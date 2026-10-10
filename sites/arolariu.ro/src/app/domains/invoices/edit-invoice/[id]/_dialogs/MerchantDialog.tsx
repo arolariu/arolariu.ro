@@ -59,7 +59,7 @@ import styles from "./MerchantDialog.module.scss";
 export default function MerchantDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const {
-    currentDialog: {payload},
+    currentDialog: {payload = null},
     isOpen,
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT");
@@ -69,7 +69,7 @@ export default function MerchantDialog(): React.JSX.Element | null {
   // production gate which only renders this component once `open()` has already
   // set a real merchant payload). No hooks are declared below this point, so
   // returning early here is hook-order-safe.
-  const merchant: Merchant | null = payload ?? null;
+  const merchant: Merchant | null = payload;
 
   if (!merchant) {
     return null;

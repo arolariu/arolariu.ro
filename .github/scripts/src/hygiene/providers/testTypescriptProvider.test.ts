@@ -1,5 +1,14 @@
+import * as fs from "node:fs/promises";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {VitestJsonReport} from "./_testHelpers.ts";
+
+async function writeReport(args: readonly string[], report: VitestJsonReport, exitCode = 0) {
+  const outputFile = args[args.indexOf("--outputFile") + 1];
+  if (args.includes("--outputFile") && outputFile) {
+    await fs.writeFile(outputFile, JSON.stringify(report));
+  }
+  return {exitCode, stdout: "JSON report written to output.json", stderr: ""};
+}
 
 const passing: VitestJsonReport = {
   numTotalTests: 5,
@@ -82,13 +91,13 @@ describe("testTypescriptProvider", () => {
     ).toBe(true);
   });
 
-  it("runs each suite in parallel and emits one SuiteResult per project", async () => {
+  it("runs each suite and emits one SuiteResult per project", async () => {
     // Mock exec.getExecOutput to return a failing report only when cwd ends with sites/arolariu.ro (website).
-    const getExecOutput = vi.fn().mockImplementation((_cmd: string, _args: string[], opts?: {cwd?: string}) => {
+    const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[], opts?: {cwd?: string}) => {
       const cwd = (opts?.cwd ?? "").replace(/\\/g, "/");
       const isWebsite = cwd.endsWith("sites/arolariu.ro");
       const report = isWebsite ? failing : passing;
-      return Promise.resolve({exitCode: 0, stdout: JSON.stringify(report), stderr: ""});
+      return writeReport(args, report, isWebsite ? 1 : 0);
     });
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
@@ -104,20 +113,27 @@ describe("testTypescriptProvider", () => {
     expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["components", "cv", "scripts", "status", "website"]);
     // website suite has 1 failing test; others all passing
     expect(result.payload.failed).toBe(1);
+    expect(result.payload.totalTests).toBe(22);
     expect(result.findings).toHaveLength(1);
     const f = result.findings[0];
     if (f?.kind === "line") {
       expect(f.suite).toBe("website");
     }
+    for (const call of getExecOutput.mock.calls) {
+      const args = call[1] as string[];
+      const outputFile = args[args.indexOf("--outputFile") + 1];
+      expect(outputFile).toBeDefined();
+      await expect(fs.access(outputFile ?? "")).rejects.toMatchObject({code: "ENOENT"});
+    }
   });
 
   it("records a runner-failed synthetic suite when one project produces no JSON", async () => {
-    const getExecOutput = vi.fn().mockImplementation((_cmd: string, _args: string[], opts?: {cwd?: string}) => {
+    const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[], opts?: {cwd?: string}) => {
       const cwd = opts?.cwd ?? "";
       if (cwd.includes("cv.arolariu.ro")) {
         return Promise.resolve({exitCode: 1, stdout: "garbage non-json", stderr: "build failed"});
       }
-      return Promise.resolve({exitCode: 0, stdout: JSON.stringify(passing), stderr: ""});
+      return writeReport(args, passing);
     });
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
@@ -140,7 +156,7 @@ describe("testTypescriptProvider", () => {
   });
 
   it("runs only the website suite for website-only changes", async () => {
-    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: JSON.stringify(passing), stderr: ""});
+    const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[]) => writeReport(args, passing));
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
 
@@ -156,5 +172,24 @@ describe("testTypescriptProvider", () => {
     expect(getExecOutput).toHaveBeenCalledTimes(1);
     expect((getExecOutput.mock.calls[0]?.[2] as {cwd?: string} | undefined)?.cwd?.replace(/\\/g, "/")).toBe("/w/sites/arolariu.ro");
     expect(result.payload.suites.map((s) => s.name)).toEqual(["website"]);
+  });
+
+  it("does not accept passing assertions when the Vitest process fails", async () => {
+    const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[]) => writeReport(args, passing, 1));
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+      env: {},
+    });
+
+    expect(result.payload.failed).toBe(1);
+    expect(result.findings[0]).toMatchObject({ruleId: "website/runner-failed"});
+    expect(result.findings[0]?.message).toContain("exit 1");
   });
 });

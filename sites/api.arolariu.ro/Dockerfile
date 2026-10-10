@@ -56,7 +56,7 @@ COPY src/Invoices/arolariu.Backend.Domain.Invoices.csproj src/Invoices/
 COPY src/Core/arolariu.Backend.Core.csproj src/Core/
 
 # 3. Restore
-RUN dotnet restore src/Core/arolariu.Backend.Core.csproj
+RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore src/Core/arolariu.Backend.Core.csproj
 
 # 4. Copy the full source tree AFTER restore
 COPY . .

@@ -22,7 +22,7 @@ import {SELFHOST_SQL_PASSWORD, selfhostFixture, type SelfhostFixture} from "./se
 function failingSqlFixture(): SelfhostFixture {
   return selfhostFixture({
     process: (_command, args) =>
-      args.includes("/opt/mssql-tools/bin/sqlcmd")
+      args.includes("/opt/mssql-tools18/bin/sqlcmd")
         ? {kind: "exited", exitCode: 1, stdout: "", stderr: "Login failed for user 'sa'.", durationMs: 0}
         : {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0},
   });

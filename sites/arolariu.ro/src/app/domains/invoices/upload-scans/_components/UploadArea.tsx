@@ -135,9 +135,7 @@ export default function UploadArea(): React.JSX.Element {
    */
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent): void => {
-      if (isUploading) return;
-      if (isEditableTarget(event.target)) return;
-      if (!event.clipboardData) return;
+      if (isUploading || isEditableTarget(event.target) || !event.clipboardData) return;
 
       const pastedFiles = extractFilesFromDataTransferItems(event.clipboardData.items);
       if (pastedFiles.length === 0) return;

@@ -30,23 +30,28 @@ This directory contains TypeScript modules used by GitHub Actions workflows for 
 
 ### Hygiene check (v3)
 
-The hygiene check pipeline is split into per-provider entry points and a final
-projection gate. Both are invoked from the workflow `official-hygiene-check-v2.yml`:
+The hygiene check pipeline is split into per-provider entry points and a final projection gate. Both are invoked from the workflow
+`official-hygiene-check-v2.yml`:
 
-- `src/hygiene/pipeline/runProvider.ts <providerId>` -- runs one provider
-  (`format`, `lint`, `test`, `stats`), writes `artifacts/hygiene/outcome-<id>.json`.
-  Exit code is 1 when the provider's gateResult is `failed` or `errored` and 0
-  otherwise; the workflow uses step-level `continue-on-error: true` on each
-  provider step so a non-zero exit shows a warning marker in the step UI without
+- `src/hygiene/pipeline/runProvider.ts <providerId>` -- runs one provider (`format`, `lint`, `test`, `stats`), writes
+  `artifacts/hygiene/outcome-<id>.json`. Exit code is 1 when the provider's gateResult is `failed` or `errored` and 0 otherwise; the
+  workflow uses step-level `continue-on-error: true` on each provider step so a non-zero exit shows a warning marker in the step UI without
   aborting subsequent providers. Workflow pass/fail is decided by `runProjections.ts`.
-- `src/hygiene/pipeline/runProjections.ts` -- loads all outcome JSON files,
-  builds the aggregate `HygieneReport`, fans out to projections (`jsonArtifact`,
-  `stepSummary`, `prComment`, `statusChecks`) via `Promise.allSettled`, and
-  calls `core.setFailed()` if `overallResult` is `failed` or `errored`. This is
-  the single point that turns the workflow red.
+- `src/hygiene/pipeline/runProjections.ts` -- loads all outcome JSON files, builds the aggregate `HygieneReport`, fans out to projections
+  (`jsonArtifact`, `stepSummary`, `prComment`, `statusChecks`) via `Promise.allSettled`, and calls `core.setFailed()` if `overallResult` is
+  `failed` or `errored`. This is the single point that turns the workflow red.
 
-Adding a new check: create `src/hygiene/providers/myProvider.ts` exporting a
-`CheckProvider<P>` value, then register it in `src/hygiene/providers/registry.ts`.
+Adding a new check: create `src/hygiene/providers/myProvider.ts` exporting a `CheckProvider<P>` value, then register it in
+`src/hygiene/providers/registry.ts`.
+
+The `test-typescript` provider runs each project's worker pool in turn and reads an explicitly selected, temporary JSON report file. Vitest
+5 no longer writes that report to stdout by default. Reports are cleaned up after each run, and a nonzero runner exit cannot pass merely
+because its assertions passed.
+
+The `lint` provider runs typed projects sequentially in separate processes, each with a 6 GB heap while preserving existing Node options.
+Remaining root and tooling files run in a final, disjoint scope, releasing project/compiler state between owners. Generated build
+directories are globally ignored by the root ESLint configuration; application and tooling source remain in scope. Fatal process exits are
+reported directly rather than as downstream JSON errors.
 
 ### runLiveTestAction.ts
 
@@ -117,8 +122,8 @@ All check results conform to the `HygieneCheckResult` interface:
 
 ```typescript
 interface HygieneCheckResult {
-  check: 'format' | 'lint' | 'test' | 'stats';
-  status: 'success' | 'failure' | 'skipped' | 'error';
+  check: "format" | "lint" | "test" | "stats";
+  status: "success" | "failure" | "skipped" | "error";
   duration: number;
   summary: string;
   timestamp: string;
@@ -160,32 +165,32 @@ npm run test:unit
 
 The `helpers/` directory provides reusable utilities:
 
-| Helper | Description |
-|--------|-------------|
-| `artifacts` | Upload/download GitHub Actions artifacts |
-| `cache` | Cache management with key generation |
-| `comments` | Fluent builder for markdown PR comments |
-| `environment` | Type-safe environment variable access |
-| `filesystem` | File reading, globbing, JSON parsing |
-| `git` | Git operations (diff, fetch, file sizes) |
-| `github` | GitHub API client (issues, comments, PRs) |
-| `http` | HTTP client with retry logic |
-| `newman` | Parse Newman/Postman test results |
-| `playwright` | Parse Playwright test results |
-| `vitest` | Parse Vitest coverage reports |
+| Helper        | Description                               |
+| ------------- | ----------------------------------------- |
+| `artifacts`   | Upload/download GitHub Actions artifacts  |
+| `cache`       | Cache management with key generation      |
+| `comments`    | Fluent builder for markdown PR comments   |
+| `environment` | Type-safe environment variable access     |
+| `filesystem`  | File reading, globbing, JSON parsing      |
+| `git`         | Git operations (diff, fetch, file sizes)  |
+| `github`      | GitHub API client (issues, comments, PRs) |
+| `http`        | HTTP client with retry logic              |
+| `newman`      | Parse Newman/Postman test results         |
+| `playwright`  | Parse Playwright test results             |
+| `vitest`      | Parse Vitest coverage reports             |
 
 ### Usage Example
 
 ```typescript
-import { env, git, createGitHubHelper } from '../helpers/index.ts';
+import {env, git, createGitHubHelper} from "../helpers/index.ts";
 
 // Get environment variables
-const token = env.getRequired('GITHUB_TOKEN');
-const headRef = env.get('HEAD_REF', 'HEAD');
+const token = env.getRequired("GITHUB_TOKEN");
+const headRef = env.get("HEAD_REF", "HEAD");
 
 // Git operations
-const changedFiles = await git.getChangedFiles('origin/main', headRef);
-const diffStats = await git.getDiffStats('origin/main', headRef);
+const changedFiles = await git.getChangedFiles("origin/main", headRef);
+const diffStats = await git.getDiffStats("origin/main", headRef);
 
 // GitHub API
 const gh = createGitHubHelper(token);

@@ -105,6 +105,7 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
     "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
     "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-uint8array-hex": "off", // Uint8Array.toHex() requires Node 25; our supported floor is Node 24.
     "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
 
     // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
@@ -890,7 +891,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
 
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
-// Add the global ignores to the default config.
+// Keep project-specific exclusions separate from global directory ignores and tooling rules.
 for (const individualEslintConfig of projectEslintConfig) {
   const eslintPathsIgnoreList = [
     "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts,tests}/**", // dirs
@@ -902,6 +903,11 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig);
+const eslintConfig = defineConfig(
+  {ignores: ["**/{node_modules,.storybook,storybook-static,.superpowers,.svelte-kit,.next,out,bin,build,dist}/**", "docs/superpowers/**"]},
+  projectEslintConfig,
+  toolingOutputConfig,
+  toolingPromptOutputConfig,
+);
 
 export default eslintConfig;

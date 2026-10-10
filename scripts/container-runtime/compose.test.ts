@@ -78,7 +78,7 @@ describe("buildComposeCommand", () => {
 
         expect(command).toEqual({
           command: "podman",
-          args: ["compose", "-f", "infra/Local/Storage/docker-compose.yml", "up", "-d"],
+          args: ["compose", "--podman-build-args=--format=docker", "-f", "infra/Local/Storage/docker-compose.yml", "up", "-d"],
         });
       }),
     makeTestLayer().layer,
@@ -102,7 +102,10 @@ describe("runCompose", () => {
           // Assert
           expect(result).toEqual({engine: "podman", file: "infra\\Local\\Storage\\docker-compose.yml", passthrough: ["up", "-d"]});
           expect(harness.processCalls().at(-1)).toEqual({
-            request: {command: "podman", args: ["compose", "-f", "infra\\Local\\Storage\\docker-compose.yml", "up", "-d"]},
+            request: {
+              command: "podman",
+              args: ["compose", "--podman-build-args=--format=docker", "-f", "infra\\Local\\Storage\\docker-compose.yml", "up", "-d"],
+            },
             options: {output: "tee", echo: false},
           });
         }),
@@ -160,7 +163,7 @@ describe("runCompose", () => {
     const harness = makeTestLayer({
       files: WORKSPACE_FILES,
       processes: [
-        {match: (request) => request.args[0] === "compose" && request.args[1] === "-f", respond: () => Effect.never},
+        {match: (request) => request.args[0] === "compose" && request.args.includes("-f"), respond: () => Effect.never},
         queued(preflight),
       ],
     });
@@ -270,7 +273,17 @@ describe("containers compose characterization", () => {
         {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "podman",
-          args: ["compose", "-f", "infra/Local/Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d", "--remove-orphans"],
+          args: [
+            "compose",
+            "--podman-build-args=--format=docker",
+            "-f",
+            "infra/Local/Storage/docker-compose.yml",
+            "--profile",
+            "selfhost",
+            "up",
+            "-d",
+            "--remove-orphans",
+          ],
           options: TEE,
         },
       ],

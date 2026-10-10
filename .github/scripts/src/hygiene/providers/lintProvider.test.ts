@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {LineFinding} from "../domain/types.ts";
 import {lintProvider, parseEslintJson, type EslintFileResult} from "./lintProvider.ts";
 
@@ -118,6 +118,7 @@ describe("lintProvider metadata", () => {
 
 describe("lintProvider.run", () => {
   beforeEach(() => vi.resetModules());
+  afterEach(() => vi.unstubAllEnvs());
 
   it("parses ESLint JSON output into findings", async () => {
     const eslintJson = JSON.stringify([
@@ -129,7 +130,10 @@ describe("lintProvider.run", () => {
       },
     ]);
     vi.doMock("@actions/exec", () => ({
-      getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: eslintJson, stderr: ""}),
+      getExecOutput: vi
+        .fn()
+        .mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""})
+        .mockResolvedValueOnce({exitCode: 1, stdout: eslintJson, stderr: ""}),
     }));
     const {lintProvider: provider} = await import("./lintProvider.ts");
     const result = await provider.run({
@@ -184,11 +188,15 @@ describe("lintProvider.run", () => {
         env: {},
       });
 
-      expect(getExecOutput).toHaveBeenCalledWith("npx", ["eslint", relativeFile, "--format", "json"], {
-        cwd: workspaceRoot,
-        ignoreReturnCode: true,
-        silent: true,
-      });
+      expect(getExecOutput).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", relativeFile, "--format", "json"],
+        expect.objectContaining({
+          cwd: workspaceRoot,
+          ignoreReturnCode: true,
+          silent: true,
+        }),
+      );
     } finally {
       await fs.rm(workspaceRoot, {recursive: true, force: true});
     }
@@ -218,5 +226,67 @@ describe("lintProvider.run", () => {
     } finally {
       await fs.rm(workspaceRoot, {recursive: true, force: true});
     }
+  });
+
+  it("budgets the typed lint process without dropping existing Node options", async () => {
+    vi.stubEnv("NODE_OPTIONS", "--enable-source-maps");
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {lintProvider: provider} = await import("./lintProvider.ts");
+
+    await provider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+
+    const options = getExecOutput.mock.calls[0]?.[2] as {env?: NodeJS.ProcessEnv} | undefined;
+    expect(options?.env?.["NODE_OPTIONS"]).toBe("--enable-source-maps --max-old-space-size=6144");
+    expect(getExecOutput.mock.calls.map((call) => (call[1] as string[])[1]?.replace(/\\/g, "/"))).toEqual([
+      "sites/arolariu.ro",
+      "packages/components",
+      "sites/cv.arolariu.ro",
+      "sites/status.arolariu.ro",
+      ".",
+    ]);
+    expect(getExecOutput.mock.calls[4]?.[1]).toEqual([
+      "eslint",
+      ".",
+      "--ignore-pattern",
+      "sites/arolariu.ro/**",
+      "--ignore-pattern",
+      "packages/components/**",
+      "--ignore-pattern",
+      "sites/cv.arolariu.ro/**",
+      "--ignore-pattern",
+      "sites/status.arolariu.ro/**",
+      "--format",
+      "json",
+    ]);
+  });
+
+  it("reports the fatal process exit instead of a downstream JSON parse failure", async () => {
+    vi.doMock("@actions/exec", () => ({
+      getExecOutput: vi.fn().mockResolvedValue({
+        exitCode: 134,
+        stdout: "",
+        stderr: "FATAL ERROR: Reached heap limit Allocation failed",
+      }),
+    }));
+    const {lintProvider: provider} = await import("./lintProvider.ts");
+
+    await expect(
+      provider.run({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).rejects.toThrow("ESLint exited with code 134");
   });
 });

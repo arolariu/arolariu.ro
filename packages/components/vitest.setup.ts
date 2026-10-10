@@ -2,6 +2,11 @@ import "@testing-library/jest-dom/vitest";
 import {cleanup} from "@testing-library/react";
 import {afterEach} from "vitest";
 
+// Happy DOM's native cancellation rejects Motion's animation promises; use its supported JS fallback in DOM tests.
+if (!Reflect.deleteProperty(Element.prototype, "animate")) {
+  throw new Error("Could not disable the unsupported Happy DOM animation boundary");
+}
+
 /** The subset of the Web Storage API the mock implements. */
 type StorageMock = Pick<Storage, "length" | "clear" | "getItem" | "key" | "removeItem" | "setItem">;
 

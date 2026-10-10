@@ -20,7 +20,7 @@ import {basename, join, resolve} from "node:path";
 
 import {Effect, type PlatformError} from "effect";
 
-import {parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {formatVersionRequirement, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import {ReadOnlyFiles} from "../../../platform/Files.ts";
 import type {Process} from "../../../platform/Process.ts";
@@ -477,7 +477,7 @@ function diagnoseRequirementSources(context: Readonly<ModuleRunContext>): Diagno
     "Runtime requirement sources",
     "Tracked runtime requirement sources agree.",
     [
-      `Node.js >=${formattedVersion(context.requirements.requirements.node)}`,
+      `Node.js ${formatVersionRequirement(context.requirements.requirements.node)}`,
       `npm >=${formattedVersion(context.requirements.requirements.npm)}`,
     ],
   );
@@ -535,15 +535,18 @@ function diagnoseRuntime(
         name: input.name,
         status: "fail",
         summary: `${input.name} does not meet the repository minimum.`,
-        evidence: [`Installed: ${formattedVersion(version)}`, `Required: >=${formattedVersion(input.minimum)}`],
-        rootCause: `${input.name} is older than the repository minimum.`,
+        evidence: [`Installed: ${formattedVersion(version)}`, `Required: ${formatVersionRequirement(input.minimum)}`],
+        rootCause:
+          version.major > input.minimum.major
+            ? `${input.name} is outside the supported runtime branches.`
+            : `${input.name} is older than the repository minimum.`,
         fixes: [{description: `Install a supported ${input.name} version, then rerun doctor.`}],
       });
     }
 
     return passDiagnostic(context, startedAt, input.id, input.name, `${input.name} satisfies the repository requirement.`, [
       `Installed: ${formattedVersion(version)}`,
-      `Required: >=${formattedVersion(input.minimum)}`,
+      `Required: ${formatVersionRequirement(input.minimum)}`,
     ]);
   });
 }

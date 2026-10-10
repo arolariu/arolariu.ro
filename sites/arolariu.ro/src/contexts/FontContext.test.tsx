@@ -30,7 +30,7 @@ describe("FontContext", () => {
   beforeEach(() => {
     // Mock localStorage
     localStorageMock = {};
-    globalThis.localStorage = {
+    vi.stubGlobal("localStorage", {
       getItem: vi.fn((key: string) => localStorageMock[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
         localStorageMock[key] = value;
@@ -43,10 +43,11 @@ describe("FontContext", () => {
       }),
       length: 0,
       key: vi.fn(),
-    } as Storage;
+    } satisfies Storage);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 

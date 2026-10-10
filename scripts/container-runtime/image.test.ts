@@ -23,6 +23,7 @@ import {makeRootCommand, runCli} from "../cli.ts";
 import {makeContainersCommand} from "../commands/containers/cli.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../commands/generate/artifacts.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
+import {Environment} from "../platform/Environment.ts";
 import {exitCodeFor} from "../platform/exit.ts";
 import {
   effectTest,
@@ -40,6 +41,8 @@ import {buildImageBuildCommand, buildImageRunCommand, runImage, shouldGenerateTa
 const WORKSPACE_FILES: Readonly<Record<string, string>> = {
   "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
   "sites/arolariu.ro/package.json": JSON.stringify({}),
+  "sites/arolariu.ro/.env": "NEXT_PUBLIC_SERVICE_KEY=public-fixture\nRUNTIME_API_KEY=private-runtime-only\n",
+  "sites/exp.arolariu.ro/config.docker.json": "{}",
 };
 
 /** Pinned GS1 archive URL. */
@@ -212,6 +215,19 @@ function projectOutput(harness: TestHarness): readonly unknown[] {
 }
 
 describe("buildImageBuildCommand", () => {
+  it("passes feed policy as build secrets instead of copying its contents", () => {
+    const command = buildImageBuildCommand(getContainerAdapter("podman"), {
+      dockerfile: "infra/containers/Dockerfile.exp",
+      tag: "arolariu-exp",
+      context: ".",
+      buildArgs: {},
+      secrets: [{id: "pip_config", source: "C:\\private\\pip.conf"}],
+    });
+
+    expect(command.args).toContain("id=pip_config,src=C:\\private\\pip.conf");
+    expect(command.args).toContain("--secret");
+  });
+
   it("builds frontend image with Podman", () => {
     const command = buildImageBuildCommand(getContainerAdapter("podman"), {
       dockerfile: "infra/containers/Dockerfile.frontend",
@@ -222,12 +238,47 @@ describe("buildImageBuildCommand", () => {
 
     expect(command).toEqual({
       command: "podman",
-      args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
+      args: [
+        "build",
+        "-f",
+        "infra/containers/Dockerfile.frontend",
+        "-t",
+        "arolariu-frontend",
+        "--build-arg",
+        "VERSION=local",
+        "--format",
+        "docker",
+        ".",
+      ],
     });
   });
 });
 
 describe("buildImageRunCommand", () => {
+  it("delivers private runtime configuration by variable name and mount path, not argument values", () => {
+    const command = buildImageRunCommand(getContainerAdapter("podman"), {
+      tag: "arolariu-exp",
+      ports: ["5002:8080"],
+      environment: {INFRA: "local"},
+      environmentNames: ["RUNTIME_API_KEY"],
+      mounts: ["type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly"],
+    });
+
+    expect(command.args).toEqual([
+      "run",
+      "--rm",
+      "-p",
+      "5002:8080",
+      "-e",
+      "RUNTIME_API_KEY",
+      "--mount",
+      "type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly",
+      "-e",
+      "INFRA=local",
+      "arolariu-exp",
+    ]);
+  });
+
   it("runs backend image with Rancher", () => {
     const command = buildImageRunCommand(getContainerAdapter("rancher"), {
       tag: "arolariu-backend",
@@ -254,6 +305,127 @@ describe("shouldGenerateTaxonomyArtifacts", () => {
 });
 
 describe("runImage", () => {
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "preserves quoted and padded dotenv values through the private process environment",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            const fs = yield* FileSystem.FileSystem;
+            yield* fs.writeFileString(
+              join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env"),
+              'RUNTIME_API_KEY="private=literal"\nNEXT_PUBLIC_SERVICE_KEY="public-padded=="\n',
+            );
+
+            yield* runImage({action: "run", target: "frontend", engine: "podman"});
+
+            const call = harness.processCalls().at(-1);
+            expect(call?.options.env).toEqual({
+              RUNTIME_API_KEY: "private=literal",
+              NEXT_PUBLIC_SERVICE_KEY: "public-padded==",
+            });
+            expect(call?.request.args).toContain("RUNTIME_API_KEY");
+            expect(JSON.stringify(call?.request)).not.toContain("private=literal");
+            expect(JSON.stringify(harness.output())).not.toContain("private=literal");
+            expect(call?.request.args).not.toContain("--env-file");
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "rejects a missing explicitly selected feed policy before image build",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            const snapshot = yield* Environment;
+            const result = yield* Effect.flip(
+              runImage({action: "build", target: "exp", engine: "podman"}).pipe(
+                Effect.provideService(Environment, {
+                  ...snapshot,
+                  variables: {...snapshot.variables, AROLARIU_CONTAINER_PIP_CONFIG: "/private/missing-pip.conf"},
+                }),
+              ),
+            );
+            expect(result._tag).toBe("ContainerRuntimeError");
+            expect(harness.processCalls().some(({request}) => request.args[0] === "build")).toBe(false);
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "rejects a directory substituted for private exp configuration",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            const fs = yield* FileSystem.FileSystem;
+            const path = join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json");
+            yield* fs.remove(path);
+            yield* fs.makeDirectory(path);
+
+            const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
+
+            expect(error._tag).toBe("ContainerRuntimeError");
+            expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "delivers provider-independent website build configuration only through a secret file",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            yield* runImage({action: "build", target: "frontend", engine: "podman"});
+
+            const command = harness.processCalls().at(-1)?.request;
+            expect(command?.args).toContain(`id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`);
+            expect(JSON.stringify(command)).not.toContain("public-fixture");
+            expect(JSON.stringify(harness.processCalls())).not.toContain("private-runtime-only");
+            expect(JSON.stringify(harness.output())).not.toContain("private-runtime-only");
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "rejects missing private exp configuration before launching its image",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            const fs = yield* FileSystem.FileSystem;
+            yield* fs.remove(join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json"));
+
+            const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
+
+            expect(error._tag).toBe("ContainerRuntimeError");
+            expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
   for (const [target, shouldGenerate] of [
     ["frontend", true],
     ["backend", true],
@@ -314,7 +486,7 @@ describe("runImage", () => {
             expect(projectOutput(harness)).toEqual([
               {
                 stream: "stdout",
-                text: "$ podman build -f infra/containers/Dockerfile.backend -t arolariu-backend --build-arg VERSION=local .",
+                text: "$ podman build -f infra/containers/Dockerfile.backend -t arolariu-backend --build-arg VERSION=local --format docker .",
               },
               {stream: "stdout", text: "built"},
             ]);
@@ -358,7 +530,22 @@ describe("runImage", () => {
 
             // Assert
             expect(harness.processCalls().at(-1)).toEqual({
-              request: {command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]},
+              request: {
+                command: "podman",
+                args: [
+                  "run",
+                  "--rm",
+                  "-p",
+                  "5002:8080",
+                  "--mount",
+                  `type=bind,source=${join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json")},target=/app/config.docker.json,readonly`,
+                  "-e",
+                  "INFRA=local",
+                  "-e",
+                  "EXP_LOCAL_CONFIG_PATH=/app/config.docker.json",
+                  "arolariu-exp",
+                ],
+              },
               options: {output: "tee", echo: false},
             });
           }),
@@ -541,14 +728,27 @@ describe("containers build characterization", () => {
         EXTRACTION,
         {
           command: "podman",
-          args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
+          args: [
+            "build",
+            "-f",
+            "infra/containers/Dockerfile.frontend",
+            "-t",
+            "arolariu-frontend",
+            "--build-arg",
+            "VERSION=local",
+            "--secret",
+            `id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`,
+            "--format",
+            "docker",
+            ".",
+          ],
           options: TEE,
         },
       ],
       output: [
         {
           stream: "stdout",
-          text: "$ podman build -f infra/containers/Dockerfile.frontend -t arolariu-frontend --build-arg VERSION=local .",
+          text: `$ podman build -f infra/containers/Dockerfile.frontend -t arolariu-frontend --build-arg VERSION=local --secret id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")} --format docker .`,
         },
         {stream: "stdout", text: "[arolariu::image] ✅ Image build completed for target 'frontend' with engine 'podman'."},
       ],
@@ -570,7 +770,18 @@ describe("containers build characterization", () => {
         EXTRACTION,
         {
           command: "docker",
-          args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
+          args: [
+            "build",
+            "-f",
+            "infra/containers/Dockerfile.frontend",
+            "-t",
+            "arolariu-frontend",
+            "--build-arg",
+            "VERSION=local",
+            "--secret",
+            `id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`,
+            ".",
+          ],
           options: TEE,
         },
       ],

@@ -18,10 +18,11 @@ All Dockerfiles include:
 ## Available Files
 
 | File | Site | Technology | Port | Base Image |
-|------|------|------------|------|------------|
+| --------------------- | --------------- | --------------------- | ---- | ------------------------- |
 | `Dockerfile.frontend` | arolariu.ro | Next.js 16 + React 19 | 3000 | node:24-alpine |
 | `Dockerfile.backend` | api.arolariu.ro | .NET 10 ASP.NET Core | 8080 | dotnet/aspnet:10.0-alpine |
 | `Dockerfile.cv` | cv.arolariu.ro | SvelteKit + serve | 3000 | node:24-alpine |
+| `Dockerfile.exp`      | exp.arolariu.ro | FastAPI + Uvicorn     | 8080 | python:3.12-slim          |
 
 ## Build Context
 
@@ -48,6 +49,27 @@ npm run containers:run -- --engine podman --target backend
 
 The helper builds from the repository root and routes build/run commands through the selected runtime adapter.
 
+Podman image and Compose build commands select Docker image format explicitly so `HEALTHCHECK` survives serialization. Direct Podman builds
+must also use `--format docker`.
+
+Build contexts exclude environment files, private exp configuration, package-feed configuration, key material and nested build/dependency
+artifacts. Frontend recipes build the local components package themselves and preserve the complete Next.js standalone hierarchy. Only
+public website metadata and CDN selection are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the
+build-only `website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated
+website `.env` as this secret, without embedding the file in an image or introducing provider-specific defaults.
+
+Frontend `containers:run` requires the generated website `.env`, parses its quoted values and supplies them through the child process
+environment with engine variable-name flags, never secret values in arguments. Exp `containers:run` requires
+`sites/exp.arolariu.ro/config.docker.json` and mounts it read-only through `EXP_LOCAL_CONFIG_PATH`. Neither file is copied into an image.
+Supply runtime configuration privately through the established environment contract. Authentication configuration and migration are
+owned by their separate workstream; this container follow-up does not provision provider-specific cloud settings.
+
+Use the package feeds configured for your environment. The image helper accepts `AROLARIU_CONTAINER_NPM_CONFIG`,
+`AROLARIU_CONTAINER_PIP_CONFIG` and `AROLARIU_CONTAINER_NUGET_CONFIG` as paths to private feed-policy files. The corresponding build secret
+IDs are `npm_config`, `pip_config` and `nuget_config`, mounted only during dependency installation. Direct builds can pass
+`--secret id=<id>,src=<file>`. Do not copy these files into the context. A Windows remote Podman build may reject secret-mount temporary
+paths; run the same build natively inside the existing Podman guest rather than changing engine, disabling TLS or using a fallback registry.
+
 ## Build Commands
 
 ### Frontend (arolariu.ro)
@@ -63,9 +85,9 @@ npm run containers:run -- --engine rancher --target frontend
 npm run containers:build -- --engine podman --target backend
 npm run containers:run -- --engine podman --target backend
 
-# Build specific stages
-podman build -f infra/containers/Dockerfile.backend --target=test -t arolariu-backend-test .
-podman build -f infra/containers/Dockerfile.backend --target=security-scan -t arolariu-backend-scan .
+# CI owns tests; image recipes only restore/build/publish.
+# Build the optional security-scanning input stage:
+podman build --format docker -f infra/containers/Dockerfile.backend --target=security-scan -t arolariu-backend-scan .
 ```
 
 ### CV Site (cv.arolariu.ro)
@@ -79,26 +101,26 @@ npm run containers:run -- --engine rancher --target cv
 
 ### Common Build Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument     | Description                     | Default   |
+| ------------ | ------------------------------- | --------- |
 | `COMMIT_SHA` | Git commit SHA for traceability | `unknown` |
 | `BUILD_DATE` | ISO 8601 build timestamp | - |
 | `VERSION` | Semantic version | `1.0.0` |
 
 ### Frontend-Specific
 
-| Argument | Description | Default |
-|----------|-------------|---------|
+| Argument                | Description                      | Default   |
+| ----------------------- | -------------------------------- | --------- |
 | `NODE_VERSION` | Node.js major version | `24` |
-| `AZURE_TENANT_ID` | Azure AD tenant ID | - |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | - |
-| `AZURE_CLIENT_ID` | Azure managed identity client ID | - |
-| `INFRA` | Infrastructure type | `unknown` |
+| `AZURE_TENANT_ID`       | Azure AD tenant ID               | -         |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID            | -         |
+| `AZURE_CLIENT_ID`       | Azure managed identity client ID | -         |
+| `INFRA`                 | Infrastructure type              | `unknown` |
 
 ### Backend-Specific
 
 | Argument | Description | Default |
-|----------|-------------|---------|
+| ----------------------- | -------------------------------- | ------------------------- |
 | `DOTNET_VERSION` | .NET SDK/runtime version | `10.0` |
 | `BUILD_CONFIGURATION` | Build configuration | `Release` |
 | `API_NAME` | API service name | `arolariu-backend-api` |
@@ -115,7 +137,7 @@ npm run containers:run -- --engine rancher --target cv
 The frontend requires environment variables at runtime:
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ----------------------------------- | ------------------------------------ | -------- |
 | `SITE_ENV` | Environment (development/production) | Yes |
 | `SITE_URL` | Site URL | Yes |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Yes |
@@ -131,7 +153,7 @@ Most backend configuration is embedded at build time via build arguments.
 ### CV Site
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | --------- |
 | `PORT` | Server port | `3000` |
 | `HOST` | Server host | `0.0.0.0` |
 
@@ -147,7 +169,7 @@ For local development, prefer the `npm run containers:build -- --engine <rancher
 All containers include built-in health checks compatible with Docker Compose, Kubernetes, and Azure Container Apps.
 
 | Container | Endpoint | Interval | Timeout | Start Period |
-|-----------|----------|----------|---------|--------------|
+| --------- | ----------------------------- | -------- | ------- | ------------ |
 | Backend | `GET /health` (port 8080) | 30s | 10s | 30s |
 | Frontend | `GET /api/health` (port 3000) | 30s | 10s | 30s |
 | CV | `GET /health` (port 3000) | 30s | 10s | 10s |
@@ -157,7 +179,7 @@ All containers include built-in health checks compatible with Docker Compose, Ku
 ### Non-Root Users
 
 | Container | User | UID | Group | GID |
-|-----------|------|-----|-------|-----|
+| --------- | ----------- | ---- | ---------- | ---- |
 | Frontend | `nextjs` | 1001 | `nodejs` | 1001 |
 | Backend | `appuser` | 1001 | `appgroup` | 1001 |
 | CV | `sveltekit` | 1001 | `nodejs` | 1001 |

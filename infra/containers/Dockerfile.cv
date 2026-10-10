@@ -6,7 +6,7 @@
 #
 # Key points:
 # - Multi-stage build for optimized image size
-# - Uses SvelteKit with Node adapter for containerized deployment
+# - Serves the Azure SWA adapter's prerendered static output
 # - Non-root user for security
 # - Uses dumb-init for proper signal handling (PID 1 zombie reaping)
 # - OCI-compliant labels for container metadata
@@ -61,9 +61,11 @@ COPY tsconfig.json ./
 
 # Copy CV site package manifest
 COPY sites/cv.arolariu.ro/package.json ./sites/cv.arolariu.ro/
+COPY packages/components/package.json ./packages/components/
+COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
 # Install all dependencies
-RUN npm install --prefer-offline --no-audit && \
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci --no-audit && \
     npm cache clean --force
 
 # ========================================
@@ -119,12 +121,12 @@ ENV NODE_ENV=production \
     HOST="0.0.0.0"
 
 # Copy the built application
-# SvelteKit with Azure SWA adapter outputs static files to build/ directory
-COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/build ./build
+# SvelteKit with Azure SWA adapter writes the document root to build/static.
+COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/build/static ./build
 COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/package.json ./
 
 # Install serve for static file serving (lightweight, production-ready)
-RUN npm install --global serve@14 && npm cache clean --force
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm install --global serve@14 && npm cache clean --force
 
 # Security: Switch to non-root user
 USER sveltekit

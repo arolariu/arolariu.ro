@@ -37,11 +37,8 @@ beforeEach(() => {
     configurable: true,
   });
 
-  Object.defineProperty(globalThis, "performance", {
-    value: {
-      ...globalThis.performance,
-      getEntriesByType: vi.fn(() => []),
-    },
+  Object.defineProperty(globalThis.performance, "getEntriesByType", {
+    value: vi.fn(() => []),
     writable: true,
     configurable: true,
   });

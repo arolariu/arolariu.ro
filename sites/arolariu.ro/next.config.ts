@@ -143,6 +143,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   transpilePackages: ["import-in-the-middle", "require-in-the-middle", "prettier"],
+  serverExternalPackages: ["@opentelemetry/auto-instrumentations-node"],
 
   experimental: {
     // Enable server source maps in development for debugging

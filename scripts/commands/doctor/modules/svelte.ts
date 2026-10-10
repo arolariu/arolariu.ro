@@ -21,12 +21,10 @@ import {
   moduleRunContext,
   type ModuleRunContext,
 } from "../diagnostics.ts";
-import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {formatVersionRequirement, parseNodeRequirement, requirementSatisfies} from "../../../common/requirements.ts";
 import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult} from "../types.ts";
 import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-
-const SITE_ENGINE_PATTERN = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?$/u;
 
 const SVELTE_INSPECTION_RESOLUTION_FIX = "Resolve the reported Svelte inspection problem, then rerun doctor.";
 
@@ -182,47 +180,46 @@ function diagnoseNodeEngine(
       summary: "The site's package.json does not declare a valid Node.js engine requirement.",
       evidence: ["package.json#engines.node is missing or uses an unsupported range."],
       rootCause: "package.json#engines.node is missing or uses an unsupported range.",
-      fixes: [{description: "Declare package.json#engines.node using a >=<major>[.<minor>] range."}],
+      fixes: [{description: "Declare a supported minimum version or LTS/current-branch Node engine range."}],
     });
   }
 
-  const match = SITE_ENGINE_PATTERN.exec(nodeEngine);
-  if (match === null) {
+  const siteMinimum = parseNodeRequirement(nodeEngine);
+  if (siteMinimum === null) {
     return issueDiagnostic(context, startedAt, {
       id,
       name: "SvelteKit Node.js engine compatibility",
       status: "fail",
       summary: "The site's package.json#engines.node uses an unsupported or malformed range.",
-      evidence: [`package.json#engines.node must be a string matching >=<major>[.<minor>]; received '${nodeEngine}'.`],
-      rootCause: "package.json#engines.node must be a string matching >=<major>[.<minor>].",
-      fixes: [{description: "Correct package.json#engines.node to a >=<major>[.<minor>] range."}],
+      evidence: [`package.json#engines.node must declare a supported minimum or LTS/current-branch range; received '${nodeEngine}'.`],
+      rootCause: "package.json#engines.node uses an unsupported runtime constraint.",
+      fixes: [{description: "Correct package.json#engines.node to a supported minimum or LTS/current-branch range."}],
     });
   }
 
-  const siteMinimum: MinimumVersion = {major: Number(match[1]), minor: Number(match[2] ?? 0), patch: 0};
   const rootMinimum = context.requirements.requirements.node;
 
-  if (!satisfiesMinimum(rootMinimum, siteMinimum)) {
-    const rootLabel = `${String(rootMinimum.major)}.${String(rootMinimum.minor)}.${String(rootMinimum.patch)}`;
+  if (!requirementSatisfies(rootMinimum, siteMinimum)) {
+    const rootLabel = formatVersionRequirement(rootMinimum);
     return issueDiagnostic(context, startedAt, {
       id,
       name: "SvelteKit Node.js engine compatibility",
       status: "fail",
       summary: "The root Node.js runtime requirement does not satisfy this site's declared engine range.",
-      evidence: [`package.json#engines.node requires ${nodeEngine}; root requirement is >=${rootLabel}.`],
-      rootCause: `Root Node.js requirement >=${rootLabel} does not satisfy this site's package.json#engines.node requirement ${nodeEngine}.`,
+      evidence: [`package.json#engines.node requires ${nodeEngine}; root requirement is ${rootLabel}.`],
+      rootCause: `Root Node.js requirement ${rootLabel} does not satisfy this site's package.json#engines.node requirement ${nodeEngine}.`,
       fixes: [{description: "Align the root and site Node.js engine requirements."}],
     });
   }
 
-  const rootLabel = `${String(rootMinimum.major)}.${String(rootMinimum.minor)}.${String(rootMinimum.patch)}`;
+  const rootLabel = formatVersionRequirement(rootMinimum);
   return passDiagnostic(
     context,
     startedAt,
     id,
     "SvelteKit Node.js engine compatibility",
     "The root Node.js runtime requirement satisfies this site's declared engine range.",
-    [`package.json#engines.node ${nodeEngine} is satisfied by the root Node.js requirement >=${rootLabel}.`],
+    [`package.json#engines.node ${nodeEngine} is satisfied by the root Node.js requirement ${rootLabel}.`],
   );
 }
 

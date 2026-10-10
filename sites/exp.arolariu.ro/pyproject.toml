@@ -5,7 +5,7 @@ description = "Configuration proxy service for arolariu.ro platform"
 requires-python = ">=3.12"
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
 
 # exp is a FastAPI app (run via uvicorn), not a distributable Python package.

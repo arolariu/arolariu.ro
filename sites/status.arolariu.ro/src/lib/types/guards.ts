@@ -118,8 +118,7 @@ export function isServiceId(value: unknown): value is ServiceId {
 /** Validates a sub-check shape: required name/status/durationMs, optional description/sampleDurationsMs. */
 export function isSubCheck(value: unknown): value is SubCheck {
   if (!isObject(value)) return false;
-  const candidate = value as SubCheckCandidate;
-  const {name, status, durationMs, description, sampleDurationsMs} = candidate;
+  const {name, status, durationMs, description, sampleDurationsMs} = value as SubCheckCandidate;
   return (
     typeof name === "string"
     && isHealthStatus(status)
@@ -136,8 +135,8 @@ export function isSubCheck(value: unknown): value is SubCheck {
  */
 export function isProbeResult(value: unknown): value is ProbeResult {
   if (!isObject(value)) return false;
-  const candidate = value as ProbeResultCandidate;
-  const {service, timestamp, latencyMs, httpStatus, overall, error, subChecks, sampleCount, sampleLatenciesMs} = candidate;
+  const {service, timestamp, latencyMs, httpStatus, overall, error, subChecks, sampleCount, sampleLatenciesMs} =
+    value as ProbeResultCandidate;
 
   return (
     isServiceId(service)
@@ -162,8 +161,7 @@ export function isProbeResult(value: unknown): value is ProbeResult {
  */
 export function isBucket(value: unknown): value is Bucket {
   if (!isObject(value)) return false;
-  const candidate = value as BucketCandidate;
-  const {t: timestamp, status, probes, latency, httpStatus, worstSubCheck} = candidate;
+  const {t: timestamp, status, probes, latency, httpStatus, worstSubCheck} = value as BucketCandidate;
 
   return (
     typeof timestamp === "string"
@@ -178,11 +176,9 @@ export function isBucket(value: unknown): value is Bucket {
 /** Validates a single service's series, including optional sub-series map. */
 export function isServiceSeries(value: unknown): value is ServiceSeries {
   if (!isObject(value)) return false;
-  const candidate = value as ServiceSeriesCandidate;
-  const {service, buckets, subSeries} = candidate;
+  const {service, buckets, subSeries} = value as ServiceSeriesCandidate;
 
-  if (!isServiceId(service)) return false;
-  if (!Array.isArray(buckets) || !buckets.every(isBucket)) return false;
+  if (!isServiceId(service) || !Array.isArray(buckets) || !buckets.every(isBucket)) return false;
   if (subSeries === undefined) return true;
   if (!isObject(subSeries)) return false;
 
@@ -210,10 +206,8 @@ const VALID_AGGREGATE_PAIRS: ReadonlyMap<string, 14 | 90 | 365> = new Map([
  */
 export function isAggregateFile(value: unknown): value is AggregateFile {
   if (!isObject(value)) return false;
-  const candidate = value as AggregateFileCandidate;
-  const {generatedAt, bucketSize, windowDays, services} = candidate;
-  if (typeof generatedAt !== "string") return false;
-  if (typeof bucketSize !== "string") return false;
+  const {generatedAt, bucketSize, windowDays, services} = value as AggregateFileCandidate;
+  if (typeof generatedAt !== "string" || typeof bucketSize !== "string") return false;
   const expectedWindowDays = VALID_AGGREGATE_PAIRS.get(bucketSize);
   // Unknown bucketSize.
   if (expectedWindowDays === undefined) return false;
@@ -231,16 +225,13 @@ export function isAggregateFile(value: unknown): value is AggregateFile {
  */
 export function isIncident(value: unknown): value is Incident {
   if (!isObject(value)) return false;
-  const candidate = value as IncidentCandidate;
-  const {id, service, subCheck, startedAt, severity, reason, probeCount, status, resolvedAt, durationMs} = candidate;
+  const {id, service, subCheck, startedAt, severity, reason, probeCount, status, resolvedAt, durationMs} = value as IncidentCandidate;
 
-  if (typeof id !== "string") return false;
-  if (!isServiceId(service)) return false;
+  if (typeof id !== "string" || !isServiceId(service)) return false;
   if (subCheck !== undefined && typeof subCheck !== "string") return false;
   if (typeof startedAt !== "string") return false;
   if (severity !== "Degraded" && severity !== "Unhealthy") return false;
-  if (typeof reason !== "string") return false;
-  if (!isNonNegativeNumber(probeCount)) return false;
+  if (typeof reason !== "string" || !isNonNegativeNumber(probeCount)) return false;
 
   // Discriminated on status: open incidents must NOT carry resolvedAt/durationMs;
   // Resolved incidents MUST carry both.

@@ -842,16 +842,17 @@ Architecture tests do not replace command behavior tests.
 
 | Package | Version | Ownership |
 | --- | --- | --- |
-| `effect` | `4.0.0` | Services, layers, fibers, scopes, `effect/cli`, `FileSystem`, `HttpClient`, `ChildProcessSpawner`, `Terminal`, test clock |
-| `@effect/platform-node` | `4.0.0` | Node adapters (`NodeServices`, `NodeHttpClient`, `NodeRuntime`); imported only by `scripts/platform/` and `scripts/cli.ts` |
-| `@nx/devkit` | `23.1.1` | Project discovery and dependency graph (workspace worker) |
+| `effect` | `4.0.2` | Services, layers, fibers, scopes, `effect/cli`, `FileSystem`, `HttpClient`, `ChildProcessSpawner`, `Terminal`, test clock |
+| `@effect/platform-node` | `4.0.2` | Node adapters (`NodeServices`, `NodeHttpClient`, `NodeRuntime`); imported only by `scripts/platform/` and `scripts/cli.ts` |
+| `@nx/devkit` | `23.3.0` | Project discovery and dependency graph (workspace worker) |
 | `envinfo` | `7.21.0` | Generic tooling inventory (aggregate worker) |
-| `systeminformation` | `5.33.6` | Generic host inventory (aggregate worker) |
-| `@azure/storage-blob` | `12.33.0` | Azurite provisioning (`LocalBlobStorageLive`) |
-| `execa` | `10.0.1` | Frozen closure only (`common/runner.execa.ts`) |
-| `piscina` | `5.3.0` | Frozen closure only (format/lint pools) |
+| `systeminformation` | `5.33.15` | Generic host inventory (aggregate worker) |
+| `@azure/storage-blob` | `12.34.0` | Azurite provisioning (`LocalBlobStorageLive`) |
+| `execa` | `10.1.0` | Frozen closure only (`common/runner.execa.ts`) |
+| `piscina` | `5.3.2` | Frozen closure only (format/lint pools) |
 
 `effect` and `@effect/platform-node` stay pinned exactly and move in lockstep.
+The exact pins are owned by the [root package manifest](../../package.json).
 A new package requires a concrete missing capability, comparison against the
 existing platform, exact version approval, a security and transitive-dependency
 review, and adapter ownership and rollback.
