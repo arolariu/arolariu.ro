@@ -11,17 +11,26 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### 2.4.0 - Unreleased
 
-**Dependency and build updates**
+**Added**
 
-- Upgrade Base UI, Motion, Rslib/Rsbuild, Storybook, Vitest, and component runtime dependencies to the exact versions in `package.json`.
-- Support both Motion 13 and 14 without removing the existing Motion 13 peer range.
-- Pin runtime dependencies rather than resolving wildcard versions in downstream installations.
-- Keep development React and ReactDOM aligned with the monorepo runtime to avoid multiple React dispatchers in hoisted peer dependencies.
-- Generate extension-qualified declaration imports with Rslib 1 for ESM consumers.
-- Give both stylesheet subpaths explicit type declarations for strict TypeScript side-effect imports.
+- Accept Motion 14 alongside Motion 13 in the peer dependency range. Existing Motion 13 consumers do not need to upgrade.
+- Add explicit TypeScript declaration targets for `@arolariu/components/styles` and `@arolariu/components/styles.css`, allowing strict
+  side-effect imports without consumer-owned ambient declarations. Both subpaths still load the same stylesheet.
 
-This version is prepared for the existing publishing workflow; it is not published by the website decoupling change. The website consumes
-the already published registry artifact pinned in its own manifest, not this workspace's build output.
+**Compatibility and dependency policy**
+
+- Existing component APIs, React 18/19 peer support, and stylesheet runtime behavior are unchanged.
+- Runtime and development dependency declarations remain wildcards; exact repository development versions are owned by the root
+  `package.json` and shared lockfile. Root dependency upgrades are maintained separately from this release.
+
+**Repository integration**
+
+- Keep the package as an npm workspace and Nx project for independent development, testing, and publishing.
+- Make the website consume an integrity-pinned published npm artifact rather than this workspace's source or `dist`; align build/dev
+  targets, test resolution, containers, setup/doctor inspection, and license metadata with that boundary.
+
+The 2.4.0 package is release-ready but remains **unreleased** until the approved publishing workflow succeeds. The website currently
+consumes published 2.3.0; adopting 2.4.0 after publication is a separate registry artifact update.
 
 ### [2.3.0](https://www.npmjs.com/package/@arolariu/components/v/2.3.0) - 2026-08-06
 
