@@ -1,5 +1,7 @@
 import * as fs from "node:fs/promises";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {access, writeFile} from "node:fs/promises";
+import * as path from "node:path";
 import type {VitestJsonReport} from "./_testHelpers.ts";
 
 async function writeReport(args: readonly string[], report: VitestJsonReport, exitCode = 0) {
@@ -155,6 +157,59 @@ describe("testTypescriptProvider", () => {
     }
   });
 
+  it("reads the explicit JSON output file when Vitest writes no report to stdout and cleans up", async () => {
+    let reportPath = "";
+    const getExecOutput = vi.fn().mockImplementation(async (_cmd: string, args: string[]) => {
+      const outputIndex = args.indexOf("--outputFile");
+      if (outputIndex >= 0) {
+        reportPath = args[outputIndex + 1] ?? "";
+        await writeFile(reportPath, JSON.stringify(passing));
+      }
+      return {exitCode: 0, stdout: "JSON report written to file", stderr: ""};
+    });
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: path.resolve("/w"),
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["packages/components/src/index.ts"],
+      env: {},
+    });
+
+    expect(result.payload.passed).toBe(5);
+    expect(result.payload.failed).toBe(0);
+    expect(result.findings).toEqual([]);
+    expect(path.isAbsolute(reportPath)).toBe(true);
+    await expect(access(reportPath)).rejects.toMatchObject({code: "ENOENT"});
+  });
+
+  it("preserves a nonzero runner exit when all reported assertions passed", async () => {
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 1, stdout: JSON.stringify(passing), stderr: "Coverage threshold failed"});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["packages/components/src/index.ts"],
+      env: {},
+    });
+
+    expect(result.payload.passed).toBe(5);
+    expect(result.findings).toEqual([
+      expect.objectContaining({
+        severity: "error",
+        ruleId: "components/runner-failed",
+        message: expect.stringContaining("Coverage threshold failed"),
+      }),
+    ]);
+  });
+
   it("runs only the website suite for website-only changes", async () => {
     const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[]) => writeReport(args, passing));
     vi.doMock("@actions/exec", () => ({getExecOutput}));
@@ -188,8 +243,8 @@ describe("testTypescriptProvider", () => {
       env: {},
     });
 
-    expect(result.payload.failed).toBe(1);
+    expect(result.payload.passed).toBe(5);
     expect(result.findings[0]).toMatchObject({ruleId: "website/runner-failed"});
-    expect(result.findings[0]?.message).toContain("exit 1");
+    expect(result.findings[0]?.message).toContain("exited with code 1");
   });
 });

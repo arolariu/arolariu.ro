@@ -88,11 +88,7 @@ async function writePackageManifest(
 ): Promise<string> {
   const packageRoot = join(root, "node_modules", ...packageName.split("/"));
   await mkdir(packageRoot, {recursive: true});
-  await writeFile(
-    join(packageRoot, "package.json"),
-    typeof contents === "string" ? contents : JSON.stringify(contents),
-    "utf8",
-  );
+  await writeFile(join(packageRoot, "package.json"), typeof contents === "string" ? contents : JSON.stringify(contents), "utf8");
   return packageRoot;
 }
 
@@ -100,8 +96,7 @@ describe("createNpmTreeProvider", () => {
   it("counts 10,000 problems but retains only the bounded first facts", async () => {
     const problems = Array.from(
       {length: 10_000},
-      (_, index) =>
-        `missing: broken-package-${index.toString().padStart(4, "0")}@1.0.0, required by @arolariu/monorepo@0.0.0`,
+      (_, index) => `missing: broken-package-${index.toString().padStart(4, "0")}@1.0.0, required by @arolariu/monorepo@0.0.0`,
     );
     const harness = npmHarness(
       exited(1, {
@@ -359,6 +354,23 @@ describe("package-name inventory", () => {
 });
 
 describe("createInstalledPackageProvider", () => {
+  it("inspects the website registry copy independently of the retained local workspace", async () => {
+    const root = await createTemporaryRoot("arolariu-registry-components-");
+    await writePackageManifest(root, "@arolariu/components", {name: "@arolariu/components", version: "2.4.0"});
+    const websiteRoot = join(root, "sites", "arolariu.ro");
+    await writePackageManifest(websiteRoot, "@arolariu/components", {name: "@arolariu/components", version: "2.3.0"});
+
+    const outcome = await invokeProvider(
+      createInstalledPackageProvider({
+        root,
+        packageNames: ["@arolariu/components"],
+        packageRoots: {"@arolariu/components": websiteRoot},
+      }),
+    );
+
+    expect(outcome).toMatchObject({kind: "available", value: {installed: {"@arolariu/components": {version: "2.3.0"}}}});
+  });
+
   it("reads only requested metadata and normalizes a workspace-link root", async () => {
     const root = await createTemporaryRoot("arolariu-packages-");
     await writePackageManifest(root, "react", {name: "react", version: "19.2.8"});
@@ -367,11 +379,7 @@ describe("createInstalledPackageProvider", () => {
 
     const workspaceRoot = join(root, "packages", "components");
     await mkdir(workspaceRoot, {recursive: true});
-    await writeFile(
-      join(workspaceRoot, "package.json"),
-      JSON.stringify({name: "@arolariu/components", version: "2.2.0"}),
-      "utf8",
-    );
+    await writeFile(join(workspaceRoot, "package.json"), JSON.stringify({name: "@arolariu/components", version: "2.2.0"}), "utf8");
     const linkRoot = join(root, "node_modules", "@arolariu", "components");
     await mkdir(dirname(linkRoot), {recursive: true});
     await symlink(workspaceRoot, linkRoot, "junction");
@@ -397,11 +405,7 @@ describe("createInstalledPackageProvider", () => {
   it("does not expose an absolute root for a package link outside the repository", async () => {
     const root = await createTemporaryRoot("arolariu-packages-external-link-");
     const externalRoot = await createTemporaryRoot("arolariu-packages-external-target-");
-    await writeFile(
-      join(externalRoot, "package.json"),
-      JSON.stringify({name: "linked-package", version: "1.2.3"}),
-      "utf8",
-    );
+    await writeFile(join(externalRoot, "package.json"), JSON.stringify({name: "linked-package", version: "1.2.3"}), "utf8");
     const linkRoot = join(root, "node_modules", "linked-package");
     await mkdir(dirname(linkRoot), {recursive: true});
     await symlink(externalRoot, linkRoot, "junction");

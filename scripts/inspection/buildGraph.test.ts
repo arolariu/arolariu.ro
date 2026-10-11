@@ -10,7 +10,7 @@ import {expect, it} from "vitest";
 const execute = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, "..", "..");
 
-it("waits for component declarations before website builds and development", async () => {
+it("builds and develops the registry-only website without local component tasks", async () => {
   const directory = await mkdtemp(join(tmpdir(), "arolariu-nx-prerequisites-"));
   const output = join(directory, "graph.json");
   try {
@@ -42,11 +42,9 @@ it("waits for component declarations before website builds and development", asy
     const graph: unknown = JSON.parse(await readFile(output, "utf8"));
 
     for (const target of ["build", "dev"]) {
-      expect(graph).toHaveProperty(
-        ["tasks", "dependencies", `@arolariu/website:${target}`],
-        expect.arrayContaining(["@arolariu/components:build"]),
-      );
+      expect(graph).toHaveProperty(["tasks", "dependencies", `@arolariu/website:${target}`], []);
     }
+    expect(graph).not.toHaveProperty(["tasks", "tasks", "@arolariu/components:build"]);
   } finally {
     await rm(directory, {recursive: true, force: true});
   }

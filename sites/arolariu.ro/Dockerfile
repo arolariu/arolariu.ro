@@ -67,13 +67,9 @@ COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY --from=deps /app/tsconfig.json ./tsconfig.json
 COPY --from=deps /app/vitest.config.ts ./vitest.config.ts
 
-# Copy the components package source (needed for workspace link)
-COPY packages/components/ ./packages/components/
-
 # Copy the website source
 COPY sites/arolariu.ro/ ./sites/arolariu.ro/
-
-RUN npm run build --workspace=@arolariu/components
+COPY --from=deps /app/sites/arolariu.ro/node_modules ./sites/arolariu.ro/node_modules
 
 # Fail fast when host-side taxonomy generation was skipped.
 RUN test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \

@@ -163,6 +163,25 @@ compatibility.
 The publishing workflow builds, tests, and publishes with provenance through
 the repository's approved GitHub Actions/OIDC path.
 
+### Website consumption boundary
+
+The library remains an npm workspace and Nx project, while the website consumes
+a published registry artifact rather than the local workspace's source or build
+output. The website manifest pins the official npm tarball; the shared root
+lockfile pins its integrity and installs the website's separate copy.
+
+An ordinary semver dependency or npm alias can be linked to a matching local
+workspace, so those declarations do not establish this boundary. The explicit
+registry artifact avoids that implicit link. Website build/dev targets, test
+resolution, and container builders must not require local component compilation.
+Library tests, Storybook, and release builds continue to validate the workspace
+independently.
+
+Publishing a new library version and adopting it in the website are separate
+operations. A website upgrade must reference an already published artifact.
+The shared lock domain still couples dependency installation and cache
+invalidation; it does not couple the website to local library implementation.
+
 ## Testing and stories
 
 Colocated Vitest and Testing Library tests should cover the public interaction:

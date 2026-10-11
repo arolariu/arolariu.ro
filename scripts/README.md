@@ -525,7 +525,7 @@ container-engine client/cache state outside that boundary.
 | [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering through `Presenter` |
 | [`commands/doctor/modules/workspace.ts`](./commands/doctor/modules/workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
 | [`commands/doctor/modules/dotnet.ts`](./commands/doctor/modules/dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |
-| [`commands/doctor/modules/react.ts`](./commands/doctor/modules/react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
+| [`commands/doctor/modules/react.ts`](./commands/doctor/modules/react.ts) | Website packages, registry component dependency, environment, i18n, taxonomy/licenses, Playwright, framework config |
 | [`commands/doctor/modules/svelte.ts`](./commands/doctor/modules/svelte.ts) | CV and status SvelteKit packages, Node engine, scripts, generated `.svelte-kit` state, adapter |
 | [`commands/doctor/modules/python.ts`](./commands/doctor/modules/python.ts) | `exp` runtime, virtual environment, pip, requirements, dependency conflicts, PyPI reachability |
 | [`commands/doctor/modules/infrastructure.ts`](./commands/doctor/modules/infrastructure.ts) | Container engine selection, CLI/backend/Compose/socket checks, ports, certificates, manifests, known containers |

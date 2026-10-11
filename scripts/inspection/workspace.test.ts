@@ -730,7 +730,7 @@ describe("createWorkspaceProvider live integration", () => {
           "@arolariu/status",
           "@arolariu/website",
         ]);
-        expect(outcome.value.dependencies).toEqual([{source: "@arolariu/website", target: "@arolariu/components"}]);
+        expect(outcome.value.dependencies).toEqual([]);
       }
 
       const nxTopLevelAfter = await snapshotPath(join(paths.root, ".nx"), {recursive: false});

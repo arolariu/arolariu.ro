@@ -129,7 +129,7 @@ function healthyPackageInventoryFacts(overrides: Readonly<Partial<Record<string,
     next: {version: "16.3.0"},
     react: {version: "19.2.8"},
     "react-dom": {version: "19.2.8"},
-    "@arolariu/components": {version: "2.2.0", workspaceRoot: "packages/components"},
+    "@arolariu/components": {version: "2.2.0"},
     "@clerk/nextjs": {version: "7.6.5"},
     "@docusaurus/core": {version: "3.10.2"},
     playwright: {version: "1.62.1"},
@@ -303,7 +303,7 @@ describe("reactDoctorModule", () => {
     expect(packages.rootCause).toContain("react installed version '19.0.0' does not match the locked version '19.2.8'");
   });
 
-  it("detects missing workspace link for @arolariu/components", async () => {
+  it("detects missing registry dependency for @arolariu/components", async () => {
     const facts = healthyReactFacts({workspaceLinkIssues: ["sites/arolariu.ro/package.json does not declare @arolariu/components."]});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 

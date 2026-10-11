@@ -110,6 +110,13 @@ export const lintProvider: CheckProvider<LintPayload> = {
       };
     }
 
+    const nodeOptions = input.env["NODE_OPTIONS"] ?? process.env["NODE_OPTIONS"] ?? "";
+    const env = {
+      ...process.env,
+      NODE_OPTIONS: /--max[-_]old[-_]space[-_]size(?:=|\s)/u.test(nodeOptions)
+        ? nodeOptions
+        : `${nodeOptions} --max-old-space-size=8192`.trim(),
+    };
     const projectPrefixes = LINT_PROJECTS.map((project) => `${project.replace(/\\/g, "/")}/`);
     const groups =
       scopedFiles === null
@@ -125,7 +132,7 @@ export const lintProvider: CheckProvider<LintPayload> = {
         ignoreReturnCode: true,
         silent: true,
         // Release typed projectService/compiler state between projects instead of retaining the whole monorepo.
-        env: {...process.env, NODE_OPTIONS: `${process.env["NODE_OPTIONS"] ?? ""} --max-old-space-size=6144`.trim()},
+        env,
       });
 
       if (result.exitCode > 1) {
