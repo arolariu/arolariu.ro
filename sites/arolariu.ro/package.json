@@ -45,7 +45,7 @@
     "test:storybook": "storybook build -o storybook-static --test"
   },
   "dependencies": {
-    "@arolariu/components": "*",
+    "@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.3.0.tgz",
     "@azure/identity": "*",
     "@azure/monitor-opentelemetry-exporter": "*",
     "@azure/storage-blob": "*",

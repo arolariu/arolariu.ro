@@ -1732,8 +1732,8 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       for (const packageName of packageNames) {
         const relativeManifestPath = join(...packageName.split("/"), "package.json");
         const candidates = [
-          join(workspaceRoot, "node_modules", relativeManifestPath),
           join(workspaceRoot, "sites", "arolariu.ro", "node_modules", relativeManifestPath),
+          join(workspaceRoot, "node_modules", relativeManifestPath),
         ];
         let resolvedPath: string | undefined;
 

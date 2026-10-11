@@ -8,7 +8,7 @@
 import react from "@vitejs/plugin-react";
 import {resolve} from "node:path";
 import {defineConfig, mergeConfig} from "vitest/config";
-import baseConfig from "../../vitest.config";
+import baseConfig from "../../vitest.config.ts";
 
 export default mergeConfig(
   baseConfig,
@@ -64,7 +64,7 @@ export default mergeConfig(
     },
     resolve: {
       alias: {
-        "@": resolve(__dirname, "./src"),
+        "@": resolve(import.meta.dirname, "./src"),
       },
     },
   }),
