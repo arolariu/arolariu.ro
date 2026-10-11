@@ -9,7 +9,7 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
-### 2.4.0 - Unreleased
+### [2.4.0](https://www.npmjs.com/package/@arolariu/components/v/2.4.0) - 2026-10-11
 
 **✨ Added**
 
