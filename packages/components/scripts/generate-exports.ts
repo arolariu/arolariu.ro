@@ -179,6 +179,14 @@ export function main(): Record<string, ExportEntry> {
   fs.mkdirSync(DIST_DIR, {recursive: true});
   fs.writeFileSync(path.join(DIST_DIR, "styles.d.ts"), "export {};\r\n");
   packageJson.exports = exports;
+  packageJson.typesVersions = {
+    ...packageJson.typesVersions,
+    "*": {
+      ...packageJson.typesVersions?.["*"],
+      styles: ["./dist/styles.d.ts"],
+      "styles.css": ["./dist/styles.d.ts"],
+    },
+  };
   // Serialize with CRLF + trailing newline so the generated file matches the
   // repository convention (.editorconfig `end_of_line = crlf` /
   // `insert_final_newline = true`, and Prettier's `endOfLine: "crlf"`).

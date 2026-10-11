@@ -32,6 +32,12 @@
       ],
       ".": [
         "./dist/index.d.ts"
+      ],
+      "styles": [
+        "./dist/styles.d.ts"
+      ],
+      "styles.css": [
+        "./dist/styles.d.ts"
       ]
     }
   },

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import {execFileSync} from "node:child_process";
 import os from "node:os";
 import path from "node:path";
+import ts from "typescript";
 
 import {afterEach, describe, expect, it} from "vitest";
 
@@ -16,23 +17,41 @@ describe("generate-exports helpers", () => {
     });
   });
 
-  it("generates typed stylesheet exports for strict side-effect imports", () => {
-    const packageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "ac-styles-exports-"));
-    temporaryDirectories.push(packageDirectory);
+  it.each([
+    ["node10", ts.ModuleResolutionKind.Node10],
+    ["bundler", ts.ModuleResolutionKind.Bundler],
+    ["nodenext", ts.ModuleResolutionKind.NodeNext],
+  ])("resolves both generated stylesheet declarations with %s module resolution", (_mode, moduleResolution) => {
+    const consumerDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "ac-styles-exports-"));
+    temporaryDirectories.push(consumerDirectory);
+    const packageDirectory = path.join(consumerDirectory, "package");
+    fs.mkdirSync(packageDirectory, {recursive: true});
     fs.mkdirSync(path.join(packageDirectory, "scripts"));
     fs.mkdirSync(path.join(packageDirectory, "dist"));
-    fs.writeFileSync(path.join(packageDirectory, "package.json"), JSON.stringify({name: "@arolariu/components", type: "module"}));
+    fs.copyFileSync(path.resolve(import.meta.dirname, "../package.json"), path.join(packageDirectory, "package.json"));
     fs.writeFileSync(path.join(packageDirectory, "dist", "index.css"), ":root { --ac-test: 1; }");
     const scriptPath = path.join(packageDirectory, "scripts", "generate-exports.ts");
     fs.copyFileSync(path.resolve(import.meta.dirname, "generate-exports.ts"), scriptPath);
 
     execFileSync(process.execPath, [scriptPath], {stdio: "pipe"});
 
-    const manifest = JSON.parse(fs.readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
+    const installedDirectory = path.join(consumerDirectory, "node_modules", "@arolariu", "components");
+    fs.mkdirSync(path.dirname(installedDirectory), {recursive: true});
+    fs.renameSync(packageDirectory, installedDirectory);
+    const manifest = JSON.parse(fs.readFileSync(path.join(installedDirectory, "package.json"), "utf8"));
     for (const subpath of ["./styles", "./styles.css"]) {
       expect(manifest.exports[subpath]).toEqual({types: "./dist/styles.d.ts", default: "./dist/index.css"});
+      const resolved = ts.resolveModuleName(
+        `@arolariu/components/${subpath.slice(2)}`,
+        path.join(consumerDirectory, "consumer.ts"),
+        {moduleResolution},
+        ts.sys,
+      );
+      expect(resolved.resolvedModule?.resolvedFileName).toBe(path.join(installedDirectory, "dist", "styles.d.ts").replaceAll("\\", "/"));
     }
-    expect(fs.readFileSync(path.join(packageDirectory, "dist", "styles.d.ts"), "utf8")).toContain("export {};");
+    expect(manifest.typesVersions["*"]["*"]).toEqual(["./dist/*"]);
+    expect(manifest.typesVersions["*"]["."]).toEqual(["./dist/index.d.ts"]);
+    expect(fs.readFileSync(path.join(installedDirectory, "dist", "styles.d.ts"), "utf8")).toContain("export {};");
   });
 
   it("creates export entries for hooks and utilities in their dedicated dist directories", () => {
