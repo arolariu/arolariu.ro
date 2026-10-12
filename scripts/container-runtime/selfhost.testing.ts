@@ -46,6 +46,12 @@ export const SELFHOST_CERTIFICATES: Readonly<Record<string, string>> = {
   "infra/Local/Management/certs/local-key.pem": "local-key",
 };
 
+/** Gitignored exp bind mount and website build secret the start action requires. */
+export const SELFHOST_PRIVATE_CONFIGURATION: Readonly<Record<string, string>> = {
+  "sites/exp.arolariu.ro/config.docker.json": "{}",
+  "sites/arolariu.ro/.env": "SITE_ENV=DEVELOPMENT",
+};
+
 /** Pinned GS1 archive URL. */
 const GPC_URL = "https://ref.gs1.org/standards/gpc/2026-05/";
 
@@ -122,6 +128,8 @@ export interface SelfhostFixtureOptions {
   readonly variables?: Readonly<Record<string, string>>;
   /** Seeded files merged over the workspace manifests; defaults to {@link SELFHOST_CERTIFICATES}. */
   readonly files?: Readonly<Record<string, string>>;
+  /** Private configuration seeded under {@link files}; defaults to {@link SELFHOST_PRIVATE_CONFIGURATION}. */
+  readonly privateConfiguration?: Readonly<Record<string, string>>;
   /** Answers every non-`unzip` process request; defaults to success with empty output. */
   readonly process?: (command: string, args: readonly string[]) => ProcessAnswer;
   /** Answers every Cosmos request by path; defaults to `201 {}`. */
@@ -275,7 +283,11 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
   const harness = makeTestLayer({
     context: "selfhost",
     environment: {platform: "linux", variables},
-    files: {...WORKSPACE_FILES, ...(options.files ?? SELFHOST_CERTIFICATES)},
+    files: {
+      ...WORKSPACE_FILES,
+      ...(options.privateConfiguration ?? SELFHOST_PRIVATE_CONFIGURATION),
+      ...(options.files ?? SELFHOST_CERTIFICATES),
+    },
     http: options.taxonomy === "unavailable" ? [{match: () => true, respond: {status: 503, body: "Unavailable"}}] : TAXONOMY_SOURCES,
     processes: [
       {

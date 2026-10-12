@@ -25,6 +25,7 @@ import {getContainerAdapter} from "./adapters.ts";
 import {cosmosBootstrapMaximumResponseBytes, type LocalBlobStorage} from "./selfhost.bootstrap.ts";
 import {
   advancingClock,
+  SELFHOST_PRIVATE_CONFIGURATION,
   SELFHOST_SQL_PASSWORD,
   selfhostFixture,
   type SelfhostFixture,
@@ -146,7 +147,7 @@ describe("buildSelfhostPlan", () => {
     expect(plan.map((command) => command.args.join(" "))).toEqual([
       "compose -f Frontend/docker-compose.yml down",
       "compose -f Backend/docker-compose.yml down",
-      "compose -f Storage/docker-compose.yml down",
+      "compose -f Storage/docker-compose.yml --profile selfhost down",
       "compose -f Management/docker-compose.yml down",
     ]);
   });
@@ -373,6 +374,57 @@ describe("runSelfhost start", () => {
     }),
   );
 
+  for (const {name, missing, expected} of [
+    {
+      name: "exp Docker configuration",
+      missing: "sites/exp.arolariu.ro/config.docker.json",
+      expected: "Copy sites/exp.arolariu.ro/config.template.json to config.docker.json.",
+    },
+    {name: "website build secret", missing: "sites/arolariu.ro/.env", expected: "Run `npm run setup` to create it."},
+  ]) {
+    selfhostTest(
+      `requires the ${name} before generating artifacts or starting any stack`,
+      {privateConfiguration: Object.fromEntries(Object.entries(SELFHOST_PRIVATE_CONFIGURATION).filter(([path]) => path !== missing))},
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+          // Assert
+          expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
+          expect(error.message).toContain("Required private runtime configuration is missing:");
+          expect(error.message.replaceAll("\\", "/")).toContain(missing);
+          expect(error.message).toContain(expected);
+          expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
+          expect(fixture.harness.httpCalls()).toEqual([]);
+          expect(fixture.traefik()).toBeNull();
+        }),
+    );
+  }
+
+  selfhostTest(
+    "rejects a private configuration path that a container engine turned into a directory",
+    {
+      privateConfiguration: {
+        "sites/exp.arolariu.ro/config.docker.json/created-by-engine": "",
+        "sites/arolariu.ro/.env": "SITE_ENV=DEVELOPMENT",
+      },
+    },
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
+        expect(error.message.replaceAll("\\", "/")).toContain("Private runtime configuration must be a file: ");
+        expect(error.message.replaceAll("\\", "/")).toContain("sites/exp.arolariu.ro/config.docker.json");
+        expect(error.message).toContain("Remove it, then: Copy sites/exp.arolariu.ro/config.template.json to config.docker.json.");
+        expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
+        expect(fixture.harness.httpCalls()).toEqual([]);
+      }),
+  );
+
   selfhostTest("writes the generated Traefik config and keeps it as requested persistent state", {}, (fixture) =>
     Effect.gen(function* () {
       // Act
@@ -586,7 +638,11 @@ describe("runSelfhost HTTPS certificates", () => {
 describe("runSelfhost stop", () => {
   selfhostTest(
     "stops stacks in reverse order, removes the generated Traefik config, and skips artifacts and bootstrap",
-    {variables: {}, files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated"}},
+    {
+      variables: {},
+      privateConfiguration: {},
+      files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated"},
+    },
     (fixture) =>
       Effect.gen(function* () {
         // Act
@@ -597,7 +653,7 @@ describe("runSelfhost stop", () => {
         expect(businessCalls(fixture)).toEqual([
           "podman compose -f Frontend/docker-compose.yml down",
           "podman compose -f Backend/docker-compose.yml down",
-          "podman compose -f Storage/docker-compose.yml down",
+          "podman compose -f Storage/docker-compose.yml --profile selfhost down",
           "podman compose -f Management/docker-compose.yml down",
         ]);
         expect(delays(fixture)).toEqual([3_000, 3_000, 3_000, 3_000]);
@@ -914,7 +970,7 @@ describe("dev selfhost characterization", () => {
       output: [
         {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml down"},
         {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml down"},
-        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml down"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost down"},
         {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml down"},
         {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost stop completed for engine 'rancher'."},
       ],
@@ -925,7 +981,7 @@ describe("dev selfhost characterization", () => {
         {delay: 3000},
         {process: "docker", args: ["compose", "-f", "Backend/docker-compose.yml", "down"], options: TEE},
         {delay: 3000},
-        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "down"], options: TEE},
+        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "down"], options: TEE},
         {delay: 3000},
         {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "down"], options: TEE},
         {delay: 3000},

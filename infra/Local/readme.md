@@ -182,7 +182,11 @@ echo 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY' > .env
 echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
 ```
 
-Both files are gitignored — they will never be committed.
+The frontend image build also reads `sites/arolariu.ro/.env` as the `website_env` build secret. Create it with `npm run setup`.
+
+These files are gitignored — they will never be committed. `npm run dev:selfhost` checks that `config.docker.json` and
+`sites/arolariu.ro/.env` exist as files before starting any stack. Otherwise Docker Compose and podman-compose would create the missing
+exp bind source as a directory, and the frontend build would fail only after the other stacks had started.
 
 Exp configuration is mounted read-only, never baked into its image. Local admin updates change only the in-memory snapshot, as before;
 edit the developer-owned source outside the container for persistent changes and allow the normal refresh. Exp listens on unprivileged port 8080
@@ -358,6 +362,8 @@ npm run dev:selfhost:stop -- --engine podman
 ```
 
 The stop wrapper runs Compose `down` for every project without `--volumes`.
+Storage keeps `--profile selfhost`, matching start, so the profile-gated `exp`
+container is removed and the shared `arolariu-network` can be deleted.
 Named SQL Server, Cosmos, Azurite and Redis volumes survive ordinary teardown.
 The wrapper refuses to reconcile legacy SQL/Cosmos containers without their
 intended volumes; do not bypass that guard with direct Compose removal.

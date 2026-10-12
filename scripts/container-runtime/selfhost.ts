@@ -18,13 +18,16 @@
  * Traefik file.
  */
 
+import {join} from "node:path";
+
 import {Duration, Effect, FileSystem, Redacted, type PlatformError} from "effect";
 
 import {generateArtifacts} from "../commands/generate/artifacts.ts";
 import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
-import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
 import {Environment} from "../platform/Environment.ts";
+import type {ReadOnlyFiles} from "../platform/Files.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import {Presenter} from "../platform/Output.ts";
 import {formatProcessRequest, Process, type ProcessError} from "../platform/Process.ts";
@@ -99,6 +102,41 @@ function assertPersistentSelfhostStorage(
   });
 }
 
+/**
+ * Requires the private, gitignored files the start stacks read: the exp `config.docker.json` bind
+ * mount and the website `.env` Frontend build secret.
+ *
+ * @remarks
+ * Docker Compose and podman-compose both create a missing bind source as a directory instead of
+ * failing, so start checks these files before generating artifacts or touching any stack.
+ *
+ * @returns An effect failing with {@link ContainerRuntimeError} when a file is missing or not a file.
+ */
+function assertSelfhostPrivateConfiguration(): Effect.Effect<
+  void,
+  ContainerRuntimeError | RepositoryRootNotFound | PlatformError.PlatformError,
+  FileSystem.FileSystem | ReadOnlyFiles
+> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    const requiredFiles = [
+      {path: join(paths.expRoot, "config.docker.json"), remedy: "Copy sites/exp.arolariu.ro/config.template.json to config.docker.json."},
+      {path: paths.websiteEnvironment, remedy: "Run `npm run setup` to create it."},
+    ];
+    for (const {path, remedy} of requiredFiles) {
+      if (!(yield* fs.exists(path))) {
+        return yield* new ContainerRuntimeError({message: `Required private runtime configuration is missing: ${path}. ${remedy}`});
+      }
+      if ((yield* fs.stat(path)).type !== "File") {
+        return yield* new ContainerRuntimeError({
+          message: `Private runtime configuration must be a file: ${path}. Remove it, then: ${remedy}`,
+        });
+      }
+    }
+  });
+}
+
 /** Local stacks each selfhost action operates on, in execution order. */
 const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>> = {
   start: ["management", "storage", "profile", "backend", "frontend"],
@@ -146,7 +184,7 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
     return [
       composeFile(inputs.adapter, "Frontend/docker-compose.yml", ["down"]),
       composeFile(inputs.adapter, "Backend/docker-compose.yml", ["down"]),
-      composeFile(inputs.adapter, "Storage/docker-compose.yml", ["down"]),
+      composeFile(inputs.adapter, "Storage/docker-compose.yml", ["--profile", "selfhost", "down"]),
       composeFile(inputs.adapter, "Management/docker-compose.yml", ["down"]),
     ];
   }
@@ -350,11 +388,12 @@ function bootstrapSelfhost(
  * Runs selfhost orchestration with the resolved local container engine.
  *
  * @remarks
- * - **start**: preflight, silent artifact generation, the SQL password, localhost certificates, the
- *   Traefik config, then each stack with a 3 s pause after it; after the storage stack, a 10 s
- *   settle and the SQL/Cosmos/Azurite/storage bootstrap.
+ * - **start**: preflight, the private configuration check, silent artifact generation, the SQL
+ *   password, localhost certificates, the Traefik config, then each stack with a 3 s pause after it;
+ *   after the storage stack, a 10 s settle and the SQL/Cosmos/Azurite/storage bootstrap.
  * - **stop**: preflight, each stack `down` in reverse order with a 3 s pause after it, then the
- *   Traefik config removal.
+ *   Traefik config removal. Storage keeps `--profile selfhost` so its profile-gated `exp` container
+ *   is removed and Management can drop the shared network.
  * - **logs**: preflight, then the last 100 log lines of each application container.
  *
  * @param input - Typed command input.
@@ -380,6 +419,10 @@ export const runSelfhost: (
 
   if (input.action !== "logs") {
     yield* assertPersistentSelfhostStorage(adapter);
+  }
+
+  if (input.action === "start") {
+    yield* assertSelfhostPrivateConfiguration();
   }
 
   if (shouldGenerateTaxonomyArtifacts(input.action)) {

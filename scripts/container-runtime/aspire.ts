@@ -29,6 +29,11 @@ export interface AspireCommand {
 /**
  * Builds the Aspire AppHost command for the selected container engine.
  *
+ * @remarks
+ * Aspire reads `ASPIRE_CONTAINER_RUNTIME` first and only falls back to the legacy
+ * `DOTNET_ASPIRE_CONTAINER_RUNTIME`, so both are pinned to keep an inherited value from
+ * overriding the selected engine.
+ *
  * @param adapter - Selected runtime adapter.
  * @param baseEnvironment - Environment values merged under the Aspire runtime override.
  * @returns Command and environment for starting AppHost.
@@ -42,6 +47,7 @@ export function buildAspireCommand(
     args: ["run", "--project", "tooling/src/AppHost"],
     env: {
       ...baseEnvironment,
+      ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,
       DOTNET_ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,
     },
   };
@@ -52,7 +58,7 @@ export function buildAspireCommand(
  *
  * @remarks
  * Preflight runs first; AppHost then runs with inherited output and the `Environment` variables
- * merged under `DOTNET_ASPIRE_CONTAINER_RUNTIME`.
+ * merged under `ASPIRE_CONTAINER_RUNTIME` and its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias.
  *
  * @param input - Typed command input.
  * @returns The engine Aspire AppHost ran with, failing with {@link ContainerRuntimeError} when the

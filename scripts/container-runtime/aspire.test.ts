@@ -84,7 +84,7 @@ describe("buildAspireCommand", () => {
 
         expect(command.command).toBe("dotnet");
         expect(command.args).toEqual(["run", "--project", "tooling/src/AppHost"]);
-        expect(command.env).toEqual({EXISTING: "value", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
+        expect(command.env).toEqual({EXISTING: "value", ASPIRE_CONTAINER_RUNTIME: "docker", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
       }),
     makeTestLayer().layer,
   );
@@ -95,7 +95,21 @@ describe("buildAspireCommand", () => {
       Effect.sync(() => {
         const command = buildAspireCommand(getContainerAdapter("podman"), {});
 
-        expect(command.env["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
+        expect(command.env).toEqual({ASPIRE_CONTAINER_RUNTIME: "podman", DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman"});
+      }),
+    makeTestLayer().layer,
+  );
+
+  effectTest(
+    "overrides inherited primary and legacy Aspire runtime selections with the selected engine",
+    () =>
+      Effect.sync(() => {
+        const command = buildAspireCommand(getContainerAdapter("rancher"), {
+          ASPIRE_CONTAINER_RUNTIME: "podman",
+          DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman",
+        });
+
+        expect(command.env).toEqual({ASPIRE_CONTAINER_RUNTIME: "docker", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
       }),
     makeTestLayer().layer,
   );
@@ -115,7 +129,10 @@ describe("runAspire", () => {
           expect(result).toEqual({engine: "rancher"});
           expect(harness.processCalls().at(-1)).toEqual({
             request: {command: "dotnet", args: ["run", "--project", "tooling/src/AppHost"]},
-            options: {env: {HOME: "/home/fixture", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"}, output: "inherit"},
+            options: {
+              env: {HOME: "/home/fixture", ASPIRE_CONTAINER_RUNTIME: "docker", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"},
+              output: "inherit",
+            },
           });
         }),
       harness.layer,
@@ -150,6 +167,7 @@ describe("runAspire", () => {
             "podman",
             "dotnet",
           ]);
+          expect(harness.processCalls().at(-1)?.options.env?.["ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
           expect(harness.processCalls().at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
         }),
       harness.layer,
@@ -302,6 +320,7 @@ describe("dev aspire characterization", () => {
           options: {
             env: {
               HOME: "/home/fixture",
+              ASPIRE_CONTAINER_RUNTIME: "docker",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
             },
             output: "inherit",
@@ -347,6 +366,7 @@ describe("dev aspire characterization", () => {
           options: {
             env: {
               HOME: "/home/fixture",
+              ASPIRE_CONTAINER_RUNTIME: "podman",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman",
             },
             output: "inherit",
@@ -391,6 +411,7 @@ describe("dev aspire characterization", () => {
           options: {
             env: {
               HOME: "/home/fixture",
+              ASPIRE_CONTAINER_RUNTIME: "docker",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
             },
             output: "inherit",

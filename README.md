@@ -381,7 +381,7 @@ npx nx show project website      # 🔍 Show project details
 - **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
 - **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
 
-VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`DOTNET_ASPIRE_CONTAINER_RUNTIME=docker`). The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
+VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`docker`) through both `ASPIRE_CONTAINER_RUNTIME` and its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias, as `npm run dev -- --engine` does, so a stale host-level value cannot override the chosen engine. The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
 
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
 
