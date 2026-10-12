@@ -280,10 +280,10 @@
       },
       "OpenTelemetry.Instrumentation.SqlClient": {
         "type": "Transitive",
-        "resolved": "1.15.2",
-        "contentHash": "pRB84YJEXD121kygc6CtcF46dtLuTKIjphA2SJye32G4g2Xl3epkCrOcPCOAg4WDagCdMGa16Ge6PPVzFJZsAQ==",
+        "resolved": "1.19.0",
+        "contentHash": "JYdCD0Hkn0+hbSNTjDWENIlsR0CquiH2g6g2jme8Pv1GdDKjJ4/hQnOPJ3vX6XNV/RLf5T1551FeX4DncbdmXw==",
         "dependencies": {
-          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.15.3, 2.0.0)"
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.19.0, 2.0.0)"
         }
       },
       "OpenTelemetry.PersistentStorage.Abstractions": {
@@ -360,8 +360,8 @@
           "Azure.Core": "[1.63.0, )",
           "Azure.Identity": "[1.21.0, )",
           "Azure.Monitor.OpenTelemetry.Exporter": "[1.10.0, )",
-          "Microsoft.ApplicationInsights": "[3.1.2, )",
-          "Microsoft.ApplicationInsights.AspNetCore": "[3.1.2, )",
+          "Microsoft.ApplicationInsights": "[3.2.0, )",
+          "Microsoft.ApplicationInsights.AspNetCore": "[3.2.0, )",
           "Microsoft.ApplicationInsights.DependencyCollector": "[2.23.0, )",
           "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "[10.0.12, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.12, )",
@@ -468,24 +468,24 @@
       },
       "Microsoft.ApplicationInsights": {
         "type": "CentralTransitive",
-        "requested": "[3.1.2, )",
-        "resolved": "3.1.2",
-        "contentHash": "E+8N7Q6GS/AcyJ0xuYA48nVL4eQGGOSJZvNz/R7qQtMGCUwjLzQe9Ttpgh/7eQktngsUuNGaEzBhM7IUU0t4xA==",
+        "requested": "[3.2.0, )",
+        "resolved": "3.2.0",
+        "contentHash": "INnOjG9bfTkRUDLiqLUZrxN5g9RiBeCXnuSntZfoMyDYqjWAJhwYl2s8rMd/kpZyeOjkkLB14X6bMBDXr2hM6A==",
         "dependencies": {
-          "Azure.Monitor.OpenTelemetry.Exporter": "1.8.0"
+          "Azure.Monitor.OpenTelemetry.Exporter": "1.10.0"
         }
       },
       "Microsoft.ApplicationInsights.AspNetCore": {
         "type": "CentralTransitive",
-        "requested": "[3.1.2, )",
-        "resolved": "3.1.2",
-        "contentHash": "L8JeWrQNmUMeplxBZFqVWrwiK456SlaKZ59Up+ilZhkpHKMSbxfIX1rmbxoh9GnHVf5pNutlvzMMqJNl2uTlbA==",
+        "requested": "[3.2.0, )",
+        "resolved": "3.2.0",
+        "contentHash": "L2Sv4DxHzI5L24EfQ3LXWigvzzaa5rMijokrpQYEaHZzRr79L9vJQqqZwmrmTNUoW8CRRmiXff3BGHCUVKlJyg==",
         "dependencies": {
-          "Microsoft.ApplicationInsights": "3.1.2",
-          "OpenTelemetry.Extensions.Hosting": "1.15.3",
-          "OpenTelemetry.Instrumentation.AspNetCore": "1.15.2",
-          "OpenTelemetry.Instrumentation.Http": "1.15.1",
-          "OpenTelemetry.Instrumentation.SqlClient": "1.15.2"
+          "Microsoft.ApplicationInsights": "3.2.0",
+          "OpenTelemetry.Extensions.Hosting": "1.19.1",
+          "OpenTelemetry.Instrumentation.AspNetCore": "1.19.0",
+          "OpenTelemetry.Instrumentation.Http": "1.19.0",
+          "OpenTelemetry.Instrumentation.SqlClient": "1.19.0"
         }
       },
       "Microsoft.ApplicationInsights.DependencyCollector": {
