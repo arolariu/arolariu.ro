@@ -48,10 +48,10 @@ The `test-typescript` provider runs each project's worker pool in turn and reads
 5 no longer writes that report to stdout by default. Reports are cleaned up after each run, and a nonzero runner exit cannot pass merely
 because its assertions passed.
 
-The `lint` provider runs typed projects sequentially in separate processes, each with a 6 GB heap while preserving existing Node options.
-Remaining root and tooling files run in a final, disjoint scope, releasing project/compiler state between owners. Generated build
-directories are globally ignored by the root ESLint configuration; application and tooling source remain in scope. Fatal process exits are
-reported directly rather than as downstream JSON errors.
+The `lint` provider runs typed projects sequentially in separate processes, each with an 8 GB heap (`--max-old-space-size=8192`) unless
+`NODE_OPTIONS` already sets a heap limit; other Node options are preserved. Remaining root and tooling files run in a final, disjoint scope,
+releasing project/compiler state between owners. Generated build directories are globally ignored by the root ESLint configuration;
+application and tooling source remain in scope. Fatal process exits are reported directly rather than as downstream JSON errors.
 
 ### runLiveTestAction.ts
 
