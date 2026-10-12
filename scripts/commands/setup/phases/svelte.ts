@@ -68,10 +68,6 @@ const PREPARE_COMMAND: ProcessRequest = {
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
 
-function normalizedVersion(version: MinimumVersion): string {
-  return `${version.major}.${version.minor}.${version.patch}`;
-}
-
 function failedResult(summary: string, evidence: readonly string[], nextActions: readonly string[]): SetupPhaseResult {
   return {
     id: "svelte",
