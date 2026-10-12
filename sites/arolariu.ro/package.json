@@ -58,6 +58,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "*",
     "@opentelemetry/instrumentation": "*",
     "@opentelemetry/resources": "*",
+    "@opentelemetry/sdk-logs": "*",
     "@opentelemetry/sdk-metrics": "*",
     "@opentelemetry/sdk-node": "*",
     "@opentelemetry/sdk-trace-node": "*",
