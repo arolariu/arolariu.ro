@@ -5,13 +5,13 @@
  *
  * @remarks
  * `ensureCosmos` runs over the harness `HttpClient` with scripted emulator answers (or a client whose
- * requests never complete, for interruption); `ensureAzurite` runs over a recording
+ * requests are refused, or never complete for interruption); `ensureAzurite` runs over a recording
  * `LocalBlobStorage` layer. `LocalBlobStorageLive` is exercised only on a malformed connection string,
  * which the Azure Blob SDK rejects before any request, so no test reaches Cosmos or Azurite.
  */
 
 import {Effect, Exit, Fiber, Layer, Redacted} from "effect";
-import {HttpClient} from "effect/http";
+import {HttpClient, HttpClientError} from "effect/http";
 import {describe, expect, it, vi} from "vitest";
 
 import {effectTest, makeTestLayer, type ScriptedHttp} from "../platform/testing.ts";
@@ -19,6 +19,7 @@ import {
   azuriteBootstrapFailure,
   azuriteDevelopmentConnectionString,
   cosmosBootstrapMaximumResponseBytes,
+  CosmosEmulatorUnreachable,
   ensureAzurite,
   ensureCosmos,
   LocalBlobStorage,
@@ -191,6 +192,31 @@ describe("ensureCosmos", () => {
           );
         }),
       harness.layer,
+    );
+  }
+
+  {
+    let requests = 0;
+    const refusing = Layer.succeed(
+      HttpClient.HttpClient,
+      HttpClient.make((request) => {
+        requests += 1;
+        return Effect.fail(new HttpClientError.HttpClientError({reason: new HttpClientError.TransportError({request})}));
+      }),
+    );
+    effectTest(
+      "fails as an unreachable emulator, with the wrapped message, when the connection is refused",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(ensureCosmos);
+
+          // Assert
+          expect(error).toBeInstanceOf(CosmosEmulatorUnreachable);
+          expect(error.message).toBe(`${COSMOS_PREFIX}Transport error (POST ${localCosmosEndpoint}/dbs)`);
+          expect(requests).toBe(1);
+        }),
+      refusing,
     );
   }
 

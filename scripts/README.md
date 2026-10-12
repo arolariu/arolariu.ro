@@ -374,6 +374,10 @@ case the processes it stops are gone within three seconds.
   of the `docker`/`podman exec -e SQLCMDPASSWORD mssql …` client: the engine copies the named variable into the container, where
   `sqlcmd` reads it, so the password never appears in an argument vector or the host process list. The run never echoes under
   `--verbose`, and a `sqlcmd` failure is rebuilt as a step-only message that carries no process evidence.
+- **Storage readiness.** Selfhost start waits 10 s after the storage stack starts, then bootstraps SQL Server, Cosmos, Azurite, and the .NET
+  storage provisioner. A slow engine (a Podman machine or Rancher Desktop VM that is still warming up) can leave a service unready after
+  that wait, so a non-zero `sqlcmd` exit and a refused Cosmos connection are retried every 5 s, up to 12 times, each retry announced with a
+  warning (and the `sqlcmd` command echoed again). Any other failure, an HTTP error from the emulator included, fails the start at once.
 - **Persistent state.** Started stacks and the generated Traefik file are requested state: a failed or interrupted start leaves what it
   started running, and only `dev selfhost stop` removes the Traefik file.
 

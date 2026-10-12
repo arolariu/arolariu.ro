@@ -16,7 +16,7 @@
 import {dirname, join} from "node:path";
 
 import {Clock, Duration, Effect, Exit, Fiber, FileSystem, Layer, Redacted} from "effect";
-import {HttpClient, HttpClientResponse, type HttpClientError, type HttpClientRequest} from "effect/http";
+import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
 import {TestClock} from "effect/testing";
 
 import {makeRootCommand, runCli} from "../cli.ts";
@@ -108,8 +108,11 @@ const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
   },
 ];
 
-/** A Cosmos emulator answer, or `"never"` for a request that never completes. */
-export type CosmosAnswer = {readonly status: number; readonly body: string} | "never";
+/**
+ * A Cosmos emulator answer, `"refused"` for a connection the emulator refuses (a transport failure),
+ * or `"never"` for a request that never completes.
+ */
+export type CosmosAnswer = {readonly status: number; readonly body: string} | "refused" | "never";
 
 /** A process answer, or `"never"` for a process that never exits. */
 export type ProcessAnswer = ProbeOutcome | "never";
@@ -332,6 +335,10 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
         cosmosCalls.push(url.pathname);
         record({http: request.method, url: url.href, headers: {"Content-Type": body.contentType}, body: body.text});
         const answer = options.cosmos?.(url.pathname) ?? {status: 201, body: "{}"};
+        if (answer === "refused") {
+          const cause = new Error(`connect ECONNREFUSED 127.0.0.1:${url.port}`);
+          return Effect.fail(new HttpClientError.HttpClientError({reason: new HttpClientError.TransportError({request, cause})}));
+        }
         return answer === "never"
           ? Effect.never
           : Effect.succeed(HttpClientResponse.fromWeb(request, new Response(answer.body, {status: answer.status})));

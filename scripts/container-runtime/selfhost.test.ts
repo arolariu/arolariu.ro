@@ -88,6 +88,22 @@ function delays(fixture: SelfhostFixture): readonly unknown[] {
 }
 
 /**
+ * Counts the SQL schema bootstrap attempts of a fixture.
+ *
+ * @param fixture - The selfhost fixture.
+ * @returns The number of `sqlcmd` exec calls.
+ */
+function sqlcmdCalls(fixture: SelfhostFixture): number {
+  return formatCalls(fixture).filter((call) => call.includes("/opt/mssql-tools18/bin/sqlcmd")).length;
+}
+
+/** Attempts of a storage bootstrap step whose service keeps failing as still starting. */
+const storageStartupAttempts = 13;
+
+/** The 5 s pauses before each of the 12 retries of such a step. */
+const storageStartupRetryDelays: readonly number[] = Array.from({length: storageStartupAttempts - 1}, () => 5_000);
+
+/**
  * Registers a case that runs `runSelfhost(input)` (or a custom body) on a fresh fixture.
  *
  * @param name - The test name.
@@ -455,7 +471,7 @@ describe("runSelfhost start", () => {
   );
 
   selfhostTest(
-    "fails with a step-only message when the SQL schema bootstrap fails",
+    "retries a failing SQL schema bootstrap for a bounded time, then fails with a step-only message",
     {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? exited(1) : succeededAnswer())},
     (fixture) =>
       Effect.gen(function* () {
@@ -467,9 +483,37 @@ describe("runSelfhost start", () => {
           _tag: "ContainerRuntimeError",
           message: "SQL Server schema bootstrap failed: podman exec mssql sqlcmd exited with code 1.",
         });
+        expect(sqlcmdCalls(fixture)).toBe(storageStartupAttempts);
+        expect(delays(fixture)).toEqual([3_000, 10_000, ...storageStartupRetryDelays]);
         expect(fixture.cosmosCalls()).toEqual([]);
       }),
   );
+
+  {
+    let sqlcmdRuns = 0;
+    selfhostTest(
+      "retries the SQL schema bootstrap every 5 seconds until SQL Server accepts it",
+      {
+        process: (_command, args) => {
+          if (!args.includes("/opt/mssql-tools18/bin/sqlcmd")) {
+            return succeededAnswer();
+          }
+          sqlcmdRuns += 1;
+          return sqlcmdRuns <= 2 ? exited(1, "Login timeout expired") : succeededAnswer();
+        },
+      },
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          yield* runSelfhost({action: "start", engine: "podman"});
+
+          // Assert
+          expect(sqlcmdCalls(fixture)).toBe(3);
+          expect(delays(fixture)).toEqual([3_000, 10_000, 5_000, 5_000, 3_000, 3_000, 3_000]);
+          expect(fixture.cosmosCalls()).toEqual(["/dbs", "/dbs/primary/colls", "/dbs/primary/colls"]);
+        }),
+    );
+  }
 
   for (const [answer, expected] of [
     [{kind: "signalled", signal: "SIGKILL", stdout: "", stderr: "", durationMs: 0}, "was terminated by SIGKILL."],
@@ -477,15 +521,17 @@ describe("runSelfhost start", () => {
     [{kind: "timed-out", stdout: "", stderr: "", durationMs: 0}, "timed out."],
   ] as const satisfies readonly (readonly [ProbeOutcome, string])[]) {
     selfhostTest(
-      `describes a ${answer.kind} SQL schema bootstrap without its command line`,
+      `describes a ${answer.kind} SQL schema bootstrap without its command line or a retry`,
       {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? answer : succeededAnswer())},
-      () =>
+      (fixture) =>
         Effect.gen(function* () {
           // Act
           const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
 
           // Assert
           expect(error.message).toBe(`SQL Server schema bootstrap failed: podman exec mssql sqlcmd ${expected}`);
+          expect(sqlcmdCalls(fixture)).toBe(1);
+          expect(delays(fixture)).toEqual([3_000, 10_000]);
         }),
     );
   }
@@ -505,6 +551,49 @@ describe("runSelfhost start", () => {
             "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Response exceeded the 65536 byte limit.",
         });
         expect(fixture.cosmosCalls()).toEqual(["/dbs"]);
+      }),
+  );
+
+  {
+    let cosmosRequests = 0;
+    selfhostTest(
+      "retries the Cosmos bootstrap every 5 seconds while the emulator refuses connections",
+      {
+        cosmos: () => {
+          cosmosRequests += 1;
+          return cosmosRequests <= 2 ? "refused" : {status: 201, body: "{}"};
+        },
+      },
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          yield* runSelfhost({action: "start", engine: "podman"});
+
+          // Assert
+          expect(fixture.cosmosCalls()).toEqual(["/dbs", "/dbs", "/dbs", "/dbs/primary/colls", "/dbs/primary/colls"]);
+          expect(delays(fixture)).toEqual([3_000, 10_000, 5_000, 5_000, 3_000, 3_000, 3_000]);
+          expect(fixture.timeline().filter((event) => "blob" in event)).toHaveLength(3);
+        }),
+    );
+  }
+
+  selfhostTest(
+    "fails with the Cosmos bootstrap message once the emulator keeps refusing connections",
+    {cosmos: () => "refused"},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({
+          _tag: "ContainerRuntimeError",
+          message:
+            "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Transport error (POST http://localhost:8081/dbs)",
+        });
+        expect(fixture.cosmosCalls()).toEqual(Array.from({length: storageStartupAttempts}, () => "/dbs"));
+        expect(delays(fixture)).toEqual([3_000, 10_000, ...storageStartupRetryDelays]);
+        expect(fixture.timeline().some((event) => "blob" in event)).toBe(false);
       }),
   );
 
@@ -941,6 +1030,35 @@ describe("dev selfhost characterization", () => {
       taxonomyRequests: 3,
       traefik: TRAEFIK_CONFIG,
       passwordArgs: PASSWORD_ARGS,
+    });
+  });
+
+  it("start with a SQL Server that is still starting: the retry is announced and the command echoed again", async () => {
+    let sqlcmdRuns = 0;
+    const result = await characterizeSelfhost("start", {
+      process: (_command, args) => {
+        if (!args.includes("/opt/mssql-tools18/bin/sqlcmd")) {
+          return succeededAnswer();
+        }
+        sqlcmdRuns += 1;
+        return sqlcmdRuns === 1 ? exited(1) : succeededAnswer();
+      },
+    });
+
+    expect(result).toMatchObject({
+      exitCode: 0,
+      output: [
+        {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d"},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {stream: "stderr", text: "[arolariu::selfhost] ⚠️ SQL Server is not ready yet. Retrying in 5000ms (attempt 2/13)."},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {stream: "stdout", text: "$ dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only"},
+        {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'."},
+      ],
+      timeline: START_TIMELINE.flatMap((event) => (event === SQLCMD ? [SQLCMD, {delay: 5000}, SQLCMD] : [event])),
     });
   });
 

@@ -8,12 +8,13 @@
  * handler provides, so tests provide a recording layer instead of reaching Azurite. Cosmos
  * provisioning ({@link ensureCosmos}) goes through the Effect `HttpClient` and reads every response
  * body with the {@link cosmosBootstrapMaximumResponseBytes} bound. Nothing here logs: every failure
- * is a {@link ContainerRuntimeError} whose diagnostic text is bounded and stripped of storage
- * credentials. Cancellation is fiber interruption, which aborts the in-flight request or blob call.
+ * is a {@link ContainerRuntimeError}, or a {@link CosmosEmulatorUnreachable} when the Cosmos emulator
+ * refuses the connection, whose diagnostic text is bounded and stripped of storage credentials.
+ * Cancellation is fiber interruption, which aborts the in-flight request or blob call.
  */
 
 import {BlobServiceClient} from "@azure/storage-blob";
-import {Context, Effect, Layer, Redacted} from "effect";
+import {Context, Effect, Layer, Redacted, Schema} from "effect";
 import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
 import {readBoundedText, type ResponseTooLarge} from "../platform/Http.ts";
@@ -72,6 +73,18 @@ const maximumResponseDiagnosticLength = 500;
 
 /** Matches storage credential assignments so they never reach a returned diagnostic. */
 const storageCredentialPattern = /(AccountKey|SharedAccessSignature|Sig)=[^;\s"']*/giu;
+
+/**
+ * Cosmos bootstrap failure raised when the emulator refuses or resets the connection.
+ *
+ * @remarks
+ * A container engine can publish the emulator port before the emulator listens, so this failure
+ * means the emulator may still be starting and the caller may retry it. Its message is the regular
+ * `Cosmos bootstrap failed. …` diagnostic.
+ */
+export class CosmosEmulatorUnreachable extends Schema.TaggedError<CosmosEmulatorUnreachable>()("CosmosEmulatorUnreachable", {
+  message: Schema.String,
+}) {}
 
 /** Blob-service capability the local storage bootstrap depends on. */
 export class LocalBlobStorage extends Context.Service<
@@ -180,21 +193,25 @@ function postCosmosResource(
  * @remarks
  * One attempt per resource, sequentially, as in the legacy command: the first failure stops the
  * remaining requests and is wrapped as `Cosmos bootstrap failed. Ensure … Original error: <detail>`.
- * An oversized body fails with the legacy `Response exceeded the 65536 byte limit.` detail. Trace
- * propagation headers are disabled, so the emulator receives exactly the legacy request.
+ * A transport failure fails as {@link CosmosEmulatorUnreachable}, which selfhost start retries while
+ * the emulator starts, every other failure as {@link ContainerRuntimeError}. An oversized body fails
+ * with the legacy `Response exceeded the 65536 byte limit.` detail. Trace propagation headers are
+ * disabled, so the emulator receives exactly the legacy request.
  */
-export const ensureCosmos: Effect.Effect<void, ContainerRuntimeError, HttpClient.HttpClient> = Effect.gen(function* () {
-  yield* postCosmosResource("/dbs", {id: cosmosDatabaseId});
-  yield* Effect.forEach(requiredCosmosContainers, (container) => postCosmosResource(`/dbs/${cosmosDatabaseId}/colls`, container), {
-    discard: true,
-  });
-}).pipe(
-  Effect.mapError(
-    (error) =>
-      new ContainerRuntimeError({
-        message: `Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at ${localCosmosEndpoint}. Original error: ${boundedDiagnostic(error.message, maximumBootstrapDiagnosticLength)}`,
-      }),
-  ),
+export const ensureCosmos: Effect.Effect<void, ContainerRuntimeError | CosmosEmulatorUnreachable, HttpClient.HttpClient> = Effect.gen(
+  function* () {
+    yield* postCosmosResource("/dbs", {id: cosmosDatabaseId});
+    yield* Effect.forEach(requiredCosmosContainers, (container) => postCosmosResource(`/dbs/${cosmosDatabaseId}/colls`, container), {
+      discard: true,
+    });
+  },
+).pipe(
+  Effect.mapError((error) => {
+    const message = `Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at ${localCosmosEndpoint}. Original error: ${boundedDiagnostic(error.message, maximumBootstrapDiagnosticLength)}`;
+    return error._tag === "HttpClientError" && error.reason._tag === "TransportError"
+      ? new CosmosEmulatorUnreachable({message})
+      : new ContainerRuntimeError({message});
+  }),
   Effect.provideService(HttpClient.TracerPropagationEnabled, false),
 );
 

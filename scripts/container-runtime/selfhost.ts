@@ -9,8 +9,9 @@
  * with {@link generateArtifacts} (silently), reads the SQL password as a `Redacted` value, makes
  * sure the localhost certificates exist, writes the Traefik file-provider config, and bootstraps
  * SQL Server, Cosmos, Azurite, and the .NET storage provisioner once the storage stack has
- * settled. Waits are `Effect.sleep`, so tests drive them with the test clock, and cancellation is
- * fiber interruption, which stops the current step immediately.
+ * settled, retrying the SQL and Cosmos steps for a bounded time while their services still start.
+ * Waits are `Effect.sleep`, so tests drive them with the test clock, and cancellation is fiber
+ * interruption, which stops the current step immediately.
  *
  * Started stacks and the generated Traefik file are requested persistent state: neither is cleaned
  * up when a later step fails or the invocation is interrupted, a partially completed start leaves
@@ -20,7 +21,7 @@
 
 import {join} from "node:path";
 
-import {Duration, Effect, FileSystem, Redacted, type PlatformError} from "effect";
+import {Duration, Effect, FileSystem, Redacted, Result, type PlatformError} from "effect";
 
 import {generateArtifacts} from "../commands/generate/artifacts.ts";
 import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
@@ -39,6 +40,12 @@ import {ContainerRuntimeError, type SelfhostAction, type SelfhostInput, type Sel
 
 /** Time to wait for storage containers to accept bootstrap calls after compose start. */
 const storageReadyDelayMs = 10_000;
+
+/** Attempts of a storage bootstrap step whose service is still starting: the first one plus a minute of retries. */
+const storageStartupAttempts = 13;
+
+/** Time to wait before retrying a storage bootstrap step whose service is still starting. */
+const storageStartupRetryDelayMs = 5_000;
 
 /** Time to wait between compose stack operations to reduce local runtime contention. */
 const stackOperationDelayMs = 3_000;
@@ -327,14 +334,55 @@ function sqlSchemaFailureMessage(adapter: ContainerRuntimeAdapter, error: Proces
 }
 
 /**
+ * Runs a storage bootstrap step, retrying it while its service is still starting.
+ *
+ * @remarks
+ * A slow engine (for example a container virtual machine that is still warming up) can leave a
+ * storage service unready after the fixed settle. A failure `isStarting` accepts is retried, up to
+ * {@link storageStartupAttempts} attempts in total and {@link storageStartupRetryDelayMs} apart, with
+ * a warning before each retry; any other failure, and the failure of the last attempt, fails the
+ * step unchanged.
+ *
+ * @param service - Service name used in the retry warning.
+ * @param step - The bootstrap step; it must be safe to run again after a failure.
+ * @param isStarting - Decides whether a failure means the service is still starting.
+ * @returns The step, retried while its service is starting.
+ */
+function retryWhileStarting<A, E, R>(
+  service: string,
+  step: Effect.Effect<A, E, R>,
+  isStarting: (error: E) => boolean,
+): Effect.Effect<A, E, R> {
+  return Effect.gen(function* () {
+    for (let attempt = 1; attempt < storageStartupAttempts; attempt += 1) {
+      // Sequential by design: one attempt settles before the next one is considered.
+      const outcome = yield* Effect.result(step);
+      if (Result.isSuccess(outcome)) {
+        return outcome.success;
+      }
+      if (!isStarting(outcome.failure)) {
+        return yield* Effect.fail(outcome.failure);
+      }
+      yield* Effect.logWarning(
+        `${service} is not ready yet. Retrying in ${String(storageStartupRetryDelayMs)}ms (attempt ${String(attempt + 1)}/${String(storageStartupAttempts)}).`,
+      );
+      yield* Effect.sleep(Duration.millis(storageStartupRetryDelayMs));
+    }
+    return yield* step;
+  });
+}
+
+/**
  * Applies the SQL Server schema through `sqlcmd` inside the `mssql` container.
  *
  * @remarks
  * The password is unwrapped only into the `SQLCMDPASSWORD` variable of the spawned engine client
  * (spec §7: secrets travel through `env`, not arguments), so it never appears in an argument
  * vector, the host process list, the echoed `$ …` line, or a `--verbose` echo (the run sets
- * `echo: false`). A failure is rebuilt as a {@link ContainerRuntimeError} naming the step only, so
- * neither the rendered output nor a failure document carries process evidence.
+ * `echo: false`). A non-zero `sqlcmd` exit is retried while SQL Server may still be starting (the
+ * idempotent schema script makes every attempt safe), each attempt echoed again. A failure is
+ * rebuilt as a {@link ContainerRuntimeError} naming the step only, so neither the rendered output
+ * nor a failure document carries process evidence.
  *
  * @param adapter - Selected runtime adapter.
  * @param sqlPassword - The local SQL Server password.
@@ -348,20 +396,28 @@ function runSqlSchemaBootstrap(
     const presenter = yield* Presenter;
     const runner = yield* Process;
     const command = sqlSchemaCommand(adapter);
-    yield* presenter.line("stdout", `$ ${formatProcessRequest(command)}`);
-    yield* runner
-      .run(command, {
-        cwd: selfhostWorkingDirectory,
-        env: {[sqlcmdPasswordVariable]: Redacted.value(sqlPassword)},
-        output: "tee",
-        echo: false,
-      })
-      .pipe(Effect.mapError((error) => new ContainerRuntimeError({message: sqlSchemaFailureMessage(adapter, error)})));
+    const attempt = presenter.line("stdout", `$ ${formatProcessRequest(command)}`).pipe(
+      Effect.andThen(
+        runner.run(command, {
+          cwd: selfhostWorkingDirectory,
+          env: {[sqlcmdPasswordVariable]: Redacted.value(sqlPassword)},
+          output: "tee",
+          echo: false,
+        }),
+      ),
+    );
+    yield* retryWhileStarting("SQL Server", attempt, (error) => error._tag === "ProcessExited").pipe(
+      Effect.mapError((error) => new ContainerRuntimeError({message: sqlSchemaFailureMessage(adapter, error)})),
+    );
   });
 }
 
 /**
  * Provisions SQL, Cosmos, Azurite, and local storage once the storage stack is ready.
+ *
+ * @remarks
+ * The Cosmos step is retried while the emulator refuses connections, which an engine reports while
+ * the emulator starts behind its already published port; an HTTP failure still fails at once.
  *
  * @param adapter - Selected runtime adapter.
  * @param sqlPassword - The local SQL Server password.
@@ -373,7 +429,9 @@ function bootstrapSelfhost(
 ): Effect.Effect<void, ContainerRuntimeError | ProcessError, PlatformServices | LocalBlobStorage> {
   return Effect.gen(function* () {
     yield* runSqlSchemaBootstrap(adapter, sqlPassword);
-    yield* ensureCosmos;
+    yield* retryWhileStarting("The Cosmos emulator", ensureCosmos, (error) => error._tag === "CosmosEmulatorUnreachable").pipe(
+      Effect.catchTag("CosmosEmulatorUnreachable", (error) => Effect.fail(new ContainerRuntimeError({message: error.message}))),
+    );
     yield* ensureAzurite;
     yield* runSelfhostCommand(buildLocalStorageBootstrapCommand(), {
       DOTNET_ENVIRONMENT: "Development",
@@ -390,7 +448,8 @@ function bootstrapSelfhost(
  * @remarks
  * - **start**: preflight, the private configuration check, silent artifact generation, the SQL
  *   password, localhost certificates, the Traefik config, then each stack with a 3 s pause after it;
- *   after the storage stack, a 10 s settle and the SQL/Cosmos/Azurite/storage bootstrap.
+ *   after the storage stack, a 10 s settle and the SQL/Cosmos/Azurite/storage bootstrap, whose SQL
+ *   and Cosmos steps retry every 5 s, up to 12 times, while their services still start.
  * - **stop**: preflight, each stack `down` in reverse order with a 3 s pause after it, then the
  *   Traefik config removal. Storage keeps `--profile selfhost` so its profile-gated `exp` container
  *   is removed and Management can drop the shared network.
