@@ -190,7 +190,7 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 | Category | Features |
 |:--------:|:---------|
 | 🏛️ **Architecture** | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard |
-| ⚡ **Performance** | React Server Components • Edge Caching • CDN Optimization • Lazy Loading |
+| ⚡ **Performance** | React Server Components • Edge Caching • Lazy Loading |
 | 🔒 **Security** | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC |
 | 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana |
 | 🧪 **Quality** | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier |
@@ -682,7 +682,7 @@ graph LR
     end
 
     subgraph "☁️ Azure Cloud"
-        AFD["🌐 Azure Front Door<br/><i>CDN + WAF</i>"]
+        AFD["🌐 Azure Front Door<br/><i>Edge routing + WAF</i>"]
         DATA["📦 Data Layer<br/><i>SQL + Cosmos DB + Blob</i>"]
         AI["🤖 Azure OpenAI<br/><i>Model deployments</i>"]
     end
@@ -755,7 +755,7 @@ logout handler do not use the Invoices service hierarchy.
 
 | Layer | Components | Purpose |
 |:-----:|:-----------|:--------|
-| 🌐 **Networking** | Azure Front Door, DNS Zone | Global CDN, WAF, traffic routing |
+| 🌐 **Networking** | Azure Front Door, DNS Zone | Global edge routing, WAF, DNS |
 | 🖥️ **Compute** | App Service Plans | Production and development hosting |
 | 🌍 **Sites** | App Services and Static Web Apps | Web applications |
 | 🔐 **Identity** | User-Assigned Managed Identities | Workload identity |
@@ -775,7 +775,7 @@ graph TB
         direction TB
 
         subgraph NET["🌐 Networking"]
-            AFD["Azure Front Door<br/><i>CDN + WAF</i>"]
+            AFD["Azure Front Door<br/><i>Edge routing + WAF</i>"]
             DNS["DNS Zone<br/><i>arolariu.ro</i>"]
         end
 

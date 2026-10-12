@@ -54,7 +54,7 @@ must also use `--format docker`.
 
 Build contexts exclude environment files, private exp configuration, package-feed configuration, key material and nested build/dependency
 artifacts. Frontend recipes build the local components package themselves and preserve the complete Next.js standalone hierarchy. Only
-public website metadata and CDN selection are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the
+public website metadata values are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the
 build-only `website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated
 website `.env` as this secret, without embedding the file in an image or introducing provider-specific defaults.
 

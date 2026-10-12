@@ -4,7 +4,7 @@ import Architecture from "./Architecture";
 /**
  * Architecture section displaying the platform's technical architecture.
  * Features an interactive layered diagram with eight architecture layers
- * (Client, CDN, API, Services, Auth, Data, AI, Infra), each showing
+ * (Client, Edge, API, Services, Auth, Data, AI, Infra), each showing
  * technologies as badges.
  * Uses the `sections.about.platform.architecture` i18n namespace.
  */

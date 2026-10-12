@@ -122,7 +122,7 @@ const PROD_PERSONAL_CARE = makeClassification(ClassificationSystem.Gs1Gpc, "5300
 export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
   const defaultScan: InvoiceScan = {
     type: InvoiceScanType.JPEG,
-    location: "https://cdn.arolariu.ro/invoices/mock-scan.jpg",
+    location: "https://storage.blob.core.windows.net/invoices/mock-scan.jpg",
     metadata: {},
   };
 

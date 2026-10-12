@@ -95,7 +95,6 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
         allowedOrigins: [
           'https://clerk.arolariu.ro'
           'https://api.arolariu.ro'
-          'https://cdn.arolariu.ro'
         ]
       }
       localMySqlEnabled: false // Local MySQL is not enabled;

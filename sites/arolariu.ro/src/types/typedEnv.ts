@@ -165,7 +165,6 @@ type LegacyRuntimeEnvironmentVariables = Readonly<
  * - `COMMIT_SHA`: Git commit hash for traceability
  *
  * The commit SHA is attached to telemetry spans for deployment tracking.
- * CDN asset prefixing is not configured here; `next.config.ts` derives it from `SITE_URL`.
  */
 type MetadataEnvironmentVariables = Readonly<{
   readonly TIMESTAMP: string;

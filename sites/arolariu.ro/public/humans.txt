@@ -48,7 +48,7 @@
 /* INFRASTRUCTURE */
     Cloud Provider: Microsoft Azure
     Hosting: Azure App Service (Containerized)
-    CDN: Azure Front Door
+    Edge: Azure Front Door (WAF)
     Storage: Azure Blob Storage
     Secrets: Azure Key Vault
     Configuration: Azure App Configuration

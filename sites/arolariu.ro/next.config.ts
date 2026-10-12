@@ -27,23 +27,6 @@ const cspHeader = `
     ${upgradeInsecure}
 `;
 
-/** Only the production site serves its static assets through the CDN. */
-const cdnSiteHostname = "arolariu.ro";
-
-/**
- * Derives CDN asset-prefix usage from the build's canonical site URL.
- *
- * @param siteUrl - The `SITE_URL` build value; missing or unparsable values keep the CDN disabled.
- * @returns `true` only when the site URL's hostname is exactly `arolariu.ro`.
- */
-function isCdnSiteUrl(siteUrl: string | undefined): boolean {
-  if (siteUrl === undefined || !URL.canParse(siteUrl)) return false;
-  return new URL(siteUrl).hostname === cdnSiteHostname;
-}
-
-const isCdnEnabled = isCdnSiteUrl(process.env["SITE_URL"]);
-console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
-
 const isDebugBuild = process.env["NODE_ENV"] === "development";
 console.log(">>> isDebugBuild", isDebugBuild ? "✅" : "❌");
 console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
@@ -81,7 +64,7 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 100],
     remotePatterns: [
       {protocol: "https", hostname: "**.blob.core.windows.net"}, // Azure Blob Storage (any account).
-      {protocol: "https", hostname: "**.arolariu.ro"}, // Platform subdomains (including CDN).
+      {protocol: "https", hostname: "**.arolariu.ro"}, // Platform subdomains.
       {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
@@ -144,10 +127,6 @@ const nextConfig: NextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "https://cdn.arolariu.ro",
-          },
         ],
       },
     ];
@@ -208,8 +187,7 @@ const nextConfig: NextConfig = {
   },
 
   pageExtensions: ["ts", "tsx"],
-  assetPrefix: isCdnEnabled ? "https://cdn.arolariu.ro" : undefined,
-  compress: false, // We use AFD built-in compression for static assets.
+  compress: false, // Responses are not compressed: Azure Front Door's production route has compression disabled.
   trailingSlash: true,
   typedRoutes: true,
 

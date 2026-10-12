@@ -141,7 +141,7 @@ export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
  *   id: "019234ab-cdef-7890-abcd-ef1234567890",
  *   userIdentifier: "user_abc123",
  *   name: "receipt-001.jpg",
- *   blobUrl: "https://cdn.arolariu.ro/scans/user_abc123/019234ab_1704067200000.jpg",
+ *   blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user_abc123/019234ab_1704067200000.jpg",
  *   mimeType: "image/jpeg",
  *   sizeInBytes: 1048576,
  *   scanType: ScanType.JPEG,
@@ -172,7 +172,7 @@ export interface Scan {
 
   /**
    * Full URL to the scan in Azure Blob Storage.
-   * Format: https://cdn.arolariu.ro/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
+   * Format: https://{account}.blob.core.windows.net/invoices/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
    */
   readonly blobUrl: string;
 

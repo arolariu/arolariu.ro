@@ -89,7 +89,6 @@ ARG SITE_NAME
 # Make environment variables available during build (Next.js embeds these at build time)
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME are intentionally NOT propagated to the runner
 #       stage — they are baked into the .next/standalone bundle.
-# SITE_URL=https://arolariu.ro also enables the CDN asset prefix (see next.config.ts).
 # Public configuration is selected from a build-only secret; private values remain runtime-only.
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \

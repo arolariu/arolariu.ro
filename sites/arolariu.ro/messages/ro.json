@@ -4211,11 +4211,6 @@
               "name": "Identitate și securitate",
               "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
             },
-            "cdn": {
-              "description": "Livrare globală de conținut cu cache la margine și optimizare",
-              "name": "Edge și CDN",
-              "technologies": "Azure CDN,Vercel Edge,Active statice"
-            },
             "client": {
               "description": "Frontend-uri moderne bazate pe React cu capacități SSR și SSG",
               "name": "Nivelul client",
@@ -4225,6 +4220,11 @@
               "description": "Strategie de baze de date multi-model pentru performanță optimă",
               "name": "Nivelul de date",
               "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+            },
+            "edge": {
+              "description": "Rutare globală la margine cu certificate TLS gestionate și protecție prin firewall pentru aplicații web",
+              "name": "Edge și WAF",
+              "technologies": "Azure Front Door,WAF,TLS gestionat,Azure DNS"
             },
             "infra": {
               "description": "Infrastructură Azure complet gestionată cu implementare IaC",

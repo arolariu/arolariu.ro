@@ -124,7 +124,7 @@ export type InvoiceScanMetadataValue = string | object;
  *
  * **Storage:**
  * Scans are stored in Azure Blob Storage with the `location` property
- * containing the full CDN URL (https://cdn.arolariu.ro/...).
+ * containing the full blob URL (https://{account}.blob.core.windows.net/invoices/...).
  *
  * **Metadata:**
  * The `metadata` object stores scan-specific information such as:
@@ -142,7 +142,7 @@ export type InvoiceScanMetadataValue = string | object;
  * ```typescript
  * const scan: InvoiceScan = {
  *   type: InvoiceScanType.JPEG,
- *   location: "https://cdn.arolariu.ro/invoices/user123/scan-001.jpg",
+ *   location: "https://storage.blob.core.windows.net/invoices/user123/scan-001.jpg",
  *   metadata: {
  *     // Canonical scan metadata (string values)
  *     scanId: "scan-001",
@@ -336,7 +336,7 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  *   userIdentifier: "user_abc123",
  *   initialScan: {
  *     type: InvoiceScanType.JPEG,
- *     location: "https://cdn.arolariu.ro/uploads/receipt.jpg",
+ *     location: "https://storage.blob.core.windows.net/invoices/receipt.jpg",
  *     metadata: {}
  *   },
  *   additionalMetadata: {
@@ -467,7 +467,7 @@ export type DeleteInvoiceDtoPayload<T = string> = {
  * ```typescript
  * const scanPayload: CreateInvoiceScanDtoPayload = {
  *   type: InvoiceScanType.PNG,
- *   location: "https://cdn.arolariu.ro/invoices/user123/scan-002.png",
+ *   location: "https://storage.blob.core.windows.net/invoices/user123/scan-002.png",
  *   additionalMetadata: {
  *     pageNumber: "2",
  *     side: "back"

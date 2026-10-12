@@ -3,7 +3,7 @@ title: Azure Bicep Infrastructure - Resource Architecture
 ---
 flowchart TB
     subgraph Network["🌐 Networking Layer"]
-        AFD[Azure Front Door<br/>CDN + WAF]
+        AFD[Azure Front Door<br/>Edge routing + WAF]
         DNS[DNS Zone<br/>arolariu.ro]
         AFD <--> DNS
     end
@@ -38,7 +38,7 @@ flowchart TB
     end
 
     subgraph Storage["📦 Storage Layer"]
-        SA[Storage Account<br/>Blobs/CDN]
+        SA[Storage Account<br/>Blobs/Queues/Tables]
         ACR[Container Registry<br/>Docker Images]
         SQL[Azure SQL Server<br/>Relational DB]
         COSMOS[Cosmos DB<br/>NoSQL Documents]

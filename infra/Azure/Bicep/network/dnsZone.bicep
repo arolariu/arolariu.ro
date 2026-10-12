@@ -10,7 +10,7 @@
 //
 // Record Types Deployed:
 // - A Record (@): Apex domain to Front Door (ALIAS)
-// - CNAME Records: www, cdn, api, dev, docs, cv subdomains
+// - CNAME Records: www and Clerk subdomains (api, dev, docs, cv, status are bound in bindings/)
 // - TXT Records: Domain validation tokens, SPF, DKIM
 // - MX Records: Email routing (if configured)
 //
@@ -59,9 +59,6 @@ param frontDoorApexCustomDomainValidationToken string
 
 @description('The Azure Front Door WWW custom domain validation token.')
 param frontDoorWwwCustomDomainValidationToken string
-
-@description('The Azure Front Door CDN custom domain validation token.')
-param frontDoorCdnCustomDomainValidationToken string
 
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('network', dnsZoneDeploymentDate)
@@ -126,21 +123,6 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
         {
           value: [
             frontDoorWwwCustomDomainValidationToken
-          ]
-        }
-      ]
-    }
-  }
-
-  // Front door TXT record for domain verification - cdn
-  resource frontDoorCdnTxtRecord 'TXT@2023-07-01-preview' = {
-    name: '_dnsauth.cdn'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            frontDoorCdnCustomDomainValidationToken
           ]
         }
       ]

@@ -49,7 +49,6 @@ ARG SITE_NAME
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME
 #       are intentionally NOT propagated to the runner stage — they are baked into the
 #       .next/standalone bundle and do not need to be re-set as container runtime envs.
-# SITE_URL=https://arolariu.ro also enables the CDN asset prefix (see next.config.ts).
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
     AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \

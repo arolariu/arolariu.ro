@@ -69,7 +69,7 @@ Content-Type: application/json
   "userIdentifier": "{{userIdentifier}}",
   "initialScan": {
     "type": 2,
-    "location": "https://cdn.arolariu.ro/invoices/sample-receipt.png",
+    "location": "https://storage.blob.core.windows.net/invoices/sample-receipt.png",
     "metadata": {
       "source": "http-playground",
       "uploadedAt": "{{$datetime iso8601}}"
@@ -266,7 +266,7 @@ Content-Type: application/json
 
 {
   "type": 2,
-  "location": "https://cdn.arolariu.ro/invoices/additional-page.png",
+  "location": "https://storage.blob.core.windows.net/invoices/additional-page.png",
   "metadata": {
     "page": "2",
     "uploadedAt": "{{$datetime iso8601}}"
@@ -278,8 +278,8 @@ Content-Type: application/json
 ### Delete Scan from Invoice
 # Remove a specific scan by its location field.
 # The location must be URL-encoded in the path.
-# Example: https://cdn.arolariu.ro/invoices/scan.png -> https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Fscan.png
-DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/scans/https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Fadditional-page.png
+# Example: https://storage.blob.core.windows.net/invoices/scan.png -> https%3A%2F%2Fstorage.blob.core.windows.net%2Finvoices%2Fscan.png
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/scans/https%3A%2F%2Fstorage.blob.core.windows.net%2Finvoices%2Fadditional-page.png
 Authorization: Bearer {{authToken}}
 
 ###############################################################################

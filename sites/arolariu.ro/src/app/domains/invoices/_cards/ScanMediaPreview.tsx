@@ -67,7 +67,7 @@ export function ScanMediaPreview({
       onClick={onPreviewActivate}
       onKeyDown={handleKeyDown}>
       {src && mediaKind === "image" ? (
-        // eslint-disable-next-line @next/next/no-img-element -- scan URLs can be object/blob/CDN URLs and should bypass next/image processing.
+        // eslint-disable-next-line @next/next/no-img-element -- scan URLs can be object/blob URLs and should bypass next/image processing.
         <img
           src={src}
           alt={alt}

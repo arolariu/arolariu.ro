@@ -5,7 +5,7 @@
 // website. The site is built with SvelteKit and deployed via GitHub Actions.
 //
 // Platform: Azure Static Web Apps
-// - Globally distributed CDN with edge locations
+// - Globally distributed static content (built-in SWA edge network)
 // - Free tier includes 100 GB bandwidth/month
 // - Auto-deployment from GitHub repository
 // - No server-side rendering costs

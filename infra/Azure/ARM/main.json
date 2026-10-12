@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "14173030662609879100"
+      "templateHash": "16503841580064942228"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -104,7 +104,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "2540928887175740376"
+              "templateHash": "16345899558335370087"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -3926,7 +3926,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
-                      "templateHash": "2317712975069481097"
+                      "templateHash": "14998703354967126603"
                     },
                     "description": "Sites orchestrator deploying all web applications and static sites",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -4335,7 +4335,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "1791821014878384396"
+                              "templateHash": "6453577115637440056"
                             },
                             "description": "Production arolariu.ro App Service with container deployment",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -4508,8 +4508,7 @@
                                   "cors": {
                                     "allowedOrigins": [
                                       "https://clerk.arolariu.ro",
-                                      "https://api.arolariu.ro",
-                                      "https://cdn.arolariu.ro"
+                                      "https://api.arolariu.ro"
                                     ]
                                   },
                                   "localMySqlEnabled": false,
@@ -4631,7 +4630,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "8011569336950316901"
+                              "templateHash": "1751434221306155197"
                             },
                             "description": "Development staging environment dev.arolariu.ro",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -4815,8 +4814,7 @@
                                   "cors": {
                                     "allowedOrigins": [
                                       "https://clerk.arolariu.ro",
-                                      "https://api.arolariu.ro",
-                                      "https://cdn.arolariu.ro"
+                                      "https://api.arolariu.ro"
                                     ]
                                   },
                                   "localMySqlEnabled": false,
@@ -5734,9 +5732,9 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
-                      "templateHash": "8434066753712565388"
+                      "templateHash": "8197019384079480811"
                     },
-                    "description": "Network orchestrator deploying Azure Front Door CDN and DNS Zone",
+                    "description": "Network orchestrator deploying Azure Front Door and DNS Zone",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
                     "version": "2.0.0"
                   },
@@ -5809,9 +5807,9 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "14071212572238938679"
+                              "templateHash": "7643021306667145682"
                             },
-                            "description": "Azure Front Door with WAF, custom domains, and CDN",
+                            "description": "Azure Front Door with WAF and custom domains",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
                             "version": "2.0.0"
                           },
@@ -6006,86 +6004,6 @@
                                 "frontDoorProfile::wwwCustomDomain"
                               ]
                             },
-                            "frontDoorProfile::cdnEndpoint::cdnRoute": {
-                              "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
-                              "apiVersion": "2025-09-01-preview",
-                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'cdn', 'cdn-route')]",
-                              "properties": {
-                                "cacheConfiguration": {
-                                  "compressionSettings": {
-                                    "isCompressionEnabled": true,
-                                    "contentTypesToCompress": [
-                                      "application/eot",
-                                      "application/font",
-                                      "application/font-sfnt",
-                                      "application/javascript",
-                                      "application/json",
-                                      "application/opentype",
-                                      "application/otf",
-                                      "application/pkcs7-mime",
-                                      "application/truetype",
-                                      "application/ttf",
-                                      "application/vnd.ms-fontobject",
-                                      "application/xhtml+xml",
-                                      "application/xml",
-                                      "application/xml+rss",
-                                      "application/x-font-opentype",
-                                      "application/x-font-truetype",
-                                      "application/x-font-ttf",
-                                      "application/x-httpd-cgi",
-                                      "application/x-javascript",
-                                      "application/x-mpegurl",
-                                      "application/x-opentype",
-                                      "application/x-otf",
-                                      "application/x-perl",
-                                      "application/x-ttf",
-                                      "font/eot",
-                                      "font/ttf",
-                                      "font/otf",
-                                      "font/opentype",
-                                      "image/svg+xml",
-                                      "text/css",
-                                      "text/csv",
-                                      "text/html",
-                                      "text/javascript",
-                                      "text/js",
-                                      "text/plain",
-                                      "text/richtext",
-                                      "text/tab-separated-values",
-                                      "text/xml",
-                                      "text/x-script",
-                                      "text/x-component",
-                                      "text/x-java-source"
-                                    ]
-                                  },
-                                  "queryStringCachingBehavior": "UseQueryString"
-                                },
-                                "customDomains": [
-                                  {
-                                    "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'cdn-arolariu-ro')]"
-                                  }
-                                ],
-                                "originGroup": {
-                                  "id": "[resourceId('Microsoft.Cdn/profiles/originGroups', parameters('frontDoorName'), 'production')]"
-                                },
-                                "supportedProtocols": [
-                                  "Https"
-                                ],
-                                "patternsToMatch": [
-                                  "/*"
-                                ],
-                                "forwardingProtocol": "MatchRequest",
-                                "linkToDefaultDomain": "Disabled",
-                                "httpsRedirect": "Enabled",
-                                "enabledState": "Enabled"
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile::cdnCustomDomain",
-                                "frontDoorProfile::cdnEndpoint",
-                                "frontDoorProfile::productionOriginGroup",
-                                "frontDoorProfile::productionOriginGroup::productionOrigin"
-                              ]
-                            },
                             "frontDoorProfile::wafPolicy": {
                               "type": "Microsoft.Cdn/profiles/securityPolicies",
                               "apiVersion": "2025-09-01-preview",
@@ -6146,21 +6064,6 @@
                                 "frontDoorProfile"
                               ]
                             },
-                            "frontDoorProfile::cdnCustomDomain": {
-                              "type": "Microsoft.Cdn/profiles/customDomains",
-                              "apiVersion": "2025-09-01-preview",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn-arolariu-ro')]",
-                              "properties": {
-                                "hostName": "cdn.arolariu.ro",
-                                "tlsSettings": {
-                                  "certificateType": "ManagedCertificate",
-                                  "minimumTlsVersion": "TLS12"
-                                }
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
                             "frontDoorProfile::productionOriginGroup": {
                               "type": "Microsoft.Cdn/profiles/originGroups",
                               "apiVersion": "2025-09-01-preview",
@@ -6192,19 +6095,6 @@
                                 "enabledState": "Enabled"
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'Production Endpoint'))]",
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "frontDoorProfile::cdnEndpoint": {
-                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
-                              "apiVersion": "2025-09-01-preview",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn')]",
-                              "location": "Global",
-                              "properties": {
-                                "enabledState": "Enabled"
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'CDN Endpoint'))]",
                               "dependsOn": [
                                 "frontDoorProfile"
                               ]
@@ -6243,17 +6133,13 @@
                               "properties": {
                                 "originResponseTimeoutSeconds": 16
                               },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Azure Front Door Profile', 'resourceType', 'CDN Profile'))]"
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Azure Front Door Profile', 'resourceType', 'Front Door Profile'))]"
                             }
                           },
                           "outputs": {
                             "frontDoorProductionFqdn": {
                               "type": "string",
                               "value": "[reference('frontDoorProfile::productionEndpoint').hostName]"
-                            },
-                            "frontDoorCdnFqdn": {
-                              "type": "string",
-                              "value": "[reference('frontDoorProfile::cdnEndpoint').hostName]"
                             },
                             "frontDoorProfileId": {
                               "type": "string",
@@ -6266,10 +6152,6 @@
                             "frontDoorWwwToken": {
                               "type": "string",
                               "value": "[reference('frontDoorProfile::wwwCustomDomain').validationProperties.validationToken]"
-                            },
-                            "frontDoorCdnToken": {
-                              "type": "string",
-                              "value": "[reference('frontDoorProfile::cdnCustomDomain').validationProperties.validationToken]"
                             }
                           }
                         }
@@ -6302,9 +6184,6 @@
                           },
                           "frontDoorWwwCustomDomainValidationToken": {
                             "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorWwwToken.value]"
-                          },
-                          "frontDoorCdnCustomDomainValidationToken": {
-                            "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorCdnToken.value]"
                           }
                         },
                         "template": {
@@ -6319,7 +6198,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "13607278046478220374"
+                              "templateHash": "12846378107742693632"
                             },
                             "description": "Azure DNS Zone with DNSSEC and dynamic Front Door integration",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -6468,12 +6347,6 @@
                               "metadata": {
                                 "description": "The Azure Front Door WWW custom domain validation token."
                               }
-                            },
-                            "frontDoorCdnCustomDomainValidationToken": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The Azure Front Door CDN custom domain validation token."
-                              }
                             }
                           },
                           "variables": {
@@ -6544,24 +6417,6 @@
                                   {
                                     "value": [
                                       "[parameters('frontDoorWwwCustomDomainValidationToken')]"
-                                    ]
-                                  }
-                                ]
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::frontDoorCdnTxtRecord": {
-                              "type": "Microsoft.Network/dnsZones/TXT",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), '_dnsauth.cdn')]",
-                              "properties": {
-                                "TTL": 3600,
-                                "TXTRecords": [
-                                  {
-                                    "value": [
-                                      "[parameters('frontDoorCdnCustomDomainValidationToken')]"
                                     ]
                                   }
                                 ]
@@ -6755,10 +6610,6 @@
                     "frontDoorProductionFqdn": {
                       "type": "string",
                       "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProductionFqdn.value]"
-                    },
-                    "frontDoorCdnFqdn": {
-                      "type": "string",
-                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorCdnFqdn.value]"
                     },
                     "frontDoorProfileId": {
                       "type": "string",
