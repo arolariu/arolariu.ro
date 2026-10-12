@@ -118,7 +118,7 @@ services:
       - "traefik.http.routers.azurite-table.tls=true"
 
   redis:
-    image: "redis:alpine"
+    image: "docker.io/library/redis:alpine"
     container_name: "redis"
     command: redis-server --requirepass RedisPassword123! --appendonly yes
     ports:

@@ -37,7 +37,7 @@ ARG SITE_NAME
 # ========================================
 # Stage 0: Base image with system dependencies
 # ========================================
-FROM node:${NODE_VERSION}-alpine AS base
+FROM docker.io/library/node:${NODE_VERSION}-alpine AS base
 
 # Install system dependencies and create non-root user in single layer
 RUN corepack enable && \
