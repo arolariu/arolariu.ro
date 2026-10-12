@@ -103,6 +103,10 @@ updates:
         update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # @opentelemetry/sdk-logs is pinned to the version range that
+      # @azure/monitor-opentelemetry-exporter requires, so the website's LoggerProvider
+      # shares one copy with AzureMonitorLogExporter. Bump it by hand together with the exporter.
+      - dependency-name: "@opentelemetry/sdk-logs"
     groups:
       # ESLint ecosystem (20+ plugins configured)
       eslint:
