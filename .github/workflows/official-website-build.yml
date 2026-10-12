@@ -196,8 +196,6 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Framework | Vitest |" >> $GITHUB_STEP_SUMMARY
-        env: # We will use local assets for the tests
-          USE_CDN: "false"
 
       - name: 🧪 Running E2E tests...
         working-directory: './sites/arolariu.ro'
@@ -219,8 +217,7 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Framework | Playwright |" >> $GITHUB_STEP_SUMMARY
-        env: # We will use local assets for the tests
-          USE_CDN: "false"
+        env:
           # Run Playwright against `next build && next start` instead of `next dev`.
           # This also disables `output: "standalone"` in next.config.ts (incompatible with next start).
           E2E_USE_PROD: "true"
@@ -345,14 +342,8 @@ jobs:
           echo ""
 
           START_TIME=$(date +%s)
-          USE_CDN="$(node --input-type=module -e '
-            import {readFileSync} from "node:fs";
-            import {parseEnv} from "node:util";
-            process.stdout.write(parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8")).USE_CDN ?? "false");
-          ')"
           docker build -f infra/containers/Dockerfile.frontend \
             --secret id=website_env,src=sites/arolariu.ro/.env \
-            --build-arg USE_CDN="$USE_CDN" \
             --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
             --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
             --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \
