@@ -44,12 +44,12 @@ ARG INFRA
 ARG SITE_ENV
 ARG SITE_URL
 ARG SITE_NAME
-ARG USE_CDN=false
 
 # Make them available during build (Next.js embeds these at build time)
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME
 #       are intentionally NOT propagated to the runner stage — they are baked into the
 #       .next/standalone bundle and do not need to be re-set as container runtime envs.
+# SITE_URL=https://arolariu.ro also enables the CDN asset prefix (see next.config.ts).
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
     AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
@@ -57,8 +57,7 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     INFRA=${INFRA} \
     SITE_ENV=${SITE_ENV} \
     SITE_URL=${SITE_URL} \
-    SITE_NAME=${SITE_NAME} \
-    USE_CDN=${USE_CDN}
+    SITE_NAME=${SITE_NAME}
 
 # Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules

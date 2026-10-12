@@ -25,7 +25,6 @@ def mock_config(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
         "Site:Environment": "Development",
         "Site:Name": "dev.arolariu.ro",
         "Site:Url": "http://localhost:3000",
-        "Site:UseCdn": "false",
     }
 
     with (
@@ -51,7 +50,7 @@ class TestOperationalProbes:
         assert body["status"] == "Healthy"
         assert body["requestsServed"] == 1
         assert body["requestsByPath"]["/api/health"] == 1
-        assert body["configKeysLoaded"] == 10
+        assert body["configKeysLoaded"] == 9
         assert body["configLoadCount"] == 1
         assert body["hostname"]
         assert body["processId"] > 0
@@ -67,7 +66,7 @@ class TestOperationalProbes:
         assert body["status"] == "Ready"
         assert response.headers.get("X-Request-Id")
         assert response.headers.get("X-Content-Type-Options") == "nosniff"
-        assert body["keysLoaded"] == 10
+        assert body["keysLoaded"] == 9
 
     def test_health_tracks_served_config_metrics(self, client: TestClient):
         website_config = {
@@ -80,7 +79,6 @@ class TestOperationalProbes:
             "Site:Environment": "Development",
             "Site:Name": "dev.arolariu.ro",
             "Site:Url": "http://localhost:3000",
-            "Site:UseCdn": "false",
         }
 
         with (
@@ -105,12 +103,12 @@ class TestOperationalProbes:
         assert config_response.status_code == 200
         assert health_response.status_code == 200
         assert body["configResponsesServed"] == 2
-        assert body["configValuesServed"] == 11
+        assert body["configValuesServed"] == 10
         assert body["configResponsesByEndpoint"] == {"build-time": 1, "config": 1}
         assert body["configResponsesByTarget"] == {"website": 2}
         assert body["configResponsesByCaller"] == {"local:website": 2}
-        assert body["configValuesByTarget"] == {"website": 11}
-        assert body["configValuesByCaller"] == {"local:website": 11}
+        assert body["configValuesByTarget"] == {"website": 10}
+        assert body["configValuesByCaller"] == {"local:website": 10}
         assert body["configValuesByName"]["Endpoints:Service:Api"] == 2
         assert body["requestsServed"] == 3
 

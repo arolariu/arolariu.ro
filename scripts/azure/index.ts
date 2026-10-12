@@ -34,7 +34,6 @@ export const APP_CONFIGURATION_MAPPING = {
   "Site:Url": "SITE_URL",
   "Auth:Clerk:PublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
   "Auth:Clerk:SecretKey": "CLERK_SECRET_KEY",
-  "Site:UseCdn": "USE_CDN",
 } as const satisfies Record<string, string>;
 
 /**

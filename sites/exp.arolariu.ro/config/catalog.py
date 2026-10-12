@@ -174,7 +174,6 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
             "Site:Environment",
             "Site:Name",
             "Site:Url",
-            "Site:UseCdn",
         ],
         runtime_required_keys=[
             "Auth:Clerk:PublishableKey",
@@ -187,7 +186,6 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
             "Site:Environment",
             "Site:Name",
             "Site:Url",
-            "Site:UseCdn",
         ],
         runtime_optional_keys=[
             "Communication:Email:ApiKey",
@@ -297,10 +295,6 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
     "Site:Url": ConfigKeyDocumentation(
         description="Fully-qualified site URL (e.g. https://arolariu.ro).",
         usage="Injected as SITE_URL at website build time.",
-    ),
-    "Site:UseCdn": ConfigKeyDocumentation(
-        description="CDN toggle for static asset prefix (true in production).",
-        usage="Injected as USE_CDN at website build time.",
     ),
     "website.commander.enabled": ConfigKeyDocumentation(
         description="Feature flag controlling the Commander component on the website.",

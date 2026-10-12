@@ -261,7 +261,7 @@ npm run dev:website        # Next.js only
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;
-- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
+- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
 - Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
 
 Container engine selection precedence for `npm run setup`: `npm run setup -- --engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`,

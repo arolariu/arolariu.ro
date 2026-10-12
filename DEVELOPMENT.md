@@ -436,7 +436,7 @@ the commands below — run them yourself only after reading that evidence.
 In production and selfhost mode, all runtime config flows through the **exp** service — the website and API fetch config values from `http://exp/api/v1/config` at runtime.
 
 For bare-metal local development, environment variables are set via `sites/arolariu.ro/.env`, which `npm run setup` additively
-populates with core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) without overwriting existing entries. `npm run
+populates with core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) without overwriting existing entries. `npm run
 generate:env` can also (re)generate the root `.env` and copy it over `sites/arolariu.ro/.env`, but it **overwrites both files
 unconditionally** — treat it as a manual, destructive regeneration command, not a step to run after `npm run setup`.
 

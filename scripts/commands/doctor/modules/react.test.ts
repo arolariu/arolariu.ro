@@ -118,7 +118,7 @@ function fixtureEnvironment(variables: Readonly<Record<string, string | undefine
 function healthyEnvironmentFacts(): EnvironmentFacts {
   return {
     syntaxErrors: [],
-    presentKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"],
+    presentKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SITE_ENV", "SITE_NAME", "SITE_URL"],
     missingCoreKeys: [],
     missingAuthenticationKeys: [],
   };

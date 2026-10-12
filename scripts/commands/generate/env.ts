@@ -508,13 +508,11 @@ function generateEnvFileContent(config: EnvironmentValues): Effect.Effect<string
     }
 
     yield* Effect.logInfo("📊 Adding Metadata Configuration.");
-    const useCdn = config["USE_CDN"] === undefined ? "false" : reveal(config["USE_CDN"]);
     lines.push(
       "",
       "# Metadata Configuration Start",
       `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
       `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
-      `USE_CDN=${quoteIfNeeded(useCdn)}`,
       "# Metadata Configuration End",
     );
 

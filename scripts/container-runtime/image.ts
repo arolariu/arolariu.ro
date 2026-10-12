@@ -162,7 +162,7 @@ export const runImage: (
         return yield* new ContainerRuntimeError({message: `Website build configuration must be a file: ${paths.websiteEnvironment}`});
       }
       const fileValues = hasConfiguration ? parseEnv(yield* fs.readFileString(paths.websiteEnvironment)) : {};
-      for (const key of ["SITE_ENV", "SITE_URL", "SITE_NAME", "USE_CDN"]) {
+      for (const key of ["SITE_ENV", "SITE_URL", "SITE_NAME"]) {
         const value = environment.variables[key] ?? fileValues[key];
         if (value !== undefined) buildArgs[key] = value;
       }

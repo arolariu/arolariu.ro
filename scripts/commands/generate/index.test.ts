@@ -46,7 +46,6 @@ const COMPLETE_ENV = [
   "SITE_URL=https://localhost:3000",
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
   "CLERK_SECRET_KEY=sk_test_existing",
-  "USE_CDN=false",
 ].join("\n");
 
 /** Locale files whose keys already match English. */
@@ -217,7 +216,7 @@ describe("runGenerate", () => {
       expect(result).toEqual({selected: ["env", "i18n", "gql", "artifacts"], completed: ["env", "i18n", "gql", "artifacts"]});
       expect(records(harness).slice(-11)).toEqual([
         {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running environment configuration generator..."},
-        {stream: "stdout", text: "[arolariu::test::generate] ✅ Generated 6 environment variable(s)."},
+        {stream: "stdout", text: "[arolariu::test::generate] ✅ Generated 5 environment variable(s)."},
         {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running internationalization (i18n) generator..."},
         {stream: "stdout", text: "[arolariu::test::generate] ✅ i18n synchronization completed with 0 missing key(s) added."},
         {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running GraphQL types generator..."},

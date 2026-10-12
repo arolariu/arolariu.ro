@@ -128,12 +128,12 @@ describe("appendMissingEnvironmentValues", () => {
     const {appendMissingEnvironmentValues} = await import("./env.ts");
     const original = "# comment\r\nSITE_ENV=DEVELOPMENT";
 
-    expect(appendMissingEnvironmentValues(original, new Map([["USE_CDN", "false"]]))).toBe(
+    expect(appendMissingEnvironmentValues(original, new Map([["SITE_NAME", "dev.arolariu.ro"]]))).toBe(
       [
         "# comment",
         "SITE_ENV=DEVELOPMENT",
         "# arolariu.ro setup-managed values",
-        "USE_CDN=false",
+        "SITE_NAME=dev.arolariu.ro",
         "# End arolariu.ro setup-managed values",
         "",
       ].join("\r\n"),
@@ -173,7 +173,6 @@ describe("generateEnvironment", () => {
     "SITE_URL=https://localhost:3000",
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
     "CLERK_SECRET_KEY=sk_test_existing",
-    "USE_CDN=false",
   ].join("\n");
 
   {
@@ -245,8 +244,8 @@ describe("generateEnvironment", () => {
     const harness = makeTestLayer({
       environment: {stdinIsTTY: true},
       files: {".env": ""},
-      // confirm, SITE_ENV, SITE_NAME, SITE_URL (text), the two Clerk keys (secret), USE_CDN (text).
-      prompts: [true, "DEVELOPMENT", "local-value", "https://localhost:3000", publishable, secretValue, "false"],
+      // confirm, SITE_ENV, SITE_NAME, SITE_URL (text), then the two Clerk keys (secret).
+      prompts: [true, "DEVELOPMENT", "local-value", "https://localhost:3000", publishable, secretValue],
       verbose: true,
     });
     effectTest(
@@ -262,11 +261,11 @@ describe("generateEnvironment", () => {
           const result = yield* generateEnvironment;
 
           // Assert
-          expect(result.summary).toBe("Generated 6 environment variable(s).");
+          expect(result.summary).toBe("Generated 5 environment variable(s).");
           expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
           const output = JSON.stringify(harness.output());
-          expect(output).toContain("🔐 [4/6] Requesting NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (hidden).");
-          expect(output).toContain("🔐 [5/6] Requesting CLERK_SECRET_KEY (hidden).");
+          expect(output).toContain("🔐 [4/5] Requesting NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (hidden).");
+          expect(output).toContain("🔐 [5/5] Requesting CLERK_SECRET_KEY (hidden).");
           expect(output).not.toContain(publishable);
           expect(output).not.toContain(secretValue);
           const written = yield* readText(".env");
@@ -386,16 +385,14 @@ describe("generateEnvironment characterization", () => {
     "Site:Url": "https://localhost:3000",
     "Auth:Clerk:PublishableKey": "pk_test_exp",
     "Auth:Clerk:SecretKey": "sk_test_exp",
-    "Site:UseCdn": "true",
   };
 
   /**
    * Builds the expected generated `.env` payload for one exp-backed run.
    *
-   * @param useCdn - Rendered `USE_CDN` value.
    * @returns The exact file text the generator writes.
    */
-  function expectedExpEnvironmentFile(useCdn: string): string {
+  function expectedExpEnvironmentFile(): string {
     return [
       "# Generated environment configuration file",
       "# Site Environment: development",
@@ -422,7 +419,6 @@ describe("generateEnvironment characterization", () => {
       "# Metadata Configuration Start",
       "TIMESTAMP=2025-01-01T00:00:00.000Z",
       "COMMIT_SHA=N/A",
-      `USE_CDN=${useCdn}`,
       "# Metadata Configuration End",
     ].join("\n");
   }
@@ -459,15 +455,15 @@ describe("generateEnvironment characterization", () => {
           const result = yield* generateEnvironment;
 
           // Assert
-          expect(result).toEqual({summary: "Generated 6 environment variable(s).", changedFiles: [".env", SUBREPO_ENV]});
+          expect(result).toEqual({summary: "Generated 5 environment variable(s).", changedFiles: [".env", SUBREPO_ENV]});
           expect(harness.httpCalls().map((request) => ({method: request.method, url: request.url, headers: request.headers}))).toEqual([
             {method: "GET", url: EXP_URL, headers: {"x-exp-target": "website"}},
           ]);
-          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile("true"));
-          expect(yield* readText(SUBREPO_ENV)).toBe(expectedExpEnvironmentFile("true"));
+          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile());
+          expect(yield* readText(SUBREPO_ENV)).toBe(expectedExpEnvironmentFile());
           expect(semanticLines(harness)).toContainEqual({
             stream: "stdout",
-            text: "[arolariu::generate:env] ✅ Generated 6 environment variables.",
+            text: "[arolariu::generate:env] ✅ Generated 5 environment variables.",
           });
         }),
       harness.layer,
@@ -475,10 +471,10 @@ describe("generateEnvironment characterization", () => {
   }
 
   {
-    const {"Site:UseCdn": _omitted, ...partialConfig} = expConfig;
+    const {"Site:Name": _omitted, ...partialConfig} = expConfig;
     const harness = expHarness({status: 200, body: JSON.stringify({config: partialConfig})});
     effectTest(
-      "warns about a key missing from the exp response and falls back to USE_CDN=false",
+      "warns about a key missing from the exp response and omits it from the generated file",
       () =>
         Effect.gen(function* () {
           // Arrange
@@ -488,12 +484,12 @@ describe("generateEnvironment characterization", () => {
           const result = yield* generateEnvironment;
 
           // Assert
-          expect(result.summary).toBe("Generated 5 environment variable(s).");
+          expect(result.summary).toBe("Generated 4 environment variable(s).");
           expect(semanticLines(harness)).toContainEqual({
             stream: "stderr",
-            text: "[arolariu::generate:env] ⚠️ Key Site:UseCdn was not found in the exp build-time response.",
+            text: "[arolariu::generate:env] ⚠️ Key Site:Name was not found in the exp build-time response.",
           });
-          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile("false"));
+          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile().replace("SITE_NAME=dev.arolariu.ro\n", ""));
         }),
       harness.layer,
     );
@@ -612,8 +608,8 @@ describe("generateEnvironment characterization", () => {
             }),
           );
           expect(semanticLines(harness).slice(-2)).toEqual([
-            {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Found 5 missing key(s) that need to be provided."},
-            {stream: "stdout", text: "[arolariu::generate:env] ℹ️ 🔑 [1/5] Requesting SITE_NAME."},
+            {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Found 4 missing key(s) that need to be provided."},
+            {stream: "stdout", text: "[arolariu::generate:env] ℹ️ 🔑 [1/4] Requesting SITE_NAME."},
           ]);
           expect(yield* readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
         }),
@@ -634,12 +630,12 @@ describe("generateEnvironment characterization", () => {
           expect(error).toEqual(
             new MissingEnvironmentValues({
               message: "Aborting: Missing environment variables were not provided.",
-              keys: ["SITE_NAME", "SITE_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "USE_CDN"],
+              keys: ["SITE_NAME", "SITE_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"],
             }),
           );
           expect(semanticLines(harness).at(-1)).toEqual({
             stream: "stderr",
-            text: "[arolariu::generate:env] ⚠️ Missing 5 required environment variable(s):",
+            text: "[arolariu::generate:env] ⚠️ Missing 4 required environment variable(s):",
           });
           expect(yield* readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
         }),
@@ -745,7 +741,6 @@ describe("azure mapping source-of-truth", () => {
       ["Site:Url", "SITE_URL"],
       ["Auth:Clerk:PublishableKey", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
       ["Auth:Clerk:SecretKey", "CLERK_SECRET_KEY"],
-      ["Site:UseCdn", "USE_CDN"],
     ]);
   });
 });

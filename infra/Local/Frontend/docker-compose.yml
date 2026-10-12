@@ -12,7 +12,6 @@ services:
       dockerfile: infra/containers/Dockerfile.frontend
       args:
         INFRA: local
-        USE_CDN: "false"
         SITE_ENV: DEVELOPMENT
         SITE_URL: http://localhost:3000
         SITE_NAME: dev.arolariu.ro
