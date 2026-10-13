@@ -45,6 +45,27 @@ function createWorkerCall(
   return () => raceWithSignal(invokeWorkerMethod(method, args, name), signal);
 }
 
+function createCallTimeout(
+  name: string,
+  durationMs: number,
+  callStartMs: number,
+): Readonly<{promise: Promise<never>; cancel: () => void}> {
+  let handle: ReturnType<typeof setTimeout> | null = null;
+  const promise = new Promise<never>((_resolve, reject) => {
+    handle = setTimeout(() => {
+      reject(new WorkerTimeoutError(name, Math.round(performance.now() - callStartMs)));
+    }, durationMs);
+  });
+  return {
+    promise,
+    cancel: (): void => {
+      if (handle !== null) {
+        clearTimeout(handle);
+      }
+    },
+  };
+}
+
 export type CallProxyDeps<TApi> = Readonly<{
   inFlight: InFlightRegistry;
   bridge: TelemetryBridge;
@@ -109,14 +130,9 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           deps.lifecycle.beginCall();
 
           const callStartMs = performance.now();
-          let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-          let timeoutPromise: Promise<never> | null = null;
+          let timeout: ReturnType<typeof createCallTimeout> | null = null;
           if (deps.defaultCallTimeoutMs > 0 && Number.isFinite(deps.defaultCallTimeoutMs)) {
-            timeoutPromise = new Promise<never>((_resolve, reject) => {
-              timeoutHandle = setTimeout(() => {
-                reject(new WorkerTimeoutError(prop, Math.round(performance.now() - callStartMs)));
-              }, deps.defaultCallTimeoutMs);
-            });
+            timeout = createCallTimeout(prop, deps.defaultCallTimeoutMs, callStartMs);
           }
 
           try {
@@ -125,13 +141,13 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
               createWorkerCall(fn as WorkerMethod, callArgs, prop, signal),
             );
 
-            if (timeoutPromise) {
+            if (timeout) {
               wrapped.catch(noop);
-              return await Promise.race([wrapped, timeoutPromise]);
+              return await Promise.race([wrapped, timeout.promise]);
             }
             return await wrapped;
           } finally {
-            if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+            timeout?.cancel();
             deps.lifecycle.endCall();
           }
         };

@@ -284,7 +284,6 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     ref,
   ) => {
     const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
-    const setActiveItemId = setSelectedItemId;
     const [search, setSearch] = React.useState("");
     const itemOrderRef = React.useRef(0);
     const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());
@@ -359,7 +358,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 
     // Remember the fallback so a removed, filtered, or disabled selection cannot reappear later.
     if (selectedItemId !== activeItemId) {
-      setActiveItemId(activeItemId);
+      setSelectedItemId(activeItemId);
     }
 
     React.useEffect(() => {
@@ -373,7 +372,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     }, [activeItemId]);
 
     const selectSpecificItem = React.useCallback((itemId: string | null): void => {
-      setActiveItemId(itemId);
+      setSelectedItemId(itemId);
     }, []);
 
     const selectNextItem = React.useCallback((): void => {
@@ -384,18 +383,18 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
 
       if (currentIndex === -1) {
-        setActiveItemId(selectableItems[0].id);
+        setSelectedItemId(selectableItems[0].id);
         return;
       }
 
       const nextIndex = currentIndex + 1;
 
       if (nextIndex >= selectableItems.length) {
-        setActiveItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
+        setSelectedItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
         return;
       }
 
-      setActiveItemId(selectableItems[nextIndex].id);
+      setSelectedItemId(selectableItems[nextIndex].id);
     }, [activeItemId, loop, selectableItems]);
 
     const selectPreviousItem = React.useCallback((): void => {
@@ -406,18 +405,18 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
 
       if (currentIndex === -1) {
-        setActiveItemId(selectableItems[0].id);
+        setSelectedItemId(selectableItems[0].id);
         return;
       }
 
       const previousIndex = currentIndex - 1;
 
       if (previousIndex < 0) {
-        setActiveItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
+        setSelectedItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
         return;
       }
 
-      setActiveItemId(selectableItems[previousIndex].id);
+      setSelectedItemId(selectableItems[previousIndex].id);
     }, [activeItemId, loop, selectableItems]);
 
     const triggerActiveItem = React.useCallback((): void => {
@@ -509,7 +508,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
                 }
 
                 event.preventDefault();
-                setActiveItemId(selectableItems[0].id);
+                setSelectedItemId(selectableItems[0].id);
                 break;
               }
 
@@ -519,7 +518,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
                 }
 
                 event.preventDefault();
-                setActiveItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
+                setSelectedItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
                 break;
               }
 
