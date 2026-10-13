@@ -45,7 +45,7 @@ import type {ScanMetadata} from "./ScanMetadata";
  * };
  * ```
  */
-export const ScanType = {
+const scanTypes = {
   /** JPEG image format */
   JPEG: "JPEG",
   /** PNG image format */
@@ -63,7 +63,8 @@ export const ScanType = {
   /** Other or unsupported format */
   OTHER: "OTHER",
 } as const;
-export type ScanType = (typeof ScanType)[keyof typeof ScanType];
+export {scanTypes as ScanType};
+export type ScanType = (typeof scanTypes)[keyof typeof scanTypes];
 
 /**
  * Represents the lifecycle status of a standalone scan.
@@ -94,7 +95,7 @@ export type ScanType = (typeof ScanType)[keyof typeof ScanType];
  * }
  * ```
  */
-export const ScanStatus = {
+const scanStatuses = {
   /** Upload in progress */
   UPLOADING: "uploading",
   /** Uploaded to Azure, available for use */
@@ -110,7 +111,8 @@ export const ScanStatus = {
   /** Invoice created, scan archived */
   ARCHIVED: "archived",
 } as const;
-export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
+export {scanStatuses as ScanStatus};
+export type ScanStatus = (typeof scanStatuses)[keyof typeof scanStatuses];
 
 /**
  * Represents a standalone scan stored in Azure Blob Storage.

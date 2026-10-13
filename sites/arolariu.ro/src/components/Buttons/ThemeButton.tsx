@@ -20,7 +20,8 @@ import {useCallback, useSyncExternalStore} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
 import styles from "./ThemeButton.module.scss";
 
-const subscribeToHydration = (): (() => void) => () => undefined;
+const noop = (): void => undefined;
+const subscribeToHydration = (): (() => void) => noop;
 
 /**
  * Renders the moon icon with a small animation.

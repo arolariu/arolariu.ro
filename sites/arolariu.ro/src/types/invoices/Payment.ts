@@ -54,7 +54,7 @@ import type {Currency} from "../DDD";
  *
  * @see {@link PaymentInformation} for complete payment details
  */
-export const PaymentType = {
+const paymentTypes = {
   Unknown: 0,
   Cash: 100,
   Card: 200,
@@ -63,7 +63,8 @@ export const PaymentType = {
   Voucher: 500,
   Other: 9999,
 } as const;
-export type PaymentType = (typeof PaymentType)[keyof typeof PaymentType];
+export {paymentTypes as PaymentType};
+export type PaymentType = (typeof paymentTypes)[keyof typeof paymentTypes];
 
 /**
  * Captures the financial details of an invoice transaction.

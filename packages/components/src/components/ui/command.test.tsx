@@ -17,6 +17,154 @@ import {
 } from "./command";
 
 describe("Command", () => {
+  it.each(["disabled", "removed"] as const)("keeps the fallback active after a selected item is %s and restored", async (state) => {
+    // Arrange
+    const user = userEvent.setup();
+    const onSelectFirst = vi.fn();
+    const onSelectSecond = vi.fn();
+    const commands = (secondState: "enabled" | "disabled" | "removed"): React.JSX.Element => (
+      <Command>
+        <CommandInput placeholder='Search commands' />
+        <CommandList>
+          <CommandItem onSelect={onSelectFirst}>First</CommandItem>
+          {secondState !== "removed" && (
+            <CommandItem
+              disabled={secondState === "disabled"}
+              onSelect={onSelectSecond}>
+              Second
+            </CommandItem>
+          )}
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(commands("enabled"));
+    const input = screen.getByRole("combobox");
+
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "First"}).id);
+    await user.click(input);
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+
+    // Act
+    rerender(commands(state));
+
+    // Assert
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "First"}).id);
+
+    // Act
+    rerender(commands("enabled"));
+    await user.keyboard("{Enter}");
+
+    // Assert
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "false");
+    expect(onSelectFirst).toHaveBeenCalledWith("First");
+    expect(onSelectSecond).not.toHaveBeenCalled();
+  });
+
+  it("clears active selection when all items become disabled and recovers to the first enabled item", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const commands = (disabled: boolean): React.JSX.Element => (
+      <Command>
+        <CommandInput placeholder='Search commands' />
+        <CommandList>
+          <CommandItem
+            disabled={disabled}
+            onSelect={onSelect}>
+            First
+          </CommandItem>
+          <CommandItem
+            disabled={disabled}
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(commands(false));
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{End}");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+
+    // Act
+    rerender(commands(true));
+    await user.keyboard("{ArrowUp}{ArrowDown}{Home}{End}{Enter}");
+
+    // Assert
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "false");
+    expect(onSelect).not.toHaveBeenCalled();
+
+    // Act
+    rerender(commands(false));
+    await user.keyboard("{Enter}");
+
+    // Assert
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "First"}).id);
+    expect(onSelect).toHaveBeenCalledWith("First");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves valid selection across controlled filtering without reviving an invalidated selection", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const commands = (search: string): React.JSX.Element => (
+      <Command>
+        <CommandInput
+          placeholder='Search commands'
+          value={search}
+        />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandItem onSelect={onSelect}>First</CommandItem>
+          <CommandItem onSelect={onSelect}>Second</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(commands(""));
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{End}");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+
+    // Act
+    rerender(commands("s"));
+
+    // Assert
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+
+    // Act
+    rerender(commands("First"));
+    rerender(commands(""));
+
+    // Assert
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "false");
+
+    // Act
+    rerender(commands("missing"));
+    await user.keyboard("{Enter}");
+
+    // Assert
+    expect(screen.getByRole("status")).toHaveTextContent("No results");
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+    expect(onSelect).not.toHaveBeenCalled();
+
+    // Act
+    rerender(commands(""));
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    // Assert
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+    expect(onSelect).toHaveBeenCalledWith("Second");
+  });
+
   it("should filter items and display the empty state when nothing matches", async () => {
     // Arrange
     render(

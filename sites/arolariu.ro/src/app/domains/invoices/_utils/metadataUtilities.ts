@@ -28,11 +28,8 @@ function readMetadataChoice<T extends string>(
 
 function readOptionalMetadataDate(metadata: Readonly<Record<string, string | undefined>>, key: ScanMetadataKey): Date | undefined {
   const value = metadata[key];
-  if (!value) {
-    return undefined;
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = value ? new Date(value) : undefined;
+  if (date && Number.isNaN(date.getTime())) {
     throw new Error(`Invalid blob metadata date: ${key}`);
   }
   return date;

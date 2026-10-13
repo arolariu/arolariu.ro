@@ -79,6 +79,10 @@ async function sendShareInvitation(id: string, action: Extract<ShareAction, {typ
   }
 }
 
+function throwShareFailure(error: unknown, getFallbackMessage: () => string): never {
+  throw new Error(error ? String(error) : getFallbackMessage());
+}
+
 /**
  * Manages invoice sharing mutations and email invitation side effects.
  *
@@ -146,7 +150,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.toggleError));
+          throwShareFailure(result.error, () => t((m) => m.toasts.invoices.useInvoiceShare.toggleError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;
@@ -162,7 +166,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.revokeError));
+          throwShareFailure(result.error, () => t((m) => m.toasts.invoices.useInvoiceShare.revokeError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;

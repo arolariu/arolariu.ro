@@ -34,6 +34,15 @@ async function invokeWorkerMethod(
   }
 }
 
+function createWorkerCall(
+  method: (...args: unknown[]) => Promise<unknown>,
+  args: readonly unknown[],
+  name: string,
+  signal: AbortSignal | undefined,
+): () => Promise<unknown> {
+  return () => raceWithSignal(invokeWorkerMethod(method, args, name), signal);
+}
+
 export type CallProxyDeps<TApi> = Readonly<{
   inFlight: InFlightRegistry;
   bridge: TelemetryBridge;
@@ -109,8 +118,9 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           }
 
           try {
-            const wrapped = deps.bridge.wrapCall(prop, () =>
-              raceWithSignal(invokeWorkerMethod(fn as (...args: unknown[]) => Promise<unknown>, callArgs, prop), signal),
+            const wrapped = deps.bridge.wrapCall(
+              prop,
+              createWorkerCall(fn as (...args: unknown[]) => Promise<unknown>, callArgs, prop, signal),
             );
 
             if (timeoutPromise) {

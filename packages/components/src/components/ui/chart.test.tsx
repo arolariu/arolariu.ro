@@ -488,4 +488,23 @@ describe("ChartLegendContent", () => {
     expect(screen.queryByTestId("legend-icon")).toBeNull();
     expect(container).toHaveTextContent("Revenue");
   });
+
+  it.each(["top", "bottom", "middle", undefined] as const)("preserves legend spacing for verticalAlign=%s", (verticalAlign) => {
+    // Arrange
+    render(
+      <ChartContainer config={config}>
+        <ChartLegendContent
+          className='custom-legend'
+          payload={[{color: "#123456", dataKey: "revenue", value: "Revenue"}]}
+          verticalAlign={verticalAlign}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert
+    const legend = screen.getByText("Revenue").closest(".custom-legend");
+    expect(legend).toHaveClass("custom-legend");
+    expect(legend?.className).toContain(verticalAlign === "top" ? "legendTop" : "legendBottom");
+    expect(legend?.className).not.toContain(verticalAlign === "top" ? "legendBottom" : "legendTop");
+  });
 });

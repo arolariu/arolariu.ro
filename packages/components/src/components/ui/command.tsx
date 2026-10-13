@@ -283,7 +283,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     },
     ref,
   ) => {
-    const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
+    const [selectedItemId, setActiveItemId] = React.useState<string | null>(null);
     const [search, setSearch] = React.useState("");
     const itemOrderRef = React.useRef(0);
     const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());
@@ -354,18 +354,12 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 
     const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
 
-    React.useEffect(() => {
-      if (selectableItems.length === 0) {
-        // eslint-disable-next-line react-x/set-state-in-effect -- clearing active item when no selectable items remain is the effect's purpose
-        setActiveItemId(null);
-        return;
-      }
+    const activeItemId = selectableItems.find((item) => item.id === selectedItemId)?.id ?? selectableItems[0]?.id ?? null;
 
-      if (!activeItemId || !selectableItems.some((item) => item.id === activeItemId)) {
-        // eslint-disable-next-line react-x/set-state-in-effect -- resetting active item to the first selectable is the effect's purpose
-        setActiveItemId(selectableItems[0].id);
-      }
-    }, [activeItemId, selectableItems]);
+    // Remember the fallback so a removed, filtered, or disabled selection cannot reappear later.
+    if (selectedItemId !== activeItemId) {
+      setActiveItemId(activeItemId);
+    }
 
     React.useEffect(() => {
       if (!activeItemId) {

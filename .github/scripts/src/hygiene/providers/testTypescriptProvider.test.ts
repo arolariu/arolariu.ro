@@ -187,7 +187,8 @@ describe("testTypescriptProvider", () => {
   });
 
   it("preserves a nonzero runner exit when all reported assertions passed", async () => {
-    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 1, stdout: JSON.stringify(passing), stderr: "Coverage threshold failed"});
+    const stderr = `${"Vite configuration advisory\n".repeat(200)}Coverage threshold failed`;
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 1, stdout: JSON.stringify(passing), stderr});
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
 

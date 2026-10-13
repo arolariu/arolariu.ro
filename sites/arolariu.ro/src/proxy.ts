@@ -6,12 +6,30 @@
  * Configures request matching rules and enforces authentication for protected routes.
  */
 
-import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
+import {clerkMiddleware as authMiddleware} from "@clerk/nextjs/server";
 
-const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
+class MalformedAdminPathError extends Error {
+  public readonly statusCode = 400;
+
+  constructor(pathname: string, cause: unknown) {
+    super(`Malformed encoding in URL path: ${pathname}`, {cause});
+    this.name = "MalformedURLError";
+  }
+}
+
+function isProtectedAdminPath(pathname: string): boolean {
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURI(pathname);
+  } catch (error) {
+    throw new MalformedAdminPathError(pathname, error);
+  }
+  // Preserve Clerk's existing decoding, repeated-slash normalization and /admin(.*) prefix policy.
+  return /^\/admin.*$/iu.test(decodedPath.replace(/\/\/+/gu, "/"));
+}
 
 export default authMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  if (isProtectedAdminPath(req.nextUrl.pathname)) {
     await auth.protect();
   }
 });
