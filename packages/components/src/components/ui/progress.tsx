@@ -13,7 +13,8 @@ import styles from "./progress.module.css";
  */
 export interface ProgressProps extends Omit<BaseProgress.Root.Props, "value"> {
   /** Current value within `min`/`max`; null or omission means indeterminate. @default null */
-  readonly value?: number | null;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves optional value assignments with exactOptionalPropertyTypes
+  readonly value?: number | null | undefined;
 }
 
 /** Primitive-owned completion status supplied to Root callbacks. */
@@ -40,6 +41,7 @@ function mergeProgressClassName(baseClassName: string | undefined, className: Pr
 }
 
 function hasProgressTrack(children: React.ReactNode): boolean {
+  // eslint-disable-next-line react-x/no-children-to-array -- React-aware normalization preserves direct track detection for arrays and fragment children
   return React.Children.toArray(children).some((child) => {
     if (!React.isValidElement<{children?: React.ReactNode}>(child)) {
       return false;
@@ -176,31 +178,31 @@ const ProgressValue = React.forwardRef<HTMLSpanElement, Readonly<ProgressValue.P
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Progress {
   export type Props = ProgressProps;
-  export type State = ProgressState;
+  export type State = BaseProgress.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ProgressTrack {
-  export type Props = ProgressTrackProps;
-  export type State = ProgressTrackState;
+  export type Props = BaseProgress.Track.Props;
+  export type State = BaseProgress.Track.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ProgressIndicator {
-  export type Props = ProgressIndicatorProps;
-  export type State = ProgressIndicatorState;
+  export type Props = BaseProgress.Indicator.Props;
+  export type State = BaseProgress.Indicator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ProgressLabel {
-  export type Props = ProgressLabelProps;
-  export type State = ProgressLabelState;
+  export type Props = BaseProgress.Label.Props;
+  export type State = BaseProgress.Label.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ProgressValue {
-  export type Props = ProgressValueProps;
-  export type State = ProgressValueState;
+  export type Props = BaseProgress.Value.Props;
+  export type State = BaseProgress.Value.State;
 }
 
 Progress.displayName = "Progress";
