@@ -1,3 +1,8 @@
+"use client";
+
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
@@ -8,72 +13,95 @@ import styles from "./item.module.css";
 export type ItemVariant = "default" | "outline" | "muted";
 
 /** Supported size variants for {@link Item}. */
-export type ItemSize = "default" | "sm";
+export type ItemSize = "default" | "sm" | "xs";
 
 /** Supported media treatments for {@link ItemMedia}. */
 export type ItemMediaVariant = "default" | "icon" | "image";
 
-type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
+/** Item-owned state supplied to render callbacks and mapped to data attributes. */
+export type ItemState = Readonly<{
+  slot: "item";
+  variant: ItemVariant;
+  size: ItemSize;
+}>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type ItemRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
 
 /**
  * Props for the {@link ItemGroup} component.
  */
-export type ItemGroupProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemGroupProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link ItemSeparator} component.
  */
-export type ItemSeparatorProps = React.ComponentPropsWithoutRef<typeof Separator>;
+export type ItemSeparatorProps = Readonly<React.ComponentPropsWithoutRef<typeof Separator>>;
 
 /**
  * Props for the {@link Item} component.
  */
-export interface ItemProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Enables rendering an existing div-compatible child element. @default false */
-  asChild?: boolean;
-  /** Compactness applied to the item container. @default "default" */
-  size?: ItemSize;
-  /** Visual surface treatment for the item container. @default "default" */
-  variant?: ItemVariant;
-}
+export type ItemProps = Readonly<
+  Omit<useRender.ComponentProps<"div", ItemState, ItemRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+    /**
+     * Composes a single non-fragment child, preserving its content, handlers and refs.
+     * A valid child takes precedence over `render`; other content uses normal rendering.
+     * @default false
+     * @deprecated Prefer `render` for element composition.
+     */
+    asChild?: boolean;
+    /** Compactness applied to the item container and direct media slots. @default "default" */
+    size?: ItemSize;
+    /** Visual surface treatment for the item container. @default "default" */
+    variant?: ItemVariant;
+  }
+>;
 
 /**
  * Props for the {@link ItemMedia} component.
  */
-export interface ItemMediaProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Visual treatment used for the media slot. @default "default" */
-  variant?: ItemMediaVariant;
-}
+export type ItemMediaProps = Readonly<
+  React.ComponentPropsWithoutRef<"div"> & {
+    /** Visual treatment used for the media slot. @default "default" */
+    variant?: ItemMediaVariant;
+  }
+>;
 
 /**
  * Props for the {@link ItemContent} component.
  */
-export type ItemContentProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link ItemTitle} component.
  */
-export type ItemTitleProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemTitleProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link ItemDescription} component.
  */
-export type ItemDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+export type ItemDescriptionProps = Readonly<React.ComponentPropsWithoutRef<"p">>;
 
 /**
  * Props for the {@link ItemActions} component.
  */
-export type ItemActionsProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemActionsProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link ItemHeader} component.
  */
-export type ItemHeaderProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemHeaderProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link ItemFooter} component.
  */
-export type ItemFooterProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemFooterProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Groups a collection of list-like items with consistent spacing.
@@ -81,12 +109,13 @@ export type ItemFooterProps = React.ComponentPropsWithoutRef<"div">;
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Assign `role="listitem"` to grouped entries when using list semantics.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
  * <ItemGroup>
- *   <Item />
+ *   <Item role='listitem' />
  * </ItemGroup>
  * ```
  *
@@ -108,8 +137,8 @@ const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
  * Inserts a separator between adjacent items.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a wrapped `Separator` component
+ * - Delegates rendering and state ownership to the existing `Separator` component.
+ * - Uses its stable default API; does not evaluate primitive render callbacks.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -135,8 +164,16 @@ const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
  * Creates a flexible data-display row with optional media and actions.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a `<div>` element by default
+ * - Client boundary for Base UI render/ref composition; no interaction primitive.
+ * - Renders an inert `<div>` by default, without button role or keyboard handlers.
+ * - Use `render` with a native anchor/button/label for its native behavior and
+ *   provide children valid for that target's content model.
+ * - Base UI merges child-first handlers and both refs; `preventDefault()` cancels
+ *   native behavior, while `preventBaseUIHandler()` also suppresses the wrapper handler.
+ * - Common `HTMLElement` refs support the actual composed target. Existing div
+ *   object refs remain valid; explicitly div-only callback consumers should use
+ *   `HTMLElement` or narrow the actual node before accessing div-specific members.
+ * - `xs` adds the densest spacing and smaller direct icon/image media slots.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -146,46 +183,38 @@ const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
  *
  * @see {@link ItemProps} for available props
  */
-const Item = React.forwardRef<HTMLDivElement, ItemProps>(
+const Item = React.forwardRef<HTMLElement, Item.Props>(
   (
-    {className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>,
+    {
+      className,
+      variant = "default",
+      size = "default",
+      render,
+      // eslint-disable-next-line sonarjs/deprecation -- retain the supported legacy composition API
+      asChild = false,
+      children,
+      ...props
+    }: Readonly<React.PropsWithoutRef<Item.Props>>,
     ref,
-  ): React.JSX.Element => {
+  ): React.ReactElement => {
     const mergedClassName = cn(
       styles.item,
       variant === "outline" && styles.outline,
       variant === "muted" && styles.muted,
-      size === "sm" ? styles.sizeSm : styles.sizeDefault,
+      size === "xs" ? styles.sizeXs : size === "sm" ? styles.sizeSm : styles.sizeDefault,
       className,
     );
 
-    if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<
-        React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
-      >;
+    const legacyChild =
+      asChild && React.isValidElement<{children?: React.ReactNode}>(children) && children.type !== React.Fragment ? children : undefined;
 
-      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
-      return React.cloneElement(child, {
-        ...props,
-        ref,
-        "data-size": size,
-        "data-slot": "item",
-        "data-variant": variant,
-        className: cn(mergedClassName, child.props.className),
-      });
-    }
-
-    return (
-      <div
-        ref={ref}
-        data-slot='item'
-        data-size={size}
-        data-variant={variant}
-        className={mergedClassName}
-        {...props}>
-        {children}
-      </div>
-    );
+    return useRender<Item.State, HTMLElement>({
+      defaultTagName: "div",
+      ref,
+      render: legacyChild ?? render,
+      state: {slot: "item", variant, size},
+      props: mergeProps<"div">({className: mergedClassName}, props, {children: legacyChild ? legacyChild.props.children : children}),
+    });
   },
 );
 
@@ -195,6 +224,8 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Icon/image dimensions follow the direct parent Item size; images are cropped
+ *   with `object-fit: cover`. The default media variant leaves content intrinsic.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -222,6 +253,7 @@ const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Uses a shrinking flex column so long content cannot force the row wider.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -248,6 +280,8 @@ const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Visually clamps to one line with ellipsis while keeping all content in the DOM.
+ *   Inline text/icons remain supported; use `className` to override the clamp.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -274,6 +308,9 @@ const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<p>` element
+ * - Accepts rich phrasing content, including inline links, not nested block markup.
+ * - Visually clamps to two lines without removing accessible content; override
+ *   the CSS Module treatment through `className` when full expansion is needed.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -386,5 +423,15 @@ ItemDescription.displayName = "ItemDescription";
 ItemActions.displayName = "ItemActions";
 ItemHeader.displayName = "ItemHeader";
 ItemFooter.displayName = "ItemFooter";
+
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
+namespace Item {
+  /** Readonly composition and visual props for the item root. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace and named-import compatibility
+  export type Props = ItemProps;
+  /** Item-owned state passed to render callbacks. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace and named-import compatibility
+  export type State = ItemState;
+}
 
 export {Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemHeader, ItemMedia, ItemSeparator, ItemTitle};
