@@ -79,6 +79,9 @@ type ActionItemProps = Readonly<{
   isLocked: boolean;
 }>;
 
+const EMPTY_METADATA_ITEMS: readonly string[] = [];
+const EMPTY_ACTIONS: readonly ScanCardAction[] = [];
+
 /**
  * Renders a single dropdown action item with a stable handle* callback.
  */
@@ -107,12 +110,12 @@ function ActionItem({action, isLocked}: ActionItemProps): React.JSX.Element {
 export default function ScanCard({
   media,
   title,
-  metadataItems = [],
+  metadataItems = EMPTY_METADATA_ITEMS,
   isSelected = false,
   isLocked = false,
   selection,
   rename,
-  actions = [],
+  actions = EMPTY_ACTIONS,
   statusBadge,
   linkedBadge,
   centerOverlay,

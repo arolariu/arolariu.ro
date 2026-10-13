@@ -72,4 +72,20 @@ describe("getCapabilities", () => {
     });
     expect(getCapabilities().hasWebGpu).toBe(false);
   });
+
+  it("hasWebGpu is false when a partial implementation exposes null", () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: {gpu: null},
+      configurable: true,
+    });
+    expect(getCapabilities().hasWebGpu).toBe(false);
+  });
+
+  it("hasWebGpu is false when navigator is unavailable", () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: undefined,
+      configurable: true,
+    });
+    expect(getCapabilities().hasWebGpu).toBe(false);
+  });
 });

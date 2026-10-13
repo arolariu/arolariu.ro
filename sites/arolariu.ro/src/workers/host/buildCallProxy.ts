@@ -19,6 +19,21 @@ import {WorkerError, WorkerTimeoutError} from "./workerErrors";
 /** No-op callback used to suppress unhandled-rejection noise on race losers. */
 const noop = (): void => undefined;
 
+async function invokeWorkerMethod(
+  method: (...args: unknown[]) => Promise<unknown>,
+  args: readonly unknown[],
+  name: string,
+): Promise<unknown> {
+  try {
+    return await method(...args);
+  } catch (error) {
+    if (typeof error === "object" && error !== null && (error as {__workerError?: unknown}).__workerError === true) {
+      throw new WorkerError(error, name);
+    }
+    throw error;
+  }
+}
+
 export type CallProxyDeps<TApi> = Readonly<{
   inFlight: InFlightRegistry;
   bridge: TelemetryBridge;
@@ -94,19 +109,9 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           }
 
           try {
-            const wrapped = deps.bridge.wrapCall(prop, async () => {
-              const callPromise = (async (): Promise<unknown> => {
-                try {
-                  return await (fn as (...a: unknown[]) => Promise<unknown>)(...callArgs);
-                } catch (error) {
-                  if (typeof error === "object" && error !== null && (error as {__workerError?: unknown}).__workerError === true) {
-                    throw new WorkerError(error, prop);
-                  }
-                  throw error;
-                }
-              })();
-              return raceWithSignal(callPromise, signal);
-            });
+            const wrapped = deps.bridge.wrapCall(prop, () =>
+              raceWithSignal(invokeWorkerMethod(fn as (...args: unknown[]) => Promise<unknown>, callArgs, prop), signal),
+            );
 
             if (timeoutPromise) {
               wrapped.catch(noop);

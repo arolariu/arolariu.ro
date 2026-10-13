@@ -152,6 +152,8 @@ export default function UploadArea(): React.JSX.Element {
     };
   }, [isUploading, addFiles]);
 
+  const emptyDropzoneClassName = isDragActive ? `${styles["dropzoneEmpty"]} ${styles["dropzoneEmptyActive"]}` : styles["dropzoneEmpty"];
+
   if (pendingUploads.length === 0) {
     return (
       <>
@@ -166,7 +168,7 @@ export default function UploadArea(): React.JSX.Element {
         />
         <button
           type='button'
-          className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
+          className={emptyDropzoneClassName}
           onClick={handleClick}
           disabled={isUploading}
           onDragEnter={handleDragEnter}

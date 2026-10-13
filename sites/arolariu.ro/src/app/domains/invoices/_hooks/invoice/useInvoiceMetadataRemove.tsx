@@ -98,11 +98,11 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
    * @returns Aggregate metadata removal result after all keys have been attempted.
    */
   const processBulkRecursive = useCallback(
-    async (
+    async function processBulk(
       keys: readonly string[],
       index: number,
       acc: {successCount: number; failureCount: number; failedKeys: string[]},
-    ): Promise<BulkRemoveResult> => {
+    ): Promise<BulkRemoveResult> {
       if (index >= keys.length) {
         return acc;
       }
@@ -112,13 +112,13 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
       }
       try {
         await performMutation(key);
-        return await processBulkRecursive(keys, index + 1, {
+        return await processBulk(keys, index + 1, {
           ...acc,
           successCount: acc.successCount + 1,
         });
       } catch (error) {
         console.error(`Failed to remove metadata field [${key}]:`, error);
-        return await processBulkRecursive(keys, index + 1, {
+        return await processBulk(keys, index + 1, {
           ...acc,
           failureCount: acc.failureCount + 1,
           failedKeys: [...acc.failedKeys, key],

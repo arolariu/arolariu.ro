@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Runtime type guards for the status domain model. Every network read
  * (cache or fetch) passes through one of the `isAggregateFile` /
  * `isIncidentsFile` predicates — a schema mismatch throws

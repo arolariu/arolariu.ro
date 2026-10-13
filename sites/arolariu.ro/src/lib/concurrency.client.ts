@@ -62,11 +62,11 @@
 export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<Array<T | undefined>> {
   const results: Array<T | undefined> = Array.from({length: tasks.length});
   let currentIndex = 0;
-  let hasFailed = false;
+  const failureController = new AbortController();
 
   const executeNext = async (): Promise<void> => {
     while (currentIndex < tasks.length) {
-      if (hasFailed) return;
+      if (failureController.signal.aborted) return;
 
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
@@ -75,7 +75,7 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
         try {
           results[taskIndex] = await task();
         } catch (error) {
-          hasFailed = true;
+          failureController.abort(error);
           throw error;
         }
       }

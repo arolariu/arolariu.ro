@@ -6,12 +6,11 @@
  */
 
 import {formatDate, formatFileSize} from "@/lib/utils.generic";
-import type {CachedScan} from "@/types/scans";
-import {ScanStatus} from "@/types/scans";
+import {ScanStatus, type CachedScan} from "@/types/scans";
 import {Button, useIsMobile} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight, TbLink, TbRotate, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import ScanCard from "../../_cards/ScanCard";
 import {CardShimmer} from "../../_cards/ScanCard.shimmers";
@@ -136,8 +135,6 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
 export default function ScansGrid(): React.JSX.Element {
   const t = useTranslations();
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
-  const [page, setPage] = useState(0);
-
   const isMobile = useIsMobile();
 
   /**
@@ -152,25 +149,26 @@ export default function ScansGrid(): React.JSX.Element {
    * No user feedback is shown to avoid UI noise during normal upload flow.
    */
   const validScans = scans.filter((s) => s.id);
+  const [pagination, setPagination] = useState({count: validScans.length, page: 0});
+  const page = pagination.count === validScans.length ? pagination.page : 0;
+
+  if (pagination.count !== validScans.length) {
+    setPagination({count: validScans.length, page: 0});
+  }
 
   // Calculate pagination
   const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
   const totalPages = Math.ceil(validScans.length / pageSize);
   const paginatedScans = validScans.slice(page * pageSize, (page + 1) * pageSize);
 
-  // Reset page to 0 when scans change (sync, filter, etc.)
-  useEffect(() => {
-    setPage(0);
-  }, [validScans.length]);
-
   /** Navigates to the previous page of scans. */
   const handlePreviousPage = useCallback(() => {
-    setPage((p) => Math.max(0, p - 1));
+    setPagination((current) => ({...current, page: Math.max(0, current.page - 1)}));
   }, []);
 
   /** Navigates to the next page of scans. */
   const handleNextPage = useCallback(() => {
-    setPage((p) => Math.min(totalPages - 1, p + 1));
+    setPagination((current) => ({...current, page: Math.min(totalPages - 1, current.page + 1)}));
   }, [totalPages]);
 
   // Show loading state

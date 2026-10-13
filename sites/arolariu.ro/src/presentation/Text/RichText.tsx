@@ -13,6 +13,21 @@ type Props = {
   textKey: string;
 };
 
+const richTextTags = {
+  strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
+  em: (chunks: React.ReactNode) => <em>{chunks}</em>,
+  br: (chunks: React.ReactNode) => (
+    <>
+      {chunks}
+      <br />
+    </>
+  ),
+  code: (chunks: React.ReactNode) => <code className={styles["inlineCode"]}>{chunks}</code>,
+  ul: (chunks: React.ReactNode) => <ul className={styles["richList"]}>{chunks}</ul>,
+  li: (chunks: React.ReactNode) => <li>{chunks}</li>,
+  span: (chunks: React.ReactNode) => <span>{chunks}</span>,
+};
+
 /**
  * A rich text component that renders internationalized text with formatting support.
  *
@@ -29,26 +44,13 @@ type Props = {
 export function RichText({className, sectionKey, textKey}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const fullKey = `${sectionKey}.${textKey}`;
+  let text: React.ReactNode = null;
 
   try {
-    const text = t.rich(selectorFromPath(fullKey), {
-      strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
-      em: (chunks: React.ReactNode) => <em>{chunks}</em>,
-      br: (chunks: React.ReactNode) => (
-        <>
-          {chunks}
-          <br />
-        </>
-      ),
-      code: (chunks: React.ReactNode) => <code className={styles["inlineCode"]}>{chunks}</code>,
-      ul: (chunks: React.ReactNode) => <ul className={styles["richList"]}>{chunks}</ul>,
-      li: (chunks: React.ReactNode) => <li>{chunks}</li>,
-      span: (chunks: React.ReactNode) => <span>{chunks}</span>,
-    });
-
-    return <span className={className}>{text}</span>;
+    text = t.rich(selectorFromPath(fullKey), richTextTags);
   } catch (error: unknown) {
     console.warn(`[RichText] Failed to render "${fullKey}":`, error);
-    return <span className={className} />;
   }
+
+  return <span className={className}>{text}</span>;
 }
