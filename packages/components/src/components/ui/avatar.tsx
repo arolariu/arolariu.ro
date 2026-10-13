@@ -2,6 +2,7 @@
 
 import {Avatar as BaseAvatar} from "@base-ui/react/avatar";
 import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
@@ -42,23 +43,45 @@ export type AvatarFallbackState = Readonly<BaseAvatar.Fallback.State>;
 /** Readonly Base UI fallback props, including its delay and render callbacks. */
 export type AvatarFallbackProps = Readonly<React.ComponentPropsWithRef<typeof BaseAvatar.Fallback>>;
 
+// Base UI merges input refs into a callback (or null) before invoking render.
+type AvatarPartRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
+
 /** State owned by the native avatar badge renderer. */
 export type AvatarBadgeState = Readonly<{slot: "avatar-badge"}>;
 
 /** Native span props with Base UI render composition for the corner badge. */
-export type AvatarBadgeProps = Readonly<useRender.ComponentProps<"span", AvatarBadgeState, React.ComponentPropsWithRef<"span">>>;
+export type AvatarBadgeProps = Readonly<
+  Omit<useRender.ComponentProps<"span", AvatarBadgeState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a span. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /** State owned by the native avatar group renderer. */
 export type AvatarGroupState = Readonly<{slot: "avatar-group"}>;
 
 /** Native div props with Base UI render composition for an avatar stack. */
-export type AvatarGroupProps = Readonly<useRender.ComponentProps<"div", AvatarGroupState, React.ComponentPropsWithRef<"div">>>;
+export type AvatarGroupProps = Readonly<
+  Omit<useRender.ComponentProps<"div", AvatarGroupState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /** State owned by the native avatar group count renderer. */
 export type AvatarGroupCountState = Readonly<{slot: "avatar-group-count"}>;
 
 /** Native div props with Base UI render composition for remaining-avatar content. */
-export type AvatarGroupCountProps = Readonly<useRender.ComponentProps<"div", AvatarGroupCountState, React.ComponentPropsWithRef<"div">>>;
+export type AvatarGroupCountProps = Readonly<
+  Omit<useRender.ComponentProps<"div", AvatarGroupCountState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /**
  * Displays a user avatar container with shared sizing and shape styles.
@@ -174,17 +197,21 @@ AvatarFallback.displayName = "AvatarFallback";
  * Place directly inside {@link Avatar}; its size follows the root preset.
  * Icons are hidden at `sm`, leaving a compact dot. Supply an accessible label
  * for meaningful status, or `aria-hidden` for a purely decorative badge.
+ * Composed targets accept their corresponding DOM refs; callback props carry
+ * Base UI's merged callback ref rather than a default-span object ref.
  */
-const AvatarBadge = React.forwardRef<HTMLSpanElement, AvatarBadge.Props>((props: Readonly<AvatarBadge.Props>, ref): React.ReactElement => {
-  const {className, render, ...otherProps} = props;
-  return useRender<AvatarBadge.State, HTMLSpanElement>({
-    defaultTagName: "span",
-    ref,
-    render,
-    state: {slot: "avatar-badge"},
-    props: mergeProps<"span">({className: cn(styles.badge, className)}, otherProps),
-  });
-});
+const AvatarBadge = React.forwardRef<HTMLElement, AvatarBadge.Props>(
+  (props: Readonly<React.PropsWithoutRef<AvatarBadge.Props>>, ref): React.ReactElement => {
+    const {className, render, ...otherProps} = props;
+    return useRender<AvatarBadge.State, HTMLElement>({
+      defaultTagName: "span",
+      ref,
+      render,
+      state: {slot: "avatar-badge"},
+      props: mergeProps<"span">({className: cn(styles.badge, className)}, otherProps),
+    });
+  },
+);
 AvatarBadge.displayName = "AvatarBadge";
 
 /**
@@ -194,17 +221,20 @@ AvatarBadge.displayName = "AvatarBadge";
  * The stack uses logical overlap for LTR/RTL and keeps badge-bearing avatars
  * above unbadged peers. Supply `role="group"` and a label when the collection
  * needs a group name; the default native div adds no redundant ARIA.
+ * The common `HTMLElement` ref boundary supports the actual composed target.
  */
-const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroup.Props>((props: Readonly<AvatarGroup.Props>, ref): React.ReactElement => {
-  const {className, render, ...otherProps} = props;
-  return useRender<AvatarGroup.State, HTMLDivElement>({
-    defaultTagName: "div",
-    ref,
-    render,
-    state: {slot: "avatar-group"},
-    props: mergeProps<"div">({className: cn(styles.group, className)}, otherProps),
-  });
-});
+const AvatarGroup = React.forwardRef<HTMLElement, AvatarGroup.Props>(
+  (props: Readonly<React.PropsWithoutRef<AvatarGroup.Props>>, ref): React.ReactElement => {
+    const {className, render, ...otherProps} = props;
+    return useRender<AvatarGroup.State, HTMLElement>({
+      defaultTagName: "div",
+      ref,
+      render,
+      state: {slot: "avatar-group"},
+      props: mergeProps<"div">({className: cn(styles.group, className)}, otherProps),
+    });
+  },
+);
 AvatarGroup.displayName = "AvatarGroup";
 
 /**
@@ -215,11 +245,12 @@ AvatarGroup.displayName = "AvatarGroup";
  * Mixed-size groups deliberately use the first avatar as the sizing reference.
  * Outside a group it uses the default size. Provide a descriptive accessible
  * label when a number alone does not explain the remaining items.
+ * Composed targets accept their corresponding DOM refs through `HTMLElement`.
  */
-const AvatarGroupCount = React.forwardRef<HTMLDivElement, AvatarGroupCount.Props>(
-  (props: Readonly<AvatarGroupCount.Props>, ref): React.ReactElement => {
+const AvatarGroupCount = React.forwardRef<HTMLElement, AvatarGroupCount.Props>(
+  (props: Readonly<React.PropsWithoutRef<AvatarGroupCount.Props>>, ref): React.ReactElement => {
     const {className, render, ...otherProps} = props;
-    return useRender<AvatarGroupCount.State, HTMLDivElement>({
+    return useRender<AvatarGroupCount.State, HTMLElement>({
       defaultTagName: "div",
       ref,
       render,

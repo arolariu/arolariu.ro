@@ -69,6 +69,19 @@ function cssDeclaration(selector: string, property: string): string {
   return "";
 }
 
+// Apply the authored stylesheet using the same local class names exposed by Vite.
+function mountAvatarStyles(): () => void {
+  const stylesheet = document.createElement("style");
+  stylesheet.textContent = readFileSync(resolve(import.meta.dirname, "avatar.module.css"), "utf8")
+    .replace(/:global\(([^)]+)\)/g, "$1")
+    .replace(/\.([a-zA-Z][\w-]*)/g, (selector: string, name: string): string => {
+      const scopedName = styles[name];
+      return scopedName ? `.${scopedName}` : selector;
+    });
+  document.head.append(stylesheet);
+  return (): void => stylesheet.remove();
+}
+
 describe("Avatar", () => {
   it("exposes the Avatar size contract", () => {
     render(
@@ -481,7 +494,7 @@ describe("Avatar", () => {
       <Part
         className='consumer'
         render={(
-          elementProps: React.ComponentPropsWithRef<"span">,
+          elementProps: Parameters<Exclude<AvatarBadge.Props["render"], React.ReactElement | undefined>>[0],
           state: AvatarBadge.State | AvatarGroup.State | AvatarGroupCount.State,
         ): React.ReactElement => (
           <span
@@ -499,6 +512,65 @@ describe("Avatar", () => {
     expect(element).toHaveClass(styleClass, "consumer");
   });
 
+  it("accepts typed anchor/button callback consumers and forwards their actual DOM refs", () => {
+    const badgeRef = React.createRef<HTMLAnchorElement>();
+    const groupRef = React.createRef<HTMLAnchorElement>();
+    const countRef = React.createRef<HTMLButtonElement>();
+    const {unmount} = render(
+      <>
+        <AvatarBadge
+          ref={badgeRef}
+          render={(props, state) => (
+            <a
+              {...props}
+              href='#profile'
+              data-render-slot={state.slot}
+            />
+          )}>
+          Availability
+        </AvatarBadge>
+        <AvatarGroup
+          ref={groupRef}
+          render={(props, state) => (
+            <a
+              {...props}
+              href='#contributors'
+              data-render-slot={state.slot}
+            />
+          )}>
+          Contributors
+        </AvatarGroup>
+        <AvatarGroupCount
+          ref={countRef}
+          render={(props, state) => (
+            <button
+              {...props}
+              type='button'
+              data-render-slot={state.slot}
+            />
+          )}>
+          More contributors
+        </AvatarGroupCount>
+      </>,
+    );
+    const badge = screen.getByRole("link", {name: "Availability"});
+    const group = screen.getByRole("link", {name: "Contributors"});
+    const count = screen.getByRole("button", {name: "More contributors"});
+    expect(badgeRef.current).toBe(badge);
+    expect(groupRef.current).toBe(group);
+    expect(countRef.current).toBe(count);
+    expect(badge).toHaveAttribute("data-render-slot", "avatar-badge");
+    expect(group).toHaveAttribute("data-render-slot", "avatar-group");
+    expect(count).toHaveAttribute("data-render-slot", "avatar-group-count");
+    expect(badge).toHaveClass(styles.badge);
+    expect(group).toHaveClass(styles.group);
+    expect(count).toHaveClass(styles.groupCount);
+    unmount();
+    expect(badgeRef.current).toBeNull();
+    expect(groupRef.current).toBeNull();
+    expect(countRef.current).toBeNull();
+  });
+
   it.each([
     [AvatarBadge, "avatar-badge"],
     [AvatarGroup, "avatar-group"],
@@ -506,7 +578,7 @@ describe("Avatar", () => {
   ] as const)("merges %s render-element content, refs, classes, and cancellation", async (Part, slot) => {
     expect(Part).toBeDefined();
     const user = userEvent.setup();
-    const wrapperRef = React.createRef<HTMLDivElement>();
+    const wrapperRef = React.createRef<HTMLAnchorElement>();
     const childRef = React.createRef<HTMLAnchorElement>();
     const calls: string[] = [];
     const {unmount} = render(
@@ -537,6 +609,31 @@ describe("Avatar", () => {
     expect(screen.queryByText("Ignored content")).not.toBeInTheDocument();
     await user.click(link);
     expect(calls).toEqual(["child", "wrapper-true"]);
+    unmount();
+    expect(wrapperRef.current).toBeNull();
+    expect(childRef.current).toBeNull();
+  });
+
+  it("merges correctly typed button refs for a count rendered as an element", () => {
+    const wrapperRef = React.createRef<HTMLButtonElement>();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const {unmount} = render(
+      <AvatarGroupCount
+        ref={wrapperRef}
+        render={
+          <button
+            ref={childRef}
+            type='button'
+          />
+        }>
+        More contributors
+      </AvatarGroupCount>,
+    );
+    const button = screen.getByRole("button", {name: "More contributors"});
+    expect(wrapperRef.current).toBe(button);
+    expect(childRef.current).toBe(button);
+    expect(button).toHaveAttribute("data-slot", "avatar-group-count");
+    expect(button).toHaveClass(styles.groupCount);
     unmount();
     expect(wrapperRef.current).toBeNull();
     expect(childRef.current).toBeNull();
@@ -689,6 +786,93 @@ describe("Avatar", () => {
     act(() => fireEvent.load(currentImage));
     expect(screen.getByRole("img", {name: "Current portrait"})).toHaveAttribute("src", "/second.png");
     expect(screen.queryByText("AO")).not.toBeInTheDocument();
+  });
+
+  it("removes a superseded loaded image from flex flow while its real exit and fallback coexist", () => {
+    const removeStyles = mountAvatarStyles();
+    const loader = supplyImageLoader();
+    const exitSnapshots: Array<
+      Readonly<{
+        image: HTMLImageElement;
+        fallback: HTMLSpanElement;
+        imagePosition: string;
+        imageWidth: string;
+        fallbackWidth: string;
+        ending: boolean;
+        loading: boolean;
+        error: boolean;
+        rootDisplay: string;
+        rootWidth: string;
+        rootHeight: string;
+        rootOverflow: string;
+      }>
+    > = [];
+    const captureFallback = (fallback: HTMLSpanElement | null): void => {
+      const root = fallback?.parentElement;
+      const image = root?.querySelector<HTMLImageElement>('[data-slot="avatar-image"]');
+      if (!root || !image || !fallback) return;
+      const imageStyle = window.getComputedStyle(image);
+      const rootStyle = window.getComputedStyle(root);
+      exitSnapshots.push({
+        image,
+        fallback,
+        imagePosition: imageStyle.position,
+        imageWidth: imageStyle.width,
+        fallbackWidth: window.getComputedStyle(fallback).width,
+        ending: image.hasAttribute("data-ending-style"),
+        loading: image.hasAttribute("data-loading"),
+        error: image.hasAttribute("data-error"),
+        rootDisplay: rootStyle.display,
+        rootWidth: rootStyle.width,
+        rootHeight: rootStyle.height,
+        rootOverflow: rootStyle.overflow,
+      });
+    };
+    const avatar = (src: string): React.ReactElement => (
+      <Avatar data-testid='switch-avatar'>
+        <AvatarImage
+          src={src}
+          alt='Current portrait'
+        />
+        <AvatarFallback ref={captureFallback}>AO</AvatarFallback>
+        <AvatarBadge aria-label='Available' />
+      </Avatar>
+    );
+    try {
+      const {rerender} = render(avatar("/first.png"));
+      act(() => fireEvent.load(loader.latest()));
+      const loadedImage = screen.getByRole("img", {name: "Current portrait"});
+      expect(loadedImage).toHaveAttribute("src", "/first.png");
+      expect(screen.queryByText("AO")).not.toBeInTheDocument();
+
+      rerender(avatar("/second.png"));
+      const exit = exitSnapshots.at(-1);
+      if (!exit) throw new Error("The actual fallback never coexisted with the exiting loaded image");
+      expect(exit.image).toBe(loadedImage);
+      expect(exit.ending).toBe(true);
+      expect(exit.loading).toBe(false);
+      expect(exit.error).toBe(false);
+      expect(exit.rootDisplay).toBe("flex");
+      expect(exit.imagePosition).toBe("absolute");
+      expect(exit.imageWidth).toBe("100%");
+      expect(exit.fallbackWidth).toBe("100%");
+      expect(exit.rootWidth).toBe("40px");
+      expect(exit.rootHeight).toBe("40px");
+      expect(exit.rootOverflow).toBe("visible");
+      expect(screen.getByText("AO")).toBe(exit.fallback);
+      expect(screen.getByLabelText("Available").parentElement).toBe(screen.getByTestId("switch-avatar"));
+      expect(cssDeclaration(".image", "border-radius")).toBe("inherit");
+      expect(cssDeclaration(".fallback", "border-radius")).toBe("inherit");
+      expect(cssDeclaration(".badge", "box-shadow")).toBe("0 0 0 2px var(--ac-background)");
+
+      act(() => fireEvent.load(loader.latest()));
+      expect(screen.getByRole("img", {name: "Current portrait"})).toHaveAttribute("src", "/second.png");
+      expect(screen.queryByText("AO")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Available").parentElement).toBe(screen.getByTestId("switch-avatar"));
+    } finally {
+      cleanup();
+      removeStyles();
+    }
   });
 
   it("retains fallback render-element content, refs, classes, and merged handlers", async () => {

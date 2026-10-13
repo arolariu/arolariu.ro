@@ -52,6 +52,7 @@
   opacity: 0;
 }
 
+.image[data-ending-style],
 .image[data-loading],
 .image[data-error] {
   position: absolute;
