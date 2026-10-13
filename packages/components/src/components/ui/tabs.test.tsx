@@ -2,6 +2,8 @@ import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import postcss, {type Container} from "postcss";
+import selectorParser from "postcss-selector-parser";
 import * as React from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
@@ -20,6 +22,93 @@ function cssDeclaration(selector: string, property: string): string {
     }
   }
   return "";
+}
+
+type Specificity = readonly [number, number, number];
+
+function compareSpecificity(first: Specificity, second: Specificity): number {
+  return first[0] - second[0] || first[1] - second[1] || first[2] - second[2];
+}
+
+function selectorSpecificity(selector: selectorParser.Selector): Specificity {
+  let ids = 0;
+  let classes = 0;
+  let elements = 0;
+  for (const node of selector.nodes) {
+    if (node.type === "id") ids += 1;
+    else if (node.type === "class" || node.type === "attribute") classes += 1;
+    else if (node.type === "tag") elements += 1;
+    else if (node.type === "pseudo") {
+      if (node.value === ":where") continue;
+      if ([":is", ":not", ":has"].includes(node.value)) {
+        const maximum = node.nodes
+          .map(selectorSpecificity)
+          .reduce<Specificity>((highest, current) => (compareSpecificity(current, highest) > 0 ? current : highest), [0, 0, 0]);
+        ids += maximum[0];
+        classes += maximum[1];
+        elements += maximum[2];
+      } else if (node.value.startsWith("::")) elements += 1;
+      else classes += 1;
+    }
+  }
+  return [ids, classes, elements];
+}
+
+// Happy DOM drops some system color keywords. Evaluate this unlayered authored
+// stylesheet instead: real parsed rules, DOM matching, importance, specificity,
+// and source order. Admitted media conditions are explicit test inputs, not paint proof.
+function authoredDeclaration(element: HTMLElement, property: string, activeMedia: readonly string[] = []): string | undefined {
+  const stylesheet = postcss.parse(readFileSync(resolve(import.meta.dirname, "tabs.module.css"), "utf8"));
+  let winner: {value: string; important: boolean; specificity: Specificity} | undefined;
+
+  function visit(container: Container, parentSelectors: readonly string[] = []): void {
+    container.each((node) => {
+      if (node.type === "atrule") {
+        if (node.name === "media" && activeMedia.includes(node.params)) visit(node, parentSelectors);
+        return;
+      }
+      if (node.type === "rule") {
+        const selectors = parentSelectors.length
+          ? parentSelectors.flatMap((parent) =>
+              node.selectors.map((child) => {
+                const parsed = selectorParser().astSync(child);
+                parsed.walkNesting((nesting) => {
+                  const ancestor = selectorParser().astSync(parent).first;
+                  nesting.replaceWith(...ancestor.nodes.map((part) => part.clone()));
+                });
+                return parsed.toString();
+              }),
+            )
+          : node.selectors;
+        visit(node, selectors);
+        return;
+      }
+      if (node.type !== "decl" || node.prop !== property) return;
+      for (const selector of parentSelectors) {
+        const parsed = selectorParser().astSync(selector);
+        parsed.walkClasses((classNode) => {
+          const mapped = styles[classNode.value];
+          if (!mapped) throw new Error(`Missing CSS Module class: ${classNode.value}`);
+          classNode.value = mapped;
+        });
+        for (const candidate of parsed.nodes) {
+          if (!element.matches(candidate.toString())) continue;
+          const specificity = selectorSpecificity(candidate);
+          const important = Boolean(node.important);
+          if (
+            !winner
+            || (important && !winner.important)
+            || (important === winner.important && compareSpecificity(specificity, winner.specificity) >= 0)
+          ) {
+            winner = {value: node.value, important, specificity};
+          }
+        }
+      }
+    });
+  }
+
+  visit(stylesheet);
+  return winner?.value;
 }
 
 // Supply only DOM geometry; Base UI still owns measuring and updating the indicator.
@@ -760,6 +849,76 @@ describe("Tabs", () => {
 });
 
 describe("TabsList variants and indicator", () => {
+  it.each([
+    ["horizontal", "default"],
+    ["vertical", "default"],
+    ["horizontal", "line"],
+    ["vertical", "line"],
+  ] as const)("uses winning system-color declarations for %s %s selection in forced colors", async (orientation, variant) => {
+    supplyTabGeometry();
+    const user = userEvent.setup();
+    const media = ["(forced-colors: active)"];
+    render(
+      <Tabs
+        defaultValue='one'
+        orientation={orientation}>
+        <TabsList
+          variant={variant}
+          data-geometry='list'>
+          <TabsTrigger
+            value='one'
+            data-geometry='one'>
+            One
+          </TabsTrigger>
+          <TabsTrigger
+            value='two'
+            data-geometry='two'>
+            Two
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent value='two'>Panel two</TabsContent>
+      </Tabs>,
+    );
+    const indicator = screen.getByRole("presentation");
+    const one = screen.getByRole("tab", {name: "One"});
+    const two = screen.getByRole("tab", {name: "Two"});
+    expect(screen.getByRole("tablist")).toHaveAttribute("data-variant", variant);
+    expect(indicator).toHaveAttribute("data-orientation", orientation);
+    expect(one).toHaveAttribute("data-active");
+    expect(authoredDeclaration(indicator, "background-color")).toBe(variant === "line" ? "var(--ac-foreground)" : "var(--ac-background)");
+    expect(authoredDeclaration(indicator, "background-color", media)).toBe("Highlight");
+    expect(authoredDeclaration(indicator, "forced-color-adjust", media)).toBe("none");
+    expect(authoredDeclaration(one, "color", media)).toBe(variant === "default" ? "HighlightText" : "CanvasText");
+    expect(authoredDeclaration(indicator, "box-shadow", media)).toBe("none");
+
+    await user.click(two);
+    expect(one).not.toHaveAttribute("data-active");
+    expect(two).toHaveAttribute("data-active");
+    expect(two).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel two");
+    expect(authoredDeclaration(indicator, "background-color", media)).toBe("Highlight");
+    expect(authoredDeclaration(two, "color", media)).toBe(variant === "default" ? "HighlightText" : "CanvasText");
+  });
+
+  it("uses the existing semantic foreground token for the default indicator shadow", () => {
+    supplyTabGeometry();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList data-geometry='list'>
+          <TabsTrigger
+            value='one'
+            data-geometry='one'>
+            One
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    expect(authoredDeclaration(screen.getByRole("presentation"), "box-shadow")).toBe(
+      "0 1px 2px color-mix(in oklch, var(--ac-foreground), transparent 95%)",
+    );
+  });
+
   it("exports a CSS Module variant generator with default and consumer classes", () => {
     expect(TabsModule.tabsListVariants()).toContain(styles.list);
     expect(TabsModule.tabsListVariants()).toContain(styles.default);

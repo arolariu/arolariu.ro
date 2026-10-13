@@ -30,9 +30,11 @@ export interface TabsListState extends Readonly<BaseTabs.List.State> {
 /** Options for generating tab list classes without rendering a component. */
 export interface TabsListVariantOptions {
   /** Visual presentation. @default "default" */
-  readonly variant?: TabsListVariant;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+  readonly variant?: TabsListVariant | undefined;
   /** Additional classes merged with the CSS Module classes. */
-  readonly className?: string;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+  readonly className?: string | undefined;
 }
 
 type PrimitiveListRenderCallback = Exclude<BaseTabs.List.Props["render"], React.ReactElement | undefined>;
@@ -41,11 +43,15 @@ type PrimitiveListRenderCallback = Exclude<BaseTabs.List.Props["render"], React.
 export type TabsListProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseTabs.List>, "className" | "render"> & {
     /** Visual presentation. The line variant retains the animated underline. @default "default" */
-    variant?: TabsListVariant;
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    variant?: TabsListVariant | undefined;
     /** Additional classes, optionally derived from the primitive and variant state. */
-    className?: string | ((state: TabsListState) => string | undefined);
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    className?: string | ((state: TabsListState) => string | undefined) | undefined;
     /** Element or callback composed by Base UI with current list and variant state. */
-    render?: React.ReactElement | ((props: Parameters<PrimitiveListRenderCallback>[0], state: TabsListState) => React.ReactElement);
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    render?:
+      React.ReactElement | ((props: Parameters<PrimitiveListRenderCallback>[0], state: TabsListState) => React.ReactElement) | undefined;
   }
 >;
 
@@ -215,25 +221,32 @@ TabsContent.displayName = "TabsContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Tabs {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type State = TabsState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsList {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsListProps;
   export type State = TabsListState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsTriggerProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type State = TabsTriggerState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsContentProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type State = TabsContentState;
 }
 

@@ -124,7 +124,7 @@
   height: var(--active-tab-height);
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-background);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--ac-foreground), transparent 95%);
   /* Preserve the local sliding/resizing indicator for unequal tab labels. */
   transition-property: translate, width, height;
   transition-duration: 200ms;
@@ -191,8 +191,19 @@
 }
 
 @media (forced-colors: active) {
-  .indicator {
+  .indicator,
+  .line .indicator {
     background-color: Highlight;
+    box-shadow: none;
     forced-color-adjust: none;
+  }
+
+  .default .tab[data-active] {
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+
+  .line .tab[data-active] {
+    color: CanvasText;
   }
 }
