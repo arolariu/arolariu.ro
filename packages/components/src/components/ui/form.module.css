@@ -9,11 +9,80 @@
 
 .description {
   color: var(--ac-muted-foreground);
-  font-size: 0.8rem;
+  font-size: var(--ac-text-sm);
+  margin: 0;
 }
 
 .message {
   color: var(--ac-destructive);
-  font-size: 0.8rem;
+  font-size: var(--ac-text-sm);
   font-weight: 500;
+  margin: 0;
+}
+
+.demoForm {
+  display: grid;
+  gap: var(--ac-space-4);
+  inline-size: min(26rem, 100%);
+}
+
+.demoFields {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+.demoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+
+.demoComposedControl {
+  min-inline-size: 0;
+}
+
+.demoFocusedControl {
+  border-color: var(--ac-primary);
+}
+
+.demoOutput {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.demoSummary {
+  border: 1px solid var(--ac-destructive);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-destructive);
+  padding: var(--ac-space-3);
+  font-size: var(--ac-text-sm);
+}
+
+.demoProgress {
+  display: grid;
+  gap: var(--ac-space-2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.demoProgress progress {
+  accent-color: var(--ac-primary);
+  inline-size: 100%;
+}
+
+.demoProgress p {
+  margin: 0;
+}
+
+@media (forced-colors: active) {
+  .labelError,
+  .message {
+    color: LinkText;
+  }
+
+  .demoSummary {
+    border-color: CanvasText;
+    color: CanvasText;
+  }
 }
