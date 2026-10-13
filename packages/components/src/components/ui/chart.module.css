@@ -155,6 +155,21 @@
   gap: var(--ac-space-2);
 }
 
+.legendButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.legendButton:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
 .legendItem svg {
   width: 0.75rem;
   height: 0.75rem;

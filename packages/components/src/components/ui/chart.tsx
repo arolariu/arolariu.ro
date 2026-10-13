@@ -18,6 +18,7 @@ import styles from "./chart.module.css";
 
 const THEMES = {light: "", dark: ".dark"} as const;
 const INITIAL_DIMENSION = {width: 320, height: 200} as const;
+const HEX_COLOR_LENGTHS: ReadonlySet<number> = new Set([4, 5, 7, 9]);
 
 /**
  * Describes per-series chart metadata used by legend and tooltip renderers.
@@ -110,7 +111,11 @@ export interface ChartContainerProps
  * - `ref`, `id`, `className`, and native attributes belong to the outer chart div.
  *   The responsive implementation receives only sizing options and the existing
  *   caller-owned `innerResponsiveContainerStyle` compatibility passthrough.
- * - Each instance gets a unique CSS scope, even when caller IDs repeat.
+ * - CSS scope preserves React's identifier identity, independently of native id.
+ *   When combining separate SSR roots in one document, callers must assign a
+ *   distinct React `identifierPrefix` to each server root and pass the same
+ *   prefix to that root's hydrateRoot. Uncoordinated server roots can share useId
+ *   values; this helper does not invent a global or random namespace for them.
  *
  * @example
  * ```tsx
@@ -143,7 +148,7 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
     ref,
   ): React.JSX.Element => {
     const uniqueId = React.useId();
-    const chartId = `chart-${id ? normalizeChartId(id) + "-" : ""}${normalizeChartId(uniqueId)}`;
+    const chartId = `chart-${encodeChartScope(uniqueId)}`;
 
     return (
       <ChartContext.Provider value={{config}}>
@@ -194,7 +199,8 @@ export interface ChartStyleProps {
  * - Series keys must be ASCII letters, digits, underscores or hyphens.
  * - Colors accept hex/named colors and balanced CSS color/var functions, not
  *   declaration delimiters, comments, URLs, escapes or HTML. Invalid entries
- *   are omitted. Selectors are escaped and quoted; theme scope remains `.dark`.
+ *   are omitted. Standard CSS whitespace is normalized to spaces. Selectors
+ *   are escaped and quoted; theme scope remains `.dark`.
  *
  * @example
  * ```tsx
@@ -206,13 +212,15 @@ export interface ChartStyleProps {
 const ChartStyle = ({id, config}: Readonly<ChartStyleProps>): React.JSX.Element | null => {
   const rules = (["light", "dark"] as const)
     .map((theme) => {
-      const declarations = Object.entries(config).flatMap(([key, itemConfig]) => {
-        if (!/^[\w-]+$/u.test(key)) {
-          return [];
-        }
-        const color = getSafeChartColor(itemConfig.theme?.[theme] ?? itemConfig.color);
-        return color ? [`  --color-${key}: ${color};`] : [];
-      });
+      const declarations = Object.entries(config)
+        .map(([key, itemConfig]) => {
+          if (!/^[\w-]+$/u.test(key)) {
+            return null;
+          }
+          const color = getSafeChartColor(itemConfig.theme?.[theme] ?? itemConfig.color);
+          return color ? `  --color-${key}: ${color};` : null;
+        })
+        .filter((declaration) => declaration !== null);
       return declarations.length ? `${THEMES[theme]} [data-chart="${escapeChartSelector(id)}"] {\n${declarations.join("\n")}\n}` : null;
     })
     .filter((rule) => rule !== null);
@@ -224,20 +232,26 @@ const ChartStyle = ({id, config}: Readonly<ChartStyleProps>): React.JSX.Element 
   return <style>{rules.join("\n")}</style>;
 };
 
-function normalizeChartId(id: string): string {
-  return id.replace(/[^\w-]/gu, (character) => `_${character.codePointAt(0)?.toString(16)}_`);
+function encodeChartScope(id: string): string {
+  // Fixed-width UTF-16 encoding is injective, including literal escape-like prefixes.
+  let encoded = "";
+  for (let index = 0; index < id.length; index++) {
+    // eslint-disable-next-line unicorn/prefer-code-point -- Preserve every UTF-16 code unit, including lone surrogates.
+    encoded += id.charCodeAt(index).toString(16).padStart(4, "0");
+  }
+  return encoded;
 }
 
 function escapeChartSelector(id: string): string {
-  return id.replace(/[^\w-]/gu, (character) => `\\${character.codePointAt(0)?.toString(16)} `);
+  return id.replaceAll(/[^\w-]/gu, (character) => `\\${character.codePointAt(0)?.toString(16)} `);
 }
 
 function getSafeChartColor(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
-  const color = value.trim();
-  if (/^#[\da-f]{3,4}$/iu.test(color) || /^#[\da-f]{6}(?:[\da-f]{2})?$/iu.test(color) || /^[a-z]+$/iu.test(color)) {
+  const color = value.replaceAll(/[\t\n\f\r ]+/gu, " ").trim();
+  if ((HEX_COLOR_LENGTHS.has(color.length) && /^#[\da-f]+$/iu.test(color)) || /^[a-z]+$/iu.test(color)) {
     return color;
   }
   if (
@@ -306,6 +320,9 @@ export type ChartTooltipContentProps = Omit<
  *   payload array, and can return a row node, a value/name tuple or null to hide
  *   a row. Config formatters/units apply when no row formatter supplies a value.
  * - Native DOM attributes and the ref target the tooltip div.
+ * - Ref-capable content helpers must be instantiated: migrate the former
+ *   `content={ChartTooltipContent}` pattern to `content={<ChartTooltipContent />}`
+ *   or `content={(props) => <ChartTooltipContent {...props} />}`.
  * - Ignores `wrapperClassName`, `contentStyle`, `itemStyle`, `labelStyle`, and
  *   primitive positioning/animation/sorting props because this helper renders
  *   its own DOM structure. Accessibility-layer content uses a live status.
@@ -511,10 +528,13 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
  */
 const ChartLegend = RechartsPrimitive.Legend;
 
-/** Recharts legend content callbacks plus native div attributes and config lookup options. */
-export type ChartLegendContentProps = Omit<React.ComponentPropsWithoutRef<"div">, "onClick" | "onMouseEnter" | "onMouseLeave">
-  & Omit<DefaultLegendContentProps, keyof React.ComponentPropsWithoutRef<"div"> | "layout">
-  & Pick<DefaultLegendContentProps, "onClick" | "onMouseEnter" | "onMouseLeave">
+type LegendItemEventKey = Extract<keyof DefaultLegendContentProps, `on${string}`>;
+type LegendRootAttributes = Omit<React.ComponentPropsWithoutRef<"div">, `on${string}`>;
+
+/** Recharts item-event signatures, native non-event div attributes and config lookup options. */
+export type ChartLegendContentProps = LegendRootAttributes
+  & Omit<DefaultLegendContentProps, keyof React.ComponentPropsWithoutRef<"div"> | "layout" | "align" | "verticalAlign">
+  & Pick<DefaultLegendContentProps, LegendItemEventKey>
   & Pick<
     RechartsPrimitive.LegendProps,
     | "layout"
@@ -533,6 +553,10 @@ export type ChartLegendContentProps = Omit<React.ComponentPropsWithoutRef<"div">
     readonly hideIcon?: boolean;
     /** Direct or nested payload field identifying a config entry. */
     readonly nameKey?: string;
+    /** Content spacing only; outer legend positioning remains primitive-owned. @default "bottom" */
+    readonly verticalAlign?: "top" | "bottom" | "middle";
+    /** Accepted legacy container alignment; unused by the custom content layout. */
+    readonly align?: "left" | "center" | "right";
   };
 
 // Recharts also injects these internal dimensions into cloned legend content.
@@ -549,7 +573,17 @@ type InjectedLegendDimensions = {
  * - Renders a `<div>` element when legend payload exists
  * - Built on `recharts` legend payloads and shared chart config context
  * - Honors `payload`, `verticalAlign`, `className`, and the custom `hideIcon`
- *   and `nameKey` props, formatters, item mouse callbacks and native DOM refs/props
+ *   and `nameKey` props, formatters, native non-event attributes and DOM refs.
+ * - Only `onClick`, `onMouseEnter` and `onMouseLeave` are invoked per item with
+ *   Recharts' entry/index/event arguments. All other primitive item-event props
+ *   are accepted for content compatibility but consumed without invocation;
+ *   they are never native root handlers. Attach native handlers to a parent
+ *   element or ChartContainer instead.
+ * - Items with an onClick handler use native, non-submit buttons for keyboard
+ *   activation. Other items remain display-only divs.
+ * - Migrate `content={ChartLegendContent}` to `content={<ChartLegendContent />}`
+ *   or `content={(props) => <ChartLegendContent {...props} />}`; a forwardRef
+ *   component object is not a Recharts content function or instantiated element.
  * - Text falls back from config label to payload value to a string/number dataKey.
  * - `middle` uses the same content spacing as `bottom`; positioning remains
  *   owned by the Recharts Legend primitive.
@@ -613,7 +647,7 @@ const ChartLegendContent: React.ForwardRefExoticComponent<ChartLegendContentProp
 
     return (
       <div
-        {...props}
+        {...getLegendRootAttributes(props)}
         ref={ref}
         data-slot='chart-legend'
         className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}>
@@ -627,14 +661,12 @@ const ChartLegendContent: React.ForwardRefExoticComponent<ChartLegendContentProp
             "--ac-chart-indicator-background": getSafeChartColor(item.color) ?? "transparent",
           };
 
-          return (
-            <div
-              key={`${key}-${index}`}
-              data-slot='chart-legend-item'
-              onClick={onClick ? (event) => onClick(item, index, event) : undefined}
-              onMouseEnter={onMouseEnter ? (event) => onMouseEnter(item, index, event) : undefined}
-              onMouseLeave={onMouseLeave ? (event) => onMouseLeave(item, index, event) : undefined}
-              className={styles.legendItem}>
+          const mouseHandlers: Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> = {
+            onMouseEnter: onMouseEnter ? (event) => onMouseEnter(item, index, event) : undefined,
+            onMouseLeave: onMouseLeave ? (event) => onMouseLeave(item, index, event) : undefined,
+          };
+          const content = (
+            <>
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />
               ) : (
@@ -645,6 +677,26 @@ const ChartLegendContent: React.ForwardRefExoticComponent<ChartLegendContentProp
                 />
               )}
               {itemFormatter ? itemFormatter(value, item, index) : value}
+            </>
+          );
+
+          return onClick ? (
+            <button
+              key={`${key}-${index}`}
+              type='button'
+              data-slot='chart-legend-item'
+              {...mouseHandlers}
+              onClick={(event) => onClick(item, index, event)}
+              className={cn(styles.legendItem, styles.legendButton)}>
+              {content}
+            </button>
+          ) : (
+            <div
+              key={`${key}-${index}`}
+              data-slot='chart-legend-item'
+              {...mouseHandlers}
+              className={styles.legendItem}>
+              {content}
             </div>
           );
         })}
@@ -652,6 +704,18 @@ const ChartLegendContent: React.ForwardRefExoticComponent<ChartLegendContentProp
     );
   },
 );
+
+function getLegendRootAttributes(
+  props: Readonly<LegendRootAttributes & Pick<DefaultLegendContentProps, LegendItemEventKey>>,
+): LegendRootAttributes {
+  const attributes = {...props};
+  for (const key of Object.keys(attributes)) {
+    if (key.startsWith("on")) {
+      Reflect.deleteProperty(attributes, key);
+    }
+  }
+  return attributes;
+}
 
 function isFormatterTuple(value: React.ReactNode): value is readonly [React.ReactNode, React.ReactNode] {
   return Array.isArray(value) && value.length === 2;

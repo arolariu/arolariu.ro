@@ -1,5 +1,7 @@
 import {act, cleanup, fireEvent, render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {renderToString} from "react-dom/server";
 import * as RechartsPrimitive from "recharts";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
@@ -221,6 +223,14 @@ const config: ChartConfig = {
   },
 };
 
+function renderLegendContent(props: Readonly<DefaultLegendContentProps>): React.JSX.Element {
+  return <ChartLegendContent {...props} />;
+}
+
+function renderTooltipContent(props: Readonly<RechartsPrimitive.TooltipContentProps>): React.JSX.Element {
+  return <ChartTooltipContent {...props} />;
+}
+
 describe("ChartContainer", () => {
   function renderChart({className = undefined, id = undefined}: Readonly<{className?: string; id?: string}> = {}): ReturnType<
     typeof render
@@ -357,11 +367,11 @@ describe("ChartContainer", () => {
             active
             defaultIndex={0}
             isAnimationActive={false}
-            content={<ChartTooltipContent />}
+            content={renderTooltipContent}
           />
           <ChartLegend
             position={{x: 0, y: "100%"}}
-            content={<ChartLegendContent />}
+            content={renderLegendContent}
           />
         </BarChart>
       </ChartContainer>,
@@ -374,6 +384,69 @@ describe("ChartContainer", () => {
 });
 
 describe("ChartStyle", () => {
+  it("keeps distinct SSR root palettes isolated when React prefixes resemble escaped punctuation", () => {
+    function serverChart(identifierPrefix: string, color: string): string {
+      return renderToString(
+        <ChartContainer
+          id='sales'
+          config={{revenue: {color}}}
+          width={400}
+          height={200}>
+          <LineChart data={[{revenue: 0}, {revenue: 1}]}>
+            <Line
+              dataKey='revenue'
+              stroke='var(--color-revenue)'
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ChartContainer>,
+        {identifierPrefix},
+      );
+    }
+    const firstMarkup = serverChart("scope!", "#123456");
+    const secondMarkup = serverChart("scope_21_", "#abcdef");
+    const host = document.createElement("div");
+    document.body.append(host);
+    try {
+      host.innerHTML = firstMarkup + secondMarkup;
+      const roots = host.querySelectorAll("[data-slot='chart']");
+      expect(roots).toHaveLength(2);
+      expect(roots[0]?.getAttribute("data-chart")).not.toBe(roots[1]?.getAttribute("data-chart"));
+      expect(roots[0] && getComputedStyle(roots[0]).getPropertyValue("--color-revenue")).toBe("#123456");
+      expect(roots[1] && getComputedStyle(roots[1]).getPropertyValue("--color-revenue")).toBe("#abcdef");
+      const repeat = document.createElement("div");
+      repeat.innerHTML = serverChart("scope!", "#123456");
+      expect(repeat.querySelector("[data-slot='chart']")?.getAttribute("data-chart")).toBe(roots[0]?.getAttribute("data-chart"));
+    } finally {
+      host.remove();
+    }
+  });
+
+  it.each([
+    {color: "rgb(255\t0\n0)", normalized: "rgb(255 0 0)", bridged: "rgb(255 0 0)"},
+    {color: "var(\n--ac-primary\n)", normalized: "var( --ac-primary )", bridged: "var(--ac-primary)"},
+    {color: "hsl(0\r\n100%\f50%)", normalized: "hsl(0 100% 50%)", bridged: "hsl(0 100% 50%)"},
+  ])("retains standard CSS whitespace in palette declarations and both indicator bridges: $color", ({color, normalized, bridged}) => {
+    const {container} = render(
+      <ChartContainer config={{revenue: {label: "Revenue", color}}}>
+        <div>
+          <ChartTooltipContent
+            active
+            hideLabel
+            color={color}
+            payload={[{graphicalItemId: "revenue", name: "revenue", value: 0}]}
+          />
+          <ChartLegendContent payload={[{value: "Revenue", dataKey: "revenue", color}]} />
+        </div>
+      </ChartContainer>,
+    );
+    expect(container.querySelector("style")?.textContent).toContain(`--color-revenue: ${normalized};`);
+    for (const slot of ["chart-tooltip-indicator", "chart-legend-indicator"]) {
+      const swatch = container.querySelector(`[data-slot='${slot}']`);
+      expect(swatch instanceof HTMLElement && swatch.style.getPropertyValue("--ac-chart-indicator-background")).toBe(bridged);
+    }
+  });
+
   it("scopes each chart palette independently even when caller IDs repeat", () => {
     const {container} = render(
       <>
@@ -437,6 +510,7 @@ describe("ChartStyle", () => {
     "red/*comment*/",
     "rgb(1 2 3",
     "#xyz",
+    "rgb(255\t0\n0)\n; --injected: red",
   ])("rejects unsafe or malformed color %s", (color) => {
     const {container} = render(
       <ChartStyle
@@ -740,6 +814,82 @@ describe("ChartTooltipContent", () => {
 });
 
 describe("ChartLegendContent", () => {
+  it("provides native keyboard activation without form submission for clickable legend items", async () => {
+    const user = userEvent.setup();
+    const calls: Array<readonly [number, string]> = [];
+    let submissions = 0;
+    render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submissions++;
+        }}>
+        <ChartContainer config={config}>
+          <BarChart data={[{revenue: 1}]}>
+            <Bar
+              dataKey='revenue'
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              content={<ChartLegendContent />}
+              onClick={(_item, index, event) => calls.push([index, event.type])}
+            />
+          </BarChart>
+        </ChartContainer>
+      </form>,
+    );
+    const item = screen.getByRole("button", {name: "Revenue"});
+    expect(item).toHaveAttribute("type", "button");
+    item.focus();
+    await user.keyboard("{Enter} ");
+    expect(calls).toEqual([
+      [0, "click"],
+      [0, "click"],
+    ]);
+    expect(submissions).toBe(0);
+  });
+
+  it.each(["element", "callback"] as const)(
+    "consumes unsupported Recharts item events rather than attaching native handlers with %s content",
+    (contentType) => {
+      const unsupportedCalls: unknown[][] = [];
+      const supportedCalls: Array<{item: RechartsPrimitive.LegendPayload; index: number; type: string; target: EventTarget | null}> = [];
+      const {container} = render(
+        <ChartContainer config={config}>
+          <BarChart data={[{revenue: 1}]}>
+            <Bar
+              dataKey='revenue'
+              fill='var(--color-revenue)'
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              content={contentType === "element" ? <ChartLegendContent aria-label='Chart series' /> : renderLegendContent}
+              onMouseOver={(...args) => unsupportedCalls.push(args)}
+              onCopyCapture={(...args) => unsupportedCalls.push(args)}
+              onClick={(item, index, event) => supportedCalls.push({item, index, type: event.type, target: event.currentTarget})}
+              onMouseEnter={(item, index, event) => supportedCalls.push({item, index, type: event.type, target: event.currentTarget})}
+              onMouseLeave={(item, index, event) => supportedCalls.push({item, index, type: event.type, target: event.currentTarget})}
+            />
+          </BarChart>
+        </ChartContainer>,
+      );
+      const row = container.querySelector("[data-slot='chart-legend-item']");
+      expect(row).toBeInTheDocument();
+      const label = screen.getByText("Revenue");
+      fireEvent.mouseOver(label);
+      fireEvent.copy(label);
+      fireEvent.click(label);
+      fireEvent.mouseLeave(label);
+      expect(unsupportedCalls).toEqual([]);
+      expect(supportedCalls.map(({type}) => type)).toEqual(["mouseenter", "click", "mouseleave"]);
+      for (const call of supportedCalls) {
+        expect(call.item.dataKey).toBe("revenue");
+        expect(call.index).toBe(0);
+        expect(call.target).toBe(row);
+      }
+    },
+  );
+
   it("retains duplicate labels without colliding React keys across updates", () => {
     const errors = vi.spyOn(console, "error");
     const payload = [

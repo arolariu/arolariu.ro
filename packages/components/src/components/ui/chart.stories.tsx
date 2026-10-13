@@ -48,7 +48,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Six config-aware helpers plus identity-preserving Recharts exports. Container refs and native attributes target the outer div. Resize/layout are owned by Recharts; .dark ancestors select the dark palette.",
+          "Six config-aware helpers plus identity-preserving Recharts exports. Container refs and native attributes target the outer div. Separate SSR roots must use distinct React identifierPrefix values and retain them for hydration. Use content={<ChartTooltipContent />} or a callback returning that JSX—not content={ChartTooltipContent}; the same migration applies to ChartLegendContent. Legend content invokes only item click/enter/leave callbacks, never forwards item callbacks as native root handlers. Resize/layout are owned by Recharts; .dark ancestors select the dark palette.",
       },
     },
   },
