@@ -131,7 +131,7 @@ function RestoreFocusDemo(): React.JSX.Element {
   const [open, setOpen] = useState(false);
   return (
     <section className={styles.demo}>
-      <p>Open an inline focus scope, then close it to return focus to its trigger.</p>
+      <p>The draft's native autofocus takes entry focus. Closing the inline scope still returns focus to its original trigger.</p>
       <button
         type='button'
         className={styles.button}
@@ -140,13 +140,15 @@ function RestoreFocusDemo(): React.JSX.Element {
       </button>
       {open && (
         <FocusScope
-          autoFocus
           aria-label='Inline workbench'
           className={styles.panel}>
           <div className={styles.controls}>
             <label>
               Draft
-              <input className={styles.input} />
+              <input
+                autoFocus
+                className={styles.input}
+              />
             </label>
             <button
               type='button'
@@ -161,7 +163,7 @@ function RestoreFocusDemo(): React.JSX.Element {
   );
 }
 
-/** Restoration is tied to the inline scope's mount lifetime. */
+/** Native descendant autofocus does not replace the inline scope's original restoration owner. */
 export const WithRestoreFocus: Story = {render: () => <RestoreFocusDemo />};
 
 /** SDK modal comparison: Dialog supplies focus ownership without any FocusScope wrapper. */

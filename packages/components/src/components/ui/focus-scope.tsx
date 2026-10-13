@@ -74,7 +74,7 @@ function isAvailable(element: HTMLElement): boolean {
     const style = view?.getComputedStyle(ancestor);
     if (style?.display === "none") return false;
     if (ancestor instanceof HTMLDetailsElement && !ancestor.open) {
-      const summary = ancestor.querySelector("summary");
+      const summary = [...ancestor.children].find((child) => child.tagName === "SUMMARY");
       if (!summary?.contains(element)) return false;
     }
   }
@@ -91,17 +91,20 @@ function getTabIndex(element: HTMLElement): number {
   return element.tabIndex;
 }
 
-function isRadioTabStop(element: HTMLElement, candidates: readonly HTMLElement[]): boolean {
-  if (!(element instanceof HTMLInputElement) || element.type !== "radio" || !element.name) return true;
-  const group = candidates.filter(
-    (candidate): candidate is HTMLInputElement =>
-      candidate instanceof HTMLInputElement
-      && candidate.type === "radio"
-      && candidate.name === element.name
-      && candidate.form === element.form,
+function isRadioGroupRoot(root: Node): root is Document | DocumentFragment {
+  return root.nodeType === Node.DOCUMENT_NODE || root.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+}
+
+function isRadioTabStop(element: HTMLElement): boolean {
+  const Input = element.ownerDocument.defaultView?.HTMLInputElement ?? HTMLInputElement;
+  if (!(element instanceof Input) || element.type !== "radio" || !element.name) return true;
+  const root = element.getRootNode();
+  if (!isRadioGroupRoot(root)) return false;
+  const group = [...root.querySelectorAll<HTMLInputElement>("input")].filter(
+    (candidate) => candidate.type === "radio" && candidate.name === element.name && candidate.form === element.form,
   );
   const selected = group.find((candidate) => candidate.checked);
-  return element === (selected ?? group[0]);
+  return !selected || element === selected;
 }
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
@@ -109,7 +112,7 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
     (element) => getTabIndex(element) >= 0 && isAvailable(element),
   );
   return available
-    .filter((element) => isRadioTabStop(element, available))
+    .filter((element) => isRadioTabStop(element))
     .toSorted((left, right) => {
       const leftIndex = getTabIndex(left);
       const rightIndex = getTabIndex(right);
@@ -127,6 +130,10 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * visible, enabled, non-inert tabbable descendants. An empty scope uses the container
  * as its programmatic focus fallback. Focus restoration targets the original connected,
  * available focus owner on unmount, not on option changes.
+ * A hidden, scope-owned entry marker captures that owner during commit before descendant
+ * native `autoFocus` runs; connected Strict Mode effect replay is not treated as an exit.
+ * Native radio groups are selected by name, form owner and tree before intersecting
+ * their eligible targets with this scope, including checked peers outside the scope.
  *
  * This is a local Tab controller, not a modal manager: it does not inert siblings,
  * dismiss on Escape, intercept pointer focus, or control portaled descendants.
@@ -150,15 +157,24 @@ const FocusScope = React.forwardRef<HTMLDivElement, FocusScopeProps>(
   ): React.ReactElement => {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const restoreFocusRef = React.useRef(restoreFocus);
+    const entryFocusRef = React.useRef<Element | null>(null);
+    const entryCapturedRef = React.useRef(false);
+    const captureEntryFocus = React.useCallback((marker: HTMLSpanElement | null): void => {
+      if (marker && !entryCapturedRef.current) {
+        entryFocusRef.current = marker.ownerDocument.activeElement;
+        entryCapturedRef.current = true;
+      }
+    }, []);
 
     React.useEffect(() => {
       restoreFocusRef.current = restoreFocus;
     }, [restoreFocus]);
 
     React.useEffect(() => {
-      const previousFocus = containerRef.current?.ownerDocument.activeElement;
+      const container = containerRef.current;
       return () => {
-        if (restoreFocusRef.current && previousFocus instanceof HTMLElement && isAvailable(previousFocus)) {
+        const previousFocus = entryFocusRef.current;
+        if (!container?.isConnected && restoreFocusRef.current && previousFocus instanceof HTMLElement && isAvailable(previousFocus)) {
           previousFocus.focus();
         }
       };
@@ -203,7 +219,15 @@ const FocusScope = React.forwardRef<HTMLDivElement, FocusScopeProps>(
         role: props.role ?? "group",
         tabIndex: props.tabIndex ?? -1,
         onKeyDown: handleKeyDown,
-        children,
+        children: (
+          <>
+            <span
+              hidden
+              ref={captureEntryFocus}
+            />
+            {children}
+          </>
+        ),
       },
     });
   },

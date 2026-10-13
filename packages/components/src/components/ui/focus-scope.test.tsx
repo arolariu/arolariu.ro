@@ -6,6 +6,334 @@ import {describe, expect, it} from "vitest";
 import {FocusScope} from "./focus-scope";
 
 describe("FocusScope", () => {
+  it("excludes a nested summary under a closed summary-less outer details on entry", () => {
+    render(
+      <FocusScope autoFocus>
+        <details>
+          <details>
+            <summary>Hidden nested summary</summary>
+          </details>
+        </details>
+        <button type='button'>Available action</button>
+      </FocusScope>,
+    );
+
+    expect(screen.getByRole("button", {name: "Available action"})).toHaveFocus();
+  });
+
+  it("wraps actual Tab before a nested summary hidden by a closed summary-less outer details", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FocusScope>
+          <button type='button'>First available</button>
+          <button type='button'>Final available</button>
+          <details>
+            <details>
+              <summary>Hidden nested final summary</summary>
+            </details>
+          </details>
+        </FocusScope>
+        <button type='button'>Outside</button>
+      </>,
+    );
+    screen.getByRole("button", {name: "Final available"}).focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "First available"})).toHaveFocus();
+  });
+
+  it("recognizes the outer details' own first direct summary rather than an earlier nested summary", () => {
+    render(
+      <FocusScope autoFocus>
+        <details>
+          <details>
+            <summary>Hidden earlier nested summary</summary>
+          </details>
+          <summary>Visible outer summary</summary>
+        </details>
+        <button type='button'>Later action</button>
+      </FocusScope>,
+    );
+
+    expect(screen.getByText("Visible outer summary")).toHaveFocus();
+  });
+
+  it.each(["same-form", "linked-form", "no-form"] as const)(
+    "excludes an unchecked local radio when a checked native group peer is outside the scope (%s)",
+    (ownership) => {
+      const peer = (
+        <label>
+          <input
+            type='radio'
+            name='external-group'
+            defaultChecked
+            form={ownership === "linked-form" ? "radio-owner" : undefined}
+          />
+          External checked peer
+        </label>
+      );
+      const scope = (
+        <FocusScope autoFocus>
+          <label>
+            <input
+              type='radio'
+              name='external-group'
+            />
+            Local unchecked peer
+          </label>
+          <button type='button'>Available local action</button>
+        </FocusScope>
+      );
+      render(
+        ownership === "same-form" ? (
+          <form id='radio-owner'>
+            {peer}
+            {scope}
+          </form>
+        ) : ownership === "linked-form" ? (
+          <>
+            {peer}
+            <form id='radio-owner'>{scope}</form>
+          </>
+        ) : (
+          <>
+            {peer}
+            {scope}
+          </>
+        ),
+      );
+      const external = screen.getByLabelText<HTMLInputElement>("External checked peer");
+      const local = screen.getByLabelText<HTMLInputElement>("Local unchecked peer");
+      expect(external).toBeChecked();
+      expect(local).not.toBeChecked();
+      expect(external.form).toBe(local.form);
+      expect(external.getRootNode()).toBe(local.getRootNode());
+
+      expect(screen.getByRole("button", {name: "Available local action"})).toHaveFocus();
+    },
+  );
+
+  it("does not treat a checked same-name radio with a different form owner as a group peer", () => {
+    render(
+      <>
+        <form id='other-radio-owner'>
+          <label>
+            <input
+              type='radio'
+              name='distinct-owner'
+              defaultChecked
+            />
+            Other form peer
+          </label>
+        </form>
+        <form id='local-radio-owner'>
+          <FocusScope autoFocus>
+            <label>
+              <input
+                type='radio'
+                name='distinct-owner'
+              />
+              Local form peer
+            </label>
+            <button type='button'>Later action</button>
+          </FocusScope>
+        </form>
+      </>,
+    );
+    const external = screen.getByLabelText<HTMLInputElement>("Other form peer");
+    const local = screen.getByLabelText<HTMLInputElement>("Local form peer");
+    expect(external.form).not.toBe(local.form);
+    expect(local).toHaveFocus();
+  });
+
+  it("keeps an unchecked local peer eligible when its native group has no checked radio", () => {
+    render(
+      <>
+        <label>
+          <input
+            type='radio'
+            name='unselected-group'
+          />
+          External unchecked peer
+        </label>
+        <FocusScope autoFocus>
+          <label>
+            <input
+              type='radio'
+              name='unselected-group'
+            />
+            Local unchecked peer
+          </label>
+          <button type='button'>Later action</button>
+        </FocusScope>
+      </>,
+    );
+
+    expect(screen.getByLabelText("Local unchecked peer")).toHaveFocus();
+  });
+
+  it("uses the radio's actual owner-document tree, not a global document group", () => {
+    const {getByTitle, unmount: unmountIframe} = render(<iframe title='Radio owner document' />);
+    const iframe = getByTitle("Radio owner document");
+    if (!(iframe instanceof HTMLIFrameElement)) throw new TypeError("The owner-document fixture requires an iframe element.");
+    const otherDocument = iframe.contentDocument;
+    if (!otherDocument) throw new Error("The owner-document fixture requires an actual iframe document.");
+    const container = otherDocument.createElement("div");
+    otherDocument.body.append(container);
+    const {getByLabelText, getByRole, unmount} = render(
+      <>
+        <label>
+          <input
+            type='radio'
+            name='owner-document-group'
+            defaultChecked
+          />
+          Owner document checked peer
+        </label>
+        <FocusScope
+          autoFocus
+          restoreFocus={false}>
+          <label>
+            <input
+              type='radio'
+              name='owner-document-group'
+            />
+            Owner document local peer
+          </label>
+          <button type='button'>Owner document available action</button>
+        </FocusScope>
+      </>,
+      {container, baseElement: otherDocument.body},
+    );
+    try {
+      const external = getByLabelText("Owner document checked peer");
+      const local = getByLabelText("Owner document local peer");
+      const Input = otherDocument.defaultView?.HTMLInputElement;
+      if (!Input || !(external instanceof Input) || !(local instanceof Input)) {
+        throw new TypeError("The owner-document fixture requires native radio inputs.");
+      }
+      expect(external.ownerDocument).toBe(otherDocument);
+      expect(local.ownerDocument).toBe(otherDocument);
+      expect(external.form).toBeNull();
+      expect(local.form).toBeNull();
+      expect(external).toBeChecked();
+      expect(local).not.toBeChecked();
+
+      expect(otherDocument.activeElement).toBe(getByRole("button", {name: "Owner document available action"}));
+    } finally {
+      unmount();
+      container.remove();
+      unmountIframe();
+    }
+  });
+
+  it.each([false, true])("restores the connected trigger after descendant native autofocus (Strict Mode: %s)", (strict) => {
+    const {rerender} = render(<button type='button'>Native autofocus trigger</button>);
+    const trigger = screen.getByRole("button", {name: "Native autofocus trigger"});
+    trigger.focus();
+    const scope = (
+      <FocusScope>
+        <input
+          autoFocus
+          aria-label='Native autofocus input'
+        />
+      </FocusScope>
+    );
+    rerender(
+      <>
+        <button type='button'>Native autofocus trigger</button>
+        {strict ? <StrictMode>{scope}</StrictMode> : scope}
+      </>,
+    );
+    expect(screen.getByRole("textbox", {name: "Native autofocus input"})).toHaveFocus();
+    expect(trigger.isConnected).toBe(true);
+
+    rerender(<button type='button'>Native autofocus trigger</button>);
+
+    expect(trigger).toHaveFocus();
+  });
+
+  it("retains the pre-entry owner when scope autofocus follows descendant native autofocus", () => {
+    const {rerender} = render(<button type='button'>Combined autofocus trigger</button>);
+    const trigger = screen.getByRole("button", {name: "Combined autofocus trigger"});
+    trigger.focus();
+    rerender(
+      <>
+        <button type='button'>Combined autofocus trigger</button>
+        <FocusScope autoFocus>
+          <button type='button'>Scope entry action</button>
+          <input
+            autoFocus
+            aria-label='Descendant native input'
+          />
+        </FocusScope>
+      </>,
+    );
+    expect(screen.getByRole("button", {name: "Scope entry action"})).toHaveFocus();
+    rerender(<button type='button'>Combined autofocus trigger</button>);
+    expect(trigger).toHaveFocus();
+  });
+
+  it.each([false, true])("respects a shadow tree's own radio group rather than document peers (checked local group: %s)", (checkedPeer) => {
+    const {getByTestId, unmount: unmountHost} = render(
+      <>
+        <label>
+          <input
+            type='radio'
+            name='shadow-group'
+            defaultChecked
+          />
+          Document checked peer
+        </label>
+        <div data-testid='radio-shadow-host' />
+      </>,
+    );
+    const host = getByTestId("radio-shadow-host");
+    const shadow = host.attachShadow({mode: "open"});
+    const container = document.createElement("div");
+    shadow.append(container);
+    const {getByLabelText, getByRole, unmount} = render(
+      <>
+        {checkedPeer && (
+          <label>
+            <input
+              type='radio'
+              name='shadow-group'
+              defaultChecked
+            />
+            Shadow checked peer
+          </label>
+        )}
+        <FocusScope
+          autoFocus
+          restoreFocus={false}>
+          <label>
+            <input
+              type='radio'
+              name='shadow-group'
+            />
+            Shadow local peer
+          </label>
+          <button type='button'>Shadow available action</button>
+        </FocusScope>
+      </>,
+      {container, baseElement: container},
+    );
+    try {
+      const local = getByLabelText("Shadow local peer");
+      expect(local.getRootNode()).toBe(shadow);
+      expect(screen.getByLabelText("Document checked peer")).toBeChecked();
+      if (checkedPeer) expect(getByLabelText("Shadow checked peer")).toBeChecked();
+      expect(shadow.activeElement).toBe(checkedPeer ? getByRole("button", {name: "Shadow available action"}) : local);
+    } finally {
+      unmount();
+      container.remove();
+      unmountHost();
+    }
+  });
+
   it("includes a visibly overridden descendant of a visibility-hidden ancestor", () => {
     const {rerender} = render(
       <FocusScope>
