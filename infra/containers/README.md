@@ -162,12 +162,14 @@ If you prefer plain configuration variables for these public values, create
 Actions > Variables**, and replace the global expression with:
 
 ```yaml
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ inputs.environment == 'production' && vars.CLERK_PUBLISHABLE_KEY_PRODUCTION || vars.CLERK_PUBLISHABLE_KEY_DEVELOPMENT }}
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[inputs.environment == 'production' && 'CLERK_PUBLISHABLE_KEY_PRODUCTION' || 'CLERK_PUBLISHABLE_KEY_DEVELOPMENT'] }}
 ```
 
 Do not substitute an environment-level `vars` value into the global expression:
 [environment variables become available only after the job starts](https://docs.github.com/en/actions/reference/workflows-and-actions/variables#configuration-variable-precedence).
 The configured environment secrets remain the workflow's supported default.
+The variable expression selects a name before reading its value, so a missing
+production key does not silently select the development key.
 
 The existing Next.js `instrumentation.register()` hook awaits
 `initializeRuntimeEnvironmentConfiguration()` before requests are served.
