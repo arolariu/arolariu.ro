@@ -1,8 +1,9 @@
 import {DirectionProvider} from "@base-ui/react/direction-provider";
+import {NavigationMenu as BaseNavigationMenu} from "@base-ui/react/navigation-menu";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import * as NavigationMenuParts from "./navigation-menu";
 import {
@@ -146,6 +147,85 @@ function MenuItems(): React.ReactElement {
 }
 
 describe("NavigationMenu", () => {
+  it("exposes a genuine React forwardRef Root instead of relying on React 19 ref-as-prop behavior", () => {
+    expect(NavigationMenu).toHaveProperty("$$typeof", Symbol.for("react.forward_ref"));
+    expect(NavigationMenu).toHaveProperty("render", expect.any(Function));
+  });
+
+  it("merges the consumer Root callback ref with a static rendered native ref and cleans both on unmount", () => {
+    const consumerNodes: (HTMLElement | null)[] = [];
+    const childRef = React.createRef<HTMLElement>();
+    const {unmount} = render(
+      <NavigationMenu
+        ref={(node) => {
+          consumerNodes.push(node);
+        }}
+        render={
+          <nav
+            ref={childRef}
+            aria-label='Forwarded root'
+          />
+        }>
+        <MenuItems />
+      </NavigationMenu>,
+    );
+    const root = screen.getByRole("navigation", {name: "Forwarded root"});
+    expect(consumerNodes).toContain(root);
+    expect(childRef.current).toBe(root);
+    expect(root).toContainElement(screen.getByRole("button", {name: "Products"}));
+    unmount();
+    expect(consumerNodes.at(-1)).toBeNull();
+    expect(childRef.current).toBeNull();
+  });
+
+  it("preserves inferred generic values and exact primitive Props and State contracts while forwarding Root refs", () => {
+    const objectValue: {readonly id: string} = {id: "products"};
+    const ref = React.createRef<HTMLElement>();
+    expectTypeOf<NavigationMenu.State>().toEqualTypeOf<BaseNavigationMenu.Root.State>();
+    expectTypeOf<NavigationMenu.Props<number>["onValueChange"]>().toEqualTypeOf<BaseNavigationMenu.Root.Props<number>["onValueChange"]>();
+    expectTypeOf<NavigationMenu.Props<typeof objectValue>["onValueChange"]>().toEqualTypeOf<
+      BaseNavigationMenu.Root.Props<typeof objectValue>["onValueChange"]
+    >();
+    const {rerender} = render(
+      <NavigationMenu
+        ref={ref}
+        defaultValue={42}
+        onValueChange={(value, details) => {
+          expectTypeOf(value).toEqualTypeOf<number | null>();
+          expectTypeOf(details).toEqualTypeOf<BaseNavigationMenu.Root.ChangeEventDetails>();
+        }}
+        className={(state) => {
+          expectTypeOf(state).toEqualTypeOf<BaseNavigationMenu.Root.State>();
+          return state.open ? "inferred-open" : "inferred-closed";
+        }}
+        render={(props, state) => {
+          expectTypeOf(state).toEqualTypeOf<BaseNavigationMenu.Root.State>();
+          return (
+            <nav
+              {...props}
+              aria-label='Inferred numeric menu'
+            />
+          );
+        }}
+      />,
+    );
+    expect(ref.current).toBe(screen.getByRole("navigation", {name: "Inferred numeric menu"}));
+    expect(ref.current).toHaveClass("inferred-open");
+    rerender(
+      <NavigationMenu
+        key='object-menu'
+        ref={ref}
+        value={objectValue}
+        onValueChange={(value, details) => {
+          expectTypeOf(value).toEqualTypeOf<typeof objectValue | null>();
+          expectTypeOf(details).toEqualTypeOf<BaseNavigationMenu.Root.ChangeEventDetails>();
+        }}
+        aria-label='Inferred object menu'
+      />,
+    );
+    expect(ref.current).toBe(screen.getByRole("navigation", {name: "Inferred object menu"}));
+  });
+
   it("publicly exports Positioner without removing the legacy Viewport adapter", () => {
     expect(NavigationMenuParts).toHaveProperty("NavigationMenuPositioner");
     expect(NavigationMenuParts.NavigationMenuViewport).toBeDefined();

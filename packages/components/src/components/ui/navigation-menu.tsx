@@ -31,6 +31,12 @@ export type NavigationMenuProps<Value = unknown> = Readonly<
   }
 >;
 
+interface NavigationMenuComponent {
+  <Value = unknown>(props: Readonly<NavigationMenuProps<Value>>): React.ReactElement;
+  readonly $$typeof: symbol;
+  displayName?: string;
+}
+
 /** Readonly props for the primitive navigation list. */
 export type NavigationMenuListProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.List>>;
 /** Readonly props for an individual navigation item. */
@@ -83,15 +89,10 @@ function withElementChildren<Render>(render: Render, children: React.ReactNode):
   return React.isValidElement(render) ? React.cloneElement(render, undefined, children) : render;
 }
 
-/**
- * Coordinates native navigation semantics and mounts one automatic portaled popup.
- *
- * @remarks
- * Base UI owns all Root render/class state and value-change details, including cancellation.
- * `align` defaults to `"start"`; `positionerProps.align` can override it.
- * Use `positionerProps={false}` to compose an explicit Positioner/legacy Viewport.
- */
-function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenu.Props<Value>>): React.ReactElement {
+function renderNavigationMenu<Value = unknown>(
+  props: Readonly<NavigationMenuProps<Value>>,
+  ref: React.ForwardedRef<HTMLElement>,
+): React.ReactElement {
   const {className, children, render, align = "start", orientation = "horizontal", positionerProps, ...otherProps} = props;
   const rootChildren = (
     <>
@@ -106,9 +107,10 @@ function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenu.Props<Va
   );
 
   return (
-    <BaseNavigationMenu.Root
+    <BaseNavigationMenu.Root<Value>
       data-slot='navigation-menu'
       {...otherProps}
+      ref={ref}
       data-orientation={orientation}
       orientation={orientation}
       render={withElementChildren(render, rootChildren)}
@@ -117,6 +119,25 @@ function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenu.Props<Va
     </BaseNavigationMenu.Root>
   );
 }
+
+function forwardNavigationMenuRef(render: typeof renderNavigationMenu): NavigationMenuComponent;
+// eslint-disable-next-line no-redeclare -- overload preserves generic values and React 18 refs without assertions
+function forwardNavigationMenuRef(
+  render: typeof renderNavigationMenu,
+): React.ForwardRefExoticComponent<React.PropsWithoutRef<NavigationMenuProps> & React.RefAttributes<HTMLElement>> {
+  return React.forwardRef(render);
+}
+
+/**
+ * Coordinates native navigation semantics and mounts one automatic portaled popup.
+ *
+ * @remarks
+ * Base UI owns all Root render/class state and value-change details, including cancellation.
+ * `align` defaults to `"start"`; `positionerProps.align` can override it.
+ * Use `positionerProps={false}` to compose an explicit Positioner/legacy Viewport.
+ * Root refs are forwarded through React.forwardRef on React 18 and 19.
+ */
+const NavigationMenu = forwardNavigationMenuRef(renderNavigationMenu);
 
 /** Renders the primitive list and preserves its open-state callbacks, native orientation and ref. */
 const NavigationMenuList = React.forwardRef<HTMLUListElement, NavigationMenuList.Props>((props, ref): React.ReactElement => {

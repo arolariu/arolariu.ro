@@ -17,7 +17,7 @@ import {
 } from "./navigation-menu";
 import styles from "./navigation-menu.module.css";
 
-const meta = {
+const meta: Meta<typeof NavigationMenu> = {
   title: "Components/Navigation/NavigationMenu",
   component: NavigationMenu,
   tags: ["autodocs"],
@@ -29,7 +29,7 @@ const meta = {
     delay: {control: "number"},
     closeDelay: {control: "number"},
   },
-} satisfies Meta<typeof NavigationMenu>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
