@@ -209,21 +209,17 @@ function useSubmenu(): SubmenuContextValue {
   if (!value) throw new Error("DropDrawerSubTrigger and DropDrawerSubContent require DropDrawerSub.");
   return value;
 }
-
 function withChildren<State>(render: RenderProp<State> | undefined, children: React.ReactNode): RenderProp<State> | undefined {
   // eslint-disable-next-line react-x/no-clone-element -- only supply compound children; SDK retains render state, handlers and refs.
   return React.isValidElement<{children?: React.ReactNode}>(render) ? React.cloneElement(render, {children}) : render;
 }
-
 function contentOf<State>(children: React.ReactNode, render: RenderProp<State> | undefined): React.ReactNode {
   return children === undefined && React.isValidElement<{children?: React.ReactNode}>(render) ? render.props.children : children;
 }
-
 function cancelActivation(event: React.SyntheticEvent): void {
   event.preventDefault();
   if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
 }
-
 function isActivationCancelled(event: React.SyntheticEvent): boolean {
   return (
     event.defaultPrevented
@@ -231,18 +227,20 @@ function isActivationCancelled(event: React.SyntheticEvent): boolean {
     || ("baseUIHandlerPrevented" in event && event.baseUIHandlerPrevented === true)
   );
 }
-
 /** Capture precedes the rendered child's own capture/bubble handlers, without replacing SDK composition. */
 function ActivationBoundary({
   children,
   disabled,
   controlRef,
+  inline = false,
 }: Readonly<{
   children: React.ReactNode;
   disabled: boolean;
   controlRef: React.RefObject<HTMLElement | null>;
+  inline?: boolean;
 }>): React.JSX.Element {
-  const handleCapture = (event: React.SyntheticEvent<HTMLDivElement>): void => {
+  const Element = inline ? "span" : "div";
+  const handleCapture = (event: React.SyntheticEvent<HTMLElement>): void => {
     if ("key" in event && event.key !== "Enter" && event.key !== " ") return;
     const control = controlRef.current;
     const disabledState = control?.getAttribute("data-disabled");
@@ -257,7 +255,7 @@ function ActivationBoundary({
   };
 
   return (
-    <div
+    <Element
       className={styles.activationBoundary}
       onClickCapture={handleCapture}
       onDoubleClickCapture={handleCapture}
@@ -265,10 +263,9 @@ function ActivationBoundary({
       onKeyDownCapture={handleCapture}
       onKeyUpCapture={handleCapture}>
       {children}
-    </div>
+    </Element>
   );
 }
-
 /** Mobile panels stay mounted; preventing their unmount is already guaranteed by that owner. */
 function requestSubmenuChange(entry: SubmenuRegistration, open: boolean, event: MouseEvent): boolean {
   const details: BaseMenu.SubmenuRoot.ChangeEventDetails = {
@@ -392,6 +389,10 @@ function DropDrawerTrigger({
   const mergedRef = useMergedRefs(ref, root.triggerRef, controlRef);
   const child = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
   const renderProp = child ?? render;
+  const inlineBoundary =
+    !React.isValidElement(renderProp)
+    || typeof renderProp.type !== "string"
+    || !/^(?:div|p|section|article|aside|nav|header|footer|main|form|fieldset|ul|ol|li|table|h[1-6])$/u.test(renderProp.type);
   const {delay, closeDelay, openOnHover, ...buttonProps} = props;
   const trigger = root.isMobile ? (
     <DrawerTrigger
@@ -419,6 +420,7 @@ function DropDrawerTrigger({
   );
   return (
     <ActivationBoundary
+      inline={inlineBoundary}
       disabled={root.disabled || Boolean(disabled)}
       controlRef={controlRef}>
       {trigger}
@@ -480,6 +482,16 @@ function MobileContent({
     (id: string, nextOpen: boolean): void => {
       if (!nextOpen) {
         openingRequestsRef.current.delete(id);
+        for (const requestedId of openingRequestsRef.current) {
+          let ancestorId = entriesRef.current.get(requestedId)?.parentId;
+          while (ancestorId !== null && ancestorId !== undefined) {
+            if (ancestorId === id) {
+              openingRequestsRef.current.delete(requestedId);
+              break;
+            }
+            ancestorId = entriesRef.current.get(ancestorId)?.parentId;
+          }
+        }
         closePath(id);
         return;
       }
@@ -676,58 +688,53 @@ function DropDrawerItem({
     if (isDisabled) cancelActivation(event);
     else onKeyDown?.(event);
   };
-  if (!root.isMobile) {
-    return (
-      <ActivationBoundary
-        disabled={isDisabled}
-        controlRef={controlRef}>
-        <DropdownMenuItem
-          data-slot='drop-drawer-item'
-          {...props}
-          ref={mergedRef}
-          disabled={isDisabled}
-          closeOnClick={closeOnClick}
-          inset={inset}
-          label={label}
-          variant={variant}
-          nativeButton={nativeButton ?? legacyChild?.type === "button"}
-          render={withChildren(renderProp, content)}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          className={className}>
-          {content}
-        </DropdownMenuItem>
-      </ActivationBoundary>
-    );
-  }
   const Action = closeOnClick ? DrawerClose : BaseButton;
+  const action = root.isMobile ? (
+    <Action
+      data-slot='drop-drawer-item'
+      data-inset={inset}
+      data-variant={variant}
+      {...props}
+      ref={mergedRef}
+      disabled={isDisabled}
+      nativeButton={
+        nativeButton
+        ?? (typeof renderProp === "object" && React.isValidElement(renderProp) && typeof renderProp.type === "string"
+          ? renderProp.type === "button"
+          : true)
+      }
+      render={withChildren(renderProp, content)}
+      className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}>
+      {content}
+    </Action>
+  ) : (
+    <DropdownMenuItem
+      data-slot='drop-drawer-item'
+      {...props}
+      ref={mergedRef}
+      disabled={isDisabled}
+      closeOnClick={closeOnClick}
+      inset={inset}
+      label={label}
+      variant={variant}
+      nativeButton={nativeButton ?? legacyChild?.type === "button"}
+      render={withChildren(renderProp, content)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className={className}>
+      {content}
+    </DropdownMenuItem>
+  );
   return (
     <ActivationBoundary
       disabled={isDisabled}
       controlRef={controlRef}>
-      <Action
-        data-slot='drop-drawer-item'
-        data-inset={inset}
-        data-variant={variant}
-        {...props}
-        ref={mergedRef}
-        disabled={isDisabled}
-        nativeButton={
-          nativeButton
-          ?? (typeof renderProp === "object" && React.isValidElement(renderProp) && typeof renderProp.type === "string"
-            ? renderProp.type === "button"
-            : true)
-        }
-        render={withChildren(renderProp, content)}
-        className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}>
-        {content}
-      </Action>
+      {action}
     </ActivationBoundary>
   );
 }
-
 /** A real desktop menu separator; mobile groups use CSS boundaries rather than menu roles. */
 function DropDrawerSeparator(props: DropDrawerSeparatorProps): React.JSX.Element | null {
   return useRoot().isMobile ? null : (
@@ -737,7 +744,6 @@ function DropDrawerSeparator(props: DropDrawerSeparatorProps): React.JSX.Element
     />
   );
 }
-
 /** Section labels use the group label owner and do not overwrite the mobile dialog title. */
 function DropDrawerLabel({className, ...props}: DropDrawerLabelProps): React.JSX.Element {
   const root = useRoot();
@@ -749,7 +755,6 @@ function DropDrawerLabel({className, ...props}: DropDrawerLabelProps): React.JSX
     />
   );
 }
-
 /** Native footer layout with state-free render composition. */
 function DropDrawerFooter({className, ref, render, ...props}: DropDrawerFooterProps): React.ReactElement {
   const root = useRoot();
@@ -856,44 +861,40 @@ function DropDrawerSubTrigger({
     if (isDisabled) cancelActivation(event);
     else onKeyDown?.(event);
   };
-  if (!root.isMobile) {
-    return (
-      <ActivationBoundary
-        disabled={isDisabled}
-        controlRef={controlRef}>
-        <DropdownMenuSubTrigger
-          data-slot='drop-drawer-sub-trigger'
-          {...props}
-          ref={mergedRef}
-          disabled={isDisabled}
-          inset={inset}
-          className={className}
-          render={render}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}>
-          {children}
-        </DropdownMenuSubTrigger>
-      </ActivationBoundary>
-    );
-  }
   const {delay, closeDelay, openOnHover, label, ...buttonProps} = props;
+  const trigger = root.isMobile ? (
+    <BaseButton
+      data-slot='drop-drawer-sub-trigger'
+      {...buttonProps}
+      ref={mergedRef}
+      disabled={isDisabled}
+      aria-controls={entry.panelId}
+      aria-expanded={navigation?.activeId === entry.id}
+      render={withChildren(render, content)}
+      className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}>
+      {content}
+    </BaseButton>
+  ) : (
+    <DropdownMenuSubTrigger
+      data-slot='drop-drawer-sub-trigger'
+      {...props}
+      ref={mergedRef}
+      disabled={isDisabled}
+      inset={inset}
+      className={className}
+      render={render}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}>
+      {children}
+    </DropdownMenuSubTrigger>
+  );
   return (
     <ActivationBoundary
       disabled={isDisabled}
       controlRef={controlRef}>
-      <BaseButton
-        data-slot='drop-drawer-sub-trigger'
-        {...buttonProps}
-        ref={mergedRef}
-        disabled={isDisabled}
-        aria-controls={entry.panelId}
-        aria-expanded={navigation?.activeId === entry.id}
-        render={withChildren(render, content)}
-        className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}>
-        {content}
-      </BaseButton>
+      {trigger}
     </ActivationBoundary>
   );
 }

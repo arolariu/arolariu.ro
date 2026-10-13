@@ -3,6 +3,8 @@ import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {hydrateRoot, type Root} from "react-dom/client";
+import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {
@@ -1490,4 +1492,188 @@ describe("DropDrawer review fix round 1 native and ancestry invariants", () => {
     expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
     expect(screen.queryByRole("button", {name: "Nested blocked action"})).not.toBeInTheDocument();
   });
+});
+
+describe("DropDrawer review fix round 2", () => {
+  it("retains a flow-content boundary for an explicitly composed block trigger", () => {
+    const errors = vi.spyOn(console, "error");
+    const ref = React.createRef<HTMLElement>();
+    render(
+      <article>
+        <DropDrawer>
+          <DropDrawerTrigger
+            ref={ref}
+            nativeButton={false}
+            render={<div />}>
+            Block opener
+          </DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Block action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </article>,
+    );
+    const trigger = screen.getByRole("button", {name: "Block opener"});
+    expect(ref.current).toBe(trigger);
+    expect(trigger.tagName).toBe("DIV");
+    expect(trigger.parentElement?.tagName).toBe("DIV");
+    expect(errors).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "accepted Back withdraws late descendant intent while cancelled Back retains it: cancelled=%s",
+    async (cancelled) => {
+      media.change(true);
+      const user = userEvent.setup();
+      const requests: [string, boolean][] = [];
+      function LateChild({present}: Readonly<{present: boolean}>): React.ReactElement {
+        return (
+          <DropDrawer defaultOpen>
+            <DropDrawerTrigger>Open</DropDrawerTrigger>
+            <DropDrawerContent>
+              <DropDrawerItem closeOnClick={false}>Main after Back</DropDrawerItem>
+              <DropDrawerSub
+                onOpenChange={(open, details) => {
+                  requests.push(["parent", open]);
+                  if (cancelled && !open) details.cancel();
+                }}>
+                <DropDrawerSubTrigger>Parent submenu</DropDrawerSubTrigger>
+                <DropDrawerSubContent>
+                  <DropDrawerItem closeOnClick={false}>Parent action</DropDrawerItem>
+                  <DropDrawerSub
+                    defaultOpen
+                    onOpenChange={(open) => requests.push(["child", open])}>
+                    <DropDrawerSubTrigger>Late child submenu</DropDrawerSubTrigger>
+                    {present && (
+                      <DropDrawerSubContent>
+                        <DropDrawerItem closeOnClick={false}>Late child action</DropDrawerItem>
+                      </DropDrawerSubContent>
+                    )}
+                  </DropDrawerSub>
+                </DropDrawerSubContent>
+              </DropDrawerSub>
+            </DropDrawerContent>
+          </DropDrawer>
+        );
+      }
+      const view = render(<LateChild present={false} />);
+      const parent = await screen.findByRole("button", {name: "Parent submenu"});
+      await user.click(parent);
+      expect(await screen.findByRole("button", {name: "Parent action"})).toBeVisible();
+      await user.click(screen.getByRole("button", {name: "Go back"}));
+      if (!cancelled) {
+        expect(screen.getByRole("button", {name: "Main after Back"})).toBeVisible();
+        expect(parent).toHaveFocus();
+      }
+      view.rerender(<LateChild present />);
+      if (cancelled) expect(await screen.findByRole("button", {name: "Late child action"})).toBeVisible();
+      else {
+        expect(screen.getByRole("button", {name: "Main after Back"})).toBeVisible();
+        expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", {name: "Late child action"})).not.toBeInTheDocument();
+        expect(parent).toHaveFocus();
+        await user.click(parent);
+        expect(await screen.findByRole("button", {name: "Parent action"})).toBeVisible();
+        expect(screen.queryByRole("button", {name: "Late child action"})).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", {name: "Late child submenu"}));
+        expect(await screen.findByRole("button", {name: "Late child action"})).toBeVisible();
+      }
+      expect(requests.slice(0, 2)).toEqual([
+        ["parent", true],
+        ["parent", false],
+      ]);
+    },
+  );
+
+  it.each([false, true])("retains valid inline native trigger markup through SSR parsing and hydration on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const errors = vi.spyOn(console, "error");
+    const recoverable: unknown[] = [];
+    const ref = React.createRef<HTMLElement>();
+    const markup = (
+      <p data-testid='inline-parent'>
+        Inline actions:
+        <DropDrawer>
+          <DropDrawerTrigger ref={ref}>Inline opener</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Inline action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </p>
+    );
+    const html = renderToString(markup);
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    const parsedParent = parsed.querySelector('[data-testid="inline-parent"]');
+    expect(parsedParent?.querySelector("button")).not.toBeNull();
+    expect(parsedParent?.querySelector("div")).toBeNull();
+    expect(parsed.querySelectorAll("p")).toHaveLength(1);
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.append(container);
+    let root: Root | undefined;
+    try {
+      await act(async () => {
+        root = hydrateRoot(container, markup, {onRecoverableError: (error) => recoverable.push(error)});
+      });
+      const trigger = within(container).getByRole("button", {name: "Inline opener"});
+      expect(ref.current).toBe(trigger);
+      expect(trigger.tagName).toBe("BUTTON");
+      expect(trigger.parentElement?.tagName).toBe("SPAN");
+      expect(within(container).getByTestId("inline-parent")).toContainElement(trigger);
+      expect(recoverable).toEqual([]);
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      act(() => root?.unmount());
+      container.remove();
+    }
+  });
+
+  it.each([false, true].flatMap((mobile) => [false, true].map((disabled) => ({mobile, disabled}))))(
+    "preserves inline link refs, capture order and disabled activation: mobile=$mobile, disabled=$disabled",
+    async ({mobile, disabled}) => {
+      media.change(mobile);
+      const errors = vi.spyOn(console, "error");
+      const calls: string[] = [];
+      const ref = React.createRef<HTMLElement>();
+      const childRef = React.createRef<HTMLAnchorElement>();
+      render(
+        <p data-testid='inline-link-parent'>
+          Links:
+          <DropDrawer>
+            <DropDrawerTrigger
+              asChild
+              disabled={disabled}
+              nativeButton={false}
+              ref={ref}
+              onClickCapture={() => calls.push("wrapper-capture")}
+              onClick={() => calls.push("wrapper-click")}>
+              <a
+                href='#inline-target'
+                ref={childRef}
+                onClickCapture={() => calls.push("child-capture")}
+                onClick={(event) => {
+                  calls.push("child-click");
+                  event.preventDefault();
+                }}>
+                Inline link
+              </a>
+            </DropDrawerTrigger>
+            <DropDrawerContent>
+              <DropDrawerItem>Link action</DropDrawerItem>
+            </DropDrawerContent>
+          </DropDrawer>
+        </p>,
+      );
+      const control = screen.getByRole("button", {name: "Inline link"});
+      expect(control.tagName).toBe("A");
+      expect(control).toHaveAttribute("href", "#inline-target");
+      expect(ref.current).toBe(control);
+      expect(childRef.current).toBe(control);
+      expect(control.parentElement?.tagName).toBe("SPAN");
+      expect(screen.getByTestId("inline-link-parent")).toContainElement(control);
+      await userEvent.setup({pointerEventsCheck: 0}).click(control);
+      expect(calls).toEqual(disabled ? [] : ["child-capture", "wrapper-capture", "child-click", "wrapper-click"]);
+      expect(errors).not.toHaveBeenCalled();
+    },
+  );
 });
