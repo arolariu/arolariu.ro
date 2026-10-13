@@ -23,7 +23,7 @@ import {Button} from "./button";
 import styles from "./alert-dialog.module.css";
 import * as stories from "./alert-dialog.stories";
 
-const {FocusContract: FocusContractStory} = composeStories(stories);
+const {FocusContract: FocusContractStory, CustomTrigger: CustomTriggerStory} = composeStories(stories);
 
 function requiredStyle(name: string): string {
   const className = styles[name];
@@ -94,6 +94,15 @@ function AsyncConfirmation({work}: Readonly<{work: Promise<void>}>): React.React
 }
 
 describe("AlertDialog", () => {
+  it("customizes the CustomTrigger story's trigger instead of its confirmation action", async () => {
+    const user = userEvent.setup();
+    render(<CustomTriggerStory />);
+    const trigger = screen.getByRole("button", {name: "Review confirmation"});
+    expect(trigger).toHaveAttribute("data-variant", "secondary");
+    await user.click(trigger);
+    expect(screen.getByRole("button", {name: "Confirm"})).toHaveAttribute("data-variant", "default");
+  });
+
   it("renders the actual FocusContract story and exercises its owner-controlled rejected/successful work", async () => {
     const user = userEvent.setup();
     render(<FocusContractStory />);

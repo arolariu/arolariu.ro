@@ -56,12 +56,39 @@ export type DialogDescriptionProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
 >;
 
-function legacyChild(children: React.ReactNode, asChild: boolean): React.ReactElement<{children?: React.ReactNode}> | undefined {
-  if (!asChild) return undefined;
-  if (!React.isValidElement<{children?: React.ReactNode}>(children) || children.type === React.Fragment) {
-    throw new TypeError("Dialog asChild requires a single non-Fragment React element.");
+type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
+
+function normalizedElement(render: React.ReactNode): React.ReactElement<{children?: React.ReactNode}> {
+  // eslint-disable-next-line react-x/no-children-to-array -- public React normalization supports Flight/lazy slots without reading private lazy fields.
+  const elements = React.Children.toArray(render);
+  const [element] = elements;
+  if (elements.length !== 1 || !React.isValidElement<{children?: React.ReactNode}>(element) || element.type === React.Fragment) {
+    throw new TypeError("Dialog composition requires a single non-Fragment React element.");
   }
-  return children;
+  return element;
+}
+
+function DecoratedDialogElement({
+  render,
+  elementProps,
+  closeControl,
+}: Readonly<{
+  render: React.ReactElement;
+  elementProps: Parameters<PrimitiveRenderCallback>[0];
+  closeControl: React.ReactNode;
+}>): React.ReactElement {
+  const element = normalizedElement(render);
+  const children = Object.hasOwn(element.props, "children") ? element.props.children : elementProps.children;
+  // eslint-disable-next-line react-x/no-clone-element -- preserve Base UI's top-level element-child precedence before appending the close.
+  const decorated = React.cloneElement(element, {
+    children: (
+      <>
+        {children}
+        {closeControl}
+      </>
+    ),
+  });
+  return useRender({render: decorated, props: {...elementProps}});
 }
 
 /** Coordinates a modal dialog without adding a DOM wrapper. */
@@ -73,7 +100,7 @@ Dialog.displayName = "Dialog";
 /** Opens a dialog. Canonical `render` callers specify `nativeButton={false}` for non-buttons. */
 const DialogTrigger = React.forwardRef<HTMLElement, DialogTrigger.Props>(
   ({asChild = false, children, render, nativeButton, ...props}: Readonly<DialogTrigger.Props>, ref): React.ReactElement => {
-    const child = legacyChild(children, asChild);
+    const child = asChild ? normalizedElement(children) : undefined;
     const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
       (element) => {
         if (typeof ref === "function") return ref(element);
@@ -131,30 +158,23 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContent.Props>(
     {className, children, render, showCloseButton = true, ...props}: Readonly<React.PropsWithoutRef<DialogContent.Props>>,
     ref,
   ): React.ReactElement => {
-    const renderElement = React.isValidElement<{children?: React.ReactNode}>(render) ? render : undefined;
-    const content = (
-      <>
-        {children === undefined ? renderElement?.props.children : children}
-        {showCloseButton ? (
-          <DialogClose
-            aria-label='Close'
-            render={
-              <Button
-                variant='ghost'
-                size='icon-sm'
-                className={cn(styles.close)}
-              />
-            }>
-            <X
-              aria-hidden='true'
-              className={styles.closeIcon}
-            />
-          </DialogClose>
-        ) : null}
-      </>
-    );
-    // eslint-disable-next-line react-x/no-clone-element -- extend only top-level children; Base UI still owns state, event and ref merging.
-    const popupRender = renderElement ? React.cloneElement(renderElement, {children: content}) : render;
+    const closeControl = showCloseButton ? (
+      <DialogClose
+        aria-label='Close'
+        render={
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            className={cn(styles.close)}
+          />
+        }>
+        <X
+          aria-hidden='true'
+          className={styles.closeIcon}
+        />
+      </DialogClose>
+    ) : null;
+    const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
     return (
       <DialogPortal>
         <DialogOverlay />
@@ -162,9 +182,26 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContent.Props>(
           data-slot='dialog-content'
           {...props}
           ref={ref}
-          render={popupRender}
+          render={
+            decorateElement
+              ? (elementProps) => (
+                  <DecoratedDialogElement
+                    render={render}
+                    elementProps={elementProps}
+                    closeControl={closeControl}
+                  />
+                )
+              : render
+          }
           className={cn(styles.popup, className)}>
-          {content}
+          {decorateElement ? (
+            children
+          ) : (
+            <>
+              {children}
+              {closeControl}
+            </>
+          )}
         </BaseDialog.Popup>
       </DialogPortal>
     );
@@ -178,7 +215,7 @@ const DialogHeader = React.forwardRef<HTMLElement, DialogHeader.Props>(
     {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<DialogHeader.Props>>,
     ref,
   ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
+    const child = asChild ? normalizedElement(children) : undefined;
     return useRender({
       defaultTagName: "div",
       ref,
@@ -200,33 +237,34 @@ const DialogFooter = React.forwardRef<HTMLElement, DialogFooter.Props>(
     {asChild = false, children, className, render, showCloseButton = false, ...props}: Readonly<React.PropsWithoutRef<DialogFooter.Props>>,
     ref,
   ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
+    const child = asChild ? normalizedElement(children) : undefined;
     const renderElement = child ?? render;
-    const suppliedChildren = child
-      ? child.props.children
-      : children === undefined && React.isValidElement<{children?: React.ReactNode}>(render)
-        ? render.props.children
-        : children;
-    const content = showCloseButton ? (
-      <>
-        {suppliedChildren}
-        <DialogClose render={<Button variant='outline' />}>Close</DialogClose>
-      </>
-    ) : child ? undefined : (
-      children
-    );
+    const closeControl = showCloseButton ? <DialogClose render={<Button variant='outline' />}>Close</DialogClose> : null;
+    const decorateElement = showCloseButton && renderElement !== undefined && typeof renderElement !== "function";
+    const suppliedChildren = child ? undefined : children;
     return useRender({
       defaultTagName: "div",
       ref,
-      render:
-        showCloseButton && React.isValidElement<{children?: React.ReactNode}>(renderElement)
-          ? // eslint-disable-next-line react-x/no-clone-element -- append the opt-in close without changing primitive-owned refs or handlers.
-            React.cloneElement(renderElement, {children: content})
-          : renderElement,
+      render: decorateElement
+        ? (elementProps) => (
+            <DecoratedDialogElement
+              render={renderElement}
+              elementProps={elementProps}
+              closeControl={closeControl}
+            />
+          )
+        : renderElement,
       props: {
         "data-slot": "dialog-footer",
         ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
-          children: content,
+          children: decorateElement ? (
+            suppliedChildren
+          ) : (
+            <>
+              {suppliedChildren}
+              {closeControl}
+            </>
+          ),
         }),
       },
     });

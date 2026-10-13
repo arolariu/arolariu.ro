@@ -55,6 +55,36 @@ function legacyChild(children: React.ReactNode, asChild: boolean): React.ReactEl
   return children;
 }
 
+type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
+
+function DecoratedSheetElement({
+  render,
+  elementProps,
+  closeControl,
+}: Readonly<{
+  render: React.ReactElement;
+  elementProps: Parameters<PrimitiveRenderCallback>[0];
+  closeControl: React.ReactNode;
+}>): React.ReactElement {
+  // eslint-disable-next-line react-x/no-children-to-array -- public React normalization supports Flight/lazy slots without reading private lazy fields.
+  const elements = React.Children.toArray(render);
+  const [element] = elements;
+  if (elements.length !== 1 || !React.isValidElement<{children?: React.ReactNode}>(element) || element.type === React.Fragment) {
+    throw new TypeError("Sheet render requires a single non-Fragment React element.");
+  }
+  const children = Object.hasOwn(element.props, "children") ? element.props.children : elementProps.children;
+  // eslint-disable-next-line react-x/no-clone-element -- preserve Base UI's top-level element-child precedence before appending the close.
+  const decorated = React.cloneElement(element, {
+    children: (
+      <>
+        {children}
+        {closeControl}
+      </>
+    ),
+  });
+  return useRender({render: decorated, props: {...elementProps}});
+}
+
 /** Coordinates a sheet using the real modal Dialog primitive, without an extra DOM wrapper. */
 function Sheet<Payload = unknown>(props: Readonly<Sheet.Props<Payload>>): React.ReactElement {
   return <BaseDialog.Root {...props} />;
@@ -122,30 +152,23 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContent.Props>(
     {className, children, render, side = "right", showCloseButton = true, ...props}: Readonly<React.PropsWithoutRef<SheetContent.Props>>,
     ref,
   ): React.ReactElement => {
-    const renderElement = React.isValidElement<{children?: React.ReactNode}>(render) ? render : undefined;
-    const content = (
-      <>
-        {children === undefined ? renderElement?.props.children : children}
-        {showCloseButton ? (
-          <SheetClose
-            aria-label='Close'
-            render={
-              <Button
-                variant='ghost'
-                size='icon-sm'
-                className={cn(styles.close)}
-              />
-            }>
-            <X
-              aria-hidden='true'
-              className={styles.closeIcon}
-            />
-          </SheetClose>
-        ) : null}
-      </>
-    );
-    // eslint-disable-next-line react-x/no-clone-element -- extend only top-level children; Base UI still owns state, event and ref merging.
-    const popupRender = renderElement ? React.cloneElement(renderElement, {children: content}) : render;
+    const closeControl = showCloseButton ? (
+      <SheetClose
+        aria-label='Close'
+        render={
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            className={cn(styles.close)}
+          />
+        }>
+        <X
+          aria-hidden='true'
+          className={styles.closeIcon}
+        />
+      </SheetClose>
+    ) : null;
+    const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
     return (
       <SheetPortal>
         <SheetOverlay />
@@ -154,9 +177,26 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContent.Props>(
           data-side={side}
           {...props}
           ref={ref}
-          render={popupRender}
+          render={
+            decorateElement
+              ? (elementProps) => (
+                  <DecoratedSheetElement
+                    render={render}
+                    elementProps={elementProps}
+                    closeControl={closeControl}
+                  />
+                )
+              : render
+          }
           className={cn(styles.popup, styles[side], className)}>
-          {content}
+          {decorateElement ? (
+            children
+          ) : (
+            <>
+              {children}
+              {closeControl}
+            </>
+          )}
         </BaseDialog.Popup>
       </SheetPortal>
     );

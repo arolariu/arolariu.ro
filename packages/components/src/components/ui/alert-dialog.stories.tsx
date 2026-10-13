@@ -39,12 +39,14 @@ type Story = StoryObj<typeof meta>;
 function ConfirmationDemo({
   size = "default",
   variant = "default",
+  triggerVariant = "outline",
   showCancel = true,
   longContent = false,
   checkbox = false,
 }: Readonly<{
   size?: AlertDialogSize;
   variant?: ButtonVariant;
+  triggerVariant?: ButtonVariant;
   showCancel?: boolean;
   longContent?: boolean;
   checkbox?: boolean;
@@ -56,7 +58,7 @@ function ConfirmationDemo({
     <AlertDialog
       open={open}
       onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant='outline' />}>Review confirmation</AlertDialogTrigger>
+      <AlertDialogTrigger render={<Button variant={triggerVariant} />}>Review confirmation</AlertDialogTrigger>
       <AlertDialogContent size={size}>
         <AlertDialogHeader>
           <AlertDialogMedia>
@@ -97,7 +99,7 @@ function ConfirmationDemo({
 export const Default: Story = {render: (): ReactElement => <ConfirmationDemo />};
 export const WithoutCancel: Story = {render: (): ReactElement => <ConfirmationDemo showCancel={false} />};
 export const WithLongContent: Story = {render: (): ReactElement => <ConfirmationDemo longContent />};
-export const CustomTrigger: Story = {render: (): ReactElement => <ConfirmationDemo variant='secondary' />};
+export const CustomTrigger: Story = {render: (): ReactElement => <ConfirmationDemo triggerVariant='secondary' />};
 export const DestructiveConfirm: Story = {render: (): ReactElement => <ConfirmationDemo variant='destructive' />};
 export const WithCheckbox: Story = {render: (): ReactElement => <ConfirmationDemo checkbox />};
 export const SmallWithMedia: Story = {render: (): ReactElement => <ConfirmationDemo size='sm' />};

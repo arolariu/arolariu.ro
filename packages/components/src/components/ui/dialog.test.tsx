@@ -23,6 +23,16 @@ import * as stories from "./dialog.stories";
 
 const {FocusContract: FocusContractStory} = composeStories(stories);
 
+// Models the resolved Flight slot accepted by the actual React/Base UI renderer.
+function resolvedLazySlot(element: React.ReactElement): React.ReactElement
+  & Readonly<{
+    $$typeof: symbol;
+    _payload: React.ReactElement;
+    _init: () => React.ReactElement;
+  }> {
+  return {...element, $$typeof: Symbol.for("react.lazy"), _payload: element, _init: () => element};
+}
+
 function requiredStyle(name: string): string {
   const className = styles[name];
   if (!className) throw new Error(`Missing dialog CSS class: ${name}`);
@@ -57,6 +67,308 @@ function renderDialog({
 }
 
 describe("Dialog", () => {
+  it.each([
+    ["element", true],
+    ["element", false],
+    ["resolved lazy", true],
+    ["resolved lazy", false],
+  ] as const)("preserves %s popup children over fallback children with showCloseButton=%s", async (kind, showCloseButton) => {
+    const user = userEvent.setup();
+    const slotRef = React.createRef<HTMLElement>();
+    const popupRef = React.createRef<HTMLDivElement>();
+    const closeRef = React.createRef<HTMLButtonElement>();
+    const events: string[] = [];
+    const slot = (
+      <section
+        ref={slotRef}
+        className='slot-popup'
+        onClick={() => events.push("slot")}>
+        <DialogTitle>Slot title</DialogTitle>
+        <DialogDescription>Slot description</DialogDescription>
+        <DialogClose
+          ref={closeRef}
+          title='Embedded close props'
+          onClick={() => events.push("close")}>
+          Embedded Close
+        </DialogClose>
+      </section>
+    );
+    render(
+      <Dialog defaultOpen>
+        <DialogContent
+          ref={popupRef}
+          className='wrapper-popup'
+          showCloseButton={showCloseButton}
+          onClick={() => events.push("wrapper")}
+          render={kind === "element" ? slot : resolvedLazySlot(slot)}>
+          <DialogTitle>Wrapper fallback</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Slot title"});
+    expect(popup).toHaveAccessibleDescription("Slot description");
+    expect(screen.queryByText("Wrapper fallback")).not.toBeInTheDocument();
+    expect(popup).toHaveClass("slot-popup", "wrapper-popup");
+    expect(slotRef.current).toBe(popup);
+    expect(popupRef.current).toBe(popup);
+    expect(closeRef.current).toHaveAttribute("title", "Embedded close props");
+    expect(screen.getAllByRole("button").map((button) => button.textContent || button.getAttribute("aria-label"))).toEqual(
+      showCloseButton ? ["Embedded Close", "Close"] : ["Embedded Close"],
+    );
+    await user.click(screen.getByRole("button", {name: "Embedded Close"}));
+    expect(events).toEqual(["close", "slot", "wrapper"]);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it.each(["element", "resolved lazy"] as const)("appends footer Close after %s actions rather than wrapper fallback", async (kind) => {
+    const user = userEvent.setup();
+    const slotRef = React.createRef<HTMLElement>();
+    const footerRef = React.createRef<HTMLElement>();
+    const events: string[] = [];
+    const slot = (
+      <footer
+        ref={slotRef}
+        className='slot-footer'
+        onClick={() => events.push("slot")}>
+        <Button>Slot action</Button>
+      </footer>
+    );
+    render(
+      <Dialog defaultOpen>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Footer precedence</DialogTitle>
+          <DialogFooter
+            ref={footerRef}
+            className='wrapper-footer'
+            showCloseButton
+            onClick={() => events.push("wrapper")}
+            render={kind === "element" ? slot : resolvedLazySlot(slot)}>
+            <Button>Wrapper fallback</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.queryByRole("button", {name: "Wrapper fallback"})).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Slot action", "Close"]);
+    expect(slotRef.current).toBe(footerRef.current);
+    expect(footerRef.current).toHaveClass("slot-footer", "wrapper-footer");
+    await user.click(screen.getByRole("button", {name: "Close"}));
+    expect(events).toEqual(["slot", "wrapper"]);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("decorates a resolved lazy footer compatibility slot without losing its content", () => {
+    render(
+      <Dialog defaultOpen>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Lazy footer slot</DialogTitle>
+          <DialogFooter
+            asChild
+            showCloseButton>
+            {resolvedLazySlot(
+              <footer>
+                <Button>Slot action</Button>
+              </footer>,
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Slot action", "Close"]);
+  });
+
+  it("does not resolve a pending popup slot while closed and adds Close after it resolves while mounted", async () => {
+    const request = Promise.withResolvers<React.ReactElement>();
+    let resolved: React.ReactElement | undefined;
+    let reads = 0;
+    void request.promise.then((element) => {
+      resolved = element;
+    });
+    const seed = <section />;
+    const slot = {
+      ...seed,
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: request.promise,
+      _init: () => {
+        reads += 1;
+        if (resolved) return resolved;
+        throw request.promise;
+      },
+    };
+    function PendingDialog({open}: Readonly<{open: boolean}>): React.ReactElement {
+      return (
+        <React.Suspense fallback={<p role='status'>Loading popup slot</p>}>
+          <Dialog open={open}>
+            <DialogContent render={slot} />
+          </Dialog>
+        </React.Suspense>
+      );
+    }
+    const {rerender} = render(<PendingDialog open={false} />);
+    expect(reads).toBe(0);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    rerender(<PendingDialog open />);
+    expect(reads).toBeGreaterThan(0);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading popup slot");
+    await act(async () => {
+      request.resolve(
+        <section>
+          <DialogTitle>Resolved title</DialogTitle>
+          <DialogDescription>Resolved description</DialogDescription>
+        </section>,
+      );
+      await request.promise;
+    });
+    expect(screen.getByRole("dialog", {name: "Resolved title"})).toHaveAccessibleDescription("Resolved description");
+    expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+  });
+
+  it("does not resolve a pending opt-in footer slot before its popup mounts", async () => {
+    const request = Promise.withResolvers<React.ReactElement>();
+    let resolved: React.ReactElement | undefined;
+    let reads = 0;
+    void request.promise.then((element) => {
+      resolved = element;
+    });
+    const seed = <footer />;
+    const slot = {
+      ...seed,
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: request.promise,
+      _init: () => {
+        reads += 1;
+        if (resolved) return resolved;
+        throw request.promise;
+      },
+    };
+    function PendingFooter({open}: Readonly<{open: boolean}>): React.ReactElement {
+      return (
+        <React.Suspense fallback={<p role='status'>Loading footer slot</p>}>
+          <Dialog open={open}>
+            <DialogContent showCloseButton={false}>
+              <DialogTitle>Pending footer</DialogTitle>
+              <DialogFooter
+                showCloseButton
+                render={slot}>
+                <Button>Fallback action</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </React.Suspense>
+      );
+    }
+    const {rerender} = render(<PendingFooter open={false} />);
+    expect(reads).toBe(0);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    rerender(<PendingFooter open />);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading footer slot");
+    await act(async () => {
+      request.resolve(
+        <footer>
+          <Button>Resolved action</Button>
+        </footer>,
+      );
+      await request.promise;
+    });
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Resolved action", "Close"]);
+    expect(screen.queryByRole("button", {name: "Fallback action"})).not.toBeInTheDocument();
+  });
+
+  it("passes function render callbacks only from the actual mounted Popup with live state", () => {
+    const states: DialogContent.State[] = [];
+    const callback: Exclude<DialogContent.Props["render"], React.ReactElement | undefined> = (props, state) => {
+      states.push(state);
+      return (
+        <section
+          {...props}
+          data-callback-open={String(state.open)}
+        />
+      );
+    };
+    const {rerender} = render(
+      <Dialog open={false}>
+        <DialogContent render={callback}>
+          <DialogTitle>Callback title</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(states).toEqual([]);
+    rerender(
+      <Dialog open>
+        <DialogContent render={callback}>
+          <DialogTitle>Callback title</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Callback title"});
+    expect(popup).toHaveAttribute("data-callback-open", "true");
+    expect(states.length).toBeGreaterThan(0);
+    expect(states.every((state) => state.open && !state.nested)).toBe(true);
+    expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+  });
+
+  it("keeps an explicit undefined render-element child value ahead of wrapper fallback", () => {
+    render(
+      <Dialog defaultOpen>
+        <DialogContent
+          aria-label='Explicit empty content'
+          render={<section children={undefined} />}>
+          <p>Wrapper fallback</p>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.queryByText("Wrapper fallback")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", {name: "Explicit empty content"})).toBeVisible();
+    expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+  });
+
+  it("uses wrapper children for a render element with no own children property", () => {
+    render(
+      <Dialog defaultOpen>
+        <DialogContent render={<section />}>
+          <DialogTitle>Fallback title</DialogTitle>
+          <DialogDescription>Fallback description</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole("dialog", {name: "Fallback title"})).toHaveAccessibleDescription("Fallback description");
+    expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+  });
+
+  it.each(["element", "resolved lazy"] as const)("preserves %s Close props, child precedence and cancellation", async (kind) => {
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLElement>();
+    const closeRef = React.createRef<HTMLButtonElement>();
+    const slot = (
+      <Button
+        ref={childRef}
+        onClick={(event) => event.preventBaseUIHandler()}>
+        Slot Close
+      </Button>
+    );
+    render(
+      <Dialog defaultOpen>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Close precedence</DialogTitle>
+          <DialogClose
+            ref={closeRef}
+            title='Close props'
+            className='caller-close'
+            render={kind === "element" ? slot : resolvedLazySlot(slot)}>
+            Wrapper fallback
+          </DialogClose>
+        </DialogContent>
+      </Dialog>,
+    );
+    const close = screen.getByRole("button", {name: "Slot Close"});
+    expect(close).toHaveAttribute("title", "Close props");
+    expect(close).toHaveClass("caller-close");
+    expect(closeRef.current).toBe(close);
+    expect(childRef.current).toBe(close);
+    await user.click(close);
+    expect(screen.getByRole("dialog", {name: "Close precedence"})).toBeVisible();
+  });
+
   it("renders the actual FocusContract story and opens its nested real modal", async () => {
     const user = userEvent.setup();
     render(<FocusContractStory />);
