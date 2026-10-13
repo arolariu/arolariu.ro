@@ -17,6 +17,428 @@ import {
 } from "./command";
 
 describe("Command", () => {
+  it("keeps option-origin ArrowDown/Home/End focus and Enter/Space activation coherent", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <Command>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onSelect={onSelect}>
+            First
+          </CommandItem>
+          <CommandItem
+            value='disabled'
+            disabled
+            onSelect={onSelect}>
+            Disabled
+          </CommandItem>
+          <CommandItem
+            value='second'
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+          <CommandItem
+            value='last'
+            onSelect={onSelect}>
+            Last
+          </CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const first = screen.getByRole("option", {name: "First"});
+    const second = screen.getByRole("option", {name: "Second"});
+    const last = screen.getByRole("option", {name: "Last"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}{Home}");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard(" ");
+    await user.keyboard("{End}");
+    expect(last).toHaveFocus();
+    expect(last).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}{ArrowUp}");
+    expect(second).toHaveFocus();
+    expect(onSelect.mock.calls.map(([value]) => value)).toEqual(["second", "first", "last"]);
+  });
+
+  it("moves option focus only when the controlled selected-value proposal commits", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    const fixture = (value: string): React.JSX.Element => (
+      <Command
+        value={value}
+        onValueChange={onValueChange}>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onSelect={onSelect}>
+            First
+          </CommandItem>
+          <CommandItem
+            value='second'
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("first"));
+    const first = screen.getByRole("option", {name: "First"});
+    const second = screen.getByRole("option", {name: "Second"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange).toHaveBeenLastCalledWith("second");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenLastCalledWith("first");
+    await user.keyboard("{ArrowDown}");
+    rerender(fixture("first"));
+    expect(first).toHaveFocus();
+    rerender(fixture("second"));
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    await user.keyboard(" ");
+    expect(onSelect).toHaveBeenLastCalledWith("second");
+  });
+
+  it("moves actual option focus for a synchronously accepted controlled keyboard proposal", async () => {
+    const user = userEvent.setup();
+    function Fixture(): React.JSX.Element {
+      const [value, setValue] = React.useState("first");
+      return (
+        <Command
+          value={value}
+          onValueChange={setValue}>
+          <CommandList>
+            <CommandItem value='first'>First</CommandItem>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandList>
+        </Command>
+      );
+    }
+    render(<Fixture />);
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    await user.keyboard("{ArrowDown}");
+    const second = screen.getByRole("option", {name: "Second"});
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("does not steal native focus moved outside while a controlled keyboard proposal is pending", async () => {
+    const user = userEvent.setup();
+    const fixture = (value: string): React.JSX.Element => (
+      <>
+        <button type='button'>Outside</button>
+        <Command value={value}>
+          <CommandList>
+            <CommandItem value='first'>First</CommandItem>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandList>
+        </Command>
+      </>
+    );
+    const {rerender} = render(fixture("first"));
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("button", {name: "Outside"}));
+    rerender(fixture("second"));
+    expect(screen.getByRole("button", {name: "Outside"})).toHaveFocus();
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the combobox focused while committed navigation changes its active descendant", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{Home}{End}");
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+  });
+
+  it.each(["root", "item"] as const)("keeps actual option focus when a %s keyboard consumer cancels navigation", async (boundary) => {
+    const user = userEvent.setup();
+    const cancel: React.KeyboardEventHandler<HTMLDivElement> = (event) => event.preventDefault();
+    render(
+      <Command onKeyDown={boundary === "root" ? cancel : undefined}>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onKeyDown={boundary === "item" ? cancel : undefined}>
+            First
+          </CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it.each(["items", "groups"] as const)("retains the focused option and committed selection when scored %s reorder", async (kind) => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          {kind === "groups" ? (
+            <>
+              <CommandGroup heading='A'>
+                <CommandItem
+                  value='first'
+                  onSelect={onSelect}>
+                  First
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup heading='B'>
+                <CommandItem
+                  value='second'
+                  onSelect={onSelect}>
+                  Second
+                </CommandItem>
+              </CommandGroup>
+            </>
+          ) : (
+            <>
+              <CommandItem
+                value='first'
+                onSelect={onSelect}>
+                First
+              </CommandItem>
+              <CommandItem
+                value='second'
+                onSelect={onSelect}>
+                Second
+              </CommandItem>
+            </>
+          )}
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    rerender(fixture(true));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Second", "First"]);
+    expect(first.isConnected).toBe(true);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Home}{Enter}");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveFocus();
+    expect(onSelect).toHaveBeenLastCalledWith("second");
+  });
+
+  it.each(["input", "textarea"] as const)(
+    "retains real nested %s focus and its native text selection when its scored group moves",
+    (kind) => {
+      const fixture = (preferSecond: boolean): React.JSX.Element => (
+        <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+          <CommandInput
+            defaultValue='query'
+            aria-label='Search commands'
+          />
+          <CommandList>
+            <CommandGroup heading='A'>
+              <CommandItem
+                value='first'
+                aria-label='First'>
+                First
+                {kind === "input" ? (
+                  <input
+                    aria-label='Inline notes'
+                    defaultValue='abcdef'
+                  />
+                ) : (
+                  <textarea
+                    aria-label='Inline notes'
+                    defaultValue='abcdef'
+                  />
+                )}
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='B'>
+              <CommandItem value='second'>Second</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      );
+      const {rerender} = render(fixture(false));
+      const notes = screen.getByRole("textbox", {name: "Inline notes"});
+      if (!(notes instanceof HTMLInputElement) && !(notes instanceof HTMLTextAreaElement))
+        throw new Error("Expected the real native notes control.");
+      act(() => {
+        notes.focus();
+        notes.setSelectionRange(1, 4, "backward");
+      });
+      rerender(fixture(true));
+      expect(screen.getAllByRole("option").map((item) => item.getAttribute("aria-label") ?? item.textContent)).toEqual(["Second", "First"]);
+      expect(notes).toHaveFocus();
+      expect(notes.selectionStart).toBe(1);
+      expect(notes.selectionEnd).toBe(4);
+      expect(notes.selectionDirection).toBe("backward");
+    },
+  );
+
+  it("honors a real child focus handler handing focus outside during group-order restoration", () => {
+    const outsideRef = React.createRef<HTMLButtonElement>();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <>
+        <button
+          type='button'
+          ref={outsideRef}>
+          Outside
+        </button>
+        <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+          <CommandInput
+            defaultValue='query'
+            aria-label='Search commands'
+          />
+          <CommandList>
+            <CommandGroup heading='A'>
+              <CommandItem
+                value='first'
+                aria-label='First'>
+                First
+                <input
+                  aria-label='Inline notes'
+                  onFocus={(event) => {
+                    if (preferSecond) {
+                      event.preventDefault();
+                      outsideRef.current?.focus();
+                    }
+                  }}
+                />
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='B'>
+              <CommandItem value='second'>Second</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </>
+    );
+    const {rerender} = render(fixture(false));
+    act(() => screen.getByRole("textbox", {name: "Inline notes"}).focus());
+    rerender(fixture(true));
+    expect(screen.getByRole("button", {name: "Outside"})).toHaveFocus();
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("allows a caller focus handoff to select a different real option during score restoration", () => {
+    const secondRef = React.createRef<HTMLDivElement>();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandGroup heading='A'>
+            <CommandItem
+              value='first'
+              onFocus={() => {
+                if (preferSecond) secondRef.current?.focus();
+              }}>
+              First
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='B'>
+            <CommandItem
+              value='second'
+              ref={secondRef}>
+              Second
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    rerender(fixture(true));
+    const second = screen.getByRole("option", {name: "Second"});
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("does not emit a new selection proposal while restoring a controlled option after a group move", () => {
+    const onValueChange = vi.fn();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command
+        value='second'
+        onValueChange={onValueChange}
+        filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandGroup heading='A'>
+            <CommandItem value='first'>First</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='B'>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    onValueChange.mockClear();
+    rerender(fixture(true));
+    expect(first).toHaveFocus();
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("composes Separator class callbacks with actual primitive-owned orientation state", () => {
+    const className = vi.fn((state: CommandSeparator.State) => `consumer-${state.orientation}`);
+    const fixture = (orientation: CommandSeparator.State["orientation"]): React.JSX.Element => (
+      <Command>
+        <CommandList>
+          <CommandSeparator
+            orientation={orientation}
+            className={className}
+          />
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("vertical"));
+    const separator = screen.getByRole("separator");
+    expect(className).toHaveBeenCalledWith({orientation: "vertical"});
+    expect(separator).toHaveClass("consumer-vertical");
+    expect(separator.classList.length).toBeGreaterThan(1);
+    rerender(fixture("horizontal"));
+    expect(className).toHaveBeenCalledWith({orientation: "horizontal"});
+    expect(separator).toHaveClass("consumer-horizontal");
+    expect(separator).not.toHaveClass("consumer-vertical");
+    expect(separator.classList.length).toBeGreaterThan(1);
+  });
+
   it("does not let consumer-hidden scores boost a visible group's rank", () => {
     render(
       <Command filter={(value) => (value === "hidden" ? 1 : value === "pear" ? 0.5 : 0.1)}>

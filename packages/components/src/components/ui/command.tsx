@@ -132,6 +132,7 @@ interface CommandContextValue {
   readonly disablePointerSelection: boolean;
   readonly isFiltering: boolean;
   readonly isItemVisible: (itemId: string) => boolean;
+  readonly isRestoringFocus: (element: HTMLElement) => boolean;
   readonly hasVisibleItemsInGroup: (groupId: string) => boolean;
   readonly label: string;
   readonly listId: string;
@@ -171,11 +172,63 @@ interface RankedNode {
   readonly order: number;
 }
 
+interface NavigationFocusRequest {
+  readonly origin: HTMLElement;
+  readonly originId: string;
+  readonly targetId: string;
+}
+
+interface NativeTextSelection {
+  readonly start: number;
+  readonly end: number;
+  readonly direction: "forward" | "backward" | "none";
+}
+
+interface NativeFocusSnapshot {
+  readonly element: HTMLElement;
+  readonly selection: NativeTextSelection | null;
+}
+
+function captureRegisteredFocus(entries: readonly RankedNode[]): NativeFocusSnapshot | null {
+  const element = entries[0]?.node.ownerDocument.activeElement;
+  if (!(element instanceof HTMLElement) || !entries.some(({node}) => node.contains(element))) return null;
+  let selection: NativeTextSelection | null = null;
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    const {selectionStart: start, selectionEnd: end, selectionDirection: direction} = element;
+    if (start !== null && end !== null) selection = {start, end, direction: direction === null ? "none" : direction};
+  }
+  return {element, selection};
+}
+
+function restoreRegisteredFocus(snapshot: NativeFocusSnapshot | null): void {
+  if (!snapshot) return;
+  const {element, selection} = snapshot;
+  const owner = element.ownerDocument;
+  const focused = owner.activeElement;
+  if (!element.isConnected || element.closest("[hidden], [inert]") || focused === element) return;
+  // A caller that deliberately focused another control during the move keeps ownership.
+  if (focused && focused !== owner.body && focused !== owner.documentElement) return;
+  element.focus({preventScroll: true});
+  if (
+    owner.activeElement === element
+    && selection
+    && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)
+    && element.selectionStart !== null
+  ) {
+    element.setSelectionRange(selection.start, selection.end, selection.direction);
+  }
+}
+
 /**
  * The native registry owns DOM score ordering of registered sibling groups/options.
- * Replace only registered slots so headings, separators and React identities survive.
+ * Replace only registered slots, then restore the real focused descendant and its text selection.
  */
-function orderRegisteredNodes(entries: readonly RankedNode[], filtering: boolean): void {
+function orderRegisteredNodes(
+  entries: readonly RankedNode[],
+  filtering: boolean,
+  restoreFocus: (snapshot: NativeFocusSnapshot | null) => void,
+): void {
+  const focused = captureRegisteredFocus(entries);
   const parents = new Map<HTMLElement, RankedNode[]>();
   for (const entry of entries) {
     const parent = entry.node.parentElement;
@@ -201,6 +254,7 @@ function orderRegisteredNodes(entries: readonly RankedNode[], filtering: boolean
       });
     }
   }
+  restoreFocus(focused);
 }
 
 type NavigationRequest =
@@ -261,6 +315,7 @@ function isNestedControl(target: EventTarget): boolean {
  * Native, context-scoped command controller; not a cmdk package emulation.
  * Filtering retains registrations, score order, stable ties and committed control.
  * Home/End, arrows, Meta endpoints, Alt groups and optional Ctrl Vim keys navigate.
+ * Option-origin navigation transfers focus only after selection commits; input focus stays put.
  * Place registered groups/items directly beneath CommandList/CommandGroup for score ordering.
  */
 const Command = React.forwardRef<HTMLDivElement, CommandProps>(
@@ -286,6 +341,12 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     const [search, setSearch] = React.useState("");
     const generatedListId = React.useId();
     const [listId, setListId] = React.useState(generatedListId);
+    const navigationFocusRequestRef = React.useRef<NavigationFocusRequest | null>(null);
+    const restoringFocusRef = React.useRef<HTMLElement | null>(null);
+    const isRestoringFocus = React.useCallback((element: HTMLElement): boolean => {
+      const restoring = restoringFocusRef.current;
+      return restoring !== null && element.contains(restoring);
+    }, []);
     const [registry, setRegistry] = React.useState<Registry>(() => ({
       items: new Map(),
       groups: new Map(),
@@ -396,8 +457,30 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         const node = group.ref.current;
         if (node) entries.push({node, score: groupRanks.get(group.id)?.score ?? 0, order: group.order});
       }
-      orderRegisteredNodes(entries, isFiltering);
+      orderRegisteredNodes(entries, isFiltering, (snapshot) => {
+        // Restoring this descendant is not a proposal; a caller's handoff to another option still is.
+        restoringFocusRef.current = snapshot?.element ?? null;
+        try {
+          restoreRegisteredFocus(snapshot);
+        } finally {
+          restoringFocusRef.current = null;
+        }
+      });
     }, [groupRanks, isFiltering, rankedItems, registry.groups]);
+    React.useLayoutEffect(() => {
+      const request = navigationFocusRequestRef.current;
+      if (!request) return;
+      if (!request.origin.isConnected || request.origin.ownerDocument.activeElement !== request.origin) {
+        navigationFocusRequestRef.current = null;
+        return;
+      }
+      if (activeItemId === request.targetId) {
+        navigationFocusRequestRef.current = null;
+        activeItem?.ref.current?.focus({preventScroll: true});
+      } else if (activeItemId !== request.originId) {
+        navigationFocusRequestRef.current = null;
+      }
+    }, [activeItem, activeItemId]);
     React.useEffect(() => {
       activeItem?.ref.current?.scrollIntoView({block: "nearest"});
     }, [activeItem]);
@@ -412,12 +495,24 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       [onValueChange, selectableItems, selectedValue, value],
     );
 
+    const navigateToItem = (item: RegisteredItem, owner: Document): void => {
+      const focused = owner.activeElement;
+      const origin = focused instanceof HTMLElement ? registry.items.get(focused.id)?.ref.current : null;
+      navigationFocusRequestRef.current = origin && origin === focused ? {origin, originId: origin.id, targetId: item.id} : null;
+      selectItem(item.id);
+      if (navigationFocusRequestRef.current && item.id === activeItemId) {
+        navigationFocusRequestRef.current = null;
+        item.ref.current?.focus({preventScroll: true});
+      }
+    };
+
     const context = React.useMemo<CommandContextValue>(
       () => ({
         activeItemId,
         disablePointerSelection,
         isFiltering,
         isItemVisible: (id) => visibleItems.some((item) => item.id === id),
+        isRestoringFocus,
         hasVisibleItemsInGroup: (id) => visibleItems.some((item) => item.groupId === id),
         label,
         listId,
@@ -435,6 +530,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         activeItemId,
         disablePointerSelection,
         isFiltering,
+        isRestoringFocus,
         label,
         listId,
         registerGroup,
@@ -476,7 +572,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
                 : nextItem(selectableItems, activeItemId, request, loop);
             if (item) {
               event.preventDefault();
-              selectItem(item.id);
+              navigateToItem(item, event.currentTarget.ownerDocument);
             }
           }}>
           {children}
@@ -676,7 +772,7 @@ const CommandSeparator = React.forwardRef<HTMLDivElement, CommandSeparatorProps>
         {...props}
         ref={ref}
         data-slot='command-separator'
-        className={cn(styles.separator, className)}
+        className={typeof className === "function" ? (state) => cn(styles.separator, className(state)) : cn(styles.separator, className)}
         orientation={orientation}
       />
     );
@@ -705,7 +801,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
     }: Readonly<CommandItemProps>,
     ref,
   ): React.JSX.Element => {
-    const {activeItemId, disablePointerSelection, isFiltering, isItemVisible, registerItem, selectItem, unregisterItem} =
+    const {activeItemId, disablePointerSelection, isFiltering, isItemVisible, isRestoringFocus, registerItem, selectItem, unregisterItem} =
       useCommandContext("CommandItem");
     const group = React.useContext(CommandGroupContext);
     const generatedId = React.useId();
@@ -777,7 +873,8 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
         }}
         onFocus={(event) => {
           onFocus?.(event);
-          if (!event.defaultPrevented && !isNestedControl(event.target) && !disabled && isVisible) selectItem(itemId);
+          if (!event.defaultPrevented && !isRestoringFocus(event.currentTarget) && !isNestedControl(event.target) && !disabled && isVisible)
+            selectItem(itemId);
         }}
         onMouseEnter={(event) => {
           onMouseEnter?.(event);
