@@ -3,7 +3,7 @@ import {Menubar as BaseMenubar} from "@base-ui/react/menubar";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import {describe, expect, expectTypeOf, it} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
   Menubar,
@@ -23,6 +23,14 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "./menubar";
+
+function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+  return <button {...props} />;
+}
+
+function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement {
+  return <div {...props} />;
+}
 
 function renderMenubar(): HTMLElement {
   render(
@@ -44,6 +52,101 @@ function renderMenubar(): HTMLElement {
 }
 
 describe("Menubar", () => {
+  it.each(["open", "cancel"] as const)(
+    "preserves custom native-button asChild form/ref/state semantics when callbacks %s",
+    async (interaction) => {
+      const user = userEvent.setup();
+      const errors = vi.spyOn(console, "error");
+      const childRef = React.createRef<HTMLButtonElement>();
+      const wrapperRef = React.createRef<HTMLElement>();
+      const calls: string[] = [];
+      let submissions = 0;
+      try {
+        render(
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submissions += 1;
+            }}>
+            <Menubar>
+              <MenubarMenu>
+                <MenubarTrigger
+                  asChild
+                  ref={wrapperRef}
+                  className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
+                  onClick={() => calls.push("wrapper")}>
+                  <LegacyControl
+                    ref={childRef}
+                    onMouseDown={(event) => {
+                      if (interaction === "cancel" && "preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                        event.preventBaseUIHandler();
+                      }
+                    }}
+                    onClick={() => calls.push("child")}>
+                    File
+                  </LegacyControl>
+                </MenubarTrigger>
+                <MenubarContent aria-label='Custom file actions'>
+                  <MenubarItem>Rename</MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
+            </Menubar>
+          </form>,
+        );
+        const trigger = screen.getByRole("menuitem", {name: "File"});
+        expect(trigger.tagName).toBe("BUTTON");
+        expect(trigger).toHaveAttribute("type", "button");
+        expect(trigger.querySelector("button")).toBeNull();
+        expect(childRef.current).toBe(trigger);
+        expect(wrapperRef.current).toBe(trigger);
+        await user.click(trigger);
+        expect(calls).toEqual(["child", "wrapper"]);
+        expect(submissions).toBe(0);
+        expect(trigger).toHaveClass(interaction === "open" ? "trigger-open" : "trigger-closed");
+        if (interaction === "open") {
+          expect(screen.getByRole("menu", {name: "Custom file actions"})).toBeInTheDocument();
+        } else {
+          expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+        }
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        errors.mockRestore();
+      }
+    },
+  );
+
+  it("preserves caller-selected non-native mode for a custom Menubar trigger", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    try {
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger
+              asChild
+              nativeButton={false}>
+              <LegacyRegion>File</LegacyRegion>
+            </MenubarTrigger>
+            <MenubarContent aria-label='Custom file actions'>
+              <MenubarItem>Rename</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+      const trigger = screen.getByRole("menuitem", {name: "File"});
+      expect(trigger.tagName).toBe("DIV");
+      expect(trigger).not.toHaveAttribute("type");
+      await act(async () => {
+        trigger.focus();
+      });
+      await user.keyboard("{Enter}");
+      expect(await screen.findByRole("menu", {name: "Custom file actions"})).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it("keeps explicit menus inside an element-render Menubar", () => {
     render(
       <Menubar render={<nav>Ignored content</nav>}>

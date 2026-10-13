@@ -2,7 +2,7 @@ import {ContextMenu as BaseContextMenu} from "@base-ui/react/context-menu";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import {describe, expect, expectTypeOf, it} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
   ContextMenu,
@@ -22,7 +22,95 @@ import {
   ContextMenuTrigger,
 } from "./context-menu";
 
+function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+  return <button {...props} />;
+}
+
+function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement {
+  return <div {...props} />;
+}
+
 describe("ContextMenu", () => {
+  it("retains explicit native-button mode and safe form semantics on the shared custom Item", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    const childRef = React.createRef<HTMLButtonElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const calls: string[] = [];
+    let submissions = 0;
+    try {
+      render(
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Target</ContextMenuTrigger>
+          <ContextMenuContent aria-label='Context actions'>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                submissions += 1;
+              }}>
+              <ContextMenuItem
+                asChild
+                nativeButton
+                ref={wrapperRef}
+                onClick={(event) => {
+                  calls.push("wrapper");
+                  event.preventBaseUIHandler();
+                }}>
+                <LegacyControl
+                  ref={childRef}
+                  onClick={() => calls.push("child")}>
+                  Cancel close
+                </LegacyControl>
+              </ContextMenuItem>
+            </form>
+          </ContextMenuContent>
+        </ContextMenu>,
+      );
+      const item = screen.getByRole("menuitem", {name: "Cancel close"});
+      expect(item.tagName).toBe("BUTTON");
+      expect(item).toHaveAttribute("type", "button");
+      expect(childRef.current).toBe(item);
+      expect(wrapperRef.current).toBe(item);
+      expect(item.querySelector("button")).toBeNull();
+      await user.click(item);
+      expect(calls).toEqual(["child", "wrapper"]);
+      expect(submissions).toBe(0);
+      expect(screen.getByRole("menu", {name: "Context actions"})).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it("retains explicit non-native mode on the shared custom Context Item", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    try {
+      render(
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Target</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem
+              asChild
+              nativeButton={false}>
+              <LegacyRegion>Rename</LegacyRegion>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>,
+      );
+      const item = screen.getByRole("menuitem", {name: "Rename"});
+      expect(item.tagName).toBe("DIV");
+      await act(async () => {
+        item.focus();
+      });
+      await user.keyboard("{Enter}");
+      await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it("routes Popup event handlers to the real menu rather than Positioner", async () => {
     const user = userEvent.setup();
     const targets: HTMLElement[] = [];

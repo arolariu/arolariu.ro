@@ -3,8 +3,9 @@ import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import {describe, expect, expectTypeOf, it} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
+import {Button} from "./button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,6 +24,18 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 
+function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+  return <button {...props} />;
+}
+
+function LegacyLink(props: Readonly<React.ComponentPropsWithRef<"a">>): React.ReactElement {
+  return <a {...props} />;
+}
+
+function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement {
+  return <div {...props} />;
+}
+
 function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
   const transport = {
     ...element,
@@ -35,6 +48,170 @@ function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
 }
 
 describe("DropdownMenu", () => {
+  it.each(["custom", "library"] as const)(
+    "preserves native type, form safety, state callbacks and refs for %s button asChild",
+    async (kind) => {
+      const user = userEvent.setup();
+      const errors = vi.spyOn(console, "error");
+      const childRef = React.createRef<HTMLButtonElement>();
+      const wrapperRef = React.createRef<HTMLElement>();
+      const calls: string[] = [];
+      let submissions = 0;
+      try {
+        render(
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submissions += 1;
+            }}>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                asChild
+                ref={wrapperRef}
+                className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
+                onClick={() => calls.push("wrapper")}>
+                {kind === "custom" ? (
+                  <LegacyControl
+                    ref={childRef}
+                    onClick={() => calls.push("child")}>
+                    Actions
+                  </LegacyControl>
+                ) : (
+                  <Button
+                    ref={childRef}
+                    onClick={() => calls.push("child")}>
+                    Actions
+                  </Button>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent aria-label='Custom actions'>
+                <DropdownMenuItem>Rename</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </form>,
+        );
+        const trigger = screen.getByRole("button", {name: "Actions"});
+        expect(trigger.tagName).toBe("BUTTON");
+        expect(trigger.querySelector("button")).toBeNull();
+        expect(childRef.current).toBe(trigger);
+        expect(wrapperRef.current).toBe(trigger);
+        expect(trigger).toHaveClass("trigger-closed");
+        await user.click(trigger);
+        expect(calls).toEqual(["child", "wrapper"]);
+        expect(submissions).toBe(0);
+        expect(trigger).toHaveAttribute("type", "button");
+        expect(trigger).not.toHaveAttribute("role");
+        expect(screen.getByRole("menu", {name: "Custom actions"})).toBeInTheDocument();
+        expect(trigger).toHaveClass("trigger-open");
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        errors.mockRestore();
+      }
+    },
+  );
+
+  it("retains custom native-button asChild cancellation without submitting its form", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    const calls: string[] = [];
+    const openChanges: boolean[] = [];
+    let submissions = 0;
+    try {
+      render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submissions += 1;
+          }}>
+          <DropdownMenu onOpenChange={(open) => openChanges.push(open)}>
+            <DropdownMenuTrigger
+              asChild
+              onClick={() => calls.push("wrapper")}>
+              <LegacyControl
+                onMouseDown={(event) => {
+                  if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
+                }}
+                onClick={() => calls.push("child")}>
+                Cancel open
+              </LegacyControl>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>Rename</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </form>,
+      );
+      const trigger = screen.getByRole("button", {name: "Cancel open"});
+      await user.click(trigger);
+      expect(calls).toEqual(["child", "wrapper"]);
+      expect(submissions).toBe(0);
+      expect(trigger).toHaveAttribute("type", "button");
+      expect(openChanges).toEqual([]);
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it.each(["anchor", "div"] as const)("keeps a custom non-native %s consumer explicit nativeButton=false", async (kind) => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    const ref = React.createRef<HTMLElement>();
+    try {
+      render(
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            asChild
+            ref={ref}
+            nativeButton={false}>
+            {kind === "anchor" ? <LegacyLink href='#actions'>Custom target</LegacyLink> : <LegacyRegion>Custom target</LegacyRegion>}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent aria-label='Custom target actions'>
+            <DropdownMenuItem>Rename</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+      const trigger = screen.getByRole("button", {name: "Custom target"});
+      expect(trigger.tagName).toBe(kind === "anchor" ? "A" : "DIV");
+      expect(ref.current).toBe(trigger);
+      expect(trigger).not.toHaveAttribute("type");
+      await act(async () => {
+        trigger.focus();
+      });
+      await user.keyboard("{Enter}");
+      expect(await screen.findByRole("menu", {name: "Custom target actions"})).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it.each(["anchor", "div"] as const)("still infers non-native mode only for the known intrinsic %s legacy target", async (kind) => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    try {
+      render(
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            {kind === "anchor" ? <a href='#actions'>Intrinsic target</a> : <div>Intrinsic target</div>}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Rename</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+      const trigger = screen.getByRole("button", {name: "Intrinsic target"});
+      expect(trigger.tagName).toBe(kind === "anchor" ? "A" : "DIV");
+      expect(trigger).not.toHaveAttribute("type");
+      await user.click(trigger);
+      expect(await screen.findByRole("menu")).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it("routes Popup events to the role-bearing element and retains item cancellation", async () => {
     const user = userEvent.setup();
     const targets: HTMLElement[] = [];

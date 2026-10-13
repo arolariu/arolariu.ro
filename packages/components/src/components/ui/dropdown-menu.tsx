@@ -131,7 +131,8 @@ const DropdownMenuSub = BaseMenu.SubmenuRoot;
 /**
  * Opens a menu with the primitive's native button behavior by default.
  * Set nativeButton={false} for non-button render targets. Legacy intrinsic
- * asChild targets infer nativeButton; custom components may specify it.
+ * asChild targets infer nativeButton; opaque custom targets retain the native
+ * default unless the caller explicitly selects non-native behavior.
  */
 function DropdownMenuTrigger<Payload>(props: Readonly<DropdownMenuTrigger.Props<Payload>>): React.JSX.Element {
   const {asChild = false, children, render, nativeButton, ref, ...otherProps} = props;
@@ -150,7 +151,7 @@ function DropdownMenuTrigger<Payload>(props: Readonly<DropdownMenuTrigger.Props<
       data-slot='dropdown-menu-trigger'
       {...otherProps}
       ref={primitiveRef}
-      nativeButton={nativeButton ?? (legacyChild ? legacyChild.type === "button" : true)}
+      nativeButton={nativeButton ?? (typeof legacyChild?.type === "string" ? legacyChild.type === "button" : true)}
       render={legacyChild || children === undefined ? renderProp : withMenuChildren(renderProp, children)}>
       {legacyChild ? undefined : children}
     </BaseMenu.Trigger>
