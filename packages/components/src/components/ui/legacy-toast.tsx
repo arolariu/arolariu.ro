@@ -221,8 +221,8 @@ function markPublication(id: string): number {
 function save(record: ToastRecord, update = false): void {
   if (!update) {
     operations.delete(record.snapshot.id);
-    markPublication(record.snapshot.id);
   }
+  markPublication(record.snapshot.id);
   records.set(record.snapshot.id, record);
   const index = update ? history.findLastIndex((snapshot) => snapshot.id === record.snapshot.id) : -1;
   if (index === -1) {
@@ -379,12 +379,13 @@ function settle(operation: PromiseOperation, state: ResolvedState, variant: Lega
   if (operation.generation !== undefined) {
     update(operation.id, {...resolved.options, message: resolved.message, variant});
   } else {
-    const targetId = identifier(resolved.options.id ?? registration().toastOptions.id ?? operation.id);
+    const targetOptions = mergeOptions(resolved.options);
+    const targetId = identifier(targetOptions.id ?? operation.id);
     const owner = operations.get(targetId);
     if ((publicationVersions.get(targetId) ?? 0) > operation.version || (owner !== undefined && owner !== operation)) {
       return;
     }
-    show(resolved.message, variant, {...resolved.options, id: targetId});
+    show(resolved.message, variant, {...targetOptions, id: targetId});
   }
 }
 

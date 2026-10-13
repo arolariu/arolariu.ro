@@ -1630,4 +1630,117 @@ describe("legacyToast compatibility", () => {
     expect(toast.getToasts()).toHaveLength(0);
     expect(toast.getHistory()).toEqual(history);
   });
+
+  it("does not overwrite an explicitly updated resolved target with stale no-loader completion", async () => {
+    const source = Promise.withResolvers<number>();
+    const success = vi.fn(() => ({id: "updated-target", message: "Stale result"}));
+    const onFinally = vi.fn();
+    render(<Toaster />);
+    act(() => {
+      toast("Initial target", {id: "updated-target", duration: 0});
+    });
+    const pending = toast.promise(source.promise, {success, finally: onFinally});
+    await act(async () => {
+      toast.update("updated-target", {message: "Newer explicit update"});
+    });
+    const updatedHistory = toast.getHistory();
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "updated-target", title: "Newer explicit update"})]);
+    expect(toast.getHistory()).toEqual(updatedHistory);
+    expect(success).toHaveBeenCalledExactlyOnceWith(42);
+    expect(onFinally).toHaveBeenCalledOnce();
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rejects raw invalid resolved-state ID %s before coercion without active/history entries and awaits finally",
+    async (id) => {
+      const finalizer = Promise.withResolvers<void>();
+      const onFinally = vi.fn(() => finalizer.promise);
+      const success = vi.fn(() => ({id, message: "Invalid ID"}));
+      render(<Toaster />);
+      const history = toast.getHistory();
+      let completed = false;
+      let rejected: Promise<void> | undefined;
+      await act(async () => {
+        const pending = toast.promise(Promise.resolve(42), {success, finally: onFinally});
+        rejected = pending.then(
+          () => {
+            completed = true;
+            throw new Error("Invalid numeric ID unexpectedly resolved");
+          },
+          (error: unknown) => {
+            completed = true;
+            expect(error).toBeInstanceOf(TypeError);
+            expect(error).toHaveProperty("message", expect.stringMatching(/id/iu));
+          },
+        );
+        await Promise.resolve();
+      });
+      expect(onFinally).toHaveBeenCalledOnce();
+      expect(completed).toBe(false);
+      expect(toast.getToasts()).toHaveLength(0);
+      expect(toast.getHistory()).toEqual(history);
+      await act(async () => {
+        finalizer.resolve();
+        await rejected;
+      });
+      expect(completed).toBe(true);
+      expect(success).toHaveBeenCalledExactlyOnceWith(42);
+      expect(toast.getToasts()).toHaveLength(0);
+      expect(toast.getHistory()).toEqual(history);
+    },
+  );
+
+  it.each([0, 17, -4, 1.25])("preserves finite resolved-state numeric ID %s and current default styling", async (id) => {
+    render(<Toaster toastOptions={{duration: 0, className: "valid-resolved-default", description: "Default description"}} />);
+    const history = toast.getHistory();
+    await act(async () => {
+      expect(await toast.promise(Promise.resolve(42), {success: {id, message: 0}})).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: String(id), title: 0, description: "Default description"})]);
+    expect(toast.getHistory().slice(history.length)).toHaveLength(1);
+    expect(screen.getByText("0").closest("[data-slot=toast]")).toHaveClass("valid-resolved-default");
+  });
+
+  it("does not suppress resolved-target completion when only an unrelated ID is explicitly updated", async () => {
+    const source = Promise.withResolvers<number>();
+    render(<Toaster />);
+    act(() => {
+      toast("Initial target", {id: "unchanged-target", duration: 0});
+      toast("Unrelated", {id: "updated-unrelated", duration: 0});
+    });
+    const pending = toast.promise(source.promise, {success: {id: "unchanged-target", message: "Owned target completion"}});
+    await act(async () => {
+      toast.update("updated-unrelated", {message: "New unrelated content"});
+    });
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([
+      expect.objectContaining({id: "unchanged-target", title: "Owned target completion"}),
+      expect.objectContaining({id: "updated-unrelated", title: "New unrelated content"}),
+    ]);
+  });
+
+  it("keeps actual loading-operation ownership during explicit progress updates", async () => {
+    const source = Promise.withResolvers<number>();
+    render(<Toaster />);
+    let pending: Promise<number> | undefined;
+    act(() => {
+      pending = toast.promise(source.promise, {id: "loading-progress", loading: "Starting", success: "Completed"});
+    });
+    await act(async () => {
+      toast.update("loading-progress", {message: "Explicit progress", description: "Halfway"});
+    });
+    expect(screen.getByText("Explicit progress")).toBeInTheDocument();
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "loading-progress", title: "Completed"})]);
+  });
 });
