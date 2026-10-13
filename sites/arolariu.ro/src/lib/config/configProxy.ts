@@ -2,16 +2,15 @@
  * @fileoverview Server-side-only config proxy client with per-key TTL caching
  * and typed config value helpers with env-var fallback.
  *
- * Config URL is determined deterministically by `AZURE_CLIENT_ID` presence:
- *   - `AZURE_CLIENT_ID` set -> `https://exp.arolariu.ro`  (Azure / production)
- *   - otherwise             -> `http://exp`               (local Docker / CI)
+ * Cloud deployments use `https://exp.arolariu.ro`; local deployments use
+ * `http://exp`. EXP_PROXY_URL overrides the endpoint. Explicit INFRA=local
+ * preserves local routing even when an Azure identity is configured.
  *
- * The website consumes the exp service through the single-key endpoint:
- * `/api/v1/config?name=<config-key>`.
+ * Startup fetches `/api/v1/run-time?for=website`; keys outside the initialized
+ * snapshot use `/api/v1/config?name=<config-key>`.
  *
  * Typed helpers (`fetchApiUrl`, `fetchApiJwtSecret`, `fetchResendApiKey`) resolve
- * specific whitelisted keys and fall back to environment variables when exp is
- * unavailable.
+ * the initialized environment, retaining dotenv values if local exp is unavailable.
  *
  * @module sites/arolariu.ro/src/lib/config/configProxy
  */
@@ -128,8 +127,13 @@ export function invalidateConfigValueCache(key?: string): void {
   configValueCache.clear();
 }
 
-/** `true` when running on Azure with a Managed Identity client ID configured. */
+/** Whether a managed identity client ID is available; local use does not imply cloud hosting. */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
+const INFRASTRUCTURE = process.env["INFRA"]?.trim().toLowerCase();
+const IS_CLOUD_DEPLOYMENT =
+  INFRASTRUCTURE === "azure"
+  || Boolean(process.env["WEBSITE_INSTANCE_ID"])
+  || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
 
 /**
  * Azure AD token scope for the experiments service.
@@ -145,13 +149,14 @@ const LOCAL_EXP_URL = "http://exp";
 /**
  * Base URL for the experiments / config service.
  *
- * Priority: EXP_PROXY_URL env var > AZURE_CLIENT_ID-based selection > Docker default.
+ * Priority: EXP_PROXY_URL > cloud deployment detection > Docker default.
+ * Explicit INFRA=local retains local routing even when Azure credentials exist.
  * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach bare-metal exp.
  */
-const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : LOCAL_EXP_URL);
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (IS_CLOUD_DEPLOYMENT ? AZURE_EXP_URL : LOCAL_EXP_URL);
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
-const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
+const USE_AZURE_AUTH = URL.canParse(EXP_BASE_URL) && new URL(EXP_BASE_URL).origin === AZURE_EXP_URL;
 
 const WEBSITE_TARGET = "website" as const;
 
@@ -172,7 +177,7 @@ let runtimeConfiguration: Readonly<Record<string, string>> | null = null;
  * Azure (production): 10 seconds — exp is reliably reachable.
  * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
  */
-const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2000;
+const CONFIG_FETCH_TIMEOUT_MS = IS_CLOUD_DEPLOYMENT ? 10_000 : 2000;
 
 /**
  * Azure App Configuration label derived from `SITE_ENV`.
@@ -180,14 +185,14 @@ const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2000;
  * When `SITE_ENV` equals `"PRODUCTION"` the PRODUCTION label is requested;
  * all other values (including absent) resolve to the DEVELOPMENT label.
  */
-const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").trim().toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
 /**
  * Acquires a Bearer token for the experiments service.
  * Returns an empty string when not targeting the Azure-hosted exp instance.
  */
-async function getBearerToken(signal?: AbortSignal, useAzureAuth: boolean = USE_AZURE_AUTH): Promise<string> {
-  if (!useAzureAuth) return "";
+async function getBearerToken(signal?: AbortSignal): Promise<string> {
+  if (!USE_AZURE_AUTH) return "";
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
@@ -201,7 +206,7 @@ async function getBearerToken(signal?: AbortSignal, useAzureAuth: boolean = USE_
 /**
  * Builds request headers for exp proxy requests.
  */
-async function getRequestHeaders(signal?: AbortSignal, useAzureAuth: boolean = USE_AZURE_AUTH): Promise<Record<string, string>> {
+async function getRequestHeaders(signal?: AbortSignal): Promise<Record<string, string>> {
   const baseHeaders = new Headers({"X-Exp-Target": WEBSITE_TARGET});
   const injectedHeaders = injectTraceContextHeaders(baseHeaders);
   const headers = injectedHeaders instanceof Headers ? injectedHeaders : new Headers(baseHeaders);
@@ -212,7 +217,7 @@ async function getRequestHeaders(signal?: AbortSignal, useAzureAuth: boolean = U
     }
   }
 
-  const bearerToken = await getBearerToken(signal, useAzureAuth);
+  const bearerToken = await getBearerToken(signal);
   if (bearerToken) headers.set("Authorization", `Bearer ${bearerToken}`);
   return Object.fromEntries(headers.entries());
 }
@@ -224,7 +229,7 @@ async function getRequestHeaders(signal?: AbortSignal, useAzureAuth: boolean = U
  */
 let expCircuitOpen = false;
 let expCircuitOpenedAt = 0;
-const CIRCUIT_RESET_MS = HAS_AZURE_CLIENT_ID ? 30_000 : 300_000;
+const CIRCUIT_RESET_MS = IS_CLOUD_DEPLOYMENT ? 30_000 : 300_000;
 
 function isExpCircuitOpen(): boolean {
   if (!expCircuitOpen) return false;
@@ -352,10 +357,7 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   }
   if (process.env["NEXT_PHASE"] === "phase-production-build") return;
 
-  const infrastructure = process.env["INFRA"]?.trim().toLowerCase();
-  const isCloud = infrastructure === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]);
-  const baseUrl = process.env["EXP_PROXY_URL"]?.trim() || (isCloud ? AZURE_EXP_URL : LOCAL_EXP_URL);
-  const endpointUrl = `${baseUrl.replace(/\/$/u, "")}/api/v1/run-time`;
+  const endpointUrl = `${EXP_BASE_URL.replace(/\/$/u, "")}/api/v1/run-time`;
   if (!URL.canParse(endpointUrl)) {
     throw new Error("EXP_PROXY_URL must be a valid URL.");
   }
@@ -363,11 +365,11 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   endpoint.searchParams.set("for", WEBSITE_TARGET);
   endpoint.searchParams.set("label", environment);
 
-  const signal = AbortSignal.timeout(isCloud ? 10_000 : 2000);
-  const response = await getRequestHeaders(signal, endpoint.origin === AZURE_EXP_URL)
+  const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
+  const response = await getRequestHeaders(signal)
     .then((headers) => fetch(endpoint.href, {cache: "no-store", headers, signal}))
     .catch(() => {
-      if (isCloud) {
+      if (IS_CLOUD_DEPLOYMENT) {
         throw new Error("Unable to fetch private runtime configuration from exp. Check managed identity and exp availability.");
       }
       expCircuitOpen = true;
@@ -394,6 +396,9 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
     return [key, value] as const;
   });
   const config: Readonly<Record<string, string>> = Object.fromEntries(entries);
+  if (config["Site:Environment"]?.trim().toUpperCase() !== environment) {
+    throw new Error(`Runtime configuration environment does not match ${environment}. Check the exp configuration label.`);
+  }
   const resolved = Object.entries(RUNTIME_ENVIRONMENT_KEYS).map(([key, variable]) => {
     const value = config[key];
     if (value === undefined || (key !== "Communication:Email:ApiKey" && !value.trim())) {

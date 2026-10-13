@@ -107,8 +107,8 @@ env:
   SITE_ENV: ${{ inputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
   SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
   SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
-  # Each job's deployment environment selects the same-named environment secret/variable.
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  # Each job's deployment environment selects the same-named environment secret.
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
 jobs:
   test:

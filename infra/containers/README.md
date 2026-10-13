@@ -138,9 +138,36 @@ npm run containers:run -- --engine rancher --target cv
 ### Frontend
 
 Public configuration is supplied by CI as Docker build arguments. Configure
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment variable or secret in
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment secret in
 each deployment environment. `SITE_*`, `COMMIT_SHA`, and `TIMESTAMP` remain
 build-time inputs. Cloud builds do not generate or mount a website `.env`.
+
+#### Configuring the public Clerk key in GitHub
+
+In **Settings > Environments**, open `development` and add an environment secret
+named `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` containing that Clerk instance's
+`pk_test_...` value. In `production`, add the same secret name with the
+`pk_live_...` value.
+
+The workflow declares the input once in its global `env` block. Both jobs select
+their deployment environment with `inputs.environment || 'development'`, so the
+same-named input resolves to the matching environment's value. Preview pushes
+and development dispatches use `DEVELOPMENT`; production dispatches use
+`PRODUCTION`. Separate conditional key names are not necessary. Keep each public
+key paired with the Clerk secret stored under the corresponding exp label.
+
+If you prefer plain configuration variables for these public values, create
+**repository-level** variables named `CLERK_PUBLISHABLE_KEY_DEVELOPMENT` and
+`CLERK_PUBLISHABLE_KEY_PRODUCTION` under **Settings > Secrets and variables >
+Actions > Variables**, and replace the global expression with:
+
+```yaml
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ inputs.environment == 'production' && vars.CLERK_PUBLISHABLE_KEY_PRODUCTION || vars.CLERK_PUBLISHABLE_KEY_DEVELOPMENT }}
+```
+
+Do not substitute an environment-level `vars` value into the global expression:
+[environment variables become available only after the job starts](https://docs.github.com/en/actions/reference/workflows-and-actions/variables#configuration-variable-precedence).
+The configured environment secrets remain the workflow's supported default.
 
 The existing Next.js `instrumentation.register()` hook awaits
 `initializeRuntimeEnvironmentConfiguration()` before requests are served.
@@ -153,10 +180,26 @@ Local, Aspire, and selfhost modes use local exp when available and retain
 dotenv values when it is unreachable. Invalid documents and cloud failures
 stop initialization instead of silently substituting defaults. `.env` is
 retained for local/offline use and deprecated for cloud deployment.
+Set `INFRA=local` when using a local Azure identity to access other resources;
+both startup and subsequent config reads then retain local exp routing.
 
 The container keeps the standard `node server.js` entrypoint. Private values
 are not baked into image layers. Restarting the Node server reloads changed
 private configuration from exp.
+
+The build workflow runs a bounded startup smoke test on the final image before
+publishing it. It uses the image's normal entrypoint and runner-stage environment
+(without setting `SITE_ENV` or private variables), plus a local exp fixture.
+The test checks the requested exp label and the application's health report,
+proving the build-time environment survives into runtime instrumentation.
+Run it on a Linux Docker host after building an image:
+
+```bash
+node sites/arolariu.ro/tests/container/runtime-configuration.smoke.mjs <image> PRODUCTION
+```
+
+The fixture and test container are temporary; no real Azure services or credentials
+are used.
 
 | Variable | Description | Required |
 | ----------------------------------- | ------------------------------------ | -------- |

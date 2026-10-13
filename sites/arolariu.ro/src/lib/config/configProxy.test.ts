@@ -47,6 +47,16 @@ function createConfigValuePayload(name: string, value: string, refreshIntervalSe
   } as const;
 }
 
+beforeEach(() => {
+  vi.stubEnv("INFRA", "");
+  vi.stubEnv("WEBSITE_INSTANCE_ID", "");
+  vi.stubEnv("EXP_PROXY_URL", "");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("configProxy", () => {
   beforeEach(() => {
     vi.resetModules();
