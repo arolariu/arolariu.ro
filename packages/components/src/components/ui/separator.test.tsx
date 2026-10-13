@@ -99,8 +99,10 @@ describe("Separator", () => {
     );
 
     const separator = screen.getByTestId("separator");
+    const verticalClass = styles.vertical;
 
-    expect(separator).toHaveClass(styles.vertical);
+    if (verticalClass === undefined) throw new Error("Missing Separator vertical CSS Module class");
+    expect(separator).toHaveClass(verticalClass);
     expect(separator).toHaveAttribute("data-orientation", "vertical");
   });
 

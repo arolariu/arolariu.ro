@@ -50,7 +50,7 @@ export interface PaginationNextProps extends PaginationLinkProps {
  */
 export type PaginationEllipsisProps = Readonly<React.ComponentPropsWithoutRef<"span">>;
 
-const buttonSizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
+const buttonSizeStyles: Readonly<Record<NonNullable<ButtonProps["size"]>, string | undefined>> = {
   default: buttonStyles.sizeDefault,
   xs: buttonStyles.sizeXs,
   icon: buttonStyles.sizeIcon,

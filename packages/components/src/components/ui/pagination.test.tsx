@@ -26,6 +26,7 @@ const sizeCases = [
 
 describe("Pagination", () => {
   it.each(sizeCases)("uses the reviewed %s Button sizing for a native pagination anchor", (size, className) => {
+    if (className === undefined) throw new Error(`Missing Pagination ${size} Button CSS Module class`);
     render(
       <PaginationLink
         size={size}

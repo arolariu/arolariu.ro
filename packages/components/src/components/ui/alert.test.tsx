@@ -114,6 +114,7 @@ describe("Alert", () => {
   });
 
   it.each(alertVariantsToTest)("applies the %s variant styles", (variant, expectedClassName) => {
+    if (expectedClassName === undefined) throw new Error(`Missing Alert ${variant} CSS Module class`);
     render(<Alert variant={variant}>Content</Alert>);
 
     expect(screen.getByRole("alert")).toHaveClass(expectedClassName);

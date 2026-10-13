@@ -8,7 +8,7 @@ import styles from "./alert.module.css";
  */
 export type AlertVariant = "default" | "destructive";
 
-const variantStyles: Record<AlertVariant, string> = {
+const variantStyles: Readonly<Record<AlertVariant, string | undefined>> = {
   default: styles.default,
   destructive: styles.destructive,
 };
