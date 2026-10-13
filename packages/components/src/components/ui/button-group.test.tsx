@@ -9,6 +9,14 @@ import {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants}
 import styles from "./button-group.module.css";
 import {CallbackText, LegacyText, RenderedLabel} from "./button-group.stories";
 
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) {
+    throw new Error(`Missing CSS Module class: ${name}`);
+  }
+  return className;
+}
+
 // Consumer fixtures: labels accept both callback props and label-specific refs.
 function GroupTextLabelCallbackConsumer({labelRef}: Readonly<{labelRef: React.Ref<HTMLLabelElement>}>): React.ReactElement {
   return (
@@ -53,8 +61,8 @@ function GroupTextLabelElementConsumer({
 describe("ButtonGroup", () => {
   it("renders ButtonGroup components with children, custom classes, and forwarded refs", () => {
     // Arrange
-    const groupRef = {current: null as HTMLDivElement | null};
-    const textRef = {current: null as HTMLDivElement | null};
+    const groupRef = createRef<HTMLDivElement>();
+    const textRef = createRef<HTMLDivElement>();
 
     // Act
     render(
@@ -124,8 +132,8 @@ describe("ButtonGroup", () => {
   });
 
   it.each([
-    ["horizontal", styles.horizontal],
-    ["vertical", styles.vertical],
+    ["horizontal", requiredClass("horizontal")],
+    ["vertical", requiredClass("vertical")],
   ] as const)("exposes %s orientation, styles, and an accessible group label", (orientation, orientationClass) => {
     render(
       <ButtonGroup
@@ -136,15 +144,15 @@ describe("ButtonGroup", () => {
       </ButtonGroup>,
     );
     const group = screen.getByRole("group", {name: "Page actions"});
-    expect(group).toHaveClass(styles.root, orientationClass);
+    expect(group).toHaveClass(requiredClass("root"), orientationClass);
     expect(group).toHaveAttribute("data-orientation", orientation);
     expect(group).toHaveAttribute("data-slot", "button-group");
   });
 
   it("generates default and customized orientation classes", () => {
-    expect(buttonGroupVariants()).toContain(styles.root);
-    expect(buttonGroupVariants()).toContain(styles.horizontal);
-    expect(buttonGroupVariants({orientation: "vertical", className: "consumer"})).toContain(styles.vertical);
+    expect(buttonGroupVariants()).toContain(requiredClass("root"));
+    expect(buttonGroupVariants()).toContain(requiredClass("horizontal"));
+    expect(buttonGroupVariants({orientation: "vertical", className: "consumer"})).toContain(requiredClass("vertical"));
     expect(buttonGroupVariants({className: "consumer"})).toContain("consumer");
   });
 
@@ -197,7 +205,7 @@ describe("ButtonGroup", () => {
     const text = screen.getByText("Quantity");
     expect(wrapperRef.current).toBe(text);
     expect(childRef.current).toBe(text);
-    expect(text).toHaveClass(styles.text, "wrapper", "child");
+    expect(text).toHaveClass(requiredClass("text"), "wrapper", "child");
     expect(text).toHaveAttribute("data-slot", "button-group-text");
     await user.click(text);
     expect(calls).toEqual(["child", "wrapper"]);
@@ -271,7 +279,7 @@ describe("ButtonGroup", () => {
     );
     const text = screen.getByLabelText("button-group-text");
     expect(text).toHaveTextContent("Callback text");
-    expect(text).toHaveClass(styles.text);
+    expect(text).toHaveClass(requiredClass("text"));
     expect(ref.current).toBe(text);
   });
 
@@ -332,7 +340,7 @@ describe("ButtonGroup", () => {
     const separator = screen.getByRole("separator");
     expect(separator).toHaveAttribute("aria-orientation", orientation);
     expect(separator).toHaveAttribute("data-orientation", orientation);
-    expect(separator).toHaveClass(styles.separator, "consumer");
+    expect(separator).toHaveClass(requiredClass("separator"), "consumer");
     expect(ref.current).toBe(separator);
   });
 

@@ -8,6 +8,14 @@ import {Button, buttonVariants} from "./button";
 import styles from "./button.module.css";
 import {FocusableDisabled, IconExtraSmall, Navigation, NonNative} from "./button.stories";
 
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) {
+    throw new Error(`Missing CSS Module class: ${name}`);
+  }
+  return className;
+}
+
 const LegacyNativeTarget = forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button">>((props, ref) => (
   <button
     {...props}
@@ -17,23 +25,23 @@ const LegacyNativeTarget = forwardRef<HTMLButtonElement, React.ComponentPropsWit
 LegacyNativeTarget.displayName = "LegacyNativeTarget";
 
 const variants = [
-  ["default", styles.default],
-  ["destructive", styles.destructive],
-  ["outline", styles.outline],
-  ["secondary", styles.secondary],
-  ["ghost", styles.ghost],
-  ["link", styles.link],
+  ["default", requiredClass("default")],
+  ["destructive", requiredClass("destructive")],
+  ["outline", requiredClass("outline")],
+  ["secondary", requiredClass("secondary")],
+  ["ghost", requiredClass("ghost")],
+  ["link", requiredClass("link")],
 ] as const;
 
 const sizes = [
-  ["default", styles.sizeDefault],
-  ["xs", styles.sizeXs],
-  ["sm", styles.sizeSm],
-  ["lg", styles.sizeLg],
-  ["icon", styles.sizeIcon],
-  ["icon-xs", styles.sizeIconXs],
-  ["icon-sm", styles.sizeIconSm],
-  ["icon-lg", styles.sizeIconLg],
+  ["default", requiredClass("sizeDefault")],
+  ["xs", requiredClass("sizeXs")],
+  ["sm", requiredClass("sizeSm")],
+  ["lg", requiredClass("sizeLg")],
+  ["icon", requiredClass("sizeIcon")],
+  ["icon-xs", requiredClass("sizeIconXs")],
+  ["icon-sm", requiredClass("sizeIconSm")],
+  ["icon-lg", requiredClass("sizeIconLg")],
 ] as const;
 
 describe("Button", () => {
@@ -93,7 +101,7 @@ describe("Button", () => {
         </Button>,
       );
       const button = screen.getByRole("button", {name: "Action"});
-      expect(button).toHaveClass(styles.button, variantClass, sizeClass);
+      expect(button).toHaveClass(requiredClass("button"), variantClass, sizeClass);
       expect(button).toHaveAttribute("data-slot", "button");
       expect(button).toHaveAttribute("data-variant", variant);
       expect(button).toHaveAttribute("data-size", size);
@@ -102,11 +110,11 @@ describe("Button", () => {
   });
 
   it("generates default and customized classes without rendering", () => {
-    expect(buttonVariants()).toContain(styles.button);
-    expect(buttonVariants()).toContain(styles.default);
-    expect(buttonVariants()).toContain(styles.sizeDefault);
-    expect(buttonVariants({variant: "ghost", size: "icon-xs", className: "consumer"})).toContain(styles.ghost);
-    expect(buttonVariants({variant: "ghost", size: "icon-xs", className: "consumer"})).toContain(styles.sizeIconXs);
+    expect(buttonVariants()).toContain(requiredClass("button"));
+    expect(buttonVariants()).toContain(requiredClass("default"));
+    expect(buttonVariants()).toContain(requiredClass("sizeDefault"));
+    expect(buttonVariants({variant: "ghost", size: "icon-xs", className: "consumer"})).toContain(requiredClass("ghost"));
+    expect(buttonVariants({variant: "ghost", size: "icon-xs", className: "consumer"})).toContain(requiredClass("sizeIconXs"));
     expect(buttonVariants({className: "consumer"})).toContain("consumer");
   });
 
@@ -124,7 +132,7 @@ describe("Button", () => {
     const button = screen.getByRole("button", {name: "Save record"});
     expect(ref.current).toBe(button);
     expect(button).toHaveAttribute("aria-describedby", "description");
-    expect(button).toHaveClass("consumer", styles.button);
+    expect(button).toHaveClass("consumer", requiredClass("button"));
   });
 
   it("merges element-render child and wrapper refs, handlers, classes, and child content", async () => {
@@ -150,7 +158,7 @@ describe("Button", () => {
     );
     const button = screen.getByRole("button", {name: "Child action"});
     expect(button).toHaveAttribute("type", "button");
-    expect(button).toHaveClass("child", "wrapper", styles.button);
+    expect(button).toHaveClass("child", "wrapper", requiredClass("button"));
     expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
     expect(wrapperRef.current).toBe(button);
     expect(childRef.current).toBe(button);
@@ -496,7 +504,7 @@ describe("Button", () => {
       </>,
     );
     expect(screen.getByRole("button", {name: "Read documentation"})).toHaveAttribute("href", "#documentation");
-    expect(screen.getByRole("button", {name: "Add"})).toHaveClass(styles.sizeIconXs);
+    expect(screen.getByRole("button", {name: "Add"})).toHaveClass(requiredClass("sizeIconXs"));
     expect(screen.getByRole("button", {name: "default action unavailable"})).toHaveAttribute("aria-disabled", "true");
   });
 });

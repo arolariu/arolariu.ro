@@ -29,6 +29,14 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) {
+    throw new Error(`Missing CSS Module class: ${name}`);
+  }
+  return className;
+}
+
 // Control only the browser's offscreen image loading; real Base UI owns all state.
 function supplyImageLoader(): {latest: () => HTMLImageElement} {
   const images: HTMLImageElement[] = [];
@@ -116,8 +124,8 @@ describe("Avatar", () => {
     const fallback = screen.getByText("AO");
     expect(rootRef.current).toBe(avatar);
     expect(fallbackRef.current).toBe(fallback);
-    expect(avatar).toHaveClass(styles.root, "consumer-root");
-    expect(fallback).toHaveClass(styles.fallback, "consumer-fallback");
+    expect(avatar).toHaveClass(requiredClass("root"), "consumer-root");
+    expect(fallback).toHaveClass(requiredClass("fallback"), "consumer-fallback");
   });
 
   it("forwards primitive-owned state to the root render callback", () => {
@@ -151,7 +159,7 @@ describe("Avatar", () => {
       </Avatar>,
     );
 
-    expect(screen.getByTestId("avatar")).toHaveClass(styles.root, styles[size], `root-idle-${size}`);
+    expect(screen.getByTestId("avatar")).toHaveClass(requiredClass("root"), requiredClass(size), `root-idle-${size}`);
     expect(screen.getByTestId("avatar")).toHaveAttribute("data-slot", "avatar");
     expect(screen.getByTestId("avatar")).toHaveAttribute("data-size", size);
   });
@@ -163,7 +171,7 @@ describe("Avatar", () => {
       </Avatar>,
     );
     expect(screen.getByTestId("avatar")).toHaveAttribute("data-size", "default");
-    expect(screen.getByTestId("avatar")).toHaveClass(styles.default);
+    expect(screen.getByTestId("avatar")).toHaveClass(requiredClass("default"));
   });
 
   it("preserves the existing root flex layout while adding badge overflow", () => {
@@ -226,7 +234,7 @@ describe("Avatar", () => {
     expect(avatar).toHaveAttribute("data-status", "loading");
     expect(avatar).toHaveClass("root-loading");
     expect(fallback).toHaveAttribute("data-status", "loading");
-    expect(fallback).toHaveClass(styles.fallback, "fallback-loading");
+    expect(fallback).toHaveClass(requiredClass("fallback"), "fallback-loading");
     expect(fallback).toHaveAttribute("data-slot", "avatar-fallback");
     expect(fallbackRef.current).toBe(fallback);
     expect(imageRef.current).toBeNull();
@@ -242,7 +250,7 @@ describe("Avatar", () => {
     const image = await screen.findByRole("img", {name: "Profile portrait"});
     expect(image).toHaveAttribute("data-status", "loaded");
     expect(image).toHaveAttribute("data-slot", "avatar-image");
-    expect(image).toHaveClass(styles.image, "image-loaded");
+    expect(image).toHaveClass(requiredClass("image"), "image-loaded");
     expect(imageRef.current).toBe(image);
     expect(rootRef.current).toBe(avatar);
     expect(fallbackRef.current).toBeNull();
@@ -279,7 +287,7 @@ describe("Avatar", () => {
 
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(screen.getByText("AO")).toHaveAttribute("data-status", "error");
-    expect(screen.getByText("AO")).toHaveClass(styles.fallback, "fallback-error");
+    expect(screen.getByText("AO")).toHaveClass(requiredClass("fallback"), "fallback-error");
     expect(statuses).toEqual(["loading", "error"]);
   });
 
@@ -355,7 +363,7 @@ describe("Avatar", () => {
     const image = screen.getByAltText("Native portrait");
     expect(imageRef.current).toBe(image);
     expect(childRef.current).toBe(image);
-    expect(image).toHaveClass(styles.image, "wrapper-image", "child-image");
+    expect(image).toHaveClass(requiredClass("image"), "wrapper-image", "child-image");
     expect(image).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByText("AO")).toBeInTheDocument();
 
@@ -399,7 +407,7 @@ describe("Avatar", () => {
       </Avatar>,
     );
     const link = screen.getByRole("link", {name: "AO"});
-    expect(link).toHaveClass(styles.root, "wrapper-root", "child-root");
+    expect(link).toHaveClass(requiredClass("root"), "wrapper-root", "child-root");
     expect(rootRef.current).toBe(link);
     expect(childRef.current).toBe(link);
     await user.click(link);
@@ -430,7 +438,7 @@ describe("Avatar", () => {
     const badge = screen.getByRole("img", {name: "Online"});
     expect(badgeRef.current).toBe(badge);
     expect(badge).toHaveAttribute("data-slot", "avatar-badge");
-    expect(badge).toHaveClass(styles.badge, "consumer-badge");
+    expect(badge).toHaveClass(requiredClass("badge"), "consumer-badge");
     expect(badge.parentElement).toBe(screen.getByTestId("avatar"));
     expect(screen.getByTestId("badge-icon").parentElement).toBe(badge);
     expect(cssDeclaration(".root", "overflow")).toBe("visible");
@@ -475,8 +483,8 @@ describe("Avatar", () => {
     expect(count.tagName).toBe("DIV");
     expect(group).toHaveAttribute("data-slot", "avatar-group");
     expect(count).toHaveAttribute("data-slot", "avatar-group-count");
-    expect(group).toHaveClass(styles.group, "consumer-group");
-    expect(count).toHaveClass(styles.groupCount, "consumer-count");
+    expect(group).toHaveClass(requiredClass("group"), "consumer-group");
+    expect(count).toHaveClass(requiredClass("groupCount"), "consumer-count");
     expect(count).toHaveAttribute("aria-label", "3 more contributors");
     expect(group.children).toHaveLength(3);
     expect(group.lastElementChild).toBe(count);
@@ -485,9 +493,9 @@ describe("Avatar", () => {
   });
 
   it.each([
-    [AvatarBadge, "avatar-badge", styles.badge],
-    [AvatarGroup, "avatar-group", styles.group],
-    [AvatarGroupCount, "avatar-group-count", styles.groupCount],
+    [AvatarBadge, "avatar-badge", requiredClass("badge")],
+    [AvatarGroup, "avatar-group", requiredClass("group")],
+    [AvatarGroupCount, "avatar-group-count", requiredClass("groupCount")],
   ] as const)("lets %s own its render callback with slot state, children, and classes", (Part, slot, styleClass) => {
     expect(Part).toBeDefined();
     render(
@@ -562,9 +570,9 @@ describe("Avatar", () => {
     expect(badge).toHaveAttribute("data-render-slot", "avatar-badge");
     expect(group).toHaveAttribute("data-render-slot", "avatar-group");
     expect(count).toHaveAttribute("data-render-slot", "avatar-group-count");
-    expect(badge).toHaveClass(styles.badge);
-    expect(group).toHaveClass(styles.group);
-    expect(count).toHaveClass(styles.groupCount);
+    expect(badge).toHaveClass(requiredClass("badge"));
+    expect(group).toHaveClass(requiredClass("group"));
+    expect(count).toHaveClass(requiredClass("groupCount"));
     unmount();
     expect(badgeRef.current).toBeNull();
     expect(groupRef.current).toBeNull();
@@ -633,7 +641,7 @@ describe("Avatar", () => {
     expect(wrapperRef.current).toBe(button);
     expect(childRef.current).toBe(button);
     expect(button).toHaveAttribute("data-slot", "avatar-group-count");
-    expect(button).toHaveClass(styles.groupCount);
+    expect(button).toHaveClass(requiredClass("groupCount"));
     unmount();
     expect(wrapperRef.current).toBeNull();
     expect(childRef.current).toBeNull();
@@ -901,7 +909,7 @@ describe("Avatar", () => {
     const fallback = screen.getByText("AO");
     expect(fallbackRef.current).toBe(fallback);
     expect(childRef.current).toBe(fallback);
-    expect(fallback).toHaveClass(styles.fallback, "wrapper", "child");
+    expect(fallback).toHaveClass(requiredClass("fallback"), "wrapper", "child");
     expect(screen.queryByText("Ignored")).not.toBeInTheDocument();
     await user.click(fallback);
     expect(calls).toEqual(["child", "wrapper"]);

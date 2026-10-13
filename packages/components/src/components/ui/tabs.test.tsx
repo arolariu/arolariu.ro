@@ -13,6 +13,14 @@ import styles from "./tabs.module.css";
 
 afterEach(() => vi.restoreAllMocks());
 
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) {
+    throw new Error(`Missing CSS Module class: ${name}`);
+  }
+  return className;
+}
+
 function cssDeclaration(selector: string, property: string): string {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(readFileSync(resolve(import.meta.dirname, "tabs.module.css"), "utf8"));
@@ -635,14 +643,14 @@ describe("Tabs", () => {
     const list = screen.getByRole("tablist");
     const one = screen.getByRole("tab", {name: "One"});
     const panel = screen.getByTestId("callback-panel");
-    expect(root).toHaveClass(styles.root, "root-horizontal");
+    expect(root).toHaveClass(requiredClass("root"), "root-horizontal");
     expect(root).toHaveAttribute("data-contract-orientation", "horizontal");
     expect(root).toHaveAttribute("data-direction", "none");
-    expect(list).toHaveClass(styles.list, styles.default, "list-horizontal-default");
+    expect(list).toHaveClass(requiredClass("list"), requiredClass("default"), "list-horizontal-default");
     expect(list).toHaveAttribute("data-contract-variant", "default");
-    expect(one).toHaveClass(styles.tab, "active-tab");
+    expect(one).toHaveClass(requiredClass("tab"), "active-tab");
     expect(one).toHaveAttribute("data-contract-active", "true");
-    expect(panel).toHaveClass(styles.panel, "visible-panel");
+    expect(panel).toHaveClass(requiredClass("panel"), "visible-panel");
     expect(panel).toHaveAttribute("data-contract-hidden", "false");
     expect(panel).toHaveAttribute("data-contract-transition", "undefined");
     expect(panel).not.toHaveAttribute("hidden");
@@ -656,7 +664,7 @@ describe("Tabs", () => {
     );
     expect(root).toHaveClass("root-vertical");
     expect(root).toHaveAttribute("data-contract-orientation", "vertical");
-    expect(list).toHaveClass(styles.line, "list-vertical-line");
+    expect(list).toHaveClass(requiredClass("line"), "list-vertical-line");
     expect(list).toHaveAttribute("aria-orientation", "vertical");
     expect(list).toHaveAttribute("data-contract-variant", "line");
     expect(one).not.toHaveClass("active-tab");
@@ -739,19 +747,19 @@ describe("Tabs", () => {
     const tab = screen.getByRole("tab", {name: "Two"});
     expect(rootRef.current).toBe(root);
     expect(childRootRef.current).toBe(root);
-    expect(root).toHaveClass(styles.root, "wrapper-root", "child-root");
+    expect(root).toHaveClass(requiredClass("root"), "wrapper-root", "child-root");
     expect(listRef.current).toBe(list);
     expect(childListRef.current).toBe(list);
-    expect(list).toHaveClass(styles.list, "wrapper-list", "child-list");
+    expect(list).toHaveClass(requiredClass("list"), "wrapper-list", "child-list");
     expect(tabRef.current).toBe(tab);
     expect(childTabRef.current).toBe(tab);
-    expect(tab).toHaveClass(styles.tab, "wrapper-tab", "child-tab");
+    expect(tab).toHaveClass(requiredClass("tab"), "wrapper-tab", "child-tab");
     await user.click(tab);
     expect(calls).toEqual(["child", "wrapper"]);
     const panel = screen.getByRole("tabpanel");
     expect(panelRef.current).toBe(panel);
     expect(childPanelRef.current).toBe(panel);
-    expect(panel).toHaveClass(styles.panel, "wrapper-panel", "child-panel");
+    expect(panel).toHaveClass(requiredClass("panel"), "wrapper-panel", "child-panel");
     expect(panel).toHaveTextContent("Panel two");
     expect(tab).toHaveAttribute("aria-controls", panel.id);
     expect(panel).toHaveAttribute("aria-labelledby", tab.id);
@@ -920,11 +928,11 @@ describe("TabsList variants and indicator", () => {
   });
 
   it("exports a CSS Module variant generator with default and consumer classes", () => {
-    expect(TabsModule.tabsListVariants()).toContain(styles.list);
-    expect(TabsModule.tabsListVariants()).toContain(styles.default);
+    expect(TabsModule.tabsListVariants()).toContain(requiredClass("list"));
+    expect(TabsModule.tabsListVariants()).toContain(requiredClass("default"));
     expect(TabsModule.tabsListVariants({className: "consumer"})).toContain("consumer");
-    expect(TabsModule.tabsListVariants({variant: "line"})).toContain(styles.line);
-    expect(TabsModule.tabsListVariants({variant: "line"})).not.toContain(styles.default);
+    expect(TabsModule.tabsListVariants({variant: "line"})).toContain(requiredClass("line"));
+    expect(TabsModule.tabsListVariants({variant: "line"})).not.toContain(requiredClass("default"));
   });
 
   it.each(["default", "line"] as const)("renders the %s list variant with one shared indicator", (variant) => {
@@ -939,15 +947,15 @@ describe("TabsList variants and indicator", () => {
       </Tabs>,
     );
     const list = screen.getByRole("tablist");
-    expect(list).toHaveClass(styles.list, styles[variant], "consumer");
+    expect(list).toHaveClass(requiredClass("list"), requiredClass(variant), "consumer");
     expect(list).toHaveAttribute("data-variant", variant);
     expect(list.querySelectorAll('[role="presentation"]')).toHaveLength(1);
-    expect(list.querySelector('[role="presentation"]')).toHaveClass(styles.indicator);
+    expect(list.querySelector('[role="presentation"]')).toHaveClass(requiredClass("indicator"));
   });
 
   it("uses the default list variant when omitted", () => {
     renderTabs();
-    expect(screen.getByRole("tablist")).toHaveClass(styles.default);
+    expect(screen.getByRole("tablist")).toHaveClass(requiredClass("default"));
     expect(screen.getByRole("tablist")).toHaveAttribute("data-variant", "default");
   });
 

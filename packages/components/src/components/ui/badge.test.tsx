@@ -8,6 +8,14 @@ import {Badge, badgeVariants} from "./badge";
 import styles from "./badge.module.css";
 import {CallbackRender, Ghost, Large, Link, WithDot} from "./badge.stories";
 
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) {
+    throw new Error(`Missing CSS Module class: ${name}`);
+  }
+  return className;
+}
+
 // Consumer fixture: the provided merged ref must spread onto a native anchor.
 function BadgeAnchorConsumer({anchorRef}: Readonly<{anchorRef: React.Ref<HTMLAnchorElement>}>): React.ReactElement {
   return (
@@ -28,12 +36,12 @@ function BadgeAnchorConsumer({anchorRef}: Readonly<{anchorRef: React.Ref<HTMLAnc
 }
 
 const badgeVariantsToTest = [
-  ["default", styles.default],
-  ["secondary", styles.secondary],
-  ["destructive", styles.destructive],
-  ["outline", styles.outline],
-  ["ghost", styles.ghost],
-  ["link", styles.link],
+  ["default", requiredClass("default")],
+  ["secondary", requiredClass("secondary")],
+  ["destructive", requiredClass("destructive")],
+  ["outline", requiredClass("outline")],
+  ["ghost", requiredClass("ghost")],
+  ["link", requiredClass("link")],
 ] as const;
 
 describe("Badge", () => {
@@ -79,7 +87,7 @@ describe("Badge", () => {
     const badge = screen.getByText("Status");
 
     expect(badge).toHaveClass(expectedClassName);
-    expect(badge).toHaveClass(styles.badge);
+    expect(badge).toHaveClass(requiredClass("badge"));
     expect(badge).toHaveAttribute("data-variant", variant);
   });
 
@@ -99,10 +107,10 @@ describe("Badge", () => {
   });
 
   it("generates default and customized classes without rendering", () => {
-    expect(badgeVariants()).toContain(styles.badge);
-    expect(badgeVariants()).toContain(styles.default);
-    expect(badgeVariants({variant: "ghost", className: "consumer"})).toContain(styles.ghost);
-    expect(badgeVariants({variant: "link", className: "consumer"})).toContain(styles.link);
+    expect(badgeVariants()).toContain(requiredClass("badge"));
+    expect(badgeVariants()).toContain(requiredClass("default"));
+    expect(badgeVariants({variant: "ghost", className: "consumer"})).toContain(requiredClass("ghost"));
+    expect(badgeVariants({variant: "link", className: "consumer"})).toContain(requiredClass("link"));
     expect(badgeVariants({className: "consumer"})).toContain("consumer");
   });
 
@@ -134,7 +142,7 @@ describe("Badge", () => {
     );
     const link = screen.getByRole("link", {name: "Release notes"});
     expect(link).toHaveAttribute("href", "#release");
-    expect(link).toHaveClass(styles.badge, styles.link, "wrapper", "child");
+    expect(link).toHaveClass(requiredClass("badge"), requiredClass("link"), "wrapper", "child");
     expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
     expect(wrapperRef.current).toBe(link);
     expect(childRef.current).toBe(link);
@@ -232,7 +240,7 @@ describe("Badge", () => {
         <Badge {...CallbackRender.args} />
       </>,
     );
-    expect(screen.getByText("Ghost")).toHaveClass(styles.ghost);
+    expect(screen.getByText("Ghost")).toHaveClass(requiredClass("ghost"));
     expect(screen.getByRole("link", {name: "Release notes"})).toHaveAttribute("href", "#release-notes");
     expect(screen.getByLabelText("outline badge")).toHaveTextContent("Preview");
   });
@@ -245,6 +253,6 @@ describe("Badge", () => {
       </>,
     );
     expect(screen.getByText("Active").querySelector("span")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByText("Large Default")).toHaveClass(styles.storyLarge);
+    expect(screen.getByText("Large Default")).toHaveClass(requiredClass("storyLarge"));
   });
 });

@@ -1,5 +1,6 @@
-import {act, render} from "@testing-library/react";
-import {beforeAll, describe, expect, it} from "vitest";
+import {act, render, screen} from "@testing-library/react";
+import {createRef} from "react";
+import {afterEach, beforeAll, describe, expect, it, vi} from "vitest";
 
 // Polyfill for Base UI ScrollArea which calls getAnimations() in happy-dom
 beforeAll(() => {
@@ -8,7 +9,7 @@ beforeAll(() => {
   }
 });
 
-import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger, type AccordionProps} from "./accordion";
 import {BackgroundBeams} from "./background-beams";
 import {Badge} from "./badge";
 import {Button} from "./button";
@@ -35,16 +36,23 @@ import {Toggle} from "./toggle";
 import {Tooltip, TooltipContent, TooltipTrigger} from "./tooltip";
 import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
 
-const typewriterWords = [{text: "Hello"}] as const;
+afterEach(() => vi.restoreAllMocks());
+
+const typewriterWords = [{text: "Hello"}];
+const legacyAccordionProps: readonly AccordionProps[] = [
+  {type: "single", defaultValue: "item-1"},
+  {type: "multiple", defaultValue: ["item-1"]},
+];
 
 describe("DOM wrapper ref forwarding", () => {
-  it("forwards refs for div and svg wrappers", () => {
+  it("forwards refs for span, div, and svg wrappers", () => {
     // Arrange
-    const badgeRef = {current: null as HTMLDivElement | null};
-    const backgroundBeamsRef = {current: null as HTMLDivElement | null};
-    const dialogHeaderRef = {current: null as HTMLDivElement | null};
-    const dialogFooterRef = {current: null as HTMLDivElement | null};
-    const dotBackgroundRef = {current: null as SVGSVGElement | null};
+    const badgeRef = createRef<HTMLSpanElement>();
+    const backgroundBeamsRef = createRef<HTMLDivElement>();
+    const dialogHeaderRef = createRef<HTMLDivElement>();
+    const dialogFooterRef = createRef<HTMLDivElement>();
+    const dotBackgroundRef = createRef<SVGSVGElement>();
+    vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 32, 16));
 
     // Act
     render(
@@ -53,22 +61,29 @@ describe("DOM wrapper ref forwarding", () => {
         <BackgroundBeams ref={backgroundBeamsRef} />
         <DialogHeader ref={dialogHeaderRef}>Header</DialogHeader>
         <DialogFooter ref={dialogFooterRef}>Footer</DialogFooter>
-        <DotBackground ref={dotBackgroundRef} />
+        <DotBackground
+          ref={dotBackgroundRef}
+          data-testid='dot-background'
+        />
       </>,
     );
 
     // Assert
-    expect(badgeRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(badgeRef.current).toBeInstanceOf(HTMLSpanElement);
+    expect(badgeRef.current).toBe(screen.getByText("New"));
+    expect(badgeRef.current?.tagName).toBe("SPAN");
     expect(backgroundBeamsRef.current).toBeInstanceOf(HTMLDivElement);
     expect(dialogHeaderRef.current).toBeInstanceOf(HTMLDivElement);
     expect(dialogFooterRef.current).toBeInstanceOf(HTMLDivElement);
     expect(dotBackgroundRef.current).toBeInstanceOf(SVGSVGElement);
+    expect(dotBackgroundRef.current).toBe(screen.getByTestId("dot-background"));
+    expect(dotBackgroundRef.current?.tagName).toBe("svg");
   });
 
   it("forwards refs for typewriter variants", () => {
     // Arrange
-    const typewriterRef = {current: null as HTMLDivElement | null};
-    const smoothTypewriterRef = {current: null as HTMLDivElement | null};
+    const typewriterRef = createRef<HTMLDivElement>();
+    const smoothTypewriterRef = createRef<HTMLDivElement>();
 
     // Act
     render(
@@ -91,24 +106,25 @@ describe("DOM wrapper ref forwarding", () => {
 
   it("forwards refs for tier 1 Base UI wrappers", async () => {
     // Arrange
-    const buttonRef = {current: null as HTMLButtonElement | null};
-    const inputRef = {current: null as HTMLElement | null};
-    const checkboxRef = {current: null as HTMLElement | null};
-    const switchRef = {current: null as HTMLElement | null};
-    const sliderRef = {current: null as HTMLDivElement | null};
-    const toggleRef = {current: null as HTMLButtonElement | null};
-    const selectTriggerRef = {current: null as HTMLButtonElement | null};
-    const selectContentRef = {current: null as HTMLDivElement | null};
-    const dialogTriggerRef = {current: null as HTMLElement | null};
-    const dialogContentRef = {current: null as HTMLDivElement | null};
-    const popoverTriggerRef = {current: null as HTMLElement | null};
-    const popoverContentRef = {current: null as HTMLDivElement | null};
-    const tooltipTriggerRef = {current: null as HTMLElement | null};
-    const tooltipContentRef = {current: null as HTMLDivElement | null};
-    const tabsTriggerRef = {current: null as HTMLElement | null};
-    const tabsContentRef = {current: null as HTMLDivElement | null};
-    const accordionTriggerRef = {current: null as HTMLElement | null};
-    const accordionContentRef = {current: null as HTMLDivElement | null};
+    const buttonRef = createRef<HTMLButtonElement>();
+    const inputRef = createRef<HTMLInputElement>();
+    const checkboxRef = createRef<HTMLSpanElement>();
+    const switchRef = createRef<HTMLSpanElement>();
+    const sliderRef = createRef<HTMLDivElement>();
+    const toggleRef = createRef<HTMLButtonElement>();
+    const selectTriggerRef = createRef<HTMLButtonElement>();
+    const selectContentRef = createRef<HTMLDivElement>();
+    const dialogTriggerRef = createRef<HTMLElement>();
+    const dialogContentRef = createRef<HTMLDivElement>();
+    const popoverTriggerRef = createRef<HTMLElement>();
+    const popoverContentRef = createRef<HTMLDivElement>();
+    const tooltipTriggerRef = createRef<HTMLElement>();
+    const tooltipContentRef = createRef<HTMLDivElement>();
+    const tabsTriggerRef = createRef<HTMLElement>();
+    const tabsContentRef = createRef<HTMLDivElement>();
+    const accordionRootRef = createRef<HTMLDivElement>();
+    const accordionTriggerRef = createRef<HTMLElement>();
+    const accordionContentRef = createRef<HTMLDivElement>();
 
     // Act
     await act(async () => {
@@ -118,9 +134,16 @@ describe("DOM wrapper ref forwarding", () => {
           <Input
             ref={inputRef}
             defaultValue='Hello'
+            data-testid='input'
           />
-          <Checkbox ref={checkboxRef} />
-          <Switch ref={switchRef} />
+          <Checkbox
+            ref={checkboxRef}
+            data-testid='checkbox'
+          />
+          <Switch
+            ref={switchRef}
+            data-testid='switch'
+          />
           <Slider
             ref={sliderRef}
             defaultValue={[25]}
@@ -160,10 +183,21 @@ describe("DOM wrapper ref forwarding", () => {
               Tab content
             </TabsContent>
           </Tabs>
-          <Accordion defaultValue='item-1'>
+          <Accordion
+            ref={accordionRootRef}
+            defaultValue={["item-1"]}
+            data-testid='canonical-accordion'>
             <AccordionItem value='item-1'>
-              <AccordionTrigger ref={accordionTriggerRef}>Section</AccordionTrigger>
-              <AccordionContent ref={accordionContentRef}>Accordion content</AccordionContent>
+              <AccordionTrigger
+                ref={accordionTriggerRef}
+                data-testid='canonical-accordion-trigger'>
+                Section
+              </AccordionTrigger>
+              <AccordionContent
+                ref={accordionContentRef}
+                data-testid='canonical-accordion-content'>
+                Accordion content
+              </AccordionContent>
             </AccordionItem>
           </Accordion>
         </>,
@@ -174,8 +208,14 @@ describe("DOM wrapper ref forwarding", () => {
     // Assert
     expect(buttonRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(inputRef.current).toBeInstanceOf(HTMLInputElement);
-    expect(checkboxRef.current).toBeInstanceOf(HTMLButtonElement);
-    expect(switchRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(inputRef.current).toBe(screen.getByTestId("input"));
+    expect(inputRef.current?.tagName).toBe("INPUT");
+    expect(checkboxRef.current).toBeInstanceOf(HTMLSpanElement);
+    expect(checkboxRef.current).toBe(screen.getByTestId("checkbox"));
+    expect(checkboxRef.current?.tagName).toBe("SPAN");
+    expect(switchRef.current).toBeInstanceOf(HTMLSpanElement);
+    expect(switchRef.current).toBe(screen.getByTestId("switch"));
+    expect(switchRef.current?.tagName).toBe("SPAN");
     expect(sliderRef.current).toBeInstanceOf(HTMLDivElement);
     expect(toggleRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(selectTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
@@ -188,28 +228,71 @@ describe("DOM wrapper ref forwarding", () => {
     expect(tooltipContentRef.current).toBeInstanceOf(HTMLDivElement);
     expect(tabsTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(tabsContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(accordionRootRef.current).toBe(screen.getByTestId("canonical-accordion"));
+    expect(accordionRootRef.current?.tagName).toBe("DIV");
     expect(accordionTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(accordionTriggerRef.current).toBe(screen.getByTestId("canonical-accordion-trigger"));
+    expect(accordionTriggerRef.current).toHaveAttribute("aria-expanded", "true");
     expect(accordionContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(accordionContentRef.current).toBe(screen.getByTestId("canonical-accordion-content"));
+    expect(accordionContentRef.current).toHaveTextContent("Accordion content");
+  });
+
+  it.each(legacyAccordionProps)("forwards actual DOM refs through the explicit legacy $type Accordion union", async (props) => {
+    const rootRef = createRef<HTMLDivElement>();
+    const triggerRef = createRef<HTMLButtonElement>();
+    const contentRef = createRef<HTMLDivElement>();
+    const {unmount} = render(
+      <Accordion
+        {...props}
+        ref={rootRef}
+        data-testid='legacy-accordion'>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger ref={triggerRef}>Legacy section</AccordionTrigger>
+          <AccordionContent
+            ref={contentRef}
+            data-testid='legacy-accordion-content'>
+            Legacy content
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(rootRef.current).toBe(screen.getByTestId("legacy-accordion"));
+    expect(rootRef.current?.tagName).toBe("DIV");
+    expect(triggerRef.current).toBe(screen.getByRole("button", {name: "Legacy section"}));
+    expect(triggerRef.current?.tagName).toBe("BUTTON");
+    expect(triggerRef.current).toHaveAttribute("aria-expanded", "true");
+    expect(contentRef.current).toBe(screen.getByTestId("legacy-accordion-content"));
+    expect(contentRef.current?.tagName).toBe("DIV");
+    expect(contentRef.current).toHaveTextContent("Legacy content");
+    unmount();
+    expect(rootRef.current).toBeNull();
+    expect(triggerRef.current).toBeNull();
+    expect(contentRef.current).toBeNull();
   });
 
   it("forwards refs for tier 2 Base UI wrappers", async () => {
     // Arrange — trigger refs only (content refs require portal rendering)
-    const radioGroupRef = {current: null as HTMLDivElement | null};
-    const radioGroupItemRef = {current: null as HTMLButtonElement | null};
-    const numberFieldGroupRef = {current: null as HTMLDivElement | null};
-    const numberFieldInputRef = {current: null as HTMLElement | null};
-    const contextMenuTriggerRef = {current: null as HTMLDivElement | null};
-    const dropdownMenuTriggerRef = {current: null as HTMLButtonElement | null};
-    const menubarTriggerRef = {current: null as HTMLButtonElement | null};
-    const sheetTriggerRef = {current: null as HTMLButtonElement | null};
-    const sheetContentRef = {current: null as HTMLDivElement | null};
-    const drawerTriggerRef = {current: null as HTMLButtonElement | null};
-    const drawerContentRef = {current: null as HTMLDivElement | null};
-    const hoverCardTriggerRef = {current: null as HTMLAnchorElement | null};
-    const hoverCardContentRef = {current: null as HTMLDivElement | null};
-    const scrollAreaRef = {current: null as HTMLDivElement | null};
-    const collapsibleTriggerRef = {current: null as HTMLButtonElement | null};
-    const collapsibleContentRef = {current: null as HTMLDivElement | null};
+    const radioGroupRef = createRef<HTMLDivElement>();
+    const radioGroupItemRef = createRef<HTMLSpanElement>();
+    const numberFieldGroupRef = createRef<HTMLDivElement>();
+    const numberFieldInputRef = createRef<HTMLInputElement>();
+    const contextMenuTriggerRef = createRef<HTMLDivElement>();
+    const dropdownMenuTriggerRef = createRef<HTMLButtonElement>();
+    const menubarTriggerRef = createRef<HTMLButtonElement>();
+    const sheetTriggerRef = createRef<HTMLButtonElement>();
+    const sheetContentRef = createRef<HTMLDivElement>();
+    const drawerTriggerRef = createRef<HTMLButtonElement>();
+    const drawerContentRef = createRef<HTMLDivElement>();
+    const hoverCardTriggerRef = createRef<HTMLAnchorElement>();
+    const hoverCardContentRef = createRef<HTMLDivElement>();
+    const scrollAreaRef = createRef<HTMLDivElement>();
+    const collapsibleTriggerRef = createRef<HTMLButtonElement>();
+    const collapsibleContentRef = createRef<HTMLDivElement>();
 
     // Act
     await act(async () => {
@@ -222,13 +305,17 @@ describe("DOM wrapper ref forwarding", () => {
               ref={radioGroupItemRef}
               value='starter'
               aria-label='Starter'
+              data-testid='radio'
             />
           </RadioGroup>
           <NumberField
             aria-label='Quantity'
             defaultValue={2}>
             <NumberFieldGroup ref={numberFieldGroupRef}>
-              <NumberFieldInput ref={numberFieldInputRef} />
+              <NumberFieldInput
+                ref={numberFieldInputRef}
+                data-testid='number-field-input'
+              />
             </NumberFieldGroup>
           </NumberField>
           <ContextMenu>
@@ -270,9 +357,13 @@ describe("DOM wrapper ref forwarding", () => {
 
     // Assert — trigger refs are set on mount, content refs only for defaultOpen components
     expect(radioGroupRef.current).toBeInstanceOf(HTMLDivElement);
-    expect(radioGroupItemRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(radioGroupItemRef.current).toBeInstanceOf(HTMLSpanElement);
+    expect(radioGroupItemRef.current).toBe(screen.getByTestId("radio"));
+    expect(radioGroupItemRef.current?.tagName).toBe("SPAN");
     expect(numberFieldGroupRef.current).toBeInstanceOf(HTMLDivElement);
     expect(numberFieldInputRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(numberFieldInputRef.current).toBe(screen.getByTestId("number-field-input"));
+    expect(numberFieldInputRef.current?.tagName).toBe("INPUT");
     expect(contextMenuTriggerRef.current).toBeInstanceOf(HTMLElement);
     expect(dropdownMenuTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(menubarTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
