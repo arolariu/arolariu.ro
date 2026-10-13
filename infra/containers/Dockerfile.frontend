@@ -65,8 +65,9 @@ COPY tsconfig.json vitest.config.ts ./
 COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
-# Install all dependencies
-RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci --prefer-offline --no-audit && \
+# Install all dependencies. The repository .npmrc is excluded from the build context, so enforce
+# its engine-strict policy here: a cached Node base below engines.node fails instead of warning.
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci --engine-strict --prefer-offline --no-audit && \
     npm cache clean --force
 
 # ========================================

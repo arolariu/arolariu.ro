@@ -70,6 +70,9 @@ IDs are `npm_config`, `pip_config` and `nuget_config`, mounted only during depen
 `--secret id=<id>,src=<file>`. Do not copy these files into the context. A Windows remote Podman build may reject secret-mount temporary
 paths; run the same build natively inside the existing Podman guest rather than changing engine, disabling TLS or using a fallback registry.
 
+The repository `.npmrc` is excluded from build contexts too, so the recipes pass `--engine-strict` to `npm ci` directly. A build on a cached
+Node base below `engines.node` (`^24.15.0 || >=26.0.0`) fails with `EBADENGINE` until the base is refreshed, for example with `--pull`.
+
 ## Build Commands
 
 ### Frontend (arolariu.ro)

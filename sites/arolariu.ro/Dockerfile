@@ -25,8 +25,9 @@ COPY tsconfig.json vitest.config.ts ./
 COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
-# Install all dependencies (this resolves workspace links)
-RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci
+# Install all dependencies (this resolves workspace links). The repository .npmrc is excluded from the
+# build context, so enforce its engine-strict policy here: a cached Node base below engines.node fails.
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci --engine-strict
 
 # ========================================
 # Stage 2: Build the application
