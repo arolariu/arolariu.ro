@@ -23,7 +23,7 @@
 }
 
 .root[data-disabled] {
-  pointer-events: none;
+  cursor: not-allowed;
   opacity: 0.5;
 }
 
@@ -42,19 +42,68 @@
 }
 
 .sizeDefault {
-  min-width: var(--ac-size-default);
-  height: var(--ac-size-default);
-  padding: 0 var(--ac-space-2);
+  min-inline-size: var(--ac-size-default);
+  block-size: var(--ac-size-default);
+  padding-inline: var(--ac-space-2);
+  padding-block: 0;
 }
 
 .sizeSm {
-  min-width: var(--ac-size-md);
-  height: var(--ac-size-md);
-  padding: 0 var(--ac-space-2);
+  min-inline-size: var(--ac-size-md);
+  block-size: var(--ac-size-md);
+  padding-inline: var(--ac-space-2);
+  padding-block: 0;
 }
 
 .sizeLg {
-  min-width: var(--ac-size-lg);
-  height: var(--ac-size-lg);
-  padding: 0 var(--ac-space-3);
+  min-inline-size: var(--ac-size-lg);
+  block-size: var(--ac-size-lg);
+  padding-inline: var(--ac-space-3);
+  padding-block: 0;
+}
+
+.root:not([data-disabled]):hover {
+  background-color: var(--ac-muted);
+  color: var(--ac-muted-foreground);
+}
+
+.root svg {
+  pointer-events: none;
+  flex-shrink: 0;
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root {
+    border-color: ButtonText;
+    color: ButtonText;
+
+    &[data-pressed] {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+
+    &[data-disabled] {
+      border-color: GrayText;
+      color: GrayText;
+    }
+  }
 }

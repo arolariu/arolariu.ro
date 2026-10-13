@@ -1,9 +1,17 @@
 .root {
+  --switch-inline-size: 2rem;
+  --switch-block-size: 1.125rem;
+  --switch-thumb-size: calc(var(--switch-block-size) - 0.25rem - 2px);
+  --switch-thumb-travel: calc(var(--switch-inline-size) - var(--switch-thumb-size) - 0.25rem - 2px);
+  --switch-direction: 1;
+
+  box-sizing: border-box;
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 2rem;
-  height: 1.125rem;
+  inline-size: var(--switch-inline-size);
+  block-size: var(--switch-block-size);
+  flex-shrink: 0;
   padding: 0.125rem;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -11,6 +19,15 @@
   cursor: pointer;
   outline: none;
   transition: background-color var(--ac-transition-fast);
+}
+
+.root[data-size="sm"] {
+  --switch-inline-size: 1.5rem;
+  --switch-block-size: 0.875rem;
+}
+
+.root:dir(rtl) {
+  --switch-direction: -1;
 }
 
 .root[data-checked] {
@@ -28,9 +45,10 @@
 }
 
 .thumb {
+  pointer-events: none;
   display: block;
-  width: 0.875rem;
-  height: 0.875rem;
+  inline-size: var(--switch-thumb-size);
+  block-size: var(--switch-thumb-size);
   border-radius: 999px;
   background-color: var(--ac-background);
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
@@ -38,5 +56,52 @@
 }
 
 .root[data-checked] .thumb {
-  transform: translateX(0.875rem);
+  transform: translateX(calc(var(--switch-thumb-travel) * var(--switch-direction)));
+}
+
+.storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  font-size: var(--ac-text-sm);
+}
+
+.storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .thumb {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root {
+    border-color: ButtonText;
+    background-color: Canvas;
+
+    &[data-checked] {
+      border-color: Highlight;
+      background-color: Highlight;
+    }
+
+    &[data-disabled] {
+      border-color: GrayText;
+    }
+  }
+
+  .thumb {
+    background-color: ButtonText;
+  }
+
+  .root[data-checked] .thumb {
+    background-color: HighlightText;
+  }
+
+  .root[data-disabled] .thumb {
+    background-color: GrayText;
+  }
 }

@@ -7,8 +7,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex-shrink: 0;
   border: 1px solid var(--ac-primary);
   border-radius: 999px;
   background-color: var(--ac-background);
@@ -37,7 +38,47 @@
 }
 
 .icon {
-  width: 0.625rem;
-  height: 0.625rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
   fill: currentcolor;
+}
+
+.storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+
+  & small {
+    display: block;
+    color: var(--ac-muted-foreground);
+  }
+}
+
+.storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .item {
+    border-color: ButtonText;
+    color: ButtonText;
+
+    &[data-checked] {
+      border-color: Highlight;
+      color: Highlight;
+    }
+
+    &[data-disabled] {
+      border-color: GrayText;
+      color: GrayText;
+    }
+  }
 }

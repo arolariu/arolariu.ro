@@ -1,105 +1,182 @@
 import {Bold, Italic, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline} from "lucide-react";
-import React from "react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {ToggleGroup, ToggleGroupItem} from "./toggle-group";
+import styles from "./toggle-group.module.css";
 
 const meta = {
   title: "Components/Actions/ToggleGroup",
   component: ToggleGroup,
   tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
+  parameters: {layout: "centered"},
+  argTypes: {
+    orientation: {control: "select", options: ["horizontal", "vertical"]},
+    spacing: {control: "number"},
+    variant: {control: "select", options: ["default", "outline"]},
+    size: {control: "select", options: ["sm", "default", "lg"]},
   },
 } satisfies Meta<typeof ToggleGroup>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Single selection toggle group.
- */
 export const Single: Story = {
   render: () => (
-    <ToggleGroup defaultValue={["center"]}>
+    <ToggleGroup
+      aria-label='Text alignment'
+      defaultValue={["center"]}>
       <ToggleGroupItem
         value='left'
         aria-label='Align left'>
-        <TextAlignStart className='h-4 w-4' />
+        <TextAlignStart aria-hidden='true' />
       </ToggleGroupItem>
       <ToggleGroupItem
         value='center'
         aria-label='Align center'>
-        <TextAlignCenter className='h-4 w-4' />
+        <TextAlignCenter aria-hidden='true' />
       </ToggleGroupItem>
       <ToggleGroupItem
         value='right'
         aria-label='Align right'>
-        <TextAlignEnd className='h-4 w-4' />
+        <TextAlignEnd aria-hidden='true' />
       </ToggleGroupItem>
     </ToggleGroup>
   ),
 };
 
-/**
- * Multiple selection toggle group.
- */
 export const Multiple: Story = {
   render: () => (
     <ToggleGroup
+      aria-label='Formatting'
       defaultValue={["bold"]}
-      toggleMultiple>
+      multiple>
       <ToggleGroupItem
         value='bold'
-        aria-label='Toggle bold'>
-        <Bold className='h-4 w-4' />
+        aria-label='Bold'>
+        <Bold aria-hidden='true' />
       </ToggleGroupItem>
       <ToggleGroupItem
         value='italic'
-        aria-label='Toggle italic'>
-        <Italic className='h-4 w-4' />
+        aria-label='Italic'>
+        <Italic aria-hidden='true' />
       </ToggleGroupItem>
       <ToggleGroupItem
         value='underline'
-        aria-label='Toggle underline'>
-        <Underline className='h-4 w-4' />
+        aria-label='Underline'>
+        <Underline aria-hidden='true' />
       </ToggleGroupItem>
     </ToggleGroup>
   ),
 };
 
-/**
- * Controlled toggle group with multiple selections.
- */
-function ControlledDemo() {
+function ControlledDemo(): React.JSX.Element {
   const [value, setValue] = React.useState<string[]>(["bold", "italic"]);
-
   return (
-    <div className='space-y-4'>
+    <div className={styles.storyStack}>
       <ToggleGroup
+        aria-label='Controlled formatting'
         value={value}
-        onValueChange={(newValue) => setValue(newValue)}
-        toggleMultiple>
+        onValueChange={setValue}
+        multiple>
         <ToggleGroupItem
           value='bold'
-          aria-label='Toggle bold'>
-          <Bold className='h-4 w-4' />
+          aria-label='Bold'
+          render={(props, state) => (
+            <button
+              {...props}
+              data-contract-pressed={String(state.pressed)}
+            />
+          )}>
+          <Bold aria-hidden='true' />
         </ToggleGroupItem>
         <ToggleGroupItem
           value='italic'
-          aria-label='Toggle italic'>
-          <Italic className='h-4 w-4' />
+          aria-label='Italic'>
+          <Italic aria-hidden='true' />
         </ToggleGroupItem>
         <ToggleGroupItem
           value='underline'
-          aria-label='Toggle underline'>
-          <Underline className='h-4 w-4' />
+          aria-label='Underline'>
+          <Underline aria-hidden='true' />
         </ToggleGroupItem>
       </ToggleGroup>
-      <p className='text-muted-foreground text-sm'>Selected: {value.join(", ") || "none"}</p>
+      <output>Selected: {value.join(", ") || "none"}</output>
     </div>
   );
 }
 
-export const Controlled: Story = {
-  render: () => <ControlledDemo />,
+export const Controlled: Story = {render: () => <ControlledDemo />};
+export const Joined: Story = {
+  render: () => (
+    <ToggleGroup
+      aria-label='Joined outline'
+      spacing={0}
+      variant='outline'>
+      <ToggleGroupItem value='one'>One</ToggleGroupItem>
+      <ToggleGroupItem value='two'>Two</ToggleGroupItem>
+      <ToggleGroupItem value='three'>Three</ToggleGroupItem>
+    </ToggleGroup>
+  ),
+};
+export const Vertical: Story = {
+  render: () => (
+    <ToggleGroup
+      aria-label='Vertical joined'
+      orientation='vertical'
+      spacing={0}
+      variant='outline'>
+      <ToggleGroupItem value='one'>One</ToggleGroupItem>
+      <ToggleGroupItem
+        value='two'
+        disabled>
+        Two (disabled)
+      </ToggleGroupItem>
+      <ToggleGroupItem value='three'>Three</ToggleGroupItem>
+    </ToggleGroup>
+  ),
+};
+export const ItemOverrides: Story = {
+  render: () => (
+    <div className={styles.storyStack}>
+      <p>Explicit item size and variant take precedence over group defaults.</p>
+      <ToggleGroup
+        aria-label='Item overrides'
+        size='lg'
+        variant='outline'
+        spacing={3}>
+        <ToggleGroupItem value='inherited'>Inherited large outline</ToggleGroupItem>
+        <ToggleGroupItem
+          value='override'
+          size='sm'
+          variant='default'>
+          Small default override
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </div>
+  ),
+};
+export const RightToLeft: Story = {
+  render: () => (
+    <div dir='rtl'>
+      <ToggleGroup
+        aria-label='RTL joined'
+        spacing={0}
+        variant='outline'>
+        <ToggleGroupItem value='one'>One</ToggleGroupItem>
+        <ToggleGroupItem value='two'>Two</ToggleGroupItem>
+      </ToggleGroup>
+    </div>
+  ),
+};
+export const Disabled: Story = {
+  render: () => (
+    <ToggleGroup
+      aria-label='Disabled formatting'
+      disabled
+      defaultValue={["bold"]}
+      multiple>
+      <ToggleGroupItem value='bold'>Bold</ToggleGroupItem>
+      <ToggleGroupItem value='italic'>Italic</ToggleGroupItem>
+    </ToggleGroup>
+  ),
 };
