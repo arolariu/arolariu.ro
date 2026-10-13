@@ -1,5 +1,8 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {parse, type Rule} from "postcss";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
@@ -322,6 +325,60 @@ describe("Item", () => {
     expect(screen.queryByRole("button", {name: "Static details"})).not.toBeInTheDocument();
     expect(screen.getByRole("button", {name: "Next focus target"})).toHaveFocus();
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it.each(["link", "button"] as const)("authors a forced-colors outline for a keyboard-focused native %s Item", async (role) => {
+    const user = userEvent.setup();
+    const rootClass = styles.item;
+    if (rootClass === undefined) {
+      throw new Error("Missing Item CSS class");
+    }
+    render(
+      <>
+        <Item
+          variant='outline'
+          render={role === "link" ? <a href='#contrast-details' /> : <button type='button' />}>
+          Contrast details
+        </Item>
+        <button type='button'>Next focus target</button>
+      </>,
+    );
+    const target = screen.getByRole(role, {name: "Contrast details"});
+    expect(target.tagName).toBe(role === "link" ? "A" : "BUTTON");
+    expect(target).toHaveClass(rootClass);
+    expect(target).not.toHaveFocus();
+
+    await user.tab();
+    expect(target).toHaveFocus();
+
+    const stylesheet = parse(readFileSync(resolve(import.meta.dirname, "item.module.css"), "utf8"));
+    const forcedColorRules: Rule[] = [];
+    stylesheet.walkAtRules("media", (media) => {
+      if (media.params === "(forced-colors: active)") {
+        media.walkRules((rule) => {
+          forcedColorRules.push(rule);
+        });
+      }
+    });
+    const scopedSelector = (rule: Readonly<Rule>): string => rule.selector.replace(/\.item(?![\w-])/g, `.${CSS.escape(rootClass)}`);
+    const focusRule = forcedColorRules.find((rule) => target.matches(scopedSelector(rule)));
+    expect(focusRule).toBeDefined();
+    if (focusRule === undefined) {
+      throw new Error("No authored forced-colors focus rule matches the emitted Item");
+    }
+    const declarations = new Map<string, string>();
+    focusRule.walkDecls((declaration) => {
+      declarations.set(declaration.prop, declaration.value);
+    });
+    expect(declarations.get("outline-width")).toBe("2px");
+    expect(declarations.get("outline-style")).toBe("solid");
+    expect(["highlight", "canvastext"]).toContain(declarations.get("outline-color")?.toLowerCase());
+    expect(declarations.get("outline-offset")).toBe("2px");
+    expect(declarations.get("forced-color-adjust")).not.toBe("none");
+
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Next focus target"})).toHaveFocus();
+    expect(target.matches(scopedSelector(focusRule))).toBe(false);
   });
 
   it("retains ordinary content when legacy asChild receives text or a fragment", () => {

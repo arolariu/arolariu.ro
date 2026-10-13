@@ -38,6 +38,15 @@ a.item {
   box-shadow: 0 0 0 1px var(--ac-ring);
 }
 
+@media (forced-colors: active) {
+  .item:focus-visible {
+    outline-width: 2px;
+    outline-style: solid;
+    outline-color: Highlight;
+    outline-offset: 2px;
+  }
+}
+
 .outline {
   border-color: var(--ac-border);
 }
