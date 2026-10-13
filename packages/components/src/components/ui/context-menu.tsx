@@ -1,633 +1,367 @@
 "use client";
 
 import {ContextMenu as BaseContextMenu} from "@base-ui/react/context-menu";
-import {mergeProps} from "@base-ui/react/merge-props";
-import {useRender} from "@base-ui/react/use-render";
-import {Check, ChevronRight, Circle} from "lucide-react";
+import {useDirection} from "@base-ui/react/direction-provider";
+import type {ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSubTrigger,
+} from "./dropdown-menu";
 import styles from "./context-menu.module.css";
 
-interface ContextMenuProps extends React.ComponentPropsWithRef<typeof BaseContextMenu.Root> {}
+/** Primitive context-menu state options. */
+export type ContextMenuProps = Readonly<BaseContextMenu.Root.Props>;
+/** Accessible group props from the actual ContextMenu alias. */
+export type ContextMenuGroupProps = Readonly<React.ComponentPropsWithRef<typeof BaseContextMenu.Group>>;
+/** Portal props from the actual ContextMenu alias. */
+export type ContextMenuPortalProps = Readonly<React.ComponentPropsWithRef<typeof BaseContextMenu.Portal>>;
+/** Native radio-group values and event details from the actual ContextMenu alias. */
+export type ContextMenuRadioGroupProps = Readonly<React.ComponentPropsWithRef<typeof BaseContextMenu.RadioGroup>>;
+/** Native ContextMenu submenu-root props. */
+export type ContextMenuSubProps = Readonly<BaseContextMenu.SubmenuRoot.Props>;
+/** Primitive trigger props with compatible single-child composition. */
+export type ContextMenuTriggerProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseContextMenu.Trigger> & {
+    /** Legacy single-child composition. Prefer `render`. @default false */
+    asChild?: boolean;
+  }
+>;
+type ContextMenuPositioningProps = Omit<BaseContextMenu.Positioner.Props, keyof BaseContextMenu.Popup.Props>;
+type MenuDataAttributes = {readonly [key: `data-${string}`]: string | number | boolean | undefined};
+/** Popup DOM/state props and separate primitive-derived placement options. */
+export type ContextMenuContentProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseContextMenu.Popup>
+    & ContextMenuPositioningProps & {
+      /** Positioner DOM, ref, render and state-class props; placement stays at the top level. */
+      positionerProps?: Readonly<
+        Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Positioner>, keyof ContextMenuPositioningProps | "children">
+          & MenuDataAttributes
+      >;
+      /** Portal options. Nested modal menus should target the enclosing primitive Portal, not an external sibling. */
+      portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Portal>, "children"> & MenuDataAttributes>;
+    }
+>;
+/** ContextMenu.Item is the same installed primitive as Menu.Item. */
+export type ContextMenuItemProps = DropdownMenuItem.Props;
+/** Native checkbox props with optional inset. */
+export type ContextMenuCheckboxItemProps = DropdownMenuCheckboxItem.Props;
+/** Native radio props with optional inset. */
+export type ContextMenuRadioItemProps = DropdownMenuRadioItem.Props;
+/** Primitive submenu trigger props with optional inset. */
+export type ContextMenuSubTriggerProps = DropdownMenuSubTrigger.Props;
+/** Primitive group-label props with optional inset. */
+export type ContextMenuLabelProps = DropdownMenuLabel.Props;
+/** Primitive separator props. */
+export type ContextMenuSeparatorProps = DropdownMenuSeparator.Props;
+/** Presentation-only shortcut props. */
+export type ContextMenuShortcutProps = DropdownMenuShortcut.Props;
 
-interface ContextMenuTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
+function withContextChildren<State>(
+  render: React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined,
+  children: React.ReactNode,
+): React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined {
+  if (typeof render === "function" || children === undefined) return render;
+  // eslint-disable-next-line react-x/no-children-to-array -- Resolve Flight-lazy elements through React's public children boundary.
+  const [element] = React.Children.toArray(render);
+  // eslint-disable-next-line react-x/no-clone-element -- Replace only compound children; ContextMenu owns state, ref and event merging.
+  return React.isValidElement<{children?: React.ReactNode}>(element) ? React.cloneElement(element, {children}) : render;
 }
 
-interface ContextMenuSubTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.SubmenuTrigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
-}
-
-interface ContextMenuContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Positioner>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface ContextMenuItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Item>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-interface ContextMenuCheckboxItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.CheckboxItem>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface ContextMenuRadioItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.RadioItem>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface ContextMenuLabelProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.GroupLabel>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
-}
-
-interface ContextMenuSeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Separator>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface ContextMenuShortcutProps extends React.ComponentPropsWithRef<"span"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-/**
- * Coordinates context menu state and accessibility behavior.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <ContextMenu>Content</ContextMenu>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
+/** Coordinates the real pointer/long-press context menu without adding a DOM wrapper. */
 function ContextMenu(props: Readonly<ContextMenu.Props>): React.ReactElement {
   return <BaseContextMenu.Root {...props} />;
 }
-
-/**
- * Renders the context menu group.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <ContextMenuGroup>Content</ContextMenuGroup>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
+/** Provides accessible primitive group semantics. */
 const ContextMenuGroup = BaseContextMenu.Group;
-/**
- * Provides the context menu portal container.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <ContextMenuPortal>Content</ContextMenuPortal>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
+/** Hosts content in the primitive portal. */
 const ContextMenuPortal = BaseContextMenu.Portal;
-/**
- * Coordinates the context menu radio group.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <ContextMenuRadioGroup>Content</ContextMenuRadioGroup>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
+/** Preserves native values, null selection and cancellable radio change details. */
 const ContextMenuRadioGroup = BaseContextMenu.RadioGroup;
-/**
- * Coordinates the context menu sub.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <ContextMenuSub>Content</ContextMenuSub>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-const ContextMenuSub: typeof BaseContextMenu.SubmenuRoot & {displayName?: string} = BaseContextMenu.SubmenuRoot;
+/** Coordinates native submenu keyboard and focus behavior. */
+const ContextMenuSub = BaseContextMenu.SubmenuRoot;
 
-/**
- * Renders the context menu trigger.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuTrigger>Content</ContextMenuTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
+/** Opens the context menu at the pointer; render callbacks run only inside the primitive. */
 const ContextMenuTrigger = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Trigger>, ContextMenuTrigger.Props>(
   (props: Readonly<ContextMenuTrigger.Props>, ref): React.ReactElement => {
-    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-    const {asChild = false, children, className, render, ...otherProps} = props;
-    const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+    const {asChild = false, children, render, ...otherProps} = props;
+    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
     return (
       <BaseContextMenu.Trigger
-        ref={ref}
+        data-slot='context-menu-trigger'
         {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: renderProp as never,
-          props: mergeProps({className}, {}),
-        })}>
-        {renderProp ? undefined : children}
+        ref={ref}
+        render={legacyChild ?? withContextChildren(render, children)}>
+        {legacyChild ? undefined : children}
       </BaseContextMenu.Trigger>
     );
   },
 );
+ContextMenuTrigger.displayName = "ContextMenuTrigger";
 
 /**
- * Renders the context menu sub trigger.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuSubTrigger>Content</ContextMenuSubTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuSubTrigger(props: Readonly<ContextMenuSubTrigger.Props>): React.ReactElement {
-  const {className, children, inset = false, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.SubmenuTrigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.subTrigger, inset && styles.inset, className)}, {}),
-      })}>
-      {children}
-      <ChevronRight className={styles.subTriggerIcon} />
-    </BaseContextMenu.SubmenuTrigger>
-  );
-}
-
-/**
- * Renders the context menu sub content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuSubContent>Content</ContextMenuSubContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuSubContent(props: Readonly<ContextMenuContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.Positioner
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        props: mergeProps({className: styles.positioner}, {}),
-      })}>
-      <BaseContextMenu.Popup
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.content, className)}, {}),
-        })}>
-        {children}
-      </BaseContextMenu.Popup>
-    </BaseContextMenu.Positioner>
-  );
-}
-
-/**
- * Renders the context menu content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuContent>Content</ContextMenuContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
+ * Portals the role-bearing Popup with canonical right/start placement and offsets 0/4.
+ * Popup names, events, ref, finalFocus and render/class callbacks remain on Popup.
+ * Context Menu's deprecated positionMethod is retained unchanged (the primitive ignores it).
  */
 const ContextMenuContent = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Popup>, ContextMenuContent.Props>(
   (props: Readonly<ContextMenuContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-
+    const direction = useDirection();
+    const {
+      align = "start",
+      alignOffset = 4,
+      side = "right",
+      sideOffset = 0,
+      anchor,
+      // eslint-disable-next-line sonarjs/deprecation -- preserve installed ContextMenu.Positioner's legacy no-op prop
+      positionMethod,
+      collisionBoundary,
+      collisionPadding,
+      sticky,
+      arrowPadding,
+      disableAnchorTracking,
+      collisionAvoidance,
+      positionerProps,
+      portalProps,
+      className,
+      dir = direction,
+      children,
+      render,
+      ...popupProps
+    } = props;
+    const positionerClassName = positionerProps?.className;
+    const popup = (
+      <BaseContextMenu.Popup
+        data-slot='context-menu-content'
+        {...popupProps}
+        ref={ref}
+        dir={dir}
+        render={withContextChildren(render, children)}
+        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}>
+        {children}
+      </BaseContextMenu.Popup>
+    );
+    const positioner = (
+      <BaseContextMenu.Positioner
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        anchor={anchor}
+        // eslint-disable-next-line sonarjs/deprecation -- preserve installed ContextMenu.Positioner's legacy no-op prop
+        positionMethod={positionMethod}
+        collisionBoundary={collisionBoundary}
+        collisionPadding={collisionPadding}
+        sticky={sticky}
+        arrowPadding={arrowPadding}
+        disableAnchorTracking={disableAnchorTracking}
+        collisionAvoidance={collisionAvoidance}
+        {...positionerProps}
+        render={withContextChildren(positionerProps?.render, popup)}
+        className={(state) =>
+          cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
+        }>
+        {popup}
+      </BaseContextMenu.Positioner>
+    );
     return (
-      <ContextMenuPortal>
-        <BaseContextMenu.Positioner
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            props: mergeProps({className: styles.positioner}, {}),
-          })}>
-          <BaseContextMenu.Popup
-            ref={ref}
-            render={useRender({
-              defaultTagName: "div",
-              render: render as never,
-              props: mergeProps({className: cn(styles.content, className)}, {}),
-            })}>
-            {children}
-          </BaseContextMenu.Popup>
-        </BaseContextMenu.Positioner>
+      <ContextMenuPortal
+        {...portalProps}
+        render={withContextChildren(portalProps?.render, null)}>
+        {positioner}
       </ContextMenuPortal>
     );
   },
 );
+ContextMenuContent.displayName = "ContextMenuContent";
 
-/**
- * Renders the context menu item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuItem>Content</ContextMenuItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuItem(props: Readonly<ContextMenuItem.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Portaled submenu using inline-end (right in LTR), start alignment and offsets 0/4. */
+function ContextMenuSubContent(props: Readonly<ContextMenuSubContent.Props>): React.ReactElement {
+  const {side = "inline-end", ...otherProps} = props;
   return (
-    <BaseContextMenu.Item
+    <ContextMenuContent
+      data-slot='context-menu-sub-content'
+      side={side}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: renderProp as never,
-        props: mergeProps({className: cn(styles.item, inset && styles.inset, className)}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseContextMenu.Item>
-  );
-}
-
-/**
- * Renders the context menu checkbox item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuCheckboxItem>Content</ContextMenuCheckboxItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuCheckboxItem(props: Readonly<ContextMenuCheckboxItem.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.CheckboxItem
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
-      })}>
-      <span className={styles.indicatorSlot}>
-        <BaseContextMenu.CheckboxItemIndicator>
-          <Check className={styles.indicatorIcon} />
-        </BaseContextMenu.CheckboxItemIndicator>
-      </span>
-      {children}
-    </BaseContextMenu.CheckboxItem>
-  );
-}
-
-/**
- * Renders the context menu radio item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuRadioItem>Content</ContextMenuRadioItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuRadioItem(props: Readonly<ContextMenuRadioItem.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.RadioItem
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
-      })}>
-      <span className={styles.indicatorSlot}>
-        <BaseContextMenu.RadioItemIndicator>
-          <Circle className={styles.radioIndicatorIcon} />
-        </BaseContextMenu.RadioItemIndicator>
-      </span>
-      {children}
-    </BaseContextMenu.RadioItem>
-  );
-}
-
-/**
- * Renders the context menu label.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuLabel>Content</ContextMenuLabel>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuLabel(props: Readonly<ContextMenuLabel.Props>): React.ReactElement {
-  const {className, children, inset = false, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.GroupLabel
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.label, inset && styles.inset, className)}, {}),
-      })}>
-      {children}
-    </BaseContextMenu.GroupLabel>
-  );
-}
-
-/**
- * Renders the context menu separator.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuSeparator>Content</ContextMenuSeparator>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuSeparator(props: Readonly<ContextMenuSeparator.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
-
-  return (
-    <BaseContextMenu.Separator
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.separator, className)}, {}),
-      })}
     />
   );
 }
 
-/**
- * Renders the context menu shortcut.
- *
- * @remarks
- * - Renders a `<span>` element by default
- * - Built on {@link https://base-ui.com/react/components/context-menu | Base UI Context Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <ContextMenuShortcut>Content</ContextMenuShortcut>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
- */
-function ContextMenuShortcut(props: Readonly<ContextMenuShortcut.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
-  return useRender({
-    defaultTagName: "span",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.shortcut, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
-  });
+/** Uses the shared corrected Menu item contract; ContextMenu exports this same Base UI primitive. */
+function ContextMenuItem(props: Readonly<ContextMenuItem.Props>): React.ReactElement {
+  const {className, ...otherProps} = props;
+  return (
+    <DropdownMenuItem
+      data-slot='context-menu-item'
+      {...otherProps}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+    />
+  );
 }
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+/** Native checkbox row with a relative indicator and unchanged checked/change semantics. */
+function ContextMenuCheckboxItem(props: Readonly<ContextMenuCheckboxItem.Props>): React.ReactElement {
+  const {className, ...otherProps} = props;
+  return (
+    <DropdownMenuCheckboxItem
+      data-slot='context-menu-checkbox-item'
+      {...otherProps}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+    />
+  );
+}
+
+/** Native radio row with a relative indicator and unchanged values/change semantics. */
+function ContextMenuRadioItem(props: Readonly<ContextMenuRadioItem.Props>): React.ReactElement {
+  const {className, ...otherProps} = props;
+  return (
+    <DropdownMenuRadioItem
+      data-slot='context-menu-radio-item'
+      {...otherProps}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+    />
+  );
+}
+
+/** Native submenu activation with the shared logical inset and RTL decorative arrow. */
+function ContextMenuSubTrigger(props: Readonly<ContextMenuSubTrigger.Props>): React.ReactElement {
+  const {className, ...otherProps} = props;
+  return (
+    <DropdownMenuSubTrigger
+      data-slot='context-menu-sub-trigger'
+      {...otherProps}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+    />
+  );
+}
+
+/** Names the surrounding real primitive group. */
+function ContextMenuLabel(props: Readonly<ContextMenuLabel.Props>): React.ReactElement {
+  const {className, ...otherProps} = props;
+  return (
+    <DropdownMenuLabel
+      data-slot='context-menu-label'
+      {...otherProps}
+      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+    />
+  );
+}
+/** Separates sections with the shared real Menu separator. */
+function ContextMenuSeparator(props: Readonly<ContextMenuSeparator.Props>): React.ReactElement {
+  return (
+    <DropdownMenuSeparator
+      data-slot='context-menu-separator'
+      {...props}
+    />
+  );
+}
+/** Shows a shortcut hint without registering keyboard handlers. */
+function ContextMenuShortcut(props: Readonly<ContextMenuShortcut.Props>): React.ReactElement {
+  return (
+    <DropdownMenuShortcut
+      data-slot='context-menu-shortcut'
+      {...props}
+    />
+  );
+}
+
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenu {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuProps;
   export type State = BaseContextMenu.Root.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace ContextMenuGroup {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = ContextMenuGroupProps;
+  export type State = BaseContextMenu.Group.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace ContextMenuPortal {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = ContextMenuPortalProps;
+  export type State = BaseContextMenu.Portal.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace ContextMenuRadioGroup {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = ContextMenuRadioGroupProps;
+  export type State = BaseContextMenu.RadioGroup.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace ContextMenuSub {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = ContextMenuSubProps;
+  export type State = BaseContextMenu.SubmenuRoot.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuTriggerProps;
   export type State = BaseContextMenu.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
-namespace ContextMenuSubTrigger {
-  export type Props = ContextMenuSubTriggerProps;
-  export type State = BaseContextMenu.SubmenuTrigger.State;
-}
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuContentProps;
   export type State = BaseContextMenu.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuSubContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuContentProps;
   export type State = BaseContextMenu.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuItemProps;
   export type State = BaseContextMenu.Item.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuCheckboxItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuCheckboxItemProps;
   export type State = BaseContextMenu.CheckboxItem.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuRadioItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuRadioItemProps;
   export type State = BaseContextMenu.RadioItem.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace ContextMenuSubTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = ContextMenuSubTriggerProps;
+  export type State = BaseContextMenu.SubmenuTrigger.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuLabel {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuLabelProps;
   export type State = BaseContextMenu.GroupLabel.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuSeparator {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuSeparatorProps;
   export type State = BaseContextMenu.Separator.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace ContextMenuShortcut {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = ContextMenuShortcutProps;
-  export type State = Record<string, never>;
+  export type State = DropdownMenuShortcut.State;
 }
-
-ContextMenu.displayName = "ContextMenu";
-ContextMenuGroup.displayName = "ContextMenuGroup";
-ContextMenuPortal.displayName = "ContextMenuPortal";
-ContextMenuRadioGroup.displayName = "ContextMenuRadioGroup";
-ContextMenuSub.displayName = "ContextMenuSub";
-ContextMenuTrigger.displayName = "ContextMenuTrigger";
-ContextMenuSubTrigger.displayName = "ContextMenuSubTrigger";
-ContextMenuSubContent.displayName = "ContextMenuSubContent";
-ContextMenuContent.displayName = "ContextMenuContent";
-ContextMenuItem.displayName = "ContextMenuItem";
-ContextMenuCheckboxItem.displayName = "ContextMenuCheckboxItem";
-ContextMenuRadioItem.displayName = "ContextMenuRadioItem";
-ContextMenuLabel.displayName = "ContextMenuLabel";
-ContextMenuSeparator.displayName = "ContextMenuSeparator";
-ContextMenuShortcut.displayName = "ContextMenuShortcut";
 
 export {
   ContextMenu,

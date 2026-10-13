@@ -1,14 +1,19 @@
+import {DirectionProvider} from "@base-ui/react/direction-provider";
+import {File, FolderOpen, Save, Trash2} from "lucide-react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -19,223 +24,220 @@ const meta = {
   title: "Components/Navigation/DropdownMenu",
   component: DropdownMenu,
   tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
-  },
+  parameters: {layout: "centered"},
 } satisfies Meta<typeof DropdownMenu>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default dropdown menu with basic items.
- */
+/** Named Popup, correctly grouped labels, disabled item and canonical Button composition. */
 export const Default: Story = {
   render: () => (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>Open Menu</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+      <DropdownMenuTrigger render={<Button variant='outline' />}>Open menu</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='Account actions'>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Account</DropdownMenuLabel>
+          <DropdownMenuItem>Profile</DropdownMenuItem>
+          <DropdownMenuItem>Billing</DropdownMenuItem>
+          <DropdownMenuItem disabled>Team settings</DropdownMenuItem>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Profile</DropdownMenuItem>
-        <DropdownMenuItem>Billing</DropdownMenuItem>
-        <DropdownMenuItem>Team</DropdownMenuItem>
-        <DropdownMenuItem>Subscription</DropdownMenuItem>
+        <DropdownMenuItem
+          nativeButton={false}
+          render={<a href='#subscription' />}>
+          Subscription
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   ),
 };
 
-/**
- * Dropdown menu with checkboxes for toggling options.
- */
-export const WithCheckboxes: Story = {
-  render: () => (
+function CheckboxExample(): React.JSX.Element {
+  const [toolbar, setToolbar] = React.useState(true);
+  return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>View Options</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuCheckboxItem checked>Show Status Bar</DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem checked>Show Activity Bar</DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem>Show Panel</DropdownMenuCheckboxItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuCheckboxItem>Show Minimap</DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem checked>Show Breadcrumbs</DropdownMenuCheckboxItem>
+      <DropdownMenuTrigger render={<Button variant='outline' />}>View options</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='Appearance options'>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel inset>Appearance</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem
+            inset
+            checked={toolbar}
+            onCheckedChange={setToolbar}>
+            Show toolbar
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            inset
+            defaultChecked>
+            Show sidebar
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem inset>Show panel</DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            inset
+            disabled>
+            Managed setting
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  ),
-};
+  );
+}
 
-/**
- * Dropdown menu with radio group for selecting a single option.
- */
+/** Real controlled and uncontrolled native checkbox rows with inset indicators. */
+export const WithCheckboxes: Story = {render: () => <CheckboxExample />};
+
+/** Real selectable radio group, not a read-only checked lookalike. */
 export const WithRadioGroup: Story = {
   render: () => (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>Choose Position</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value='bottom'>
-          <DropdownMenuRadioItem value='top'>Top</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value='bottom'>Bottom</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value='right'>Right</DropdownMenuRadioItem>
+      <DropdownMenuTrigger render={<Button variant='outline' />}>Panel position</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='Panel placement'>
+        <DropdownMenuRadioGroup defaultValue='bottom'>
+          <DropdownMenuLabel inset>Position</DropdownMenuLabel>
+          <DropdownMenuRadioItem
+            inset
+            value='top'>
+            Top
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem
+            inset
+            value='bottom'>
+            Bottom
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem
+            inset
+            value='right'>
+            Right
+          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   ),
 };
 
-/**
- * Dropdown menu with submenus and keyboard shortcuts.
- */
+/** Real portaled nested menus and the public Shortcut presentation component. */
 export const WithSubmenus: Story = {
   render: () => (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>Actions</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuTrigger render={<Button variant='outline' />}>Actions</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='File actions'>
         <DropdownMenuItem>
-          <span>New File</span>
-          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘N</span>
+          New file<DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <span>New Window</span>
-          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘⇧N</span>
+          New window<DropdownMenuShortcut>⌘⇧N</DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Share</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
+          <DropdownMenuSubContent aria-label='Share options'>
             <DropdownMenuItem>Email link</DropdownMenuItem>
             <DropdownMenuItem>Messages</DropdownMenuItem>
-            <DropdownMenuItem>Notes</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Copy link</DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent aria-label='More sharing options'>
+                <DropdownMenuItem>Copy link</DropdownMenuItem>
+                <DropdownMenuItem>Notes</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-        <DropdownMenuSeparator />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+};
+
+/** Decorative icons sized by the actual menu's CSS Module. */
+export const WithIcons: Story = {
+  render: () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant='outline' />}>File menu</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='File operations'>
         <DropdownMenuItem>
-          <span>Print</span>
-          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘P</span>
+          <File aria-hidden='true' />
+          New document
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <FolderOpen aria-hidden='true' />
+          Open folder
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Save aria-hidden='true' />
+          Save
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   ),
 };
 
-/**
- * Dropdown menu with leading icons for each item.
- */
-function DropdownWithIcons(): React.JSX.Element {
-  return (
+/** Canonical destructive Item API; no manual colors or styled substitutes. */
+export const Destructive: Story = {
+  render: () => (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>File Menu</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>File</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <svg
-            style={{marginRight: "8px", width: "16px", height: "16px"}}
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-            />
-          </svg>
-          <span>New Document</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <svg
-            style={{marginRight: "8px", width: "16px", height: "16px"}}
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
-            />
-          </svg>
-          <span>Open Folder</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <svg
-            style={{marginRight: "8px", width: "16px", height: "16px"}}
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4'
-            />
-          </svg>
-          <span>Save</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export const WithIcons: Story = {
-  render: () => <DropdownWithIcons />,
-};
-
-/**
- * Dropdown menu with a destructive delete action styled differently.
- */
-function DropdownWithDestructiveAction(): React.JSX.Element {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline'>Actions</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56'>
-        <DropdownMenuLabel>Item Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuTrigger render={<Button variant='outline' />}>Item actions</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label='Item actions'>
         <DropdownMenuItem>Edit</DropdownMenuItem>
         <DropdownMenuItem>Duplicate</DropdownMenuItem>
-        <DropdownMenuItem>Archive</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem style={{color: "#dc2626"}}>
-          <svg
-            style={{marginRight: "8px", width: "16px", height: "16px"}}
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'>
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-            />
-          </svg>
-          <span>Delete</span>
+        <DropdownMenuItem variant='destructive'>
+          <Trash2 aria-hidden='true' />
+          Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
+  ),
+};
 
-export const Destructive: Story = {
-  render: () => <DropdownWithDestructiveAction />,
+/** Primitive callback state is provided after the Menu computes its actual open state. */
+export const StateAwareRender: Story = {
+  render: () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={(props, state) => <button {...props}>{state.open ? "Close actions" : "Open actions"}</button>} />
+      <DropdownMenuContent
+        aria-label='State-aware menu'
+        render={(props, state) => (
+          <section
+            {...props}
+            data-nested={state.nested}
+          />
+        )}>
+        <DropdownMenuCheckboxItem
+          render={(props, state) => (
+            <div
+              {...props}
+              data-checked={state.checked}
+            />
+          )}>
+          Toolbar
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuItem>Rename</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+};
+
+/** Logical submenu placement, indicator inset and arrow direction in RTL. */
+export const RightToLeft: Story = {
+  render: () => (
+    <DirectionProvider direction='rtl'>
+      <div dir='rtl'>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant='outline' />}>RTL actions</DropdownMenuTrigger>
+          <DropdownMenuContent aria-label='RTL actions'>
+            <DropdownMenuCheckboxItem
+              inset
+              defaultChecked>
+              Toolbar
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger inset>Share</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent aria-label='RTL share options'>
+                <DropdownMenuItem>Email</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </DirectionProvider>
+  ),
 };
