@@ -88,16 +88,52 @@ function sidebarLegacyChild(children: React.ReactNode, asChild: boolean): React.
   return asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
 }
 
+function isSidebarNavigationTarget(element: HTMLElement): boolean {
+  return element.tagName === "A" && element.hasAttribute("href");
+}
+
 function useSidebarControlInteractions(
   element: React.ReactElement | undefined,
   hasRender: boolean,
   disabled: boolean,
   nativeButton?: boolean,
-): React.HTMLAttributes<HTMLElement> & {disabled?: boolean; type?: "button"} {
+): Readonly<{
+  ref: React.RefCallback<HTMLElement>;
+  props: React.HTMLAttributes<HTMLElement> & {disabled?: boolean; type?: "button"};
+}> {
   const spaceActivationRef = React.useRef(false);
   const intrinsicTag = typeof element?.type === "string" ? element.type : undefined;
   const native = nativeButton ?? (!hasRender || intrinsicTag === "button" || intrinsicTag === undefined);
-  const link = intrinsicTag === "a" && React.isValidElement<{href?: string}>(element) && Boolean(element.props.href);
+  const [resolvedLink, setResolvedLink] = React.useState<boolean | undefined>(undefined);
+  const resolvedLinkRef = React.useRef<boolean | undefined>(undefined);
+  const inspectTarget = !native && intrinsicTag === undefined;
+  const targetRef = React.useCallback<React.RefCallback<HTMLElement>>(
+    (node) => {
+      if (!inspectTarget || !node) return undefined;
+      const syncTarget = (): void => {
+        const nextLink = isSidebarNavigationTarget(node);
+        if (resolvedLinkRef.current !== nextLink) {
+          resolvedLinkRef.current = nextLink;
+          setResolvedLink(nextLink);
+        }
+      };
+      syncTarget();
+      const observer = new MutationObserver(syncTarget);
+      observer.observe(node, {attributes: true, attributeFilter: ["href"]});
+      return (): void => {
+        observer.disconnect();
+        resolvedLinkRef.current = undefined;
+      };
+    },
+    [inspectTarget],
+  );
+  const link =
+    intrinsicTag === undefined
+      ? resolvedLink
+      : intrinsicTag === "a"
+        && React.isValidElement<{href?: string | null}>(element)
+        && element.props.href !== undefined
+        && element.props.href !== null;
   const preventDisabledActivation = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (disabled) {
       event.preventDefault();
@@ -105,51 +141,63 @@ function useSidebarControlInteractions(
     }
   };
   return {
-    ...(native
-      ? {disabled, type: "button" as const}
-      : {
-          "aria-disabled": disabled || undefined,
-          tabIndex: disabled ? -1 : link ? undefined : 0,
-          role: link ? undefined : "button",
-        }),
-    onClickCapture: preventDisabledActivation,
-    onPointerDownCapture: preventDisabledActivation,
-    onMouseDownCapture: preventDisabledActivation,
-    onKeyDownCapture(event) {
-      if (event.key === " ") spaceActivationRef.current = false;
-      if (disabled && (event.key === "Enter" || event.key === " ")) {
-        preventDisabledActivation(event);
-      }
-    },
-    onKeyUpCapture(event) {
-      if (disabled && (event.key === "Enter" || event.key === " ")) {
+    ref: targetRef,
+    props: {
+      ...(native
+        ? {disabled, type: "button" as const}
+        : {
+            "aria-disabled": disabled || undefined,
+            tabIndex: disabled ? -1 : link === false ? 0 : undefined,
+            role: link === false ? "button" : undefined,
+          }),
+      onClickCapture: preventDisabledActivation,
+      onPointerDownCapture: preventDisabledActivation,
+      onMouseDownCapture: preventDisabledActivation,
+      onKeyDownCapture(event) {
+        if (event.key === " ") spaceActivationRef.current = false;
+        if (disabled && (event.key === "Enter" || event.key === " ")) {
+          preventDisabledActivation(event);
+        }
+      },
+      onKeyUpCapture(event) {
+        if (disabled && (event.key === "Enter" || event.key === " ")) {
+          spaceActivationRef.current = false;
+          preventDisabledActivation(event);
+        }
+      },
+      onKeyDown(event) {
+        if (
+          native
+          || event.currentTarget.tagName === "BUTTON"
+          || isSidebarNavigationTarget(event.currentTarget)
+          || disabled
+          || event.defaultPrevented
+          || event.target !== event.currentTarget
+        )
+          return;
+        if (event.key === "Enter" || event.key === " ") {
+          spaceActivationRef.current = event.key === " ";
+          event.preventDefault();
+          if (event.key === "Enter") event.currentTarget.click();
+        }
+      },
+      onKeyUp(event) {
+        const activate = spaceActivationRef.current;
         spaceActivationRef.current = false;
-        preventDisabledActivation(event);
-      }
-    },
-    onKeyDown(event) {
-      if (native || link || disabled || event.defaultPrevented || event.target !== event.currentTarget) return;
-      if (event.key === "Enter" || event.key === " ") {
-        spaceActivationRef.current = event.key === " ";
-        event.preventDefault();
-        if (event.key === "Enter") event.currentTarget.click();
-      }
-    },
-    onKeyUp(event) {
-      const activate = spaceActivationRef.current;
-      spaceActivationRef.current = false;
-      if (
-        activate
-        && !native
-        && !link
-        && !disabled
-        && !event.defaultPrevented
-        && event.target === event.currentTarget
-        && event.key === " "
-      ) {
-        event.preventDefault();
-        event.currentTarget.click();
-      }
+        if (
+          activate
+          && !native
+          && event.currentTarget.tagName !== "BUTTON"
+          && !isSidebarNavigationTarget(event.currentTarget)
+          && !disabled
+          && !event.defaultPrevented
+          && event.target === event.currentTarget
+          && event.key === " "
+        ) {
+          event.preventDefault();
+          event.currentTarget.click();
+        }
+      },
     },
   };
 }
@@ -456,10 +504,14 @@ const SidebarTrigger = React.forwardRef<React.ComponentRef<typeof Button>, Sideb
         variant='ghost'
         size='icon'
         className={cn(styles.trigger, className)}
-        onClick={(event) => {
-          onClick?.(event);
-          if (!event.defaultPrevented) toggleSidebar();
-        }}
+        {...mergeProps<"button">(
+          {
+            onClick: (event) => {
+              if (!event.defaultPrevented) toggleSidebar();
+            },
+          },
+          {onClick},
+        )}
         {...props}>
         <PanelLeft className={styles.triggerIcon} />
         <span className={styles.srOnly}>Toggle Sidebar</span>
@@ -773,24 +825,22 @@ const SidebarGroupAction = React.forwardRef<HTMLElement, SidebarGroupActionProps
   ): React.JSX.Element => {
     const child = sidebarLegacyChild(children, asChild);
     const renderProp = child ?? render;
+    const interactions = useSidebarControlInteractions(
+      typeof renderProp === "function" ? undefined : renderProp,
+      Boolean(renderProp),
+      disabled,
+      nativeButton,
+    );
     return useRender<SidebarGroupActionState, HTMLElement>({
       defaultTagName: "button",
-      ref,
+      ref: [ref, interactions.ref],
       render: renderProp,
       state: {disabled},
       props: {
         "data-sidebar": "group-action",
-        ...mergeProps<"button">(
-          useSidebarControlInteractions(
-            typeof renderProp === "function" ? undefined : renderProp,
-            Boolean(renderProp),
-            disabled,
-            nativeButton,
-          ),
-          {className: cn(styles.groupAction, className)},
-          props,
-          {children: child ? undefined : children},
-        ),
+        ...mergeProps<"button">(interactions.props, {className: cn(styles.groupAction, className)}, props, {
+          children: child ? undefined : children,
+        }),
       },
     });
   },
@@ -935,9 +985,11 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
  * <SidebarMenuButton isActive>Dashboard</SidebarMenuButton>
  * ```
  *
- * Native anchors retain link semantics. Opaque non-button render targets must
- * specify `nativeButton={false}`; render callbacks receive the wrapper's full
- * state, not Tooltip's or any nested control primitive's state.
+ * Native anchors retain link semantics, including an empty href. Opaque
+ * non-button render targets must specify `nativeButton={false}` and forward
+ * their DOM ref; the resolved native target owns navigation classification.
+ * Render callbacks receive the wrapper's full state, not Tooltip's or any
+ * nested control primitive's state.
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
@@ -961,9 +1013,15 @@ const SidebarMenuButton = React.forwardRef<HTMLElement, SidebarMenuButtonProps>(
     const {isMobile, state} = useSidebar();
     const child = sidebarLegacyChild(children, asChild);
     const renderProp = child ?? render;
+    const interactions = useSidebarControlInteractions(
+      typeof renderProp === "function" ? undefined : renderProp,
+      Boolean(renderProp),
+      disabled,
+      nativeButton,
+    );
     const button = useRender<SidebarMenuButtonState, HTMLElement>({
       defaultTagName: "button",
-      ref,
+      ref: [ref, interactions.ref],
       render: renderProp,
       state: {disabled, isActive, size, variant},
       props: {
@@ -971,12 +1029,7 @@ const SidebarMenuButton = React.forwardRef<HTMLElement, SidebarMenuButtonProps>(
         "data-sidebar": "menu-button",
         "data-size": size,
         ...mergeProps<"button">(
-          useSidebarControlInteractions(
-            typeof renderProp === "function" ? undefined : renderProp,
-            Boolean(renderProp),
-            disabled,
-            nativeButton,
-          ),
+          interactions.props,
           {className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className)},
           props,
           {children: child ? undefined : children},
@@ -1053,20 +1106,21 @@ const SidebarMenuAction = React.forwardRef<HTMLElement, SidebarMenuActionProps>(
   ): React.JSX.Element => {
     const child = sidebarLegacyChild(children, asChild);
     const renderProp = child ?? render;
+    const interactions = useSidebarControlInteractions(
+      typeof renderProp === "function" ? undefined : renderProp,
+      Boolean(renderProp),
+      disabled,
+      nativeButton,
+    );
     return useRender<SidebarMenuActionState, HTMLElement>({
       defaultTagName: "button",
-      ref,
+      ref: [ref, interactions.ref],
       render: renderProp,
       state: {disabled, showOnHover},
       props: {
         "data-sidebar": "menu-action",
         ...mergeProps<"button">(
-          useSidebarControlInteractions(
-            typeof renderProp === "function" ? undefined : renderProp,
-            Boolean(renderProp),
-            disabled,
-            nativeButton,
-          ),
+          interactions.props,
           {className: cn(styles.menuAction, showOnHover && styles.menuActionShowOnHover, className)},
           props,
           {children: child ? undefined : children},

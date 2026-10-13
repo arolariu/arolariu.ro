@@ -1,8 +1,13 @@
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {useDirection} from "@base-ui/react/direction-provider";
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {BaseUIEvent, HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
+import type {getRole as NativeRoleOracle} from "dom-accessibility-api" with {"resolution-mode": "require"};
 import {act, cleanup, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
+import {createRequire} from "node:module";
 import {resolve} from "node:path";
 import {AtRule, parse, root, type Node} from "postcss";
 import * as React from "react";
@@ -39,6 +44,12 @@ import styles from "./sidebar.module.css";
 import * as stories from "./sidebar.stories";
 
 const stylesheet = readFileSync(resolve("packages", "components", "src", "components", "ui", "sidebar.module.css"), "utf8");
+const accessibilityApi: unknown = createRequire(resolve("packages", "components", "package.json"))("dom-accessibility-api");
+function hasNativeRoleOracle(value: unknown): value is Readonly<{getRole: typeof NativeRoleOracle}> {
+  return typeof value === "object" && value !== null && "getRole" in value && typeof value.getRole === "function";
+}
+if (!hasNativeRoleOracle(accessibilityApi)) throw new TypeError("The real DOM accessibility API must expose getRole.");
+const {getRole} = accessibilityApi;
 let changeMobile: (mobile: boolean) => void;
 let mobileQuery: MediaQueryList;
 const stylesheetFixtures: HTMLStyleElement[] = [];
@@ -90,6 +101,33 @@ function ContextProbe(): React.JSX.Element {
 function DirectionProbe(): React.JSX.Element {
   return <output data-testid='direction'>{useDirection()}</output>;
 }
+
+const ReviewAnchor = React.forwardRef<
+  HTMLAnchorElement,
+  Readonly<React.ComponentPropsWithoutRef<"a"> & {childRef?: React.Ref<HTMLAnchorElement>}>
+>(({childRef, ...props}, ref): React.JSX.Element => {
+  const id = React.useId();
+  return useRender<Record<string, never>, HTMLAnchorElement>({
+    defaultTagName: "a",
+    ref: childRef ? [ref, childRef] : ref,
+    props: {...props, id: props.id ?? id},
+  });
+});
+ReviewAnchor.displayName = "ReviewAnchor";
+
+const ReviewNonAnchor = React.forwardRef<HTMLDivElement, Readonly<React.ComponentPropsWithoutRef<"div">>>(
+  (props, ref): React.JSX.Element => {
+    const id = React.useId();
+    return (
+      <div
+        {...props}
+        id={props.id ?? id}
+        ref={ref}
+      />
+    );
+  },
+);
+ReviewNonAnchor.displayName = "ReviewNonAnchor";
 
 function expectState(expected: Readonly<{open: boolean; state: string; isMobile: boolean; openMobile: boolean}>): void {
   expect(screen.getByTestId("state")).toHaveTextContent(JSON.stringify(expected));
@@ -505,6 +543,241 @@ describe("Sidebar original-child composition", () => {
   });
 });
 
+describe("Sidebar review: resolved navigation and action targets", () => {
+  const controls = [
+    ["group-action", SidebarGroupAction],
+    ["menu-action", SidebarMenuAction],
+    ["menu-button", SidebarMenuButton],
+  ] as const;
+  const anchorCases = controls.flatMap(([name, Part]) =>
+    (["empty intrinsic", "opaque child", "opaque render", "callback"] as const).flatMap((kind) =>
+      [false, true].map((disabled) => ({name, Part, kind, disabled})),
+    ),
+  );
+
+  it.each(anchorCases)("preserves $name $kind native navigation with disabled=$disabled", async ({name, Part, kind, disabled}) => {
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const events: string[] = [];
+    const states: object[] = [];
+    const submit = vi.fn();
+    const childClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
+      events.push("child");
+      event.preventDefault();
+    };
+    const wrapperClick = (): void => {
+      events.push("wrapper");
+    };
+    const intrinsic = (
+      <a
+        ref={childRef}
+        href=''
+        onClick={childClick}>
+        Reviewed navigation
+      </a>
+    );
+    const opaque = (
+      <ReviewAnchor
+        ref={childRef}
+        href='#reviewed'
+        onClick={childClick}>
+        Reviewed navigation
+      </ReviewAnchor>
+    );
+    render(
+      <SidebarProvider>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}>
+          {kind === "empty intrinsic" || kind === "opaque child" ? (
+            <Part
+              ref={wrapperRef}
+              disabled={disabled}
+              asChild
+              nativeButton={kind === "opaque child" ? false : undefined}
+              onClick={wrapperClick}>
+              {kind === "empty intrinsic" ? intrinsic : opaque}
+            </Part>
+          ) : kind === "opaque render" ? (
+            <Part
+              ref={wrapperRef}
+              disabled={disabled}
+              nativeButton={false}
+              render={opaque}
+              onClick={wrapperClick}
+            />
+          ) : (
+            <Part
+              ref={wrapperRef}
+              disabled={disabled}
+              nativeButton={false}
+              onClick={wrapperClick}
+              render={(elementProps: HTMLProps, state: Readonly<{disabled: boolean}>) => {
+                states.push(state);
+                return (
+                  <ReviewAnchor
+                    {...mergeProps<"a">(elementProps, {href: "#reviewed", onClick: childClick})}
+                    childRef={childRef}>
+                    Reviewed navigation
+                  </ReviewAnchor>
+                );
+              }}
+            />
+          )}
+        </form>
+      </SidebarProvider>,
+    );
+    const link = screen.getByText("Reviewed navigation");
+    expect(screen.getAllByText("Reviewed navigation")).toHaveLength(1);
+    // aria-query's "set" matcher wrongly excludes href=""; the real accessibility API checks attribute presence.
+    expect(getRole(link)).toBe("link");
+    expect(link).toHaveAccessibleName("Reviewed navigation");
+    expect(link).toHaveAttribute("href", kind === "empty intrinsic" ? "" : "#reviewed");
+    if (kind !== "empty intrinsic") expect(screen.getByRole("link", {name: "Reviewed navigation"})).toBe(link);
+    expect(link).not.toHaveAttribute("role", "button");
+    expect(link).not.toHaveAttribute("type");
+    expect(link).not.toHaveAttribute("disabled");
+    expect(childRef.current).toBe(link);
+    expect(wrapperRef.current).toBe(link);
+    if (disabled) {
+      expect(link).toHaveAttribute("aria-disabled", "true");
+      expect(link).toHaveAttribute("tabindex", "-1");
+      await user.click(link);
+      act(() => link.focus());
+      await user.keyboard("{Enter} ");
+      expect(events).toEqual([]);
+    } else {
+      expect(link).not.toHaveAttribute("aria-disabled");
+      expect(link).not.toHaveAttribute("tabindex");
+      await user.tab();
+      expect(link).toHaveFocus();
+      await user.keyboard(" ");
+      expect(events).toEqual([]);
+      await user.keyboard("{Enter}");
+      expect(events).toEqual(["child", "wrapper"]);
+    }
+    expect(submit).not.toHaveBeenCalled();
+    if (kind === "callback") {
+      const expectedState =
+        name === "menu-button"
+          ? {disabled, isActive: false, size: "default", variant: "default"}
+          : name === "menu-action"
+            ? {disabled, showOnHover: false}
+            : {disabled};
+      expect(states.length).toBeGreaterThan(0);
+      for (const state of states) expect(state).toEqual(expectedState);
+    }
+  });
+
+  it.each(controls.flatMap(([name, Part]) => (["opaque", "callback"] as const).map((kind) => ({name, Part, kind}))))(
+    "keeps $name $kind non-anchor targets keyboard-operable under the explicit non-native flag",
+    async ({Part, kind}) => {
+      const user = userEvent.setup();
+      const ref = React.createRef<HTMLElement>();
+      const click = vi.fn();
+      render(
+        <SidebarProvider>
+          <Part
+            ref={ref}
+            nativeButton={false}
+            onClick={click}
+            render={
+              kind === "opaque" ? (
+                <ReviewNonAnchor>Reviewed action</ReviewNonAnchor>
+              ) : (
+                (elementProps: HTMLProps) => <ReviewNonAnchor {...elementProps}>Reviewed action</ReviewNonAnchor>
+              )
+            }
+          />
+        </SidebarProvider>,
+      );
+      const action = screen.getByRole("button", {name: "Reviewed action"});
+      expect(action.tagName).toBe("DIV");
+      expect(ref.current).toBe(action);
+      expect(action).toHaveAttribute("tabindex", "0");
+      expect(action).not.toHaveAttribute("type");
+      expect(action).not.toHaveAttribute("disabled");
+      await user.tab();
+      await user.keyboard("{Enter} ");
+      expect(click).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(controls)("tracks %s opaque href presence without replacing its native node or invoking its component", async (_name, Part) => {
+    const ref = React.createRef<HTMLElement>();
+    const {rerender} = render(
+      <SidebarProvider>
+        <Part
+          ref={ref}
+          nativeButton={false}
+          render={<ReviewAnchor href='#reviewed'>Changing target</ReviewAnchor>}
+        />
+      </SidebarProvider>,
+    );
+    const node = screen.getByRole("link", {name: "Changing target"});
+    await act(async () => {
+      rerender(
+        <SidebarProvider>
+          <Part
+            ref={ref}
+            nativeButton={false}
+            render={<ReviewAnchor>Changing target</ReviewAnchor>}
+          />
+        </SidebarProvider>,
+      );
+    });
+    await waitFor(() => expect(screen.getByRole("button", {name: "Changing target"})).toBe(node));
+    expect(ref.current).toBe(node);
+    expect(node).toHaveAttribute("tabindex", "0");
+    await act(async () => {
+      rerender(
+        <SidebarProvider>
+          <Part
+            ref={ref}
+            nativeButton={false}
+            render={<ReviewAnchor href=''>Changing target</ReviewAnchor>}
+          />
+        </SidebarProvider>,
+      );
+    });
+    await waitFor(() => expect(getRole(node)).toBe("link"));
+    expect(screen.getByText("Changing target")).toBe(node);
+    expect(node).toHaveAttribute("href", "");
+    expect(node).not.toHaveAttribute("tabindex");
+  });
+
+  it("cleans up the opaque-target platform observer while preserving both DOM-ref detachments", () => {
+    const wrapperRef = React.createRef<HTMLElement>();
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const {unmount} = render(
+      <SidebarProvider>
+        <SidebarMenuButton
+          ref={wrapperRef}
+          nativeButton={false}
+          render={
+            <ReviewAnchor
+              ref={childRef}
+              href='#cleanup'>
+              Observer cleanup
+            </ReviewAnchor>
+          }
+        />
+      </SidebarProvider>,
+    );
+    const disconnect = vi.spyOn(MutationObserver.prototype, "disconnect");
+    const link = screen.getByRole("link", {name: "Observer cleanup"});
+    expect(wrapperRef.current).toBe(link);
+    expect(childRef.current).toBe(link);
+    unmount();
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(wrapperRef.current).toBeNull();
+    expect(childRef.current).toBeNull();
+  });
+});
+
 describe("Sidebar desktop state and layout", () => {
   it("toggles desktop state, writes the cookie, and supports Ctrl+B and Cmd+B", async () => {
     const user = userEvent.setup();
@@ -558,6 +831,84 @@ describe("Sidebar desktop state and layout", () => {
     await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
     expect(click).toHaveBeenCalledTimes(1);
     expectState({open: true, state: "expanded", isMobile: false, openMobile: false});
+  });
+
+  it.each([
+    ["caller", "SDK"],
+    ["child", "SDK"],
+    ["caller", "native"],
+    ["child", "native"],
+  ] as const)("honors %s Trigger %s cancellation without controlled notification or cookie mutation", async (owner, cancellation) => {
+    const user = userEvent.setup();
+    const cookie = vi.spyOn(document, "cookie", "set");
+    const change = vi.fn();
+    const events: string[] = [];
+    const cancel = (event: BaseUIEvent<React.MouseEvent<HTMLButtonElement>>): void => {
+      if (cancellation === "SDK") event.preventBaseUIHandler();
+      else event.preventDefault();
+    };
+    render(
+      <SidebarProvider
+        open
+        onOpenChange={change}>
+        <ContextProbe />
+        <SidebarTrigger
+          onClick={(event) => {
+            events.push("caller");
+            if (owner === "caller") cancel(event);
+          }}
+          render={
+            <button
+              onClick={(event: BaseUIEvent<React.MouseEvent<HTMLButtonElement>>) => {
+                events.push("child");
+                if (owner === "child") cancel(event);
+              }}>
+              Cancel reviewed trigger
+            </button>
+          }
+        />
+      </SidebarProvider>,
+    );
+    await user.click(screen.getByRole("button", {name: "Cancel reviewed trigger"}));
+    expect(events).toEqual(owner === "child" && cancellation === "SDK" ? ["child"] : ["child", "caller"]);
+    expect(change).not.toHaveBeenCalled();
+    expect(cookie).not.toHaveBeenCalled();
+    expectState({open: true, state: "expanded", isMobile: false, openMobile: false});
+  });
+
+  it("keeps Trigger child/caller/toggle ordering and both refs when activation is not cancelled", async () => {
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const cookie = vi.spyOn(document, "cookie", "set");
+    const events: string[] = [];
+    const change = vi.fn(() => {
+      events.push("toggle");
+    });
+    render(
+      <SidebarProvider
+        open
+        onOpenChange={change}>
+        <SidebarTrigger
+          ref={wrapperRef}
+          onClick={() => events.push("caller")}
+          render={
+            <button
+              ref={childRef}
+              onClick={() => events.push("child")}>
+              Reviewed trigger
+            </button>
+          }
+        />
+      </SidebarProvider>,
+    );
+    const trigger = screen.getByRole("button", {name: "Reviewed trigger"});
+    expect(childRef.current).toBe(trigger);
+    expect(wrapperRef.current).toBe(trigger);
+    await user.click(trigger);
+    expect(events).toEqual(["child", "caller", "toggle"]);
+    expect(change).toHaveBeenCalledWith(false);
+    expect(cookie).toHaveBeenLastCalledWith("sidebar_state=false; path=/; max-age=604800");
   });
 
   it("honors shortcut cancellation from a real descendant input", async () => {
