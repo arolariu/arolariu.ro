@@ -9,369 +9,353 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./navigation-menu.module.css";
 
-/** Returns the CSS classes used by the navigation menu trigger wrapper. */
+type PartProps<Part extends React.ElementType> = Readonly<
+  React.ComponentPropsWithRef<Part> & {[attribute: `data-${string}`]: string | number | boolean | undefined}
+>;
+
+/** Returns the CSS classes used by a navigation trigger or a trigger-styled link. */
 export function navigationMenuTriggerStyle(className?: string): string {
   return cn(styles.trigger, className);
 }
 
-interface NavigationMenuProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Root>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
+/** Readonly primitive root options with automatic popup placement. */
+export type NavigationMenuProps<Value = unknown> = Readonly<
+  BaseNavigationMenu.Root.Props<Value> & {
+    /** Alignment of the automatic positioner. @default "start" */
+    align?: BaseNavigationMenu.Positioner.Props["align"];
+    /**
+     * Configures the automatic portaled popup. Set `false` when providing an
+     * explicit Positioner or the deprecated Viewport adapter.
+     */
+    positionerProps?: NavigationMenuPositionerProps | false;
+  }
+>;
+
+/** Readonly props for the primitive navigation list. */
+export type NavigationMenuListProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.List>>;
+/** Readonly props for an individual navigation item. */
+export type NavigationMenuItemProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Item>>;
+/** Readonly props for the native navigation trigger, including primitive render/class callbacks. */
+export type NavigationMenuTriggerProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Trigger>>;
+/** Readonly props for portaled item content and its activation/transition state. */
+export type NavigationMenuContentProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Content>>;
+/** Readonly props for a native navigation link. */
+export type NavigationMenuLinkProps = Readonly<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Link>>;
+
+/** Readonly positioning options with independently owned Portal, Popup and Viewport props. */
+export type NavigationMenuPositionerProps = Readonly<
+  PartProps<typeof BaseNavigationMenu.Positioner> & {
+    /** Portal mounting/container options and extra children; render and ref belong to the Portal. */
+    portalProps?: PartProps<typeof BaseNavigationMenu.Portal>;
+    /** Popup naming, render/class state and ref belong to the actual `<nav>` popup. */
+    popupProps?: PartProps<typeof BaseNavigationMenu.Popup>;
+    /** Viewport render/class props and ref belong to the clipping viewport. */
+    viewportProps?: PartProps<typeof BaseNavigationMenu.Viewport>;
+  }
+>;
+
+/** Legacy viewport props; the inherited DOM/render/ref contract targets Viewport, not Positioner. */
+export type NavigationMenuViewportProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseNavigationMenu.Viewport> & {
+    /** Placement and popup options for the compatibility shell. */
+    positionerProps?: Omit<NavigationMenuPositionerProps, "viewportProps">;
+  }
+>;
+
+/** Props for the standalone decorative compatibility indicator, with no menu state. */
+export type NavigationMenuIndicatorProps = Readonly<
+  Omit<React.ComponentPropsWithRef<"div">, "ref"> & {
+    /** Ref to the rendered decorative element, including non-div render targets. */
+    ref?: React.Ref<HTMLElement>;
+    /** Replaces the decorative div; receives an empty state, not menu state. */
+    render?: useRender.RenderProp<NavigationMenuIndicator.State>;
+    /** @deprecated Prefer `render` for element composition. */
+    asChild?: boolean;
+  }
+>;
+
+function elementChildren(children: React.ReactNode, render: unknown): React.ReactNode {
+  return children === undefined && React.isValidElement<{children?: React.ReactNode}>(render) ? render.props.children : children;
 }
 
-interface NavigationMenuListProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.List>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface NavigationMenuTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface NavigationMenuContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Content>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface NavigationMenuLinkProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Link>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface NavigationMenuViewportProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Viewport>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface NavigationMenuIndicatorProps extends React.ComponentPropsWithRef<"div"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
+function withElementChildren<Render>(render: Render, children: React.ReactNode): Render | React.ReactElement {
+  // eslint-disable-next-line react-x/no-clone-element -- only normalize static children; Base UI still merges refs/events/state and owns function renders
+  return React.isValidElement(render) ? React.cloneElement(render, undefined, children) : render;
 }
 
 /**
- * Coordinates navigation menu state and accessibility behavior.
+ * Coordinates native navigation semantics and mounts one automatic portaled popup.
  *
  * @remarks
- * - Renders a `<nav>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenu>Content</NavigationMenu>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
+ * Base UI owns all Root render/class state and value-change details, including cancellation.
+ * `align` defaults to `"start"`; `positionerProps.align` can override it.
+ * Use `positionerProps={false}` to compose an explicit Positioner/legacy Viewport.
  */
-function NavigationMenu(props: Readonly<NavigationMenu.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenu.Props<Value>>): React.ReactElement {
+  const {className, children, render, align = "start", orientation = "horizontal", positionerProps, ...otherProps} = props;
+  const rootChildren = (
+    <>
+      {elementChildren(children, render)}
+      {positionerProps !== false && (
+        <NavigationMenuPositioner
+          align={align}
+          {...positionerProps}
+        />
+      )}
+    </>
+  );
 
   return (
     <BaseNavigationMenu.Root
+      data-slot='navigation-menu'
       {...otherProps}
-      render={useRender({
-        defaultTagName: "nav",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
-      {children}
-      <NavigationMenuViewport />
+      data-orientation={orientation}
+      orientation={orientation}
+      render={withElementChildren(render, rootChildren)}
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      {rootChildren}
     </BaseNavigationMenu.Root>
   );
 }
 
-/**
- * Renders the navigation menu list.
- *
- * @remarks
- * - Renders a `<ul>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuList>Content</NavigationMenuList>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
- */
-function NavigationMenuList(props: Readonly<NavigationMenuList.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+/** Renders the primitive list and preserves its open-state callbacks, native orientation and ref. */
+const NavigationMenuList = React.forwardRef<HTMLUListElement, NavigationMenuList.Props>((props, ref): React.ReactElement => {
+  const {className, ...otherProps} = props;
   return (
     <BaseNavigationMenu.List
+      data-slot='navigation-menu-list'
       {...otherProps}
-      render={useRender({
-        defaultTagName: "ul",
-        render: render as never,
-        props: mergeProps({className: cn(styles.list, className)}, {}),
-      })}>
-      {children}
-    </BaseNavigationMenu.List>
+      ref={ref}
+      className={(state) => cn(styles.list, typeof className === "function" ? className(state) : className)}
+    />
   );
-}
+});
 
-/**
- * Renders the navigation menu item.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <NavigationMenuItem>Content</NavigationMenuItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
- */
-const NavigationMenuItem = BaseNavigationMenu.Item;
+/** Renders a native list item with Base UI's value and render composition contracts. */
+const NavigationMenuItem = React.forwardRef<HTMLLIElement, NavigationMenuItem.Props>((props, ref): React.ReactElement => {
+  const {className, ...otherProps} = props;
+  return (
+    <BaseNavigationMenu.Item
+      data-slot='navigation-menu-item'
+      {...otherProps}
+      ref={ref}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+    />
+  );
+});
 
-/**
- * Renders the navigation menu trigger.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuTrigger>Content</NavigationMenuTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
- */
-const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>((props, forwardedRef) => {
+/** Opens item content with a native button and an associated primitive-owned decorative icon. */
+const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>((props, ref): React.ReactElement => {
   const {className, children, render, ...otherProps} = props;
-
+  const triggerChildren = (
+    <>
+      {elementChildren(children, render)}
+      <BaseNavigationMenu.Icon className={styles.triggerIcon}>
+        <ChevronDown aria-hidden='true' />
+      </BaseNavigationMenu.Icon>
+    </>
+  );
   return (
     <BaseNavigationMenu.Trigger
+      data-slot='navigation-menu-trigger'
       {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {children}
-      <ChevronDown className={styles.triggerIcon} />
+      ref={ref}
+      render={withElementChildren(render, triggerChildren)}
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}>
+      {triggerChildren}
     </BaseNavigationMenu.Trigger>
   );
 });
 
-/**
- * Renders the navigation menu content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuContent>Content</NavigationMenuContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
- */
-const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
-
+/** Moves active item content into the viewport, preserving activation direction and enter/exit callbacks. */
+const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>((props, ref): React.ReactElement => {
+  const {className, ...otherProps} = props;
   return (
     <BaseNavigationMenu.Content
+      data-slot='navigation-menu-content'
       {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.content, className)}, {}),
-      })}>
-      {children}
-    </BaseNavigationMenu.Content>
+      ref={ref}
+      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+    />
   );
 });
 
-/**
- * Renders the navigation menu link.
- *
- * @remarks
- * - Renders a `<a>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuLink>Content</NavigationMenuLink>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
- */
-const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLink.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
-
+/** Renders a native anchor, retaining link attributes, active-page state, handlers, cancellation and refs. */
+const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLink.Props>((props, ref): React.ReactElement => {
+  const {className, ...otherProps} = props;
   return (
     <BaseNavigationMenu.Link
+      data-slot='navigation-menu-link'
       {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "a",
-        render: render as never,
-        props: mergeProps({className: cn(styles.link, className)}, {}),
-      })}>
-      {children}
-    </BaseNavigationMenu.Link>
+      ref={ref}
+      className={(state) => cn(styles.link, typeof className === "function" ? className(state) : className)}
+    />
   );
 });
 
 /**
- * Renders the navigation menu viewport.
+ * Positions a portaled Popup/Viewport against the active trigger.
  *
  * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuViewport>Content</NavigationMenuViewport>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
+ * Defaults to bottom/start, sideOffset 8 and alignOffset 0. Base UI owns
+ * measurements, positioning, instant state and all render/class callbacks.
+ * Positioner children precede the popup; popupProps children precede its viewport.
+ * Keep callback/ref/class props on their named primitive owner.
  */
-function NavigationMenuViewport(props: Readonly<NavigationMenuViewport.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const NavigationMenuPositioner = React.forwardRef<HTMLDivElement, NavigationMenuPositioner.Props>((props, ref): React.ReactElement => {
+  const {
+    className,
+    children,
+    render,
+    side = "bottom",
+    sideOffset = 8,
+    align = "start",
+    alignOffset = 0,
+    portalProps,
+    popupProps,
+    viewportProps,
+    ...otherProps
+  } = props;
+  const popupChildren = (
+    <>
+      {elementChildren(popupProps?.children, popupProps?.render)}
+      <BaseNavigationMenu.Viewport
+        data-slot='navigation-menu-viewport'
+        {...viewportProps}
+        className={(state) =>
+          cn(styles.viewport, typeof viewportProps?.className === "function" ? viewportProps.className(state) : viewportProps?.className)
+        }
+      />
+    </>
+  );
+  const positionerChildren = (
+    <>
+      {elementChildren(children, render)}
+      <BaseNavigationMenu.Popup
+        data-slot='navigation-menu-popup'
+        {...popupProps}
+        render={withElementChildren(popupProps?.render, popupChildren)}
+        className={(state) =>
+          cn(styles.popup, typeof popupProps?.className === "function" ? popupProps.className(state) : popupProps?.className)
+        }>
+        {popupChildren}
+      </BaseNavigationMenu.Popup>
+    </>
+  );
 
   return (
-    <div className={styles.viewportWrapper}>
-      <BaseNavigationMenu.Portal>
-        <BaseNavigationMenu.Positioner
-          render={useRender({
-            defaultTagName: "div",
-            props: mergeProps({className: styles.positioner}, {}),
-          })}>
-          <BaseNavigationMenu.Popup
-            render={useRender({
-              defaultTagName: "div",
-              props: mergeProps({className: styles.popup}, {}),
-            })}>
-            <BaseNavigationMenu.Viewport
-              {...otherProps}
-              render={useRender({
-                defaultTagName: "div",
-                render: render as never,
-                props: mergeProps({className: cn(styles.viewport, className)}, {}),
-              })}>
-              {children}
-            </BaseNavigationMenu.Viewport>
-          </BaseNavigationMenu.Popup>
-        </BaseNavigationMenu.Positioner>
-      </BaseNavigationMenu.Portal>
-    </div>
+    <BaseNavigationMenu.Portal {...portalProps}>
+      {portalProps?.children}
+      <BaseNavigationMenu.Positioner
+        data-slot='navigation-menu-positioner'
+        {...otherProps}
+        ref={ref}
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+        render={withElementChildren(render, positionerChildren)}
+        className={(state) => cn(styles.positioner, typeof className === "function" ? className(state) : className)}>
+        {positionerChildren}
+      </BaseNavigationMenu.Positioner>
+    </BaseNavigationMenu.Portal>
   );
-}
+});
 
 /**
- * Renders the navigation menu indicator.
+ * Retains the old portaled viewport shell while routing inherited callbacks/classes/ref to Viewport.
+ *
+ * @deprecated Use NavigationMenuPositioner with `viewportProps`. When rendered
+ * explicitly under NavigationMenu, set `positionerProps={false}` on the Root.
+ */
+const NavigationMenuViewport = React.forwardRef<HTMLDivElement, NavigationMenuViewport.Props>((props, ref): React.ReactElement => {
+  const {positionerProps, ...viewportProps} = props;
+  return (
+    <NavigationMenuPositioner
+      {...positionerProps}
+      viewportProps={{...viewportProps, ref}}
+    />
+  );
+});
+
+/**
+ * Standalone decorative compatibility part; does not track an item or popup.
  *
  * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/navigation-menu | Base UI Navigation Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <NavigationMenuIndicator>Content</NavigationMenuIndicator>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
+ * This is intentionally not Base UI Icon: existing consumers render it outside
+ * an Item/Trigger. It is hidden from assistive technology by default and has an
+ * empty callback state. Trigger's built-in chevron uses the associated Icon.
  */
-function NavigationMenuIndicator(props: Readonly<NavigationMenuIndicator.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
+const NavigationMenuIndicator = React.forwardRef<HTMLElement, NavigationMenuIndicator.Props>((props, ref): React.ReactElement => {
+  // eslint-disable-next-line sonarjs/deprecation -- retain the documented legacy child-composition API
   const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+  const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
+  const renderProp = legacyChild ?? render;
+  const indicatorChildren =
+    elementChildren(legacyChild ? undefined : children, renderProp) ?? (renderProp ? undefined : <div className={styles.indicatorInner} />);
 
-  return useRender({
+  return useRender<NavigationMenuIndicator.State, HTMLElement>({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.indicator, className)}, otherProps, {
-      children: renderProp ? undefined : (children ?? <div className={styles.indicatorInner} />),
-    }),
+    ref,
+    render: withElementChildren(renderProp, indicatorChildren),
+    state: {},
+    props: mergeProps<"div">({"aria-hidden": true, className: cn(styles.indicator, className)}, otherProps, {children: indicatorChildren}),
   });
-}
+});
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenu {
-  export type Props = NavigationMenuProps;
+  export type Props<Value = unknown> = NavigationMenuProps<Value>;
   export type State = BaseNavigationMenu.Root.State;
+  export type Actions = BaseNavigationMenu.Root.Actions;
+  export type ChangeEventDetails = BaseNavigationMenu.Root.ChangeEventDetails;
+  export type ChangeEventReason = BaseNavigationMenu.Root.ChangeEventReason;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuList {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuListProps;
   export type State = BaseNavigationMenu.List.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
+namespace NavigationMenuItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
+  export type Props = NavigationMenuItemProps;
+  export type State = BaseNavigationMenu.Item.State;
+}
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuTriggerProps;
   export type State = BaseNavigationMenu.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuContentProps;
   export type State = BaseNavigationMenu.Content.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuLink {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuLinkProps;
   export type State = BaseNavigationMenu.Link.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
+namespace NavigationMenuPositioner {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
+  export type Props = NavigationMenuPositionerProps;
+  export type State = BaseNavigationMenu.Positioner.State;
+}
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuViewport {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuViewportProps;
   export type State = BaseNavigationMenu.Viewport.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NavigationMenuIndicator {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical public namespace alias
   export type Props = NavigationMenuIndicatorProps;
   export type State = Record<string, never>;
 }
@@ -382,6 +366,8 @@ NavigationMenuItem.displayName = "NavigationMenuItem";
 NavigationMenuTrigger.displayName = "NavigationMenuTrigger";
 NavigationMenuContent.displayName = "NavigationMenuContent";
 NavigationMenuLink.displayName = "NavigationMenuLink";
+NavigationMenuPositioner.displayName = "NavigationMenuPositioner";
+// eslint-disable-next-line sonarjs/deprecation -- keep the compatibility adapter's diagnostic display name
 NavigationMenuViewport.displayName = "NavigationMenuViewport";
 NavigationMenuIndicator.displayName = "NavigationMenuIndicator";
 
@@ -392,6 +378,7 @@ export {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuPositioner,
   NavigationMenuTrigger,
   NavigationMenuViewport,
 };
