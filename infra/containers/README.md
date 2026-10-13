@@ -137,17 +137,38 @@ npm run containers:run -- --engine rancher --target cv
 
 ### Frontend
 
-The frontend requires environment variables at runtime:
+Public configuration is supplied by CI as Docker build arguments. Configure
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment variable or secret in
+each deployment environment. `SITE_*`, `COMMIT_SHA`, and `TIMESTAMP` remain
+build-time inputs. Cloud builds do not generate or mount a website `.env`.
+
+The existing Next.js `instrumentation.register()` hook awaits
+`initializeRuntimeEnvironmentConfiguration()` before requests are served.
+That method fetches the complete exp runtime document using the PRODUCTION or
+DEVELOPMENT label selected by `SITE_ENV`; missing or unsupported environments
+are rejected. Server-side reads use the initialized document, and runtime
+configuration is applied to the Node process without logging values.
+
+Local, Aspire, and selfhost modes use local exp when available and retain
+dotenv values when it is unreachable. Invalid documents and cloud failures
+stop initialization instead of silently substituting defaults. `.env` is
+retained for local/offline use and deprecated for cloud deployment.
+
+The container keeps the standard `node server.js` entrypoint. Private values
+are not baked into image layers. Restarting the Node server reloads changed
+private configuration from exp.
 
 | Variable | Description | Required |
 | ----------------------------------- | ------------------------------------ | -------- |
-| `SITE_ENV` | Environment (development/production) | Yes |
-| `SITE_URL` | Site URL | Yes |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key | Yes |
-| `RESEND_API_KEY` | Email service API key | Yes |
-| `API_URL` | Backend API URL | Yes |
-| `API_JWT` | API authentication token | Yes |
+| `SITE_ENV` | Public build input: PRODUCTION or DEVELOPMENT | Yes |
+| `SITE_URL` / `SITE_NAME` | Public site metadata from CI | Build |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk key from GitHub configuration | Build |
+| `CLERK_SECRET_KEY` | Runtime Clerk secret from exp, or local dotenv | Runtime |
+| `API_JWT` | Runtime JWT signing secret from exp, or local dotenv | Runtime |
+| `API_JWT_ISSUER` / `API_JWT_AUDIENCE` | Runtime JWT metadata from exp, or local dotenv | Runtime |
+| `API_URL` / `STORAGE_BLOB_ENDPOINT` | Runtime service endpoints from exp, or local dotenv | Runtime |
+| `RESEND_API_KEY` | Runtime email key; empty string disables email | Optional |
+| `EXP_PROXY_URL` | Optional exp URL override, including bare-metal local exp | No |
 
 ### Backend
 

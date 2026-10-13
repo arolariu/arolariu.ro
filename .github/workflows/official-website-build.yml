@@ -114,6 +114,8 @@ jobs:
     name: 🧪 Test phase (1/2)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     timeout-minutes: 60
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
@@ -149,6 +151,10 @@ jobs:
         with:
           install-playwright: 'true'
           run-generate: "true"
+          generate-args: "artifacts gql i18n"
+
+      - name: 📝 Set public build timestamp
+        run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: 🧬 TypeScript type-check (tsgo)
         working-directory: "./sites/arolariu.ro"
@@ -265,6 +271,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v7
@@ -302,23 +310,16 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           run-generate: 'true'
+          generate-args: "artifacts gql i18n"
+
+      - name: 📝 Set public build timestamp
+        run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: 📋 Verify generated public build configuration exists
-        run: |
-          if [ -f "sites/arolariu.ro/.env" ]; then
-            echo "✅ .env file found"
-          else
-            echo "❌ .env file not found - build will likely fail"
-            exit 1
-          fi
-        shell: bash
-        working-directory: "."
 
       - name: 🏗️ Building the docker container...
         working-directory: '.'
@@ -343,7 +344,6 @@ jobs:
 
           START_TIME=$(date +%s)
           docker build -f infra/containers/Dockerfile.frontend \
-            --secret id=website_env,src=sites/arolariu.ro/.env \
             --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
             --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
             --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \
@@ -352,6 +352,8 @@ jobs:
             --build-arg SITE_ENV=${{ env.SITE_ENV }} \
             --build-arg SITE_URL=${{ env.SITE_URL }} \
             --build-arg SITE_NAME=${{ env.SITE_NAME }} \
+            --build-arg "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" \
+            --build-arg "TIMESTAMP=${TIMESTAMP}" \
             -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))

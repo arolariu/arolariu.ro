@@ -326,7 +326,7 @@ Effects over `ReadOnlyFiles`.
 |--------|----------------|
 | [`commands/generate/cli.ts`](./commands/generate/cli.ts) | `generate [env] [i18n] [gql] [artifacts]`; renders the stop line or the success lines |
 | [`commands/generate/index.ts`](./commands/generate/index.ts) | `runGenerate` orchestrator: runs the selected leaves silently, one at a time, in the fixed order `env`, `i18n`, `gql`, `artifacts` |
-| [`commands/generate/env.ts`](./commands/generate/env.ts) | Website `.env`: exp build-time configuration with `INFRA=azure`, otherwise prompts for each missing required key; secrets stay `Redacted` |
+| [`commands/generate/env.ts`](./commands/generate/env.ts) | Local/offline website `.env` utility; cloud website CI excludes this generator and injects public inputs directly. With `INFRA=azure`, fetches exp configuration; otherwise prompts for missing required keys. Secrets stay `Redacted` |
 | [`commands/generate/i18n.ts`](./commands/generate/i18n.ts) | Synchronizes `ro`/`fr` locale files with the English source, adding missing keys as empty strings |
 | [`commands/generate/gql.ts`](./commands/generate/gql.ts) | Writes the GraphQL placeholder artifact under `scripts/__generated__/gql` |
 | [`commands/generate/artifacts.ts`](./commands/generate/artifacts.ts) | Taxonomy and license artifacts from pinned sources, with bounded retries and a validated cached-mirror fallback |

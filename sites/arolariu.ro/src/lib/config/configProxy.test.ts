@@ -203,6 +203,221 @@ describe("configProxy", () => {
 // Typed config value helpers (with env-var fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 
+describe("initializeRuntimeEnvironmentConfiguration", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv("AZURE_CLIENT_ID", "");
+    vi.stubEnv("EXP_PROXY_URL", "http://exp");
+    vi.stubEnv("INFRA", "azure");
+    vi.stubEnv("WEBSITE_INSTANCE_ID", "");
+    vi.stubEnv("SITE_ENV", "DEVELOPMENT");
+    vi.stubEnv("NEXT_PHASE", "phase-production-server");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "public-from-ci");
+    vi.stubEnv("CLERK_SECRET_KEY", "");
+    vi.stubEnv("API_JWT", "");
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("API_URL", "");
+    vi.stubEnv("API_JWT_ISSUER", "");
+    vi.stubEnv("API_JWT_AUDIENCE", "");
+    vi.stubEnv("STORAGE_BLOB_ENDPOINT", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  function runtimeDocument(config: Readonly<Record<string, unknown>> = {}) {
+    return {
+      target: "website",
+      contractVersion: "1",
+      version: "test-version",
+      refreshIntervalSeconds: 300,
+      fetchedAt: "2026-10-13T00:00:00Z",
+      features: {},
+      config: {
+        "Site:Environment": "DEVELOPMENT",
+        "Site:Name": "dev.arolariu.ro",
+        "Site:Url": "https://dev.arolariu.ro",
+        "Auth:Clerk:PublishableKey": "public-from-exp",
+        "Auth:Clerk:SecretKey": "private-clerk",
+        "Auth:JWT:Issuer": "https://issuer.example.test",
+        "Auth:JWT:Audience": "test-audience",
+        "Auth:JWT:Secret": "private-jwt",
+        "Endpoints:Service:Api": "https://api.example.test",
+        "Endpoints:Storage:Blob": "https://storage.example.test",
+        "Communication:Email:ApiKey": "private-email",
+        ...config,
+      },
+    };
+  }
+
+  it("loads private cloud values without overriding public CI configuration", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("private-clerk");
+    expect(process.env["API_JWT"]).toBe("private-jwt");
+    expect(process.env["RESEND_API_KEY"]).toBe("private-email");
+    expect(process.env["API_URL"]).toBe("https://api.example.test");
+    expect(process.env["API_JWT_ISSUER"]).toBe("https://issuer.example.test");
+    expect(process.env["API_JWT_AUDIENCE"]).toBe("test-audience");
+    expect(process.env["STORAGE_BLOB_ENDPOINT"]).toBe("https://storage.example.test");
+    expect(process.env["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]).toBe("public-from-ci");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("/api/v1/run-time?for=website&label=DEVELOPMENT");
+  });
+
+  it("preserves local dotenv values when local exp is unavailable", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("AZURE_CLIENT_ID", "local-cloud-resource-identity");
+    vi.stubEnv("CLERK_SECRET_KEY", "local-clerk");
+    vi.stubEnv("API_JWT", "local-jwt");
+    vi.stubEnv("RESEND_API_KEY", "local-email");
+    const fetchMock = vi.fn().mockRejectedValue(new Error("exp unavailable"));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("local-clerk");
+    expect(process.env["API_JWT"]).toBe("local-jwt");
+    expect(process.env["RESEND_API_KEY"]).toBe("local-email");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const request = fetchMock.mock.calls[0];
+    expect(request?.[0]).toContain("http://exp/api/v1/run-time");
+    expect(request?.[1].headers).not.toHaveProperty("Authorization");
+  });
+
+  it("uses local exp when it is running", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("CLERK_SECRET_KEY", "outdated-local-value");
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("private-clerk");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("serves all values from the initialized document without additional requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration, fetchConfigValue} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(await fetchConfigValue("Endpoints:Storage:Blob")).toBe("https://storage.example.test");
+    expect(await fetchConfigValue("Auth:JWT:Issuer")).toBe("https://issuer.example.test");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not treat object prototype members as initialized configuration", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(runtimeDocument()))
+      .mockResolvedValueOnce(createJsonResponse({error: "Unknown key"}, 400));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration, fetchConfigValue} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    await expect(fetchConfigValue("toString")).rejects.toThrow("status=400");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("selects the production label from SITE_ENV", async () => {
+    vi.stubEnv("SITE_ENV", "PRODUCTION");
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("label=PRODUCTION");
+  });
+
+  it.each(["", "STAGING"])("rejects missing or unsupported SITE_ENV (%s)", async (environment) => {
+    vi.stubEnv("SITE_ENV", environment);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("SITE_ENV must be set to PRODUCTION or DEVELOPMENT");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not resolve runtime secrets during a Next.js build", async () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    const fetchMock = vi.fn().mockRejectedValue(new Error("runtime secrets must not be fetched during builds"));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects unavailable configuration rather than starting with missing keys", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse({error: "Unavailable"}, 503)));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("status=503");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+    expect(process.env["API_JWT"]).toBe("");
+  });
+
+  it("does not fall back to dotenv on cloud transport failures", async () => {
+    vi.stubEnv("CLERK_SECRET_KEY", "stale-local-value");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connection refused")));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Unable to fetch private runtime configuration");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("stale-local-value");
+  });
+
+  it("rejects invalid local exp configuration instead of hiding it with dotenv", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse({target: "website", config: []})));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Invalid website runtime configuration");
+  });
+
+  it("validates every required private value before modifying the environment", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument({"Auth:JWT:Secret": "   "}))));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Auth:JWT:Secret");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+    expect(process.env["API_JWT"]).toBe("");
+  });
+
+  it("allows an empty optional email key to disable delivery", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument({"Communication:Email:ApiKey": ""}))));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("private-clerk");
+    expect(process.env["RESEND_API_KEY"]).toBe("");
+  });
+
+  it("rejects an invalid runtime document", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse({target: "api", config: {}})));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Invalid website runtime configuration");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+  });
+});
+
 describe("configProxy typed helpers", () => {
   beforeEach(() => {
     vi.resetModules();
