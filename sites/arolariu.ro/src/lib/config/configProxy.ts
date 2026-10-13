@@ -139,6 +139,8 @@ export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8
 
 /** Azure-hosted exp service URL. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local exp uses its Docker-internal HTTP endpoint
+const LOCAL_EXP_URL = "http://exp";
 
 /**
  * Base URL for the experiments / config service.
@@ -146,8 +148,7 @@ const AZURE_EXP_URL = "https://exp.arolariu.ro";
  * Priority: EXP_PROXY_URL env var > AZURE_CLIENT_ID-based selection > Docker default.
  * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach bare-metal exp.
  */
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : "http://exp");
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : LOCAL_EXP_URL);
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
 const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
@@ -164,7 +165,7 @@ const RUNTIME_ENVIRONMENT_KEYS = {
   "Endpoints:Storage:Blob": "STORAGE_BLOB_ENDPOINT",
 } as const;
 
-let runtimeConfiguration: Readonly<Record<string, string>> | undefined;
+let runtimeConfiguration: Readonly<Record<string, string>> | null = null;
 
 /**
  * Timeout for exp config fetches.
@@ -352,9 +353,9 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   if (process.env["NEXT_PHASE"] === "phase-production-build") return;
 
   const infrastructure = process.env["INFRA"]?.trim().toLowerCase();
-  const isCloud = infrastructure !== "local" && (infrastructure === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]));
-  const baseUrl = process.env["EXP_PROXY_URL"]?.trim() || (isCloud ? AZURE_EXP_URL : "http://exp");
-  let endpoint: URL;
+  const isCloud = infrastructure === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]);
+  const baseUrl = process.env["EXP_PROXY_URL"]?.trim() || (isCloud ? AZURE_EXP_URL : LOCAL_EXP_URL);
+  let endpoint: URL | null = null;
   try {
     endpoint = new URL(`${baseUrl.replace(/\/$/u, "")}/api/v1/run-time`);
   } catch {
@@ -364,7 +365,7 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   endpoint.searchParams.set("label", environment);
 
   const signal = AbortSignal.timeout(isCloud ? 10_000 : 2000);
-  let response: Response;
+  let response: Response | null = null;
   try {
     const headers = await getRequestHeaders(signal, endpoint.origin === AZURE_EXP_URL);
     response = await fetch(endpoint.href, {
@@ -385,7 +386,7 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
     throw new Error(`Failed to fetch private runtime configuration from exp (status=${response.status}).`);
   }
 
-  let payload: unknown;
+  let payload: unknown = null;
   try {
     payload = await response.json();
   } catch {
@@ -397,7 +398,7 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
 
   const entries = Object.entries(payload["config"]).map(([key, value]) => {
     if (typeof value !== "string") {
-      throw new Error(`Invalid runtime configuration value: ${key}.`);
+      throw new TypeError(`Invalid runtime configuration value: ${key}.`);
     }
     return [key, value] as const;
   });

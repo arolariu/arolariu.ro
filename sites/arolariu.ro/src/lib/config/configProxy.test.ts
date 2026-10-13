@@ -305,6 +305,19 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("uses dotenv aliases for subsequent reads when local exp is unavailable", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("STORAGE_BLOB_ENDPOINT", "https://offline-storage.example.test");
+    const fetchMock = vi.fn().mockRejectedValue(new Error("connection refused"));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration, fetchConfigValue} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(await fetchConfigValue("Endpoints:Storage:Blob")).toBe("https://offline-storage.example.test");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("serves all values from the initialized document without additional requests", async () => {
     const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
     vi.stubGlobal("fetch", fetchMock);
@@ -340,6 +353,36 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
     await initializeRuntimeEnvironmentConfiguration();
 
     expect(fetchMock.mock.calls[0]?.[0]).toContain("label=PRODUCTION");
+  });
+
+  it("normalizes a valid environment before selecting its label", async () => {
+    vi.stubEnv("SITE_ENV", " production ");
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("label=PRODUCTION");
+  });
+
+  it("treats Azure App Service as cloud even without an infrastructure flag", async () => {
+    vi.stubEnv("INFRA", "");
+    vi.stubEnv("WEBSITE_INSTANCE_ID", "app-service-instance");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connection refused")));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Unable to fetch private runtime configuration");
+  });
+
+  it("rejects an invalid exp URL before making a request", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "not-a-url");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("EXP_PROXY_URL must be a valid URL");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each(["", "STAGING"])("rejects missing or unsupported SITE_ENV (%s)", async (environment) => {
@@ -414,6 +457,26 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
     const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
 
     await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Invalid website runtime configuration");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+  });
+
+  it("rejects non-string runtime values before applying any configuration", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument({"Auth:JWT:Secret": 123}))));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow(TypeError);
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+  });
+
+  it("sanitizes JSON parsing errors instead of exposing response contents", async () => {
+    const response = createJsonResponse({});
+    response.json = async () => {
+      throw new SyntaxError("private-response-marker");
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Invalid website runtime configuration document");
     expect(process.env["CLERK_SECRET_KEY"]).toBe("");
   });
 });
