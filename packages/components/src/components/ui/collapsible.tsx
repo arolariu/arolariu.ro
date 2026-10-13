@@ -1,35 +1,36 @@
 "use client";
 
 import {Collapsible as BaseCollapsible} from "@base-ui/react/collapsible";
-import {mergeProps} from "@base-ui/react/merge-props";
-import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./collapsible.module.css";
 
-interface CollapsibleProps extends React.ComponentPropsWithRef<typeof BaseCollapsible.Root> {}
+/** Native collapsible state, composition, and cancellable change callbacks. */
+export interface CollapsibleProps extends React.ComponentPropsWithRef<typeof BaseCollapsible.Root> {}
 
-interface CollapsibleTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Trigger>, "className"> {
+/** Styled trigger props with a retained child-slot compatibility adapter. */
+export interface CollapsibleTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Trigger>, "className"> {
   /**
    * Applies additional CSS classes to the component root element.
    * @default undefined
    */
-  className?: string;
+  className?: string | undefined;
   /**
    * Enables child element composition instead of rendering the default wrapper.
    * @default false
    * @deprecated Prefer Base UI's `render` prop.
    */
-  asChild?: boolean;
+  asChild?: boolean | undefined;
 }
 
-interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Panel>, "className"> {
+/** Native panel mounting, transition state, and composition props. */
+export interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Panel>, "className"> {
   /**
    * Applies additional CSS classes to the component root element.
    * @default undefined
    */
-  className?: string;
+  className?: string | undefined;
 }
 
 /**
@@ -47,9 +48,15 @@ interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRef<typeo
  *
  * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
-function Collapsible(props: Readonly<Collapsible.Props>): React.ReactElement {
-  return <BaseCollapsible.Root {...props} />;
-}
+const Collapsible = React.forwardRef<React.ComponentRef<typeof BaseCollapsible.Root>, Collapsible.Props>(
+  (props: Readonly<Collapsible.Props>, ref): React.ReactElement => (
+    <BaseCollapsible.Root
+      data-slot='collapsible'
+      {...props}
+      ref={ref}
+    />
+  ),
+);
 
 /**
  * Renders the collapsible trigger.
@@ -58,6 +65,8 @@ function Collapsible(props: Readonly<Collapsible.Props>): React.ReactElement {
  * - Renders a `<button>` element by default
  * - Built on {@link https://base-ui.com/react/components/collapsible | Base UI Collapsible}
  * - Supports the `render` prop for element composition
+ * - Render callbacks receive live primitive open, disabled, and transition state
+ * - Separate children remain trigger content; `asChild` uses the child's content instead
  *
  * @example
  * ```tsx
@@ -70,18 +79,17 @@ const CollapsibleTrigger = React.forwardRef<React.ComponentRef<typeof BaseCollap
   (props: Readonly<CollapsibleTrigger.Props>, ref): React.ReactElement => {
     // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
     const {asChild = false, children, className, render, ...otherProps} = props;
-    const renderProp = asChild && React.isValidElement(children) ? children : render;
+    const child = asChild && React.isValidElement<{children?: React.ReactNode}>(children) ? children : undefined;
+    const renderProp = child ?? render;
 
     return (
       <BaseCollapsible.Trigger
+        data-slot='collapsible-trigger'
         ref={ref}
         {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: renderProp as never,
-          props: mergeProps({className: cn(styles.trigger, className)}, {}),
-        })}>
-        {renderProp ? undefined : children}
+        className={cn(styles.trigger, className)}
+        render={renderProp}>
+        {child ? child.props.children : children}
       </BaseCollapsible.Trigger>
     );
   },
@@ -108,13 +116,11 @@ const CollapsibleContent = React.forwardRef<React.ComponentRef<typeof BaseCollap
 
     return (
       <BaseCollapsible.Panel
+        data-slot='collapsible-content'
         ref={ref}
         {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.panel, className)}, {}),
-        })}>
+        className={cn(styles.panel, className)}
+        render={render}>
         {children}
       </BaseCollapsible.Panel>
     );
@@ -125,6 +131,7 @@ const CollapsibleContent = React.forwardRef<React.ComponentRef<typeof BaseCollap
 namespace Collapsible {
   export type Props = CollapsibleProps;
   export type State = BaseCollapsible.Root.State;
+  export type ChangeEventDetails = BaseCollapsible.Root.ChangeEventDetails;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

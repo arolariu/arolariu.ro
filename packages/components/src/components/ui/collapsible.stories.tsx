@@ -1,8 +1,8 @@
 import {ChevronDown} from "lucide-react";
 import React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Button} from "./button";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "./collapsible";
+import styles from "./collapsible.module.css";
 
 const meta = {
   title: "Components/Layout/Collapsible",
@@ -21,19 +21,18 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <Collapsible className='w-[350px]'>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant='ghost'
-          className='w-full justify-between'>
-          Show details
-          <ChevronDown className='h-4 w-4' />
-        </Button>
+    <Collapsible className={styles.demo}>
+      <CollapsibleTrigger
+        className={styles.demoTrigger}
+        render={<button />}>
+        Show details
+        <ChevronDown
+          aria-hidden
+          className={styles.icon}
+        />
       </CollapsibleTrigger>
-      <CollapsibleContent className='pt-4'>
-        <p className='text-muted-foreground text-sm'>
-          This is the collapsible content. It can contain any type of content including text, images, or other components.
-        </p>
+      <CollapsibleContent className={styles.demoContent}>
+        <p>This is the collapsible content. It can contain any type of content including text, images, or other components.</p>
       </CollapsibleContent>
     </Collapsible>
   ),
@@ -46,19 +45,22 @@ export const DefaultOpen: Story = {
   render: () => (
     <Collapsible
       defaultOpen
-      className='w-[350px]'>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant='outline'
-          className='w-full justify-between'>
+      className={styles.demo}>
+      <CollapsibleTrigger
+        asChild
+        className={styles.demoTrigger}>
+        <button type='button'>
           Additional information
-          <ChevronDown className='h-4 w-4' />
-        </Button>
+          <ChevronDown
+            aria-hidden
+            className={styles.icon}
+          />
+        </button>
       </CollapsibleTrigger>
-      <CollapsibleContent className='space-y-2 pt-4'>
-        <p className='text-sm'>Item 1: First piece of information</p>
-        <p className='text-sm'>Item 2: Second piece of information</p>
-        <p className='text-sm'>Item 3: Third piece of information</p>
+      <CollapsibleContent className={styles.demoContent}>
+        <p>Item 1: First piece of information</p>
+        <p>Item 2: Second piece of information</p>
+        <p>Item 3: Third piece of information</p>
       </CollapsibleContent>
     </Collapsible>
   ),
@@ -67,30 +69,27 @@ export const DefaultOpen: Story = {
 /**
  * Controlled collapsible.
  */
-function ControlledDemo() {
+function ControlledDemo(): React.JSX.Element {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <div className='space-y-4'>
+    <div className={styles.demo}>
       <Collapsible
         open={isOpen}
         onOpenChange={setIsOpen}
-        className='w-[350px]'>
-        <CollapsibleTrigger asChild>
-          <Button
-            variant='outline'
-            className='w-full justify-between'>
-            Toggle content
-            <ChevronDown className='h-4 w-4' />
-          </Button>
+        className={styles.demo}>
+        <CollapsibleTrigger className={styles.demoTrigger}>
+          Toggle content
+          <ChevronDown
+            aria-hidden
+            className={styles.icon}
+          />
         </CollapsibleTrigger>
-        <CollapsibleContent className='pt-4'>
-          <p className='text-muted-foreground text-sm'>
-            This collapsible is controlled. The state is managed externally and displayed below.
-          </p>
+        <CollapsibleContent className={styles.demoContent}>
+          <p>This collapsible is controlled. The state is managed externally and displayed below.</p>
         </CollapsibleContent>
       </Collapsible>
-      <p className='text-sm'>Status: {isOpen ? "Open" : "Closed"}</p>
+      <p>Status: {isOpen ? "Open" : "Closed"}</p>
     </div>
   );
 }
@@ -99,52 +98,25 @@ export const Controlled: Story = {
   render: () => <ControlledDemo />,
 };
 
-function AnimatedCollapsibleContent(): React.JSX.Element {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      className='w-[350px]'>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant='outline'
-          className='w-full justify-between'>
-          Show details
-          <ChevronDown
-            className='h-4 w-4'
-            style={{
-              transition: "transform 0.3s",
-              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            }}
-          />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent
-        className='pt-4'
-        style={{
-          overflow: "hidden",
-          transition: "height 0.3s ease-out",
-        }}>
-        <div style={{padding: "1rem", background: "#f9fafb", borderRadius: "6px"}}>
-          <p className='text-sm'>This content animates smoothly when expanding and collapsing.</p>
-          <p
-            className='text-muted-foreground text-sm'
-            style={{marginTop: "0.5rem"}}>
-            The height transition creates a polished user experience.
-          </p>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
 /**
- * Collapsible with smooth height animation.
+ * Primitive transitions and chevron motion honor reduced-motion preferences.
  */
 export const Animated: Story = {
-  render: () => <AnimatedCollapsibleContent />,
+  render: () => (
+    <Collapsible className={styles.demo}>
+      <CollapsibleTrigger className={styles.demoTrigger}>
+        Animated details
+        <ChevronDown
+          aria-hidden
+          className={styles.icon}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className={styles.demoContent}>
+        <p>Opacity and icon transitions use CSS Modules and existing design tokens.</p>
+        <p>Both transitions are disabled when reduced motion is requested.</p>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
 };
 
 /**
@@ -152,39 +124,61 @@ export const Animated: Story = {
  */
 export const Nested: Story = {
   render: () => (
-    <Collapsible className='w-[350px]'>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant='outline'
-          className='w-full justify-between'>
-          Parent Section
-          <ChevronDown className='h-4 w-4' />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className='pt-4'>
-        <p
-          className='text-sm'
-          style={{marginBottom: "1rem"}}>
-          This is the parent content area.
-        </p>
+    <Collapsible className={styles.demo}>
+      <CollapsibleTrigger className={styles.demoTrigger}>Parent Section</CollapsibleTrigger>
+      <CollapsibleContent className={styles.demoContent}>
+        <p>This is the parent content area.</p>
         <Collapsible>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='w-full justify-between'>
-              Nested Section
-              <ChevronDown className='h-4 w-4' />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className='pt-2'>
-            <p
-              className='text-muted-foreground text-sm'
-              style={{paddingLeft: "1rem"}}>
-              This is nested content inside the parent collapsible.
-            </p>
+          <CollapsibleTrigger className={styles.demoTrigger}>Nested Section</CollapsibleTrigger>
+          <CollapsibleContent className={styles.demoContent}>
+            <p>This is nested content inside the parent collapsible.</p>
           </CollapsibleContent>
         </Collapsible>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <Collapsible
+      disabled
+      className={styles.demo}>
+      <CollapsibleTrigger
+        className={styles.demoTrigger}
+        render={<button />}>
+        Disabled details
+      </CollapsibleTrigger>
+      <CollapsibleContent>Disabled triggers cannot open the panel.</CollapsibleContent>
+    </Collapsible>
+  ),
+};
+
+export const StateAwareRendering: Story = {
+  render: () => (
+    <Collapsible className={styles.demo}>
+      <CollapsibleTrigger
+        className={styles.demoTrigger}
+        render={(props, state) => (
+          <button {...props}>
+            {state.open ? "Hide details" : "Show details"}
+            <ChevronDown
+              aria-hidden
+              className={styles.icon}
+            />
+          </button>
+        )}
+      />
+      <CollapsibleContent
+        className={styles.demoContent}
+        render={(props, state) => (
+          <section
+            {...props}
+            data-open={state.open}
+            data-transition={state.transitionStatus}
+          />
+        )}>
+        Render callbacks observe the primitive's live open and transition state.
       </CollapsibleContent>
     </Collapsible>
   ),

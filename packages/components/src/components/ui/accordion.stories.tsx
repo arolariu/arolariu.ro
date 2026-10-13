@@ -1,5 +1,7 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
+import styles from "./accordion.module.css";
 
 const meta = {
   title: "Components/Layout/Accordion",
@@ -14,9 +16,8 @@ type Story = StoryObj<typeof meta>;
 export const Single: Story = {
   render: () => (
     <Accordion
-      type='single'
-      collapsible
-      defaultValue='item-1'>
+      className={styles.demo}
+      defaultValue={["item-1"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Is it accessible?</AccordionTrigger>
         <AccordionContent>Yes. It adheres to the WAI-ARIA design pattern.</AccordionContent>
@@ -36,7 +37,8 @@ export const Single: Story = {
 export const Multiple: Story = {
   render: () => (
     <Accordion
-      type='multiple'
+      multiple
+      className={styles.demo}
       defaultValue={["item-1", "item-2"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Feature 1</AccordionTrigger>
@@ -66,7 +68,7 @@ export const DisabledItems: Story = {
       <AccordionItem
         value='item-2'
         disabled>
-        <AccordionTrigger style={{opacity: 0.5, cursor: "not-allowed"}}>Disabled Item 2</AccordionTrigger>
+        <AccordionTrigger>Disabled Item 2</AccordionTrigger>
         <AccordionContent>This content cannot be accessed.</AccordionContent>
       </AccordionItem>
       <AccordionItem value='item-3'>
@@ -84,8 +86,8 @@ export const WithIcon: Story = {
       collapsible>
       <AccordionItem value='item-1'>
         <AccordionTrigger>
-          <span style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-            <span style={{fontSize: "1.25rem"}}>📦</span>
+          <span className={styles.label}>
+            <span aria-hidden>📦</span>
             <span>Shipping Information</span>
           </span>
         </AccordionTrigger>
@@ -93,8 +95,8 @@ export const WithIcon: Story = {
       </AccordionItem>
       <AccordionItem value='item-2'>
         <AccordionTrigger>
-          <span style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-            <span style={{fontSize: "1.25rem"}}>💳</span>
+          <span className={styles.label}>
+            <span aria-hidden>💳</span>
             <span>Payment Methods</span>
           </span>
         </AccordionTrigger>
@@ -102,8 +104,8 @@ export const WithIcon: Story = {
       </AccordionItem>
       <AccordionItem value='item-3'>
         <AccordionTrigger>
-          <span style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-            <span style={{fontSize: "1.25rem"}}>🔒</span>
+          <span className={styles.label}>
+            <span aria-hidden>🔒</span>
             <span>Security & Privacy</span>
           </span>
         </AccordionTrigger>
@@ -130,6 +132,101 @@ export const DefaultOpen: Story = {
       <AccordionItem value='item-3'>
         <AccordionTrigger>Another Collapsed Section</AccordionTrigger>
         <AccordionContent>This section also starts collapsed.</AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  ),
+};
+
+export const LegacyNonCollapsible: Story = {
+  render: () => (
+    <Accordion
+      type='single'
+      collapsible={false}
+      defaultValue='item-1'>
+      <AccordionItem value='item-1'>
+        <AccordionTrigger>Always keep a section open</AccordionTrigger>
+        <AccordionContent>This legacy string adapter prevents closing the last open panel.</AccordionContent>
+      </AccordionItem>
+      <AccordionItem value='item-2'>
+        <AccordionTrigger>Switch to this section</AccordionTrigger>
+        <AccordionContent>Switching remains available with pointer and keyboard activation.</AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  ),
+};
+
+export const EmptyStringIdentifier: Story = {
+  render: () => (
+    <Accordion defaultValue={[""]}>
+      <AccordionItem value=''>
+        <AccordionTrigger>Empty-string identifier</AccordionTrigger>
+        <AccordionContent>Canonical arrays distinguish this item from no selection.</AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  ),
+};
+
+function ControlledEmptyDemo(): React.JSX.Element {
+  const [value, setValue] = React.useState<string[]>([]);
+
+  return (
+    <div className={styles.demo}>
+      <div className={styles.demoActions}>
+        <button
+          type='button'
+          onClick={() => setValue([])}>
+          Clear selection
+        </button>
+        <button
+          type='button'
+          onClick={() => setValue(["item-1"])}>
+          Open section
+        </button>
+      </div>
+      <Accordion
+        value={value}
+        onValueChange={setValue}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger render={<button />}>Controlled section</AccordionTrigger>
+          <AccordionContent>An empty array stays controlled on every rerender.</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </div>
+  );
+}
+
+export const ControlledEmpty: Story = {
+  render: () => <ControlledEmptyDemo />,
+};
+
+export const StateAwareRendering: Story = {
+  render: () => (
+    <Accordion
+      render={(props, state) => (
+        <section
+          {...props}
+          aria-label={`Accordion with ${state.value.length} open sections`}
+        />
+      )}>
+      <AccordionItem value='item-1'>
+        <AccordionTrigger
+          render={(props, state) => (
+            <button
+              {...props}
+              data-open={state.open}
+            />
+          )}>
+          Live primitive state
+        </AccordionTrigger>
+        <AccordionContent
+          render={(props, state) => (
+            <section
+              {...props}
+              data-transition={state.transitionStatus}
+            />
+          )}>
+          Render callbacks receive the real open and transition state.
+        </AccordionContent>
       </AccordionItem>
     </Accordion>
   ),

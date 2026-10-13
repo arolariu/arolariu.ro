@@ -22,3 +22,44 @@
     opacity: 0;
   }
 }
+
+.demo {
+  width: min(100%, 22rem);
+}
+
+.demoTrigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-3);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: transparent;
+  color: var(--ac-foreground);
+  cursor: pointer;
+
+  &[data-panel-open] .icon {
+    transform: rotate(180deg);
+  }
+}
+
+.demoContent {
+  padding: var(--ac-space-3);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--ac-transition-normal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .icon {
+    transition: none;
+  }
+}

@@ -70,3 +70,22 @@
 .panelInner {
   padding: 0 0 var(--ac-space-3);
 }
+
+.demo {
+  width: min(100%, 28rem);
+}
+
+.demoActions,
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .icon,
+  .panel {
+    transition: none;
+  }
+}
