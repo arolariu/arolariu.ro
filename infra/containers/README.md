@@ -137,17 +137,83 @@ npm run containers:run -- --engine rancher --target cv
 
 ### Frontend
 
-The frontend requires environment variables at runtime:
+Public configuration is supplied by CI as Docker build arguments. Configure
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment secret in
+each deployment environment. `SITE_*`, `COMMIT_SHA`, and `TIMESTAMP` remain
+build-time inputs. Cloud builds do not generate or mount a website `.env`.
+
+#### Configuring the public Clerk key in GitHub
+
+In **Settings > Environments**, open `development` and add an environment secret
+named `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` containing that Clerk instance's
+`pk_test_...` value. In `production`, add the same secret name with the
+`pk_live_...` value.
+
+The workflow declares the input once in its global `env` block. Both jobs select
+their deployment environment with `inputs.environment || 'development'`, so the
+same-named input resolves to the matching environment's value. Preview pushes
+and development dispatches use `DEVELOPMENT`; production dispatches use
+`PRODUCTION`. Separate conditional key names are not necessary. Keep each public
+key paired with the Clerk secret stored under the corresponding exp label.
+
+If you prefer plain configuration variables for these public values, create
+**repository-level** variables named `CLERK_PUBLISHABLE_KEY_DEVELOPMENT` and
+`CLERK_PUBLISHABLE_KEY_PRODUCTION` under **Settings > Secrets and variables >
+Actions > Variables**, and replace the global expression with:
+
+```yaml
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[inputs.environment == 'production' && 'CLERK_PUBLISHABLE_KEY_PRODUCTION' || 'CLERK_PUBLISHABLE_KEY_DEVELOPMENT'] }}
+```
+
+Do not substitute an environment-level `vars` value into the global expression:
+[environment variables become available only after the job starts](https://docs.github.com/en/actions/reference/workflows-and-actions/variables#configuration-variable-precedence).
+The configured environment secrets remain the workflow's supported default.
+The variable expression selects a name before reading its value, so a missing
+production key does not silently select the development key.
+
+The existing Next.js `instrumentation.register()` hook awaits
+`initializeRuntimeEnvironmentConfiguration()` before requests are served.
+That method fetches the complete exp runtime document using the PRODUCTION or
+DEVELOPMENT label selected by `SITE_ENV`; missing or unsupported environments
+are rejected. Server-side reads use the initialized document, and runtime
+configuration is applied to the Node process without logging values.
+
+Local, Aspire, and selfhost modes use local exp when available and retain
+dotenv values when it is unreachable. Invalid documents and cloud failures
+stop initialization instead of silently substituting defaults. `.env` is
+retained for local/offline use and deprecated for cloud deployment.
+Set `INFRA=local` when using a local Azure identity to access other resources;
+both startup and subsequent config reads then retain local exp routing.
+
+The container keeps the standard `node server.js` entrypoint. Private values
+are not baked into image layers. Restarting the Node server reloads changed
+private configuration from exp.
+
+The build workflow runs a bounded startup smoke test on the final image before
+publishing it. It uses the image's normal entrypoint and runner-stage environment
+(without setting `SITE_ENV` or private variables), plus a local exp fixture.
+The test checks the requested exp label and the application's health report,
+proving the build-time environment survives into runtime instrumentation.
+Run it on a Linux Docker host after building an image:
+
+```bash
+node sites/arolariu.ro/tests/container/runtime-configuration.smoke.mjs <image> PRODUCTION
+```
+
+The fixture and test container are temporary; no real Azure services or credentials
+are used.
 
 | Variable | Description | Required |
 | ----------------------------------- | ------------------------------------ | -------- |
-| `SITE_ENV` | Environment (development/production) | Yes |
-| `SITE_URL` | Site URL | Yes |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key | Yes |
-| `RESEND_API_KEY` | Email service API key | Yes |
-| `API_URL` | Backend API URL | Yes |
-| `API_JWT` | API authentication token | Yes |
+| `SITE_ENV` | Public build input: PRODUCTION or DEVELOPMENT | Yes |
+| `SITE_URL` / `SITE_NAME` | Public site metadata from CI | Build |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk key from GitHub configuration | Build |
+| `CLERK_SECRET_KEY` | Runtime Clerk secret from exp, or local dotenv | Runtime |
+| `API_JWT` | Runtime JWT signing secret from exp, or local dotenv | Runtime |
+| `API_JWT_ISSUER` / `API_JWT_AUDIENCE` | Runtime JWT metadata from exp, or local dotenv | Runtime |
+| `API_URL` / `STORAGE_BLOB_ENDPOINT` | Runtime service endpoints from exp, or local dotenv | Runtime |
+| `RESEND_API_KEY` | Runtime email key; empty string disables email | Optional |
+| `EXP_PROXY_URL` | Optional exp URL override, including bare-metal local exp | No |
 
 ### Backend
 

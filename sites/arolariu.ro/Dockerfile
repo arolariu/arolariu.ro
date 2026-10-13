@@ -45,6 +45,8 @@ ARG INFRA
 ARG SITE_ENV
 ARG SITE_URL
 ARG SITE_NAME
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG TIMESTAMP
 
 # Make them available during build (Next.js embeds these at build time)
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME
@@ -57,7 +59,9 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     INFRA=${INFRA} \
     SITE_ENV=${SITE_ENV} \
     SITE_URL=${SITE_URL} \
-    SITE_NAME=${SITE_NAME}
+    SITE_NAME=${SITE_NAME} \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
+    TIMESTAMP=${TIMESTAMP}
 
 # Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules

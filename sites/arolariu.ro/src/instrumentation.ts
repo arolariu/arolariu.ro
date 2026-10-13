@@ -4,23 +4,26 @@
  *
  * @remarks
  * This module is loaded before the application starts and is responsible for
- * initializing telemetry (when applicable) based on the current runtime.
+ * initializing telemetry and required server configuration for the current runtime.
  */
 
 /**
  * Registers application instrumentation before the app starts.
  * @remarks
- * Initializes OpenTelemetry conditionally based on the runtime environment.
+ * Initializes OpenTelemetry and awaits private runtime environment configuration.
  * Logs runtime details and instrumentation status during registration.
  * @returns A promise that resolves when instrumentation setup is complete.
  */
-export async function register() {
+export async function register(): Promise<void> {
   // Initialize OpenTelemetry early in the application lifecycle
   if (process.env["NEXT_RUNTIME"] === "nodejs") {
     // Dynamic import to avoid bundling telemetry code in client bundles
     const {startTelemetry} = await import("@/instrumentation.server");
     startTelemetry();
     console.log(">>> 🔭 OpenTelemetry has been initialized for the Node.js runtime!");
+
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./lib/config/configProxy");
+    await initializeRuntimeEnvironmentConfiguration();
   }
 
   console.log(">>> Instrumentation has been registered!");

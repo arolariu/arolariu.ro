@@ -2,16 +2,15 @@
  * @fileoverview Server-side-only config proxy client with per-key TTL caching
  * and typed config value helpers with env-var fallback.
  *
- * Config URL is determined deterministically by `AZURE_CLIENT_ID` presence:
- *   - `AZURE_CLIENT_ID` set -> `https://exp.arolariu.ro`  (Azure / production)
- *   - otherwise             -> `http://exp`               (local Docker / CI)
+ * Cloud deployments use `https://exp.arolariu.ro`; local deployments use
+ * `http://exp`. EXP_PROXY_URL overrides the endpoint. Explicit INFRA=local
+ * preserves local routing even when an Azure identity is configured.
  *
- * The website consumes the exp service through the single-key endpoint:
- * `/api/v1/config?name=<config-key>`.
+ * Startup fetches `/api/v1/run-time?for=website`; keys outside the initialized
+ * snapshot use `/api/v1/config?name=<config-key>`.
  *
  * Typed helpers (`fetchApiUrl`, `fetchApiJwtSecret`, `fetchResendApiKey`) resolve
- * specific whitelisted keys and fall back to environment variables when exp is
- * unavailable.
+ * the initialized environment, retaining dotenv values if local exp is unavailable.
  *
  * @module sites/arolariu.ro/src/lib/config/configProxy
  */
@@ -41,6 +40,10 @@ type ConfigValueResponse = Readonly<{
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -124,8 +127,13 @@ export function invalidateConfigValueCache(key?: string): void {
   configValueCache.clear();
 }
 
-/** `true` when running on Azure with a Managed Identity client ID configured. */
+/** Whether a managed identity client ID is available; local use does not imply cloud hosting. */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
+const INFRASTRUCTURE = process.env["INFRA"]?.trim().toLowerCase();
+const IS_CLOUD_DEPLOYMENT =
+  INFRASTRUCTURE === "azure"
+  || Boolean(process.env["WEBSITE_INSTANCE_ID"])
+  || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
 
 /**
  * Azure AD token scope for the experiments service.
@@ -135,27 +143,41 @@ export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8
 
 /** Azure-hosted exp service URL. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local exp uses its Docker-internal HTTP endpoint
+const LOCAL_EXP_URL = "http://exp";
 
 /**
  * Base URL for the experiments / config service.
  *
- * Priority: EXP_PROXY_URL env var > AZURE_CLIENT_ID-based selection > Docker default.
+ * Priority: EXP_PROXY_URL > cloud deployment detection > Docker default.
+ * Explicit INFRA=local retains local routing even when Azure credentials exist.
  * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach bare-metal exp.
  */
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : "http://exp");
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (IS_CLOUD_DEPLOYMENT ? AZURE_EXP_URL : LOCAL_EXP_URL);
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
-const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
+const USE_AZURE_AUTH = URL.canParse(EXP_BASE_URL) && new URL(EXP_BASE_URL).origin === AZURE_EXP_URL;
 
 const WEBSITE_TARGET = "website" as const;
+
+const RUNTIME_ENVIRONMENT_KEYS = {
+  "Auth:Clerk:SecretKey": "CLERK_SECRET_KEY",
+  "Auth:JWT:Secret": "API_JWT",
+  "Auth:JWT:Issuer": "API_JWT_ISSUER",
+  "Auth:JWT:Audience": "API_JWT_AUDIENCE",
+  "Communication:Email:ApiKey": "RESEND_API_KEY",
+  "Endpoints:Service:Api": "API_URL",
+  "Endpoints:Storage:Blob": "STORAGE_BLOB_ENDPOINT",
+} as const;
+
+let runtimeConfiguration: Readonly<Record<string, string>> | null = null;
 
 /**
  * Timeout for exp config fetches.
  * Azure (production): 10 seconds — exp is reliably reachable.
  * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
  */
-const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2000;
+const CONFIG_FETCH_TIMEOUT_MS = IS_CLOUD_DEPLOYMENT ? 10_000 : 2000;
 
 /**
  * Azure App Configuration label derived from `SITE_ENV`.
@@ -163,18 +185,20 @@ const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2000;
  * When `SITE_ENV` equals `"PRODUCTION"` the PRODUCTION label is requested;
  * all other values (including absent) resolve to the DEVELOPMENT label.
  */
-const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").trim().toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
 /**
  * Acquires a Bearer token for the experiments service.
  * Returns an empty string when not targeting the Azure-hosted exp instance.
  */
-async function getBearerToken(): Promise<string> {
+async function getBearerToken(signal?: AbortSignal): Promise<string> {
   if (!USE_AZURE_AUTH) return "";
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
-  const token = await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
+  const token = signal
+    ? await credential.getToken(EXP_SERVICE_TOKEN_SCOPE, {abortSignal: signal})
+    : await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
 
   return token?.token ?? "";
 }
@@ -182,7 +206,7 @@ async function getBearerToken(): Promise<string> {
 /**
  * Builds request headers for exp proxy requests.
  */
-async function getRequestHeaders(): Promise<Record<string, string>> {
+async function getRequestHeaders(signal?: AbortSignal): Promise<Record<string, string>> {
   const baseHeaders = new Headers({"X-Exp-Target": WEBSITE_TARGET});
   const injectedHeaders = injectTraceContextHeaders(baseHeaders);
   const headers = injectedHeaders instanceof Headers ? injectedHeaders : new Headers(baseHeaders);
@@ -193,7 +217,7 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
     }
   }
 
-  const bearerToken = await getBearerToken();
+  const bearerToken = await getBearerToken(signal);
   if (bearerToken) headers.set("Authorization", `Bearer ${bearerToken}`);
   return Object.fromEntries(headers.entries());
 }
@@ -205,7 +229,7 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
  */
 let expCircuitOpen = false;
 let expCircuitOpenedAt = 0;
-const CIRCUIT_RESET_MS = HAS_AZURE_CLIENT_ID ? 30_000 : 300_000;
+const CIRCUIT_RESET_MS = IS_CLOUD_DEPLOYMENT ? 30_000 : 300_000;
 
 function isExpCircuitOpen(): boolean {
   if (!expCircuitOpen) return false;
@@ -278,6 +302,15 @@ async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
  * Server-only — guarded by the `server-only` package import.
  */
 export async function fetchConfigValue(key: string): Promise<string> {
+  const initializedValue = runtimeConfiguration && Object.hasOwn(runtimeConfiguration, key) ? runtimeConfiguration[key] : undefined;
+  if (initializedValue !== undefined) return initializedValue;
+
+  if (isExpCircuitOpen()) {
+    const variable = Object.entries(RUNTIME_ENVIRONMENT_KEYS).find(([configKey]) => configKey === key)?.[1];
+    const localValue = variable ? process.env[variable] : undefined;
+    if (localValue !== undefined) return localValue;
+  }
+
   try {
     const payload = await getConfigPayload(key);
     return payload.value;
@@ -304,6 +337,82 @@ export function invalidateConfigCache(key?: string): void {
   invalidateConfigValueCache(key);
 }
 
+/**
+ * Initializes private environment configuration before Next.js serves requests.
+ *
+ * @remarks
+ * Called by the existing Node.js instrumentation hook. Fetches the complete exp
+ * runtime document once per initialization and retains it for server-side reads.
+ * Local deployments fall back to dotenv when exp is unreachable; cloud failures
+ * stop initialization. Public configuration remains CI/build-owned. Build workers
+ * never fetch private values, and runtime values are never logged.
+ *
+ * @returns Resolves when the runtime environment configuration is initialized.
+ * @throws When SITE_ENV is missing/unsupported or cloud configuration is invalid.
+ */
+export async function initializeRuntimeEnvironmentConfiguration(): Promise<void> {
+  const environment = process.env["SITE_ENV"]?.trim().toUpperCase();
+  if (environment !== "PRODUCTION" && environment !== "DEVELOPMENT") {
+    throw new Error("SITE_ENV must be set to PRODUCTION or DEVELOPMENT before runtime configuration can be initialized.");
+  }
+  if (process.env["NEXT_PHASE"] === "phase-production-build") return;
+
+  const endpointUrl = `${EXP_BASE_URL.replace(/\/$/u, "")}/api/v1/run-time`;
+  if (!URL.canParse(endpointUrl)) {
+    throw new Error("EXP_PROXY_URL must be a valid URL.");
+  }
+  const endpoint = new URL(endpointUrl);
+  endpoint.searchParams.set("for", WEBSITE_TARGET);
+  endpoint.searchParams.set("label", environment);
+
+  const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
+  const response = await getRequestHeaders(signal)
+    .then((headers) => fetch(endpoint.href, {cache: "no-store", headers, signal}))
+    .catch(() => {
+      if (IS_CLOUD_DEPLOYMENT) {
+        throw new Error("Unable to fetch private runtime configuration from exp. Check managed identity and exp availability.");
+      }
+      expCircuitOpen = true;
+      expCircuitOpenedAt = Date.now();
+      logWithTrace("warn", "Local exp is unavailable; retaining dotenv runtime configuration", {environment}, "server");
+      return null;
+    });
+  if (response === null) return;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch private runtime configuration from exp (status=${response.status}).`);
+  }
+
+  const payload: unknown = await response.json().catch(() => {
+    throw new Error("Invalid website runtime configuration document from exp.");
+  });
+  if (!isRecord(payload) || payload["target"] !== "website" || !isRecord(payload["config"])) {
+    throw new Error("Invalid website runtime configuration document from exp.");
+  }
+
+  const entries = Object.entries(payload["config"]).map(([key, value]) => {
+    if (typeof value !== "string") {
+      throw new TypeError(`Invalid runtime configuration value: ${key}.`);
+    }
+    return [key, value] as const;
+  });
+  const config: Readonly<Record<string, string>> = Object.fromEntries(entries);
+  if (config["Site:Environment"]?.trim().toUpperCase() !== environment) {
+    throw new Error(`Runtime configuration environment does not match ${environment}. Check the exp configuration label.`);
+  }
+  const resolved = Object.entries(RUNTIME_ENVIRONMENT_KEYS).map(([key, variable]) => {
+    const value = config[key];
+    if (value === undefined || (key !== "Communication:Email:ApiKey" && !value.trim())) {
+      throw new Error(`Missing private runtime configuration: ${key}. Configure the ${environment} label in exp.`);
+    }
+    return {variable, value};
+  });
+  for (const {variable, value} of resolved) {
+    process.env[variable] = value;
+  }
+  runtimeConfiguration = config;
+  logWithTrace("info", "Private runtime environment configuration initialized", {count: resolved.length, environment}, "server");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Typed config value helpers (with env-var fallback)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -321,12 +430,15 @@ const EXP_KEY_RESEND_API_KEY = "Communication:Email:ApiKey" as const;
  * Returns the backend REST API base URL.
  *
  * @remarks
- * Reads `Endpoints:Service:Api` from exp.  Falls back to `process.env.API_URL` when
- * exp is unavailable.
+ * Uses the initialized runtime `API_URL` (or local dotenv value), then the exp
+ * proxy when initialization has not supplied a value.
  *
  * @returns Base URL string (e.g. `"https://api.arolariu.ro"`).
  */
 export async function fetchApiUrl(): Promise<string> {
+  const configuredUrl = process.env["API_URL"];
+  if (configuredUrl?.trim()) return configuredUrl;
+
   try {
     const value = await fetchConfigValue(EXP_KEY_API_URL);
     if (value) return value;
@@ -340,8 +452,8 @@ export async function fetchApiUrl(): Promise<string> {
  * Returns the HS256 JWT signing secret used to mint BFF tokens.
  *
  * @remarks
- * Reads `Auth:JWT:Secret` from exp.  Falls back to `process.env.API_JWT`
- * when exp is unavailable.
+ * Uses `API_JWT` initialized by register() or local dotenv, then the exp proxy
+ * when initialization has not supplied a value.
  *
  * **Security**: The returned value is a cryptographic secret.  Never log,
  * serialise, or forward it to the browser.
@@ -349,6 +461,9 @@ export async function fetchApiUrl(): Promise<string> {
  * @returns Base64-encoded HS256 signing secret.
  */
 export async function fetchApiJwtSecret(): Promise<string> {
+  const configuredSecret = process.env["API_JWT"];
+  if (configuredSecret?.trim()) return configuredSecret;
+
   try {
     const value = await fetchConfigValue(EXP_KEY_API_JWT_SECRET);
     if (value) return value;
@@ -362,9 +477,8 @@ export async function fetchApiJwtSecret(): Promise<string> {
  * Returns the Resend transactional-email API key.
  *
  * @remarks
- * Reads `Communication:Email:ApiKey` from exp (optional config key).
- * Falls back to `process.env.RESEND_API_KEY` when exp is unavailable or
- * the key is absent from the exp registry.
+ * Uses `RESEND_API_KEY` initialized by register() or local dotenv, including an
+ * explicit empty value to disable delivery. Uses exp when the variable is absent.
  *
  * **Security**: The returned value is a secret API key.  Never log,
  * serialise, or forward it to the browser.
@@ -372,6 +486,9 @@ export async function fetchApiJwtSecret(): Promise<string> {
  * @returns Resend API key string, or empty string if not configured.
  */
 export async function fetchResendApiKey(): Promise<string> {
+  const configuredKey = process.env["RESEND_API_KEY"];
+  if (configuredKey !== undefined) return configuredKey;
+
   try {
     const value = await fetchConfigValue(EXP_KEY_RESEND_API_KEY);
     if (value) return value;
