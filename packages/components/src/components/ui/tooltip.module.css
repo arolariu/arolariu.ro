@@ -13,7 +13,6 @@
 
 .popup {
   position: relative;
-  overflow: hidden;
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-foreground);
   color: var(--ac-background);
@@ -31,6 +30,70 @@
   & * {
     color: inherit;
     background-color: transparent;
+  }
+
+  .arrow {
+    width: var(--ac-space-2);
+    height: var(--ac-space-2);
+    background: var(--ac-foreground);
+    transform: rotate(45deg);
+    pointer-events: none;
+
+    &[data-side="top"] {
+      bottom: calc(-1 * var(--ac-space-1));
+    }
+
+    &[data-side="bottom"] {
+      top: calc(-1 * var(--ac-space-1));
+    }
+
+    &[data-side="left"] {
+      right: calc(-1 * var(--ac-space-1));
+    }
+
+    &[data-side="right"] {
+      left: calc(-1 * var(--ac-space-1));
+    }
+
+    &[data-side="inline-start"] {
+      inset-inline-end: calc(-1 * var(--ac-space-1));
+    }
+
+    &[data-side="inline-end"] {
+      inset-inline-start: calc(-1 * var(--ac-space-1));
+    }
+  }
+
+  .storyContent {
+    display: grid;
+    gap: var(--ac-space-1);
+    max-width: 16rem;
+  }
+
+  .storyGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .popup {
+      border: 1px solid CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: none;
+    }
+
+    .arrow {
+      border: 1px solid CanvasText;
+      background: Canvas;
+    }
   }
 
   &[data-starting-style],

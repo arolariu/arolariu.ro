@@ -1,119 +1,119 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
+import {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
+import styles from "./tooltip.module.css";
 
 const meta = {
   title: "Components/Overlays/Tooltip",
   component: Tooltip,
   tags: ["autodocs"],
-  argTypes: {},
+  parameters: {layout: "centered"},
 } satisfies Meta<typeof Tooltip>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Top: Story = {
-  render: () => (
-    <TooltipProvider>
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={0}>
       <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover me (top)</Button>
-        </TooltipTrigger>
-        <TooltipContent side='top'>This is a tooltip on the top</TooltipContent>
+        <TooltipTrigger render={<Button variant='outline' />}>Hover me (top)</TooltipTrigger>
+        <TooltipContent side='top'>Tooltip above the trigger</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ),
 };
 
 export const Bottom: Story = {
-  render: () => (
-    <TooltipProvider>
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={0}>
       <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover me (bottom)</Button>
-        </TooltipTrigger>
-        <TooltipContent side='bottom'>This is a tooltip on the bottom</TooltipContent>
+        <TooltipTrigger render={<Button variant='outline' />}>Hover me (bottom)</TooltipTrigger>
+        <TooltipContent
+          side='bottom'
+          align='start'
+          alignOffset={4}>
+          Start-aligned below the trigger
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ),
 };
 
 export const Left: Story = {
-  render: () => (
-    <TooltipProvider>
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={0}>
       <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover me (left)</Button>
-        </TooltipTrigger>
-        <TooltipContent side='left'>This is a tooltip on the left</TooltipContent>
+        <TooltipTrigger render={<Button variant='outline' />}>Hover me (left)</TooltipTrigger>
+        <TooltipContent
+          side='left'
+          sideOffset={8}>
+          Tooltip left of the trigger
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ),
 };
 
 export const Right: Story = {
-  render: () => (
-    <TooltipProvider>
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={0}>
       <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover me (right)</Button>
-        </TooltipTrigger>
-        <TooltipContent side='right'>This is a tooltip on the right</TooltipContent>
+        <TooltipTrigger render={<Button variant='outline' />}>Hover me (right)</TooltipTrigger>
+        <TooltipContent side='right'>Tooltip right of the trigger</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ),
 };
 
-/**
- * Tooltip with custom delay before showing.
- */
+/** Provider owns the initial delay and the adjacent-tooltip instant window. */
 export const WithDelay: Story = {
-  render: () => (
-    <TooltipProvider delayDuration={1000}>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover me (1s delay)</Button>
-        </TooltipTrigger>
-        <TooltipContent side='top'>This tooltip appears after a 1 second delay</TooltipContent>
-      </Tooltip>
+  render: (): React.JSX.Element => (
+    <TooltipProvider
+      delayDuration={1000}
+      timeout={400}>
+      <div className={styles.storyGroup}>
+        <Tooltip>
+          <TooltipTrigger render={<Button variant='outline' />}>First tooltip (1s)</TooltipTrigger>
+          <TooltipContent>Wait one second on hover; keyboard focus opens immediately.</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger render={<Button variant='outline' />}>Adjacent tooltip</TooltipTrigger>
+          <TooltipContent>The group opens adjacent tooltips immediately while active.</TooltipContent>
+        </Tooltip>
+      </div>
     </TooltipProvider>
   ),
 };
 
-/**
- * Tooltip with rich formatted content including bold text and styling.
- */
-function TooltipWithRichContent(): React.JSX.Element {
-  return (
-    <TooltipProvider>
+/** Non-interactive rich copy and an explicitly composed Arrow part. */
+export const WithRichContent: Story = {
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={0}>
       <Tooltip>
-        <TooltipTrigger>
-          <Button variant='outline'>Hover for details</Button>
-        </TooltipTrigger>
-        <TooltipContent
-          side='top'
-          style={{maxWidth: "250px"}}>
-          <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-            <div style={{fontWeight: "bold", fontSize: "14px"}}>Product Information</div>
-            <div style={{fontSize: "12px", lineHeight: "1.5"}}>
-              <strong>Status:</strong> In Stock
-            </div>
-            <div style={{fontSize: "12px", lineHeight: "1.5"}}>
-              <strong>Price:</strong> $49.99
-            </div>
-            <a
-              href='#'
-              style={{fontSize: "12px", color: "inherit", textDecoration: "underline"}}
-              onClick={(e) => e.preventDefault()}>
-              View details →
-            </a>
+        <TooltipTrigger render={<Button variant='outline' />}>Hover for details</TooltipTrigger>
+        <TooltipContent showArrow={false}>
+          <div className={styles.storyContent}>
+            <strong>Product Information</strong>
+            <span>Status: In stock</span>
+            <span>Price: $49.99</span>
           </div>
+          <TooltipArrow />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  );
-}
+  ),
+};
 
-export const WithRichContent: Story = {
-  render: () => <TooltipWithRichContent />,
+/** A root-local legacy delay is supplied to Trigger, not unsupported Root.delay. */
+export const LegacyRootDelay: Story = {
+  render: (): React.JSX.Element => (
+    <TooltipProvider delay={1000}>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger render={<Button />}>Immediate legacy root override</TooltipTrigger>
+        <TooltipContent showArrow={false}>No default arrow; zero-delay trigger contract.</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  ),
 };

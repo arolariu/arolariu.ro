@@ -1,140 +1,166 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Popover, PopoverContent, PopoverTrigger} from "./popover";
+import {Popover, PopoverAnchor, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
+import styles from "./popover.module.css";
 
 const meta = {
   title: "Components/Overlays/Popover",
   component: Popover,
   tags: ["autodocs"],
-  argTypes: {},
+  parameters: {layout: "centered"},
 } satisfies Meta<typeof Popover>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** A single composed button and primitive-owned accessible naming. */
 export const Default: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Popover>
-      <PopoverTrigger>
-        <Button variant='outline'>Open Popover</Button>
-      </PopoverTrigger>
+      <PopoverTrigger render={<Button variant='outline' />}>Open Popover</PopoverTrigger>
       <PopoverContent>
-        <div className='space-y-2 p-4'>
-          <h3 className='font-semibold'>Popover Title</h3>
-          <p className='text-sm'>This is the popover content. You can put any content here.</p>
-        </div>
+        <PopoverHeader>
+          <PopoverTitle>Popover Title</PopoverTitle>
+          <PopoverDescription>Choose an action. Escape closes the popup and returns focus.</PopoverDescription>
+        </PopoverHeader>
       </PopoverContent>
     </Popover>
   ),
 };
 
-/**
- * Popover containing a small form with inputs.
- */
-function PopoverWithForm(): React.JSX.Element {
-  return (
-    <Popover>
-      <PopoverTrigger>
-        <Button>Settings</Button>
-      </PopoverTrigger>
-      <PopoverContent>
-        <div style={{display: "flex", flexDirection: "column", gap: "12px", padding: "16px"}}>
-          <h3 style={{fontWeight: 600}}>Settings</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-            <label style={{fontSize: "14px", display: "flex", flexDirection: "column", gap: "4px"}}>
-              Width
-              <input
-                type='number'
-                style={{
-                  marginTop: "4px",
-                  width: "100%",
-                  borderRadius: "4px",
-                  border: "1px solid #d1d5db",
-                  padding: "4px 8px",
-                }}
-                defaultValue={300}
-              />
-            </label>
-            <label style={{fontSize: "14px", display: "flex", flexDirection: "column", gap: "4px"}}>
-              Height
-              <input
-                type='number'
-                style={{
-                  marginTop: "4px",
-                  width: "100%",
-                  borderRadius: "4px",
-                  border: "1px solid #d1d5db",
-                  padding: "4px 8px",
-                }}
-                defaultValue={200}
-              />
-            </label>
-          </div>
-          <Button size='sm'>Apply</Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
+/** Native inputs receive focus inside the popup, not the Positioner. */
 export const WithForm: Story = {
-  render: () => <PopoverWithForm />,
-};
-
-/**
- * Popover with custom right-side placement alignment.
- */
-export const CustomPlacement: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Popover>
-      <PopoverTrigger>
-        <Button variant='outline'>Open Right</Button>
-      </PopoverTrigger>
-      <PopoverContent side='right'>
-        <div style={{padding: "16px"}}>
-          <h3 style={{fontWeight: 600, marginBottom: "8px"}}>Right Side Popover</h3>
-          <p style={{fontSize: "14px"}}>This popover appears on the right side of the trigger.</p>
-        </div>
+      <PopoverTrigger render={<Button />}>Settings</PopoverTrigger>
+      <PopoverContent className={styles.storyForm}>
+        <PopoverHeader>
+          <PopoverTitle>Dimensions</PopoverTitle>
+          <PopoverDescription>Adjust width and height.</PopoverDescription>
+        </PopoverHeader>
+        <label className={styles.storyField}>
+          Width
+          <input
+            className={styles.storyInput}
+            type='number'
+            defaultValue={300}
+          />
+        </label>
+        <label className={styles.storyField}>
+          Height
+          <input
+            className={styles.storyInput}
+            type='number'
+            defaultValue={200}
+          />
+        </label>
       </PopoverContent>
     </Popover>
   ),
 };
 
-/**
- * Nested popover demonstration (popover inside popover).
- */
-function NestedPopover(): React.JSX.Element {
-  return (
+/** Placement options are separate from popup semantics. */
+export const CustomPlacement: Story = {
+  render: (): React.JSX.Element => (
     <Popover>
-      <PopoverTrigger>
-        <Button variant='outline'>Open Outer</Button>
-      </PopoverTrigger>
-      <PopoverContent>
-        <div style={{padding: "16px", display: "flex", flexDirection: "column", gap: "12px"}}>
-          <h3 style={{fontWeight: 600}}>Outer Popover</h3>
-          <p style={{fontSize: "14px"}}>This is the outer popover content.</p>
-          <Popover>
-            <PopoverTrigger>
+      <PopoverTrigger render={<Button variant='outline' />}>Open Right</PopoverTrigger>
+      <PopoverContent
+        side='right'
+        align='start'
+        sideOffset={12}
+        alignOffset={4}>
+        <PopoverHeader>
+          <PopoverTitle>Right Side Popover</PopoverTitle>
+          <PopoverDescription>Aligned to the start of the trigger with explicit offsets.</PopoverDescription>
+        </PopoverHeader>
+      </PopoverContent>
+    </Popover>
+  ),
+};
+
+/** Nested roots maintain independent primitive-owned state and names. */
+export const Nested: Story = {
+  render: (): React.JSX.Element => (
+    <Popover>
+      <PopoverTrigger render={<Button variant='outline' />}>Open Outer</PopoverTrigger>
+      <PopoverContent className={styles.storyForm}>
+        <PopoverHeader>
+          <PopoverTitle>Outer Popover</PopoverTitle>
+          <PopoverDescription>This root coordinates its own focus and lifecycle.</PopoverDescription>
+        </PopoverHeader>
+        <Popover>
+          <PopoverTrigger
+            render={
               <Button
                 size='sm'
-                variant='secondary'>
-                Open Inner
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <div style={{padding: "16px"}}>
-                <h4 style={{fontWeight: 600, fontSize: "14px", marginBottom: "8px"}}>Inner Popover</h4>
-                <p style={{fontSize: "12px"}}>This is a nested popover!</p>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+                variant='secondary'
+              />
+            }>
+            Open Inner
+          </PopoverTrigger>
+          <PopoverContent>
+            <PopoverHeader>
+              <PopoverTitle>Inner Popover</PopoverTitle>
+              <PopoverDescription>A separate nested popup.</PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Popover>
+      </PopoverContent>
+    </Popover>
+  ),
+};
+
+function ExplicitAnchorExample(): React.JSX.Element {
+  const anchor = React.useRef<HTMLDivElement>(null);
+  return (
+    <Popover>
+      <PopoverAnchor>
+        <div ref={anchor}>Measured anchor element</div>
+        <PopoverTrigger render={<Button variant='outline' />}>Open at the measured anchor</PopoverTrigger>
+      </PopoverAnchor>
+      <PopoverContent
+        anchor={anchor}
+        side='bottom'
+        align='start'>
+        <PopoverHeader>
+          <PopoverTitle>Explicit Anchor</PopoverTitle>
+          <PopoverDescription>PopoverAnchor is structural; the Content.anchor ref opts into positioning.</PopoverDescription>
+        </PopoverHeader>
       </PopoverContent>
     </Popover>
   );
 }
 
-export const Nested: Story = {
-  render: () => <NestedPopover />,
+/** A real measured element ref, not an implied legacy anchor registration. */
+export const ExplicitAnchor: Story = {
+  render: (): React.JSX.Element => <ExplicitAnchorExample />,
+};
+
+function FinalFocusExample(): React.JSX.Element {
+  const finalFocus = React.useRef<HTMLButtonElement>(null);
+  return (
+    <div className={styles.storyForm}>
+      <Button
+        ref={finalFocus}
+        variant='secondary'>
+        Requested return target
+      </Button>
+      <Popover>
+        <PopoverTrigger render={<Button />}>Open and press Escape</PopoverTrigger>
+        <PopoverContent finalFocus={finalFocus}>
+          <PopoverHeader>
+            <PopoverTitle>Custom Focus Return</PopoverTitle>
+            <PopoverDescription>Escape requests focus on the separate return-target button.</PopoverDescription>
+          </PopoverHeader>
+          <button type='button'>Focusable popup action</button>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+/** Exercises the Popup-owned finalFocus contract. */
+export const FinalFocus: Story = {
+  render: (): React.JSX.Element => <FinalFocusExample />,
 };

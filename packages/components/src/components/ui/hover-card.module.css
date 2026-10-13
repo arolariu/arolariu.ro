@@ -10,6 +10,7 @@
   background-color: var(--ac-popover);
   color: var(--ac-popover-foreground);
   box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.3);
+  transform-origin: var(--transform-origin);
   transition:
     opacity var(--ac-transition-normal),
     transform var(--ac-transition-normal);
@@ -20,4 +21,50 @@
 .popup[data-ending-style] {
   opacity: 0;
   transform: scale(0.96);
+}
+
+.storyContent {
+  display: grid;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+}
+
+.storyTitle {
+  margin: 0;
+  font-size: var(--ac-text-sm);
+  font-weight: 600;
+}
+
+.storyDescription {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+}
+
+.storyLink {
+  color: var(--ac-primary);
+  text-underline-offset: var(--ac-space-1);
+}
+
+.storyWide {
+  width: 20rem;
+  max-width: var(--available-width);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .popup {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  .storyDescription {
+    color: CanvasText;
+  }
 }
