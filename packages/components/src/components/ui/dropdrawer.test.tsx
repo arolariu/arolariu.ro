@@ -1007,3 +1007,487 @@ describe("DropDrawer real Drawer gestures under restored platform boundaries", (
     }
   });
 });
+
+describe("DropDrawer review fix round 1", () => {
+  const itemCases = [false, true].flatMap((mobile) =>
+    [false, true].flatMap((closeOnClick) =>
+      (["render", "asChild", "function"] as const).map((composition) => ({mobile, closeOnClick, composition})),
+    ),
+  );
+
+  it.each(itemCases)(
+    "blocks disabled composed child and wrapper activation: mobile=$mobile, closeOnClick=$closeOnClick, composition=$composition",
+    async ({mobile, closeOnClick, composition}) => {
+      media.change(mobile);
+      const user = userEvent.setup({pointerEventsCheck: 0});
+      const calls: string[] = [];
+      const childRef = React.createRef<HTMLAnchorElement>();
+      const wrapperRef = React.createRef<HTMLElement>();
+      const states: object[] = [];
+      const childHandlers: React.DOMAttributes<HTMLAnchorElement> = {
+        onClick: () => calls.push("child-click"),
+        onClickCapture: () => calls.push("child-click-capture"),
+        onKeyDown: () => calls.push("child-key-down"),
+        onKeyDownCapture: () => calls.push("child-key-down-capture"),
+        onKeyUp: () => calls.push("child-key-up"),
+        onKeyUpCapture: () => calls.push("child-key-up-capture"),
+      };
+      const child = (
+        <a
+          {...childHandlers}
+          ref={childRef}
+          href='#disabled-target'>
+          Disabled composed action
+        </a>
+      );
+
+      const actionProps: React.ComponentProps<typeof DropDrawerItem> = {
+        disabled: true,
+        closeOnClick,
+        nativeButton: false,
+        ref: wrapperRef,
+        onClick: () => calls.push("wrapper-click"),
+        onClickCapture: () => calls.push("wrapper-click-capture"),
+        onKeyDown: () => calls.push("wrapper-key-down"),
+        onKeyDownCapture: () => calls.push("wrapper-key-down-capture"),
+        onKeyUp: () => calls.push("wrapper-key-up"),
+        onKeyUpCapture: () => calls.push("wrapper-key-up-capture"),
+        onSelect: () => calls.push("selection"),
+      };
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            {composition === "asChild" ? (
+              <DropDrawerItem
+                {...actionProps}
+                asChild>
+                {child}
+              </DropDrawerItem>
+            ) : (
+              <DropDrawerItem
+                {...actionProps}
+                render={
+                  composition === "render"
+                    ? child
+                    : (props, state) => {
+                        states.push(state);
+                        return (
+                          <a
+                            {...props}
+                            href='#disabled-target'
+                            onClick={(event) => {
+                              childHandlers.onClick?.(event);
+                              props.onClick?.(event);
+                            }}
+                            onClickCapture={(event) => {
+                              childHandlers.onClickCapture?.(event);
+                              props.onClickCapture?.(event);
+                            }}
+                            onKeyDown={(event) => {
+                              childHandlers.onKeyDown?.(event);
+                              props.onKeyDown?.(event);
+                            }}
+                            onKeyDownCapture={(event) => {
+                              childHandlers.onKeyDownCapture?.(event);
+                              props.onKeyDownCapture?.(event);
+                            }}
+                            onKeyUp={(event) => {
+                              childHandlers.onKeyUp?.(event);
+                              props.onKeyUp?.(event);
+                            }}
+                            onKeyUpCapture={(event) => {
+                              childHandlers.onKeyUpCapture?.(event);
+                              props.onKeyUpCapture?.(event);
+                            }}>
+                            Disabled composed action
+                          </a>
+                        );
+                      }
+                }
+              />
+            )}
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+      const control = await screen.findByRole(mobile ? "button" : "menuitem", {name: "Disabled composed action"});
+      expect(control.tagName).toBe("A");
+      expect(wrapperRef.current).toBe(control);
+      if (composition === "function") expect(states).toContainEqual(expect.objectContaining({disabled: true}));
+      else expect(childRef.current).toBe(control);
+      expect(control).toHaveAttribute("aria-disabled", "true");
+      const hash = window.location.hash;
+      await user.click(control);
+      for (const key of ["Enter", " "]) {
+        fireEvent.keyDown(control, {key});
+        fireEvent.keyUp(control, {key});
+      }
+      expect(calls).toEqual([]);
+      expect(window.location.hash).toBe(hash);
+      expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    },
+  );
+
+  it.each([false, true].flatMap((mobile) => (["render", "function"] as const).map((composition) => ({mobile, composition}))))(
+    "blocks disabled composed submenu child capture and bubble callbacks: mobile=$mobile, composition=$composition",
+    async ({mobile, composition}) => {
+      media.change(mobile);
+      const user = userEvent.setup({pointerEventsCheck: 0});
+      const calls: string[] = [];
+      const ref = React.createRef<HTMLElement>();
+      const childHandlers: React.DOMAttributes<HTMLAnchorElement> = {
+        onClick: () => calls.push("child-click"),
+        onClickCapture: () => calls.push("child-click-capture"),
+        onKeyDown: () => calls.push("child-key-down"),
+        onKeyDownCapture: () => calls.push("child-key-down-capture"),
+        onKeyUp: () => calls.push("child-key-up"),
+        onKeyUpCapture: () => calls.push("child-key-up-capture"),
+      };
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub>
+              <DropDrawerSubTrigger
+                ref={ref}
+                disabled
+                nativeButton={false}
+                onClick={() => calls.push("wrapper-click")}
+                onClickCapture={() => calls.push("wrapper-click-capture")}
+                onKeyDown={() => calls.push("wrapper-key-down")}
+                onKeyDownCapture={() => calls.push("wrapper-key-down-capture")}
+                onKeyUp={() => calls.push("wrapper-key-up")}
+                onKeyUpCapture={() => calls.push("wrapper-key-up-capture")}
+                render={
+                  composition === "render" ? (
+                    <a
+                      {...childHandlers}
+                      href='#disabled-submenu'>
+                      Disabled composed submenu
+                    </a>
+                  ) : (
+                    (props) => (
+                      <a
+                        {...props}
+                        {...childHandlers}
+                        href='#disabled-submenu'>
+                        Disabled composed submenu
+                      </a>
+                    )
+                  )
+                }
+              />
+              <DropDrawerSubContent>
+                <DropDrawerItem>Unreachable action</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+      const control = await screen.findByRole(mobile ? "button" : "menuitem", {name: "Disabled composed submenu"});
+      expect(ref.current).toBe(control);
+      await user.click(control);
+      for (const key of ["Enter", " "]) {
+        fireEvent.keyDown(control, {key});
+        fireEvent.keyUp(control, {key});
+      }
+      expect(calls).toEqual([]);
+      expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+      expect(screen.queryByRole(mobile ? "button" : "menuitem", {name: "Unreachable action"})).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([false, true])(
+    "preserves enabled child/wrapper capture order and refs through a disabled rerender on mobile=%s",
+    async (mobile) => {
+      media.change(mobile);
+      const user = userEvent.setup({pointerEventsCheck: 0});
+      const calls: string[] = [];
+      const childRef = React.createRef<HTMLAnchorElement>();
+      const wrapperRef = React.createRef<HTMLElement>();
+      function ToggledAction({disabled}: Readonly<{disabled: boolean}>): React.ReactElement {
+        return (
+          <DropDrawer defaultOpen>
+            <DropDrawerTrigger>Open</DropDrawerTrigger>
+            <DropDrawerContent>
+              <DropDrawerItem
+                ref={wrapperRef}
+                disabled={disabled}
+                nativeButton={false}
+                closeOnClick={false}
+                onClickCapture={() => calls.push("wrapper-capture")}
+                onClick={() => calls.push("wrapper-bubble")}
+                onSelect={() => calls.push("selection")}
+                render={
+                  <a
+                    ref={childRef}
+                    href='#enabled-target'
+                    onClickCapture={() => calls.push("child-capture")}
+                    onClick={(event) => {
+                      calls.push("child-bubble");
+                      event.preventDefault();
+                    }}>
+                    Toggled action
+                  </a>
+                }
+              />
+            </DropDrawerContent>
+          </DropDrawer>
+        );
+      }
+      const view = render(<ToggledAction disabled={false} />);
+      const control = await screen.findByRole(mobile ? "button" : "menuitem", {name: "Toggled action"});
+      await user.click(control);
+      expect(calls).toEqual(["child-capture", "wrapper-capture", "child-bubble", "wrapper-bubble"]);
+      expect(childRef.current).toBe(control);
+      expect(wrapperRef.current).toBe(control);
+      calls.length = 0;
+      view.rerender(<ToggledAction disabled />);
+      expect(wrapperRef.current).toBe(control);
+      await user.click(control);
+      expect(calls).toEqual([]);
+      view.rerender(<ToggledAction disabled={false} />);
+      await user.click(control);
+      expect(calls).toEqual(["child-capture", "wrapper-capture", "child-bubble", "wrapper-bubble"]);
+    },
+  );
+
+  it.each(["open", "defaultOpen"] as const)(
+    "keeps main actions until the initially %s submenu has a live panel and recovers after removal",
+    async (mode) => {
+      media.change(true);
+      const requests: boolean[] = [];
+      function DeferredPanel({present}: Readonly<{present: boolean}>): React.ReactElement {
+        return (
+          <DropDrawer defaultOpen>
+            <DropDrawerTrigger>Open</DropDrawerTrigger>
+            <DropDrawerContent>
+              <DropDrawerItem closeOnClick={false}>Main deferred action</DropDrawerItem>
+              <DropDrawerSub
+                open={mode === "open" ? true : undefined}
+                defaultOpen={mode === "defaultOpen"}
+                onOpenChange={(open) => requests.push(open)}>
+                <DropDrawerSubTrigger>Deferred submenu</DropDrawerSubTrigger>
+                {present && (
+                  <DropDrawerSubContent>
+                    <DropDrawerItem closeOnClick={false}>Deferred action</DropDrawerItem>
+                  </DropDrawerSubContent>
+                )}
+              </DropDrawerSub>
+            </DropDrawerContent>
+          </DropDrawer>
+        );
+      }
+      const view = render(<DeferredPanel present={false} />);
+      expect(await screen.findByRole("button", {name: "Main deferred action"})).toBeVisible();
+      expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+      view.rerender(<DeferredPanel present />);
+      const action = await screen.findByRole("button", {name: "Deferred action"});
+      expect(action).toBeVisible();
+      await waitFor(() => expect(action).toHaveFocus());
+      expect(screen.queryByRole("button", {name: "Main deferred action"})).not.toBeInTheDocument();
+      view.rerender(<DeferredPanel present={false} />);
+      expect(screen.getByRole("button", {name: "Main deferred action"})).toBeVisible();
+      expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+      view.rerender(<DeferredPanel present />);
+      expect(await screen.findByRole("button", {name: "Deferred action"})).toBeVisible();
+      expect(requests).toEqual([]);
+    },
+  );
+
+  it("withdraws a controlled opening request while the panel is absent and preserves subsequent callback cancellation", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const requests: boolean[] = [];
+    function DeferredControlled({open, present}: Readonly<{open: boolean; present: boolean}>): React.ReactElement {
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem closeOnClick={false}>Main controlled action</DropDrawerItem>
+            <DropDrawerSub
+              open={open}
+              onOpenChange={(nextOpen, details) => {
+                requests.push(nextOpen);
+                details.cancel();
+              }}>
+              <DropDrawerSubTrigger>Controlled deferred submenu</DropDrawerSubTrigger>
+              {present && (
+                <DropDrawerSubContent>
+                  <DropDrawerItem>Controlled deferred action</DropDrawerItem>
+                </DropDrawerSubContent>
+              )}
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    const view = render(
+      <DeferredControlled
+        open
+        present={false}
+      />,
+    );
+    expect(await screen.findByRole("button", {name: "Main controlled action"})).toBeVisible();
+    view.rerender(
+      <DeferredControlled
+        open={false}
+        present={false}
+      />,
+    );
+    view.rerender(
+      <DeferredControlled
+        open={false}
+        present
+      />,
+    );
+    expect(screen.getByRole("button", {name: "Main controlled action"})).toBeVisible();
+    await user.click(screen.getByRole("button", {name: "Controlled deferred submenu"}));
+    expect(requests).toEqual([true]);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Main controlled action"})).toBeVisible();
+  });
+});
+
+describe("DropDrawer review fix round 1 native and ancestry invariants", () => {
+  it.each([false, true])("blocks composed disabled root trigger callbacks without changing its actual ref on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const calls: string[] = [];
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    render(
+      <DropDrawer>
+        <DropDrawerTrigger
+          asChild
+          disabled
+          nativeButton={false}
+          ref={wrapperRef}
+          onClick={() => calls.push("wrapper-click")}
+          onClickCapture={() => calls.push("wrapper-capture")}>
+          <a
+            href='#disabled-root'
+            ref={childRef}
+            onClick={() => calls.push("child-click")}
+            onClickCapture={() => calls.push("child-capture")}
+            onKeyDown={() => calls.push("child-key")}>
+            Disabled root trigger
+          </a>
+        </DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Root action</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const control = screen.getByRole("button", {name: "Disabled root trigger"});
+    expect(childRef.current).toBe(control);
+    expect(wrapperRef.current).toBe(control);
+    await userEvent.setup({pointerEventsCheck: 0}).click(control);
+    fireEvent.keyDown(control, {key: "Enter"});
+    expect(calls).toEqual([]);
+    expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument();
+  });
+
+  it.each([false, true])("honors explicit native disabled state on a composed button on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const calls: string[] = [];
+    const ref = React.createRef<HTMLElement>();
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            ref={ref}
+            closeOnClick={false}
+            nativeButton
+            onClickCapture={() => calls.push("wrapper-capture")}
+            onKeyDownCapture={() => calls.push("wrapper-key-capture")}
+            render={
+              <button
+                type='button'
+                disabled
+                onClick={() => calls.push("child-click")}
+                onKeyDown={() => calls.push("child-key")}
+                onKeyUp={() => calls.push("child-key-up")}>
+                Native disabled composition
+              </button>
+            }
+          />
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const control = await screen.findByRole(mobile ? "button" : "menuitem", {name: "Native disabled composition"});
+    expect(control.tagName).toBe("BUTTON");
+    expect(control).toBeDisabled();
+    expect(ref.current).toBe(control);
+    fireEvent.click(control);
+    fireEvent.keyDown(control, {key: "Enter"});
+    fireEvent.keyUp(control, {key: " "});
+    expect(calls).toEqual([]);
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+  });
+
+  it.each(["open", "defaultOpen"] as const)("waits for every live ancestor before applying a nested %s request", async (mode) => {
+    media.change(true);
+    function NestedDeferred({parentPresent}: Readonly<{parentPresent: boolean}>): React.ReactElement {
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem closeOnClick={false}>Main nested action</DropDrawerItem>
+            <DropDrawerSub>
+              <DropDrawerSubTrigger>Deferred parent</DropDrawerSubTrigger>
+              <DropDrawerSub
+                open={mode === "open" ? true : undefined}
+                defaultOpen={mode === "defaultOpen"}>
+                <DropDrawerSubTrigger>Nested requested panel</DropDrawerSubTrigger>
+                <DropDrawerSubContent>
+                  <DropDrawerItem closeOnClick={false}>Nested live action</DropDrawerItem>
+                </DropDrawerSubContent>
+              </DropDrawerSub>
+              {parentPresent && (
+                <DropDrawerSubContent>
+                  <DropDrawerItem closeOnClick={false}>Parent live action</DropDrawerItem>
+                </DropDrawerSubContent>
+              )}
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    const view = render(<NestedDeferred parentPresent={false} />);
+    expect(await screen.findByRole("button", {name: "Main nested action"})).toBeVisible();
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    view.rerender(<NestedDeferred parentPresent />);
+    expect(await screen.findByRole("button", {name: "Nested live action"})).toBeVisible();
+    expect(screen.queryByRole("button", {name: "Main nested action"})).not.toBeInTheDocument();
+    view.rerender(<NestedDeferred parentPresent={false} />);
+    expect(screen.getByRole("button", {name: "Main nested action"})).toBeVisible();
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+  });
+
+  it("does not let a nested requested panel override an explicitly closed controlled ancestor", async () => {
+    media.change(true);
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem closeOnClick={false}>Main closed-parent action</DropDrawerItem>
+          <DropDrawerSub open={false}>
+            <DropDrawerSubTrigger>Closed parent</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerSub open>
+                <DropDrawerSubTrigger>Requested child</DropDrawerSubTrigger>
+                <DropDrawerSubContent>
+                  <DropDrawerItem>Nested blocked action</DropDrawerItem>
+                </DropDrawerSubContent>
+              </DropDrawerSub>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    expect(await screen.findByRole("button", {name: "Main closed-parent action"})).toBeVisible();
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Nested blocked action"})).not.toBeInTheDocument();
+  });
+});

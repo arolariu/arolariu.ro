@@ -2,6 +2,10 @@
   min-width: 13.75rem;
 }
 
+.activationBoundary {
+  display: contents;
+}
+
 .mobileContent {
   max-height: 90dvh;
 }
@@ -101,7 +105,7 @@
   background: var(--ac-muted);
 }
 
-.mobileGroup > .mobileItem + .mobileItem {
+.mobileGroup > .activationBoundary + .activationBoundary > .mobileItem {
   border-top: 1px solid var(--ac-border);
 }
 
