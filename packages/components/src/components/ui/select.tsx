@@ -1,6 +1,7 @@
 "use client";
 
 import {Select as BaseSelect} from "@base-ui/react/select";
+import type {ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
 import {Check, ChevronDown, ChevronUp} from "lucide-react";
 import * as React from "react";
 
@@ -25,13 +26,24 @@ interface SelectContentProps extends React.ComponentPropsWithRef<typeof BaseSele
   listProps?: Readonly<SelectListProps>;
 }
 
-function getSelectChildren(children: React.ReactNode, render: unknown): React.ReactNode {
-  return children === undefined && React.isValidElement<{children?: React.ReactNode}>(render) ? render.props.children : children;
+type SelectRender<State> = React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined;
+
+function getSelectRenderElement<State>(render: SelectRender<State>): React.ReactElement<{children?: React.ReactNode}> | undefined {
+  if (typeof render === "function") return undefined;
+  // eslint-disable-next-line react-x/no-children-to-array -- React's resolver unwraps the Flight-lazy render elements supported by Base UI.
+  const [element] = React.Children.toArray(render);
+  return React.isValidElement<{children?: React.ReactNode}>(element) ? element : undefined;
+}
+
+function getSelectChildren<State>(children: React.ReactNode, render: SelectRender<State>): React.ReactNode {
+  return children === undefined ? getSelectRenderElement(render)?.props.children : children;
 }
 
 // Only normalize element children; Base UI still owns callback state, ref and handler merging.
-function withSelectChildren<Render>(render: Render, children: React.ReactNode): Render | React.ReactElement {
-  return React.isValidElement<{children?: React.ReactNode}>(render) ? React.cloneElement(render, {children}) : render;
+function withSelectChildren<State>(render: SelectRender<State>, children: React.ReactNode): SelectRender<State> {
+  const element = getSelectRenderElement(render);
+  // eslint-disable-next-line react-x/no-clone-element -- Replace only compound children; Base UI still merges primitive state, refs and handlers.
+  return element ? React.cloneElement(element, {children}) : render;
 }
 
 /**

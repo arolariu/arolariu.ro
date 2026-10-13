@@ -17,7 +17,151 @@ import {
   SelectValue,
 } from "./select";
 
+function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
+  // Model the opaque, resolved Flight transport boundary around a real JSX element.
+  const transport = {
+    ...element,
+    $$typeof: Symbol.for("react.lazy"),
+    _payload: element,
+    _init: (payload: React.ReactElement): React.ReactElement => payload,
+  };
+  for (const field of ["props", "type", "key", "ref"]) Reflect.deleteProperty(transport, field);
+  return transport;
+}
+
 describe("Select", () => {
+  it("retains lazy render-element Trigger children, its icon, refs and native handlers", async () => {
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const wrapperRef = React.createRef<HTMLButtonElement>();
+    const clicks: string[] = [];
+    const transport = resolvedFlightRender(
+      <button
+        ref={childRef}
+        className='flight-trigger'
+        onClick={() => clicks.push("child")}>
+        Flight trigger
+      </button>,
+    );
+    expect(React.isValidElement(transport)).toBe(false);
+    expect(transport).not.toHaveProperty("props");
+    render(
+      <Select>
+        <SelectTrigger
+          ref={wrapperRef}
+          aria-label='Flight trigger'
+          render={transport}
+          onClick={() => clicks.push("wrapper")}
+        />
+        <SelectContent>
+          <SelectItem value='a'>Alpha</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    const trigger = screen.getByRole("combobox", {name: "Flight trigger"});
+    expect(trigger).toHaveTextContent("Flight trigger");
+    expect(trigger).toHaveClass("flight-trigger");
+    expect(trigger.querySelector("[data-slot=select-trigger-icon]")).toBeInTheDocument();
+    expect(childRef.current).toBe(trigger);
+    expect(wrapperRef.current).toBe(trigger);
+    await user.click(trigger);
+    expect(clicks).toEqual(["child", "wrapper"]);
+    expect(screen.getByRole("option", {name: "Alpha"})).toBeInTheDocument();
+  });
+
+  it("retains the actual List and its customizations inside lazy render-element Content", async () => {
+    const user = userEvent.setup();
+    const listRef = React.createRef<HTMLDivElement>();
+    const popupRef = React.createRef<HTMLDivElement>();
+    const childPopupRef = React.createRef<HTMLElement>();
+    const transport = resolvedFlightRender(
+      <section
+        ref={childPopupRef}
+        data-testid='flight-popup'>
+        <SelectItem value='a'>Alpha</SelectItem>
+      </section>,
+    );
+    render(
+      <Select items={{a: "Alpha"}}>
+        <SelectTrigger aria-label='Flight choices'>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent
+          ref={popupRef}
+          render={transport}
+          listProps={{
+            ref: listRef,
+            "aria-label": "Flight options",
+            className: "flight-list",
+            render: (props, state) => (
+              <div
+                {...props}
+                data-list-state={Object.keys(state).join(",")}
+              />
+            ),
+          }}
+        />
+      </Select>,
+    );
+    await user.click(screen.getByRole("combobox", {name: "Flight choices"}));
+    const popup = screen.getByTestId("flight-popup");
+    const list = screen.getByRole("listbox", {name: "Flight options"});
+    expect(popupRef.current).toBe(popup);
+    expect(childPopupRef.current).toBe(popup);
+    expect(listRef.current).toBe(list);
+    expect(list.parentElement).toBe(popup);
+    expect(list).toHaveAttribute("data-slot", "select-list");
+    expect(list).toHaveAttribute("data-list-state", "");
+    expect(list).toHaveClass("flight-list");
+    await user.click(within(list).getByRole("option", {name: "Alpha"}));
+    expect(screen.getByRole("combobox", {name: "Flight choices"})).toHaveTextContent("Alpha");
+  });
+
+  it("keeps explicit children and compound anatomy with lazy nested containers, items and arrows", () => {
+    const itemRef = React.createRef<HTMLElement>();
+    render(
+      <Select
+        defaultOpen
+        defaultValue='a'>
+        <SelectTrigger
+          aria-label='Flight nested'
+          render={resolvedFlightRender(<button>Ignored trigger</button>)}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent
+          data-testid='flight-nested-popup'
+          render={resolvedFlightRender(<section>Ignored popup</section>)}
+          positionerProps={{render: resolvedFlightRender(<div data-testid='flight-positioner'>Ignored positioner</div>)}}
+          listProps={{"aria-label": "Flight nested options", render: resolvedFlightRender(<div>Ignored list</div>)}}>
+          <SelectItem
+            ref={itemRef}
+            value='a'
+            render={resolvedFlightRender(<div>Ignored item</div>)}>
+            Alpha
+          </SelectItem>
+          <SelectScrollUpButton
+            keepMounted
+            render={resolvedFlightRender(<div data-testid='flight-up'>Earlier</div>)}
+          />
+          <SelectScrollDownButton
+            keepMounted
+            render={resolvedFlightRender(<div data-testid='flight-down'>Later</div>)}
+          />
+        </SelectContent>
+      </Select>,
+    );
+    const list = screen.getByRole("listbox", {name: "Flight nested options"});
+    const alpha = within(list).getByRole("option", {name: "Alpha"});
+    expect(itemRef.current).toBe(alpha);
+    expect(within(alpha).getByText("Alpha")).toHaveAttribute("data-slot", "select-item-text");
+    expect(alpha.querySelector("[data-slot=select-item-indicator]")).toBeInTheDocument();
+    expect(screen.getByTestId("flight-positioner")).toContainElement(screen.getByTestId("flight-nested-popup"));
+    expect(list.parentElement).toBe(screen.getByTestId("flight-nested-popup"));
+    expect(screen.getByTestId("flight-up")).toHaveTextContent("Earlier");
+    expect(screen.getByTestId("flight-down")).toHaveTextContent("Later");
+    expect(screen.queryAllByText(/Ignored/)).toHaveLength(0);
+  });
+
   it("delivers array-valued changes instead of discarding them", async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();
