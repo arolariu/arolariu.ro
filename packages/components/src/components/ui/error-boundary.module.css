@@ -18,6 +18,7 @@
   max-width: 32rem;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
+  overflow-wrap: anywhere;
 }
 
 .retry {
@@ -33,4 +34,31 @@
 
 .retry:hover {
   background-color: var(--ac-accent);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.demo {
+  display: grid;
+  gap: var(--ac-space-4);
+  max-inline-size: 40rem;
+  color: var(--ac-foreground);
+}
+
+.panel {
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  padding: var(--ac-space-6);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .retry {
+    transition: none;
+  }
 }

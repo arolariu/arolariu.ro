@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {ErrorBoundary} from "./error-boundary";
 
@@ -9,6 +9,113 @@ function ThrowingComponent(): never {
 }
 
 describe("ErrorBoundary", () => {
+  beforeEach(() => {
+    // React's expected error reporting is the only mocked platform boundary.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    {failure: "Literal rendering failure", message: "Literal rendering failure"},
+    {failure: null, message: "Unknown rendering failure"},
+  ])("normalizes a non-Error throw ($failure) for fallback and reporting", ({failure, message}) => {
+    function NonErrorFailure(): never {
+      throw failure;
+    }
+    let reported: Error | undefined;
+    render(
+      <ErrorBoundary
+        onError={(error) => {
+          reported = error;
+        }}>
+        <NonErrorFailure />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(message);
+    expect(reported).toBeInstanceOf(Error);
+    expect(reported?.cause).toBe(failure);
+  });
+
+  it("honors a deliberately empty fallback rather than rendering the default error UI", () => {
+    const {container} = render(
+      <ErrorBoundary fallback={null}>
+        <ThrowingComponent />
+      </ErrorBoundary>,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("recovers the real failed subtree through a function fallback reset", async () => {
+    const user = userEvent.setup();
+    let shouldThrow = true;
+    function RecoverableContent(): React.JSX.Element {
+      if (shouldThrow) throw new Error("Temporary failure");
+      return <p>Function recovery complete</p>;
+    }
+    render(
+      <ErrorBoundary
+        fallback={(error, reset) => (
+          <div role='alert'>
+            {error.message}
+            <button
+              type='button'
+              onClick={reset}>
+              Retry content
+            </button>
+          </div>
+        )}>
+        <RecoverableContent />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Temporary failure");
+    shouldThrow = false;
+
+    await user.click(screen.getByRole("button", {name: "Retry content"}));
+
+    expect(screen.getByText("Function recovery complete")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("reports the captured error and component stack while displaying the actual fallback", () => {
+    const failure = new Error("Diagnostic failure");
+    function BrokenContent(): never {
+      throw failure;
+    }
+    let reported: Error | undefined;
+    let stack: string | null | undefined;
+    render(
+      <ErrorBoundary
+        onError={(error, info) => {
+          reported = error;
+          stack = info.componentStack;
+        }}>
+        <BrokenContent />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Diagnostic failure");
+    expect(reported).toBe(failure);
+    expect(stack).toContain("BrokenContent");
+  });
+
+  it("does not turn an unchanged failing condition into success on retry", async () => {
+    const user = userEvent.setup();
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent />
+      </ErrorBoundary>,
+    );
+
+    await user.click(screen.getByRole("button", {name: "Try again"}));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Test error");
+  });
+
   it("renders children when no error occurs", () => {
     render(
       <ErrorBoundary>

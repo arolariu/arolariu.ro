@@ -1,3 +1,55 @@
 .scope {
-  outline: none;
+  outline: revert;
+}
+
+.scope:focus-visible,
+.button:focus-visible,
+.input:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.demo,
+.controls {
+  display: grid;
+  gap: var(--ac-space-4);
+  color: var(--ac-foreground);
+}
+
+.panel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+}
+
+.input {
+  display: block;
+  margin-block-start: var(--ac-space-2);
+  padding: var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  font: inherit;
+}
+
+.button {
+  justify-self: start;
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.hidden {
+  display: none;
 }

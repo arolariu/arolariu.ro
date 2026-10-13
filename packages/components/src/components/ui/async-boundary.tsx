@@ -14,13 +14,14 @@ interface AsyncBoundaryProps extends Omit<ErrorBoundaryProps, "children"> {
   /**
    * Content that may suspend or throw during rendering.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
   /**
-   * Fallback UI rendered while descendants are suspended.
+   * Fallback UI rendered while descendants are suspended. Explicit `null` renders
+   * nothing while pending; omission uses the shared accessible spinner.
    *
    * @default <Spinner />
    */
-  loadingFallback?: React.ReactNode;
+  readonly loadingFallback?: React.ReactNode;
 }
 
 /**
@@ -32,6 +33,9 @@ interface AsyncBoundaryProps extends Omit<ErrorBoundaryProps, "children"> {
  * Wrap async child trees with this component to centralize loading and error handling.
  * The loading fallback is rendered by `React.Suspense`, while rendering errors are
  * delegated to the shared client-side {@link ErrorBoundary}.
+ * Descendants must read a stable Suspense resource; creating a new promise on every
+ * render never completes. A retry renderer must replace a rejected resource before
+ * invoking its reset action. This component does not fetch, cache or recreate resources.
  *
  * @example
  * ```tsx
@@ -45,7 +49,7 @@ interface AsyncBoundaryProps extends Omit<ErrorBoundaryProps, "children"> {
 function AsyncBoundary({children, loadingFallback, ...errorBoundaryProps}: Readonly<AsyncBoundaryProps>): React.JSX.Element {
   return (
     <ErrorBoundary {...errorBoundaryProps}>
-      <React.Suspense fallback={loadingFallback ?? <Spinner />}>{children}</React.Suspense>
+      <React.Suspense fallback={loadingFallback === undefined ? <Spinner /> : loadingFallback}>{children}</React.Suspense>
     </ErrorBoundary>
   );
 }
