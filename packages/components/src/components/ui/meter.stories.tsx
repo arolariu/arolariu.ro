@@ -1,6 +1,7 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./meter";
+import styles from "./meter.module.css";
 
 const meta = {
   title: "Components/Data Display/Meter",
@@ -97,24 +98,24 @@ export const DangerThreshold: Story = {
 /**
  * Meter with descriptive label showing percentage value.
  */
-export const WithLabel: Story = {
+export const WithLabel = {
   render: () => (
-    <div style={{width: "16rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-      <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-        <MeterLabel style={{fontSize: "0.875rem", fontWeight: "500"}}>CPU Usage</MeterLabel>
-        <span style={{fontSize: "0.875rem", fontWeight: "600", color: "#3b82f6"}}>65%</span>
-      </div>
+    <div className={styles.storyContainer}>
       <Meter
         value={65}
         min={0}
         max={100}>
+        <div className={styles.storyLabelRow}>
+          <MeterLabel>CPU Usage</MeterLabel>
+          <span className={styles.storyValue}>65%</span>
+        </div>
         <MeterTrack>
           <MeterIndicator />
         </MeterTrack>
       </Meter>
     </div>
   ),
-};
+} satisfies Story;
 
 function AnimatedMeterContent(): React.JSX.Element {
   const [value, setValue] = React.useState(0);

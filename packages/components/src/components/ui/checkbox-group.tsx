@@ -1,8 +1,6 @@
 "use client";
 
 import {CheckboxGroup as BaseCheckboxGroup} from "@base-ui/react/checkbox-group";
-import {mergeProps} from "@base-ui/react/merge-props";
-import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -26,27 +24,31 @@ import styles from "./checkbox-group.module.css";
  *
  * @see {@link https://base-ui.com/react/components/checkbox-group | Base UI Checkbox Group Docs}
  */
-const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>((props, forwardedRef) => {
-  const {className, render, ...otherProps} = props;
+const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>(
+  (props: Readonly<CheckboxGroup.Props>, forwardedRef): React.ReactElement => {
+    const {className, render, ...otherProps} = props;
 
-  return (
-    <BaseCheckboxGroup
-      {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.group, className)}, {}),
-      })}
-    />
-  );
-});
+    return (
+      <BaseCheckboxGroup
+        {...otherProps}
+        ref={forwardedRef}
+        render={render}
+        className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace CheckboxGroup {
-  export type Props = React.ComponentPropsWithRef<typeof BaseCheckboxGroup>;
-  export type State = BaseCheckboxGroup.State;
+  export type Props = CheckboxGroupProps;
+  export type State = CheckboxGroupState;
 }
+
+/** Props accepted by the checkbox group, including primitive render composition and DOM refs. */
+export type CheckboxGroupProps = React.ComponentPropsWithRef<typeof BaseCheckboxGroup>;
+/** Primitive-owned disabled and field state exposed to composition callbacks. */
+export type CheckboxGroupState = BaseCheckboxGroup.State;
 
 CheckboxGroup.displayName = "CheckboxGroup";
 

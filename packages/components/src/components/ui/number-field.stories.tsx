@@ -1,5 +1,12 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput} from "./number-field";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "./number-field";
 
 const meta = {
   title: "Components/Forms/NumberField",
@@ -62,7 +69,7 @@ export const WithStep: Story = {
         min={0}
         max={1}
         step={0.1}
-        formatOptions={{style: "percent"}}>
+        format={{style: "percent"}}>
         <NumberFieldGroup>
           <NumberFieldDecrement />
           <NumberFieldInput aria-label='Opacity' />
@@ -85,7 +92,7 @@ export const Currency: Story = {
         defaultValue={100}
         min={0}
         step={1}
-        formatOptions={{
+        format={{
           style: "currency",
           currency: "USD",
         }}>
@@ -124,7 +131,7 @@ export const WithCurrency: Story = {
           defaultValue={1000}
           min={0}
           step={50}
-          formatOptions={{
+          format={{
             style: "decimal",
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -184,5 +191,34 @@ export const MinMax: Story = {
         />
       </div>
     </div>
+  ),
+};
+
+/**
+ * Localized decimal entry with a drag-to-adjust area and state-aware controls.
+ */
+export const WithScrubArea: Story = {
+  render: () => (
+    <NumberField
+      defaultValue={2.5}
+      min={0}
+      max={10}
+      step={0.5}
+      locale='de-DE'>
+      <NumberFieldGroup>
+        <NumberFieldScrubArea>Drag</NumberFieldScrubArea>
+        <NumberFieldDecrement />
+        <NumberFieldInput
+          aria-label='Quantity'
+          render={(props, state) => (
+            <input
+              {...props}
+              aria-description={`Current quantity: ${state.value ?? "empty"}`}
+            />
+          )}
+        />
+        <NumberFieldIncrement />
+      </NumberFieldGroup>
+    </NumberField>
   ),
 };
