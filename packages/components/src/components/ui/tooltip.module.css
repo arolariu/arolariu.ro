@@ -70,20 +70,14 @@
     max-width: 16rem;
   }
 
-  .storyGroup {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ac-space-3);
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .popup {
+    & {
       transition: none;
     }
   }
 
   @media (forced-colors: active) {
-    .popup {
+    & {
       border: 1px solid CanvasText;
       background: Canvas;
       color: CanvasText;
@@ -101,4 +95,10 @@
     opacity: 0;
     transform: scale(0.96);
   }
+}
+
+.storyGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-3);
 }

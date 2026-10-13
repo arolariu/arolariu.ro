@@ -1,9 +1,58 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse, root, Rule, type Node} from "postcss";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
+import styles from "./tooltip.module.css";
+
+const authoredStyles = parse(readFileSync(join(import.meta.dirname, "tooltip.module.css"), "utf8"));
+const stylesheetFixtures: HTMLStyleElement[] = [];
+
+function qualifiedSelector(rule: Rule): string {
+  let selector = rule.selector;
+  let ancestor: Node["parent"] = rule.parent;
+  while (ancestor) {
+    if (ancestor instanceof Rule) {
+      const scope = `:is(${ancestor.selector})`;
+      selector = selector.includes("&") ? selector.replaceAll("&", scope) : `${scope} ${selector}`;
+    }
+    ancestor = ancestor.parent;
+  }
+  return selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string): string => (styles[name] ? `.${styles[name]}` : match));
+}
+
+function installAuthoredStyles(activeMediaQuery: string | null): void {
+  // Happy DOM does not parse nested style rules. Resolve this sheet's nesting and
+  // select an explicit media fixture; its actual DOM CSS cascade still owns declarations.
+  const stylesheet = root();
+  authoredStyles.walkRules((rule) => {
+    let mediaQuery: string | null = null;
+    let ancestor: Node["parent"] = rule.parent;
+    while (ancestor) {
+      if (ancestor instanceof AtRule && ancestor.name === "media") mediaQuery = ancestor.params;
+      ancestor = ancestor.parent;
+    }
+    if (mediaQuery !== null && mediaQuery !== activeMediaQuery) return;
+    const declarations = rule.nodes
+      .filter((node) => node.type === "decl")
+      .map((node) => {
+        // Happy DOM has no native system palette; keep the authored tokens separately
+        // asserted and supply a deterministic Canvas/CanvasText platform boundary.
+        return node.clone({
+          value: node.value.replaceAll(/\bCanvasText\b/gu, "rgb(0, 0, 0)").replaceAll(/\bCanvas\b/gu, "rgb(255, 255, 255)"),
+        });
+      });
+    stylesheet.append(rule.clone({selector: qualifiedSelector(rule), nodes: declarations}));
+  });
+  const element = document.createElement("style");
+  element.textContent = stylesheet.toString();
+  document.head.append(element);
+  stylesheetFixtures.push(element);
+}
 
 function renderTooltip({
   className,
@@ -33,7 +82,80 @@ function renderTooltip({
 describe("Tooltip", () => {
   afterEach(() => {
     cleanup();
+    for (const stylesheet of stylesheetFixtures) stylesheet.remove();
+    stylesheetFixtures.length = 0;
     vi.restoreAllMocks();
+  });
+
+  it("matches reduced-motion overrides to the actual portalled popup, not a nested popup", async () => {
+    installAuthoredStyles("(prefers-reduced-motion: reduce)");
+    renderTooltip({defaultOpen: true});
+
+    const popup = await screen.findByTestId("tooltip-content");
+    if (!styles.popup) throw new Error("Expected the authored popup CSS Module class");
+    expect(popup).toHaveClass(styles.popup);
+    expect(getComputedStyle(popup).transition).toBe("none");
+  });
+
+  it("applies forced-colors popup rules and preserves the Arrow background over the descendant reset", async () => {
+    installAuthoredStyles("(forced-colors: active)");
+    renderTooltip({defaultOpen: true});
+
+    const popup = await screen.findByTestId("tooltip-content");
+    const arrow = popup.querySelector('[data-slot="tooltip-arrow"]');
+    expect(arrow).toBeInstanceOf(HTMLElement);
+    if (!(arrow instanceof HTMLElement)) throw new Error("Expected the real Tooltip Arrow");
+    const popupDeclarations = new Map<string, string>();
+    authoredStyles.walkAtRules("media", (media) => {
+      if (media.params !== "(forced-colors: active)") return;
+      media.walkRules((rule) => {
+        if (!popup.matches(qualifiedSelector(rule))) return;
+        for (const declaration of rule.nodes) {
+          if (declaration.type === "decl") popupDeclarations.set(declaration.prop, declaration.value);
+        }
+      });
+    });
+    expect(Object.fromEntries(popupDeclarations)).toMatchObject({
+      border: "1px solid CanvasText",
+      background: "Canvas",
+      color: "CanvasText",
+      "box-shadow": "none",
+    });
+    const popupStyle = getComputedStyle(popup);
+    expect(popupStyle.borderTopColor).toBe("rgb(0, 0, 0)");
+    expect(popupStyle.borderTopWidth).toBe("1px");
+    expect(popupStyle.backgroundColor).toBe("rgb(255, 255, 255)");
+    expect(popupStyle.color).toBe("rgb(0, 0, 0)");
+    expect(popupStyle.boxShadow).toBe("none");
+    expect(getComputedStyle(arrow).backgroundColor).toBe("rgb(255, 255, 255)");
+  });
+
+  it("applies the adjacent-tooltip group layout outside both portalled popups", async () => {
+    installAuthoredStyles(null);
+    render(
+      <TooltipProvider delayDuration={1000}>
+        <div
+          className={styles.storyGroup}
+          data-testid='tooltip-story-group'>
+          <Tooltip>
+            <TooltipTrigger>First</TooltipTrigger>
+            <TooltipContent>First help</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger>Adjacent</TooltipTrigger>
+            <TooltipContent>Adjacent help</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>,
+    );
+
+    const group = screen.getByTestId("tooltip-story-group");
+    group.style.setProperty("--ac-space-3", "12px");
+    expect(group.closest(`.${styles.popup}`)).toBeNull();
+    expect(getComputedStyle(group).display).toBe("flex");
+    expect(getComputedStyle(group).flexWrap).toBe("wrap");
+    expect(getComputedStyle(group).gap).toBe("12px");
+    expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 
   it("preserves live Trigger render callbacks, refs and merged classes", async () => {
