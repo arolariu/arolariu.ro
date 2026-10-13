@@ -2,12 +2,14 @@ import * as React from "react";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {AtRule, parse, root, Rule, type Node} from "postcss";
+import {Tooltip as BaseTooltip} from "@base-ui/react/tooltip";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 import styles from "./tooltip.module.css";
+import {Sidebar, SidebarMenuButton, SidebarProvider} from "./sidebar";
 
 const authoredStyles = parse(readFileSync(join(import.meta.dirname, "tooltip.module.css"), "utf8"));
 const stylesheetFixtures: HTMLStyleElement[] = [];
@@ -85,6 +87,383 @@ describe("Tooltip", () => {
     for (const stylesheet of stylesheetFixtures) stylesheet.remove();
     stylesheetFixtures.length = 0;
     vi.restoreAllMocks();
+  });
+
+  it("gives the real popup a tooltip role and describes its paired focused trigger", async () => {
+    const user = userEvent.setup();
+    renderTooltip({});
+    const trigger = screen.getByRole("button", {name: "Open tooltip"});
+    expect(trigger).not.toHaveAttribute("aria-describedby");
+    await user.tab();
+    const popup = await screen.findByRole("tooltip");
+    expect(popup.id).not.toBe("");
+    expect(trigger).toHaveAttribute("aria-describedby", popup.id);
+    expect(trigger).toHaveAccessibleDescription("Tooltip content");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).not.toHaveAttribute("aria-describedby"));
+  });
+
+  it("merges caller and render-element descriptions while respecting render IDs and caller naming", async () => {
+    render(
+      <>
+        <span id='outer-description'>Outer description.</span>
+        <span id='shared-description'>Shared description.</span>
+        <span id='inner-description'>Inner description.</span>
+        <Tooltip defaultOpen>
+          <TooltipTrigger
+            id='caller-trigger'
+            aria-label='Caller name'
+            aria-describedby='outer-description shared-description'
+            render={
+              <button
+                id='render-trigger'
+                aria-describedby='inner-description shared-description'
+              />
+            }
+          />
+          <TooltipContent
+            id='caller-tooltip'
+            render={<section id='render-tooltip' />}>
+            Tooltip description.
+          </TooltipContent>
+        </Tooltip>
+      </>,
+    );
+    const popup = await screen.findByRole("tooltip");
+    const trigger = screen.getByRole("button", {name: "Caller name"});
+    expect(trigger).toHaveAttribute("id", "render-trigger");
+    expect(popup).toHaveAttribute("id", "render-tooltip");
+    await waitFor(() =>
+      expect(trigger).toHaveAttribute("aria-describedby", "outer-description shared-description inner-description render-tooltip"),
+    );
+    expect(trigger).toHaveAccessibleDescription("Outer description. Shared description. Inner description. Tooltip description.");
+  });
+
+  it("updates committed popup IDs and removes only its own description on content unmount", async () => {
+    const tree = (id: string, withContent: boolean): React.ReactElement => (
+      <Tooltip open>
+        <TooltipTrigger aria-describedby='existing-description'>Control</TooltipTrigger>
+        {withContent ? <TooltipContent id={id}>Dynamic help</TooltipContent> : null}
+      </Tooltip>
+    );
+    const {rerender} = render(tree("help-one", true));
+    const trigger = screen.getByRole("button", {name: "Control"});
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "existing-description help-one"));
+    rerender(tree("help-two", true));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "existing-description help-two"));
+    expect(screen.getByRole("button", {name: "Control"})).toBe(trigger);
+    rerender(tree("help-two", false));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "existing-description"));
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    rerender(tree("help-three", true));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "existing-description help-three"));
+  });
+
+  it("removes automatic descriptions while closed, retained, root-disabled or trigger-disabled", async () => {
+    const tree = (open: boolean, disabled: boolean, triggerDisabled = false): React.ReactElement => (
+      <Tooltip
+        open={open}
+        disabled={disabled}>
+        <TooltipTrigger
+          disabled={triggerDisabled}
+          aria-describedby='caller-hint'>
+          Control
+        </TooltipTrigger>
+        <TooltipContent
+          keepMounted
+          id='retained-help'>
+          Retained help
+        </TooltipContent>
+      </Tooltip>
+    );
+    const {rerender} = render(tree(true, false));
+    const trigger = screen.getByRole("button", {name: "Control"});
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "caller-hint retained-help"));
+    rerender(tree(false, false));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "caller-hint"));
+    expect(screen.getByText("Retained help")).toBeInTheDocument();
+    rerender(tree(true, true));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "caller-hint"));
+    rerender(tree(true, false, true));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "caller-hint"));
+    rerender(tree(true, false));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "caller-hint retained-help"));
+  });
+
+  it("preserves callback-owned IDs, descriptions, refs and real primitive render state", async () => {
+    const ref = React.createRef<HTMLElement>();
+    render(
+      <Tooltip defaultOpen>
+        <TooltipTrigger
+          ref={ref}
+          aria-describedby='outer-hint'
+          render={(props, state) => (
+            <button
+              {...props}
+              aria-describedby='callback-hint'
+              data-active={String(state.open)}>
+              Control
+            </button>
+          )}
+        />
+        <TooltipContent
+          render={(props, state) => (
+            <section
+              {...props}
+              id={state.open ? "callback-open-help" : "callback-closed-help"}
+            />
+          )}>
+          Callback help
+        </TooltipContent>
+      </Tooltip>,
+    );
+    const popup = await screen.findByRole("tooltip");
+    const trigger = screen.getByRole("button", {name: "Control"});
+    expect(popup.id).toBe("callback-open-help");
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "outer-hint callback-hint callback-open-help"));
+    expect(trigger).toHaveAttribute("data-active", "true");
+    expect(ref.current).toBe(trigger);
+  });
+
+  it("does not replace a caller-owned role or describe cancelled opening requests", async () => {
+    const user = userEvent.setup();
+    const {rerender} = render(
+      <Tooltip
+        key='custom-role'
+        defaultOpen>
+        <TooltipTrigger>Control</TooltipTrigger>
+        <TooltipContent
+          role='status'
+          id='status-help'>
+          Status instead
+        </TooltipContent>
+      </Tooltip>,
+    );
+    expect(await screen.findByRole("status")).toHaveAttribute("id", "status-help");
+    expect(screen.getByRole("button", {name: "Control"})).not.toHaveAttribute("aria-describedby");
+    rerender(
+      <Tooltip
+        key='cancelled-root'
+        onOpenChange={(_open, details) => details.cancel()}>
+        <TooltipTrigger>Cancelled</TooltipTrigger>
+        <TooltipContent>Cancelled help</TooltipContent>
+      </Tooltip>,
+    );
+    await user.tab();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Cancelled"})).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("preserves explicit empty caller IDs and description attributes without generating a dangling reference", async () => {
+    render(
+      <Tooltip open>
+        <TooltipTrigger aria-describedby=''>Control</TooltipTrigger>
+        <TooltipContent id=''>Intentionally empty ID</TooltipContent>
+      </Tooltip>,
+    );
+    expect(await screen.findByRole("tooltip")).toHaveAttribute("id", "");
+    expect(screen.getByRole("button", {name: "Control"})).toHaveAttribute("aria-describedby", "");
+  });
+
+  it("describes only the SDK-active trigger when a root has multiple triggers", async () => {
+    render(
+      <Tooltip
+        defaultOpen
+        defaultTriggerId='second-trigger'>
+        <TooltipTrigger id='first-trigger'>First</TooltipTrigger>
+        <TooltipTrigger id='second-trigger'>Second</TooltipTrigger>
+        <TooltipContent>Active help</TooltipContent>
+      </Tooltip>,
+    );
+    const popup = await screen.findByRole("tooltip");
+    expect(screen.getByRole("button", {name: "First"})).not.toHaveAttribute("aria-describedby");
+    await waitFor(() => expect(screen.getByRole("button", {name: "Second"})).toHaveAttribute("aria-describedby", popup.id));
+  });
+
+  it("preserves real SDK handle payload ownership while adding the semantic pair", async () => {
+    const user = userEvent.setup();
+    const handle = BaseTooltip.createHandle<string>();
+    render(
+      <Tooltip<string>
+        handle={handle}
+        delayDuration={0}>
+        {({payload}) => (
+          <>
+            <TooltipTrigger
+              handle={handle}
+              payload='Payload help'>
+              Payload trigger
+            </TooltipTrigger>
+            <TooltipContent>{payload ?? "No active payload"}</TooltipContent>
+          </>
+        )}
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole("button", {name: "Payload trigger"});
+    await user.hover(trigger);
+    const popup = await screen.findByRole("tooltip");
+    expect(popup).toHaveTextContent("Payload help");
+    expect(trigger).toHaveAccessibleDescription("Payload help");
+  });
+
+  it("leaves refused controlled opening requests closed rather than treating requests as primitive state", async () => {
+    const user = userEvent.setup();
+    const requests = vi.fn<NonNullable<Tooltip.Props["onOpenChange"]>>();
+    render(
+      <Tooltip
+        open={false}
+        delayDuration={0}
+        onOpenChange={requests}>
+        <TooltipTrigger>Refused</TooltipTrigger>
+        <TooltipContent
+          keepMounted
+          id='refused-help'>
+          Retained but closed
+        </TooltipContent>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole("button", {name: "Refused"});
+    await user.hover(trigger);
+    expect(requests).toHaveBeenCalledWith(true, expect.objectContaining({reason: "trigger-hover"}));
+    expect(screen.getByText("Retained but closed")).toHaveAttribute("data-closed");
+    expect(trigger).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("respects render-owned roles and explicit hidden content without inventing an association", async () => {
+    const {rerender} = render(
+      <Tooltip open>
+        <TooltipTrigger aria-describedby='caller-hint'>Control</TooltipTrigger>
+        <TooltipContent
+          render={
+            <section
+              role='status'
+              id='render-status'
+            />
+          }>
+          Status
+        </TooltipContent>
+      </Tooltip>,
+    );
+    expect(await screen.findByRole("status")).toHaveAttribute("id", "render-status");
+    expect(screen.getByRole("button", {name: "Control"})).toHaveAttribute("aria-describedby", "caller-hint");
+    rerender(
+      <Tooltip open>
+        <TooltipTrigger aria-describedby='caller-hint'>Control</TooltipTrigger>
+        <TooltipContent
+          aria-hidden='true'
+          id='hidden-help'>
+          Hidden help
+        </TooltipContent>
+      </Tooltip>,
+    );
+    await waitFor(() => expect(screen.getByRole("button", {name: "Control"})).toHaveAttribute("aria-describedby", "caller-hint"));
+    expect(screen.getByText("Hidden help")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps callback-ref cleanup and the focused original trigger stable across description ID changes", async () => {
+    const user = userEvent.setup();
+    const cleanupRef = vi.fn();
+    const ref = vi.fn<React.RefCallback<HTMLElement>>(() => cleanupRef);
+    const tree = (id: string): React.ReactElement => (
+      <Tooltip>
+        <TooltipTrigger ref={ref}>Control</TooltipTrigger>
+        <TooltipContent id={id}>Help</TooltipContent>
+      </Tooltip>
+    );
+    const {rerender, unmount} = render(tree("first-help"));
+    const trigger = screen.getByRole("button", {name: "Control"});
+    await user.tab();
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "first-help"));
+    rerender(tree("second-help"));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby", "second-help"));
+    expect(screen.getByRole("button", {name: "Control"})).toBe(trigger);
+    expect(trigger).toHaveFocus();
+    const cleanupsBeforeUnmount = cleanupRef.mock.calls.length;
+    unmount();
+    expect(cleanupRef).toHaveBeenCalledTimes(cleanupsBeforeUnmount + 1);
+  });
+
+  it("preserves detached typed handle triggers with caller-owned description wiring", async () => {
+    const user = userEvent.setup();
+    const handle = BaseTooltip.createHandle<{text: string}>();
+    render(
+      <>
+        <TooltipTrigger<{text: string}>
+          handle={handle}
+          id='detached-trigger'
+          payload={{text: "Detached payload"}}
+          delay={0}
+          aria-describedby='detached-help'>
+          Detached
+        </TooltipTrigger>
+        <Tooltip<{text: string}> handle={handle}>
+          {({payload}) => <TooltipContent id='detached-help'>{payload?.text ?? "No active payload"}</TooltipContent>}
+        </Tooltip>
+      </>,
+    );
+    const trigger = screen.getByRole("button", {name: "Detached"});
+    await user.hover(trigger);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Detached payload");
+    expect(trigger).toHaveAttribute("id", "detached-trigger");
+    expect(trigger).toHaveAttribute("aria-describedby", "detached-help");
+    expect(trigger).toHaveAccessibleDescription("Detached payload");
+  });
+
+  it("does not cross-wire generated tooltip IDs between independent roots", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Tooltip
+          delayDuration={0}
+          disableHoverablePopup>
+          <TooltipTrigger>One</TooltipTrigger>
+          <TooltipContent>One help</TooltipContent>
+        </Tooltip>
+        <Tooltip
+          delayDuration={0}
+          disableHoverablePopup>
+          <TooltipTrigger>Two</TooltipTrigger>
+          <TooltipContent>Two help</TooltipContent>
+        </Tooltip>
+      </>,
+    );
+    const firstTrigger = screen.getByRole("button", {name: "One"});
+    const secondTrigger = screen.getByRole("button", {name: "Two"});
+    await user.hover(firstTrigger);
+    const firstPopup = await screen.findByRole("tooltip");
+    await waitFor(() => expect(firstTrigger).toHaveAccessibleDescription("One help"));
+    expect(secondTrigger).not.toHaveAttribute("aria-describedby");
+    await user.unhover(firstTrigger);
+    await waitFor(() => expect(firstTrigger).not.toHaveAttribute("aria-describedby"));
+    await user.hover(secondTrigger);
+    const secondPopup = await screen.findByText("Two help");
+    expect(secondPopup).toHaveAttribute("role", "tooltip");
+    await waitFor(() => expect(secondTrigger).toHaveAccessibleDescription("Two help"));
+    expect(firstTrigger).not.toHaveAttribute("aria-describedby");
+    expect(firstPopup.id).not.toBe(secondPopup.id);
+  });
+
+  it("describes the original composed Sidebar navigation link through the real Tooltip", async () => {
+    const user = userEvent.setup();
+    render(
+      <SidebarProvider defaultOpen={false}>
+        <Sidebar collapsible='icon'>
+          <SidebarMenuButton
+            asChild
+            tooltip='Home details'>
+            <a href='#home'>Home</a>
+          </SidebarMenuButton>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    const link = screen.getByRole("link", {name: "Home"});
+    await user.tab();
+    const popup = await screen.findByRole("tooltip");
+    expect(popup).toHaveTextContent("Home details");
+    expect(link).toHaveAttribute("aria-describedby", popup.id);
+    expect(link).toHaveAccessibleDescription("Home details");
+    expect(screen.getAllByRole("link", {name: "Home"})).toEqual([link]);
+    expect(link).toHaveFocus();
   });
 
   it("matches reduced-motion overrides to the actual portalled popup, not a nested popup", async () => {

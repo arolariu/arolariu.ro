@@ -117,3 +117,20 @@ export const LegacyRootDelay: Story = {
     </TooltipProvider>
   ),
 };
+
+/** Wrapper-owned semantics merge an existing hint with a real, SDK-opened tooltip description. */
+export const AccessibleDescription: Story = {
+  render: (): React.JSX.Element => (
+    <div className={styles.storyGroup}>
+      <span id='tooltip-existing-hint'>An existing description remains associated.</span>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger
+          aria-describedby='tooltip-existing-hint'
+          render={<Button variant='outline' />}>
+          Hover or focus for an additional description
+        </TooltipTrigger>
+        <TooltipContent id='tooltip-accessible-detail'>This real popup adds its description while open.</TooltipContent>
+      </Tooltip>
+    </div>
+  ),
+};
