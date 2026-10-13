@@ -2,6 +2,7 @@ import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./stepper.module.css";
+import {VisuallyHidden} from "./visually-hidden";
 
 /**
  * Represents the configurable props for the {@link Stepper} component.
@@ -10,21 +11,21 @@ import styles from "./stepper.module.css";
  * Extends native `<div>` attributes so step progress indicators can expose data
  * attributes, testing hooks, and ARIA metadata while remaining layout-flexible.
  */
-interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
+interface StepperProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
   /**
    * Labels for each step in the progress sequence.
    */
-  steps: ReadonlyArray<string>;
+  readonly steps: ReadonlyArray<string>;
   /**
    * Zero-based index of the currently active step.
    */
-  activeStep: number;
+  readonly activeStep: number;
   /**
    * Visual orientation of the stepper layout.
    *
    * @default "horizontal"
    */
-  orientation?: "horizontal" | "vertical";
+  readonly orientation?: "horizontal" | "vertical";
 }
 
 /**
@@ -48,7 +49,7 @@ interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
  * @see {@link https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/progressbar/progressbar.html | WAI progress indicator guidance}
  */
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({steps, activeStep, orientation = "horizontal", className, ...props}, ref) => (
+  ({steps, activeStep, orientation = "horizontal", className, ...props}: Readonly<StepperProps>, ref) => (
     <div
       ref={ref}
       role='list'
@@ -69,6 +70,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           <div
             key={`${label}-${index}`}
             role='listitem'
+            aria-current={state === "active" ? "step" : undefined}
             className={styles.step}
             data-state={state}>
             <div
@@ -83,6 +85,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               />
             ) : null}
             <span className={styles.label}>{label}</span>
+            {state === "completed" ? <VisuallyHidden> Completed</VisuallyHidden> : null}
           </div>
         );
       })}

@@ -42,3 +42,19 @@
 .measure {
   visibility: hidden;
 }
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.storyLarge {
+  height: 3rem;
+  padding-inline: var(--ac-space-6);
+  font-size: var(--ac-text-lg);
+}
+
+.storyFront {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}

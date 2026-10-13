@@ -1,316 +1,173 @@
 import * as React from "react";
-
-import {act, render, screen} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from "vitest";
 
-type MotionState = {
-  buttonProps?: React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>;
-};
+let RippleButton: typeof import("./ripple-button").RippleButton;
+const animateDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
+const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
-const motionState = vi.hoisted<MotionState>(() => ({}));
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      if (tag === "button") {
-        motionState.buttonProps = props;
-      }
-
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-  };
+beforeAll(async () => {
+  Object.defineProperty(Element.prototype, "animate", {configurable: true, value: undefined});
+  vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date", "performance"]});
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback): number =>
+    window.setTimeout(() => callback(performance.now()), 16),
+  );
+  vi.stubGlobal("cancelAnimationFrame", (id: number): void => window.clearTimeout(id));
+  ({RippleButton} = await import("./ripple-button"));
+});
+afterEach(async () => {
+  cleanup();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(64);
+  });
+  if (clipboardDescriptor) Object.defineProperty(navigator, "clipboard", clipboardDescriptor);
+  else Reflect.deleteProperty(navigator, "clipboard");
+});
+afterAll(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  if (animateDescriptor) Object.defineProperty(Element.prototype, "animate", animateDescriptor);
+  else Reflect.deleteProperty(Element.prototype, "animate");
 });
 
-import {RippleButton} from "./ripple-button";
-
-beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
+describe("RippleButton with real Motion", () => {
+  it("activates with native Enter and Space without submitting the surrounding form", async () => {
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    const onClick = vi.fn();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <RippleButton
+          onClick={onClick}
+          rippleClassName='test-ripple'>
+          Activate
+        </RippleButton>
+      </form>,
+    );
+    const tab = user.tab();
+    await vi.advanceTimersByTimeAsync(1);
+    await tab;
+    const keyboard = user.keyboard("{Enter} ");
+    await vi.advanceTimersByTimeAsync(1);
+    await keyboard;
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(2);
   });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
-});
 
-describe("RippleButton", () => {
-  it("renders RippleButton with custom classes and forwarded refs", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const rippleButtonRef = {current: null as HTMLButtonElement | null};
-    const handleRippleClick = vi.fn();
-
-    // Act
+  it("retains a one-second ripple beyond 600ms and removes it through actual Motion completion", async () => {
     render(
       <RippleButton
-        ref={rippleButtonRef}
-        className='ripple-button-class'
-        onClick={handleRippleClick}>
-        Ripple
+        transition={{duration: 1, ease: "linear"}}
+        rippleClassName='test-ripple'>
+        Activate
       </RippleButton>,
     );
-
-    // Assert
-    const rippleButton = screen.getByRole("button", {name: "Ripple"});
-
-    expect(rippleButton).toHaveClass("ripple-button-class");
-    expect(rippleButtonRef.current).toBe(rippleButton);
-
-    await user.click(rippleButton);
-    expect(handleRippleClick).toHaveBeenCalledTimes(1);
-  });
-
-  it("creates ripple animation on click", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const rippleButtonRef = {current: null as HTMLButtonElement | null};
-
-    // Act
-    render(
-      <RippleButton
-        ref={rippleButtonRef}
-        data-testid='ripple-button'>
-        Click me
-      </RippleButton>,
-    );
-
-    const button = screen.getByTestId("ripple-button");
-
-    // Mock getBoundingClientRect
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
-
-    // Click to create a ripple
-    await user.click(button);
-
-    // Assert - ripple should be created (can't directly check ripple state but can verify click worked)
-    expect(button).toBeInTheDocument();
-  });
-
-  it("removes ripple after timeout", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<RippleButton data-testid='ripple-button'>Click me</RippleButton>);
-    const button = screen.getByTestId("ripple-button");
-
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
-
-    // Click to create ripple
-    await user.click(button);
-
-    // Button should still be there
-    expect(button).toBeInTheDocument();
-
-    // Wait for ripple cleanup
-    await new Promise((resolve) => setTimeout(resolve, 650));
-
-    expect(button).toBeInTheDocument();
-  });
-
-  it("handles custom rippleClassName", async () => {
-    // Arrange & Act
-    const user = userEvent.setup();
-
-    render(
-      <RippleButton
-        rippleClassName='custom-ripple'
-        data-testid='ripple-button'>
-        Custom Ripple
-      </RippleButton>,
-    );
-
-    const button = screen.getByTestId("ripple-button");
-
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
-
-    await user.click(button);
-
-    // Assert - button renders correctly with custom ripple class
-    expect(button).toBeInTheDocument();
-  });
-
-  it("handles custom scale prop", async () => {
-    // Arrange & Act
-    const user = userEvent.setup();
-
-    render(
-      <RippleButton
-        scale={20}
-        data-testid='ripple-button'>
-        Scaled Ripple
-      </RippleButton>,
-    );
-
-    const button = screen.getByTestId("ripple-button");
-
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
-
-    await user.click(button);
-
-    // Assert
-    expect(button).toBeInTheDocument();
-  });
-
-  it("handles custom transition prop", async () => {
-    // Arrange & Act
-    const user = userEvent.setup();
-
-    render(
-      <RippleButton
-        transition={{duration: 1.0, ease: "easeIn"}}
-        data-testid='ripple-button'>
-        Custom Transition
-      </RippleButton>,
-    );
-
-    const button = screen.getByTestId("ripple-button");
-
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
-
-    await user.click(button);
-
-    // Assert
-    expect(button).toBeInTheDocument();
-  });
-
-  it("skips ripple creation when the internal button ref is unavailable", () => {
-    // Arrange
-    const handleRippleClick = vi.fn();
-    const {unmount} = render(<RippleButton onClick={handleRippleClick}>No Ref</RippleButton>);
-
-    const clickHandler = motionState.buttonProps?.onClick as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined;
-
-    unmount();
-
-    // Act
-    act(() => {
-      clickHandler?.({clientX: 12, clientY: 18} as React.MouseEvent<HTMLButtonElement>);
+    fireEvent.click(screen.getByRole("button"));
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(650);
     });
-
-    // Assert
-    expect(handleRippleClick).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(650);
+    });
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
   });
 
-  it("cleans up timeouts on unmount", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const {unmount} = render(<RippleButton data-testid='ripple-button'>Cleanup Test</RippleButton>);
-    const button = screen.getByTestId("ripple-button");
+  it("does not create a ripple after caller cancellation", () => {
+    render(
+      <RippleButton
+        onClick={(event) => event.preventDefault()}
+        rippleClassName='test-ripple'>
+        Cancel
+      </RippleButton>,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
+  });
 
-    button.getBoundingClientRect = vi.fn(() => ({
-      bottom: 100,
-      height: 50,
-      left: 50,
-      right: 150,
-      top: 50,
-      width: 100,
-      x: 50,
-      y: 50,
-      toJSON: () => ({}),
-    }));
+  it("uses collision-free identities for activations in the same millisecond", async () => {
+    render(
+      <RippleButton
+        transition={{duration: 1}}
+        rippleClassName='test-ripple'>
+        Activate
+      </RippleButton>,
+    );
+    const button = screen.getByRole("button");
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(2);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1300);
+    });
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
+  });
 
-    // Click to create ripple
-    await user.click(button);
+  it("keeps distinct stable IDs across simultaneous instances and preserves the click origin", () => {
+    const {rerender} = render(
+      <>
+        <RippleButton rippleClassName='test-ripple'>First</RippleButton>
+        <RippleButton rippleClassName='test-ripple'>Second</RippleButton>
+      </>,
+    );
+    fireEvent.click(screen.getByRole("button", {name: "First"}), {clientX: 30, clientY: 40, detail: 1});
+    fireEvent.click(screen.getByRole("button", {name: "Second"}));
+    const ripples = [...document.querySelectorAll(".test-ripple")];
+    const ids = ripples.map((ripple) => ripple.getAttribute("data-ripple-id"));
+    expect(ids.every((id) => id !== null)).toBe(true);
+    expect(new Set(ids).size).toBe(2);
+    expect(ripples[0]).toHaveStyle({transform: "translateX(30px) translateY(40px) scale(0)"});
+    rerender(
+      <>
+        <RippleButton rippleClassName='test-ripple'>First changed</RippleButton>
+        <RippleButton rippleClassName='test-ripple'>Second</RippleButton>
+      </>,
+    );
+    expect([...document.querySelectorAll(".test-ripple")].map((ripple) => ripple.getAttribute("data-ripple-id"))).toEqual(ids);
+  });
 
-    // Unmount before timeout completes
+  it("preserves native disabled, type, caller labels and actual refs", () => {
+    const ref = React.createRef<HTMLButtonElement>();
+    const onClick = vi.fn();
+    render(
+      <RippleButton
+        ref={ref}
+        disabled
+        aria-label='Disabled action'
+        onClick={onClick}
+        rippleClassName='test-ripple'>
+        Activate
+      </RippleButton>,
+    );
+    const button = screen.getByRole("button", {name: "Disabled action"});
+    expect(button).toHaveAttribute("type", "button");
+    expect(ref.current).toBe(button);
+    fireEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
+  });
+
+  it("cancels pending real Motion work when an active ripple unmounts", async () => {
+    const {unmount} = render(
+      <RippleButton
+        transition={{duration: 1}}
+        rippleClassName='test-ripple'>
+        Activate
+      </RippleButton>,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(1);
     unmount();
-
-    // Wait a bit - should not crash
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1300);
+    });
+    expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
   });
 });

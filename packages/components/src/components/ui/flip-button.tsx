@@ -7,22 +7,25 @@ import {cn} from "@/lib/utilities";
 import styles from "./flip-button.module.css";
 
 /** Supported flip origins for the button animation. */
-export type FlipDirection = "top" | "bottom" | "left" | "righ";
+export type FlipDirection = "top" | "bottom" | "left" | "right" | "righ";
+
+/** @deprecated Use the correctly spelled `"right"` direction instead. */
+export type DeprecatedFlipDirection = "righ";
 
 /** Props accepted by {@link FlipButton}. */
-export interface FlipButtonProps extends HTMLMotionProps<"button"> {
+export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
   /** Label rendered on the default face of the button. @default undefined */
-  frontText: string;
+  readonly frontText: string;
   /** Label revealed after the flip animation completes. @default undefined */
-  backText: string;
+  readonly backText: string;
   /** Motion transition applied to both button faces. @default {type: "spring", stiffness: 280, damping: 20} */
-  transition?: Transition;
+  readonly transition?: Transition;
   /** Additional CSS classes merged with the front face. @default undefined */
-  frontClassName?: string;
+  readonly frontClassName?: string;
   /** Additional CSS classes merged with the back face. @default undefined */
-  backClassName?: string;
-  /** Direction from which the back face flips into view. @default "top" */
-  from?: FlipDirection;
+  readonly backClassName?: string;
+  /** Direction from which the back face flips into view. The `"righ"` spelling is deprecated. @default "top" */
+  readonly from?: FlipDirection;
 }
 
 /**
@@ -52,7 +55,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
       backClassName,
       from = "top",
       ...props
-    },
+    }: Readonly<FlipButtonProps>,
     ref,
   ) => {
     // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
@@ -92,24 +95,32 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
     return (
       <motion.button
         ref={ref}
+        type='button'
+        aria-label={frontText}
         initial='initial'
         whileHover='hover'
         whileTap={{scale: 0.95}}
         className={cn(styles.button, className)}
         {...restProps}>
         <motion.span
+          aria-hidden='true'
           variants={frontVariants}
           transition={transition}
           className={cn(styles.face, styles.front, frontClassName)}>
           {frontText}
         </motion.span>
         <motion.span
+          aria-hidden='true'
           variants={backVariants}
           transition={transition}
           className={cn(styles.face, styles.back, backClassName)}>
           {backText}
         </motion.span>
-        <span className={styles.measure}>{frontText}</span>
+        <span
+          aria-hidden='true'
+          className={styles.measure}>
+          {frontText}
+        </span>
       </motion.button>
     );
   },

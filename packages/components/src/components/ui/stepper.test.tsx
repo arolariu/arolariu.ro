@@ -4,6 +4,20 @@ import {describe, expect, it} from "vitest";
 import {Stepper} from "./stepper";
 
 describe("Stepper", () => {
+  it("exposes the active step as aria-current and readable completion text", () => {
+    render(
+      <Stepper
+        steps={["One", "Two", "Three"]}
+        activeStep={1}
+        aria-label='Setup progress'
+      />,
+    );
+    const items = screen.getAllByRole("listitem");
+    expect(items[1]).toHaveAttribute("aria-current", "step");
+    expect(items[0]).not.toHaveAttribute("aria-current");
+    expect(items[0]).toHaveTextContent("Completed");
+    expect(screen.getByRole("list", {name: "Setup progress"})).toBeInTheDocument();
+  });
   it("renders all step labels", () => {
     render(
       <Stepper
@@ -126,7 +140,8 @@ describe("Stepper", () => {
     const items = screen.getAllByRole("listitem");
     // Check that the last item doesn't have a connector
     const lastItem = items[items.length - 1];
-    expect(lastItem.querySelector('[aria-hidden="true"].connector')).not.toBeInTheDocument();
+    expect(items).toHaveLength(3);
+    expect(lastItem?.querySelector('[aria-hidden="true"].connector')).not.toBeInTheDocument();
   });
 
   it("renders with activeStep at 0", () => {

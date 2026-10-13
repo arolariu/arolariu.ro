@@ -1,11 +1,11 @@
-import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {CopyButton} from "./copy-button";
 
 describe("CopyButton", () => {
-  const originalClipboard = navigator.clipboard;
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
   beforeEach(() => {
     Object.defineProperty(navigator, "clipboard", {
@@ -18,15 +18,13 @@ describe("CopyButton", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
 
-    Object.defineProperty(navigator, "clipboard", {
-      value: originalClipboard,
-      writable: true,
-      configurable: true,
-    });
+    if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
   });
 
   it("renders without crashing", () => {
@@ -117,7 +115,7 @@ describe("CopyButton", () => {
     });
 
     expect(button).toBeInTheDocument();
-    expect(screen.getByLabelText("Copy to clipboard")).toBeInTheDocument();
+    expect(screen.getByLabelText("Copy failed")).toHaveAttribute("data-state", "error");
   });
 
   it("shows check icon and reverts after custom timeout", async () => {
@@ -245,7 +243,7 @@ describe("CopyButton", () => {
 
     await user.click(screen.getByRole("button"));
 
-    expect(screen.getByLabelText("Copy to clipboard")).toBeInTheDocument();
+    expect(screen.getByLabelText("Copy failed")).toHaveAttribute("data-state", "error");
   });
 
   it("calls custom onClick handler", async () => {
@@ -282,5 +280,115 @@ describe("CopyButton", () => {
     await user.click(screen.getByRole("button"));
 
     expect(writeTextMock).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule a success reset for delayed clipboard completion after unmount", async () => {
+    vi.useFakeTimers();
+    let complete: (() => void) | undefined;
+    vi.spyOn(navigator.clipboard, "writeText").mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          complete = resolve;
+        }),
+    );
+    const {unmount} = render(<CopyButton value='pending' />);
+    fireEvent.click(screen.getByRole("button"));
+    unmount();
+    await act(async () => {
+      complete?.();
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("surfaces pending clipboard errors through the callback without replacing caller labels", async () => {
+    let fail: ((reason: Error) => void) | undefined;
+    const error = new Error("Denied");
+    const onCopyError = vi.fn();
+    vi.spyOn(navigator.clipboard, "writeText").mockImplementation(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(
+      <CopyButton
+        value='pending'
+        aria-label='Copy command'
+        onCopyError={onCopyError}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", {name: "Copy command"}));
+    await act(async () => {
+      fail?.(error);
+    });
+    expect(onCopyError).toHaveBeenCalledWith(error);
+    expect(screen.getByRole("button", {name: "Copy command"})).toHaveAttribute("data-state", "error");
+  });
+
+  it("does not call the error callback for a rejected pending operation after unmount", async () => {
+    let fail: ((reason: Error) => void) | undefined;
+    const onCopyError = vi.fn();
+    vi.spyOn(navigator.clipboard, "writeText").mockImplementation(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const {unmount} = render(
+      <CopyButton
+        value='pending'
+        onCopyError={onCopyError}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    unmount();
+    await act(async () => {
+      fail?.(new Error("Denied"));
+    });
+    expect(onCopyError).not.toHaveBeenCalled();
+  });
+
+  it("keeps native keyboard activation and does not submit the surrounding form", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    const write = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    render(
+      <form onSubmit={onSubmit}>
+        <CopyButton value='command' />
+      </form>,
+    );
+    await user.tab();
+    await user.keyboard("{Enter} ");
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("ignores an older clipboard rejection after a later activation succeeds", async () => {
+    let rejectOlder: ((reason: Error) => void) | undefined;
+    const onCopyError = vi.fn();
+    const write = vi.spyOn(navigator.clipboard, "writeText");
+    write.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectOlder = reject;
+        }),
+    );
+    write.mockResolvedValue(undefined);
+    render(
+      <CopyButton
+        value='command'
+        onCopyError={onCopyError}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
+    expect(screen.getByRole("button", {name: "Copied"})).toHaveAttribute("data-state", "copied");
+    await act(async () => {
+      rejectOlder?.(new Error("Older rejection"));
+    });
+    expect(onCopyError).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", {name: "Copied"})).toHaveAttribute("data-state", "copied");
   });
 });

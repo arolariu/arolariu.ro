@@ -1,148 +1,71 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {Stepper} from "./stepper";
+import styles from "./stepper.module.css";
 
+const steps = ["Start", "Configure", "Review", "Complete"];
 const meta = {
   title: "Components/Data Display/Stepper",
   component: Stepper,
   tags: ["autodocs"],
+  args: {steps, activeStep: 0},
   argTypes: {
-    activeStep: {
-      control: {type: "number", min: 0, max: 3},
-      description: "Current active step (0-indexed)",
-    },
-    orientation: {
-      control: "select",
-      options: ["horizontal", "vertical"],
-      description: "Layout orientation",
-    },
+    activeStep: {control: {type: "number", min: 0, max: 4}},
+    orientation: {control: "select", options: ["horizontal", "vertical"]},
   },
 } satisfies Meta<typeof Stepper>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const HorizontalFirstStep: Story = {
-  args: {
-    steps: ["Account", "Profile", "Review", "Complete"],
-    activeStep: 0,
-    orientation: "horizontal",
-  },
-};
-
-export const HorizontalSecondStep: Story = {
-  args: {
-    steps: ["Account", "Profile", "Review", "Complete"],
-    activeStep: 1,
-    orientation: "horizontal",
-  },
-};
-
-export const HorizontalLastStep: Story = {
-  args: {
-    steps: ["Account", "Profile", "Review", "Complete"],
-    activeStep: 3,
-    orientation: "horizontal",
-  },
-};
-
-export const VerticalFirstStep: Story = {
-  args: {
-    steps: ["Account", "Profile", "Review", "Complete"],
-    activeStep: 0,
-    orientation: "vertical",
-  },
-};
-
-export const VerticalSecondStep: Story = {
-  args: {
-    steps: ["Account", "Profile", "Review", "Complete"],
-    activeStep: 1,
-    orientation: "vertical",
-  },
-};
-
-/**
- * Stepper showing error state on a specific step.
- */
+export const HorizontalFirstStep: Story = {};
+export const HorizontalSecondStep: Story = {args: {activeStep: 1}};
+export const HorizontalLastStep: Story = {args: {activeStep: 3}};
+export const VerticalFirstStep: Story = {args: {orientation: "vertical"}};
+export const VerticalSecondStep: Story = {args: {orientation: "vertical", activeStep: 1}};
+export const Completed: Story = {args: {activeStep: steps.length}};
 export const WithErrors: Story = {
   render: () => (
-    <div style={{width: "400px"}}>
+    <div className={styles.storyStack}>
       <Stepper
-        steps={["Account", "Profile", "Review", "Complete"]}
+        steps={steps}
         activeStep={1}
-        orientation='horizontal'
       />
-      <div
-        style={{
-          marginTop: "1rem",
-          padding: "0.75rem",
-          background: "#fef2f2",
-          border: "1px solid #fecaca",
-          borderRadius: "6px",
-        }}>
-        <p style={{fontSize: "0.875rem", color: "#dc2626", fontWeight: "500"}}>⚠️ Error on step 2: Profile information is incomplete</p>
-      </div>
+      <p
+        role='alert'
+        className={styles.storyError}>
+        Configuration is incomplete.
+      </p>
     </div>
   ),
 };
 
 function ClickableStepperContent(): React.JSX.Element {
-  const [activeStep, setActiveStep] = React.useState(2);
-
+  const [activeStep, setActiveStep] = React.useState(1);
   return (
-    <div style={{width: "400px"}}>
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          cursor: "pointer",
-        }}>
-        {["Account", "Profile", "Review", "Complete"].map((label, index) => {
-          const isCompleted = index < activeStep;
-          const isActive = index === activeStep;
-
-          return (
-            <div
-              key={label}
-              onClick={() => {
-                if (index <= activeStep) {
-                  setActiveStep(index);
-                }
-              }}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                textAlign: "center",
-                fontSize: "0.875rem",
-                fontWeight: "500",
-                background: isActive ? "#3b82f6" : isCompleted ? "#dbeafe" : "#f3f4f6",
-                color: isActive ? "white" : isCompleted ? "#1e40af" : "#6b7280",
-                borderRadius: "6px",
-                cursor: isCompleted || isActive ? "pointer" : "not-allowed",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (isCompleted || isActive) {
-                  e.currentTarget.style.opacity = "0.8";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = "1";
-              }}>
-              {label}
-            </div>
-          );
-        })}
+    <div className={styles.storyStack}>
+      <Stepper
+        steps={steps}
+        activeStep={activeStep}
+        aria-label='Configuration progress'
+      />
+      <div className={styles.storyActions}>
+        <Button
+          size='sm'
+          variant='secondary'
+          disabled={activeStep === 0}
+          onClick={() => setActiveStep((step) => Math.max(0, step - 1))}>
+          Previous
+        </Button>
+        <Button
+          size='sm'
+          disabled={activeStep === steps.length}
+          onClick={() => setActiveStep((step) => Math.min(steps.length, step + 1))}>
+          Next
+        </Button>
       </div>
-      <p style={{marginTop: "1rem", fontSize: "0.875rem", color: "#6b7280"}}>Click on completed steps to navigate back</p>
     </div>
   );
 }
-
-/**
- * Stepper where clicking a completed step navigates back.
- */
-export const Clickable: Story = {
-  render: () => <ClickableStepperContent />,
-};
+/** Native controls change the active step and its actual accessible state. */
+export const Clickable: Story = {render: () => <ClickableStepperContent />};

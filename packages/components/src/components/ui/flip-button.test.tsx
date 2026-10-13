@@ -1,203 +1,91 @@
 import * as React from "react";
+import {cleanup, render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {render, screen} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {FlipButton, type FlipDirection} from "./flip-button";
 
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-  };
-});
-
-import {FlipButton} from "./flip-button";
-
+const right: FlipDirection = "right";
+const animateDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  Object.defineProperty(Element.prototype, "animate", {configurable: true, value: undefined});
+});
+afterEach(() => {
+  cleanup();
+  if (animateDescriptor) Object.defineProperty(Element.prototype, "animate", animateDescriptor);
+  else Reflect.deleteProperty(Element.prototype, "animate");
 });
 
-describe("FlipButton", () => {
-  it("renders FlipButton with custom classes and forwarded refs", () => {
-    // Arrange
-    const flipButtonRef = {current: null as HTMLButtonElement | null};
-
-    // Act
+describe("FlipButton with real Motion", () => {
+  it("accepts the correctly spelled right direction and has one stable accessible label", () => {
     render(
       <FlipButton
-        ref={flipButtonRef}
-        backText='Hovered'
-        className='flip-button-class'
-        frontText='Default'
+        frontText='Open'
+        backText='Details'
+        from={right}
       />,
     );
-
-    // Assert
-    const flipButton = screen.getAllByText("Default")[0]?.closest("button");
-
-    expect(flipButton).not.toBeNull();
-    expect(flipButton).toHaveClass("flip-button-class");
-    expect(flipButtonRef.current).toBe(flipButton);
+    expect(screen.getByRole("button", {name: "Open"})).toHaveAttribute("type", "button");
   });
 
-  it("renders FlipButton with from='bottom' direction", () => {
-    // Arrange
+  it.each(["top", "bottom", "left", "righ"] as const)("retains the %s direction", (from) => {
     render(
       <FlipButton
-        backText='Back'
-        from='bottom'
-        frontText='Front'
-        data-testid='flip-button-bottom'
+        frontText='Open'
+        backText='Details'
+        from={from}
       />,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-bottom");
-    expect(button).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Open"})).toBeInTheDocument();
   });
 
-  it("renders FlipButton with from='left' direction", () => {
-    // Arrange
+  it("retains native keyboard activation, caller label, classes and ref", async () => {
+    const user = userEvent.setup();
+    const ref = React.createRef<HTMLButtonElement>();
+    const onClick = vi.fn();
     render(
       <FlipButton
-        backText='Back'
-        from='left'
-        frontText='Front'
-        data-testid='flip-button-left'
+        ref={ref}
+        frontText='Open'
+        backText='Details'
+        aria-label='Show details'
+        className='caller'
+        onClick={onClick}
       />,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-left");
-    expect(button).toBeInTheDocument();
+    await user.tab();
+    await user.keyboard("{Enter} ");
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(ref.current).toBe(screen.getByRole("button", {name: "Show details"}));
+    expect(ref.current).toHaveClass("caller");
   });
 
-  it("renders FlipButton with from='righ' direction", () => {
-    // Arrange
-    render(
-      <FlipButton
-        backText='Back'
-        from='righ'
-        frontText='Front'
-        data-testid='flip-button-right'
-      />,
+  it("does not activate a disabled button or submit a form by default", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    const {rerender} = render(
+      <form onSubmit={onSubmit}>
+        <FlipButton
+          frontText='Open'
+          backText='Details'
+          onClick={onClick}
+          disabled
+        />
+      </form>,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-right");
-    expect(button).toBeInTheDocument();
-  });
-
-  it("renders FlipButton with custom front and back class names", () => {
-    // Arrange
-    const {container} = render(
-      <FlipButton
-        backClassName='custom-back'
-        backText='Back'
-        frontClassName='custom-front'
-        frontText='Front'
-        data-testid='flip-button-custom'
-      />,
+    await user.click(screen.getByRole("button"));
+    expect(onClick).not.toHaveBeenCalled();
+    rerender(
+      <form onSubmit={onSubmit}>
+        <FlipButton
+          frontText='Open'
+          backText='Details'
+          onClick={onClick}
+        />
+      </form>,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-custom");
-    expect(button).toBeInTheDocument();
-
-    // Check for custom classes in the rendered output
-    const frontFace = container.querySelector(".custom-front");
-    const backFace = container.querySelector(".custom-back");
-    expect(frontFace).toBeInTheDocument();
-    expect(backFace).toBeInTheDocument();
-  });
-
-  it("handles onClick event", () => {
-    // Arrange
-    const handleClick = vi.fn();
-
-    render(
-      <FlipButton
-        backText='Back'
-        frontText='Front'
-        onClick={handleClick}
-        data-testid='flip-button-click'
-      />,
-    );
-
-    // Act
-    const button = screen.getByTestId("flip-button-click");
-    button.click();
-
-    // Assert
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders FlipButton with custom transition", () => {
-    // Arrange
-    const customTransition = {type: "tween" as const, duration: 0.5};
-
-    render(
-      <FlipButton
-        backText='Back'
-        frontText='Front'
-        transition={customTransition}
-        data-testid='flip-button-transition'
-      />,
-    );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-transition");
-    expect(button).toBeInTheDocument();
+    await user.click(screen.getByRole("button"));
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

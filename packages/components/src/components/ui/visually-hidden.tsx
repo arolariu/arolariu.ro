@@ -10,11 +10,11 @@ import styles from "./visually-hidden.module.css";
  * Extends native `<span>` attributes so hidden assistive text can carry ARIA metadata,
  * testing hooks, and composed class overrides while remaining available to screen readers.
  */
-interface VisuallyHiddenProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface VisuallyHiddenProps extends Readonly<React.ComponentPropsWithoutRef<"span">> {
   /**
    * Content that is hidden visually but remains accessible to assistive technology.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 /**
@@ -37,13 +37,15 @@ interface VisuallyHiddenProps extends React.HTMLAttributes<HTMLSpanElement> {
  *
  * @see {@link https://www.w3.org/WAI/tutorials/forms/labels/#note-on-hiding-elements | W3C hiding elements guidance}
  */
-const VisuallyHidden = React.forwardRef<HTMLSpanElement, VisuallyHiddenProps>(({className, ...props}, ref) => (
-  <span
-    ref={ref}
-    className={cn(styles.visuallyHidden, className)}
-    {...props}
-  />
-));
+const VisuallyHidden = React.forwardRef<HTMLSpanElement, VisuallyHiddenProps>(
+  ({className, ...props}: Readonly<VisuallyHiddenProps>, ref) => (
+    <span
+      ref={ref}
+      className={cn(styles.visuallyHidden, className)}
+      {...props}
+    />
+  ),
+);
 VisuallyHidden.displayName = "VisuallyHidden";
 
 export {VisuallyHidden};

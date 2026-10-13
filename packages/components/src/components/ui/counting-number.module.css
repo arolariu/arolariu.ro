@@ -2,3 +2,14 @@
   display: inline-block;
   font-variant-numeric: tabular-nums;
 }
+
+.storyValue {
+  font-size: calc(var(--ac-text-xl) * 2);
+  font-weight: 700;
+}
+
+.storyDeferred {
+  margin-block-start: 110vh;
+  padding: var(--ac-space-4);
+  background: var(--ac-muted);
+}

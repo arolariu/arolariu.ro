@@ -1,177 +1,172 @@
-import {render, screen, waitFor} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {act, cleanup, render, screen, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {CountingNumber} from "./counting-number";
 
-type MotionValue = {
-  get: () => number;
-  on: (event: "change", listener: (latest: number) => void) => () => void;
-  set: (value: number) => void;
-};
-
-const {useInViewMock, useSpringMock} = vi.hoisted(() => ({
-  useInViewMock: vi.fn(() => true),
-  useSpringMock: vi.fn((value: MotionValue) => value),
-}));
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionValue(initialValue: number): MotionValue {
-    let currentValue = initialValue;
-    const listeners = new Set<(latest: number) => void>();
-
-    return {
-      get: () => currentValue,
-      on: (_event, listener) => {
-        listeners.add(listener);
-        listener(currentValue);
-
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-      set: (value) => {
-        currentValue = value;
-
-        for (const listener of listeners) {
-          listener(value);
-        }
-      },
-    };
+let observed: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  readonly options: IntersectionObserverInit | undefined;
+  target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    this.callback = callback;
+    this.options = options;
+    observed.push(this);
   }
-
-  return {
-    useInView: useInViewMock,
-    useMotionValue: (initialValue: number) => ReactModule.useMemo(() => createMotionValue(initialValue), [initialValue]),
-    useSpring: useSpringMock,
-  };
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(): void {
+    if (!this.target) throw new Error("Missing observed element");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          time: performance.now(),
+        },
+      ],
+      this,
+    );
+  }
+}
+beforeEach(() => {
+  observed = [];
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
 });
 
-describe("CountingNumber", () => {
-  beforeEach(() => {
-    useInViewMock.mockReset();
-    useInViewMock.mockReturnValue(true);
-    useSpringMock.mockClear();
-  });
-
-  it("renders the target number once the motion value updates", async () => {
+describe("CountingNumber with real Motion", () => {
+  it("renders nonzero fromNumber as the stable initial text while awaiting viewport entry", () => {
     render(
       <CountingNumber
-        number={42}
-        data-testid='counting-number'
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("counting-number")).toHaveTextContent("42");
-    });
-  });
-
-  it("formats decimal places with the provided separator", async () => {
-    render(
-      <CountingNumber
-        number={3.14159}
-        decimalPlaces={2}
-        decimalSeparator=','
-        data-testid='counting-number'
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("counting-number")).toHaveTextContent("3,14");
-    });
-  });
-
-  it("waits until the element is in view before updating the displayed number", async () => {
-    useInViewMock.mockReturnValue(false);
-
-    const {rerender} = render(
-      <CountingNumber
-        number={50}
+        number={100}
+        fromNumber={37}
         inView
-        inViewMargin='100px'
-        inViewOnce={false}
-        data-testid='counting-number'
+        data-testid='count'
       />,
     );
-
-    expect(screen.getByTestId("counting-number")).toHaveTextContent("0");
-    expect(useInViewMock).toHaveBeenLastCalledWith(
-      expect.any(Object),
-      expect.objectContaining({
-        margin: "100px",
-        once: false,
-      }),
-    );
-
-    useInViewMock.mockReturnValue(true);
-
-    rerender(
-      <CountingNumber
-        number={50}
-        inView
-        inViewMargin='100px'
-        inViewOnce={false}
-        data-testid='counting-number'
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("counting-number")).toHaveTextContent("50");
-    });
+    expect(screen.getByTestId("count")).toHaveTextContent(/^37$/);
   });
 
-  it("keeps the padded placeholder while the value is still out of view", () => {
-    useInViewMock.mockReturnValue(false);
-
+  it("pads the magnitude without moving a negative sign into the digits", () => {
     render(
       <CountingNumber
-        number={123.45}
+        number={-123}
+        fromNumber={-5.25}
         decimalPlaces={2}
         decimalSeparator=','
         padStart
         inView
-        data-testid='counting-number'
+        data-testid='count'
       />,
     );
-
-    expect(screen.getByTestId("counting-number")).toHaveTextContent("000,00");
+    expect(screen.getByTestId("count")).toHaveTextContent(/^-005,25$/);
   });
 
-  it("forwards transition options to useSpring", () => {
-    const transition = {stiffness: 200, damping: 20};
-
-    render(
-      <CountingNumber
-        number={25}
-        transition={transition}
-      />,
-    );
-
-    expect(useSpringMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        get: expect.any(Function),
-        on: expect.any(Function),
-        set: expect.any(Function),
-      }),
-      transition,
-    );
-  });
-
-  it("merges custom classes and forwards refs", () => {
-    const ref = {current: null as HTMLSpanElement | null};
-
+  it("preserves the actual span ref and caller accessibility attributes", () => {
+    const ref = React.createRef<HTMLSpanElement>();
     render(
       <CountingNumber
         ref={ref}
         number={10}
-        className='custom-count'
-        data-testid='counting-number'
+        inView
+        className='caller'
+        aria-label='Total'
+        data-testid='count'
       />,
     );
+    expect(ref.current).toBe(screen.getByTestId("count"));
+    expect(ref.current).toHaveClass("caller");
+    expect(ref.current).toHaveAttribute("aria-label", "Total");
+  });
 
-    expect(screen.getByTestId("counting-number")).toHaveClass("custom-count");
-    expect(ref.current).toBe(screen.getByTestId("counting-number"));
+  it("renders the final formatted target through actual spring completion", async () => {
+    render(
+      <CountingNumber
+        number={-123.45}
+        fromNumber={-5}
+        transition={{duration: 0}}
+        decimalPlaces={2}
+        decimalSeparator=','
+        padStart
+        data-testid='count'
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^-123,45$/));
+  });
+
+  it("preserves callback-ref cleanup when the actual span unmounts", () => {
+    let node: HTMLSpanElement | null = null;
+    let cleaned = false;
+    const {unmount} = render(
+      <CountingNumber
+        ref={(element) => {
+          node = element;
+          return () => {
+            cleaned = true;
+            node = null;
+          };
+        }}
+        number={10}
+        inView
+      />,
+    );
+    expect(node).toBeInstanceOf(HTMLSpanElement);
+    unmount();
+    expect(cleaned).toBe(true);
+    expect(node).toBeNull();
+  });
+
+  it("uses actual viewport entry and follows target changes through real spring updates", async () => {
+    const {rerender, unmount} = render(
+      <CountingNumber
+        number={50}
+        fromNumber={37}
+        inView
+        inViewMargin='100px'
+        transition={{duration: 0}}
+        data-testid='count'
+      />,
+    );
+    expect(screen.getByTestId("count")).toHaveTextContent(/^37$/);
+    expect(observed.some((observer) => observer.options?.rootMargin === "100px")).toBe(true);
+    act(() => {
+      observed.forEach((observer) => observer.enter());
+    });
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^50$/));
+    rerender(
+      <CountingNumber
+        number={75}
+        fromNumber={37}
+        inView
+        inViewMargin='100px'
+        transition={{duration: 0}}
+        data-testid='count'
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^75$/));
+    unmount();
+    expect(observed.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
   });
 });

@@ -41,3 +41,12 @@
   min-width: 0;
   padding-bottom: var(--ac-space-1);
 }
+
+.storyMeta {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.storyCompletedDot {
+  background: var(--ac-primary);
+}

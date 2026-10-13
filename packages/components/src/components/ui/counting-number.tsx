@@ -7,25 +7,25 @@ import {cn} from "@/lib/utilities";
 import styles from "./counting-number.module.css";
 
 /** Props accepted by {@link CountingNumber}. */
-export interface CountingNumberProps extends React.HTMLAttributes<HTMLSpanElement> {
+export interface CountingNumberProps extends Readonly<React.ComponentPropsWithoutRef<"span">> {
   /** Final numeric value to animate toward. @default undefined */
-  number: number;
+  readonly number: number;
   /** Initial numeric value used before the spring animation starts. @default 0 */
-  fromNumber?: number;
+  readonly fromNumber?: number;
   /** Pads the integer portion so it matches the target value width. @default false */
-  padStart?: boolean;
+  readonly padStart?: boolean;
   /** Delays the animation until the element enters the viewport. @default false */
-  inView?: boolean;
+  readonly inView?: boolean;
   /** Margin passed to the in-view observer when `inView` is enabled. @default "0px" */
-  inViewMargin?: UseInViewOptions["margin"];
+  readonly inViewMargin?: UseInViewOptions["margin"];
   /** Prevents the in-view animation from replaying after the first reveal. @default true */
-  inViewOnce?: boolean;
+  readonly inViewOnce?: boolean;
   /** Character used between the integer and decimal portions. @default "." */
-  decimalSeparator?: string;
+  readonly decimalSeparator?: string;
   /** Spring physics applied to the counting animation. @default {stiffness: 90, damping: 50} */
-  transition?: SpringOptions;
+  readonly transition?: SpringOptions;
   /** Number of decimal places rendered during the animation. @default 0 */
-  decimalPlaces?: number;
+  readonly decimalPlaces?: number;
 }
 
 /**
@@ -58,16 +58,27 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
       decimalPlaces = 0,
       className,
       ...props
-    },
+    }: Readonly<CountingNumberProps>,
     ref,
   ) => {
     const localRef = React.useRef<HTMLSpanElement>(null);
 
-    React.useImperativeHandle(ref, () => localRef.current!, []);
-
-    const numberStr = number.toString();
-    const decimals = numberStr.includes(".") ? (numberStr.split(".")[1]?.length ?? 0) : 0;
-    const resolvedDecimalPlaces = typeof decimalPlaces === "number" ? decimalPlaces : decimals;
+    const setRefs = React.useCallback(
+      (node: HTMLSpanElement | null): void | (() => void) => {
+        localRef.current = node;
+        if (typeof ref === "function") {
+          const callback: React.RefCallback<HTMLSpanElement> = ref;
+          const cleanup = callback(node);
+          if (typeof cleanup === "function")
+            return () => {
+              localRef.current = null;
+              cleanup();
+            };
+        } else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+    const [displayedNumber, setDisplayedNumber] = React.useState(fromNumber);
 
     const motionValue = useMotionValue(fromNumber);
     const springValue = useSpring(motionValue, transition);
@@ -83,43 +94,22 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
       }
     }, [isInView, motionValue, number]);
 
-    React.useEffect(() => {
-      const unsubscribe = springValue.on("change", (latest) => {
-        if (!localRef.current) {
-          return;
-        }
-
-        let formatted = resolvedDecimalPlaces > 0 ? latest.toFixed(resolvedDecimalPlaces) : Math.round(latest).toString();
-
-        if (resolvedDecimalPlaces > 0) {
-          formatted = formatted.replace(".", decimalSeparator);
-        }
-
-        if (padStart) {
-          const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
-          const [integerPart, fractionPart] = formatted.split(decimalSeparator);
-          const paddedInteger = integerPart.padStart(finalIntegerLength, "0");
-          formatted = fractionPart ? `${paddedInteger}${decimalSeparator}${fractionPart}` : paddedInteger;
-        }
-
-        localRef.current.textContent = formatted;
-      });
-
-      return () => {
-        unsubscribe();
-      };
-    }, [decimalSeparator, number, padStart, resolvedDecimalPlaces, springValue]);
-
+    React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
+    const formatted = decimalPlaces > 0 ? displayedNumber.toFixed(decimalPlaces) : Math.round(displayedNumber).toString();
+    const negative = formatted.startsWith("-");
+    const unsigned = negative ? formatted.slice(1) : formatted;
+    const [integerPart = "0", fractionPart] = unsigned.split(".");
     const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
-    const suffix = resolvedDecimalPlaces > 0 ? `${decimalSeparator}${"0".repeat(resolvedDecimalPlaces)}` : "";
-    const initialText = padStart ? `${"0".padStart(finalIntegerLength, "0")}${suffix}` : `0${suffix}`;
+    const integer = padStart ? integerPart.padStart(finalIntegerLength, "0") : integerPart;
+    const fraction = fractionPart === undefined ? "" : decimalSeparator + fractionPart;
+    const text = `${negative ? "-" : ""}${integer}${fraction}`;
 
     return (
       <span
-        ref={localRef}
+        ref={setRefs}
         className={cn(styles.countingNumber, className)}
         {...props}>
-        {initialText}
+        {text}
       </span>
     );
   },
