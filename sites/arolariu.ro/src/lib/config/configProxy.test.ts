@@ -569,6 +569,16 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
     expect(String(error)).not.toContain("private-error");
   });
 
+  it.each([null, "private-thrown-string"])("sanitizes non-Error transport rejections (%s)", async (failure) => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(failure));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((rejection: unknown) => rejection);
+
+    expect(String(error)).toContain("failure=unknown");
+    expect(String(error)).not.toContain("private-thrown-string");
+  });
+
   it("rejects invalid local exp configuration instead of hiding it with dotenv", async () => {
     vi.stubEnv("INFRA", "local");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse({target: "website", config: []})));

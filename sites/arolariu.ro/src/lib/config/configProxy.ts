@@ -213,17 +213,15 @@ function describeConfigurationFailure(failure: unknown): string {
   const identifiers = new Set<string>();
   for (let index = 0; index < failures.length && index < 8; index += 1) {
     const current = failures[index];
-    if (!isRecord(current)) continue;
-    for (const field of ["name", "code"]) {
-      const value = current[field];
-      if (typeof value === "string" && SAFE_FAILURE_IDENTIFIERS.has(value)) identifiers.add(value);
+    const {name, code, statusCode, cause, errors} = isRecord(current) ? current : {};
+    [name, code]
+      .filter((value): value is string => typeof value === "string")
+      .filter((value) => SAFE_FAILURE_IDENTIFIERS.has(value))
+      .forEach((value) => identifiers.add(value));
+    if (typeof statusCode === "number" && Number.isSafeInteger(statusCode) && statusCode >= 100 && statusCode <= 599) {
+      identifiers.add(`status=${statusCode}`);
     }
-    const status = current["statusCode"];
-    if (typeof status === "number" && Number.isInteger(status) && status >= 100 && status <= 599) {
-      identifiers.add(`status=${status}`);
-    }
-    if (current["cause"]) failures.push(current["cause"]);
-    const errors: unknown = current["errors"];
+    if (cause) failures.push(cause);
     if (Array.isArray(errors)) failures.push(...errors.slice(0, 5));
   }
   return [...identifiers].join(",") || "unknown";
@@ -426,12 +424,12 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
       const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
       return fetch(endpoint.href, {cache: "no-store", headers, signal});
     })
-    .catch((failure: unknown) => {
+    .catch((error: unknown) => {
       if (IS_CLOUD_DEPLOYMENT) {
         const identityEndpointConfigured = Boolean(process.env["IDENTITY_ENDPOINT"] || process.env["MSI_ENDPOINT"]);
         throw new Error(
           `Unable to fetch private runtime configuration from exp (stage=${stage}; `
-          + `failure=${describeConfigurationFailure(failure)}; elapsedMs=${Date.now() - startedAt}; `
+          + `failure=${describeConfigurationFailure(error)}; elapsedMs=${Date.now() - startedAt}; `
           + `identityEndpointConfigured=${identityEndpointConfigured}).`,
         );
       }
