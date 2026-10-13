@@ -121,10 +121,58 @@ afterEach(() => {
 });
 
 describe("HoleBackground", () => {
+  it.each([
+    {width: 0.2, height: 0.3, bitmapWidth: 1, bitmapHeight: 1, scaleX: 5, scaleY: 10 / 3},
+    {width: 1_000_000, height: 0.2, bitmapWidth: 4096, bitmapHeight: 1, scaleX: 0.004096, scaleY: 5},
+  ])(
+    "keeps main/cache backing geometry nonzero and exact for $width × $height",
+    ({width, height, bitmapWidth, bitmapHeight, scaleX, scaleY}) => {
+      box = new DOMRect(10, 20, width, height);
+      const ref = React.createRef<HTMLCanvasElement>();
+      render(<HoleBackground ref={ref} />);
+      expect(ref.current?.width).toBe(bitmapWidth);
+      expect(ref.current?.height).toBe(bitmapHeight);
+      const cache = context.drawImage.mock.calls[0]?.[0];
+      expect(cache).toBeInstanceOf(HTMLCanvasElement);
+      if (!(cache instanceof HTMLCanvasElement)) throw new Error("Missing line cache");
+      expect(cache.width).toBe(bitmapWidth);
+      expect(cache.height).toBe(bitmapHeight);
+      expect(context.scale).toHaveBeenCalledWith(scaleX, scaleY);
+    },
+  );
+  it("uses backing-space DPR queries for true/false path and stroke boundary crossings", () => {
+    const cacheContext = {
+      ...context,
+      clip: vi.fn(),
+      isPointInPath: vi.fn((_path: Path2D, x: number, y: number) => x >= 300 && x <= 360 && y > 90 && y < 100),
+      isPointInStroke: vi.fn((_path: Path2D, x: number, y: number) => x <= -20 && y > 90 && y < 100),
+    };
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value(this: HTMLCanvasElement): typeof context | typeof cacheContext {
+        return this.isConnected ? context : cacheContext;
+      },
+    });
+    render(
+      <HoleBackground
+        numberOfLines={2}
+        numberOfDiscs={4}
+      />,
+    );
+    expect(cacheContext.isPointInPath.mock.calls[0]?.[1]).toBeCloseTo(425);
+    expect(cacheContext.isPointInPath.mock.calls[0]?.[2]).toBeCloseTo(90.55242717280199);
+    expect(cacheContext.isPointInPath).toHaveBeenCalledTimes(3);
+    expect(cacheContext.isPointInStroke).toHaveBeenCalledTimes(2);
+    expect(cacheContext.isPointInStroke.mock.calls[1]?.[1]).toBeCloseTo(-25);
+    expect(cacheContext.clip).toHaveBeenCalledTimes(3);
+  });
   it("cancels native offscreen frames and freezes the drawn tunnel", () => {
     reduced = false;
     const ref = React.createRef<HTMLCanvasElement>();
     render(<HoleBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
     const stale = [...frames.values()].find((callback) => callback.name === "animate");
     expect(stale).toBeDefined();
     act(() => {
@@ -203,6 +251,9 @@ describe("HoleBackground", () => {
     reduced = false;
     const ref = React.createRef<HTMLCanvasElement>();
     const {unmount} = render(<HoleBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
     const staleFrame = [...frames.values()].find((callback) => callback.name === "animate");
     const resize = observers[0];
     act(() => {

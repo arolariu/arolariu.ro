@@ -1,17 +1,64 @@
 import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
 import {act, render, screen} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {BackgroundBeams} from "./background-beams";
 
 let reduced = true;
 let media: MediaQueryList;
+let views: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 
 beforeEach(() => {
   reduced = true;
+  views = [];
   media = window.matchMedia("(prefers-reduced-motion: reduce)");
   Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
   vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 200, 100));
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("BackgroundBeams", () => {
@@ -61,6 +108,9 @@ describe("BackgroundBeams", () => {
   it("switches recurring Motion to static paint on live preference changes", () => {
     const ref = React.createRef<HTMLDivElement>();
     const {unmount} = render(<BackgroundBeams ref={ref} />);
+    act(() => {
+      views[0]?.enter();
+    });
     expect(ref.current).toHaveAttribute("data-motion", "paused");
     expect(ref.current?.querySelector("linearGradient")).toHaveAttribute("x2", "95%");
     act(() => {

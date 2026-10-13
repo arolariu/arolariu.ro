@@ -1,6 +1,7 @@
 import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
 import {act, render} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {DotBackground} from "./dot-background";
 
@@ -8,6 +9,45 @@ let box = new DOMRect(0, 0, 32, 16);
 let reduced = true;
 let media: MediaQueryList;
 let observers: ResizeBoundary[] = [];
+let views: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 class ResizeBoundary implements ResizeObserver {
   readonly observe = vi.fn();
   readonly unobserve = vi.fn();
@@ -24,6 +64,7 @@ class ResizeBoundary implements ResizeObserver {
 
 beforeEach(() => {
   observers = [];
+  views = [];
   box = new DOMRect(0, 0, 32, 16);
   reduced = true;
   media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -31,6 +72,11 @@ beforeEach(() => {
   vi.spyOn(window, "matchMedia").mockReturnValue(media);
   vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
   vi.stubGlobal("ResizeObserver", ResizeBoundary);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("DotBackground", () => {
@@ -103,6 +149,9 @@ describe("DotBackground", () => {
     );
     const svg = container.querySelector("svg");
     const dot = container.querySelector("circle");
+    act(() => {
+      views[0]?.enter();
+    });
     expect(svg).toHaveAttribute("data-motion", "paused");
     expect(dot).toHaveStyle({opacity: "0.4"});
     random.mockClear();

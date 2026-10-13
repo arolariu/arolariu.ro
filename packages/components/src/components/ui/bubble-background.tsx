@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, type SpringOptions, type Transition, useInView, useMotionValue, useSpring} from "motion/react";
+import {motion, type SpringOptions, type Transition, useMotionValue, useSpring} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./bubble-background.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Configurable bubble color channels consumed by the CSS module. */
 export interface BubbleBackgroundColors {
@@ -106,27 +107,6 @@ function createBubbleStyle(
   };
 }
 
-function useMotionPaused(ref: React.RefObject<HTMLDivElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
-}
-
 /**
  * Renders drifting gradient bubbles with an optional interactive cursor follower.
  *
@@ -159,22 +139,8 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
   ): React.JSX.Element => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const id = React.useId();
-    const paused = useMotionPaused(containerRef);
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null): void | (() => void) => {
-        containerRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLDivElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              containerRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(containerRef);
+    const setRefs = useMergedRefs(containerRef, ref);
 
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);

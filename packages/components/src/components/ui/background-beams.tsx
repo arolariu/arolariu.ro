@@ -1,35 +1,15 @@
 "use client";
 
-import {motion, useInView} from "motion/react";
+import {motion} from "motion/react";
 import * as React from "react";
 
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./background-beams.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link BackgroundBeams}. */
 export interface BackgroundBeamsProps extends React.ComponentPropsWithoutRef<"div"> {}
-
-function useMotionPaused(ref: React.RefObject<HTMLDivElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
-}
 
 /**
  * Renders animated aurora-style beams that sweep across the background.
@@ -52,22 +32,8 @@ const BackgroundBeams = React.forwardRef<HTMLDivElement, BackgroundBeamsProps>(
     const {className, children, ...restProps} = props;
     const id = React.useId();
     const localRef = React.useRef<HTMLDivElement>(null);
-    const paused = useMotionPaused(localRef);
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null): void | (() => void) => {
-        localRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLDivElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              localRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(localRef);
+    const setRefs = useMergedRefs(localRef, ref);
     const paths = React.useMemo(
       () => [
         "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",

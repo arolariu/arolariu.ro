@@ -28,7 +28,11 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const WithNeon: Story = {args: {text: "Neon glow", neon: true}};
 export const CustomGradient: Story = {
-  args: {text: "Custom colors", gradient: "linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #ff0080)", style: {opacity: 0.9}},
+  args: {
+    text: "Custom colors",
+    gradient: "linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #ff0080)",
+    className: styles.customGradientDemo,
+  },
 };
 /** Check one accessible copy while the original image/content semantics remain intact. */
 export const WithContent: Story = {args: {text: "Related content", neon: true, children: <span> — supplementary copy</span>}};

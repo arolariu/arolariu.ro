@@ -38,7 +38,7 @@ export const CustomColors: Story = {
       fifth: "147,112,219",
       sixth: "100% 0% 100%",
     },
-    style: {opacity: 0.8},
+    className: styles.customPaletteDemo,
   },
 };
 /** Each goo filter is scoped to its own instance. */

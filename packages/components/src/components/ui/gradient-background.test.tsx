@@ -104,6 +104,9 @@ describe("GradientBackground", () => {
         transition={{repeat: Infinity}}
       />,
     );
+    act(() => {
+      views[0]?.visibility(true);
+    });
     expect(ref.current).toHaveAttribute("data-motion", "paused");
     expect(ref.current).toHaveStyle({backgroundPosition: "0% 50%"});
     act(() => {

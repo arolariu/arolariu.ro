@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, useInView} from "motion/react";
+import {motion} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./hole-background.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link HoleBackground}. */
 export interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElement> {
@@ -20,27 +21,6 @@ export interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElem
 }
 
 const defaultParticleRGB: readonly [number, number, number] = [255, 255, 255];
-
-function useMotionPaused(ref: React.RefObject<HTMLCanvasElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
-}
 
 interface Disc {
   p: number;
@@ -78,9 +58,10 @@ interface RectState {
 }
 
 interface RenderState {
-  width: number;
-  height: number;
-  dpi: number;
+  bitmapWidth: number;
+  bitmapHeight: number;
+  scaleX: number;
+  scaleY: number;
 }
 
 interface ParticleArea {
@@ -117,7 +98,7 @@ const createInitialState = (): HoleState => ({
   startDisc: createEmptyDisc(),
   endDisc: createEmptyDisc(),
   rect: {width: 0, height: 0},
-  render: {width: 0, height: 0, dpi: 1},
+  render: {bitmapWidth: 0, bitmapHeight: 0, scaleX: 1, scaleY: 1},
   particleArea: createEmptyParticleArea(),
   linesCanvas: null,
 });
@@ -164,22 +145,8 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
     }
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const stateRef = React.useRef<HoleState>(createInitialState());
-    const paused = useMotionPaused(canvasRef);
-    const setRefs = React.useCallback(
-      (node: HTMLCanvasElement | null): void | (() => void) => {
-        canvasRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLCanvasElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              canvasRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(canvasRef);
+    const setRefs = useMergedRefs(canvasRef, ref);
 
     const tweenValue = React.useCallback((start: number, end: number, progress: number, ease: "inExpo" | null = null): number => {
       const delta = end - start;
@@ -210,13 +177,22 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
         throw new RangeError("HoleBackground geometry and DPR must be finite and positive.");
       }
       stateRef.current.rect = {width: rect.width, height: rect.height};
+      const requestedScale = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
+      const bitmapWidth = Math.max(1, Math.min(4096, Math.round(rect.width * requestedScale)));
+      const bitmapHeight = Math.max(1, Math.min(4096, Math.round(rect.height * requestedScale)));
+      const scaleX = bitmapWidth / rect.width;
+      const scaleY = bitmapHeight / rect.height;
+      if (![scaleX, scaleY].every((scale) => Number.isFinite(scale) && scale > 0)) {
+        throw new RangeError("HoleBackground geometry cannot produce a finite backing-space transform.");
+      }
       stateRef.current.render = {
-        width: rect.width,
-        height: rect.height,
-        dpi: Math.min(dpr, 4096 / rect.width, 4096 / rect.height),
+        bitmapWidth,
+        bitmapHeight,
+        scaleX,
+        scaleY,
       };
-      canvas.width = stateRef.current.render.width * stateRef.current.render.dpi;
-      canvas.height = stateRef.current.render.height * stateRef.current.render.dpi;
+      canvas.width = bitmapWidth;
+      canvas.height = bitmapHeight;
     }, []);
 
     const setDiscs = React.useCallback((): void => {
@@ -260,7 +236,6 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
     }, [discCount, tweenDisc]);
 
     const setLines = React.useCallback((): void => {
-      const {width, height} = stateRef.current.rect;
       stateRef.current.lines = [];
       const linesAngle = (Math.PI * 2) / lineCount;
       for (let index = 0; index < lineCount; index += 1) {
@@ -279,14 +254,15 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       });
 
       const offCanvas = globalThis.document.createElement("canvas");
-      offCanvas.width = width * stateRef.current.render.dpi;
-      offCanvas.height = height * stateRef.current.render.dpi;
+      const {bitmapWidth, bitmapHeight, scaleX, scaleY} = stateRef.current.render;
+      offCanvas.width = bitmapWidth;
+      offCanvas.height = bitmapHeight;
       const context = offCanvas.getContext("2d");
       const clipPath = stateRef.current.clip.path;
       if (!context || !clipPath) {
         throw new Error("HoleBackground requires a 2D line-cache context and initialized clip path.");
       }
-      context.scale(stateRef.current.render.dpi, stateRef.current.render.dpi);
+      context.scale(scaleX, scaleY);
 
       stateRef.current.lines.forEach((line) => {
         context.save();
@@ -297,7 +273,11 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
           }
 
           const previousPoint = line[lineIndex - 1]!;
-          if (!lineIsIn && (context.isPointInPath(clipPath, point.x, point.y) || context.isPointInStroke(clipPath, point.x, point.y))) {
+          if (
+            !lineIsIn
+            && (context.isPointInPath(clipPath, point.x * scaleX, point.y * scaleY)
+              || context.isPointInStroke(clipPath, point.x * scaleX, point.y * scaleY))
+          ) {
             lineIsIn = true;
           } else if (lineIsIn) {
             context.clip(clipPath);
@@ -447,7 +427,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.save();
-      context.scale(stateRef.current.render.dpi, stateRef.current.render.dpi);
+      context.scale(stateRef.current.render.scaleX, stateRef.current.render.scaleY);
       if (!paused) {
         moveDiscs();
         moveParticles();

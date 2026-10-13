@@ -63,6 +63,47 @@ afterEach(() => {
 });
 
 describe("HighlightText", () => {
+  it("replays a real highlight sweep after leaving and re-entering with inViewOnce=false", async () => {
+    reduced = false;
+    const ref = React.createRef<HTMLSpanElement>();
+    const updates: string[] = [];
+    render(
+      <HighlightText
+        ref={ref}
+        text='Replay'
+        inView
+        inViewOnce={false}
+        transition={{duration: 0.15}}
+        onUpdate={(latest): void => {
+          if (typeof latest["backgroundSize"] === "string") updates.push(latest["backgroundSize"]);
+        }}
+      />,
+    );
+    await act(async () => {
+      for (const observer of observed) if (observer.target) observer.enter(true);
+    });
+    await waitFor(() => expect(ref.current).toHaveStyle({backgroundSize: "100% 100%"}));
+    await act(async () => {
+      for (const observer of observed) if (observer.target) observer.enter(false);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 30);
+    });
+    updates.length = 0;
+    await act(async () => {
+      for (const observer of observed) if (observer.target) observer.enter(true);
+    });
+    await waitFor(() =>
+      expect(
+        updates.some((value) => {
+          const percentage = Number.parseFloat(value);
+          return percentage > 0 && percentage < 100;
+        }),
+      ).toBe(true),
+    );
+    await waitFor(() => expect(ref.current).toHaveStyle({backgroundSize: "100% 100%"}));
+  });
   it("preserves a live MotionValue child alongside the text prop", async () => {
     const count = motionValue(1);
     render(<HighlightText text='Count: '>{count}</HighlightText>);

@@ -4,8 +4,9 @@ import {isMotionValue, motion, useInView, type HTMLMotionProps, type Transition,
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./highlight-text.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link HighlightText}. */
 export interface HighlightTextProps extends HTMLMotionProps<"span"> {
@@ -26,27 +27,6 @@ const defaultTransition: Transition = {duration: 2, ease: "easeInOut"};
 
 function isHighlightMotionChild(value: HighlightTextProps["children"]): value is Exclude<HighlightTextProps["children"], React.ReactNode> {
   return isMotionValue(value);
-}
-
-function useMotionPaused(ref: React.RefObject<HTMLSpanElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
 }
 
 /**
@@ -82,28 +62,15 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
     ref,
   ): React.JSX.Element => {
     const localRef = React.useRef<HTMLSpanElement>(null);
-    const paused = useMotionPaused(localRef);
-    const setRefs = React.useCallback(
-      (node: HTMLSpanElement | null): void | (() => void) => {
-        localRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLSpanElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              localRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused, reducedMotion, visible} = useVisualEffectPolicy(localRef);
+    const setRefs = useMergedRefs(localRef, ref);
 
     const inViewResult = useInView(localRef, {
       once: inViewOnce,
       margin: inViewMargin,
     });
-    const isInView = !inView || inViewResult;
+    const revealed = inView ? inViewResult : visible || inViewResult;
+    const staticTarget = reducedMotion || revealed ? animation : {backgroundSize: "0% 100%"};
 
     return (
       <motion.span
@@ -111,7 +78,7 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
         ref={setRefs}
         data-motion={paused ? "paused" : "running"}
         initial={paused ? false : (initial ?? {backgroundSize: "0% 100%"})}
-        animate={paused ? animation : (animate ?? (isInView ? animation : {backgroundSize: "0% 100%"}))}
+        animate={paused ? staticTarget : (animate ?? staticTarget)}
         transition={paused ? {duration: 0} : transition}
         className={cn(styles.highlight, className)}>
         {text}

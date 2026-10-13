@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, useInView} from "motion/react";
+import {motion} from "motion/react";
 import * as React from "react";
 
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./dot-background.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link DotBackground}. Width/height are dot spacing, not SVG dimensions. */
 export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
@@ -25,27 +26,6 @@ export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
   readonly cr?: number;
   /** Enables pulsing dots while visible and motion is permitted. @default false */
   readonly glow?: boolean;
-}
-
-function useMotionPaused(ref: React.RefObject<SVGSVGElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
 }
 
 /**
@@ -79,22 +59,8 @@ const DotBackground = React.forwardRef<SVGSVGElement, DotBackgroundProps>(
     const id = React.useId();
     const containerRef = React.useRef<SVGSVGElement>(null);
     const [dimensions, setDimensions] = React.useState({width: 0, height: 0});
-    const paused = useMotionPaused(containerRef);
-    const setRefs = React.useCallback(
-      (node: SVGSVGElement | null): void | (() => void) => {
-        containerRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<SVGSVGElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              containerRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(containerRef);
+    const setRefs = useMergedRefs(containerRef, ref);
 
     React.useEffect(() => {
       const element = containerRef.current;

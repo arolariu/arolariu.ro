@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, useAnimation, useInView} from "motion/react";
+import {motion, useAnimation} from "motion/react";
 import * as React from "react";
 
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./scratcher.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link Scratcher}. */
 export interface ScratcherProps {
@@ -35,25 +36,12 @@ type ScratchStyle = React.CSSProperties & {
   readonly "--ac-scratcher-height": string;
 };
 
-function useMotionPaused(ref: React.RefObject<HTMLDivElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
+interface ScratchGeneration {
+  readonly width: number;
+  readonly height: number;
+  readonly first: string;
+  readonly second: string;
+  readonly third: string;
 }
 
 function requireContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -83,26 +71,29 @@ const ScratcherSurface = React.forwardRef<HTMLDivElement, ScratcherProps>(
     const notifiedRef = React.useRef(false);
     const pointerRef = React.useRef<number | null>(null);
     const callbackRef = React.useRef(onComplete);
-    const [complete, setComplete] = React.useState(false);
-    const [animationError, setAnimationError] = React.useState<Error | null>(null);
-    const paused = useMotionPaused(rootRef);
+    const {paused} = useVisualEffectPolicy(rootRef);
     const controls = useAnimation();
     const [first, second, third] = gradientColors;
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null): void | (() => void) => {
-        rootRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLDivElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              rootRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
+    const generation = React.useMemo<ScratchGeneration>(
+      () => ({width, height, first, second, third}),
+      [width, height, first, second, third],
     );
+    const generationRef = React.useRef(generation);
+    const [completedGeneration, setCompletedGeneration] = React.useState<ScratchGeneration | null>(null);
+    const [animationFailure, setAnimationFailure] = React.useState<{readonly generation: ScratchGeneration; readonly error: Error} | null>(
+      null,
+    );
+    const complete = completedGeneration === generation;
+    const setRefs = useMergedRefs(rootRef, ref);
+
+    React.useLayoutEffect(() => {
+      generationRef.current = generation;
+      completedRef.current = false;
+      notifiedRef.current = false;
+      pointerRef.current = null;
+      controls.stop();
+      controls.set({scale: 1, rotate: 0});
+    }, [controls, generation]);
 
     React.useEffect(() => {
       callbackRef.current = onComplete;
@@ -148,7 +139,7 @@ const ScratcherSurface = React.forwardRef<HTMLDivElement, ScratcherProps>(
         observer.disconnect();
         window.removeEventListener("resize", paint);
       };
-    }, [first, second, third]);
+    }, [generation, first, second, third]);
 
     const scratch = React.useCallback((clientX: number, clientY: number): void => {
       if (completedRef.current) return;
@@ -174,8 +165,8 @@ const ScratcherSurface = React.forwardRef<HTMLDivElement, ScratcherProps>(
       requireContext(canvas).clearRect(0, 0, canvas.width, canvas.height);
       completedRef.current = true;
       pointerRef.current = null;
-      setComplete(true);
-    }, []);
+      setCompletedGeneration(generation);
+    }, [generation]);
 
     const checkCompletion = React.useCallback((): void => {
       if (completedRef.current) return;
@@ -218,7 +209,7 @@ const ScratcherSurface = React.forwardRef<HTMLDivElement, ScratcherProps>(
       if (!complete) return;
       let active = true;
       const notify = (): void => {
-        if (!active || notifiedRef.current) return;
+        if (!active || generationRef.current !== generation || !completedRef.current || notifiedRef.current) return;
         notifiedRef.current = true;
         callbackRef.current?.();
       };
@@ -235,17 +226,20 @@ const ScratcherSurface = React.forwardRef<HTMLDivElement, ScratcherProps>(
           })
           .then(notify)
           .catch((error: unknown): void => {
-            if (active)
-              setAnimationError(error instanceof Error ? error : new Error("Scratcher completion animation failed.", {cause: error}));
+            if (active && generationRef.current === generation)
+              setAnimationFailure({
+                generation,
+                error: error instanceof Error ? error : new Error("Scratcher completion animation failed.", {cause: error}),
+              });
           });
       }
       return (): void => {
         active = false;
         controls.stop();
       };
-    }, [complete, paused, controls]);
+    }, [complete, paused, controls, generation]);
 
-    if (animationError) throw animationError;
+    if (animationFailure?.generation === generation) throw animationFailure.error;
     const surfaceStyle: ScratchStyle = {"--ac-scratcher-width": `${width}px`, "--ac-scratcher-height": `${height}px`};
     return (
       <motion.div
@@ -294,7 +288,7 @@ ScratcherSurface.displayName = "ScratcherSurface";
  * @throws {RangeError} If dimensions or the completion threshold are invalid.
  */
 export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>((props: Readonly<ScratcherProps>, ref): React.JSX.Element => {
-  const {width, height, minScratchPercentage = 50, gradientColors = defaultGradientColors} = props;
+  const {width, height, minScratchPercentage = 50} = props;
   if (![width, height].every((dimension) => Number.isFinite(dimension) && dimension > 0)) {
     throw new RangeError("Scratcher dimensions must be positive and finite.");
   }
@@ -303,7 +297,6 @@ export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>((props
   }
   return (
     <ScratcherSurface
-      key={JSON.stringify([width, height, ...gradientColors])}
       {...props}
       ref={ref}
     />

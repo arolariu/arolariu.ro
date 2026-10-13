@@ -168,6 +168,9 @@ describe("FireworksBackground", () => {
         fireworkSpeed={4}
       />,
     );
+    act(() => {
+      views[0]?.visibility(true);
+    });
     const canvas = ref.current?.querySelector("canvas");
     expect(canvas).toHaveAttribute("width", "400");
     expect(canvas).toHaveAttribute("height", "200");
@@ -188,6 +191,9 @@ describe("FireworksBackground", () => {
         fireworkSpeed={150}
       />,
     );
+    act(() => {
+      views[0]?.visibility(true);
+    });
     if (!ref.current) throw new Error("Missing root");
     context.arc.mockClear();
     fireEvent.click(ref.current, {clientX: 150, clientY: 70});
@@ -233,6 +239,9 @@ describe("FireworksBackground", () => {
 
   it("does not restart default physics on an unrelated rerender", () => {
     const {rerender} = render(<FireworksBackground title='first' />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
     const clears = context.clearRect.mock.calls.length;
     const launches = timers.size;
     rerender(<FireworksBackground title='second' />);
@@ -249,11 +258,15 @@ describe("FireworksBackground", () => {
         fireworkSpeed={4}
       />,
     );
+    act(() => {
+      views[0]?.visibility(true);
+    });
     if (!ref.current) throw new Error("Missing root");
     for (let i = 0; i < 100; i += 1) fireEvent.click(ref.current, {clientX: 150, clientY: 70});
     context.stroke.mockClear();
     frame();
     expect(context.stroke.mock.calls.length).toBeLessThanOrEqual(16);
+    expect(context.stroke.mock.calls.length).toBeGreaterThan(0);
     rerender(
       <FireworksBackground
         ref={ref}
@@ -274,6 +287,9 @@ describe("FireworksBackground", () => {
   it("pauses timers/RAF on a live preference change and guards stale work after cleanup", () => {
     const ref = React.createRef<HTMLDivElement>();
     const {unmount} = render(<FireworksBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
     expect(timers.size).toBe(1);
     const staleFrame = [...frames.values()][0];
     const staleLaunch = [...timers.values()][0];

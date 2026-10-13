@@ -1,4 +1,6 @@
 import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import userEvent from "@testing-library/user-event";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -8,6 +10,45 @@ let box = new DOMRect(100, 50, 200, 100);
 let reduced = true;
 let media: MediaQueryList;
 let observers: ResizeBoundary[] = [];
+let views: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 let cleared = 0;
 const composites: string[] = [];
 const context = {
@@ -54,6 +95,7 @@ beforeEach(() => {
   reduced = true;
   box = new DOMRect(100, 50, 200, 100);
   observers = [];
+  views = [];
   cleared = 0;
   composites.length = 0;
   context.globalCompositeOperation = "source-over";
@@ -61,15 +103,83 @@ beforeEach(() => {
   Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
   vi.spyOn(window, "matchMedia").mockReturnValue(media);
   vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
+  vi.spyOn(HTMLDivElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
   Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: 2});
   Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => context});
   vi.stubGlobal("ResizeObserver", ResizeBoundary);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
 });
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("Scratcher", () => {
+  it("resets bitmap/completion generations without replacing the root, caller input, value or focus", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const child = (
+      <input
+        aria-label='Consumer value'
+        defaultValue='Initial'
+      />
+    );
+    const {rerender} = render(
+      <Scratcher
+        ref={ref}
+        width={200}
+        height={100}>
+        {child}
+      </Scratcher>,
+    );
+    const root = ref.current;
+    const input = screen.getByRole("textbox", {name: "Consumer value"});
+    fireEvent.change(input, {target: {value: "Entered"}});
+    input.focus();
+    const paints = context.fillRect.mock.calls.length;
+    rerender(
+      <Scratcher
+        ref={ref}
+        width={201}
+        height={100}>
+        {child}
+      </Scratcher>,
+    );
+    expect(ref.current).toBe(root);
+    expect(screen.getByRole("textbox", {name: "Consumer value"})).toBe(input);
+    expect(input).toHaveValue("Entered");
+    expect(input).toHaveFocus();
+    expect(context.fillRect.mock.calls.length).toBeGreaterThan(paints);
+    rerender(
+      <Scratcher
+        ref={ref}
+        width={201}
+        height={100}
+        gradientColors={["red", "green", "blue"]}>
+        {child}
+      </Scratcher>,
+    );
+    expect(ref.current).toBe(root);
+    expect(input).toHaveValue("Entered");
+    expect(input).toHaveFocus();
+    expect(ref.current).toHaveAttribute("data-state", "covered");
+  });
+  it.each(["[Enter]", "[Space]"])("activates native reveal by actual keyboard %s", async (key) => {
+    const user = userEvent.setup();
+    const complete = vi.fn();
+    render(
+      <Scratcher
+        width={200}
+        height={100}
+        onComplete={complete}>
+        Content
+      </Scratcher>,
+    );
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Reveal content"})).toHaveFocus();
+    await user.keyboard(key);
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(screen.getByRole("button", {name: "Reveal content"})).toBeDisabled();
+  });
   it("uses the latest completion callback without resetting the painted surface", async () => {
     const original = vi.fn();
     const latest = vi.fn();
@@ -244,6 +354,9 @@ describe("Scratcher", () => {
         Prize
       </Scratcher>,
     );
+    act(() => {
+      views[0]?.enter();
+    });
     fireEvent.click(screen.getByRole("button", {name: "Reveal content"}));
     rerender(
       <Scratcher
@@ -278,6 +391,9 @@ describe("Scratcher", () => {
         Prize
       </Scratcher>,
     );
+    act(() => {
+      views[0]?.enter();
+    });
     fireEvent.click(screen.getByRole("button", {name: "Reveal content"}));
     act(() => {
       reduced = true;

@@ -1,13 +1,53 @@
 import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {BubbleBackground, type BubbleBackgroundColors} from "./bubble-background";
 
 let reduced = true;
 let media: MediaQueryList;
+let views: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 const colors: BubbleBackgroundColors = {
   first: "10,20,30",
   second: "40 50 60",
@@ -19,9 +59,16 @@ const colors: BubbleBackgroundColors = {
 
 beforeEach(() => {
   reduced = true;
+  views = [];
   media = window.matchMedia("(prefers-reduced-motion: reduce)");
   Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
   vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 200, 100));
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("BubbleBackground", () => {
@@ -101,6 +148,9 @@ describe("BubbleBackground", () => {
     const root = ref.current;
     if (!root) throw new Error("Missing root");
     vi.spyOn(root, "getBoundingClientRect").mockReturnValue(new DOMRect(10, 20, 200, 100));
+    act(() => {
+      views[0]?.enter();
+    });
     const remove = vi.spyOn(root, "removeEventListener");
     fireEvent.mouseMove(root, {clientX: 40, clientY: 30});
     const movingFollower = root.querySelector<HTMLDivElement>('[data-bubble="interactive"]');

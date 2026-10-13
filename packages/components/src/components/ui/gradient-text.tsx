@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, useInView, type Transition} from "motion/react";
+import {motion, type Transition} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./gradient-text.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link GradientText}. */
 export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -26,27 +27,6 @@ type GradientStyleProperties = React.CSSProperties & {
 };
 
 const defaultTransition: Transition = {duration: 50, repeat: Infinity, ease: "linear"};
-
-function useMotionPaused(ref: React.RefObject<HTMLSpanElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
-}
 
 /**
  * Renders animated gradient-filled text with an optional neon glow layer.
@@ -79,22 +59,8 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
     ref,
   ): React.JSX.Element => {
     const localRef = React.useRef<HTMLSpanElement>(null);
-    const paused = useMotionPaused(localRef);
-    const setRefs = React.useCallback(
-      (node: HTMLSpanElement | null): void | (() => void) => {
-        localRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLSpanElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              localRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(localRef);
+    const setRefs = useMergedRefs(localRef, ref);
     const baseStyle: GradientStyleProperties = {
       ...style,
       "--ac-gradient-text-background": style?.["--ac-gradient-text-background"] ?? gradient,

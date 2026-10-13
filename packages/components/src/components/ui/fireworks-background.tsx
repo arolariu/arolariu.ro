@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {useInView} from "motion/react";
 
-import {useReducedMotion} from "@/hooks/useReducedMotion";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./fireworks-background.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min) + min);
@@ -33,27 +33,6 @@ function validatePalette(color: string | ReadonlyArray<string> | undefined): voi
       throw new RangeError("FireworksBackground palette must contain non-empty color strings.");
     }
   }
-}
-
-function useMotionPaused(ref: React.RefObject<HTMLDivElement | null>): boolean {
-  const reduced = useReducedMotion();
-  const preference = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-    return {
-      subscribe(notify: () => void): () => void {
-        media?.addEventListener("change", notify);
-        document.addEventListener("visibilitychange", notify);
-        return (): void => {
-          media?.removeEventListener("change", notify);
-          document.removeEventListener("visibilitychange", notify);
-        };
-      },
-      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
-    };
-  }, [reduced]);
-  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
-  const visible = useInView(ref, {initial: true});
-  return paused || !visible;
 }
 
 interface ParticleType {
@@ -302,22 +281,8 @@ const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackground
     validatePalette(color);
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const paused = useMotionPaused(containerRef);
-    const setRefs = React.useCallback(
-      (node: HTMLDivElement | null): void | (() => void) => {
-        containerRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLDivElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return (): void => {
-              containerRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const {paused} = useVisualEffectPolicy(containerRef);
+    const setRefs = useMergedRefs(containerRef, ref);
 
     React.useEffect(() => {
       const canvas = canvasRef.current;
