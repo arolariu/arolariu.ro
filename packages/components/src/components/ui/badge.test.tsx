@@ -8,6 +8,25 @@ import {Badge, badgeVariants} from "./badge";
 import styles from "./badge.module.css";
 import {CallbackRender, Ghost, Large, Link, WithDot} from "./badge.stories";
 
+// Consumer fixture: the provided merged ref must spread onto a native anchor.
+function BadgeAnchorConsumer({anchorRef}: Readonly<{anchorRef: React.Ref<HTMLAnchorElement>}>): React.ReactElement {
+  return (
+    <Badge
+      ref={anchorRef}
+      variant='link'
+      onClick={(event) => event.preventDefault()}
+      render={(props, state) => (
+        <a
+          {...props}
+          href='#destination'
+          aria-label={`${state.slot}-${state.variant}`}
+        />
+      )}>
+      Navigate
+    </Badge>
+  );
+}
+
 const badgeVariantsToTest = [
   ["default", styles.default],
   ["secondary", styles.secondary],
@@ -89,7 +108,7 @@ describe("Badge", () => {
 
   it("composes navigation, child content, both refs, classes, and event handlers", async () => {
     const user = userEvent.setup();
-    const wrapperRef = createRef<HTMLSpanElement>();
+    const wrapperRef = createRef<HTMLAnchorElement>();
     const childRef = createRef<HTMLAnchorElement>();
     const calls: string[] = [];
     const {unmount} = render(
@@ -129,6 +148,23 @@ describe("Badge", () => {
   it("preserves wrapper content for empty render elements", () => {
     render(<Badge render={<a href='#beta' />}>Beta</Badge>);
     expect(screen.getByRole("link", {name: "Beta"})).toBeInTheDocument();
+  });
+
+  it("accepts anchor callback consumer props and forwards the correct anchor ref", async () => {
+    const user = userEvent.setup();
+    const ref = createRef<HTMLAnchorElement>();
+    const {unmount} = render(<BadgeAnchorConsumer anchorRef={ref} />);
+    const link = screen.getByRole("link", {name: "badge-link"});
+
+    expect(ref.current).toBe(link);
+    expect(ref.current?.hash).toBe("#destination");
+    expect(link).toHaveTextContent("Navigate");
+    await user.tab();
+    expect(link).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(link).toHaveAttribute("href", "#destination");
+    unmount();
+    expect(ref.current).toBeNull();
   });
 
   it("evaluates callback renders with current badge state and forwarded props", () => {

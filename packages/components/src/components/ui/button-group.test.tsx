@@ -9,6 +9,47 @@ import {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants}
 import styles from "./button-group.module.css";
 import {CallbackText, LegacyText, RenderedLabel} from "./button-group.stories";
 
+// Consumer fixtures: labels accept both callback props and label-specific refs.
+function GroupTextLabelCallbackConsumer({labelRef}: Readonly<{labelRef: React.Ref<HTMLLabelElement>}>): React.ReactElement {
+  return (
+    <ButtonGroupText
+      ref={labelRef}
+      render={(props, state) => (
+        <label
+          {...props}
+          htmlFor='callback-quantity'
+          data-composition-slot={state.slot}
+        />
+      )}>
+      Callback quantity
+    </ButtonGroupText>
+  );
+}
+
+function GroupTextLabelElementConsumer({
+  labelRef,
+  childRef,
+  onClick,
+}: Readonly<{
+  labelRef: React.Ref<HTMLLabelElement>;
+  childRef: React.Ref<HTMLLabelElement>;
+  onClick: React.MouseEventHandler<HTMLElement>;
+}>): React.ReactElement {
+  return (
+    <ButtonGroupText
+      ref={labelRef}
+      onClick={onClick}
+      render={
+        <label
+          ref={childRef}
+          htmlFor='quantity'
+        />
+      }>
+      Quantity
+    </ButtonGroupText>
+  );
+}
+
 describe("ButtonGroup", () => {
   it("renders ButtonGroup components with children, custom classes, and forwarded refs", () => {
     // Arrange
@@ -136,7 +177,7 @@ describe("ButtonGroup", () => {
 
   it("merges legacy child refs, events, classes, and preserves child content", async () => {
     const user = userEvent.setup();
-    const wrapperRef = createRef<HTMLDivElement>();
+    const wrapperRef = createRef<HTMLSpanElement>();
     const childRef = createRef<HTMLSpanElement>();
     const calls: string[] = [];
     const {unmount} = render(
@@ -167,22 +208,16 @@ describe("ButtonGroup", () => {
 
   it("supports canonical render elements with both refs and wrapper content", async () => {
     const user = userEvent.setup();
-    const wrapperRef = createRef<HTMLDivElement>();
+    const wrapperRef = createRef<HTMLLabelElement>();
     const childRef = createRef<HTMLLabelElement>();
     const onClick = vi.fn();
-    render(
+    const {unmount} = render(
       <>
-        <ButtonGroupText
-          ref={wrapperRef}
+        <GroupTextLabelElementConsumer
+          labelRef={wrapperRef}
+          childRef={childRef}
           onClick={onClick}
-          render={
-            <label
-              ref={childRef}
-              htmlFor='quantity'
-            />
-          }>
-          Quantity
-        </ButtonGroupText>
+        />
         <input id='quantity' />
       </>,
     );
@@ -191,9 +226,33 @@ describe("ButtonGroup", () => {
     expect(wrapperRef.current).toBe(text);
     expect(childRef.current).toBe(text);
     expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
+    expect(wrapperRef.current?.control).toBe(screen.getByLabelText("Quantity"));
     await user.click(text);
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Quantity")).toHaveFocus();
+    unmount();
+    expect(wrapperRef.current).toBeNull();
+    expect(childRef.current).toBeNull();
+  });
+
+  it("accepts label callback consumer props and forwards the correct label ref", async () => {
+    const user = userEvent.setup();
+    const ref = createRef<HTMLLabelElement>();
+    const {unmount} = render(
+      <>
+        <GroupTextLabelCallbackConsumer labelRef={ref} />
+        <input id='callback-quantity' />
+      </>,
+    );
+    const label = screen.getByText("Callback quantity");
+    const input = screen.getByLabelText("Callback quantity");
+    expect(ref.current).toBe(label);
+    expect(ref.current?.control).toBe(input);
+    expect(label).toHaveAttribute("data-composition-slot", "button-group-text");
+    await user.click(label);
+    expect(input).toHaveFocus();
+    unmount();
+    expect(ref.current).toBeNull();
   });
 
   it("exposes text slot state to callback renders with props and ref intact", () => {

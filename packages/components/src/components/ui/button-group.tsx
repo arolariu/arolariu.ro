@@ -1,6 +1,7 @@
 "use client";
 
 import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
@@ -32,11 +33,20 @@ export type ButtonGroupProps = Readonly<
 /** State exposed to {@link ButtonGroupText} render callbacks. */
 export type ButtonGroupTextState = Readonly<{slot: "button-group-text"}>;
 
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type ButtonGroupTextRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
+
 /**
  * Props for the {@link ButtonGroupText} component.
  */
 export type ButtonGroupTextProps = Readonly<
-  useRender.ComponentProps<"div", ButtonGroupTextState, React.ComponentPropsWithRef<"div">> & {
+  Omit<useRender.ComponentProps<"div", ButtonGroupTextState, ButtonGroupTextRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
     /** Enables rendering an existing div-compatible child element. @default false */
     asChild?: boolean;
   }
@@ -99,6 +109,7 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  * @remarks
  * - Base UI owns render composition, merging both refs and event handlers.
  * - Renders a `<div>` by default; prefer `render` for labels or other markup.
+ * - The common `HTMLElement` ref boundary supports refs to the chosen target.
  * - Legacy `asChild` remains a compatible alias for a single child element.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
@@ -109,11 +120,14 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  *
  * @see {@link ButtonGroupTextProps} for available props
  */
-const ButtonGroupText = React.forwardRef<HTMLDivElement, ButtonGroupTextProps>(
-  ({className, render, asChild = false, children, ...props}: Readonly<ButtonGroupTextProps>, ref): React.ReactElement => {
+const ButtonGroupText = React.forwardRef<HTMLElement, ButtonGroupTextProps>(
+  (
+    {className, render, asChild = false, children, ...props}: Readonly<React.PropsWithoutRef<ButtonGroupTextProps>>,
+    ref,
+  ): React.ReactElement => {
     const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
 
-    return useRender<ButtonGroupTextState, HTMLDivElement>({
+    return useRender<ButtonGroupTextState, HTMLElement>({
       defaultTagName: "div",
       ref,
       render: legacyChild ?? render,

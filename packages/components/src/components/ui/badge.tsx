@@ -1,6 +1,7 @@
 "use client";
 
 import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
@@ -17,6 +18,13 @@ export type BadgeState = Readonly<{
   slot: "badge";
   variant: BadgeVariant;
 }>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type BadgeRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
 
 /**
  * Represents the options accepted by the internal badge class generator.
@@ -59,7 +67,9 @@ const variantStyles: Record<BadgeVariant, string> = {
  * @default variant `"default"`
  */
 export type BadgeProps = Readonly<
-  useRender.ComponentProps<"span", BadgeState, React.ComponentPropsWithRef<"span">> & {
+  Omit<useRender.ComponentProps<"span", BadgeState, BadgeRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a span. */
+    ref?: React.Ref<HTMLElement>;
     /**
      * The visual variant used to communicate importance or status.
      *
@@ -98,6 +108,8 @@ function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOp
  * Use it for small, high-signal labels such as statuses, tags, or counters.
  * Previous `HTMLDivElement` refs should migrate to `HTMLSpanElement`. Use
  * `render={<div />}` only when block-level markup is intentionally required.
+ * Composed targets accept their corresponding DOM refs through the common
+ * `HTMLElement` boundary; callback props carry Base UI's merged callback ref.
  *
  * @example
  * ```tsx
@@ -107,9 +119,9 @@ function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOp
  * @see {@link badgeVariants} — Generates matching badge classes without rendering.
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({className, variant = "default", render, ...props}: Readonly<BadgeProps>, ref): React.ReactElement =>
-    useRender<BadgeState, HTMLSpanElement>({
+const Badge = React.forwardRef<HTMLElement, BadgeProps>(
+  ({className, variant = "default", render, ...props}: Readonly<React.PropsWithoutRef<BadgeProps>>, ref): React.ReactElement =>
+    useRender<BadgeState, HTMLElement>({
       defaultTagName: "span",
       ref,
       render,
