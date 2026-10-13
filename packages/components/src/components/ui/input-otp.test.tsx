@@ -1,5 +1,10 @@
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
+import selectorParser from "postcss-selector-parser";
 import {createRef, type JSX, useState} from "react";
 import {describe, expect, it, vi} from "vitest";
 
@@ -12,8 +17,157 @@ import {
   REGEXP_ONLY_CHARS,
   REGEXP_ONLY_DIGITS_AND_CHARS,
 } from "./input-otp";
+import styles from "./input-otp.module.css";
+
+function otpDeclarations(element: Element, media?: string): Readonly<Record<string, string>> {
+  const transformed = transform({
+    filename: "input-otp.module.css",
+    code: readFileSync(join(import.meta.dirname, "input-otp.module.css")),
+    targets: {chrome: 100 << 16},
+  });
+  const stylesheet = parse(new TextDecoder().decode(transformed.code));
+  stylesheet.walkAtRules("media", (query) => {
+    if (query.params === media) query.replaceWith(...(query.nodes ?? []));
+    else query.remove();
+  });
+  const declarations: Record<string, string> = {};
+  stylesheet.walkRules((rule) => {
+    if (rule.parent?.type !== "root") return;
+    const selector = selectorParser((selectors) => {
+      selectors.walkClasses((className) => {
+        const scopedClass = styles[className.value];
+        if (!scopedClass) throw new Error(`Unknown OTP CSS class: ${className.value}`);
+        className.value = scopedClass;
+      });
+    }).processSync(rule.selector);
+    if (!element.matches(selector)) return;
+    rule.walkDecls((declaration) => {
+      declarations[declaration.prop] = declaration.value;
+    });
+  });
+  return declarations;
+}
 
 describe("InputOTP", () => {
+  it("keeps accessibility media rules outside keyframes and retains them after compilation", () => {
+    const code = readFileSync(join(import.meta.dirname, "input-otp.module.css"));
+    const authored = parse(code.toString());
+    const authoredQueries: string[] = [];
+    authored.walkAtRules("media", (query) => {
+      expect(query.parent?.type).toBe("root");
+      authoredQueries.push(query.params);
+    });
+    expect(authoredQueries).toEqual(expect.arrayContaining(["(prefers-reduced-motion: reduce)", "(forced-colors: active)"]));
+    authored.walkAtRules("keyframes", (keyframes) => {
+      expect(keyframes.nodes?.every((frame) => frame.type === "rule" && frame.nodes.every((node) => node.type === "decl"))).toBe(true);
+    });
+    const emitted = parse(new TextDecoder().decode(transform({filename: "input-otp.module.css", code, targets: {chrome: 100 << 16}}).code));
+    const emittedQueries: string[] = [];
+    emitted.walkAtRules("media", (query) => {
+      expect(query.parent?.type).toBe("root");
+      emittedQueries.push(query.params);
+    });
+    expect(emittedQueries).toEqual(expect.arrayContaining(["(prefers-reduced-motion: reduce)", "(forced-colors: active)"]));
+  });
+
+  it("disables transitions and fake-caret animation in the emitted reduced-motion cascade", async () => {
+    const user = userEvent.setup();
+    render(
+      <InputOTP
+        maxLength={1}
+        aria-label='Reduced-motion code'>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='motion-slot'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+    await user.click(screen.getByRole("textbox", {name: "Reduced-motion code"}));
+    const slot = screen.getByTestId("motion-slot");
+    const caret = slot.querySelector('[data-slot="input-otp-caret"] > div');
+    if (!caret) throw new Error("Expected the actual focused OTP fake caret");
+    expect(slot).toHaveAttribute("data-active", "true");
+    expect(otpDeclarations(slot)["transition"]).toBeDefined();
+    expect(otpDeclarations(caret)["animation"]).toBeDefined();
+    const media = "(prefers-reduced-motion: reduce)";
+    expect(otpDeclarations(slot, media)["transition"]).toBe("none");
+    expect(otpDeclarations(caret, media)["animation"]).toBe("none");
+  });
+
+  it("provides forced-color active-slot outlines and caret colors on actual focused slots", async () => {
+    const user = userEvent.setup();
+    render(
+      <InputOTP
+        maxLength={1}
+        aria-label='High-contrast code'>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='contrast-slot'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+    await user.click(screen.getByRole("textbox", {name: "High-contrast code"}));
+    const slot = screen.getByTestId("contrast-slot");
+    const caret = slot.querySelector('[data-slot="input-otp-caret"] > div');
+    if (!caret) throw new Error("Expected the actual focused OTP fake caret");
+    const media = "(forced-colors: active)";
+    const declarations = otpDeclarations(slot, media);
+    expect(declarations["border-color"]).toBe("buttontext");
+    expect(declarations["color"]).toBe("canvastext");
+    expect(declarations["background-color"]).toBe("canvas");
+    expect(declarations["outline"]).toBe("2px solid highlight");
+    expect(declarations["outline-offset"]).toBe("1px");
+    expect(otpDeclarations(caret, media)["background-color"]).toBe("canvastext");
+  });
+
+  it("restores forced-color disabled container opacity and slot colors", () => {
+    render(
+      <InputOTP
+        maxLength={1}
+        aria-label='Disabled high-contrast code'
+        disabled>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='disabled-contrast-slot'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+    const input = screen.getByRole("textbox", {name: "Disabled high-contrast code"});
+    const container = input.closest(`.${styles.container}`);
+    if (!container) throw new Error("Expected the actual OTP container");
+    expect(input).toBeDisabled();
+    expect(otpDeclarations(container)["opacity"]).toBe(".5");
+    const media = "(forced-colors: active)";
+    expect(otpDeclarations(container, media)["opacity"]).toBe("1");
+    const declarations = otpDeclarations(screen.getByTestId("disabled-contrast-slot"), media);
+    expect(declarations["color"]).toBe("graytext");
+    expect(declarations["border-color"]).toBe("graytext");
+  });
+
+  it("retains forced-color invalid borders for actual backing-input state", () => {
+    render(
+      <InputOTP
+        maxLength={1}
+        aria-label='Invalid high-contrast code'
+        aria-invalid='true'>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='invalid-contrast-slot'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+    expect(screen.getByRole("textbox", {name: "Invalid high-contrast code"})).toHaveAttribute("aria-invalid", "true");
+    expect(otpDeclarations(screen.getByTestId("invalid-contrast-slot"), "(forced-colors: active)")["border-color"]).toBe("linktext");
+  });
+
   it("exposes slot, active and caret states from the actual backing input", async () => {
     const user = userEvent.setup();
     render(

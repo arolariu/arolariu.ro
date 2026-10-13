@@ -44,33 +44,33 @@
     font-weight: 500;
     padding: 0;
   }
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    .input {
-      transition: none;
-    }
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .input {
+    border-color: ButtonText;
   }
 
-  @media (forced-colors: active) {
-    .input {
-      border-color: ButtonText;
-    }
+  .input:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
 
-    .input:focus-visible {
-      outline: 2px solid Highlight;
-      outline-offset: 2px;
-    }
+  .input:disabled,
+  .input[data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+    opacity: 1;
+  }
 
-    .input:disabled,
-    .input[data-disabled] {
-      border-color: GrayText;
-      color: GrayText;
-      opacity: 1;
-    }
-
-    .input[aria-invalid="true"],
-    .input[data-invalid] {
-      border-color: LinkText;
-    }
+  .input[aria-invalid="true"],
+  .input[data-invalid] {
+    border-color: LinkText;
   }
 }

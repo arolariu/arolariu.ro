@@ -95,48 +95,48 @@
     opacity: 1;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .slot {
-      transition: none;
-    }
-
-    .fakeCaret {
-      animation: none;
-    }
-  }
-
-  @media (forced-colors: active) {
-    .slot {
-      border-color: ButtonText;
-      color: CanvasText;
-      background-color: Canvas;
-    }
-
-    .slot[data-active="true"] {
-      outline: 2px solid Highlight;
-      outline-offset: 1px;
-    }
-
-    .container:has(.input:disabled) {
-      opacity: 1;
-    }
-
-    .container:has(.input:disabled) .slot {
-      color: GrayText;
-      border-color: GrayText;
-    }
-
-    .container:has(.input[aria-invalid="true"]) .slot {
-      border-color: LinkText;
-    }
-
-    .fakeCaret {
-      background-color: CanvasText;
-    }
-  }
-
   20%,
   50% {
     opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot {
+    transition: none;
+  }
+
+  .fakeCaret {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .slot {
+    border-color: ButtonText;
+    color: CanvasText;
+    background-color: Canvas;
+  }
+
+  .slot[data-active="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  .container:has(.input:disabled) {
+    opacity: 1;
+  }
+
+  .container:has(.input:disabled) .slot {
+    color: GrayText;
+    border-color: GrayText;
+  }
+
+  .container:has(.input[aria-invalid="true"]) .slot {
+    border-color: LinkText;
+  }
+
+  .fakeCaret {
+    background-color: CanvasText;
   }
 }
