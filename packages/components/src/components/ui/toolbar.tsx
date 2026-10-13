@@ -163,32 +163,32 @@ const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLink.Props>(
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toolbar {
-  export type Props = ToolbarProps;
-  export type State = ToolbarState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
+  export type State = BaseToolbar.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarButton {
-  export type Props = ToolbarButtonProps;
-  export type State = ToolbarButtonState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
+  export type State = BaseToolbar.Button.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarGroup {
-  export type Props = ToolbarGroupProps;
-  export type State = ToolbarGroupState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
+  export type State = BaseToolbar.Group.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarSeparator {
-  export type Props = ToolbarSeparatorProps;
-  export type State = ToolbarSeparatorState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
+  export type State = BaseToolbar.Separator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarLink {
-  export type Props = ToolbarLinkProps;
-  export type State = ToolbarLinkState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
+  export type State = BaseToolbar.Link.State;
 }
 
 /** Props for the keyboard-accessible toolbar root. */

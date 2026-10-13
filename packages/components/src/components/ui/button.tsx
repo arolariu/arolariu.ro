@@ -134,6 +134,7 @@ Button.displayName = "Button";
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Button {
   export type State = ButtonState;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = ButtonProps;
 }
 

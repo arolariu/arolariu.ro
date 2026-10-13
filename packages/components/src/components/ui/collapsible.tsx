@@ -15,12 +15,14 @@ export interface CollapsibleTriggerProps extends Omit<React.ComponentPropsWithRe
    * Applies additional CSS classes to the component root element.
    * @default undefined
    */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
   /**
    * Enables child element composition instead of rendering the default wrapper.
    * @default false
    * @deprecated Prefer Base UI's `render` prop.
    */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   asChild?: boolean | undefined;
 }
 
@@ -30,6 +32,7 @@ export interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRe
    * Applies additional CSS classes to the component root element.
    * @default undefined
    */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
 }
 

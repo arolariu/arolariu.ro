@@ -193,38 +193,38 @@ const NumberFieldScrubArea = React.forwardRef<HTMLSpanElement, NumberFieldScrubA
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberField {
-  export type Props = NumberFieldProps;
-  export type State = NumberFieldState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Root>;
+  export type State = BaseNumberField.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldGroup {
-  export type Props = NumberFieldGroupProps;
-  export type State = NumberFieldGroupState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Group>;
+  export type State = BaseNumberField.Group.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldInput {
-  export type Props = NumberFieldInputProps;
-  export type State = NumberFieldInputState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Input>;
+  export type State = BaseNumberField.Input.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldIncrement {
-  export type Props = NumberFieldIncrementProps;
-  export type State = NumberFieldIncrementState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Increment>;
+  export type State = BaseNumberField.Increment.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldDecrement {
-  export type Props = NumberFieldDecrementProps;
-  export type State = NumberFieldDecrementState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Decrement>;
+  export type State = BaseNumberField.Decrement.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldScrubArea {
-  export type Props = NumberFieldScrubAreaProps;
-  export type State = NumberFieldScrubAreaState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.ScrubArea>;
+  export type State = BaseNumberField.ScrubArea.State;
 }
 
 /** Props for the numeric field root, including value, locale, bounds and DOM refs. */

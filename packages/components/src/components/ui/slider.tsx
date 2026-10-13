@@ -86,6 +86,7 @@ function renderSlider<Value extends number | readonly number[]>(
 
 // Preserve the generic primitive contract and React 18 ref compatibility without type assertions.
 function forwardSliderRef(render: typeof renderSlider): SliderComponent;
+// eslint-disable-next-line no-redeclare -- TypeScript overload retains generic scalar/range callbacks and React 18 ref support without assertions.
 function forwardSliderRef(
   render: typeof renderSlider,
 ): React.ForwardRefExoticComponent<React.PropsWithoutRef<Readonly<SliderProps>> & React.RefAttributes<HTMLDivElement>> {
@@ -101,6 +102,7 @@ const Slider = forwardSliderRef(renderSlider);
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Slider {
   export type Props<Value extends number | readonly number[] = number | readonly number[]> = SliderProps<Value>;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- Preserve the mandated Slider.State namespace alongside the named SliderState export.
   export type State = SliderState;
   export type ChangeEventDetails = BaseSlider.Root.ChangeEventDetails;
   export type CommitEventDetails = BaseSlider.Root.CommitEventDetails;

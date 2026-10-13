@@ -17,6 +17,7 @@ export interface AccordionArrayProps extends BaseAccordion.Root.Props<string> {
   /** Omit the legacy discriminator when using the native array contract. */
   type?: undefined;
   /** Whether the last expanded panel can be collapsed. @default true */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   collapsible?: boolean | undefined;
 }
 
@@ -33,10 +34,13 @@ export interface AccordionSingleProps extends Omit<AccordionArrayProps, "type" |
   /** Use the legacy discriminator, not the native multiple flag, in this adapter. */
   multiple?: never;
   /** The initially expanded item identifier, or an empty string for no selection. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   defaultValue?: string | undefined;
   /** Called with the legacy selection and the original cancellable Base UI details. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   onValueChange?: ((value: string | undefined, eventDetails: BaseAccordion.Root.ChangeEventDetails) => void) | undefined;
   /** The controlled item identifier, or an empty string for controlled no selection. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   value?: string | undefined;
 }
 
@@ -59,6 +63,7 @@ interface AccordionComponent {
   (props: Readonly<AccordionMultipleProps>): React.ReactNode;
   (props: Readonly<AccordionProps>): React.ReactNode;
   (props: Readonly<AccordionArrayProps>): React.ReactNode;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- React displayName metadata permits explicit undefined under exactOptionalPropertyTypes
   displayName?: string | undefined;
 }
 
@@ -71,8 +76,10 @@ function isLegacySingleAccordion(props: Readonly<AccordionProps>): props is Read
  */
 export interface AccordionItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Item>, "className" | "value"> {
   /** Unique string identifier; canonical arrays also support the empty string. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   value?: string | undefined;
   /** Additional CSS classes merged with the accordion item styles. @default undefined */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
 }
 
@@ -81,6 +88,7 @@ export interface AccordionItemProps extends Omit<React.ComponentPropsWithRef<typ
  */
 export interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Trigger>, "className"> {
   /** Additional CSS classes merged with the accordion trigger styles. @default undefined */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
 }
 
@@ -89,6 +97,7 @@ export interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<
  */
 export interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Panel>, "className"> {
   /** Additional classes for the inner content slot, preserving outer panel animation styles. @default undefined */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
 }
 
@@ -281,6 +290,7 @@ AccordionContent.displayName = "AccordionContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Accordion {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserve the mandated Accordion.Props public namespace contract
   export type Props = AccordionProps;
   export type ArrayProps = AccordionArrayProps;
   export type SingleProps = AccordionSingleProps;

@@ -131,26 +131,26 @@ const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabel.Props>(
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Meter {
-  export type Props = MeterProps;
-  export type State = MeterState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
+  export type State = BaseMeter.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterTrack {
-  export type Props = MeterTrackProps;
-  export type State = MeterTrackState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
+  export type State = BaseMeter.Track.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterIndicator {
-  export type Props = MeterIndicatorProps;
-  export type State = MeterIndicatorState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
+  export type State = BaseMeter.Indicator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterLabel {
-  export type Props = MeterLabelProps;
-  export type State = MeterLabelState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
+  export type State = BaseMeter.Label.State;
 }
 
 /** Props for the meter root, including value, formatting, render composition and DOM refs. */

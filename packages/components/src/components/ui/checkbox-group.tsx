@@ -41,8 +41,8 @@ const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>(
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace CheckboxGroup {
-  export type Props = CheckboxGroupProps;
-  export type State = CheckboxGroupState;
+  export type Props = React.ComponentPropsWithRef<typeof BaseCheckboxGroup>;
+  export type State = BaseCheckboxGroup.State;
 }
 
 /** Props accepted by the checkbox group, including primitive render composition and DOM refs. */
