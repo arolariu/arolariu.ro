@@ -7,438 +7,277 @@ import {X} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {Button} from "./button";
 import styles from "./sheet.module.css";
 
+/** Viewport edge from which a sheet enters. */
 export type SheetSide = "top" | "right" | "bottom" | "left";
+/** Base UI owns modal state, dismissal, focus and trigger payloads. */
+export type SheetProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payload>>;
+/** Trigger props with the existing single-element slot compatibility. */
+export type SheetTriggerProps = Readonly<Omit<BaseDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>; asChild?: boolean}>;
+/** Unstyled primitive dismissal control. */
+export type SheetCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDialog.Close>>;
+/** Primitive backdrop props with presentation classes. */
+export type SheetOverlayProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {className?: string}>;
+/** Sheet popup options retain Base UI's real state, ref and focus contracts. */
+export type SheetContentProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> & {
+    className?: string;
+    /** Viewport edge. @default "right" */
+    side?: SheetSide;
+    /** Append the automatic icon close after content. @default true */
+    showCloseButton?: boolean;
+  }
+>;
+/** Layout props use the actual Base UI polymorphic render contract. */
+export type SheetHeaderProps = Readonly<
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    ref?: React.Ref<HTMLElement>;
+    /** Legacy single-element slot. Prefer `render`. @default false */
+    asChild?: boolean;
+  }
+>;
+/** Footer layout positioned after sheet content. */
+export type SheetFooterProps = Readonly<SheetHeaderProps>;
+/** Accessible sheet heading. */
+export type SheetTitleProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {className?: string}>;
+/** Accessible sheet description. */
+export type SheetDescriptionProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
+>;
 
-interface SheetProps extends React.ComponentPropsWithRef<typeof BaseDialog.Root> {}
-
-interface SheetTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
+function legacyChild(children: React.ReactNode, asChild: boolean): React.ReactElement | undefined {
+  if (!asChild) return undefined;
+  if (!React.isValidElement(children) || children.type === React.Fragment) {
+    throw new TypeError("Sheet asChild requires a single non-Fragment React element.");
+  }
+  return children;
 }
 
-interface SheetOverlayProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-export interface SheetContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Controls which side of the viewport the sheet enters from.
-   * @default "right"
-   */
-  side?: SheetSide;
-}
-
-interface SheetHeaderProps extends React.ComponentPropsWithRef<"div"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-interface SheetFooterProps extends React.ComponentPropsWithRef<"div"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-interface SheetTitleProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface SheetDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-/**
- * Coordinates sheet state and accessibility behavior.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <Sheet>Content</Sheet>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function Sheet(props: Readonly<Sheet.Props>): React.ReactElement {
+/** Coordinates a sheet using the real modal Dialog primitive, without an extra DOM wrapper. */
+function Sheet<Payload = unknown>(props: Readonly<Sheet.Props<Payload>>): React.ReactElement {
   return <BaseDialog.Root {...props} />;
 }
+Sheet.displayName = "Sheet";
 
-/**
- * Provides the sheet portal container.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <SheetPortal>Content</SheetPortal>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
+/** Portals sheet parts; supports Base UI's `keepMounted` contract. */
 const SheetPortal = BaseDialog.Portal;
-/**
- * Renders the sheet close.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <SheetClose>Content</SheetClose>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-const SheetClose = BaseDialog.Close;
 
-/**
- * Renders the sheet trigger.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetTrigger>Content</SheetTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-const SheetTrigger = React.forwardRef<HTMLButtonElement, SheetTrigger.Props>(
-  (props: Readonly<SheetTrigger.Props>, ref): React.ReactElement => {
-    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-    const {asChild = false, children, className, render, ...otherProps} = props;
-    const renderProp = asChild && React.isValidElement(children) ? children : render;
+/** Closes a sheet without imposing the automatic close icon's styling. */
+function SheetClose(props: Readonly<SheetClose.Props>): React.ReactElement {
+  return (
+    <BaseDialog.Close
+      data-slot='sheet-close'
+      {...props}
+    />
+  );
+}
+SheetClose.displayName = "SheetClose";
 
+/** Opens a sheet; render callbacks receive the primitive's live open/disabled state. */
+const SheetTrigger = React.forwardRef<HTMLElement, SheetTrigger.Props>(
+  ({asChild = false, children, render, nativeButton, ...props}: Readonly<SheetTrigger.Props>, ref): React.ReactElement => {
+    const child = legacyChild(children, asChild);
+    const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+      (element) => {
+        if (typeof ref === "function") return ref(element);
+        if (ref) ref.current = element;
+        return undefined;
+      },
+      [ref],
+    );
     return (
       <BaseDialog.Trigger
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: renderProp as never,
-          props: mergeProps({className}, {}),
-        })}>
-        {renderProp ? undefined : children}
+        data-slot='sheet-trigger'
+        {...props}
+        ref={primitiveRef}
+        nativeButton={nativeButton ?? (child && typeof child.type === "string" ? child.type === "button" : true)}
+        render={child ?? render}>
+        {child ? undefined : children}
       </BaseDialog.Trigger>
     );
   },
 );
+SheetTrigger.displayName = "SheetTrigger";
 
-/**
- * Renders the sheet overlay.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetOverlay>Content</SheetOverlay>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function SheetOverlay(props: Readonly<SheetOverlay.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
-
+/** Renders the backdrop below the sheet, forwarding primitive-owned composition unchanged. */
+function SheetOverlay({className, ...props}: Readonly<SheetOverlay.Props>): React.ReactElement {
   return (
     <BaseDialog.Backdrop
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.backdrop, className)}, {}),
-      })}
+      data-slot='sheet-overlay'
+      {...props}
+      className={cn(styles.backdrop, className)}
     />
   );
 }
+SheetOverlay.displayName = "SheetOverlay";
 
 /**
- * Renders the sheet content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetContent>Content</SheetContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ * Portals a sheet from one of four edges. Base UI owns focus and modal behavior.
+ * The automatic close is last in DOM order and can be disabled.
  */
-const SheetContent = React.forwardRef<React.ComponentRef<typeof BaseDialog.Popup>, SheetContent.Props>(
-  (props: Readonly<SheetContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, side = "right", ...otherProps} = props;
-
+const SheetContent = React.forwardRef<HTMLDivElement, SheetContent.Props>(
+  (
+    {className, children, render, side = "right", showCloseButton = true, ...props}: Readonly<React.PropsWithoutRef<SheetContent.Props>>,
+    ref,
+  ): React.ReactElement => {
+    const renderElement = React.isValidElement<{children?: React.ReactNode}>(render) ? render : undefined;
+    const content = (
+      <>
+        {children === undefined ? renderElement?.props.children : children}
+        {showCloseButton ? (
+          <SheetClose
+            aria-label='Close'
+            render={
+              <Button
+                variant='ghost'
+                size='icon-sm'
+                className={cn(styles.close)}
+              />
+            }>
+            <X
+              aria-hidden='true'
+              className={styles.closeIcon}
+            />
+          </SheetClose>
+        ) : null}
+      </>
+    );
+    // eslint-disable-next-line react-x/no-clone-element -- extend only top-level children; Base UI still owns state, event and ref merging.
+    const popupRender = renderElement ? React.cloneElement(renderElement, {children: content}) : render;
     return (
       <SheetPortal>
         <SheetOverlay />
         <BaseDialog.Popup
+          data-slot='sheet-content'
+          data-side={side}
+          {...props}
           ref={ref}
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, styles[side], className)}, {}),
-          })}>
-          <BaseDialog.Close
-            aria-label='Close'
-            className={styles.close}>
-            <X className={styles.closeIcon} />
-          </BaseDialog.Close>
-          {children}
+          render={popupRender}
+          className={cn(styles.popup, styles[side], className)}>
+          {content}
         </BaseDialog.Popup>
       </SheetPortal>
     );
   },
 );
+SheetContent.displayName = "SheetContent";
 
-/**
- * Renders the sheet header.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetHeader>Content</SheetHeader>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function SheetHeader(props: Readonly<SheetHeader.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+/** Composes the sheet heading layout while preserving child content, events and refs. */
+const SheetHeader = React.forwardRef<HTMLElement, SheetHeader.Props>(
+  (
+    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<SheetHeader.Props>>,
+    ref,
+  ): React.ReactElement => {
+    const child = legacyChild(children, asChild);
+    return useRender({
+      defaultTagName: "div",
+      ref,
+      render: child ?? render,
+      props: {
+        "data-slot": "sheet-header",
+        ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+          children: child ? undefined : children,
+        }),
+      },
+    });
+  },
+);
+SheetHeader.displayName = "SheetHeader";
 
-  return useRender({
-    defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.header, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
-  });
-}
+/** Composes actions at the end of the sheet without creating a nested wrapper. */
+const SheetFooter = React.forwardRef<HTMLElement, SheetFooter.Props>(
+  (
+    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<SheetFooter.Props>>,
+    ref,
+  ): React.ReactElement => {
+    const child = legacyChild(children, asChild);
+    return useRender({
+      defaultTagName: "div",
+      ref,
+      render: child ?? render,
+      props: {
+        "data-slot": "sheet-footer",
+        ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+          children: child ? undefined : children,
+        }),
+      },
+    });
+  },
+);
+SheetFooter.displayName = "SheetFooter";
 
-/**
- * Renders the sheet footer.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetFooter>Content</SheetFooter>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function SheetFooter(props: Readonly<SheetFooter.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
-  return useRender({
-    defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.footer, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
-  });
-}
-
-/**
- * Renders the sheet title.
- *
- * @remarks
- * - Renders a `<h2>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetTitle>Content</SheetTitle>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function SheetTitle(props: Readonly<SheetTitle.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+/** Renders the accessible sheet heading using primitive-owned composition. */
+function SheetTitle({className, ...props}: Readonly<SheetTitle.Props>): React.ReactElement {
   return (
     <BaseDialog.Title
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "h2",
-        render: render as never,
-        props: mergeProps({className: cn(styles.title, className)}, {}),
-      })}>
-      {children}
-    </BaseDialog.Title>
+      data-slot='sheet-title'
+      {...props}
+      className={cn(styles.title, className)}
+    />
   );
 }
+SheetTitle.displayName = "SheetTitle";
 
-/**
- * Renders the sheet description.
- *
- * @remarks
- * - Renders a `<p>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <SheetDescription>Content</SheetDescription>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-function SheetDescription(props: Readonly<SheetDescription.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+/** Renders the accessible sheet description using primitive-owned composition. */
+function SheetDescription({className, ...props}: Readonly<SheetDescription.Props>): React.ReactElement {
   return (
     <BaseDialog.Description
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "p",
-        render: render as never,
-        props: mergeProps({className: cn(styles.description, className)}, {}),
-      })}>
-      {children}
-    </BaseDialog.Description>
+      data-slot='sheet-description'
+      {...props}
+      className={cn(styles.description, className)}
+    />
   );
 }
+SheetDescription.displayName = "SheetDescription";
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace Sheet {
-  export type Props = SheetProps;
+  export type Props<Payload = unknown> = SheetProps<Payload>;
   export type State = BaseDialog.Root.State;
+  export type Actions = BaseDialog.Root.Actions;
+  export type ChangeEventDetails = BaseDialog.Root.ChangeEventDetails;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetTrigger {
-  export type Props = SheetTriggerProps;
+  export type Props = Readonly<SheetTriggerProps>;
   export type State = BaseDialog.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
+namespace SheetClose {
+  export type Props = Readonly<SheetCloseProps>;
+  export type State = BaseDialog.Close.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetOverlay {
-  export type Props = SheetOverlayProps;
+  export type Props = Readonly<SheetOverlayProps>;
   export type State = BaseDialog.Backdrop.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetContent {
-  export type Props = SheetContentProps;
+  export type Props = Readonly<SheetContentProps>;
   export type State = BaseDialog.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetHeader {
-  export type Props = SheetHeaderProps;
+  export type Props = Readonly<SheetHeaderProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetFooter {
-  export type Props = SheetFooterProps;
+  export type Props = Readonly<SheetFooterProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetTitle {
-  export type Props = SheetTitleProps;
+  export type Props = Readonly<SheetTitleProps>;
   export type State = BaseDialog.Title.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace SheetDescription {
-  export type Props = SheetDescriptionProps;
+  export type Props = Readonly<SheetDescriptionProps>;
   export type State = BaseDialog.Description.State;
 }
-
-Sheet.displayName = "Sheet";
-SheetPortal.displayName = "SheetPortal";
-SheetClose.displayName = "SheetClose";
-SheetTrigger.displayName = "SheetTrigger";
-SheetOverlay.displayName = "SheetOverlay";
-SheetContent.displayName = "SheetContent";
-SheetHeader.displayName = "SheetHeader";
-SheetFooter.displayName = "SheetFooter";
-SheetTitle.displayName = "SheetTitle";
-SheetDescription.displayName = "SheetDescription";
 
 export {Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger};

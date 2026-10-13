@@ -1,39 +1,40 @@
-import {useState} from "react";
+import {useId, useRef, useState, type ReactElement} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+
 import {Button} from "./button";
 import {Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "./dialog";
-import {Input} from "./input";
-import {Label} from "./label";
+import styles from "./dialog.module.css";
 
 const meta = {
   title: "Components/Feedback/Dialog",
   component: Dialog,
   tags: ["autodocs"],
-  argTypes: {},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Base UI owns modal/focus behavior. Content now appends an icon Close by default; exported DialogClose is unstyled. Footer Close is opt-in. Compose Buttons through render, never by nesting buttons.",
+      },
+    },
+  },
 } satisfies Meta<typeof Dialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
+  render: (): ReactElement => (
     <Dialog>
-      <DialogTrigger>
-        <Button>Open Dialog</Button>
-      </DialogTrigger>
+      <DialogTrigger render={<Button />}>Open Dialog</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Dialog Title</DialogTitle>
-          <DialogDescription>This is a description of what the dialog is about.</DialogDescription>
+          <DialogTitle>Review details</DialogTitle>
+          <DialogDescription>Review the information before continuing.</DialogDescription>
         </DialogHeader>
-        <div className='py-4'>
-          <p>Dialog content goes here. You can add any content you need.</p>
-        </div>
+        <p>The content is above the backdrop. Close controls can be customized independently.</p>
         <DialogFooter>
-          <DialogClose>
-            <Button variant='outline'>Cancel</Button>
-          </DialogClose>
-          <Button>Confirm</Button>
+          <DialogClose render={<Button variant='outline' />}>Cancel</DialogClose>
+          <DialogClose render={<Button />}>Continue</DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -41,142 +42,152 @@ export const Default: Story = {
 };
 
 export const Simple: Story = {
-  render: () => (
+  render: (): ReactElement => (
     <Dialog>
-      <DialogTrigger>
-        <Button variant='outline'>Simple Dialog</Button>
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant='outline' />}>Simple Dialog</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Are you sure?</DialogTitle>
-          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogTitle>Notice</DialogTitle>
+          <DialogDescription>Dismiss with the automatic icon or Escape.</DialogDescription>
         </DialogHeader>
       </DialogContent>
     </Dialog>
   ),
 };
 
-function WithFormDemo() {
+function WithFormDemo(): ReactElement {
+  const id = useId();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
   return (
     <Dialog>
-      <DialogTrigger>
-        <Button>Open Form Dialog</Button>
-      </DialogTrigger>
+      <DialogTrigger render={<Button />}>Open Form Dialog</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>Update your profile information below.</DialogDescription>
+          <DialogTitle>Edit details</DialogTitle>
+          <DialogDescription>This example keeps form values in the caller.</DialogDescription>
         </DialogHeader>
-        <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem 0"}}>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            <Label htmlFor='name'>Name</Label>
-            <Input
-              id='name'
+        <div className={styles.formFields}>
+          <label
+            className={styles.field}
+            htmlFor={`${id}-name`}>
+            Name
+            <input
+              id={`${id}-name`}
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder='Enter your name'
+              onChange={(event) => setName(event.target.value)}
             />
-          </div>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            <Label htmlFor='email'>Email</Label>
-            <Input
-              id='email'
+          </label>
+          <label
+            className={styles.field}
+            htmlFor={`${id}-email`}>
+            Email
+            <input
+              id={`${id}-email`}
               type='email'
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder='Enter your email'
+              onChange={(event) => setEmail(event.target.value)}
             />
-          </div>
+          </label>
         </div>
-        <DialogFooter>
-          <DialogClose>
-            <Button variant='outline'>Cancel</Button>
-          </DialogClose>
-          <Button>Save Changes</Button>
+        <DialogFooter showCloseButton>
+          <Button>Save draft</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-export const WithForm: Story = {
-  render: () => <WithFormDemo />,
-};
+export const WithForm: Story = {render: (): ReactElement => <WithFormDemo />};
 
 export const Scrollable: Story = {
-  render: () => (
+  render: (): ReactElement => (
     <Dialog>
-      <DialogTrigger>
-        <Button variant='outline'>Scrollable Content</Button>
-      </DialogTrigger>
-      <DialogContent style={{maxHeight: "80vh"}}>
+      <DialogTrigger render={<Button variant='outline' />}>Scrollable Content</DialogTrigger>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Terms and Conditions</DialogTitle>
-          <DialogDescription>Please read and accept our terms of service.</DialogDescription>
+          <DialogTitle>Long-form details</DialogTitle>
+          <DialogDescription>Content scrolls inside the bounded popup.</DialogDescription>
         </DialogHeader>
-        <div style={{overflowY: "auto", maxHeight: "400px", padding: "1rem 0"}}>
-          <p style={{marginBottom: "1rem"}}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-            enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </p>
-          <p style={{marginBottom: "1rem"}}>
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-            cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-          </p>
-          <p style={{marginBottom: "1rem"}}>
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa
-            quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-          </p>
-          <p style={{marginBottom: "1rem"}}>
-            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione
-            voluptatem sequi nesciunt.
-          </p>
-          <p style={{marginBottom: "1rem"}}>
-            Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi
-            tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
-          </p>
-          <p>
-            Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi
-            consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.
-          </p>
+        <div className={styles.scrollContent}>
+          {Array.from({length: 12}, (_, index) => (
+            <p key={index}>Section {index + 1}: review the details and use the explicit controls when finished.</p>
+          ))}
         </div>
-        <DialogFooter>
-          <DialogClose>
-            <Button variant='outline'>Decline</Button>
-          </DialogClose>
-          <Button>Accept</Button>
-        </DialogFooter>
+        <DialogFooter showCloseButton />
       </DialogContent>
     </Dialog>
   ),
 };
 
 export const CustomWidth: Story = {
-  render: () => (
+  render: (): ReactElement => (
     <Dialog>
-      <DialogTrigger>
-        <Button>Wide Dialog</Button>
-      </DialogTrigger>
-      <DialogContent style={{maxWidth: "800px", width: "90vw"}}>
+      <DialogTrigger render={<Button />}>Wide Dialog</DialogTrigger>
+      <DialogContent
+        className={styles.wide}
+        showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Custom Width Dialog</DialogTitle>
-          <DialogDescription>This dialog has a custom maximum width of 800px.</DialogDescription>
+          <DialogTitle>Custom width</DialogTitle>
+          <DialogDescription>A caller CSS Module changes width; the automatic icon is disabled.</DialogDescription>
         </DialogHeader>
-        <div style={{padding: "2rem 0"}}>
-          <p>
-            This dialog demonstrates how to adjust the width. The content area can accommodate more information or wider components like
-            data tables, side-by-side layouts, or detailed forms.
-          </p>
-        </div>
-        <DialogFooter>
-          <DialogClose>
-            <Button>Close</Button>
-          </DialogClose>
-        </DialogFooter>
+        <DialogFooter showCloseButton />
       </DialogContent>
     </Dialog>
   ),
+};
+
+function FocusContractDemo(): ReactElement {
+  const id = useId();
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <div className={styles.formFields}>
+      <p>
+        Open by keyboard. Focus enters the field. Check Tab and Shift+Tab containment, nested Escape dismissal, background inertness, and
+        focus return to each trigger in a real browser.
+      </p>
+      <Dialog>
+        <DialogTrigger render={<Button />}>Open focus contract</DialogTrigger>
+        <DialogContent initialFocus={input}>
+          <DialogHeader>
+            <DialogTitle>Focus contract</DialogTitle>
+            <DialogDescription>The automatic close follows all supplied content in DOM order.</DialogDescription>
+          </DialogHeader>
+          <label
+            className={styles.field}
+            htmlFor={id}>
+            First field
+            <input
+              ref={input}
+              id={id}
+            />
+          </label>
+          <Dialog>
+            <DialogTrigger render={<Button variant='outline' />}>Open nested dialog</DialogTrigger>
+            <DialogContent>
+              <DialogTitle>Nested focus contract</DialogTitle>
+              <DialogDescription>Escape closes only this topmost dialog and returns focus to its trigger.</DialogDescription>
+              <DialogClose render={<Button variant='outline' />}>Return to parent</DialogClose>
+            </DialogContent>
+          </Dialog>
+          <DialogFooter>
+            <DialogClose render={<Button variant='outline' />}>Cancel</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Button variant='outline'>Background focus target</Button>
+    </div>
+  );
+}
+
+export const FocusContract: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Interactive native-focus documentation, not automated proof. Vitest asserts the real controller's focus requests, emitted hidden/inert state and cancellations under happy-dom; native tab/inert enforcement needs browser inspection.",
+      },
+    },
+  },
+  render: (): ReactElement => <FocusContractDemo />,
 };
