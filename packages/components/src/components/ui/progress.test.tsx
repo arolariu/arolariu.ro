@@ -1,6 +1,9 @@
 import {Progress as BaseProgress} from "@base-ui/react/progress";
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Window} from "happy-dom";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it} from "vitest";
 
@@ -218,6 +221,57 @@ describe("Progress", () => {
     expect(container.querySelector('[data-slot="progress-indicator"]')).not.toHaveAttribute("style");
     expect(screen.getByTestId("pending-value")).toBeEmptyDOMElement();
     expect(screen.getByTestId("pending-value")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it.each([
+    {preference: "no-preference", value: null},
+    {preference: "no-preference", value: undefined},
+    {preference: "no-preference", value: 50},
+    {preference: "reduce", value: null},
+    {preference: "reduce", value: undefined},
+    {preference: "reduce", value: 50},
+  ])("honors the authored motion cascade for preference $preference and value $value", async ({preference, value}) => {
+    const {container} = render(
+      <Progress
+        aria-label='Motion preference'
+        value={value}
+      />,
+    );
+    const renderedIndicator = container.querySelector('[data-slot="progress-indicator"]');
+    if (!renderedIndicator) {
+      throw new Error("Progress must render an indicator.");
+    }
+
+    const browser = new Window({settings: {device: {prefersReducedMotion: preference}}});
+    try {
+      const stylesheet = browser.document.createElement("style");
+      stylesheet.textContent = readFileSync(join(import.meta.dirname, "progress.module.css"), "utf8");
+      browser.document.head.append(stylesheet);
+      browser.document.body.innerHTML = renderedIndicator.outerHTML;
+      const indicator = browser.document.querySelector('[data-slot="progress-indicator"]');
+      if (!indicator) {
+        throw new Error("The cascade document must retain the rendered indicator.");
+      }
+
+      // Authored and CSS Module class names have identical specificity.
+      indicator.classList.add("indicator");
+      const computed = browser.getComputedStyle(indicator);
+      expect(browser.matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(preference === "reduce");
+      if (preference === "reduce") {
+        expect(computed.animation).toBe("none");
+        expect(computed.transition).toBe("none");
+      } else {
+        expect(computed.transition).toBe("width 200ms ease");
+        if (value !== 50) {
+          expect(computed.animation).toBe("indeterminate 1.5s ease-in-out infinite");
+        } else {
+          expect(computed.animation).not.toContain("infinite");
+        }
+      }
+      expect(computed.width).toBe("50%");
+    } finally {
+      await browser.happyDOM.close();
+    }
   });
 
   it("normalizes a custom min/max range using primitive formatting and fill", () => {

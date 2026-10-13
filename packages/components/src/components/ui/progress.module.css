@@ -77,6 +77,10 @@
     animation: none;
     transition: none;
   }
+
+  .indicator[data-indeterminate] {
+    animation: none;
+  }
 }
 
 @media (forced-colors: active) {
