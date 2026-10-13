@@ -1,158 +1,210 @@
-/**
- * Combobox component styles
- * Compound component combining Command, Popover, and Button
- */
-
-/* Root container */
-.combobox {
-  display: contents;
-}
-
-/* Trigger button */
-.trigger {
-  justify-content: space-between;
+.inputGroup {
   width: 100%;
-  min-width: 200px;
 }
 
-.triggerValue {
-  flex: 1;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.input {
+  min-width: 0;
 }
 
-.triggerPlaceholder {
-  color: var(--ac-neutral-500);
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
 }
 
-.triggerIcon {
-  margin-left: var(--ac-spacing-2);
-  height: 1rem;
-  width: 1rem;
+.icon {
+  pointer-events: none;
   flex-shrink: 0;
-  opacity: 0.5;
+  width: 1rem;
+  height: 1rem;
 }
 
-/* Popover content */
+.clear {
+  flex-shrink: 0;
+}
+
+.positioner {
+  isolation: isolate;
+  z-index: 50;
+}
+
 .content {
+  box-sizing: border-box;
   width: var(--anchor-width);
-  min-width: 200px;
+  min-width: 10rem;
+  max-width: var(--available-width);
+  max-height: var(--available-height);
+  overflow: hidden;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+  font-size: var(--ac-text-sm);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--ac-transition-fast),
+    transform var(--ac-transition-fast);
+}
+
+.content[data-starting-style],
+.content[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.content[data-chips="true"] {
+  min-width: var(--anchor-width);
+}
+
+.list {
+  max-height: min(18rem, var(--available-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ac-space-1);
+}
+
+.list[data-empty] {
   padding: 0;
 }
 
-/* Command container */
-.command {
-  border: none;
-  box-shadow: none;
-}
-
-.commandInput {
-  border-bottom: 1px solid var(--ac-neutral-200);
-  border-radius: 0;
-}
-
-.commandList {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Items */
 .item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--ac-spacing-2);
-  cursor: pointer;
-  padding: var(--ac-spacing-2) var(--ac-spacing-3);
+  gap: var(--ac-space-2);
+  min-height: var(--ac-size-default);
+  padding: var(--ac-space-1) var(--ac-space-2);
+  padding-inline-end: var(--ac-space-8);
   border-radius: var(--ac-radius-sm);
-  transition: background-color 0.2s;
+  cursor: default;
+  outline: none;
+  user-select: none;
 }
 
-.item:hover {
-  background-color: var(--ac-neutral-100);
+.item[data-highlighted] {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
 }
 
 .item[data-disabled] {
+  cursor: not-allowed;
   opacity: 0.5;
-  pointer-events: none;
 }
 
-.itemSelected {
-  background-color: var(--ac-neutral-100);
+.indicator {
+  position: absolute;
+  inset-inline-end: var(--ac-space-2);
+  display: flex;
+  align-items: center;
 }
 
-.itemCheck {
-  height: 1rem;
-  width: 1rem;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.itemCheckVisible {
-  opacity: 1;
-}
-
-.itemLabel {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Empty state */
-.empty {
-  padding: var(--ac-spacing-6) var(--ac-spacing-4);
-  text-align: center;
-  color: var(--ac-neutral-500);
-  font-size: var(--ac-font-size-sm);
-}
-
-/* Group */
 .group {
-  padding: var(--ac-spacing-1) 0;
+  padding-block: var(--ac-space-1);
 }
 
-/* Separator */
+.label {
+  padding: var(--ac-space-1) var(--ac-space-2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-xs);
+  font-weight: 500;
+}
+
+.empty {
+  padding: var(--ac-space-6) var(--ac-space-4);
+  color: var(--ac-muted-foreground);
+  text-align: center;
+}
+
 .separator {
-  margin: var(--ac-spacing-1) 0;
   height: 1px;
-  background-color: var(--ac-neutral-200);
+  margin-block: var(--ac-space-1);
+  background: var(--ac-border);
 }
 
-/* Dark mode */
-:global(.dark) .triggerPlaceholder {
-  color: var(--ac-neutral-400);
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-1);
+  min-height: var(--ac-size-default);
+  padding: var(--ac-space-1);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
 }
 
-:global(.dark) .commandInput {
-  border-bottom-color: var(--ac-neutral-700);
+.chips:focus-within {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
 }
 
-:global(.dark) .item:hover {
-  background-color: var(--ac-neutral-800);
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  padding-inline: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  font-size: var(--ac-text-sm);
 }
 
-:global(.dark) .itemSelected {
-  background-color: var(--ac-neutral-800);
+.chip[data-disabled] {
+  opacity: 0.5;
 }
 
-:global(.dark) .empty {
-  color: var(--ac-neutral-400);
+.chipRemove {
+  flex-shrink: 0;
 }
 
-:global(.dark) .separator {
-  background-color: var(--ac-neutral-700);
+.chipsInput {
+  flex: 1;
+  min-width: 4rem;
+  padding: var(--ac-space-1);
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .trigger {
-    min-width: 150px;
-  }
+.chipsInput:disabled {
+  cursor: not-allowed;
+}
 
+.story {
+  display: grid;
+  gap: var(--ac-space-3);
+  width: 20rem;
+  max-width: 100%;
+}
+
+.valueTrigger {
+  width: 100%;
+  padding: var(--ac-space-2) var(--ac-space-3);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.trigger:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
   .content {
-    min-width: 150px;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .item[data-highlighted] {
+    outline: 1px solid Highlight;
   }
 }
