@@ -32,7 +32,8 @@ const cursorTransition = {duration: 0.8, repeat: Infinity, repeatType: "reverse"
  * @remarks
  * Client component. A stable visually hidden phrase is readable immediately;
  * animated characters and the cursor are decorative. Reduced motion displays
- * completed text without a cursor. Changed words restart the visual reveal.
+ * completed text without a cursor. Changed word text restarts the entire
+ * decorative phrase without replacing the root or accessible text node.
  *
  * @example
  * ```tsx
@@ -60,6 +61,7 @@ const TypewriterText = React.forwardRef<HTMLDivElement, TypewriterTextProps>(
     const isInView = useInView(scopeRef, {once: true});
     const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
     const fullText = words.map((word) => word.text).join(" ");
+    const visualPhraseKey = JSON.stringify(words.map((word) => word.text));
     let characterOffset = 0;
 
     return (
@@ -72,6 +74,7 @@ const TypewriterText = React.forwardRef<HTMLDivElement, TypewriterTextProps>(
           <>
             <VisuallyHidden data-slot='typewriter-text'>{fullText}</VisuallyHidden>
             <div
+              key={visualPhraseKey}
               aria-hidden='true'
               data-slot='typewriter-visual'
               className={styles.inline}>

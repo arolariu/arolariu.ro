@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
-import {act, cleanup, render, screen} from "@testing-library/react";
+import {act, cleanup, render, screen, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
@@ -134,6 +134,75 @@ describe.each([TypewriterText, TypewriterTextSmooth])("Typewriter accessible ful
 });
 
 describe("Typewriter viewport lifecycle with real Motion", () => {
+  it.each([
+    {name: "leading", before: [{text: "Old"}, {text: "tail"}], after: [{text: "New"}, {text: "tail"}]},
+    {name: "trailing", before: [{text: "same"}, {text: "old"}], after: [{text: "same"}, {text: "new"}]},
+  ])("restarts every visual character when only the $name word changes", async ({before, after}) => {
+    const ref = React.createRef<HTMLDivElement>();
+    const setRef = vi.fn((node: HTMLDivElement | null): void => {
+      ref.current = node;
+    });
+    const {rerender} = render(
+      <TypewriterText
+        ref={setRef}
+        words={before}
+        role='group'
+        aria-label='Caller phrase'
+        data-testid='typing'
+      />,
+    );
+    const root = screen.getByRole("group", {name: "Caller phrase"});
+    const readablePhrase = screen.getByText(before.map((word) => word.text).join(" "), {selector: '[data-slot="typewriter-text"]'});
+    const oldCharacters = [...root.querySelectorAll<HTMLSpanElement>('[data-slot="typewriter-visual"] span > span')];
+    expect(oldCharacters).toHaveLength(7);
+    act(() => {
+      observed.forEach((observer) => observer.enter());
+    });
+    await waitFor(
+      () => {
+        oldCharacters.forEach((character) => expect(character).toHaveStyle({opacity: "1"}));
+      },
+      {timeout: 2500},
+    );
+
+    rerender(
+      <TypewriterText
+        ref={setRef}
+        words={before.map((word) => ({...word, className: "caller-word"}))}
+        role='group'
+        aria-label='Caller phrase'
+        data-testid='typing'
+      />,
+    );
+    expect([...root.querySelectorAll<HTMLSpanElement>('[data-slot="typewriter-visual"] span > span')]).toEqual(oldCharacters);
+    oldCharacters.forEach((character) => expect(character).toHaveStyle({opacity: "1"}));
+
+    rerender(
+      <TypewriterText
+        ref={setRef}
+        words={after}
+        role='group'
+        aria-label='Caller phrase'
+        data-testid='typing'
+      />,
+    );
+    const newCharacters = [...root.querySelectorAll<HTMLSpanElement>('[data-slot="typewriter-visual"] span > span')];
+    expect(newCharacters).toHaveLength(7);
+    newCharacters.forEach((character) => expect(character).toHaveStyle({opacity: "0"}));
+    expect(screen.getByRole("group", {name: "Caller phrase"})).toBe(root);
+    expect(ref.current).toBe(root);
+    expect(setRef).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(after.map((word) => word.text).join(" "), {selector: '[data-slot="typewriter-text"]'})).toBe(readablePhrase);
+    expect(observed).toHaveLength(1);
+    expect(root).toHaveAttribute("data-motion", "running");
+    await waitFor(
+      () => {
+        newCharacters.forEach((character) => expect(character).toHaveStyle({opacity: "1"}));
+      },
+      {timeout: 2500},
+    );
+  });
+
   it("observes an initially empty root so later words can reveal", () => {
     const {rerender, unmount} = render(
       <TypewriterText
