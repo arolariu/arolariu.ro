@@ -6,6 +6,338 @@ import {describe, expect, it} from "vitest";
 import {FocusScope} from "./focus-scope";
 
 describe("FocusScope", () => {
+  it("wraps actual Tab after the first of two unchecked group peers rather than escaping past the second", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FocusScope autoFocus>
+          <button type='button'>First scope action</button>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-edge'
+            />
+            First unchecked choice
+          </label>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-edge'
+            />
+            Second unchecked choice
+          </label>
+        </FocusScope>
+        <button type='button'>Outside action</button>
+      </>,
+    );
+
+    await user.tab();
+    expect(screen.getByLabelText("First unchecked choice")).toHaveFocus();
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "First scope action"})).toHaveFocus();
+    expect(screen.getByLabelText("First unchecked choice")).not.toBeChecked();
+    expect(screen.getByLabelText("Second unchecked choice")).not.toBeChecked();
+  });
+
+  it("uses one deliberate locally eligible unchecked representative when wrapping Shift+Tab", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope autoFocus>
+        <button type='button'>First scope action</button>
+        <label>
+          <input
+            type='radio'
+            name='unchecked-reverse-wrap'
+          />
+          Canonical unchecked choice
+        </label>
+        <label>
+          <input
+            type='radio'
+            name='unchecked-reverse-wrap'
+          />
+          Other unchecked choice
+        </label>
+      </FocusScope>,
+    );
+
+    await user.tab({shift: true});
+    expect(screen.getByLabelText("Canonical unchecked choice")).toHaveFocus();
+    await user.tab({shift: true});
+    expect(screen.getByRole("button", {name: "First scope action"})).toHaveFocus();
+  });
+
+  it("contains Shift+Tab after native reverse entry reaches the other unchecked peer at the first edge", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type='button'>Outside before</button>
+        <FocusScope>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-first-edge'
+            />
+            First edge choice
+          </label>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-first-edge'
+            />
+            Reverse-entered choice
+          </label>
+          <button type='button'>Last scope action</button>
+        </FocusScope>
+      </>,
+    );
+    screen.getByRole("button", {name: "Last scope action"}).focus();
+
+    await user.tab({shift: true});
+    expect(screen.getByLabelText("Reverse-entered choice")).toHaveFocus();
+    await user.tab({shift: true});
+
+    expect(screen.getByRole("button", {name: "Last scope action"})).toHaveFocus();
+  });
+
+  it("retains ordinary reverse navigation through a non-representative unchecked peer in the middle", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <button type='button'>Before the group</button>
+        <label>
+          <input
+            type='radio'
+            name='unchecked-middle'
+          />
+          Middle canonical choice
+        </label>
+        <label>
+          <input
+            type='radio'
+            name='unchecked-middle'
+          />
+          Middle reverse-entered choice
+        </label>
+        <button type='button'>After the group</button>
+      </FocusScope>,
+    );
+    screen.getByRole("button", {name: "After the group"}).focus();
+
+    await user.tab({shift: true});
+    expect(screen.getByLabelText("Middle reverse-entered choice")).toHaveFocus();
+    await user.tab({shift: true});
+
+    expect(screen.getByRole("button", {name: "Before the group"})).toHaveFocus();
+  });
+
+  it("keeps a single local unchecked edge even when an unchecked group peer precedes the scope outside", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <label>
+          <input
+            type='radio'
+            name='unchecked-external-peer'
+          />
+          External unchecked choice
+        </label>
+        <FocusScope autoFocus>
+          <button type='button'>First local action</button>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-external-peer'
+            />
+            First local choice
+          </label>
+          <label>
+            <input
+              type='radio'
+              name='unchecked-external-peer'
+            />
+            Second local choice
+          </label>
+        </FocusScope>
+        <button type='button'>Outside after</button>
+      </>,
+    );
+
+    await user.tab();
+    expect(screen.getByLabelText("First local choice")).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", {name: "First local action"})).toHaveFocus();
+  });
+
+  it("chooses the locally eligible unchecked representative rather than hidden or disabled peers", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope autoFocus>
+        <button type='button'>First scope action</button>
+        <input
+          type='radio'
+          name='eligible-unchecked'
+          hidden
+          aria-label='Hidden unchecked peer'
+        />
+        <input
+          type='radio'
+          name='eligible-unchecked'
+          disabled
+          aria-label='Disabled unchecked peer'
+        />
+        <label>
+          <input
+            type='radio'
+            name='eligible-unchecked'
+          />
+          Eligible unchecked representative
+        </label>
+        <label>
+          <input
+            type='radio'
+            name='eligible-unchecked'
+          />
+          Other eligible unchecked peer
+        </label>
+      </FocusScope>,
+    );
+
+    await user.tab({shift: true});
+
+    expect(screen.getByLabelText("Eligible unchecked representative")).toHaveFocus();
+  });
+
+  it("preserves caller cancellation while an unchecked group is the final controller edge", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope onKeyDown={(event) => event.preventDefault()}>
+        <button type='button'>First action</button>
+        <label>
+          <input
+            type='radio'
+            name='cancel-unchecked'
+          />
+          Focused unchecked choice
+        </label>
+        <label>
+          <input
+            type='radio'
+            name='cancel-unchecked'
+          />
+          Other unchecked choice
+        </label>
+      </FocusScope>,
+    );
+    const choice = screen.getByLabelText("Focused unchecked choice");
+    choice.focus();
+
+    await user.tab();
+
+    expect(choice).toHaveFocus();
+  });
+
+  it("advances from a later unchecked peer to the logical next local stop even when that peer is physically last", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FocusScope>
+          <button type='button'>First local stop</button>
+          <label>
+            <input
+              type='radio'
+              name='interleaved-unchecked'
+            />
+            Logical group representative
+          </label>
+          <button type='button'>Logical next local stop</button>
+          <label>
+            <input
+              type='radio'
+              name='interleaved-unchecked'
+            />
+            Physically last group peer
+          </label>
+        </FocusScope>
+        <button type='button'>Outside after interleaved group</button>
+      </>,
+    );
+    screen.getByLabelText("Physically last group peer").focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "Logical next local stop"})).toHaveFocus();
+  });
+
+  it("reenters at the scope edge instead of treating a manually focused unchecked peer as its checked representative", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FocusScope>
+          <button type='button'>First available local stop</button>
+          <label>
+            <input
+              type='radio'
+              name='selected-manual-peer'
+              defaultChecked
+            />
+            Selected group representative
+          </label>
+          <button type='button'>Later local stop</button>
+          <label>
+            <input
+              type='radio'
+              name='selected-manual-peer'
+            />
+            Manually focused unchecked peer
+          </label>
+        </FocusScope>
+        <button type='button'>Outside selected group</button>
+      </>,
+    );
+    const unchecked = screen.getByLabelText("Manually focused unchecked peer");
+    unchecked.focus();
+    expect(unchecked).not.toBeChecked();
+    expect(screen.getByLabelText("Selected group representative")).toBeChecked();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "First available local stop"})).toHaveFocus();
+  });
+
+  it("advances forward from a native reverse-entered unchecked middle peer without bouncing to the group", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <button type='button'>Before middle group</button>
+        <label>
+          <input
+            type='radio'
+            name='reverse-then-forward'
+          />
+          Middle representative
+        </label>
+        <label>
+          <input
+            type='radio'
+            name='reverse-then-forward'
+          />
+          Native reverse middle peer
+        </label>
+        <button type='button'>After middle group</button>
+      </FocusScope>,
+    );
+    const after = screen.getByRole("button", {name: "After middle group"});
+    after.focus();
+    await user.tab({shift: true});
+    expect(screen.getByLabelText("Native reverse middle peer")).toHaveFocus();
+
+    await user.tab();
+
+    expect(after).toHaveFocus();
+  });
+
   it("excludes a nested summary under a closed summary-less outer details on entry", () => {
     render(
       <FocusScope autoFocus>

@@ -95,31 +95,48 @@ function isRadioGroupRoot(root: Node): root is Document | DocumentFragment {
   return root.nodeType === Node.DOCUMENT_NODE || root.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 }
 
-function isRadioTabStop(element: HTMLElement): boolean {
+function getRadioGroup(element: HTMLElement): readonly HTMLInputElement[] | null {
   const Input = element.ownerDocument.defaultView?.HTMLInputElement ?? HTMLInputElement;
-  if (!(element instanceof Input) || element.type !== "radio" || !element.name) return true;
+  if (!(element instanceof Input) || element.type !== "radio" || !element.name) return null;
   const root = element.getRootNode();
-  if (!isRadioGroupRoot(root)) return false;
-  const group = [...root.querySelectorAll<HTMLInputElement>("input")].filter(
+  if (!isRadioGroupRoot(root)) return [];
+  return [...root.querySelectorAll<HTMLInputElement>("input")].filter(
     (candidate) => candidate.type === "radio" && candidate.name === element.name && candidate.form === element.form,
   );
+}
+
+function isRadioTabStop(element: HTMLElement, candidates: readonly HTMLElement[]): boolean {
+  const group = getRadioGroup(element);
+  if (!group) return true;
   const selected = group.find((candidate) => candidate.checked);
-  return !selected || element === selected;
+  if (selected) return element === selected;
+  const members = new Set<HTMLElement>(group);
+  return element === candidates.find((candidate) => members.has(candidate));
 }
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const available = [...container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
     (element) => getTabIndex(element) >= 0 && isAvailable(element),
   );
-  return available
-    .filter((element) => isRadioTabStop(element))
-    .toSorted((left, right) => {
-      const leftIndex = getTabIndex(left);
-      const rightIndex = getTabIndex(right);
-      const leftOrder = leftIndex > 0 ? leftIndex : Number.POSITIVE_INFINITY;
-      const rightOrder = rightIndex > 0 ? rightIndex : Number.POSITIVE_INFINITY;
-      return leftOrder === rightOrder ? 0 : leftOrder - rightOrder;
-    });
+  const ordered = available.toSorted((left, right) => {
+    const leftIndex = getTabIndex(left);
+    const rightIndex = getTabIndex(right);
+    const leftOrder = leftIndex > 0 ? leftIndex : Number.POSITIVE_INFINITY;
+    const rightOrder = rightIndex > 0 ? rightIndex : Number.POSITIVE_INFINITY;
+    return leftOrder === rightOrder ? 0 : leftOrder - rightOrder;
+  });
+  return ordered.filter((element) => isRadioTabStop(element, ordered));
+}
+
+function resolveActiveTarget(active: Element | null, container: HTMLElement, candidates: readonly HTMLElement[]): HTMLElement | undefined {
+  const Html = active?.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
+  if (!(active instanceof Html) || !container.contains(active)) return undefined;
+  if (candidates.includes(active)) return active;
+  if (getTabIndex(active) < 0 || !isAvailable(active)) return undefined;
+  const group = getRadioGroup(active);
+  if (!group || group.some((candidate) => candidate.checked)) return undefined;
+  const members = new Set<HTMLElement>(group);
+  return candidates.find((candidate) => members.has(candidate));
 }
 
 /**
@@ -134,6 +151,11 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * native `autoFocus` runs; connected Strict Mode effect replay is not treated as an exit.
  * Native radio groups are selected by name, form owner and tree before intersecting
  * their eligible targets with this scope, including checked peers outside the scope.
+ * An unchecked group uses its first locally eligible target in controller order as a
+ * single edge representative. A different eligible unchecked peer reached by native
+ * navigation advances from that logical stop, so physical peer placement cannot escape
+ * containment. Ordinary native traversal remains between representative targets.
+ * This is a deliberate controller policy, not a claim about every browser's radio order.
  *
  * This is a local Tab controller, not a modal manager: it does not inert siblings,
  * dismiss on Escape, intercept pointer focus, or control portaled descendants.
@@ -195,18 +217,19 @@ const FocusScope = React.forwardRef<HTMLDivElement, FocusScopeProps>(
       const focusable = getFocusableElements(container);
       const [first] = focusable;
       const last = focusable.at(-1);
-      const active = container.ownerDocument.activeElement;
+      const {activeElement} = container.ownerDocument;
+      const active = resolveActiveTarget(activeElement, container, focusable);
       if (!first || !last) {
         event.preventDefault();
         container.focus();
-      } else if (
-        active === container
-        || !(active instanceof HTMLElement)
-        || !focusable.includes(active)
-        || (event.shiftKey ? active === first : active === last)
-      ) {
+      } else if (!active) {
         event.preventDefault();
         (event.shiftKey ? last : first).focus();
+      } else if (active !== activeElement || (event.shiftKey ? active === first : active === last)) {
+        event.preventDefault();
+        const offset = event.shiftKey ? -1 : 1;
+        const nextIndex = (focusable.indexOf(active) + offset + focusable.length) % focusable.length;
+        focusable[nextIndex]?.focus();
       }
     };
 

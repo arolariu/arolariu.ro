@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "./dialog";
 import {FocusScope} from "./focus-scope";
@@ -165,6 +165,53 @@ function RestoreFocusDemo(): React.JSX.Element {
 
 /** Native descendant autofocus does not replace the inline scope's original restoration owner. */
 export const WithRestoreFocus: Story = {render: () => <RestoreFocusDemo />};
+
+function UncheckedRadioGroupDemo(): React.JSX.Element {
+  const groupName = useId();
+  return (
+    <section className={styles.demo}>
+      <p>
+        Until a choice is checked, this controller uses the first locally eligible radio as one logical stop. Tab from that stop wraps to
+        the first action. Reverse wrapping uses the same representative; a different peer reached by native navigation resolves to that
+        logical group stop.
+      </p>
+      <FocusScope
+        autoFocus
+        aria-label='Unchecked radio workbench'
+        className={styles.panel}>
+        <div className={styles.controls}>
+          <button
+            type='button'
+            className={styles.button}>
+            First workbench action
+          </button>
+          <label>
+            <input
+              type='radio'
+              name={groupName}
+            />
+            First unchecked choice
+          </label>
+          <label>
+            <input
+              type='radio'
+              name={groupName}
+            />
+            Second unchecked choice
+          </label>
+        </div>
+      </FocusScope>
+      <button
+        type='button'
+        className={styles.button}>
+        Outside the workbench
+      </button>
+    </section>
+  );
+}
+
+/** Deliberate single-representative radio policy, not a universal native-browser order claim. */
+export const UncheckedRadioGroup: Story = {render: () => <UncheckedRadioGroupDemo />};
 
 /** SDK modal comparison: Dialog supplies focus ownership without any FocusScope wrapper. */
 export const SdkOwnedModal: Story = {
