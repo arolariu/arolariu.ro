@@ -1,174 +1,41 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {AspectRatio} from "./aspect-ratio";
+import styles from "./aspect-ratio.module.css";
 
 const meta = {
   title: "Components/Layout/AspectRatio",
   component: AspectRatio,
   tags: ["autodocs"],
-  argTypes: {
-    ratio: {
-      control: "text",
-      description: "Aspect ratio applied to the wrapper element",
-    },
-  },
+  argTypes: {ratio: {control: "text", description: "Numeric ratio or native CSS ratio string; takes precedence over caller ratio styles."}},
+  render: (args): React.JSX.Element => (
+    <div className={styles.storyFrame}>
+      <AspectRatio {...args} />
+    </div>
+  ),
 } satisfies Meta<typeof AspectRatio>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default 1:1 square aspect ratio.
- */
-export const Default: Story = {
-  args: {
-    ratio: 1,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #3b82f6, #8b5cf6)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        1:1 Ratio
-      </div>
-    ),
-  },
-};
-
-/**
- * Widescreen 16:9 aspect ratio commonly used for video content.
- */
-export const Widescreen: Story = {
-  args: {
-    ratio: 16 / 9,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #ec4899, #f43f5e)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        16:9 Widescreen
-      </div>
-    ),
-  },
-};
-
-/**
- * Classic 4:3 aspect ratio used for standard displays.
- */
-export const Standard: Story = {
-  args: {
-    ratio: 4 / 3,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #10b981, #06b6d4)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        4:3 Standard
-      </div>
-    ),
-  },
-};
-
-/**
- * 16:9 aspect ratio wrapping a video placeholder.
- */
+export const Default: Story = {args: {children: <div className={styles.storyMedia}>Default square</div>}};
+export const Square: Story = {args: {ratio: 1, children: <div className={styles.storyMedia}>1:1</div>}};
+export const Widescreen: Story = {args: {ratio: 16 / 9, children: <div className={styles.storyMedia}>16:9 numeric ratio</div>}};
+export const Standard: Story = {args: {ratio: 4 / 3, children: <div className={styles.storyMedia}>4:3</div>}};
+export const StringRatio: Story = {args: {ratio: "16 / 9", children: <div className={styles.storyMedia}>16 / 9 CSS ratio string</div>}};
 export const Video: Story = {
   args: {
-    ratio: 16 / 9,
+    ratio: "16 / 9",
     children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "#000",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: "16px",
-        }}>
-        <div
-          style={{
-            width: "80px",
-            height: "80px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-          <div
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: "20px solid white",
-              borderTop: "12px solid transparent",
-              borderBottom: "12px solid transparent",
-              marginLeft: "4px",
-            }}
-          />
-        </div>
-        <div style={{color: "rgba(255,255,255,0.7)", fontSize: "14px"}}>Video Player (16:9)</div>
-      </div>
-    ),
-  },
-};
-
-/**
- * 1:1 square aspect ratio for profile images.
- */
-export const Square: Story = {
-  args: {
-    ratio: 1,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-          borderRadius: "12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: "8px",
-        }}>
-        <div
-          style={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "32px",
-          }}>
-          👤
-        </div>
-        <div style={{color: "white", fontSize: "14px", fontWeight: "600"}}>Profile Image</div>
-        <div style={{color: "rgba(255,255,255,0.8)", fontSize: "12px"}}>1:1 Ratio</div>
-      </div>
+      <svg
+        className={styles.storyMedia}
+        role='img'
+        aria-label='Video placeholder'
+        viewBox='0 0 160 90'>
+        <path
+          d='m65 25 35 20-35 20Z'
+          fill='currentColor'
+        />
+      </svg>
     ),
   },
 };

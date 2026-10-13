@@ -10,12 +10,17 @@ import styles from "./card.module.css";
  * Extends native `<div>` attributes so cards can participate in semantic layouts,
  * landmarks, and custom event handling while exposing a documented class override.
  */
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends Readonly<React.HTMLAttributes<HTMLDivElement>> {
   /**
    * Additional CSS classes merged with the default card surface styles.
    */
-  className?: string;
+  readonly className?: string;
+  /** Interior spacing preset. @default "default" */
+  readonly size?: CardSize;
 }
+
+/** Supported card spacing presets. */
+export type CardSize = "default" | "sm";
 
 /**
  * Represents the shared styling props supported by card layout sections.
@@ -24,11 +29,11 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
  * Use these props for presentational card regions such as headers, content blocks,
  * action rows, and footers. All standard `<div>` attributes continue to work.
  */
-interface CardSectionProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardSectionProps extends Readonly<React.HTMLAttributes<HTMLDivElement>> {
   /**
    * Additional CSS classes merged with the section's default spacing styles.
    */
-  className?: string;
+  readonly className?: string;
 }
 
 /**
@@ -55,13 +60,17 @@ interface CardSectionProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Card = React.forwardRef<HTMLDivElement, CardProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.card, className)}
-    {...props}
-  />
-));
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({className, size = "default", ...props}: Readonly<CardProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card'
+      data-size={size}
+      className={cn(styles.card, className)}
+      {...props}
+    />
+  ),
+);
 Card.displayName = "Card";
 
 /**
@@ -83,13 +92,16 @@ Card.displayName = "Card";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardHeader = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.header, className)}
-    {...props}
-  />
-));
+const CardHeader = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-header'
+      className={cn(styles.header, className)}
+      {...props}
+    />
+  ),
+);
 CardHeader.displayName = "CardHeader";
 
 /**
@@ -108,13 +120,16 @@ CardHeader.displayName = "CardHeader";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardTitle = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.title, className)}
-    {...props}
-  />
-));
+const CardTitle = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-title'
+      className={cn(styles.title, className)}
+      {...props}
+    />
+  ),
+);
 CardTitle.displayName = "CardTitle";
 
 /**
@@ -133,13 +148,16 @@ CardTitle.displayName = "CardTitle";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardDescription = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.description, className)}
-    {...props}
-  />
-));
+const CardDescription = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-description'
+      className={cn(styles.description, className)}
+      {...props}
+    />
+  ),
+);
 CardDescription.displayName = "CardDescription";
 
 /**
@@ -160,13 +178,16 @@ CardDescription.displayName = "CardDescription";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardAction = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.action, className)}
-    {...props}
-  />
-));
+const CardAction = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-action'
+      className={cn(styles.action, className)}
+      {...props}
+    />
+  ),
+);
 CardAction.displayName = "CardAction";
 
 /**
@@ -187,13 +208,16 @@ CardAction.displayName = "CardAction";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardContent = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.content, className)}
-    {...props}
-  />
-));
+const CardContent = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-content'
+      className={cn(styles.content, className)}
+      {...props}
+    />
+  ),
+);
 CardContent.displayName = "CardContent";
 
 /**
@@ -214,13 +238,45 @@ CardContent.displayName = "CardContent";
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const CardFooter = React.forwardRef<HTMLDivElement, CardSectionProps>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.footer, className)}
-    {...props}
-  />
-));
+const CardFooter = React.forwardRef<HTMLDivElement, CardSectionProps>(
+  ({className, ...props}: Readonly<CardSectionProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      data-slot='card-footer'
+      className={cn(styles.footer, className)}
+      {...props}
+    />
+  ),
+);
 CardFooter.displayName = "CardFooter";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Card {
+  export type Props = CardProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardHeader {
+  export type Props = CardSectionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardTitle {
+  export type Props = CardSectionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardDescription {
+  export type Props = CardSectionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardAction {
+  export type Props = CardSectionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardContent {
+  export type Props = CardSectionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace CardFooter {
+  export type Props = CardSectionProps;
+}
 
 export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle};

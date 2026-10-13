@@ -1,5 +1,6 @@
 .empty {
   display: flex;
+  width: 100%;
   min-width: 0;
   flex: 1 1 auto;
   flex-direction: column;
@@ -10,10 +11,12 @@
   border: 1px dashed var(--ac-border);
   border-radius: var(--ac-radius-lg);
   text-align: center;
+  text-wrap: balance;
 }
 
 .header {
   display: flex;
+  min-width: 0;
   max-width: 24rem;
   flex-direction: column;
   align-items: center;
@@ -29,8 +32,9 @@
   flex-shrink: 0;
 }
 
-.media svg {
+.media > svg {
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .mediaIcon {
@@ -42,12 +46,14 @@
   color: var(--ac-foreground);
 }
 
-.mediaIcon svg {
+.mediaIcon > svg {
   width: 1.5rem;
   height: 1.5rem;
 }
 
 .title {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--ac-foreground);
   font-size: var(--ac-text-lg);
   font-weight: 600;
@@ -55,6 +61,8 @@
 }
 
 .description {
+  margin: 0;
+  overflow-wrap: anywhere;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
   line-height: 1.6;
@@ -81,4 +89,25 @@
   align-items: center;
   gap: var(--ac-space-4);
   font-size: var(--ac-text-sm);
+}
+
+.media > img {
+  max-width: 100%;
+  height: auto;
+}
+
+.description a:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .empty,
+  .mediaIcon {
+    border-color: CanvasText;
+  }
+
+  .description a {
+    color: LinkText;
+  }
 }

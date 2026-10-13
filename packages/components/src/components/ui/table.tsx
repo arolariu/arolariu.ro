@@ -1,5 +1,3 @@
-/* eslint-disable react/prop-types */
-
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -8,42 +6,42 @@ import styles from "./table.module.css";
 /**
  * Props for the {@link Table} component.
  */
-export type TableProps = React.HTMLAttributes<HTMLTableElement>;
+export type TableProps = Readonly<React.ComponentPropsWithoutRef<"table">>;
 
 /**
  * Props for the {@link TableHeader} component.
  */
-export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableHeaderProps = Readonly<React.ComponentPropsWithoutRef<"thead">>;
 
 /**
  * Props for the {@link TableBody} component.
  */
-export type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableBodyProps = Readonly<React.ComponentPropsWithoutRef<"tbody">>;
 
 /**
  * Props for the {@link TableFooter} component.
  */
-export type TableFooterProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableFooterProps = Readonly<React.ComponentPropsWithoutRef<"tfoot">>;
 
 /**
  * Props for the {@link TableRow} component.
  */
-export type TableRowProps = React.HTMLAttributes<HTMLTableRowElement>;
+export type TableRowProps = Readonly<React.ComponentPropsWithoutRef<"tr">>;
 
 /**
  * Props for the {@link TableHead} component.
  */
-export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>;
+export type TableHeadProps = Readonly<React.ComponentPropsWithoutRef<"th">>;
 
 /**
  * Props for the {@link TableCell} component.
  */
-export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
+export type TableCellProps = Readonly<React.ComponentPropsWithoutRef<"td">>;
 
 /**
  * Props for the {@link TableCaption} component.
  */
-export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;
+export type TableCaptionProps = Readonly<React.ComponentPropsWithoutRef<"caption">>;
 
 /**
  * Wraps a table in a horizontally scrollable container.
@@ -62,17 +60,18 @@ export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;
  *
  * @see {@link TableProps} for available props
  */
-const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({className, ...props}: Readonly<TableProps>, ref): React.JSX.Element => (
-    <div className={styles.container}>
-      <table
-        ref={ref}
-        className={cn(styles.table, className)}
-        {...props}
-      />
-    </div>
-  ),
-);
+const Table = React.forwardRef<HTMLTableElement, TableProps>(({className, ...props}: Readonly<TableProps>, ref): React.JSX.Element => (
+  <div
+    data-slot='table-container'
+    className={styles.container}>
+    <table
+      ref={ref}
+      data-slot='table'
+      className={cn(styles.table, className)}
+      {...props}
+    />
+  </div>
+));
 
 /**
  * Renders the table header section.
@@ -95,6 +94,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({className, ...props}: Readonly<TableHeaderProps>, ref): React.JSX.Element => (
     <thead
       ref={ref}
+      data-slot='table-header'
       className={cn(styles.header, className)}
       {...props}
     />
@@ -122,6 +122,7 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({className, ...props}: Readonly<TableBodyProps>, ref): React.JSX.Element => (
     <tbody
       ref={ref}
+      data-slot='table-body'
       className={cn(styles.body, className)}
       {...props}
     />
@@ -149,6 +150,7 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(
   ({className, ...props}: Readonly<TableFooterProps>, ref): React.JSX.Element => (
     <tfoot
       ref={ref}
+      data-slot='table-footer'
       className={cn(styles.footer, className)}
       {...props}
     />
@@ -176,6 +178,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({className, ...props}: Readonly<TableRowProps>, ref): React.JSX.Element => (
     <tr
       ref={ref}
+      data-slot='table-row'
       className={cn(styles.row, className)}
       {...props}
     />
@@ -201,6 +204,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
   ({className, ...props}: Readonly<TableHeadProps>, ref): React.JSX.Element => (
     <th
       ref={ref}
+      data-slot='table-head'
       className={cn(styles.head, className)}
       {...props}
     />
@@ -226,6 +230,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({className, ...props}: Readonly<TableCellProps>, ref): React.JSX.Element => (
     <td
       ref={ref}
+      data-slot='table-cell'
       className={cn(styles.cell, className)}
       {...props}
     />
@@ -251,6 +256,7 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, TableCaptionProps
   ({className, ...props}: Readonly<TableCaptionProps>, ref): React.JSX.Element => (
     <caption
       ref={ref}
+      data-slot='table-caption'
       className={cn(styles.caption, className)}
       {...props}
     />
@@ -265,5 +271,38 @@ TableRow.displayName = "TableRow";
 TableHead.displayName = "TableHead";
 TableCell.displayName = "TableCell";
 TableCaption.displayName = "TableCaption";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Table {
+  export type Props = Readonly<TableProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableHeader {
+  export type Props = Readonly<TableHeaderProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableBody {
+  export type Props = Readonly<TableBodyProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableFooter {
+  export type Props = Readonly<TableFooterProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableRow {
+  export type Props = Readonly<TableRowProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableHead {
+  export type Props = Readonly<TableHeadProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableCell {
+  export type Props = Readonly<TableCellProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace TableCaption {
+  export type Props = Readonly<TableCaptionProps>;
+}
 
 export {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow};

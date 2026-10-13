@@ -1,66 +1,56 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {Spinner} from "./spinner";
+import styles from "./spinner.module.css";
 
 const meta = {
   title: "Components/Feedback/Spinner",
   component: Spinner,
   tags: ["autodocs"],
-  argTypes: {},
+  argTypes: {animated: {control: "boolean"}},
 } satisfies Meta<typeof Spinner>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: () => <Spinner className='h-8 w-8' />,
-};
+export const Default: Story = {args: {"aria-label": "Loading content"}};
+export const Small: Story = Default;
+export const Medium: Story = {args: {className: styles.storyMedium, "aria-label": "Loading content"}};
+export const Large: Story = {args: {className: styles.storyLarge, "aria-label": "Loading content"}};
+export const Static: Story = {args: {animated: false, "aria-label": "Preparing the preview"}};
 
-export const Small: Story = {
-  render: () => <Spinner className='h-4 w-4' />,
-};
-
-export const Medium: Story = {
-  render: () => <Spinner className='h-8 w-8' />,
-};
-
-export const Large: Story = {
-  render: () => <Spinner className='h-16 w-16' />,
-};
-
-/**
- * Spinner inside a loading button.
- */
 export const InButton: Story = {
-  render: () => (
-    <button
-      type='button'
+  render: (args): React.JSX.Element => (
+    <Button
       disabled
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        padding: "10px 20px",
-        background: "#3b82f6",
-        color: "white",
-        border: "none",
-        borderRadius: "6px",
-        cursor: "not-allowed",
-        opacity: 0.8,
-      }}>
-      <Spinner style={{width: "16px", height: "16px"}} />
-      <span>Processing...</span>
-    </button>
+      aria-busy='true'>
+      <Spinner
+        {...args}
+        aria-hidden='true'
+      />
+      <span>Processing…</span>
+    </Button>
   ),
 };
-
-/**
- * Spinner with accompanying label text.
- */
 export const WithLabel: Story = {
-  render: () => (
-    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "12px"}}>
-      <Spinner style={{width: "40px", height: "40px"}} />
-      <div style={{fontSize: "14px", color: "#6b7280"}}>Loading your content...</div>
+  render: (args): React.JSX.Element => (
+    <div className={styles.storyLabel}>
+      <Spinner
+        {...args}
+        aria-label='Loading content'
+      />
+      <span>Loading your content…</span>
     </div>
   ),
+};
+export const ReducedMotion: Story = {
+  ...Default,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Enable prefers-reduced-motion in your system or developer tools. Rotation stops while the visible indicator and named status remain.",
+      },
+    },
+  },
 };

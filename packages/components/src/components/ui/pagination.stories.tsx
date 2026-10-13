@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {
@@ -9,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "./pagination";
+import styles from "./pagination.module.css";
 
 const meta = {
   title: "Components/Navigation/Pagination",
@@ -194,9 +197,10 @@ export const Compact: Story = {
  */
 function PaginationWithPageSize(): React.JSX.Element {
   const [pageSize, setPageSize] = React.useState("10");
+  const pageSizeId = React.useId();
 
   return (
-    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "16px"}}>
+    <div className={styles.storyStack}>
       <Pagination>
         <PaginationContent>
           <PaginationItem>
@@ -220,25 +224,12 @@ function PaginationWithPageSize(): React.JSX.Element {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          fontSize: "14px",
-          color: "#6b7280",
-        }}>
-        <span>Items per page:</span>
+      <div className={styles.storyPageSize}>
+        <label htmlFor={pageSizeId}>Items per page:</label>
         <select
+          id={pageSizeId}
           value={pageSize}
-          onChange={(e) => setPageSize(e.target.value)}
-          style={{
-            padding: "4px 8px",
-            border: "1px solid #d1d5db",
-            borderRadius: "4px",
-            fontSize: "14px",
-            cursor: "pointer",
-          }}>
+          onChange={(e) => setPageSize(e.target.value)}>
           <option value='10'>10</option>
           <option value='25'>25</option>
           <option value='50'>50</option>
@@ -251,4 +242,55 @@ function PaginationWithPageSize(): React.JSX.Element {
 
 export const WithPageSize: Story = {
   render: () => <PaginationWithPageSize />,
+};
+
+export const LocalizedRightToLeft: Story = {
+  render: (): React.JSX.Element => (
+    <Pagination
+      dir='rtl'
+      aria-label='Pages de résultats'>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            href='?page=1'
+            text='Précédent'
+            aria-label='Page précédente'
+          />
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationLink
+            href='?page=2'
+            isActive>
+            2
+          </PaginationLink>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationNext
+            href='?page=3'
+            text='Suivant'
+            aria-label='Page suivante'
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  ),
+};
+
+export const AllSizes: Story = {
+  render: (): React.JSX.Element => (
+    <Pagination aria-label='Page size examples'>
+      <PaginationContent>
+        {(["xs", "sm", "default", "lg", "icon-xs", "icon-sm", "icon", "icon-lg"] as const).map((size, index) => (
+          <PaginationItem key={size}>
+            <PaginationLink
+              href={`?page=${index + 1}`}
+              size={size}
+              aria-label={`Page ${index + 1}, ${size}`}>
+              {index + 1}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+      </PaginationContent>
+    </Pagination>
+  ),
 };

@@ -12,3 +12,32 @@
   width: 1px;
   height: 100%;
 }
+
+@media (forced-colors: active) {
+  .separator {
+    background-color: CanvasText;
+  }
+}
+
+.storyStack {
+  display: flex;
+  width: 20rem;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.storyRow {
+  display: flex;
+  width: 20rem;
+  height: 4rem;
+  align-items: center;
+  gap: var(--ac-space-4);
+}
+
+.storyHorizontal {
+  flex: 1;
+}
+
+.storyVertical {
+  align-self: stretch;
+}

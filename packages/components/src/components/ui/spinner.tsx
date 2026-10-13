@@ -6,7 +6,10 @@ import styles from "./spinner.module.css";
 /**
  * Props for the {@link Spinner} component.
  */
-export type SpinnerProps = React.ComponentPropsWithoutRef<"svg">;
+export interface SpinnerProps extends Readonly<React.ComponentPropsWithoutRef<"svg">> {
+  /** Enables rotation unless reduced motion is requested. `false` retains a static indicator. @default true */
+  readonly animated?: boolean;
+}
 
 /**
  * Renders an animated loading indicator.
@@ -15,6 +18,7 @@ export type SpinnerProps = React.ComponentPropsWithoutRef<"svg">;
  * - Pure CSS component (no Base UI primitive)
  * - Renders an `<svg>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Reduced motion or `animated={false}` retains the visible indicator and accessible status
  *
  * @example
  * ```tsx
@@ -24,9 +28,11 @@ export type SpinnerProps = React.ComponentPropsWithoutRef<"svg">;
  * @see {@link SpinnerProps} for available props
  */
 const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
-  ({children, className, ...props}: Readonly<SpinnerProps>, ref): React.JSX.Element => (
+  ({children, className, animated = true, ...props}: Readonly<SpinnerProps>, ref): React.JSX.Element => (
     <svg
       ref={ref}
+      data-slot='spinner'
+      data-animated={animated}
       role='status'
       aria-label={props["aria-label"] ?? "Loading"}
       viewBox='0 0 24 24'
@@ -53,5 +59,10 @@ const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
 );
 
 Spinner.displayName = "Spinner";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Spinner {
+  export type Props = SpinnerProps;
+}
 
 export {Spinner};

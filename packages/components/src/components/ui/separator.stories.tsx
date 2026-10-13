@@ -1,123 +1,97 @@
+"use client";
+
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {Separator} from "./separator";
+import styles from "./separator.module.css";
 
 const meta = {
   title: "Components/Layout/Separator",
   component: Separator,
   tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
-  },
+  parameters: {layout: "centered"},
 } satisfies Meta<typeof Separator>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Horizontal separator dividing content sections.
- */
 export const Horizontal: Story = {
-  render: () => (
-    <div className='w-64 space-y-4'>
-      <div>
-        <h4 className='text-sm font-medium'>Section One</h4>
-        <p className='text-muted-foreground text-sm'>Content for the first section.</p>
-      </div>
-      <Separator orientation='horizontal' />
-      <div>
-        <h4 className='text-sm font-medium'>Section Two</h4>
-        <p className='text-muted-foreground text-sm'>Content for the second section.</p>
-      </div>
+  render: (): React.JSX.Element => (
+    <div className={styles.storyStack}>
+      <p>Section one</p>
+      <Separator />
+      <p>Section two</p>
     </div>
   ),
 };
 
-/**
- * Vertical separator between inline elements.
- */
 export const Vertical: Story = {
-  render: () => (
-    <div className='flex h-16 items-center space-x-4'>
-      <div className='text-sm'>
-        <p className='font-medium'>Item 1</p>
-      </div>
-      <Separator
-        orientation='vertical'
-        className='h-full'
-      />
-      <div className='text-sm'>
-        <p className='font-medium'>Item 2</p>
-      </div>
-      <Separator
-        orientation='vertical'
-        className='h-full'
-      />
-      <div className='text-sm'>
-        <p className='font-medium'>Item 3</p>
-      </div>
+  render: (): React.JSX.Element => (
+    <div className={styles.storyRow}>
+      <span>Item one</span>
+      <Separator orientation='vertical' />
+      <span>Item two</span>
     </div>
   ),
 };
 
-/**
- * Separator in a navigation menu.
- */
 export const InNavigation: Story = {
-  render: () => (
-    <div className='w-64'>
-      <div className='space-y-1'>
-        <button className='hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm'>Home</button>
-        <button className='hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm'>Dashboard</button>
-        <button className='hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm'>Projects</button>
-      </div>
-      <Separator className='my-2' />
-      <div className='space-y-1'>
-        <button className='hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm'>Settings</button>
-        <button className='hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm'>Help</button>
-      </div>
-    </div>
+  render: (): React.JSX.Element => (
+    <nav
+      aria-label='Example navigation'
+      className={styles.storyStack}>
+      <a href='#home'>Home</a>
+      <a href='#projects'>Projects</a>
+      <Separator />
+      <a href='#help'>Help</a>
+    </nav>
   ),
 };
 
-/**
- * Separator with centered label text.
- */
 export const WithLabel: Story = {
-  render: () => (
-    <div style={{width: "320px"}}>
-      <div style={{position: "relative", display: "flex", alignItems: "center", marginTop: "24px", marginBottom: "24px"}}>
-        <Separator style={{flex: 1}} />
-        <span style={{padding: "0 16px", fontSize: "14px", color: "#6b7280", fontWeight: "500"}}>OR</span>
-        <Separator style={{flex: 1}} />
-      </div>
+  render: (): React.JSX.Element => (
+    <div className={styles.storyRow}>
+      <Separator />
+      <span>OR</span>
+      <Separator />
     </div>
   ),
 };
 
-/**
- * Separator used as a decorative visual divider.
- */
 export const Decorative: Story = {
-  render: () => (
-    <div style={{maxWidth: "600px"}}>
-      <section style={{marginBottom: "24px"}}>
-        <h3 style={{fontSize: "18px", fontWeight: "600", marginBottom: "8px"}}>Introduction</h3>
-        <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.6"}}>
-          This is the first section of content. It contains important information that sets the context for what follows.
-        </p>
-      </section>
-
+  render: (): React.JSX.Element => (
+    <div className={styles.storyStack}>
+      <p>Introduction</p>
       <Separator
         decorative
-        style={{margin: "32px 0"}}
+        aria-hidden='true'
+        role='presentation'
       />
-
-      <section>
-        <h3 style={{fontSize: "18px", fontWeight: "600", marginBottom: "8px"}}>Details</h3>
-        <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.6"}}>
-          This is the second section with additional details and supporting information separated visually from the introduction.
-        </p>
-      </section>
+      <p>Details</p>
     </div>
   ),
 };
+
+function StatefulSeparator(): React.JSX.Element {
+  const [orientation, setOrientation] = React.useState<"horizontal" | "vertical">("horizontal");
+  return (
+    <div className={styles.storyStack}>
+      <Button onClick={() => setOrientation(orientation === "horizontal" ? "vertical" : "horizontal")}>Toggle orientation</Button>
+      <div className={styles.storyRow}>
+        <span>Before</span>
+        <Separator
+          orientation={orientation}
+          className={(state) => (state.orientation === "vertical" ? styles.storyVertical : styles.storyHorizontal)}
+          render={(props, state) => (
+            <div
+              {...props}
+              aria-label={`${state.orientation} rule`}
+            />
+          )}
+        />
+        <span>After</span>
+      </div>
+    </div>
+  );
+}
+export const StateCallbacks: Story = {render: (): React.JSX.Element => <StatefulSeparator />};

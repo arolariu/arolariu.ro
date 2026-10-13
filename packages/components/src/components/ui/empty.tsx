@@ -9,35 +9,37 @@ export type EmptyMediaVariant = "default" | "icon";
 /**
  * Props for the {@link Empty} component.
  */
-export type EmptyProps = React.ComponentPropsWithoutRef<"div">;
+export type EmptyProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link EmptyHeader} component.
  */
-export type EmptyHeaderProps = React.ComponentPropsWithoutRef<"div">;
+export type EmptyHeaderProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link EmptyMedia} component.
  */
-export interface EmptyMediaProps extends React.ComponentPropsWithoutRef<"div"> {
+export interface EmptyMediaProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
   /** Visual presentation applied to the media container. @default "default" */
-  variant?: EmptyMediaVariant;
+  readonly variant?: EmptyMediaVariant;
 }
 
 /**
  * Props for the {@link EmptyTitle} component.
  */
-export type EmptyTitleProps = React.ComponentPropsWithoutRef<"div">;
+export type EmptyTitleProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link EmptyDescription} component.
  */
-export type EmptyDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+export type EmptyDescriptionProps =
+  | (Readonly<React.ComponentPropsWithoutRef<"p">> & {readonly as?: "p"})
+  | (Readonly<React.ComponentPropsWithoutRef<"div">> & {readonly as: "div"});
 
 /**
  * Props for the {@link EmptyContent} component.
  */
-export type EmptyContentProps = React.ComponentPropsWithoutRef<"div">;
+export type EmptyContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Creates a structured empty-state container.
@@ -56,16 +58,14 @@ export type EmptyContentProps = React.ComponentPropsWithoutRef<"div">;
  *
  * @see {@link EmptyProps} for available props
  */
-const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
-  ({className, ...props}: Readonly<EmptyProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty'
-      className={cn(styles.empty, className)}
-      {...props}
-    />
-  ),
-);
+const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(({className, ...props}: Readonly<EmptyProps>, ref): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty'
+    className={cn(styles.empty, className)}
+    {...props}
+  />
+));
 
 /**
  * Groups the leading header content for an empty state.
@@ -151,7 +151,8 @@ const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
  *
  * @remarks
  * - Pure CSS component (no Base UI primitive)
- * - Renders a `<p>` element
+ * - Renders a `<p>` by default; use `as="div"` for paragraphs, lists, or other rich block content
+ * - Props and the forwarded ref correspond to the selected native element
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -161,15 +162,14 @@ const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
  *
  * @see {@link EmptyDescriptionProps} for available props
  */
-const EmptyDescription = React.forwardRef<HTMLParagraphElement, EmptyDescriptionProps>(
-  ({className, ...props}: Readonly<EmptyDescriptionProps>, ref): React.JSX.Element => (
-    <p
-      ref={ref}
-      data-slot='empty-description'
-      className={cn(styles.description, className)}
-      {...props}
-    />
-  ),
+const EmptyDescription = React.forwardRef<HTMLParagraphElement | HTMLDivElement, EmptyDescriptionProps>(
+  ({className, as: tagName = "p", ...props}: Readonly<EmptyDescriptionProps>, ref): React.JSX.Element =>
+    React.createElement(tagName, {
+      ...props,
+      ref,
+      "data-slot": "empty-description",
+      className: cn(styles.description, className),
+    }),
 );
 
 /**
@@ -206,5 +206,30 @@ EmptyMedia.displayName = "EmptyMedia";
 EmptyTitle.displayName = "EmptyTitle";
 EmptyDescription.displayName = "EmptyDescription";
 EmptyContent.displayName = "EmptyContent";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Empty {
+  export type Props = Readonly<EmptyProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace EmptyHeader {
+  export type Props = Readonly<EmptyHeaderProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace EmptyMedia {
+  export type Props = EmptyMediaProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace EmptyTitle {
+  export type Props = Readonly<EmptyTitleProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace EmptyDescription {
+  export type Props = Readonly<EmptyDescriptionProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace EmptyContent {
+  export type Props = Readonly<EmptyContentProps>;
+}
 
 export {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};

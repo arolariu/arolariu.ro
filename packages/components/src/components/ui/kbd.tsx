@@ -6,12 +6,12 @@ import styles from "./kbd.module.css";
 /**
  * Props for the {@link Kbd} component.
  */
-export type KbdProps = React.ComponentPropsWithoutRef<"kbd">;
+export type KbdProps = Readonly<React.ComponentPropsWithoutRef<"kbd">>;
 
 /**
  * Props for the {@link KbdGroup} component.
  */
-export type KbdGroupProps = React.ComponentPropsWithoutRef<"kbd">;
+export type KbdGroupProps = Readonly<React.ComponentPropsWithoutRef<"kbd">>;
 
 /**
  * Renders an inline keyboard keycap label.
@@ -28,16 +28,14 @@ export type KbdGroupProps = React.ComponentPropsWithoutRef<"kbd">;
  *
  * @see {@link KbdProps} for available props
  */
-const Kbd = React.forwardRef<HTMLElement, KbdProps>(
-  ({className, ...props}: Readonly<KbdProps>, ref): React.JSX.Element => (
-    <kbd
-      ref={ref}
-      data-slot='kbd'
-      className={cn(styles.kbd, className)}
-      {...props}
-    />
-  ),
-);
+const Kbd = React.forwardRef<HTMLElement, KbdProps>(({className, ...props}: Readonly<KbdProps>, ref): React.JSX.Element => (
+  <kbd
+    ref={ref}
+    data-slot='kbd'
+    className={cn(styles.kbd, className)}
+    {...props}
+  />
+));
 
 /**
  * Groups multiple keyboard keycap labels into a shared visual cluster.
@@ -57,18 +55,25 @@ const Kbd = React.forwardRef<HTMLElement, KbdProps>(
  *
  * @see {@link KbdGroupProps} for available props
  */
-const KbdGroup = React.forwardRef<HTMLElement, KbdGroupProps>(
-  ({className, ...props}: Readonly<KbdGroupProps>, ref): React.JSX.Element => (
-    <kbd
-      ref={ref}
-      data-slot='kbd-group'
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
-);
+const KbdGroup = React.forwardRef<HTMLElement, KbdGroupProps>(({className, ...props}: Readonly<KbdGroupProps>, ref): React.JSX.Element => (
+  <kbd
+    ref={ref}
+    data-slot='kbd-group'
+    className={cn(styles.group, className)}
+    {...props}
+  />
+));
 
 Kbd.displayName = "Kbd";
 KbdGroup.displayName = "KbdGroup";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Kbd {
+  export type Props = Readonly<KbdProps>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace KbdGroup {
+  export type Props = Readonly<KbdGroupProps>;
+}
 
 export {Kbd, KbdGroup};
