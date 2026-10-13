@@ -1,10 +1,125 @@
-import {renderHook} from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import {render, renderHook} from "@testing-library/react";
 import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
 
 import {useMergedRefs} from "./useMergedRefs";
 
+interface MergedRefElementProps {
+  readonly refs: ReadonlyArray<React.Ref<HTMLDivElement> | undefined>;
+}
+
+function MergedRefElement({refs}: Readonly<MergedRefElementProps>): React.JSX.Element {
+  const ref = useMergedRefs(...refs);
+  return (
+    <div
+      ref={ref}
+      data-testid='merged-ref-element'
+    />
+  );
+}
+
 describe("useMergedRefs", () => {
+  it("runs returned callback cleanup once while clearing object and legacy callback refs on real unmount", () => {
+    const objectRef = React.createRef<HTMLDivElement>();
+    let cleanupCalls = 0;
+    let cleanupRefNullCalls = 0;
+    let legacyNode: HTMLDivElement | null = null;
+    const cleanupRef: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node === null) {
+        cleanupRefNullCalls += 1;
+        return;
+      }
+      return () => {
+        cleanupCalls += 1;
+      };
+    };
+    const legacyRef: React.RefCallback<HTMLDivElement> = (node) => {
+      legacyNode = node;
+    };
+    const {getByTestId, unmount} = render(<MergedRefElement refs={[cleanupRef, objectRef, legacyRef]} />);
+    expect(objectRef.current).toBe(getByTestId("merged-ref-element"));
+    expect(legacyNode).toBe(objectRef.current);
+    unmount();
+
+    expect(cleanupCalls).toBe(1);
+    expect(cleanupRefNullCalls).toBe(0);
+    expect(objectRef.current).toBeNull();
+    expect(legacyNode).toBeNull();
+  });
+
+  it("cleans a removed callback before attaching its replacement to the retained real node", () => {
+    const events: string[] = [];
+    const firstRef: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node === null) return;
+      events.push("first attached");
+      return () => {
+        events.push("first cleaned");
+      };
+    };
+    const secondRef: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node === null) return;
+      events.push("second attached");
+      return () => {
+        events.push("second cleaned");
+      };
+    };
+    const {getByTestId, rerender, unmount} = render(<MergedRefElement refs={[firstRef]} />);
+    const node = getByTestId("merged-ref-element");
+    rerender(<MergedRefElement refs={[secondRef]} />);
+
+    expect(getByTestId("merged-ref-element")).toBe(node);
+    expect(events).toEqual(["first attached", "first cleaned", "second attached"]);
+    unmount();
+    expect(events).toEqual(["first attached", "first cleaned", "second attached", "second cleaned"]);
+  });
+
+  it("does not reattach or clean retained cleanup refs when another ref changes", () => {
+    let attaches = 0;
+    let cleanups = 0;
+    const cleanupRef: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node === null) return;
+      attaches += 1;
+      return () => {
+        cleanups += 1;
+      };
+    };
+    const firstObjectRef = React.createRef<HTMLDivElement>();
+    const secondObjectRef = React.createRef<HTMLDivElement>();
+    const {rerender, unmount} = render(<MergedRefElement refs={[cleanupRef, firstObjectRef]} />);
+    const node = firstObjectRef.current;
+    rerender(<MergedRefElement refs={[cleanupRef, secondObjectRef]} />);
+
+    expect(firstObjectRef.current).toBeNull();
+    expect(secondObjectRef.current).toBe(node);
+    expect(attaches).toBe(1);
+    expect(cleanups).toBe(0);
+    unmount();
+    expect(cleanups).toBe(1);
+    expect(secondObjectRef.current).toBeNull();
+  });
+
+  it("balances callback cleanup during StrictMode ref replay and unmount", () => {
+    let attaches = 0;
+    let cleanups = 0;
+    const cleanupRef: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node === null) return;
+      attaches += 1;
+      return () => {
+        cleanups += 1;
+      };
+    };
+    const {unmount} = render(
+      <React.StrictMode>
+        <MergedRefElement refs={[cleanupRef]} />
+      </React.StrictMode>,
+    );
+    expect(attaches).toBe(2);
+    expect(cleanups).toBe(1);
+    unmount();
+    expect(cleanups).toBe(2);
+  });
+
   it("returns a callback ref", () => {
     const {result} = renderHook(() => useMergedRefs());
 
@@ -26,7 +141,7 @@ describe("useMergedRefs", () => {
     const {result} = renderHook(() => useMergedRefs(callbackRef));
 
     const element = document.createElement("div");
-    result.current(element);
+    expect(result.current(element)).toBeUndefined();
 
     expect(callbackRef).toHaveBeenCalledWith(element);
   });
@@ -141,13 +256,13 @@ describe("useMergedRefs", () => {
   it("clears removed callback refs when the ref inputs change", () => {
     const removedCallbackRef = vi.fn();
     const keptRef = React.createRef<HTMLDivElement>();
-    const {rerender, result} = renderHook(({refs}) => useMergedRefs(...refs), {
-      initialProps: {refs: [removedCallbackRef, keptRef] as const},
+    const {rerender, result} = renderHook(({refs}: Readonly<MergedRefElementProps>) => useMergedRefs(...refs), {
+      initialProps: {refs: [removedCallbackRef, keptRef]},
     });
     const element = document.createElement("div");
 
     result.current(element);
-    rerender({refs: [keptRef] as const});
+    rerender({refs: [keptRef]});
 
     expect(removedCallbackRef).toHaveBeenLastCalledWith(null);
     expect(keptRef.current).toBe(element);

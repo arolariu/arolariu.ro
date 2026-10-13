@@ -8,13 +8,24 @@ import * as React from "react";
  * @typeParam T - The type of the referenced element.
  * @param ref - The ref to update.
  * @param value - The element instance (or `null`) to assign.
+ * @param cleanups - Callback cleanup functions belonging to attached refs.
  */
-function setRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
+function setRef<T>(ref: React.Ref<T> | undefined, value: T | null, cleanups: Map<React.Ref<T> | undefined, () => void>): void {
+  const cleanup = cleanups.get(ref);
+  if (cleanup) {
+    cleanups.delete(ref);
+    cleanup();
+  }
   if (!ref) return;
+  if (value === null && cleanup) return;
+
   if (typeof ref === "function") {
-    ref(value);
+    const nextCleanup = ref(value);
+    if (value !== null && typeof nextCleanup === "function") {
+      cleanups.set(ref, nextCleanup);
+    }
   } else {
-    (ref as React.RefObject<T | null>).current = value;
+    ref.current = value;
   }
 }
 
@@ -42,6 +53,9 @@ function areRefsEqual<T>(
  * imperative operations. All provided refs will receive the same element instance.
  *
  * Supports all ref types: callback refs, mutable ref objects, and `null`/`undefined`.
+ * Returned callback cleanup functions are run on detach or ref replacement
+ * instead of calling that callback with `null`. The merged callback returns
+ * `void`, preserving React 18's attach/detach convention.
  * Inline callback refs create a new function identity on every render; wrap them
  * in `useCallback` before passing them here to avoid repeated ref synchronization.
  *
@@ -62,6 +76,7 @@ function areRefsEqual<T>(
 export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
   const refsRef = React.useRef<ReadonlyArray<React.Ref<T> | undefined>>(refs);
   const nodeRef = React.useRef<T | null>(null);
+  const cleanupsRef = React.useRef(new Map<React.Ref<T> | undefined, () => void>());
 
   React.useLayoutEffect(() => {
     const previousRefs = refsRef.current;
@@ -73,12 +88,14 @@ export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): Reac
 
     for (const ref of previousRefs) {
       if (!refs.includes(ref)) {
-        setRef(ref, null);
+        setRef(ref, null, cleanupsRef.current);
       }
     }
 
     for (const ref of refs) {
-      setRef(ref, nodeRef.current);
+      if (!previousRefs.includes(ref)) {
+        setRef(ref, nodeRef.current, cleanupsRef.current);
+      }
     }
   });
 
@@ -86,7 +103,7 @@ export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): Reac
     nodeRef.current = node;
 
     for (const ref of refsRef.current) {
-      setRef(ref, node);
+      setRef(ref, node, cleanupsRef.current);
     }
   }, []);
 }

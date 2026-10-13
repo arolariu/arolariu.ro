@@ -165,8 +165,8 @@
 }
 
 .rangeStart {
-  border-top-left-radius: var(--ac-radius-md);
-  border-bottom-left-radius: var(--ac-radius-md);
+  border-start-start-radius: var(--ac-radius-md);
+  border-end-start-radius: var(--ac-radius-md);
   background-color: var(--ac-muted);
 }
 
@@ -175,8 +175,8 @@
 }
 
 .rangeEnd {
-  border-top-right-radius: var(--ac-radius-md);
-  border-bottom-right-radius: var(--ac-radius-md);
+  border-start-end-radius: var(--ac-radius-md);
+  border-end-end-radius: var(--ac-radius-md);
   background-color: var(--ac-muted);
 }
 
@@ -209,13 +209,17 @@
   z-index: 0;
   display: flex;
   width: 100%;
-  min-width: var(--ac-cell-size);
+  min-width: var(--ac-cell-size, var(--ac-size-default));
   height: auto;
   aspect-ratio: 1;
   flex-direction: column;
   gap: var(--ac-space-1);
   font-weight: 400;
   line-height: 1;
+
+  &[data-outside="true"] {
+    color: var(--ac-muted-foreground);
+  }
 
   &:focus-visible,
   .day[data-focused="true"] & {
@@ -227,14 +231,24 @@
   &[data-selected-single="true"],
   &[data-range-start="true"],
   &[data-range-end="true"] {
-    background-color: var(--ac-foreground);
-    color: var(--ac-background);
+    background-color: var(--ac-primary);
+    color: var(--ac-primary-foreground);
+
+    &:not(:disabled):hover {
+      background-color: var(--ac-primary);
+      color: var(--ac-primary-foreground);
+    }
   }
 
   &[data-range-middle="true"] {
     border-radius: 0;
     background-color: var(--ac-muted);
     color: var(--ac-foreground);
+
+    &:not(:disabled):hover {
+      background-color: var(--ac-muted);
+      color: var(--ac-foreground);
+    }
   }
 
   &[data-range-start="true"],
@@ -246,4 +260,166 @@
     font-size: var(--ac-text-xs);
     opacity: 0.7;
   }
+}
+
+.calendarRoot {
+  & :global(.rdp-caption_before_enter),
+  & :global(.rdp-caption_after_enter) {
+    animation: calendarFadeIn var(--ac-transition-slow) both;
+  }
+
+  & :global(.rdp-caption_before_exit),
+  & :global(.rdp-caption_after_exit) {
+    animation: calendarFadeOut var(--ac-transition-slow) both;
+  }
+
+  & :global(.rdp-weeks_before_enter) {
+    animation: calendarSlideInBefore var(--ac-transition-slow) both;
+  }
+
+  & :global(.rdp-weeks_after_enter) {
+    animation: calendarSlideInAfter var(--ac-transition-slow) both;
+  }
+
+  & :global(.rdp-weeks_before_exit) {
+    animation: calendarSlideOutBefore var(--ac-transition-slow) both;
+  }
+
+  & :global(.rdp-weeks_after_exit) {
+    animation: calendarSlideOutAfter var(--ac-transition-slow) both;
+  }
+}
+
+.calendarRoot[dir="rtl"] {
+  & :global(.rdp-weeks_before_enter) {
+    animation-name: calendarSlideInAfter;
+  }
+
+  & :global(.rdp-weeks_after_enter) {
+    animation-name: calendarSlideInBefore;
+  }
+
+  & :global(.rdp-weeks_before_exit) {
+    animation-name: calendarSlideOutAfter;
+  }
+
+  & :global(.rdp-weeks_after_exit) {
+    animation-name: calendarSlideOutBefore;
+  }
+}
+
+@keyframes calendarFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes calendarFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes calendarSlideInBefore {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes calendarSlideInAfter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes calendarSlideOutBefore {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes calendarSlideOutAfter {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendarRoot {
+    & :global(.rdp-caption_before_enter),
+    & :global(.rdp-caption_after_enter),
+    & :global(.rdp-caption_before_exit),
+    & :global(.rdp-caption_after_exit),
+    & :global(.rdp-weeks_before_enter),
+    & :global(.rdp-weeks_after_enter),
+    & :global(.rdp-weeks_before_exit),
+    & :global(.rdp-weeks_after_exit) {
+      /* Keep animationend so DayPicker can remove the outgoing DOM snapshot. */
+      animation-duration: 0.01ms;
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .dayButton[data-selected="true"] {
+    outline: 1px solid Highlight;
+  }
+
+  .dayButton:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
+
+.storyFrame {
+  border: 1px solid var(--ac-border);
+}
+
+.storyStack {
+  display: flex;
+  max-width: 24rem;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+.storyHeading {
+  margin: 0;
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-base);
+  font-weight: 600;
+}
+
+.storyDescription {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+}
+
+.storyDayCell {
+  width: var(--ac-size-default);
+}
+
+.eventDot {
+  width: var(--ac-space-1);
+  height: var(--ac-space-1);
+  border-radius: 50%;
+  background-color: currentColor;
 }
