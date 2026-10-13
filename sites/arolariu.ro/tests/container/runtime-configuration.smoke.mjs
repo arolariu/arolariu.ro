@@ -14,8 +14,12 @@ assert.ok(image, "Supply the final website image to test.");
 assert.ok(environment === "PRODUCTION" || environment === "DEVELOPMENT", "Supply the expected build-time SITE_ENV.");
 assert.equal(process.platform, "linux", "This smoke test uses Linux Docker host networking.");
 
-for (const managedIdentity of [false, true]) {
-test(`the final image loads runtime configuration (${managedIdentity ? "App Service managed identity" : "local exp fixture"})`, {timeout: 60_000}, async () => {
+for (const {managedIdentity, identityDelayMs} of [
+  {managedIdentity: false, identityDelayMs: 0},
+  {managedIdentity: true, identityDelayMs: 0},
+  {managedIdentity: true, identityDelayMs: 11_000},
+]) {
+test(`the final image loads runtime configuration (${managedIdentity ? `App Service identity, ${identityDelayMs}ms cold start` : "local exp fixture"})`, {timeout: 60_000}, async () => {
   const imageEnvironment = JSON.parse(execFileSync("docker", ["image", "inspect", "--format", "{{json .Config.Env}}", image], {
     encoding: "utf8",
   }));
@@ -38,12 +42,14 @@ test(`the final image loads runtime configuration (${managedIdentity ? "App Serv
         resource: url.searchParams.get("resource"),
         identityHeader: request.headers["x-identity-header"],
       });
-      response.end(JSON.stringify({
-        access_token: accessToken,
-        expires_on: String(Math.floor(Date.now() / 1000) + 3600),
-        token_type: "Bearer",
-        resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
-      }));
+      void delay(identityDelayMs).then(() => {
+        response.end(JSON.stringify({
+          access_token: accessToken,
+          expires_on: String(Math.floor(Date.now() / 1000) + 3600),
+          token_type: "Bearer",
+          resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
+        }));
+      });
     } else if (url.pathname === "/api/v1/run-time") {
       requests.push({
         target: url.searchParams.get("for"),
