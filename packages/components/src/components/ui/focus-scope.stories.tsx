@@ -213,6 +213,59 @@ function UncheckedRadioGroupDemo(): React.JSX.Element {
 /** Deliberate single-representative radio policy, not a universal native-browser order claim. */
 export const UncheckedRadioGroup: Story = {render: () => <UncheckedRadioGroupDemo />};
 
+function NestedScopeOwnershipDemo(): React.JSX.Element {
+  const groupName = useId();
+  return (
+    <section className={styles.demo}>
+      <p>
+        These radios share one native group across two local scopes. Once focus enters the contained child, its native interior Tab and
+        Shift+Tab transitions belong to that child, not the ancestor's radio alias sequence. Pointer focus remains available outside because
+        these are local controllers, not modals.
+      </p>
+      <FocusScope
+        autoFocus
+        aria-label='Outer local scope'
+        className={styles.panel}>
+        <div className={styles.controls}>
+          <label>
+            <input
+              type='radio'
+              name={groupName}
+            />
+            Outer unchecked choice
+          </label>
+          <button
+            type='button'
+            className={styles.button}>
+            Outer intervening action
+          </button>
+          <FocusScope
+            aria-label='Contained child scope'
+            className={styles.panel}>
+            <div className={styles.controls}>
+              <label>
+                <input
+                  type='radio'
+                  name={groupName}
+                />
+                Inner unchecked choice
+              </label>
+              <button
+                type='button'
+                className={styles.button}>
+                Inner next action
+              </button>
+            </div>
+          </FocusScope>
+        </div>
+      </FocusScope>
+    </section>
+  );
+}
+
+/** Nested local keyboard ownership without a competing SDK modal trap or altered native group. */
+export const NestedScopeOwnership: Story = {render: () => <NestedScopeOwnershipDemo />};
+
 /** SDK modal comparison: Dialog supplies focus ownership without any FocusScope wrapper. */
 export const SdkOwnedModal: Story = {
   render: () => (

@@ -6,6 +6,302 @@ import {describe, expect, it} from "vitest";
 import {FocusScope} from "./focus-scope";
 
 describe("FocusScope", () => {
+  it("lets a contained child own native Tab from its representative even when that radio is an outer alias", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-forward-owner'
+          />
+          Outer unchecked choice
+        </label>
+        <button type='button'>Outer intervening action</button>
+        <FocusScope>
+          <label>
+            <input
+              type='radio'
+              name='nested-forward-owner'
+            />
+            Inner unchecked choice
+          </label>
+          <button type='button'>Inner next action</button>
+        </FocusScope>
+      </FocusScope>,
+    );
+    screen.getByLabelText("Inner unchecked choice").focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "Inner next action"})).toHaveFocus();
+    expect(screen.getByLabelText("Outer unchecked choice")).not.toBeChecked();
+    expect(screen.getByLabelText("Inner unchecked choice")).not.toBeChecked();
+  });
+
+  it("lets a contained child own native Shift+Tab instead of an ancestor wrapping its outer radio alias", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-reverse-owner'
+          />
+          Outer reverse choice
+        </label>
+        <button type='button'>Outer intervening action</button>
+        <FocusScope>
+          <button type='button'>Inner previous action</button>
+          <label>
+            <input
+              type='radio'
+              name='nested-reverse-owner'
+            />
+            Inner reverse choice
+          </label>
+          <button type='button'>Inner next action</button>
+        </FocusScope>
+        <button type='button'>Outer final action</button>
+      </FocusScope>,
+    );
+    screen.getByLabelText("Inner reverse choice").focus();
+
+    await user.tab({shift: true});
+
+    expect(screen.getByRole("button", {name: "Inner previous action"})).toHaveFocus();
+  });
+
+  it("keeps both native interior navigation and forward/reverse wrapping inside the contained child", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-cycle-owner'
+          />
+          Outer cycle choice
+        </label>
+        <button type='button'>Outer cycle action</button>
+        <FocusScope>
+          <label>
+            <input
+              type='radio'
+              name='nested-cycle-owner'
+            />
+            Inner cycle choice
+          </label>
+          <button type='button'>Inner cycle action</button>
+        </FocusScope>
+      </FocusScope>,
+    );
+    const choice = screen.getByLabelText("Inner cycle choice");
+    const action = screen.getByRole("button", {name: "Inner cycle action"});
+    choice.focus();
+
+    await user.tab();
+    expect(action).toHaveFocus();
+    await user.tab();
+    expect(choice).toHaveFocus();
+    await user.tab({shift: true});
+    expect(action).toHaveFocus();
+    await user.tab({shift: true});
+    expect(choice).toHaveFocus();
+  });
+
+  it("preserves consumer bubbling and an uncanceled native interior transition owned by the child", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    render(
+      <div
+        onKeyDown={(event) => {
+          if (event.key === "Tab") seen.push(`ancestor:${event.defaultPrevented}`);
+        }}>
+        <FocusScope
+          onKeyDown={(event) => {
+            if (event.key === "Tab") seen.push(`outer:${event.defaultPrevented}`);
+          }}>
+          <label>
+            <input
+              type='radio'
+              name='nested-bubble-owner'
+            />
+            Outer bubble choice
+          </label>
+          <button type='button'>Outer bubble action</button>
+          <FocusScope
+            onKeyDown={(event) => {
+              if (event.key === "Tab") seen.push(`inner:${event.defaultPrevented}`);
+            }}>
+            <label>
+              <input
+                type='radio'
+                name='nested-bubble-owner'
+              />
+              Inner bubble choice
+            </label>
+            <button type='button'>Inner bubble next</button>
+          </FocusScope>
+        </FocusScope>
+      </div>,
+    );
+    screen.getByLabelText("Inner bubble choice").focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "Inner bubble next"})).toHaveFocus();
+    expect(seen).toEqual(["inner:false", "outer:false", "ancestor:false"]);
+  });
+
+  it("still allows an ancestor consumer to cancel a child's native interior transition", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    render(
+      <FocusScope
+        onKeyDown={(event) => {
+          if (event.key === "Tab") {
+            seen.push("outer");
+            event.preventDefault();
+          }
+        }}>
+        <label>
+          <input
+            type='radio'
+            name='nested-cancel-owner'
+          />
+          Outer cancel choice
+        </label>
+        <button type='button'>Outer cancel action</button>
+        <FocusScope
+          onKeyDown={(event) => {
+            if (event.key === "Tab") seen.push("inner");
+          }}>
+          <label>
+            <input
+              type='radio'
+              name='nested-cancel-owner'
+            />
+            Inner cancel choice
+          </label>
+          <button type='button'>Inner canceled next</button>
+        </FocusScope>
+      </FocusScope>,
+    );
+    const choice = screen.getByLabelText("Inner cancel choice");
+    choice.focus();
+
+    await user.tab();
+
+    expect(choice).toHaveFocus();
+    expect(seen).toEqual(["inner", "outer"]);
+  });
+
+  it("lets the containing ancestor advance an alias in a non-contained child", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-pass-through'
+          />
+          Outer pass-through choice
+        </label>
+        <button type='button'>Outer pass-through action</button>
+        <FocusScope contain={false}>
+          <label>
+            <input
+              type='radio'
+              name='nested-pass-through'
+            />
+            Inner pass-through choice
+          </label>
+          <button type='button'>Inner pass-through next</button>
+        </FocusScope>
+      </FocusScope>,
+    );
+    screen.getByLabelText("Inner pass-through choice").focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "Outer pass-through action"})).toHaveFocus();
+  });
+
+  it("updates keyboard ownership when child containment is disabled and re-enabled", async () => {
+    const user = userEvent.setup();
+    const content = (contain: boolean): React.JSX.Element => (
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-toggle-owner'
+          />
+          Outer toggle choice
+        </label>
+        <button type='button'>Outer toggle action</button>
+        <FocusScope contain={contain}>
+          <label>
+            <input
+              type='radio'
+              name='nested-toggle-owner'
+            />
+            Inner toggle choice
+          </label>
+          <button type='button'>Inner toggle next</button>
+        </FocusScope>
+      </FocusScope>
+    );
+    const {rerender} = render(content(true));
+    const choice = screen.getByLabelText("Inner toggle choice");
+    choice.focus();
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Inner toggle next"})).toHaveFocus();
+
+    rerender(content(false));
+    choice.focus();
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Outer toggle action"})).toHaveFocus();
+
+    rerender(content(true));
+    choice.focus();
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Inner toggle next"})).toHaveFocus();
+  });
+
+  it("preserves the innermost contained owner through a non-contained intermediate scope", async () => {
+    const user = userEvent.setup();
+    render(
+      <FocusScope>
+        <label>
+          <input
+            type='radio'
+            name='nested-three-level'
+          />
+          Outermost choice
+        </label>
+        <button type='button'>Outermost intervening action</button>
+        <FocusScope contain={false}>
+          <FocusScope>
+            <label>
+              <input
+                type='radio'
+                name='nested-three-level'
+              />
+              Innermost choice
+            </label>
+            <button type='button'>Innermost next action</button>
+          </FocusScope>
+        </FocusScope>
+      </FocusScope>,
+    );
+    screen.getByLabelText("Innermost choice").focus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", {name: "Innermost next action"})).toHaveFocus();
+  });
+
   it("wraps actual Tab after the first of two unchecked group peers rather than escaping past the second", async () => {
     const user = userEvent.setup();
     render(

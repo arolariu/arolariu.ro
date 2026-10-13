@@ -49,6 +49,8 @@ const FOCUSABLE_SELECTOR = [
   "video[controls]",
 ].join(", ");
 
+const ownedTabEvents = new WeakSet<KeyboardEvent>();
+
 function isDisabledByFieldset(element: HTMLElement, ancestor: HTMLElement): boolean {
   if (!(ancestor instanceof HTMLFieldSetElement) || !ancestor.disabled || !element.matches("button, input, select, textarea")) {
     return false;
@@ -156,6 +158,9 @@ function resolveActiveTarget(active: Element | null, container: HTMLElement, can
  * navigation advances from that logical stop, so physical peer placement cannot escape
  * containment. Ordinary native traversal remains between representative targets.
  * This is a deliberate controller policy, not a claim about every browser's radio order.
+ * The innermost contained scope owns a Tab event even when permitting native interior
+ * navigation. Ancestor controllers defer, but consumer handlers still bubble and may
+ * cancel that transition. Non-contained descendants do not claim keyboard ownership.
  *
  * This is a local Tab controller, not a modal manager: it does not inert siblings,
  * dismiss on Escape, intercept pointer focus, or control portaled descendants.
@@ -211,7 +216,8 @@ const FocusScope = React.forwardRef<HTMLDivElement, FocusScopeProps>(
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
       onKeyDown?.(event);
-      if (!contain || event.key !== "Tab" || event.defaultPrevented) return;
+      if (!contain || event.key !== "Tab" || event.defaultPrevented || ownedTabEvents.has(event.nativeEvent)) return;
+      ownedTabEvents.add(event.nativeEvent);
 
       const container = event.currentTarget;
       const focusable = getFocusableElements(container);
