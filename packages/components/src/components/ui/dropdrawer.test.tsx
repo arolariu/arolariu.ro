@@ -1,8 +1,9 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
+import {Menu as BaseMenu} from "@base-ui/react/menu";
+import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
-import {useIsMobile} from "@/hooks/useIsMobile";
+import * as React from "react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {
   DropDrawer,
@@ -18,1218 +19,991 @@ import {
   DropDrawerTrigger,
 } from "./dropdrawer";
 
-vi.mock("@/hooks/useIsMobile", () => ({
-  useIsMobile: vi.fn(),
-}));
+/** Only matchMedia is replaced: both responsive hooks and both SDK owners remain real. */
+function installMediaQuery(initialMobile = false): {change: (mobile: boolean) => void; restore: () => void} {
+  let mobile = initialMobile;
+  const queries = new Map<string, MediaQueryList>();
+  const legacyListeners = new Map<MediaQueryList, Set<(this: MediaQueryList, event: MediaQueryListEvent) => void>>();
+  const original = Object.getOwnPropertyDescriptor(window, "matchMedia");
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value(query: string): MediaQueryList {
+      const existing = queries.get(query);
+      if (existing) return existing;
+      const target = new EventTarget();
+      const list: MediaQueryList = {
+        get matches() {
+          return query === "(max-width: 767px)" && mobile;
+        },
+        media: query,
+        onchange: null,
+        addListener: (listener) => {
+          if (listener) legacyListeners.get(list)?.add(listener);
+        },
+        removeListener: (listener) => {
+          if (listener) legacyListeners.get(list)?.delete(listener);
+        },
+        addEventListener: target.addEventListener.bind(target),
+        removeEventListener: target.removeEventListener.bind(target),
+        dispatchEvent: target.dispatchEvent.bind(target),
+      };
+      queries.set(query, list);
+      legacyListeners.set(list, new Set());
+      return list;
+    },
+  });
+  return {
+    change(nextMobile) {
+      mobile = nextMobile;
+      act(() => {
+        for (const list of queries.values()) {
+          const event = Object.assign(new Event("change"), {matches: list.matches, media: list.media});
+          list.dispatchEvent(event);
+          list.onchange?.call(list, event);
+          for (const listener of legacyListeners.get(list) ?? []) listener.call(list, event);
+        }
+      });
+    },
+    restore() {
+      if (original) Object.defineProperty(window, "matchMedia", original);
+      else Reflect.deleteProperty(window, "matchMedia");
+    },
+  };
+}
 
-const mockedUseIsMobile = vi.mocked(useIsMobile);
-
-function renderDropDrawer({defaultOpen = false}: Readonly<{defaultOpen?: boolean}> = {}): ReturnType<typeof render> {
-  return render(
-    <DropDrawer defaultOpen={defaultOpen}>
-      <DropDrawerTrigger>Open menu</DropDrawerTrigger>
-      <DropDrawerContent>
-        <DropDrawerGroup>
-          <DropDrawerLabel>Account</DropDrawerLabel>
-          <DropDrawerItem>Profile</DropDrawerItem>
-          <DropDrawerSub id='security-submenu'>
-            <DropDrawerSubTrigger>Security</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Passkeys</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerGroup>
-      </DropDrawerContent>
-    </DropDrawer>,
+function Navigation({version = "Passkeys", submenu = true}: Readonly<{version?: string; submenu?: boolean}>): React.ReactElement {
+  return (
+    <>
+      <DropDrawerGroup>
+        <DropDrawerLabel>Account</DropDrawerLabel>
+        <DropDrawerItem closeOnClick={false}>Profile</DropDrawerItem>
+        {submenu && (
+          <div>
+            <DropDrawerSub id='security'>
+              <DropDrawerSubTrigger>Security</DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem closeOnClick={false}>{version}</DropDrawerItem>
+                <DropDrawerSub>
+                  <DropDrawerSubTrigger>Advanced</DropDrawerSubTrigger>
+                  <DropDrawerSubContent>
+                    <DropDrawerItem>Recovery</DropDrawerItem>
+                  </DropDrawerSubContent>
+                </DropDrawerSub>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </div>
+        )}
+      </DropDrawerGroup>
+      <DropDrawerSeparator />
+      <DropDrawerFooter>Session actions</DropDrawerFooter>
+    </>
   );
 }
 
-describe("DropDrawer", () => {
-  beforeEach(() => {
-    mockedUseIsMobile.mockReturnValue(false);
+function Fixture(props: Readonly<React.ComponentProps<typeof DropDrawer> & {version?: string; submenu?: boolean}>): React.ReactElement {
+  const {version, submenu, ...rootProps} = props;
+  return (
+    <DropDrawer
+      mobileTitle='Actions'
+      {...rootProps}>
+      <DropDrawerTrigger>Open actions</DropDrawerTrigger>
+      <DropDrawerContent aria-label='Actions'>
+        <Navigation
+          version={version}
+          submenu={submenu}
+        />
+      </DropDrawerContent>
+    </DropDrawer>
+  );
+}
+
+let media: ReturnType<typeof installMediaQuery>;
+const bodyStyles = document.body.style.cssText;
+const htmlStyles = document.documentElement.style.cssText;
+
+beforeEach(() => {
+  media = installMediaQuery();
+});
+
+afterEach(async () => {
+  cleanup();
+  await waitFor(() => {
+    expect(document.body.style.cssText).toBe(bodyStyles);
+    expect(document.documentElement.style.cssText).toBe(htmlStyles);
   });
+  media.restore();
+  vi.restoreAllMocks();
+});
 
-  it("renders a Base UI menu on desktop", async () => {
-    // Arrange
-    renderDropDrawer();
-
-    // Act
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByRole("menu")).toBeInTheDocument();
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      expect(screen.getByText("Profile")).toBeVisible();
-      expect(screen.getByText("Security")).toBeVisible();
-    });
-  });
-
-  it("renders a Base UI drawer on mobile", async () => {
-    // Arrange
-    mockedUseIsMobile.mockReturnValue(true);
-
-    // Act
-    renderDropDrawer({defaultOpen: true});
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-      expect(screen.getByText("Profile")).toBeVisible();
-      expect(screen.getByText("Security")).toBeVisible();
-    });
-  });
-
-  it("navigates into mobile submenus", async () => {
-    // Arrange
-    mockedUseIsMobile.mockReturnValue(true);
-    renderDropDrawer({defaultOpen: true});
-
-    // Act
-    const user = userEvent.setup();
-    await user.click(screen.getByText("Security"));
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Passkeys")).toBeVisible();
-      expect(screen.getByRole("button", {name: "Go back"})).toBeVisible();
-    });
-  });
-
-  describe("DropDrawerGroup", () => {
-    it("renders group on desktop without crashing", async () => {
-      // Arrange
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Account")).toBeVisible();
-        expect(screen.getByText("Profile")).toBeVisible();
-      });
-    });
-
-    it("renders group on mobile without crashing", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-
-      // Act
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Account")).toBeVisible();
-        expect(screen.getByText("Profile")).toBeVisible();
-      });
-    });
-  });
-
-  describe("DropDrawerLabel", () => {
-    it("renders label inside menu content", async () => {
-      // Arrange
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Account")).toBeVisible();
-      });
-    });
-
-    it("renders label on mobile", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Account")).toBeVisible();
-      });
-    });
-
-    it("renders label with custom className on desktop", async () => {
-      // Arrange
+describe("DropDrawer real responsive owners", () => {
+  it.each(["click", "Enter", "Space"] as const)(
+    "suppresses disabled mobile submenu %s before navigation and callbacks",
+    async (activation) => {
+      media.change(true);
+      const selections: string[] = [];
       render(
         <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerTrigger>Open actions</DropDrawerTrigger>
           <DropDrawerContent>
-            <DropDrawerGroup>
-              <DropDrawerLabel className='custom-label'>Custom Label</DropDrawerLabel>
-            </DropDrawerGroup>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const label = screen.getByText("Custom Label");
-        expect(label).toHaveClass("custom-label");
-      });
-    });
-  });
-
-  describe("DropDrawerFooter", () => {
-    it("renders footer on mobile drawer", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerFooter data-testid='drawer-footer'>
-              <button type='button'>Close</button>
-            </DropDrawerFooter>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("drawer-footer")).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
-      });
-    });
-
-    it("renders footer content with custom className", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerFooter
-              className='custom-footer'
-              data-testid='custom-footer'>
-              Footer content
-            </DropDrawerFooter>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const footer = screen.getByTestId("custom-footer");
-        expect(footer).toHaveClass("custom-footer");
-        expect(footer).toHaveTextContent("Footer content");
-      });
-    });
-
-    it("renders footer content on desktop", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerFooter data-testid='desktop-footer'>Footer content</DropDrawerFooter>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("desktop-footer")).toHaveTextContent("Footer content");
-      });
-    });
-  });
-
-  describe("DropDrawerSub, DropDrawerSubTrigger, and DropDrawerSubContent", () => {
-    it("renders submenu structure on desktop", async () => {
-      // Arrange
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Security")).toBeVisible();
-      });
-    });
-
-    it("renders submenu structure on mobile and allows navigation", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      renderDropDrawer({defaultOpen: true});
-
-      // Act
-      const user = userEvent.setup();
-      await user.click(screen.getByText("Security"));
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Passkeys")).toBeVisible();
-      });
-    });
-
-    it("opens submenu on desktop hover", async () => {
-      // Arrange
-      renderDropDrawer({defaultOpen: true});
-
-      // Act - hover over submenu trigger
-      await waitFor(() => screen.getByText("Security"));
-      const securityTrigger = screen.getByText("Security");
-      const user = userEvent.setup();
-      await user.hover(securityTrigger);
-
-      // Assert - submenu content should become visible
-      await waitFor(() => {
-        expect(screen.getByText("Passkeys")).toBeInTheDocument();
-      });
-    });
-
-    it("renders chevron icon in submenu trigger on desktop", async () => {
-      // Arrange
-      renderDropDrawer({defaultOpen: true});
-
-      // Assert - should have chevron icon
-      await waitFor(() => {
-        const securityTrigger = screen.getByText("Security").parentElement;
-        expect(securityTrigger).toBeInTheDocument();
-      });
-    });
-
-    it("falls back to the default mobile submenu title when a wrapped submenu has no cached content", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <div>
-              Introductory copy
-              <DropDrawerSub id='wrapped-empty-submenu'>
-                <DropDrawerSubTrigger>
-                  <span>Wrapped Empty Submenu</span>
-                </DropDrawerSubTrigger>
-                <DropDrawerSubContent />
-              </DropDrawerSub>
-            </div>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Act
-      const user = userEvent.setup();
-      await user.click(await screen.findByText("Wrapped Empty Submenu"));
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByRole("button", {name: "Go back"})).toBeVisible();
-        expect(screen.getByText("Submenu")).toBeVisible();
-      });
-    });
-
-    it("preserves non-trigger children when processing mobile submenu children", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerSub id='mixed-children-submenu'>
-              Supporting copy
-              <span data-testid='mobile-submenu-extra-child'>Extra child</span>
-              <DropDrawerSubTrigger>Mixed Children Submenu</DropDrawerSubTrigger>
+            <DropDrawerSub>
+              <DropDrawerSubTrigger
+                disabled
+                onClick={() => selections.push("click")}
+                onKeyDown={() => selections.push("key")}>
+                Disabled submenu
+              </DropDrawerSubTrigger>
               <DropDrawerSubContent>
-                <DropDrawerItem>Mixed Child Item</DropDrawerItem>
+                <DropDrawerItem>Forbidden destination</DropDrawerItem>
               </DropDrawerSubContent>
             </DropDrawerSub>
           </DropDrawerContent>
         </DropDrawer>,
       );
+      const trigger = await screen.findByText("Disabled submenu");
+      const control = trigger.closest('[data-slot="drop-drawer-sub-trigger"]');
+      if (!control) throw new Error("Missing submenu trigger");
+      if (activation === "click") fireEvent.click(control);
+      else {
+        fireEvent.keyDown(control, {key: activation === "Enter" ? "Enter" : " "});
+        fireEvent.keyUp(control, {key: activation === "Enter" ? "Enter" : " "});
+      }
+      expect(selections).toEqual([]);
+      expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", {name: "Forbidden destination"})).not.toBeInTheDocument();
+      expect(control).toHaveAttribute("disabled");
+      expect(control.tagName).toBe("BUTTON");
+    },
+  );
 
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Supporting copy")).toBeVisible();
-        expect(screen.getByTestId("mobile-submenu-extra-child")).toBeVisible();
-        expect(screen.getByText("Mixed Children Submenu")).toBeVisible();
-      });
-    });
-  });
-
-  describe("DropDrawerSeparator", () => {
-    it("renders separator in menu", async () => {
-      // Arrange
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerSeparator data-testid='separator' />
-            <DropDrawerItem>Item 2</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("separator")).toBeInTheDocument();
-      });
-    });
-
-    it("renders separator on mobile without crashing", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerSeparator data-testid='mobile-separator' />
-            <DropDrawerItem>Item 2</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert - check that the component renders without crashing
-      await waitFor(() => {
-        expect(screen.getByText("Item 1")).toBeVisible();
-        expect(screen.getByText("Item 2")).toBeVisible();
-        expect(screen.queryByTestId("mobile-separator")).not.toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("DropDrawerItem", () => {
-    it("renders items on desktop", async () => {
-      // Arrange
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem data-testid='desktop-item'>Desktop Item</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("desktop-item")).toBeInTheDocument();
-        expect(screen.getByText("Desktop Item")).toBeVisible();
-      });
-    });
-
-    it("renders items on mobile", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem data-testid='mobile-item'>Mobile Item</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("mobile-item")).toBeInTheDocument();
-        expect(screen.getByText("Mobile Item")).toBeVisible();
-      });
-    });
-
-    it("renders item with icon prop", async () => {
-      // Arrange
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem icon={<span data-testid='item-icon'>→</span>}>Item with icon</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByTestId("item-icon")).toBeInTheDocument();
-        expect(screen.getByText("Item with icon")).toBeVisible();
-      });
-    });
-  });
-
-  describe("DropDrawerTrigger", () => {
-    it("renders trigger button on desktop", () => {
-      // Arrange
-      render(
-        <DropDrawer>
-          <DropDrawerTrigger data-testid='desktop-trigger'>Open Desktop</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      expect(screen.getByTestId("desktop-trigger")).toBeInTheDocument();
-      expect(screen.getByText("Open Desktop")).toBeVisible();
-    });
-
-    it("renders trigger button on mobile", () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer>
-          <DropDrawerTrigger data-testid='mobile-trigger'>Open Mobile</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem>Item</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      expect(screen.getByTestId("mobile-trigger")).toBeInTheDocument();
-      expect(screen.getByText("Open Mobile")).toBeVisible();
-    });
-  });
-
-  describe("DropDrawerItem with disabled prop", () => {
-    it("short-circuits disabled desktop item clicks", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      const mockOnClick = vi.fn();
-      const mockOnSelect = vi.fn();
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              disabled
-              onClick={mockOnClick}
-              onSelect={mockOnSelect}
-              data-testid='disabled-desktop-item'>
-              Disabled desktop item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Act
-      const item = await screen.findByTestId("disabled-desktop-item");
-      fireEvent.click(item);
-
-      // Assert
-      expect(mockOnClick).not.toHaveBeenCalled();
-      expect(mockOnSelect).not.toHaveBeenCalled();
-    });
-
-    it("renders disabled item on desktop", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              disabled
-              data-testid='disabled-item'>
-              Disabled Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const item = screen.getByTestId("disabled-item");
-        expect(item).toHaveAttribute("data-disabled");
-        expect(item).toHaveAttribute("aria-disabled", "true");
-      });
-    });
-
-    it("renders disabled item on mobile", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              disabled
-              data-testid='disabled-item'>
-              Disabled Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const item = screen.getByTestId("disabled-item");
-        expect(item).toHaveAttribute("data-disabled", "true");
-        expect(item).toHaveAttribute("aria-disabled", "true");
-      });
-    });
-
-    it("does not trigger onClick when item is disabled on mobile", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      const mockOnClick = vi.fn();
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              disabled
-              onClick={mockOnClick}
-              data-testid='disabled-item'>
-              Disabled Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Act
-      await waitFor(() => screen.getByTestId("disabled-item"));
-      const user = userEvent.setup();
-      await user.click(screen.getByTestId("disabled-item"));
-
-      // Assert
-      expect(mockOnClick).not.toHaveBeenCalled();
-    });
-
-    it("does not trigger onSelect when item is disabled on desktop", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      const mockOnSelect = vi.fn();
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              disabled
-              onSelect={mockOnSelect}
-              data-testid='disabled-item'>
-              Disabled Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Act
-      await waitFor(() => screen.getByTestId("disabled-item"));
-      const user = userEvent.setup();
-      await user.click(screen.getByTestId("disabled-item"));
-
-      // Assert
-      expect(mockOnSelect).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("DropDrawerItem with closeOnClick", () => {
-    it("closes dropdown when closeOnClick is true on desktop", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      render(
-        <DropDrawer>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem closeOnClick>Close on click</DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Act
-      const user = userEvent.setup();
-      await user.click(screen.getByRole("button", {name: "Open"}));
-      await waitFor(() => screen.getByText("Close on click"));
-
-      // Assert - Item rendered
-      expect(screen.getByText("Close on click")).toBeVisible();
-    });
-  });
-
-  describe("DropDrawerItem with inset prop", () => {
-    it("applies inset styling on desktop", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(false);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              inset
-              data-testid='inset-item'>
-              Inset Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const item = screen.getByTestId("inset-item");
-        expect(item).toHaveAttribute("data-inset", "true");
-      });
-    });
-
-    it("applies inset styling on mobile", async () => {
-      // Arrange
-      mockedUseIsMobile.mockReturnValue(true);
-      render(
-        <DropDrawer defaultOpen>
-          <DropDrawerTrigger>Open</DropDrawerTrigger>
-          <DropDrawerContent>
-            <DropDrawerItem
-              inset
-              data-testid='inset-item'>
-              Inset Item
-            </DropDrawerItem>
-          </DropDrawerContent>
-        </DropDrawer>,
-      );
-
-      // Assert
-      await waitFor(() => {
-        const item = screen.getByTestId("inset-item");
-        expect(item).toHaveAttribute("data-inset", "true");
-      });
-    });
-  });
-});
-
-describe("DropDrawerItem - onSelect callback", () => {
-  beforeEach(() => {
-    mockedUseIsMobile.mockReturnValue(false);
-  });
-
-  it("calls onSelect when desktop item is clicked", async () => {
-    const mockOnSelect = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem
-            onSelect={mockOnSelect}
-            data-testid='item-with-select'>
-            Item
-          </DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByTestId("item-with-select"));
+  it("owns real desktop roving navigation, submenu keyboard opening and escape", async () => {
     const user = userEvent.setup();
-    await user.click(screen.getByTestId("item-with-select"));
-
-    expect(mockOnSelect).toHaveBeenCalled();
-  });
-
-  it("calls onSelect when mobile item is clicked", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnSelect = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem
-            onSelect={mockOnSelect}
-            data-testid='item-with-select'>
-            Item
-          </DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByTestId("item-with-select"));
-    const user = userEvent.setup();
-    await user.click(screen.getByTestId("item-with-select"));
-
-    expect(mockOnSelect).toHaveBeenCalled();
-  });
-});
-
-describe("DropDrawerCheckboxItem and DropDrawerRadioGroup", () => {
-  it("renders checkbox items on desktop", async () => {
-    mockedUseIsMobile.mockReturnValue(false);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem data-testid='checkbox-item'>Checkbox Item</DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("checkbox-item")).toBeInTheDocument();
-    });
-  });
-});
-
-describe("DropDrawerSubTrigger with onClick", () => {
-  it("calls onClick handler when desktop subtrigger is clicked", async () => {
-    mockedUseIsMobile.mockReturnValue(false);
-    const mockOnClick = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='test-submenu'>
-            <DropDrawerSubTrigger onClick={mockOnClick}>Sub</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Sub Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByText("Sub"));
-    const user = userEvent.setup();
-    await user.click(screen.getByText("Sub"));
-
-    expect(mockOnClick).toHaveBeenCalled();
-  });
-
-  it("calls onClick handler and navigates when mobile subtrigger is clicked", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnClick = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='test-submenu'>
-            <DropDrawerSubTrigger onClick={mockOnClick}>Sub</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Sub Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByText("Sub"));
-    const user = userEvent.setup();
-    await user.click(screen.getByText("Sub"));
-
-    expect(mockOnClick).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(screen.getByText("Sub Item")).toBeVisible();
-    });
-  });
-});
-
-describe("DropDrawerSubTrigger keyboard navigation", () => {
-  it("navigates on Enter key press on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='keyboard-submenu'>
-            <DropDrawerSubTrigger>Keyboard Sub</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Keyboard Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByText("Keyboard Sub"));
-    const trigger = screen.getByText("Keyboard Sub");
-
-    const user = userEvent.setup();
-    trigger.focus();
-    await user.keyboard("{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByText("Keyboard Item")).toBeVisible();
-    });
-  });
-
-  it("navigates on Space key press on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='space-submenu'>
-            <DropDrawerSubTrigger>Space Sub</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Space Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByText("Space Sub"));
-    const trigger = screen.getByText("Space Sub");
-
-    const user = userEvent.setup();
-    trigger.focus();
-    await user.keyboard(" ");
-
-    await waitFor(() => {
-      expect(screen.getByText("Space Item")).toBeVisible();
-    });
-  });
-
-  it("ignores non-activation keys on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='ignored-key-submenu'>
-            <DropDrawerSubTrigger>Ignored Key Sub</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Ignored Key Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    const trigger = await screen.findByText("Ignored Key Sub");
-    const user = userEvent.setup();
-
+    render(<Fixture />);
+    const trigger = screen.getByRole("button", {name: "Open actions"});
     trigger.focus();
     await user.keyboard("{ArrowDown}");
-
-    expect(screen.queryByText("Ignored Key Item")).not.toBeInTheDocument();
+    const menu = await screen.findByRole("menu", {name: "Actions"});
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(within(menu).getByRole("menuitem", {name: "Profile"})).toHaveFocus());
+    await user.keyboard("{ArrowDown}{ArrowRight}");
+    expect(await screen.findByRole("menuitem", {name: "Passkeys"})).toBeVisible();
+    await user.keyboard("{Escape}{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
-  it("navigates using the parent submenu id fallback on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
+  it("uses ordinary native mobile buttons, labelled groups, a real viewport and no incomplete menu roles", async () => {
+    media.change(true);
+    render(<Fixture defaultOpen />);
+    const dialog = await screen.findByRole("dialog", {name: "Actions"});
+    expect(within(dialog).getByRole("button", {name: "Profile"}).tagName).toBe("BUTTON");
+    expect(within(dialog).getByRole("group", {name: "Account"})).toBeVisible();
+    expect(within(dialog).queryByRole("menuitem")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("separator")).not.toBeInTheDocument();
+    expect(dialog.closest('[data-slot="drawer-viewport"]')).not.toBeNull();
+    expect(within(dialog).getByText("Session actions")).toBeVisible();
+  });
 
+  it.each([false, true])("preserves %s uncontrolled opening across both breakpoint directions", async (defaultOpen) => {
+    const requests: boolean[] = [];
+    const user = userEvent.setup();
     render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
+      <Fixture
+        defaultOpen={defaultOpen}
+        onOpenChange={(open) => requests.push(open)}
+      />,
+    );
+    if (!defaultOpen) await user.click(screen.getByRole("button", {name: "Open actions"}));
+    expect(await screen.findByRole("menu")).toBeVisible();
+    const before = requests.length;
+    media.change(true);
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    media.change(false);
+    expect(await screen.findByRole("menu")).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(requests).toHaveLength(before);
+  });
+
+  it.each([false, true])("retains legacy matching engine handles without leaking them to the other owner on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const handle = mobile ? BaseDrawer.createHandle() : BaseMenu.createHandle();
+    const user = userEvent.setup();
+    render(
+      <DropDrawer handle={handle}>
+        <DropDrawerTrigger handle={handle}>Handled actions</DropDrawerTrigger>
         <DropDrawerContent>
-          <DropDrawerSubTrigger data-parent-submenu-id='fallback-submenu'>Fallback Sub</DropDrawerSubTrigger>
-          <DropDrawerSub id='fallback-submenu'>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Fallback Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
+          <DropDrawerItem>Handled action</DropDrawerItem>
         </DropDrawerContent>
       </DropDrawer>,
     );
-
-    const user = userEvent.setup();
-    await user.click(await screen.findByText("Fallback Sub"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Fallback Item")).toBeVisible();
-    });
+    await user.click(screen.getByRole("button", {name: "Handled actions"}));
+    expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    media.change(!mobile);
+    expect(await screen.findByRole(mobile ? "menu" : "dialog")).toBeVisible();
+    expect(screen.getByText("Handled action")).toBeVisible();
   });
 
-  it("does not navigate when a mobile subtrigger cannot resolve a submenu id", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSubTrigger>Orphan Sub</DropDrawerSubTrigger>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
+  it("keeps controlled requests cancellable and does not turn a declined request into owned state", async () => {
     const user = userEvent.setup();
-    await user.click(await screen.findByText("Orphan Sub"));
+    const requests: boolean[] = [];
+    const view = render(
+      <Fixture
+        open={false}
+        onOpenChange={(open) => requests.push(open)}
+      />,
+    );
+    await user.click(screen.getByRole("button", {name: "Open actions"}));
+    expect(requests).toEqual([true]);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    view.rerender(
+      <Fixture
+        open
+        onOpenChange={(open, details) => {
+          requests.push(open);
+          if (!open) details.cancel();
+        }}
+      />,
+    );
+    media.change(true);
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    await user.keyboard("{Escape}");
+    expect(requests).toEqual([true, false]);
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
 
+  it("honors cancellation of an uncontrolled primitive close request", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(
+      <Fixture
+        defaultOpen
+        onOpenChange={(open, details) => {
+          if (!open) details.cancel();
+        }}
+      />,
+    );
+    await screen.findByRole("dialog");
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
+
+  it("hands focus to each new primitive during an open breakpoint migration", async () => {
+    const user = userEvent.setup();
+    render(<Fixture />);
+    await user.click(screen.getByRole("button", {name: "Open actions"}));
+    await screen.findByRole("menu");
+    media.change(true);
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    media.change(false);
+    const menu = await screen.findByRole("menu");
+    await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+  });
+
+  it("enters nested mobile panels, restores each trigger on back, and keeps generated IDs stable", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(<Fixture defaultOpen />);
+    await user.click(await screen.findByRole("button", {name: "Security"}));
+    const passkeys = await screen.findByRole("button", {name: "Passkeys"});
+    await waitFor(() => expect(passkeys).toHaveFocus());
+    const advanced = screen.getByRole("button", {name: "Advanced"});
+    const id = advanced.getAttribute("aria-controls");
+    expect(id).toBeTruthy();
+    await user.click(advanced);
+    await waitFor(() => expect(screen.getByRole("button", {name: "Recovery"})).toHaveFocus());
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    await waitFor(() => expect(advanced).toHaveFocus());
+    expect(advanced).toHaveAttribute("aria-controls", id);
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    await waitFor(() => expect(screen.getByRole("button", {name: "Security"})).toHaveFocus());
+    expect(screen.getByRole("button", {name: "Profile"})).toBeVisible();
+  });
+
+  it("keeps caller panel IDs and their trigger controls aligned through active rerenders", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const panelRef = React.createRef<HTMLElement>();
+    function IdentifiedPanel({id}: Readonly<{id: string}>): React.ReactElement {
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub id='stable-submenu'>
+              <DropDrawerSubTrigger>Identified panel</DropDrawerSubTrigger>
+              <DropDrawerSubContent
+                id={id}
+                ref={panelRef}
+                render={<section />}>
+                <DropDrawerItem closeOnClick={false}>Identified action</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    const view = render(<IdentifiedPanel id='caller-panel' />);
+    const trigger = await screen.findByRole("button", {name: "Identified panel"});
+    expect(trigger).toHaveAttribute("aria-controls", "caller-panel");
+    await user.click(trigger);
+    expect(await screen.findByRole("button", {name: "Identified action"})).toBeVisible();
+    expect(panelRef.current).toHaveAttribute("id", "caller-panel");
+    view.rerender(<IdentifiedPanel id='updated-panel' />);
+    expect(panelRef.current).toHaveAttribute("id", "updated-panel");
+    expect(trigger).toHaveAttribute("aria-controls", "updated-panel");
+    expect(screen.getByRole("button", {name: "Identified action"})).toBeVisible();
+  });
+
+  it("updates active registered children on rerender and resets removed submenu navigation", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const view = render(<Fixture defaultOpen />);
+    await user.click(await screen.findByRole("button", {name: "Security"}));
+    expect(await screen.findByRole("button", {name: "Passkeys"})).toBeVisible();
+    view.rerender(
+      <Fixture
+        defaultOpen
+        version='Updated action'
+      />,
+    );
+    expect(await screen.findByRole("button", {name: "Updated action"})).toBeVisible();
+    expect(screen.queryByRole("button", {name: "Passkeys"})).not.toBeInTheDocument();
+    view.rerender(
+      <Fixture
+        defaultOpen
+        submenu={false}
+      />,
+    );
+    await waitFor(() => expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument());
+    expect(screen.getByRole("button", {name: "Profile"})).toBeVisible();
+  });
+
+  it("unregisters a removed live panel without leaving an empty active page or navigating to stale content", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    function ConditionalPanel({present}: Readonly<{present: boolean}>): React.ReactElement {
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem closeOnClick={false}>Main action</DropDrawerItem>
+            <DropDrawerSub>
+              <DropDrawerSubTrigger>Conditional panel</DropDrawerSubTrigger>
+              {present && (
+                <DropDrawerSubContent>
+                  <DropDrawerItem>Conditional action</DropDrawerItem>
+                </DropDrawerSubContent>
+              )}
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    const view = render(<ConditionalPanel present />);
+    await user.click(await screen.findByRole("button", {name: "Conditional panel"}));
+    expect(await screen.findByRole("button", {name: "Conditional action"})).toBeVisible();
+    view.rerender(<ConditionalPanel present={false} />);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", {name: "Conditional panel"});
+    expect(trigger).toHaveFocus();
+    await user.click(trigger);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Main action"})).toBeVisible();
+  });
+
+  it("resets drill-down on close/reopen and on breakpoint migration without losing root open state", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(<Fixture />);
+    const trigger = screen.getByRole("button", {name: "Open actions"});
+    await user.click(trigger);
+    await user.click(await screen.findByRole("button", {name: "Security"}));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.click(trigger);
+    expect(await screen.findByRole("button", {name: "Profile"})).toBeVisible();
+    await user.click(screen.getByRole("button", {name: "Security"}));
+    media.change(false);
+    expect(await screen.findByRole("menu")).toBeVisible();
+    media.change(true);
+    expect(await screen.findByRole("button", {name: "Profile"})).toBeVisible();
     expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
   });
-});
 
-describe("DropDrawerItem keyboard navigation", () => {
-  it("ignores non-activation keys on mobile items", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnClick = vi.fn();
+  it.each([false, true])("applies closeOnClick false and true consistently on mobile=%s, including submenu actions", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    render(<Fixture defaultOpen />);
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Profile"}));
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    const security = screen.getByRole(mobile ? "button" : "menuitem", {name: "Security"});
+    if (mobile) await user.click(security);
+    else {
+      act(() => security.focus());
+      await user.keyboard("{ArrowRight}");
+    }
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Passkeys"}));
+    expect(screen.getByRole(mobile ? "dialog" : "menu", mobile ? undefined : {name: "Actions"})).toBeVisible();
+    const advanced = screen.getByRole(mobile ? "button" : "menuitem", {name: "Advanced"});
+    if (mobile) await user.click(advanced);
+    else {
+      act(() => advanced.focus());
+      await user.keyboard("{ArrowRight}");
+    }
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Recovery"}));
+    await waitFor(() => expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument());
+  });
 
+  it.each([false, true])("preserves click/selection cancellation and callback order on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    const calls: string[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onClick={(event) => {
+              calls.push("click");
+              event.preventDefault();
+            }}
+            onSelect={() => calls.push("select")}>
+            Cancel click
+          </DropDrawerItem>
+          <DropDrawerItem
+            onClick={() => calls.push("click")}
+            onSelect={(event) => {
+              calls.push("select");
+              event.preventDefault();
+            }}>
+            Cancel selection
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Cancel click"}));
+    expect(calls).toEqual(["click"]);
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    await user.click(screen.getByRole(mobile ? "button" : "menuitem", {name: "Cancel selection"}));
+    expect(calls).toEqual(["click", "click", "select"]);
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+  });
+
+  it.each([false, true])("honors SDK-only activation cancellation before selection on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    const selections: string[] = [];
     render(
       <DropDrawer defaultOpen>
         <DropDrawerTrigger>Open</DropDrawerTrigger>
         <DropDrawerContent>
           <DropDrawerItem
-            onClick={mockOnClick}
-            data-testid='ignored-key-item'>
-            Ignored Key Item
+            onClick={(event) => {
+              event.preventBaseUIHandler();
+            }}
+            onSelect={() => selections.push("selected")}>
+            Cancel SDK activation
           </DropDrawerItem>
         </DropDrawerContent>
       </DropDrawer>,
     );
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Cancel SDK activation"}));
+    expect(selections).toEqual([]);
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+  });
 
-    const item = await screen.findByTestId("ignored-key-item");
+  it("honors SDK-only submenu activation cancellation before mobile navigation", async () => {
+    media.change(true);
     const user = userEvent.setup();
-
-    item.focus();
-    await user.keyboard("{ArrowDown}");
-
-    expect(mockOnClick).not.toHaveBeenCalled();
-  });
-
-  it("triggers click on Enter key press on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnClick = vi.fn();
-
     render(
       <DropDrawer defaultOpen>
         <DropDrawerTrigger>Open</DropDrawerTrigger>
         <DropDrawerContent>
-          <DropDrawerItem
-            onClick={mockOnClick}
-            data-testid='keyboard-item'>
-            Keyboard Item
-          </DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByTestId("keyboard-item"));
-    const item = screen.getByTestId("keyboard-item");
-
-    const user = userEvent.setup();
-    item.focus();
-    await user.keyboard("{Enter}");
-
-    expect(mockOnClick).toHaveBeenCalled();
-  });
-
-  it("triggers click on Space key press on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnClick = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem
-            onClick={mockOnClick}
-            data-testid='space-item'>
-            Space Item
-          </DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => screen.getByTestId("space-item"));
-    const item = screen.getByTestId("space-item");
-
-    const user = userEvent.setup();
-    item.focus();
-    await user.keyboard(" ");
-
-    expect(mockOnClick).toHaveBeenCalled();
-  });
-});
-
-describe("DropDrawer back navigation", () => {
-  it("navigates back from nested submenu on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem>Main Item</DropDrawerItem>
-          <DropDrawerSub id='nested-submenu'>
-            <DropDrawerSubTrigger>Nested</DropDrawerSubTrigger>
-            <DropDrawerSubContent>
-              <DropDrawerItem>Nested Item</DropDrawerItem>
-            </DropDrawerSubContent>
-          </DropDrawerSub>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    // Navigate into submenu
-    const user = userEvent.setup();
-    await waitFor(() => screen.getByText("Nested"));
-    await user.click(screen.getByText("Nested"));
-
-    await waitFor(() => screen.getByText("Nested Item"));
-
-    // Navigate back
-    const backButton = screen.getByRole("button", {name: "Go back"});
-    await user.click(backButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Main Item")).toBeVisible();
-    });
-  });
-});
-
-describe("DropDrawer mobile conditional branches", () => {
-  it("keeps parent submenu items open on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-    const mockOnClick = vi.fn();
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem
-            data-parent-submenu-id='mobile-parent-submenu'
-            data-testid='parent-submenu-item'
-            onClick={mockOnClick}>
-            Parent submenu item
-          </DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    const user = userEvent.setup();
-    await user.click(await screen.findByTestId("parent-submenu-item"));
-
-    expect(mockOnClick).toHaveBeenCalledOnce();
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("renders standalone mobile submenus without submenu registration context", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerSub id='standalone-submenu'>
-          Standalone copy
-          <span data-testid='standalone-submenu-extra'>Extra standalone child</span>
-          <DropDrawerSubTrigger>Standalone Submenu</DropDrawerSubTrigger>
-          <DropDrawerSubContent>
-            <DropDrawerItem>Standalone Item</DropDrawerItem>
-          </DropDrawerSubContent>
-        </DropDrawerSub>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("Standalone copy")).toBeVisible();
-      expect(screen.getByTestId("standalone-submenu-extra")).toBeVisible();
-      expect(screen.getByText("Standalone Submenu")).toBeVisible();
-    });
-  });
-});
-
-describe("DropDrawerFooter on desktop", () => {
-  it("renders footer content on desktop", async () => {
-    mockedUseIsMobile.mockReturnValue(false);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem>Item</DropDrawerItem>
-          <DropDrawerFooter data-testid='desktop-footer'>Desktop Footer</DropDrawerFooter>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("desktop-footer")).toBeInTheDocument();
-      expect(screen.getByText("Desktop Footer")).toBeVisible();
-    });
-  });
-});
-
-describe("DropDrawerTrigger with asChild", () => {
-  it("renders trigger with asChild on desktop", () => {
-    mockedUseIsMobile.mockReturnValue(false);
-
-    render(
-      <DropDrawer>
-        <DropDrawerTrigger asChild>
-          <button
-            type='button'
-            data-testid='custom-trigger'>
-            Custom Trigger
-          </button>
-        </DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem>Item</DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    expect(screen.getByTestId("custom-trigger")).toBeInTheDocument();
-  });
-
-  it("renders trigger with asChild on mobile", () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
-    render(
-      <DropDrawer>
-        <DropDrawerTrigger asChild>
-          <button
-            type='button'
-            data-testid='custom-mobile-trigger'>
-            Custom Mobile Trigger
-          </button>
-        </DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerItem>Item</DropDrawerItem>
-        </DropDrawerContent>
-      </DropDrawer>,
-    );
-
-    expect(screen.getByTestId("custom-mobile-trigger")).toBeInTheDocument();
-  });
-});
-
-describe("DropDrawerSubTrigger with inset", () => {
-  it("applies inset styling to subtrigger on desktop", async () => {
-    mockedUseIsMobile.mockReturnValue(false);
-
-    render(
-      <DropDrawer defaultOpen>
-        <DropDrawerTrigger>Open</DropDrawerTrigger>
-        <DropDrawerContent>
-          <DropDrawerSub id='inset-submenu'>
+          <DropDrawerSub>
             <DropDrawerSubTrigger
-              inset
-              data-testid='inset-trigger'>
-              Inset Sub
+              onClick={(event) => {
+                event.preventBaseUIHandler();
+              }}>
+              Cancel SDK navigation
             </DropDrawerSubTrigger>
             <DropDrawerSubContent>
-              <DropDrawerItem>Sub Item</DropDrawerItem>
+              <DropDrawerItem>Child action</DropDrawerItem>
             </DropDrawerSubContent>
           </DropDrawerSub>
         </DropDrawerContent>
       </DropDrawer>,
     );
-
-    await waitFor(() => {
-      const trigger = screen.getByTestId("inset-trigger");
-      expect(trigger).toHaveAttribute("data-inset", "true");
-    });
+    await user.click(await screen.findByRole("button", {name: "Cancel SDK navigation"}));
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
   });
 
-  it("applies inset styling to subtrigger on mobile", async () => {
-    mockedUseIsMobile.mockReturnValue(true);
-
+  it("allows the consumer to cancel mobile submenu navigation without dropping its handler", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const calls: string[] = [];
     render(
       <DropDrawer defaultOpen>
         <DropDrawerTrigger>Open</DropDrawerTrigger>
         <DropDrawerContent>
-          <DropDrawerSub id='mobile-inset-submenu'>
+          <DropDrawerSub>
             <DropDrawerSubTrigger
-              inset
-              data-testid='mobile-inset-trigger'>
-              Mobile Inset Sub
+              onClick={(event) => {
+                calls.push("click");
+                event.preventDefault();
+              }}>
+              Stay here
             </DropDrawerSubTrigger>
             <DropDrawerSubContent>
-              <DropDrawerItem>Sub Item</DropDrawerItem>
+              <DropDrawerItem>Destination</DropDrawerItem>
             </DropDrawerSubContent>
           </DropDrawerSub>
         </DropDrawerContent>
       </DropDrawer>,
     );
+    await user.click(await screen.findByRole("button", {name: "Stay here"}));
+    expect(calls).toEqual(["click"]);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      const trigger = screen.getByTestId("mobile-inset-trigger");
-      expect(trigger).toHaveAttribute("data-inset", "true");
-    });
+  it.each([false, true])("disabled items suppress selection/click/key callbacks on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const calls: string[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            disabled
+            onClick={() => calls.push("click")}
+            onSelect={() => calls.push("select")}
+            onKeyDown={() => calls.push("key")}>
+            Disabled action
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const control = await screen.findByRole(mobile ? "button" : "menuitem", {name: "Disabled action"});
+    fireEvent.click(control);
+    fireEvent.keyDown(control, {key: "Enter"});
+    fireEvent.keyDown(control, {key: " "});
+    expect(calls).toEqual([]);
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+  });
+
+  it.each([false, true, "trap-focus"] as const)("honors actual drawer modal=%s rather than always adding a backdrop", async (modal) => {
+    media.change(true);
+    render(
+      <Fixture
+        defaultOpen
+        modal={modal}
+      />,
+    );
+    await screen.findByRole("dialog");
+    expect(Boolean(document.querySelector('[data-slot="drawer-overlay"]'))).toBe(modal === true);
+    expect(document.querySelector('[data-slot="drawer-viewport"]')).toHaveAttribute("data-modal", String(modal));
+  });
+
+  it("updates submenu disabled state before callbacks when its root props change", async () => {
+    media.change(true);
+    const clicks: string[] = [];
+    function DisabledSub({disabled}: Readonly<{disabled: boolean}>): React.ReactElement {
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub disabled={disabled}>
+              <DropDrawerSubTrigger onClick={() => clicks.push("clicked")}>Changing availability</DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem>Child action</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    const view = render(<DisabledSub disabled={false} />);
+    const trigger = await screen.findByRole("button", {name: "Changing availability"});
+    expect(trigger).not.toBeDisabled();
+    view.rerender(<DisabledSub disabled />);
+    expect(trigger).toBeDisabled();
+    fireEvent.click(trigger);
+    expect(clicks).toEqual([]);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+  });
+
+  it("honors controlled submenu requests and updated active content without caching children", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const requests: boolean[] = [];
+    function ControlledSub(): React.ReactElement {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub
+              open={open}
+              onOpenChange={(nextOpen) => {
+                requests.push(nextOpen);
+                setOpen(nextOpen);
+              }}>
+              <DropDrawerSubTrigger>Controlled panel</DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem>Controlled child</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      );
+    }
+    render(<ControlledSub />);
+    await user.click(await screen.findByRole("button", {name: "Controlled panel"}));
+    expect(await screen.findByRole("button", {name: "Controlled child"})).toBeVisible();
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(requests).toEqual([true, false]);
+    expect(screen.getByRole("button", {name: "Controlled panel"})).toHaveFocus();
+  });
+
+  it.each([false, true])("preserves custom native asChild trigger content, handlers, refs and form safety on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const rootRef = React.createRef<HTMLElement>();
+    const calls: string[] = [];
+    let submitted = 0;
+    function NativeControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+      return <button {...props} />;
+    }
+    render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted += 1;
+        }}>
+        <DropDrawer>
+          <DropDrawerTrigger
+            asChild
+            ref={rootRef}
+            onClick={() => calls.push("wrapper")}
+            className={(state) => (state.open ? "open-trigger" : "closed-trigger")}>
+            <NativeControl
+              ref={childRef}
+              onClick={() => calls.push("child")}>
+              Custom actions
+            </NativeControl>
+          </DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </form>,
+    );
+    const trigger = screen.getByRole("button", {name: "Custom actions"});
+    expect(childRef.current).toBe(trigger);
+    expect(rootRef.current).toBe(trigger);
+    expect(trigger.querySelector("button")).toBeNull();
+    expect(trigger).toHaveClass("closed-trigger");
+    await user.click(trigger);
+    expect(calls).toEqual(["child", "wrapper"]);
+    expect(submitted).toBe(0);
+    expect(trigger).toHaveAttribute("type", "button");
+    expect(trigger).toHaveClass("open-trigger");
+    expect(screen.getByRole(mobile ? "dialog" : "menu")).toBeVisible();
+  });
+
+  it.each([false, true])("passes real primitive popup/item state to render and class callbacks on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const popupRef = React.createRef<HTMLElement>();
+    const itemRef = React.createRef<HTMLElement>();
+    const popupStates: object[] = [];
+    const actionStates: object[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent
+          ref={popupRef}
+          className={(state) => (state.open ? "actual-popup-open" : "actual-popup-closed")}
+          render={(props, state) => {
+            popupStates.push(state);
+            return <section {...props} />;
+          }}>
+          <DropDrawerItem
+            ref={itemRef}
+            closeOnClick={false}
+            className={(state) => (state.disabled ? "action-disabled" : "action-enabled")}
+            render={(props, state) => {
+              actionStates.push(state);
+              return mobile ? (
+                <button
+                  {...props}
+                  type='button'
+                />
+              ) : (
+                <div {...props} />
+              );
+            }}>
+            Composed action
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const popup = await screen.findByRole(mobile ? "dialog" : "menu");
+    const action = screen.getByRole(mobile ? "button" : "menuitem", {name: "Composed action"});
+    expect(popupRef.current).toBe(popup);
+    expect(itemRef.current).toBe(action);
+    expect(popup.tagName).toBe("SECTION");
+    expect(popup).toHaveClass("actual-popup-open");
+    expect(action).toHaveClass("action-enabled");
+    expect(popupStates).toContainEqual(
+      expect.objectContaining(mobile ? {open: true, swiping: false, swipeDirection: "down"} : {open: true, side: "bottom"}),
+    );
+    expect(actionStates).toContainEqual(mobile ? {disabled: false} : {disabled: false, highlighted: false});
+  });
+
+  it("retains mobile-only SDK popup render/class callbacks on the real popup owner", async () => {
+    media.change(true);
+    const ref = React.createRef<HTMLElement>();
+    const states: object[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent
+          ref={ref}
+          className='shared-popup-class'
+          drawerProps={{
+            className: (state) => (state.open ? "mobile-sdk-open" : "mobile-sdk-closed"),
+            render: (props, state) => {
+              states.push(state);
+              return <section {...props} />;
+            },
+          }}>
+          <DropDrawerItem>Native action</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const popup = await screen.findByRole("dialog");
+    expect(popup.tagName).toBe("SECTION");
+    expect(ref.current).toBe(popup);
+    expect(popup).toHaveClass("shared-popup-class", "mobile-sdk-open");
+    expect(states).toContainEqual(expect.objectContaining({open: true, swipeDirection: "down", swiping: false}));
+    expect(within(popup).getByRole("button", {name: "Native action"})).toBeVisible();
+  });
+
+  it("preserves element render action contents, cancellation and both actual DOM refs", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const calls: string[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            ref={wrapperRef}
+            onClick={() => calls.push("wrapper")}
+            onSelect={() => calls.push("select")}
+            render={
+              <button
+                ref={childRef}
+                type='button'
+                onClick={(event) => {
+                  calls.push("child");
+                  event.preventDefault();
+                }}>
+                Rendered contents
+              </button>
+            }
+          />
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const action = await screen.findByRole("button", {name: "Rendered contents"});
+    expect(childRef.current).toBe(action);
+    expect(wrapperRef.current).toBe(action);
+    await user.click(action);
+    expect(calls).toEqual(["child", "wrapper"]);
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
+
+  it("preserves mobile native keyboard activation and caller key cancellation without adding menu roles", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const calls: string[] = [];
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            closeOnClick={false}
+            onSelect={() => calls.push("action")}>
+            Keyboard action
+          </DropDrawerItem>
+          <DropDrawerSub>
+            <DropDrawerSubTrigger onKeyDown={(event) => event.preventDefault()}>Cancel keyboard navigation</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Child</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const action = await screen.findByRole("button", {name: "Keyboard action"});
+    act(() => action.focus());
+    await user.keyboard("{Enter} ");
+    expect(calls).toEqual(["action", "action"]);
+    act(() => screen.getByRole("button", {name: "Cancel keyboard navigation"}).focus());
+    await user.keyboard("{Enter} ");
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+  });
+
+  it("retains custom footer composition contents and an actual ref without leaking render props to DOM", async () => {
+    media.change(true);
+    const ref = React.createRef<HTMLElement>();
+    const errors = vi.spyOn(console, "error");
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerFooter
+            ref={ref}
+            render={<aside aria-label='Footer actions'>Footer contents</aside>}
+          />
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const footer = await screen.findByRole("complementary", {name: "Footer actions"});
+    expect(ref.current).toBe(footer);
+    expect(footer).toHaveTextContent("Footer contents");
+    expect(footer).not.toHaveAttribute("render");
+    expect(errors).not.toHaveBeenCalled();
+  });
+});
+
+/** Deterministic layout, hit testing and pointer capture; no primitive or hook replacement. */
+function installGesturePlatform(): {hit: (target: Element) => void; frame: () => void; restore: () => void} {
+  let target: Element | null = null;
+  let nextFrame = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  const captures = new WeakMap<HTMLElement, Set<number>>();
+  const descriptors = ["setPointerCapture", "releasePointerCapture", "hasPointerCapture"].map(
+    (name) => [name, Object.getOwnPropertyDescriptor(HTMLElement.prototype, name)] as const,
+  );
+  Object.defineProperties(HTMLElement.prototype, {
+    setPointerCapture: {
+      configurable: true,
+      value(this: HTMLElement, id: number) {
+        const ids = captures.get(this) ?? new Set<number>();
+        ids.add(id);
+        captures.set(this, ids);
+      },
+    },
+    releasePointerCapture: {
+      configurable: true,
+      value(this: HTMLElement, id: number) {
+        captures.get(this)?.delete(id);
+      },
+    },
+    hasPointerCapture: {
+      configurable: true,
+      value(this: HTMLElement, id: number) {
+        return captures.get(this)?.has(id) ?? false;
+      },
+    },
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+    return this.getAttribute("data-slot") === "drawer-viewport" ? 800 : 400;
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(400);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    return new DOMRect(0, 0, 400, this.offsetHeight);
+  });
+  vi.spyOn(document, "elementFromPoint").mockImplementation(() => target);
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    frames.set(++nextFrame, callback);
+    return nextFrame;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation((id) => {
+    frames.delete(id);
+  });
+  return {
+    hit(element) {
+      target = element;
+    },
+    frame() {
+      act(() => {
+        const pending = [...frames.values()];
+        frames.clear();
+        for (const callback of pending) callback(16);
+      });
+    },
+    restore() {
+      frames.clear();
+      for (const [name, descriptor] of descriptors) {
+        if (descriptor) Object.defineProperty(HTMLElement.prototype, name, descriptor);
+        else Reflect.deleteProperty(HTMLElement.prototype, name);
+      }
+      vi.restoreAllMocks();
+    },
+  };
+}
+
+function pointer(target: Element, type: string, y: number, timeStamp: number): void {
+  const event = new PointerEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    pointerId: 1,
+    pointerType: "mouse",
+    isPrimary: true,
+    button: 0,
+    buttons: type === "pointerup" ? 0 : 1,
+    clientX: 100,
+    clientY: y,
+  });
+  Object.defineProperty(event, "timeStamp", {value: timeStamp});
+  fireEvent(target, event);
+}
+
+describe("DropDrawer real Drawer gestures under restored platform boundaries", () => {
+  it.each([false, true])("uses the actual swipe controller and honors cancellation=%s", async (cancelled) => {
+    media.change(true);
+    const platform = installGesturePlatform();
+    const requests: {open: boolean; reason: string}[] = [];
+    try {
+      const user = userEvent.setup();
+      render(
+        <Fixture
+          onOpenChange={(open, details) => {
+            requests.push({open, reason: details.reason});
+            if (cancelled && details.reason === "swipe") details.cancel();
+          }}
+        />,
+      );
+      const trigger = screen.getByRole("button", {name: "Open actions"});
+      await user.click(trigger);
+      platform.frame();
+      const popup = await screen.findByRole("dialog");
+      const handle = popup.querySelector('[data-slot="drawer-swipe-handle"]');
+      if (!handle) throw new Error("DropDrawer must supply the real Drawer swipe surface.");
+      platform.hit(handle);
+      pointer(handle, "pointerdown", 30, 100);
+      expect(popup).toHaveAttribute("data-swiping");
+      pointer(handle, "pointermove", 40, 120);
+      pointer(handle, "pointermove", 300, 820);
+      expect(popup.style.getPropertyValue("--drawer-swipe-movement-y")).toBe("260px");
+      pointer(handle, "pointerup", 300, 920);
+      platform.frame();
+      expect(requests).toContainEqual({open: false, reason: "swipe"});
+      if (cancelled) expect(screen.getByRole("dialog")).toBeVisible();
+      else {
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+        platform.frame();
+        await waitFor(() => expect(trigger).toHaveFocus());
+      }
+    } finally {
+      cleanup();
+      platform.restore();
+    }
   });
 });
