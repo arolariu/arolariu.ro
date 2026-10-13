@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import {execFileSync, spawn} from "node:child_process";
 import {randomUUID} from "node:crypto";
 import {once} from "node:events";
+import {mkdtemp, rm, writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {test} from "node:test";
 import {setTimeout as delay} from "node:timers/promises";
 
@@ -11,7 +14,8 @@ assert.ok(image, "Supply the final website image to test.");
 assert.ok(environment === "PRODUCTION" || environment === "DEVELOPMENT", "Supply the expected build-time SITE_ENV.");
 assert.equal(process.platform, "linux", "This smoke test uses Linux Docker host networking.");
 
-test("the final image registers the inlined environment and loads runtime configuration", {timeout: 60_000}, async () => {
+for (const managedIdentity of [false, true]) {
+test(`the final image loads runtime configuration (${managedIdentity ? "App Service managed identity" : "local exp fixture"})`, {timeout: 60_000}, async () => {
   const imageEnvironment = JSON.parse(execFileSync("docker", ["image", "inspect", "--format", "{{json .Config.Env}}", image], {
     encoding: "utf8",
   }));
@@ -20,12 +24,32 @@ test("the final image registers the inlined environment and loads runtime config
   }
 
   const requests = [];
+  const identityRequests = [];
+  const identityClientId = "11111111-2222-3333-4444-555555555555";
+  const identityHeader = "smoke-test-only-identity-header";
+  const accessToken = "smoke-test-only-exp-access-token";
   let fixtureOrigin = "";
   const fixture = createServer((request, response) => {
     const url = new URL(request.url, fixtureOrigin);
     response.setHeader("Content-Type", "application/json");
-    if (url.pathname === "/api/v1/run-time") {
-      requests.push({target: url.searchParams.get("for"), label: url.searchParams.get("label")});
+    if (url.pathname === "/metadata/identity/oauth2/token") {
+      identityRequests.push({
+        clientId: url.searchParams.get("client_id"),
+        resource: url.searchParams.get("resource"),
+        identityHeader: request.headers["x-identity-header"],
+      });
+      response.end(JSON.stringify({
+        access_token: accessToken,
+        expires_on: String(Math.floor(Date.now() / 1000) + 3600),
+        token_type: "Bearer",
+        resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
+      }));
+    } else if (url.pathname === "/api/v1/run-time") {
+      requests.push({
+        target: url.searchParams.get("for"),
+        label: url.searchParams.get("label"),
+        authorization: request.headers.authorization,
+      });
       response.end(JSON.stringify({
         target: "website",
         config: {
@@ -51,6 +75,18 @@ test("the final image registers the inlined environment and loads runtime config
   const fixtureAddress = fixture.address();
   assert.ok(fixtureAddress && typeof fixtureAddress === "object");
   fixtureOrigin = `http://127.0.0.1:${fixtureAddress.port}`;
+  const fixtureDirectory = await mkdtemp(join(tmpdir(), "website-identity-smoke-"));
+  const fetchHook = join(fixtureDirectory, "exp-fetch.mjs");
+  await writeFile(fetchHook, `
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (input, options) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.origin === "https://exp.arolariu.ro") {
+        return realFetch(new URL(url.pathname + url.search, ${JSON.stringify(fixtureOrigin)}), options);
+      }
+      return realFetch(input, options);
+    };
+  `);
 
   const portReservation = createServer();
   portReservation.listen(0, "127.0.0.1");
@@ -63,9 +99,15 @@ test("the final image registers the inlined environment and loads runtime config
   const child = spawn("docker", [
     "run", "--rm", "--name", name, "--network", "host",
     "--env", `PORT=${websiteAddress.port}`,
-    "--env", `EXP_PROXY_URL=${fixtureOrigin}`,
+    "--env", `EXP_PROXY_URL=${managedIdentity ? "" : fixtureOrigin}`,
     "--env", "INFRA=azure",
-    "--env", "AZURE_CLIENT_ID=",
+    "--env", `AZURE_CLIENT_ID=${managedIdentity ? identityClientId : ""}`,
+    ...managedIdentity ? [
+      "--env", `IDENTITY_ENDPOINT=${fixtureOrigin}/metadata/identity/oauth2/token`,
+      "--env", `IDENTITY_HEADER=${identityHeader}`,
+      "--env", "NODE_OPTIONS=--import=file:///tmp/exp-fetch.mjs",
+      "--mount", `type=bind,src=${fetchHook},dst=/tmp/exp-fetch.mjs,readonly`,
+    ] : [],
     "--env", "OTEL_SDK_DISABLED=true",
     image,
   ], {stdio: ["ignore", "pipe", "pipe"]});
@@ -104,11 +146,22 @@ test("the final image registers the inlined environment and loads runtime config
     assert.equal(report.build.infraMode, "azure");
     assert.equal(report.status, "Healthy");
     assert.ok(report.dependencies.some((dependency) => dependency.url === `${fixtureOrigin}/health` && dependency.status === "Healthy"));
-    assert.deepEqual(requests, [{target: "website", label: environment}]);
+    assert.deepEqual(requests, [{
+      target: "website",
+      label: environment,
+      authorization: managedIdentity ? `Bearer ${accessToken}` : undefined,
+    }]);
+    assert.deepEqual(identityRequests, managedIdentity ? [{
+      clientId: identityClientId,
+      resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
+      identityHeader,
+    }] : []);
   } finally {
     const containerId = execFileSync("docker", ["ps", "--all", "--quiet", "--filter", `name=^/${name}$`], {encoding: "utf8"}).trim();
     if (containerId) execFileSync("docker", ["rm", "--force", containerId], {stdio: "ignore"});
     fixture.closeAllConnections();
     await new Promise((resolve, reject) => fixture.close((error) => error ? reject(error) : resolve()));
+    await rm(fixtureDirectory, {recursive: true, force: true});
   }
 });
+}
