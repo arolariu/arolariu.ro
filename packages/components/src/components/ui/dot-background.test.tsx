@@ -1,194 +1,129 @@
 import * as React from "react";
-
-import {act, render, screen, waitFor} from "@testing-library/react";
+import {act, render} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  type MotionValue = {
-    get: () => number;
-    on: (event: "change", listener: (latest: number) => void) => () => void;
-    set: (value: number) => void;
-  };
-
-  function createMotionValue(initialValue: number): MotionValue {
-    let currentValue = initialValue;
-    const listeners = new Set<(latest: number) => void>();
-
-    return {
-      get: () => currentValue,
-      on: (_event, listener) => {
-        listeners.add(listener);
-        listener(currentValue);
-
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-      set: (value) => {
-        currentValue = value;
-
-        for (const listener of listeners) {
-          listener(value);
-        }
-      },
-    };
-  }
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-    useMotionValue: (initialValue: number) => ReactModule.useMemo(() => createMotionValue(initialValue), [initialValue]),
-    useSpring: <TValue,>(value: TValue) => value,
-  };
-});
 
 import {DotBackground} from "./dot-background";
 
+let box = new DOMRect(0, 0, 32, 16);
+let reduced = true;
+let media: MediaQueryList;
+let observers: ResizeBoundary[] = [];
+class ResizeBoundary implements ResizeObserver {
+  readonly observe = vi.fn();
+  readonly unobserve = vi.fn();
+  readonly disconnect = vi.fn();
+  private readonly callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    observers.push(this);
+  }
+  resize(): void {
+    this.callback([], this);
+  }
+}
+
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  observers = [];
+  box = new DOMRect(0, 0, 32, 16);
+  reduced = true;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
+  vi.stubGlobal("ResizeObserver", ResizeBoundary);
 });
 
 describe("DotBackground", () => {
-  it("renders DotBackground with a custom class, forwarded ref, and generated dots", async () => {
-    // Arrange
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockReturnValue({
-      bottom: 16,
-      height: 16,
-      left: 0,
-      right: 32,
-      top: 0,
-      width: 32,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    });
-
-    const ref = {current: null as SVGSVGElement | null};
-
-    // Act
-    render(
+  it("observes the element and regenerates the actual grid on element-only resizing", () => {
+    const ref = React.createRef<SVGSVGElement>();
+    const {unmount} = render(
       <DotBackground
         ref={ref}
-        className='dot-background-class'
-        data-testid='dot-background'
+        x={2}
+        y={3}
+        cx={4}
+        cy={5}
+        cr={2}
       />,
     );
-
-    // Assert
-    const dotBackground = screen.getByTestId("dot-background");
-
-    await waitFor(() => {
-      expect(dotBackground.querySelectorAll("circle")).toHaveLength(2);
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(2);
+    expect(ref.current?.querySelector("circle")).toHaveAttribute("cx", "6");
+    expect(ref.current?.querySelector("circle")).toHaveAttribute("cy", "8");
+    expect(observers[0]?.observe).toHaveBeenCalledWith(ref.current);
+    act(() => {
+      box = new DOMRect(0, 0, 48, 32);
+      observers[0]?.resize();
     });
-
-    expect(dotBackground).toHaveClass("dot-background-class");
-    expect(ref.current).toBe(dotBackground);
-    for (const circle of dotBackground.querySelectorAll("circle")) {
-      expect(circle).toHaveAttribute("fill", "currentColor");
-    }
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(6);
+    unmount();
+    expect(observers[0]?.disconnect).toHaveBeenCalledOnce();
+    expect(ref.current).toBeNull();
   });
 
-  it("renders glowing dots, forwards callback refs, and updates on resize", async () => {
-    // Arrange
-    vi.spyOn(Math, "random").mockReturnValue(0.25);
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])("rejects invalid spacing %s explicitly", (width) => {
+    expect(() => render(<DotBackground width={width} />)).toThrow(/spacing/u);
+  });
 
-    let currentWidth = 16;
-    const callbackRef = vi.fn();
-
-    vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
-      bottom: 16,
-      height: 16,
-      left: 0,
-      right: currentWidth,
-      top: 0,
-      width: currentWidth,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    }));
-
-    render(
+  it("rejects invalid dot geometry and bounds tiny-spacing grids", () => {
+    expect(() => render(<DotBackground cr={Number.NaN} />)).toThrow(/radius/u);
+    const {container} = render(
       <DotBackground
-        glow
-        ref={callbackRef}
-        data-testid='glowing-dot-background'
+        width={0.25}
+        height={0.25}
       />,
     );
+    expect(container.querySelectorAll("circle").length).toBeLessThanOrEqual(4096);
+    expect(container.querySelectorAll("circle").length).toBeGreaterThan(0);
+  });
 
-    const dotBackground = screen.getByTestId("glowing-dot-background");
+  it("rejects empty measured geometry instead of scheduling an empty animated grid", () => {
+    box = new DOMRect(0, 0, 0, 0);
+    expect(() => render(<DotBackground />)).toThrow(/geometry/u);
+  });
 
-    await waitFor(() => {
-      expect(dotBackground.querySelectorAll("circle")).toHaveLength(1);
-    });
+  it("keeps even subnormal positive spacing bounded and non-empty", () => {
+    const {container} = render(
+      <DotBackground
+        width={Number.MIN_VALUE}
+        height={Number.MIN_VALUE}
+      />,
+    );
+    expect(container.querySelectorAll("circle").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll("circle").length).toBeLessThanOrEqual(4096);
+  });
 
-    currentWidth = 32;
-
-    // Act
+  it("keeps static dots under reduced motion and stable instances/timing across rerenders", () => {
+    const random = vi.spyOn(Math, "random");
+    const ref = vi.fn<(element: SVGSVGElement | null) => void>();
+    const {container, rerender} = render(
+      <DotBackground
+        glow
+        ref={ref}
+      />,
+    );
+    const svg = container.querySelector("svg");
+    const dot = container.querySelector("circle");
+    expect(svg).toHaveAttribute("data-motion", "paused");
+    expect(dot).toHaveStyle({opacity: "0.4"});
+    random.mockClear();
+    rerender(
+      <DotBackground
+        glow
+        ref={ref}
+        data-testid='rerender'
+      />,
+    );
+    expect(container.querySelector("circle")).toBe(dot);
+    expect(random).not.toHaveBeenCalled();
     act(() => {
-      globalThis.window.dispatchEvent(new Event("resize"));
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
     });
-
-    // Assert
-    await waitFor(() => {
-      expect(dotBackground.querySelectorAll("circle")).toHaveLength(2);
+    expect(svg).toHaveAttribute("data-motion", "running");
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
     });
-
-    expect(callbackRef).toHaveBeenCalledWith(dotBackground);
-    for (const circle of dotBackground.querySelectorAll("circle")) {
-      expect(circle.getAttribute("fill")).toMatch(/^url\(#.+-gradient\)$/u);
-    }
+    expect(svg).toHaveAttribute("data-motion", "paused");
   });
 });

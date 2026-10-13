@@ -1,228 +1,120 @@
 import * as React from "react";
-
-import {render, screen} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-  };
-});
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {act, render, screen} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {GradientBackground} from "./gradient-background";
 
+let reduced = true;
+let media: MediaQueryList;
+let views: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  visibility(isIntersecting: boolean): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          isIntersecting,
+          intersectionRatio: isIntersecting ? 1 : 0,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  views = [];
+  reduced = true;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("GradientBackground", () => {
-  it("renders GradientBackground with custom classes and forwarded refs", () => {
-    // Arrange
-    const gradientRef = {current: null as HTMLDivElement | null};
-
-    // Act
-    render(
+  it("pauses offscreen recurring Motion and cleans its platform subscriptions", () => {
+    reduced = false;
+    const ref = React.createRef<HTMLDivElement>();
+    const {unmount} = render(<GradientBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+      views[0]?.visibility(false);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "running");
+    unmount();
+    expect(views[0]?.disconnect).toHaveBeenCalledOnce();
+  });
+  it("preserves native content, caller style, event handlers and the root ref", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
       <GradientBackground
-        ref={gradientRef}
-        className='gradient-background-class'
-        data-testid='gradient-background'
-      />,
-    );
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-background");
-
-    expect(gradientBackground).toHaveClass("gradient-background-class");
-    expect(gradientRef.current).toBe(gradientBackground);
-  });
-
-  it("renders GradientBackground with custom transition", () => {
-    // Act
-    render(
-      <GradientBackground
-        transition={{duration: 20, ease: "linear", repeat: Infinity}}
-        data-testid='gradient-custom-transition'
-      />,
-    );
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-custom-transition");
-
-    expect(gradientBackground).toBeInTheDocument();
-  });
-
-  it("renders GradientBackground without explicit transition", () => {
-    // Act
-    render(<GradientBackground data-testid='gradient-default-transition' />);
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-default-transition");
-
-    expect(gradientBackground).toBeInTheDocument();
-  });
-
-  it("renders with children content", () => {
-    // Act
-    render(
-      <GradientBackground data-testid='gradient-with-children'>
-        <div>Gradient children</div>
+        ref={ref}
+        className='custom'
+        title='Background'
+        style={{opacity: 0.5}}>
+        <button type='button'>Content action</button>
       </GradientBackground>,
     );
-
-    // Assert
-    expect(screen.getByText("Gradient children")).toBeInTheDocument();
+    expect(ref.current).toHaveClass("custom");
+    expect(ref.current).toHaveAttribute("title", "Background");
+    expect(ref.current).toHaveStyle({opacity: "0.5"});
+    expect(screen.getByRole("button", {name: "Content action"})).toBeEnabled();
+    unmount();
+    expect(ref.current).toBeNull();
   });
 
-  it("filters out React key prop from spreading", () => {
-    // Act
+  it("renders a static gradient even if the caller requested repeating Motion", () => {
+    const ref = React.createRef<HTMLDivElement>();
     render(
       <GradientBackground
-        key='test-key'
-        data-testid='gradient-with-key'
+        ref={ref}
+        animate={{backgroundPosition: "100% 50%"}}
+        transition={{repeat: Infinity}}
       />,
     );
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-with-key");
-
-    expect(gradientBackground).toBeInTheDocument();
-    expect(gradientBackground).not.toHaveAttribute("key");
-  });
-
-  it("forwards all valid HTML props", () => {
-    // Act
-    render(
-      <GradientBackground
-        data-testid='gradient-html-props'
-        title='Gradient title'
-        id='gradient-id'
-        aria-label='Gradient label'
-      />,
-    );
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-html-props");
-
-    expect(gradientBackground).toHaveAttribute("title", "Gradient title");
-    expect(gradientBackground).toHaveAttribute("id", "gradient-id");
-    expect(gradientBackground).toHaveAttribute("aria-label", "Gradient label");
-  });
-
-  it("applies animate prop with background position values", () => {
-    // Act
-    render(<GradientBackground data-testid='gradient-animate' />);
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-animate");
-
-    expect(gradientBackground).toBeInTheDocument();
-  });
-
-  it("renders with custom style prop", () => {
-    // Act
-    render(
-      <GradientBackground
-        data-testid='gradient-custom-style'
-        style={{opacity: 0.5}}
-      />,
-    );
-
-    // Assert
-    const gradientBackground = screen.getByTestId("gradient-custom-style");
-
-    expect(gradientBackground).toBeInTheDocument();
-  });
-
-  it("handles transition with different ease functions", () => {
-    // Act
-    render(
-      <GradientBackground
-        transition={{duration: 10, ease: "linear", repeat: 5}}
-        data-testid='gradient-ease-linear'
-      />,
-    );
-
-    // Assert
-    expect(screen.getByTestId("gradient-ease-linear")).toBeInTheDocument();
-  });
-
-  it("handles transition with repeat type", () => {
-    // Act
-    render(
-      <GradientBackground
-        transition={{duration: 10, ease: "easeInOut", repeat: Infinity, repeatType: "reverse"}}
-        data-testid='gradient-repeat-type'
-      />,
-    );
-
-    // Assert
-    expect(screen.getByTestId("gradient-repeat-type")).toBeInTheDocument();
-  });
-
-  it("spreads all HTMLMotionProps correctly", () => {
-    // Act
-    render(
-      <GradientBackground
-        data-testid='gradient-motion-props'
-        onAnimationStart={() => {}}
-        onAnimationComplete={() => {}}
-      />,
-    );
-
-    // Assert
-    expect(screen.getByTestId("gradient-motion-props")).toBeInTheDocument();
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(ref.current).toHaveStyle({backgroundPosition: "0% 50%"});
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "running");
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
   });
 });

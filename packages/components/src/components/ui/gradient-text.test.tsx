@@ -1,91 +1,83 @@
 import * as React from "react";
-
-import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {act, render, screen} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement>>(({children, ...props}, ref) =>
-      ReactModule.createElement(tag, {...props, ref}, children),
-    );
-  }
-
-  return {
-    motion: {
-      span: createMotionPrimitive("span"),
-    },
-  };
-});
 
 import {GradientText} from "./gradient-text";
 
+let reduced = true;
+let media: MediaQueryList;
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  reduced = true;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
 });
 
 describe("GradientText", () => {
-  it("renders GradientText with custom classes and forwarded refs", () => {
-    const gradientTextRef = {current: null as HTMLSpanElement | null};
-
+  it("retains the requested gradient when an optional caller bridge is undefined", () => {
+    const ref = React.createRef<HTMLSpanElement>();
+    const gradient = "linear-gradient(90deg, red, blue)";
     render(
       <GradientText
-        ref={gradientTextRef}
-        className='gradient-text-class'
-        text='Gradient title'
-      />,
-    );
-
-    const gradientText = screen.getByText("Gradient title").parentElement;
-
-    expect(gradientText).toHaveClass("gradient-text-class");
-    expect(gradientTextRef.current).toBe(gradientText);
-  });
-
-  it("applies the gradient prop to the animated text style", () => {
-    const gradient = "linear-gradient(90deg, rgb(10 20 30) 0%, rgb(40 50 60) 100%)";
-
-    render(
-      <GradientText
+        ref={ref}
+        text='Content'
         gradient={gradient}
-        text='Styled gradient'
+        style={{"--ac-gradient-text-background": undefined}}
       />,
     );
-
-    expect(screen.getByText("Styled gradient").style.getPropertyValue("--ac-gradient-text-background")).toBe(gradient);
+    expect(ref.current?.style.getPropertyValue("--ac-gradient-text-background")).toBe(gradient);
   });
-
-  it("does not render the neon overlay when neon is disabled", () => {
-    const {container} = render(
+  it("merges the gradient bridge with caller style and renders only one accessible text copy", () => {
+    const ref = React.createRef<HTMLSpanElement>();
+    const gradient = "linear-gradient(90deg, red, blue)";
+    render(
       <GradientText
-        neon={false}
-        text='No glow'
-      />,
-    );
-
-    expect(container.querySelector('[aria-hidden="true"]')).not.toBeInTheDocument();
-  });
-
-  it("renders an aria-hidden neon overlay when neon is enabled", () => {
-    const {container} = render(
-      <GradientText
+        ref={ref}
+        gradient={gradient}
         neon
-        text='Glow copy'
+        text='Glow'
+        style={{opacity: 0.5}}
       />,
     );
+    expect(ref.current).toHaveStyle({opacity: "0.5", "--ac-gradient-text-background": gradient});
+    expect(ref.current?.style.getPropertyValue("--ac-gradient-text-background")).toBe(gradient);
+    const copies = screen.getAllByText("Glow");
+    expect(copies).toHaveLength(2);
+    expect(copies.filter((copy) => copy.getAttribute("aria-hidden") !== "true")).toHaveLength(1);
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+  });
 
-    const neonLayer = container.querySelector('[aria-hidden="true"]');
+  it("keeps caller content mounted and switches Motion on live preference changes", () => {
+    const {container} = render(
+      <GradientText
+        text='Text'
+        neon>
+        <img
+          alt='Related image'
+          src='image.png'
+        />
+      </GradientText>,
+    );
+    expect(screen.getByRole("img", {name: "Related image"})).toBeInTheDocument();
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(container.firstElementChild).toHaveAttribute("data-motion", "running");
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(container.firstElementChild).toHaveAttribute("data-motion", "paused");
+  });
 
-    expect(neonLayer).toBeInTheDocument();
-    expect(neonLayer).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getAllByText("Glow copy")).toHaveLength(2);
+  it("authors readable forced-colors text instead of leaving a transparent gradient-only glyph", () => {
+    const css = readFileSync(resolve("packages", "components", "src", "components", "ui", "gradient-text.module.css"), "utf8");
+    expect(css).toMatch(/@media\s*\(forced-colors:\s*active\)/u);
+    expect(css).toMatch(/color:\s*CanvasText/u);
+    expect(css).toMatch(/-webkit-text-fill-color:\s*CanvasText/u);
+    expect(css).toMatch(/\.neon\s*\{\s*display:\s*none/u);
   });
 });

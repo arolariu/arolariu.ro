@@ -8,6 +8,14 @@
   background-repeat: no-repeat;
 }
 
+@media (forced-colors: active) {
+  .highlight {
+    color: CanvasText;
+    background-image: none;
+    outline: 1px solid Highlight;
+  }
+}
+
 :global(.dark) .highlight,
 :global([data-theme="dark"]) .highlight {
   background-image: linear-gradient(
@@ -15,4 +23,18 @@
     color-mix(in oklch, var(--ac-primary), white 35%) 0%,
     color-mix(in oklch, #a855f7, white 15%) 100%
   );
+}
+
+.demo {
+  padding: 2rem;
+  font-size: 1.25rem;
+  line-height: 2;
+  color: var(--ac-foreground);
+  background: var(--ac-background);
+}
+
+.demoLead {
+  display: grid;
+  min-height: 100svh;
+  place-content: center;
 }

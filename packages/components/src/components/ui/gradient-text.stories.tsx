@@ -1,86 +1,34 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {GradientText} from "./gradient-text";
+import styles from "./gradient-text.module.css";
 
 const meta = {
   title: "Components/Typography/GradientText",
   component: GradientText,
   tags: ["autodocs"],
-  argTypes: {
-    neon: {
-      control: "boolean",
-      description: "Adds a blurred neon duplicate behind the primary text layer",
+  args: {text: "Gradient text", neon: false},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Intentional decorative text effect. Neon is an aria-hidden duplicate. Reduced motion is static; forced colors restore CanvasText glyphs and remove the neon copy.",
+      },
     },
   },
+  render: (args) => (
+    <div className={styles.demo}>
+      <h2 className={styles.demoHeading}>
+        <GradientText {...args} />
+      </h2>
+    </div>
+  ),
 } satisfies Meta<typeof GradientText>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/**
- * Animated gradient-filled text with default settings.
- */
-export const Default: Story = {
-  args: {
-    text: "Gradient Text",
-    neon: false,
-  },
-  render: (args) => (
-    <div
-      style={{
-        padding: "3rem",
-        background: "#0f172a",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-      <h1 style={{fontSize: "3rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
-};
-
-/**
- * Gradient text with neon glow effect.
- */
-export const WithNeon: Story = {
-  args: {
-    text: "Neon Glow",
-    neon: true,
-  },
-  render: (args) => (
-    <div
-      style={{padding: "3rem", background: "#000", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center"}}>
-      <h1 style={{fontSize: "4rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
-};
-
-/**
- * Gradient text with custom gradient colors.
- */
+export const Default: Story = {};
+export const WithNeon: Story = {args: {text: "Neon glow", neon: true}};
 export const CustomGradient: Story = {
-  args: {
-    text: "Custom Colors",
-    gradient: "linear-gradient(90deg, #ff0080 0%, #ff8c00 25%, #40e0d0 50%, #ff8c00 75%, #ff0080 100%)",
-    neon: false,
-  },
-  render: (args) => (
-    <div
-      style={{
-        padding: "3rem",
-        background: "#1e1b4b",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-      <h1 style={{fontSize: "3rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
+  args: {text: "Custom colors", gradient: "linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #ff0080)", style: {opacity: 0.9}},
 };
+/** Check one accessible copy while the original image/content semantics remain intact. */
+export const WithContent: Story = {args: {text: "Related content", neon: true, children: <span> — supplementary copy</span>}};

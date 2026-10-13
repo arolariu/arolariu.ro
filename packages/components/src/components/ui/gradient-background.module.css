@@ -3,4 +3,29 @@
   height: 100%;
   background-image: linear-gradient(135deg, #3b82f6 0%, #a855f7 50%, #ec4899 100%);
   background-size: 400% 400%;
+  background-position: 0% 50%;
+}
+
+@media (forced-colors: active) {
+  .root {
+    background-image: none;
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .demo {
+    position: relative;
+    height: 24rem;
+    overflow: hidden;
+    border-radius: var(--ac-radius-lg);
+    color: var(--ac-foreground);
+  }
+
+  .demoContent {
+    display: grid;
+    place-content: center;
+    min-height: 100%;
+    gap: 1rem;
+    padding: 2rem;
+  }
 }

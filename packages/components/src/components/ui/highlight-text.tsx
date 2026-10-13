@@ -1,26 +1,53 @@
 "use client";
 
-import {motion, useInView, type HTMLMotionProps, type Transition, type UseInViewOptions} from "motion/react";
+import {isMotionValue, motion, useInView, type HTMLMotionProps, type Transition, type UseInViewOptions} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useReducedMotion} from "@/hooks/useReducedMotion";
 import styles from "./highlight-text.module.css";
 
 /** Props accepted by {@link HighlightText}. */
 export interface HighlightTextProps extends HTMLMotionProps<"span"> {
   /** Inline text content that receives the animated highlight sweep. @default undefined */
-  text: string;
+  readonly text: string;
   /** Delays the highlight animation until the text enters the viewport. @default false */
-  inView?: boolean;
+  readonly inView?: boolean;
   /** Margin passed to the in-view observer when `inView` is enabled. @default "0px" */
-  inViewMargin?: UseInViewOptions["margin"];
+  readonly inViewMargin?: UseInViewOptions["margin"];
   /** Prevents the in-view animation from replaying after the first reveal. @default true */
-  inViewOnce?: boolean;
+  readonly inViewOnce?: boolean;
   /** Motion timing used for the highlight fill animation. @default {duration: 2, ease: "easeInOut"} */
-  transition?: Transition;
+  readonly transition?: Transition;
 }
 
 const animation = {backgroundSize: "100% 100%"};
+const defaultTransition: Transition = {duration: 2, ease: "easeInOut"};
+
+function isHighlightMotionChild(value: HighlightTextProps["children"]): value is Exclude<HighlightTextProps["children"], React.ReactNode> {
+  return isMotionValue(value);
+}
+
+function useMotionPaused(ref: React.RefObject<HTMLSpanElement | null>): boolean {
+  const reduced = useReducedMotion();
+  const preference = React.useMemo(() => {
+    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
+    return {
+      subscribe(notify: () => void): () => void {
+        media?.addEventListener("change", notify);
+        document.addEventListener("visibilitychange", notify);
+        return (): void => {
+          media?.removeEventListener("change", notify);
+          document.removeEventListener("visibilitychange", notify);
+        };
+      },
+      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
+    };
+  }, [reduced]);
+  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
+  const visible = useInView(ref, {initial: true});
+  return paused || !visible;
+}
 
 /**
  * Animates a gradient highlight fill behind inline text content.
@@ -40,14 +67,37 @@ const animation = {backgroundSize: "100% 100%"};
  */
 const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
   (
-    {text, className, inView = false, inViewMargin = "0px", inViewOnce = true, transition = {duration: 2, ease: "easeInOut"}, ...props},
+    {
+      text,
+      children,
+      className,
+      inView = false,
+      inViewMargin = "0px",
+      inViewOnce = true,
+      transition = defaultTransition,
+      animate,
+      initial,
+      ...props
+    }: Readonly<HighlightTextProps>,
     ref,
-  ) => {
-    // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
-    const {key: _ignoredKey, ...restProps} = props;
+  ): React.JSX.Element => {
     const localRef = React.useRef<HTMLSpanElement>(null);
-
-    React.useImperativeHandle(ref, () => localRef.current!, []);
+    const paused = useMotionPaused(localRef);
+    const setRefs = React.useCallback(
+      (node: HTMLSpanElement | null): void | (() => void) => {
+        localRef.current = node;
+        if (typeof ref === "function") {
+          const callback: React.RefCallback<HTMLSpanElement> = ref;
+          const cleanup = callback(node);
+          if (typeof cleanup === "function")
+            return (): void => {
+              localRef.current = null;
+              cleanup();
+            };
+        } else if (ref) ref.current = node;
+      },
+      [ref],
+    );
 
     const inViewResult = useInView(localRef, {
       once: inViewOnce,
@@ -57,15 +107,15 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
 
     return (
       <motion.span
-        ref={localRef}
-        initial={{
-          backgroundSize: "0% 100%",
-        }}
-        animate={isInView ? animation : undefined}
-        transition={transition}
-        className={cn(styles.highlight, className)}
-        {...restProps}>
+        {...props}
+        ref={setRefs}
+        data-motion={paused ? "paused" : "running"}
+        initial={paused ? false : (initial ?? {backgroundSize: "0% 100%"})}
+        animate={paused ? animation : (animate ?? (isInView ? animation : {backgroundSize: "0% 100%"}))}
+        transition={paused ? {duration: 0} : transition}
+        className={cn(styles.highlight, className)}>
         {text}
+        {isHighlightMotionChild(children) ? <motion.span>{children}</motion.span> : children}
       </motion.span>
     );
   },

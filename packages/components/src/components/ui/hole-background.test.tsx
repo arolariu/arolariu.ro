@@ -1,555 +1,254 @@
 import * as React from "react";
-
-import {fireEvent, render, screen} from "@testing-library/react";
-import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-  };
-});
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {renderToString} from "react-dom/server";
+import {act, render, screen} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {HoleBackground} from "./hole-background";
 
-type MockCanvasContext = {
-  arc: ReturnType<typeof vi.fn>;
-  beginPath: ReturnType<typeof vi.fn>;
-  clearRect: ReturnType<typeof vi.fn>;
-  clip: ReturnType<typeof vi.fn>;
-  closePath: ReturnType<typeof vi.fn>;
-  createLinearGradient: ReturnType<typeof vi.fn>;
-  drawImage: ReturnType<typeof vi.fn>;
-  ellipse: ReturnType<typeof vi.fn>;
-  fill: ReturnType<typeof vi.fn>;
-  fillRect: ReturnType<typeof vi.fn>;
-  getImageData: ReturnType<typeof vi.fn>;
-  isPointInPath: ReturnType<typeof vi.fn>;
-  isPointInStroke: ReturnType<typeof vi.fn>;
-  lineTo: ReturnType<typeof vi.fn>;
-  moveTo: ReturnType<typeof vi.fn>;
-  rect: ReturnType<typeof vi.fn>;
-  restore: ReturnType<typeof vi.fn>;
-  save: ReturnType<typeof vi.fn>;
-  scale: ReturnType<typeof vi.fn>;
-  stroke: ReturnType<typeof vi.fn>;
-};
-
-const mockCanvasContext: MockCanvasContext = {
-  arc: vi.fn(),
-  beginPath: vi.fn(),
+let box = new DOMRect(10, 20, 200, 100);
+let reduced = true;
+let media: MediaQueryList;
+let observers: ResizeBoundary[] = [];
+let views: ViewBoundary[] = [];
+let frames = new Map<number, FrameRequestCallback>();
+let nextId = 0;
+const context = {
   clearRect: vi.fn(),
-  clip: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
   closePath: vi.fn(),
-  createLinearGradient: vi.fn(() => ({
-    addColorStop: vi.fn(),
-  })),
-  drawImage: vi.fn(),
-  ellipse: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn(),
+  rect: vi.fn(),
   fill: vi.fn(),
-  fillRect: vi.fn(),
-  getImageData: vi.fn(() => ({
-    data: new Uint8ClampedArray(400),
-  })),
+  ellipse: vi.fn(),
+  clip: vi.fn(),
+  drawImage: vi.fn(),
+  scale: vi.fn(),
   isPointInPath: vi.fn(() => false),
   isPointInStroke: vi.fn(() => false),
-  lineTo: vi.fn(),
-  moveTo: vi.fn(),
-  rect: vi.fn(),
-  restore: vi.fn(),
-  save: vi.fn(),
-  scale: vi.fn(),
-  stroke: vi.fn(),
-};
-
-beforeAll(() => {
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => mockCanvasContext as unknown as CanvasRenderingContext2D);
-  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockImplementation(
-    () =>
-      ({
-        bottom: 120,
-        height: 120,
-        left: 0,
-        right: 240,
-        toJSON: () => ({}),
-        top: 0,
-        width: 240,
-        x: 0,
-        y: 0,
-      }) as DOMRect,
-  );
-  vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(() => 1);
-  vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => undefined);
-
-  if (!("Path2D" in globalThis)) {
-    class MockPath2D {
-      public ellipse(): void {}
-
-      public rect(): void {}
-    }
-
-    Object.assign(globalThis, {Path2D: MockPath2D});
+  fillStyle: "",
+  strokeStyle: "",
+  lineWidth: 1,
+} satisfies Partial<CanvasRenderingContext2D>;
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
   }
-});
-
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  visibility(isIntersecting: boolean): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          isIntersecting,
+          intersectionRatio: isIntersecting ? 1 : 0,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
+class PathBoundary {
+  readonly ellipse = vi.fn();
+  readonly rect = vi.fn();
+}
+class ResizeBoundary implements ResizeObserver {
+  readonly observe = vi.fn();
+  readonly unobserve = vi.fn();
+  readonly disconnect = vi.fn();
+  private readonly callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    observers.push(this);
+  }
+  resize(): void {
+    this.callback([], this);
+  }
+}
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
+  box = new DOMRect(10, 20, 200, 100);
+  reduced = true;
+  observers = [];
+  views = [];
+  frames = new Map();
+  nextId = 0;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.spyOn(Math, "random").mockReturnValue(0.5);
+  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
+  Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: 2});
+  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => context});
+  vi.stubGlobal("Path2D", PathBoundary);
+  vi.stubGlobal("ResizeObserver", ResizeBoundary);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+  vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+    const id = ++nextId;
+    frames.set(id, callback);
+    return id;
   });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
+  vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation((id) => {
+    frames.delete(id);
   });
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("HoleBackground", () => {
-  it("renders HoleBackground with custom classes and forwarded refs", () => {
-    // Arrange
-    const holeRef = {current: null as HTMLCanvasElement | null};
-
-    // Act
+  it("cancels native offscreen frames and freezes the drawn tunnel", () => {
+    reduced = false;
+    const ref = React.createRef<HTMLCanvasElement>();
+    render(<HoleBackground ref={ref} />);
+    const stale = [...frames.values()].find((callback) => callback.name === "animate");
+    expect(stale).toBeDefined();
+    act(() => {
+      views[0]?.visibility(true);
+      views[0]?.visibility(false);
+    });
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "paused");
+    const draws = context.ellipse.mock.calls.length;
+    act(() => {
+      stale?.(16);
+    });
+    expect(context.ellipse).toHaveBeenCalledTimes(draws);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "running");
+  });
+  it("paints a static tunnel with element geometry and DPR without scheduling native RAF", () => {
+    const ref = React.createRef<HTMLCanvasElement>();
     render(
       <HoleBackground
-        ref={holeRef}
-        className='hole-background-class'
-        data-testid='hole-background'
+        ref={ref}
+        strokeColor='#123456'
+        numberOfDiscs={10}
       />,
     );
-
-    // Assert
-    const holeBackground = screen.getByTestId("hole-background");
-
-    expect(holeBackground.parentElement).toHaveClass("hole-background-class");
-    expect(holeRef.current).toBe(holeBackground);
+    expect(ref.current).toHaveAttribute("width", "400");
+    expect(ref.current).toHaveAttribute("height", "200");
+    expect(ref.current).toHaveAttribute("aria-hidden", "true");
+    expect(context.scale).toHaveBeenCalledWith(2, 2);
+    expect(context.ellipse).toHaveBeenCalledWith(100, 45, 150, 70, 0, 0, Math.PI * 2);
+    expect(context.drawImage).toHaveBeenCalled();
+    expect(context.fill).toHaveBeenCalledTimes(100);
+    expect(frames.size).toBe(0);
   });
 
-  it("renders HoleBackground with custom strokeColor", () => {
-    // Act
-    render(
+  it("responds to element-only resize and retains canvas props, root class and foreground content", () => {
+    const ref = React.createRef<HTMLCanvasElement>();
+    const {unmount} = render(
       <HoleBackground
-        strokeColor='#FF0000'
-        className='hole-custom-stroke'
-        data-testid='hole-custom-stroke'
-      />,
-    );
-
-    // Assert
-    const holeBackground = screen.getByTestId("hole-custom-stroke");
-
-    expect(holeBackground.parentElement).toHaveClass("hole-custom-stroke");
-  });
-
-  it("renders HoleBackground with custom numberOfLines and numberOfDiscs", () => {
-    // Act
-    render(
-      <HoleBackground
-        numberOfLines={30}
-        numberOfDiscs={40}
-        className='hole-custom-config'
-        data-testid='hole-custom-config'
-      />,
-    );
-
-    // Assert
-    const holeBackground = screen.getByTestId("hole-custom-config");
-
-    expect(holeBackground.parentElement).toHaveClass("hole-custom-config");
-  });
-
-  it("renders HoleBackground with custom particleRGBColor", () => {
-    // Act
-    render(
-      <HoleBackground
-        particleRGBColor={[128, 128, 255]}
-        className='hole-custom-particles'
-        data-testid='hole-custom-particles'
-      />,
-    );
-
-    // Assert
-    const holeBackground = screen.getByTestId("hole-custom-particles");
-
-    expect(holeBackground.parentElement).toHaveClass("hole-custom-particles");
-  });
-
-  it("renders HoleBackground with children", () => {
-    // Act
-    render(
-      <HoleBackground data-testid='hole-with-children'>
-        <div>Hole content</div>
+        ref={ref}
+        className='custom'
+        title='Canvas'>
+        <img
+          alt='Foreground'
+          src='image.png'
+        />
       </HoleBackground>,
     );
-
-    // Assert
-    expect(screen.getByText("Hole content")).toBeInTheDocument();
-  });
-
-  it("initializes canvas and starts animation loop", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-animation' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-animation")).toBeInTheDocument();
-  });
-
-  it("handles window resize event", () => {
-    // Arrange
-    render(<HoleBackground data-testid='hole-resize' />);
-
-    // Act
-    fireEvent.resize(globalThis.window);
-
-    // Assert
-    const canvas = screen.getByTestId("hole-resize");
-
-    expect(canvas).toBeInTheDocument();
-  });
-
-  it("cleans up on unmount - cancels animation frame", () => {
-    // Act
-    const {unmount} = render(<HoleBackground data-testid='hole-cleanup' />);
+    expect(ref.current?.parentElement).toHaveClass("custom");
+    expect(ref.current).toHaveAttribute("title", "Canvas");
+    expect(screen.getByRole("img", {name: "Foreground"})).toBeInTheDocument();
+    expect(observers[0]?.observe).toHaveBeenCalledWith(ref.current);
+    act(() => {
+      box = new DOMRect(10, 20, 300, 150);
+      observers[0]?.resize();
+    });
+    expect(ref.current).toHaveAttribute("width", "600");
+    expect(context.ellipse).toHaveBeenCalledWith(150, 67.5, 225, 105, 0, 0, Math.PI * 2);
     unmount();
-
-    // Assert - should complete without errors
-    expect(true).toBe(true);
+    expect(observers[0]?.disconnect).toHaveBeenCalledOnce();
+    expect(ref.current).toBeNull();
   });
 
-  it("draws discs with proper canvas operations", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-discs' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-discs")).toBeInTheDocument();
+  it("does not regenerate random particles/default arrays on unrelated rerenders", () => {
+    const {rerender} = render(<HoleBackground title='first' />);
+    const clears = context.clearRect.mock.calls.length;
+    const random = vi.spyOn(Math, "random");
+    random.mockClear();
+    rerender(<HoleBackground title='second' />);
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    expect(random).not.toHaveBeenCalled();
   });
 
-  it("renders lines canvas and draws image", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-lines' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-lines")).toBeInTheDocument();
-  });
-
-  it("clips drawing operations with Path2D", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-clip' />);
-
-    // Assert - should render and setup clipping paths
-    expect(screen.getByTestId("hole-clip")).toBeInTheDocument();
-  });
-
-  it("draws particles within clipping path", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-particles' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-particles")).toBeInTheDocument();
-  });
-
-  it("updates particle positions with physics", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-particle-physics' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-particle-physics")).toBeInTheDocument();
-  });
-
-  it("manages particle lifecycle", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-particle-reset' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-particle-reset")).toBeInTheDocument();
-  });
-
-  it("tweens disc properties with easing", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-tween' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-tween")).toBeInTheDocument();
-  });
-
-  it("handles isPointInPath for line clipping", () => {
-    // Arrange
-    mockCanvasContext.isPointInPath.mockReturnValueOnce(true);
-
-    // Act
-    render(<HoleBackground data-testid='hole-point-in-path' />);
-
-    // Assert - should render without crashing
-    expect(screen.getByTestId("hole-point-in-path")).toBeInTheDocument();
-  });
-
-  it("handles isPointInStroke for line rendering", () => {
-    // Arrange
-    mockCanvasContext.isPointInStroke.mockReturnValueOnce(true);
-
-    // Act
-    render(<HoleBackground data-testid='hole-point-in-stroke' />);
-
-    // Assert - should render without crashing
-    expect(screen.getByTestId("hole-point-in-stroke")).toBeInTheDocument();
-  });
-
-  it("draws lines with moveTo and lineTo", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-line-drawing' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-line-drawing")).toBeInTheDocument();
-  });
-
-  it("scales canvas context by device pixel ratio", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-dpi-scaling' />);
-
-    // Assert
-    expect(screen.getByTestId("hole-dpi-scaling")).toBeInTheDocument();
-  });
-
-  it("handles canvas without context gracefully", () => {
-    // Arrange
-    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValueOnce(null);
-
-    // Act
-    render(<HoleBackground data-testid='hole-no-context' />);
-
-    // Assert - should not crash
-    expect(screen.getByTestId("hole-no-context")).toBeInTheDocument();
-
-    getContextSpy.mockRestore();
-  });
-
-  it("creates particles with random properties", () => {
-    // Act
-    render(
-      <HoleBackground
-        particleRGBColor={[100, 150, 200]}
-        data-testid='hole-random-particles'
-      />,
-    );
-
-    // Assert
-    expect(screen.getByTestId("hole-random-particles")).toBeInTheDocument();
-  });
-
-  it("handles all HTML canvas props", () => {
-    // Act
-    render(
-      <HoleBackground
-        data-testid='hole-with-props'
-        title='Hole Background'
-        id='hole-canvas'
-      />,
-    );
-
-    // Assert
-    const canvas = screen.getByTestId("hole-with-props");
-
-    expect(canvas).toHaveAttribute("title", "Hole Background");
-    expect(canvas).toHaveAttribute("id", "hole-canvas");
-  });
-
-  it("renders scanlines overlay", () => {
-    // Act
-    const {container} = render(<HoleBackground data-testid='hole-scanlines' />);
-
-    // Assert
-    const scanlines = container.querySelector('[aria-hidden="true"]');
-
-    expect(scanlines).toBeInTheDocument();
-  });
-
-  it("animates glow effect with motion", () => {
-    // Act
-    const {container} = render(<HoleBackground data-testid='hole-glow' />);
-
-    // Assert - motion.div for glow should be rendered
-    const glow = container.querySelector('[aria-hidden="true"]');
-
-    expect(glow).toBeInTheDocument();
-  });
-
-  it("moves discs with progress updates", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+  it("cancels motion on live preference changes and guards stale frame/resize callbacks", () => {
+    reduced = false;
+    const ref = React.createRef<HTMLCanvasElement>();
+    const {unmount} = render(<HoleBackground ref={ref} />);
+    const staleFrame = [...frames.values()].find((callback) => callback.name === "animate");
+    const resize = observers[0];
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
     });
-
-    // Act
-    render(<HoleBackground data-testid='hole-disc-movement' />);
-
-    // Trigger multiple frames
-    if (animationCallback) {
-      for (let i = 0; i < 10; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - discs should animate
-    expect(screen.getByTestId("hole-disc-movement")).toBeInTheDocument();
-  });
-
-  it("moves particles upward with physics", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    const clears = context.clearRect.mock.calls.length;
+    act(() => {
+      staleFrame?.(32);
     });
-
-    // Act
-    render(<HoleBackground data-testid='hole-particle-movement' />);
-
-    // Trigger animation frames
-    if (animationCallback) {
-      for (let i = 0; i < 50; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - particles should be updated
-    expect(screen.getByTestId("hole-particle-movement")).toBeInTheDocument();
-  });
-
-  it("reinitializes particles when they exit bounds", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "paused");
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
     });
-
-    // Act
-    render(<HoleBackground data-testid='hole-particle-reinit' />);
-
-    // Run many frames to allow particles to exit and reinit
-    if (animationCallback) {
-      for (let i = 0; i < 200; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - should handle particle lifecycle
-    expect(screen.getByTestId("hole-particle-reinit")).toBeInTheDocument();
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "running");
+    unmount();
+    const afterUnmount = context.clearRect.mock.calls.length;
+    act(() => {
+      resize?.resize();
+      staleFrame?.(48);
+    });
+    expect(context.clearRect).toHaveBeenCalledTimes(afterUnmount);
+    expect(frames.size).toBeLessThanOrEqual(1);
   });
 
-  it("draws discs at every 5th index", () => {
-    // Arrange
-    mockCanvasContext.ellipse.mockClear();
-
-    // Act
+  it("bounds dense disc/line geometry while preserving drawn tunnel discs", () => {
     render(
       <HoleBackground
-        numberOfDiscs={25}
-        data-testid='hole-disc-filter'
+        numberOfDiscs={10000}
+        numberOfLines={2}
       />,
     );
-
-    // Assert - only every 5th disc should be drawn
-    expect(screen.getByTestId("hole-disc-filter")).toBeInTheDocument();
+    expect(context.ellipse.mock.calls.length).toBeLessThanOrEqual(53);
+    expect(context.ellipse.mock.calls.length).toBeGreaterThan(1);
   });
-
-  it("applies clipping to discs smaller than clip threshold", () => {
-    // Arrange
-    mockCanvasContext.clip.mockClear();
-    mockCanvasContext.save.mockClear();
-    mockCanvasContext.restore.mockClear();
-
-    // Act
-    render(
-      <HoleBackground
-        numberOfDiscs={60}
-        data-testid='hole-disc-clip'
-      />,
-    );
-
-    // Assert - clipping operations should be performed
-    expect(screen.getByTestId("hole-disc-clip")).toBeInTheDocument();
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5])("rejects invalid disc count %s", (numberOfDiscs) => {
+    expect(() => renderToString(<HoleBackground numberOfDiscs={numberOfDiscs} />)).toThrow(/count/u);
   });
-
-  it("creates Path2D for clipping operations", () => {
-    // Act
-    render(<HoleBackground data-testid='hole-path2d' />);
-
-    // Assert - component should use Path2D without errors
-    expect(screen.getByTestId("hole-path2d")).toBeInTheDocument();
-  });
-
-  it("handles line clipping with isPointInPath returning true", () => {
-    // Arrange
-    mockCanvasContext.isPointInPath.mockReturnValue(true);
-    mockCanvasContext.clip.mockClear();
-
-    // Act
-    render(
-      <HoleBackground
-        numberOfLines={10}
-        data-testid='hole-line-clip-active'
-      />,
-    );
-
-    // Assert - should apply clipping when points are in path
-    expect(screen.getByTestId("hole-line-clip-active")).toBeInTheDocument();
-  });
-
-  it("recreates lines and discs on window resize", () => {
-    // Arrange
-    render(<HoleBackground data-testid='hole-resize-reinit' />);
-
-    // Act
-    fireEvent.resize(globalThis.window);
-
-    // Assert - should reinitialize without errors
-    expect(screen.getByTestId("hole-resize-reinit")).toBeInTheDocument();
+  it("rejects invalid particle channels, empty geometry and missing 2D contexts", () => {
+    expect(() => render(<HoleBackground particleRGBColor={[255, Number.NaN, 0]} />)).toThrow(/RGB/u);
+    box = new DOMRect(0, 0, 0, 0);
+    expect(() => render(<HoleBackground />)).toThrow(/geometry/u);
+    box = new DOMRect(0, 0, 200, 100);
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => null});
+    expect(() => render(<HoleBackground />)).toThrow(/2D/u);
   });
 });

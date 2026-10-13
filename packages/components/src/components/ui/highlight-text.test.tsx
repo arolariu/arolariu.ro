@@ -1,130 +1,135 @@
 import * as React from "react";
-
-import {render, screen} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
-const {useInViewMock} = vi.hoisted(() => ({
-  useInViewMock: vi.fn(() => true),
-}));
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function serializeProp(value: unknown): string {
-    return value === undefined ? "undefined" : JSON.stringify(value);
-  }
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<
-      Element,
-      React.HTMLAttributes<HTMLElement> & {
-        animate?: unknown;
-        initial?: unknown;
-        transition?: unknown;
-      }
-    >(({animate, children, initial, transition, ...props}, ref) =>
-      ReactModule.createElement(
-        tag,
-        {
-          ...props,
-          ref,
-          "data-motion-animate": serializeProp(animate),
-          "data-motion-initial": serializeProp(initial),
-          "data-motion-transition": serializeProp(transition),
-        },
-        children,
-      ),
-    );
-  }
-
-  return {
-    motion: {
-      span: createMotionPrimitive("span"),
-    },
-    useInView: useInViewMock,
-  };
-});
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {motionValue} from "motion/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {HighlightText} from "./highlight-text";
 
+let reduced = true;
+let media: MediaQueryList;
+let observed: ViewBoundary[] = [];
+class ViewBoundary implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  readonly options: IntersectionObserverInit | undefined;
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    this.callback = callback;
+    this.options = options;
+    observed.push(this);
+  }
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  enter(isIntersecting: boolean): void {
+    if (!this.target) throw new Error("Missing observed element");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          isIntersecting,
+          intersectionRatio: isIntersecting ? 1 : 0,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
 beforeEach(() => {
-  useInViewMock.mockReset();
-  useInViewMock.mockReturnValue(true);
-
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  observed = [];
+  reduced = true;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("HighlightText", () => {
-  it("renders HighlightText with custom classes and forwarded refs", () => {
-    const highlightTextRef = {current: null as HTMLSpanElement | null};
-
-    render(
-      <HighlightText
-        ref={highlightTextRef}
-        className='highlight-text-class'
-        text='Highlighted copy'
-      />,
-    );
-
-    const highlightText = screen.getByText("Highlighted copy");
-
-    expect(highlightText).toHaveClass("highlight-text-class");
-    expect(highlightTextRef.current).toBe(highlightText);
+  it("preserves a live MotionValue child alongside the text prop", async () => {
+    const count = motionValue(1);
+    render(<HighlightText text='Count: '>{count}</HighlightText>);
+    expect(screen.getByText("1")).toBeInTheDocument();
+    act(() => {
+      count.set(2);
+    });
+    await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
   });
-
-  it("keeps the initial highlight state until the text is in view", () => {
-    useInViewMock.mockReturnValue(false);
-
+  it("renders the completed highlight under reduced motion without hiding text or changing span semantics", async () => {
+    const ref = React.createRef<HTMLSpanElement>();
     render(
       <HighlightText
+        ref={ref}
         inView
-        data-testid='highlight-text'
-        text='Deferred highlight'
+        text='Highlighted'
       />,
     );
-
-    const highlightText = screen.getByTestId("highlight-text");
-
-    expect(highlightText).toHaveAttribute("data-motion-initial", JSON.stringify({backgroundSize: "0% 100%"}));
-    expect(highlightText).toHaveAttribute("data-motion-animate", "undefined");
+    expect(ref.current?.tagName).toBe("SPAN");
+    await waitFor(() => expect(ref.current).toHaveStyle({backgroundSize: "100% 100%"}));
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(screen.getByText("Highlighted")).toBeInTheDocument();
   });
 
-  it("passes the in-view margin through to useInView", () => {
-    render(
+  it("uses the real viewport observer and reveals the actual background when entering view", async () => {
+    reduced = false;
+    const ref = React.createRef<HTMLSpanElement>();
+    const {unmount} = render(
       <HighlightText
+        ref={ref}
         inView
         inViewMargin='-20% 0px'
-        text='Observed highlight'
+        text='Deferred'
+        transition={{duration: 0}}
       />,
     );
-
-    expect(useInViewMock).toHaveBeenCalledWith(
-      expect.any(Object),
-      expect.objectContaining({
-        margin: "-20% 0px",
-        once: true,
-      }),
-    );
+    expect(ref.current).toHaveStyle({backgroundSize: "0% 100%"});
+    expect(observed.some((observer) => observer.options?.rootMargin === "-20% 0px")).toBe(true);
+    await act(async () => {
+      for (const observer of observed) if (observer.target) observer.enter(true);
+    });
+    await waitFor(() => expect(ref.current).toHaveStyle({backgroundSize: "100% 100%"}));
+    unmount();
+    expect(observed.every((observer) => observer.disconnect.mock.calls.length === 1)).toBe(true);
+    expect(ref.current).toBeNull();
   });
 
-  it("forwards the transition prop to the motion span", () => {
-    const transition = {duration: 4, ease: "linear"} as const;
-
+  it("responds to a live preference change and preserves additional caller children", async () => {
+    reduced = false;
+    const ref = React.createRef<HTMLSpanElement>();
     render(
       <HighlightText
-        transition={transition}
-        data-testid='highlight-transition'
-        text='Transition highlight'
-      />,
+        ref={ref}
+        inView
+        text='Text'>
+        <img
+          alt='Inline icon'
+          src='icon.png'
+        />
+      </HighlightText>,
     );
-
-    expect(screen.getByTestId("highlight-transition")).toHaveAttribute("data-motion-transition", JSON.stringify(transition));
+    expect(screen.getByRole("img", {name: "Inline icon"})).toBeInTheDocument();
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    await waitFor(() => expect(ref.current).toHaveStyle({backgroundSize: "100% 100%"}));
   });
 });

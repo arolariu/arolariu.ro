@@ -1,21 +1,45 @@
 "use client";
 
-import {motion} from "motion/react";
+import {motion, useInView} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useReducedMotion} from "@/hooks/useReducedMotion";
 import styles from "./hole-background.module.css";
 
 /** Props accepted by {@link HoleBackground}. */
 export interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElement> {
   /** Stroke color used for the wireframe discs and line work. @default "#737373" */
-  strokeColor?: string;
-  /** Number of radial line groups drawn through the tunnel. @default 50 */
-  numberOfLines?: number;
-  /** Number of animated discs used to build the tunnel depth effect. @default 50 */
-  numberOfDiscs?: number;
+  readonly strokeColor?: string;
+  /** Positive integer radial line count, bounded to 256. @default 50 */
+  readonly numberOfLines?: number;
+  /** Positive integer depth-disc count, bounded to 256. @default 50 */
+  readonly numberOfDiscs?: number;
   /** RGB tuple used to tint the floating particle field. @default [255, 255, 255] */
-  particleRGBColor?: [number, number, number];
+  readonly particleRGBColor?: readonly [number, number, number];
+}
+
+const defaultParticleRGB: readonly [number, number, number] = [255, 255, 255];
+
+function useMotionPaused(ref: React.RefObject<HTMLCanvasElement | null>): boolean {
+  const reduced = useReducedMotion();
+  const preference = React.useMemo(() => {
+    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
+    return {
+      subscribe(notify: () => void): () => void {
+        media?.addEventListener("change", notify);
+        document.addEventListener("visibilitychange", notify);
+        return (): void => {
+          media?.removeEventListener("change", notify);
+          document.removeEventListener("visibilitychange", notify);
+        };
+      },
+      snapshot: (): boolean => (media?.matches ?? reduced !== false) || document.visibilityState === "hidden",
+    };
+  }, [reduced]);
+  const paused = React.useSyncExternalStore(preference.subscribe, preference.snapshot, () => true);
+  const visible = useInView(ref, {initial: true});
+  return paused || !visible;
 }
 
 interface Disc {
@@ -113,17 +137,49 @@ const createInitialState = (): HoleState => ({
  * ```
  *
  * @see {@link HoleBackgroundProps} for available props
+ * @throws {RangeError} If counts, RGB channels or measured geometry are invalid.
+ * @throws {Error} If a 2D canvas context is unavailable.
  */
 const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
   (
-    {strokeColor = "#737373", numberOfLines = 50, numberOfDiscs = 50, particleRGBColor = [255, 255, 255], className, children, ...props},
+    {
+      strokeColor = "#737373",
+      numberOfLines = 50,
+      numberOfDiscs = 50,
+      particleRGBColor = defaultParticleRGB,
+      className,
+      children,
+      ...props
+    }: Readonly<HoleBackgroundProps>,
     ref,
-  ) => {
+  ): React.JSX.Element => {
+    if (![numberOfLines, numberOfDiscs].every((count) => Number.isSafeInteger(count) && count > 0)) {
+      throw new RangeError("HoleBackground line/disc count must be a positive finite integer.");
+    }
+    const lineCount = Math.min(numberOfLines, 256);
+    const discCount = Math.min(numberOfDiscs, 256);
+    const [red, green, blue] = particleRGBColor;
+    if (![red, green, blue].every((channel) => Number.isFinite(channel) && channel >= 0 && channel <= 255)) {
+      throw new RangeError("HoleBackground RGB channels must be finite and in 0–255.");
+    }
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
-    const animationFrameIdRef = React.useRef(0);
     const stateRef = React.useRef<HoleState>(createInitialState());
-
-    React.useImperativeHandle(ref, () => canvasRef.current!, []);
+    const paused = useMotionPaused(canvasRef);
+    const setRefs = React.useCallback(
+      (node: HTMLCanvasElement | null): void | (() => void) => {
+        canvasRef.current = node;
+        if (typeof ref === "function") {
+          const callback: React.RefCallback<HTMLCanvasElement> = ref;
+          const cleanup = callback(node);
+          if (typeof cleanup === "function")
+            return (): void => {
+              canvasRef.current = null;
+              cleanup();
+            };
+        } else if (ref) ref.current = node;
+      },
+      [ref],
+    );
 
     const tweenValue = React.useCallback((start: number, end: number, progress: number, ease: "inExpo" | null = null): number => {
       const delta = end - start;
@@ -149,11 +205,15 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       }
 
       const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio;
+      if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
+        throw new RangeError("HoleBackground geometry and DPR must be finite and positive.");
+      }
       stateRef.current.rect = {width: rect.width, height: rect.height};
       stateRef.current.render = {
         width: rect.width,
         height: rect.height,
-        dpi: globalThis.window.devicePixelRatio || 1,
+        dpi: Math.min(dpr, 4096 / rect.width, 4096 / rect.height),
       };
       canvas.width = stateRef.current.render.width * stateRef.current.render.dpi;
       canvas.height = stateRef.current.render.height * stateRef.current.render.dpi;
@@ -180,8 +240,8 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       let previousBottom = height;
       stateRef.current.clip = {disc: createEmptyDisc(), i: 0, path: null};
 
-      for (let index = 0; index < numberOfDiscs; index += 1) {
-        const progress = index / numberOfDiscs;
+      for (let index = 0; index < discCount; index += 1) {
+        const progress = index / discCount;
         const disc: Disc = {p: progress, x: 0, y: 0, w: 0, h: 0};
         tweenDisc(disc);
         const bottom = disc.y + disc.h;
@@ -197,18 +257,18 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       clipPath.ellipse(disc.x, disc.y, disc.w, disc.h, 0, 0, Math.PI * 2);
       clipPath.rect(disc.x - disc.w, 0, disc.w * 2, disc.y);
       stateRef.current.clip.path = clipPath;
-    }, [numberOfDiscs, tweenDisc]);
+    }, [discCount, tweenDisc]);
 
     const setLines = React.useCallback((): void => {
       const {width, height} = stateRef.current.rect;
       stateRef.current.lines = [];
-      const linesAngle = (Math.PI * 2) / numberOfLines;
-      for (let index = 0; index < numberOfLines; index += 1) {
+      const linesAngle = (Math.PI * 2) / lineCount;
+      for (let index = 0; index < lineCount; index += 1) {
         stateRef.current.lines.push([]);
       }
 
       stateRef.current.discs.forEach((disc) => {
-        for (let index = 0; index < numberOfLines; index += 1) {
+        for (let index = 0; index < lineCount; index += 1) {
           const angle = index * linesAngle;
           const point: Point = {
             x: disc.x + Math.cos(angle) * disc.w,
@@ -219,13 +279,14 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       });
 
       const offCanvas = globalThis.document.createElement("canvas");
-      offCanvas.width = width;
-      offCanvas.height = height;
+      offCanvas.width = width * stateRef.current.render.dpi;
+      offCanvas.height = height * stateRef.current.render.dpi;
       const context = offCanvas.getContext("2d");
       const clipPath = stateRef.current.clip.path;
       if (!context || !clipPath) {
-        return;
+        throw new Error("HoleBackground requires a 2D line-cache context and initialized clip path.");
       }
+      context.scale(stateRef.current.render.dpi, stateRef.current.render.dpi);
 
       stateRef.current.lines.forEach((line) => {
         context.save();
@@ -254,7 +315,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       });
 
       stateRef.current.linesCanvas = offCanvas;
-    }, [numberOfLines, strokeColor]);
+    }, [lineCount, strokeColor]);
 
     const initParticle = React.useCallback(
       (start = false): Particle => {
@@ -274,10 +335,10 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
           vy,
           p: 0,
           r: radius,
-          c: `rgba(${particleRGBColor[0]}, ${particleRGBColor[1]}, ${particleRGBColor[2]}, ${Math.random()})`,
+          c: `rgb(${red} ${green} ${blue} / ${Math.random()})`,
         };
       },
-      [particleRGBColor],
+      [red, green, blue],
     );
 
     const setParticles = React.useCallback((): void => {
@@ -333,7 +394,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
 
     const drawLines = React.useCallback((context: CanvasRenderingContext2D): void => {
       if (stateRef.current.linesCanvas) {
-        context.drawImage(stateRef.current.linesCanvas, 0, 0);
+        context.drawImage(stateRef.current.linesCanvas, 0, 0, stateRef.current.rect.width, stateRef.current.rect.height);
       }
     }, []);
 
@@ -381,20 +442,21 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
 
       const context = canvas.getContext("2d");
       if (!context) {
-        return;
+        throw new Error("HoleBackground requires a 2D canvas rendering context.");
       }
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.save();
       context.scale(stateRef.current.render.dpi, stateRef.current.render.dpi);
-      moveDiscs();
-      moveParticles();
+      if (!paused) {
+        moveDiscs();
+        moveParticles();
+      }
       drawDiscs(context);
       drawLines(context);
       drawParticles(context);
       context.restore();
-      animationFrameIdRef.current = globalThis.requestAnimationFrame(tick);
-    }, [drawDiscs, drawLines, drawParticles, moveDiscs, moveParticles]);
+    }, [drawDiscs, drawLines, drawParticles, moveDiscs, moveParticles, paused]);
 
     const init = React.useCallback((): void => {
       setSize();
@@ -409,36 +471,55 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
         return;
       }
 
+      let active = true;
+      let animationFrameId: number | null = null;
+      const state = stateRef.current;
       init();
-      tick();
+      const animate = (): void => {
+        if (!active) return;
+        tick();
+        if (!paused) animationFrameId = requestAnimationFrame(animate);
+      };
+      animate();
 
       const handleResize = (): void => {
+        if (!active) return;
         setSize();
         setDiscs();
         setLines();
         setParticles();
+        tick();
       };
 
+      const observer = new ResizeObserver(handleResize);
+      observer.observe(canvas);
       globalThis.window.addEventListener("resize", handleResize);
       return () => {
+        active = false;
+        observer.disconnect();
         globalThis.window.removeEventListener("resize", handleResize);
-        globalThis.cancelAnimationFrame(animationFrameIdRef.current);
+        if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+        state.linesCanvas = null;
       };
-    }, [init, setDiscs, setLines, setParticles, setSize, tick]);
+    }, [init, setDiscs, setLines, setParticles, setSize, tick, paused]);
 
     return (
-      <div className={cn(styles.root, className)}>
+      <div
+        className={cn(styles.root, className)}
+        data-motion={paused ? "paused" : "running"}>
         {children}
         <canvas
-          ref={canvasRef}
+          ref={setRefs}
+          aria-hidden='true'
           className={styles.canvas}
           {...props}
         />
         <motion.div
           aria-hidden='true'
           className={styles.glow}
-          animate={{backgroundPosition: "0% 300%"}}
-          transition={{duration: 5, ease: "linear", repeat: Infinity}}
+          initial={paused ? false : {backgroundPosition: "0% 100%"}}
+          animate={{backgroundPosition: paused ? "0% 100%" : "0% 300%"}}
+          transition={paused ? {duration: 0} : {duration: 5, ease: "linear", repeat: Infinity}}
         />
         <div
           aria-hidden='true'
