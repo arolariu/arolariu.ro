@@ -355,43 +355,34 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   const infrastructure = process.env["INFRA"]?.trim().toLowerCase();
   const isCloud = infrastructure === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]);
   const baseUrl = process.env["EXP_PROXY_URL"]?.trim() || (isCloud ? AZURE_EXP_URL : LOCAL_EXP_URL);
-  let endpoint: URL | null = null;
-  try {
-    endpoint = new URL(`${baseUrl.replace(/\/$/u, "")}/api/v1/run-time`);
-  } catch {
+  const endpointUrl = `${baseUrl.replace(/\/$/u, "")}/api/v1/run-time`;
+  if (!URL.canParse(endpointUrl)) {
     throw new Error("EXP_PROXY_URL must be a valid URL.");
   }
+  const endpoint = new URL(endpointUrl);
   endpoint.searchParams.set("for", WEBSITE_TARGET);
   endpoint.searchParams.set("label", environment);
 
   const signal = AbortSignal.timeout(isCloud ? 10_000 : 2000);
-  let response: Response | null = null;
-  try {
-    const headers = await getRequestHeaders(signal, endpoint.origin === AZURE_EXP_URL);
-    response = await fetch(endpoint.href, {
-      cache: "no-store",
-      headers,
-      signal,
-    });
-  } catch {
-    if (!isCloud) {
+  const response = await getRequestHeaders(signal, endpoint.origin === AZURE_EXP_URL)
+    .then((headers) => fetch(endpoint.href, {cache: "no-store", headers, signal}))
+    .catch(() => {
+      if (isCloud) {
+        throw new Error("Unable to fetch private runtime configuration from exp. Check managed identity and exp availability.");
+      }
       expCircuitOpen = true;
       expCircuitOpenedAt = Date.now();
       logWithTrace("warn", "Local exp is unavailable; retaining dotenv runtime configuration", {environment}, "server");
-      return;
-    }
-    throw new Error("Unable to fetch private runtime configuration from exp. Check managed identity and exp availability.");
-  }
+      return null;
+    });
+  if (response === null) return;
   if (!response.ok) {
     throw new Error(`Failed to fetch private runtime configuration from exp (status=${response.status}).`);
   }
 
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
+  const payload: unknown = await response.json().catch(() => {
     throw new Error("Invalid website runtime configuration document from exp.");
-  }
+  });
   if (!isRecord(payload) || payload["target"] !== "website" || !isRecord(payload["config"])) {
     throw new Error("Invalid website runtime configuration document from exp.");
   }
