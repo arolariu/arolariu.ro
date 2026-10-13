@@ -67,6 +67,8 @@ export type ToggleGroupItemState = Toggle.State;
  * - Built on Base UI Toggle Group primitives
  * - Explicit item size/variant wins over this group's defaults (existing API precedence)
  * - Spacing defaults to two token units, zero joins items; orientation also reaches Base UI
+ * - Visual context scopes rendered descendants, including a render element's own children
+ * - Nested groups own their defaults independently of the surrounding group
  * - Forwarded refs work on React 18/19 while preserving selection value inference
  *
  * @example
@@ -90,17 +92,19 @@ const ToggleGroup = Object.assign(
       const {className, children, size, variant, spacing = 2, orientation = "horizontal", ...otherProps} = props;
 
       return (
-        <BaseToggleGroup
-          {...otherProps}
-          ref={ref}
-          data-slot='toggle-group'
-          data-variant={variant}
-          data-size={size}
-          data-spacing={spacing}
-          orientation={orientation}
-          className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
-          <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>{children}</ToggleGroupContext.Provider>
-        </BaseToggleGroup>
+        <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>
+          <BaseToggleGroup
+            {...otherProps}
+            ref={ref}
+            data-slot='toggle-group'
+            data-variant={variant}
+            data-size={size}
+            data-spacing={spacing}
+            orientation={orientation}
+            className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+            {children}
+          </BaseToggleGroup>
+        </ToggleGroupContext.Provider>
       );
     },
   ),

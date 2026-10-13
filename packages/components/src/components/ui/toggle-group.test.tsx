@@ -85,7 +85,7 @@ describe("ToggleGroup", () => {
     }
   });
 
-  it("joins outline item borders on the logical axis selected by orientation", () => {
+  it.each([false, true])("joins outline item borders on the logical axis with render element children=%s", (composed) => {
     const sources = [
       ["toggle-group.module.css", {root: styles.root, item: styles.item}],
       [
@@ -117,9 +117,21 @@ describe("ToggleGroup", () => {
         <ToggleGroup
           spacing={0}
           variant='outline'
-          orientation={orientation}>
-          <ToggleGroupItem value='a'>First joined</ToggleGroupItem>
-          <ToggleGroupItem value='b'>Second joined</ToggleGroupItem>
+          orientation={orientation}
+          render={
+            composed ? (
+              <section>
+                <ToggleGroupItem value='a'>First joined</ToggleGroupItem>
+                <ToggleGroupItem value='b'>Second joined</ToggleGroupItem>
+              </section>
+            ) : undefined
+          }>
+          {composed ? undefined : (
+            <>
+              <ToggleGroupItem value='a'>First joined</ToggleGroupItem>
+              <ToggleGroupItem value='b'>Second joined</ToggleGroupItem>
+            </>
+          )}
         </ToggleGroup>
       );
       const {rerender} = render(view("horizontal"));
@@ -130,6 +142,187 @@ describe("ToggleGroup", () => {
     } finally {
       sheet.remove();
     }
+  });
+
+  it("inherits group visuals and primitive selection when a render element supplies its own children", async () => {
+    const user = userEvent.setup();
+    const change = vi.fn<NonNullable<ToggleGroup.Props["onValueChange"]>>();
+    render(
+      <ToggleGroup
+        aria-label='Composed group'
+        spacing={0}
+        orientation='vertical'
+        variant='outline'
+        size='lg'
+        defaultValue={["a"]}
+        onValueChange={change}
+        render={
+          <section>
+            <ToggleGroupItem value='a'>Composed A</ToggleGroupItem>
+            <ToggleGroupItem value='b'>Composed B</ToggleGroupItem>
+            <ToggleGroupItem
+              value='c'
+              variant='default'
+              size='sm'>
+              Explicit C
+            </ToggleGroupItem>
+          </section>
+        }>
+        <span>Replaced primitive children</span>
+      </ToggleGroup>,
+    );
+    const group = screen.getByRole("group", {name: "Composed group"});
+    expect(group.tagName).toBe("SECTION");
+    expect(group).toHaveAttribute("data-spacing", "0");
+    expect(group).toHaveAttribute("data-orientation", "vertical");
+    expect(screen.queryByText("Replaced primitive children")).not.toBeInTheDocument();
+    const first = screen.getByRole("button", {name: "Composed A"});
+    const second = screen.getByRole("button", {name: "Composed B"});
+    expect(first).toHaveAttribute("aria-pressed", "true");
+    for (const item of [first, second]) {
+      expect(item).toHaveAttribute("data-spacing", "0");
+      expect(item).toHaveAttribute("data-orientation", "vertical");
+      expect(item).toHaveAttribute("data-variant", "outline");
+      expect(item).toHaveAttribute("data-size", "lg");
+    }
+    const explicit = screen.getByRole("button", {name: "Explicit C"});
+    expect(explicit).toHaveAttribute("data-variant", "default");
+    expect(explicit).toHaveAttribute("data-size", "sm");
+    expect(explicit).toHaveAttribute("data-spacing", "0");
+    await user.click(second);
+    expect(change).toHaveBeenCalledWith(["b"], expect.objectContaining({reason: "none"}));
+    expect(first).toHaveAttribute("aria-pressed", "false");
+    expect(second).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("scopes callback-rendered descendants without eagerly evaluating render or losing controlled values", async () => {
+    const user = userEvent.setup();
+    const change = vi.fn<NonNullable<ToggleGroup.Props<"a" | "b">["onValueChange"]>>();
+    const view = (orientation: "horizontal" | "vertical", spacing: number, value: readonly ("a" | "b")[]): React.JSX.Element => (
+      <ToggleGroup
+        aria-label='Callback composed group'
+        value={value}
+        multiple
+        onValueChange={change}
+        orientation={orientation}
+        spacing={spacing}
+        variant='outline'
+        size='lg'
+        render={(props, state) => (
+          <section
+            {...props}
+            data-contract-orientation={state.orientation}
+            data-contract-multiple={String(state.multiple)}>
+            <ToggleGroupItem
+              value='a'
+              className={(itemState) => (itemState.pressed ? "callback-pressed" : "callback-released")}
+              render={(itemProps, itemState) => (
+                <button
+                  {...itemProps}
+                  data-contract-pressed={String(itemState.pressed)}
+                />
+              )}>
+              Callback A
+            </ToggleGroupItem>
+            <ToggleGroupItem value='b'>Callback B</ToggleGroupItem>
+          </section>
+        )}>
+        <span>Replaced callback children</span>
+      </ToggleGroup>
+    );
+    const {rerender} = render(view("vertical", 0, ["a"]));
+    const group = screen.getByRole("group", {name: "Callback composed group"});
+    const first = screen.getByRole("button", {name: "Callback A"});
+    const second = screen.getByRole("button", {name: "Callback B"});
+    expect(group).toHaveAttribute("data-contract-orientation", "vertical");
+    expect(group).toHaveAttribute("data-contract-multiple", "true");
+    expect(screen.queryByText("Replaced callback children")).not.toBeInTheDocument();
+    expect(first).toHaveClass("callback-pressed");
+    expect(first).toHaveAttribute("data-contract-pressed", "true");
+    expect(first).toHaveAttribute("data-spacing", "0");
+    expect(first).toHaveAttribute("data-orientation", "vertical");
+    expect(first).toHaveAttribute("data-variant", "outline");
+    expect(first).toHaveAttribute("data-size", "lg");
+    await user.click(second);
+    expect(change).toHaveBeenCalledWith(["a", "b"], expect.objectContaining({reason: "none"}));
+    expect(second).toHaveAttribute("aria-pressed", "false");
+    rerender(view("horizontal", 3, ["b"]));
+    expect(group).toHaveAttribute("data-contract-orientation", "horizontal");
+    expect(first).toHaveAttribute("data-spacing", "3");
+    expect(first).toHaveAttribute("data-orientation", "horizontal");
+    expect(first).toHaveAttribute("data-contract-pressed", "false");
+    expect(first).toHaveClass("callback-released");
+    expect(second).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps composed nested groups independent with nearest context and explicit item precedence", async () => {
+    const user = userEvent.setup();
+    const outerChange = vi.fn<NonNullable<ToggleGroup.Props["onValueChange"]>>();
+    const innerChange = vi.fn<NonNullable<ToggleGroup.Props["onValueChange"]>>();
+    render(
+      <ToggleGroup
+        aria-label='Outer composed'
+        variant='outline'
+        size='lg'
+        spacing={0}
+        orientation='vertical'
+        defaultValue={["outer-a"]}
+        onValueChange={outerChange}
+        render={
+          <section>
+            <ToggleGroupItem value='outer-a'>Outer A</ToggleGroupItem>
+            <ToggleGroupItem
+              value='outer-b'
+              variant='default'
+              size='sm'>
+              Outer B
+            </ToggleGroupItem>
+            <ToggleGroup
+              aria-label='Inner composed'
+              spacing={3}
+              multiple
+              defaultValue={["inner-x"]}
+              onValueChange={innerChange}
+              render={
+                <section>
+                  <ToggleGroupItem value='inner-x'>Inner X</ToggleGroupItem>
+                  <ToggleGroupItem
+                    value='inner-y'
+                    variant='outline'
+                    size='sm'>
+                    Inner Y
+                  </ToggleGroupItem>
+                </section>
+              }
+            />
+          </section>
+        }
+      />,
+    );
+    const outerFirst = screen.getByRole("button", {name: "Outer A"});
+    const outerSecond = screen.getByRole("button", {name: "Outer B"});
+    const innerFirst = screen.getByRole("button", {name: "Inner X"});
+    const innerSecond = screen.getByRole("button", {name: "Inner Y"});
+    expect(outerFirst).toHaveAttribute("data-variant", "outline");
+    expect(outerFirst).toHaveAttribute("data-size", "lg");
+    expect(outerFirst).toHaveAttribute("data-spacing", "0");
+    expect(outerFirst).toHaveAttribute("data-orientation", "vertical");
+    expect(outerSecond).toHaveAttribute("data-variant", "default");
+    expect(outerSecond).toHaveAttribute("data-size", "sm");
+    expect(innerFirst).toHaveAttribute("data-variant", "default");
+    expect(innerFirst).toHaveAttribute("data-size", "default");
+    expect(innerFirst).toHaveAttribute("data-spacing", "3");
+    expect(innerFirst).toHaveAttribute("data-orientation", "horizontal");
+    expect(innerSecond).toHaveAttribute("data-variant", "outline");
+    expect(innerSecond).toHaveAttribute("data-size", "sm");
+    await user.click(innerSecond);
+    expect(innerChange).toHaveBeenCalledWith(["inner-x", "inner-y"], expect.objectContaining({reason: "none"}));
+    expect(outerChange).not.toHaveBeenCalled();
+    expect(outerFirst).toHaveAttribute("aria-pressed", "true");
+    await user.click(outerSecond);
+    expect(outerChange).toHaveBeenCalledWith(["outer-b"], expect.objectContaining({reason: "none"}));
+    expect(innerFirst).toHaveAttribute("aria-pressed", "true");
+    expect(innerSecond).toHaveAttribute("aria-pressed", "true");
   });
 
   it("exports typed group selection props and item state without independent pressed props", () => {

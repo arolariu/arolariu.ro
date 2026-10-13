@@ -118,6 +118,26 @@ export const Joined: Story = {
     </ToggleGroup>
   ),
 };
+
+export const ComposedChildren: Story = {
+  render: () => (
+    <ToggleGroup
+      aria-label='Composed vertical joined'
+      defaultValue={["one"]}
+      spacing={0}
+      orientation='vertical'
+      variant='outline'
+      size='lg'
+      render={
+        <section>
+          <ToggleGroupItem value='one'>Composed one</ToggleGroupItem>
+          <ToggleGroupItem value='two'>Composed two</ToggleGroupItem>
+        </section>
+      }
+    />
+  ),
+};
+
 export const Vertical: Story = {
   render: () => (
     <ToggleGroup
