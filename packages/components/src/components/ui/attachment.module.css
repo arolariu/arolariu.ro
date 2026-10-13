@@ -1,0 +1,290 @@
+.attachment {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-card);
+  color: var(--ac-card-foreground);
+  font-size: var(--ac-text-xs);
+  transition: background-color var(--ac-transition-fast);
+}
+
+.attachment:focus-within {
+  outline: 1px solid var(--ac-ring);
+  outline-offset: 1px;
+}
+
+.attachment[data-state="idle"] {
+  border-style: dashed;
+}
+
+.attachment[data-state="error"] {
+  border-color: color-mix(in oklch, var(--ac-destructive) 30%, transparent);
+}
+
+@media (hover: hover) {
+  .attachment:has(> a, > button):hover {
+    background-color: color-mix(in oklch, var(--ac-muted) 50%, var(--ac-card));
+  }
+}
+
+.horizontal {
+  min-inline-size: min(10rem, 100%);
+  align-items: center;
+}
+
+.vertical {
+  inline-size: 6rem;
+  flex-direction: column;
+}
+
+.vertical:has(> .content) {
+  inline-size: 7.5rem;
+}
+
+.sizeDefault {
+  gap: var(--ac-space-2);
+  padding: calc(var(--ac-space-3) / 2);
+}
+
+.sizeDefault:has(> .content) {
+  padding-inline: var(--ac-space-2);
+}
+
+.sizeSm {
+  gap: calc(var(--ac-space-2) + var(--ac-space-1) / 2);
+  padding: var(--ac-space-1);
+}
+
+.sizeXs {
+  gap: calc(var(--ac-space-3) / 2);
+  padding: var(--ac-space-1);
+  border-radius: var(--ac-radius-md);
+}
+
+.sizeSm:has(> .content),
+.sizeXs:has(> .content) {
+  padding-inline: calc(var(--ac-space-3) / 2);
+}
+
+.media {
+  position: relative;
+  display: flex;
+  aspect-ratio: 1;
+  inline-size: calc(var(--ac-space-8) + var(--ac-space-2));
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.mediaIcon {
+  isolation: isolate;
+}
+
+.media svg {
+  inline-size: var(--ac-space-4);
+  block-size: var(--ac-space-4);
+  pointer-events: none;
+}
+
+.attachment[data-size="sm"] > .media {
+  inline-size: var(--ac-space-8);
+}
+
+.attachment[data-size="xs"] > .media {
+  inline-size: var(--ac-size-md);
+  border-radius: var(--ac-radius-sm);
+}
+
+.attachment[data-size="xs"] > .media svg {
+  inline-size: calc(var(--ac-space-3) + var(--ac-space-1) / 2);
+  block-size: calc(var(--ac-space-3) + var(--ac-space-1) / 2);
+}
+
+.attachment[data-orientation="vertical"] > .media {
+  inline-size: 100%;
+}
+
+.attachment[data-orientation="vertical"] > .media svg {
+  inline-size: var(--ac-space-6);
+  block-size: var(--ac-space-6);
+}
+
+.attachment[data-state="error"] > .media {
+  background-color: color-mix(in oklch, var(--ac-destructive) 10%, transparent);
+  color: var(--ac-destructive);
+}
+
+.mediaImage {
+  opacity: 0.6;
+}
+
+.attachment[data-state="idle"] > .mediaImage,
+.attachment[data-state="done"] > .mediaImage {
+  opacity: 1;
+}
+
+.mediaImage > img {
+  aspect-ratio: 1;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.content {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  flex: 1 1 0%;
+  line-height: 1.25;
+}
+
+.vertical > .content {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding-inline: var(--ac-space-1);
+}
+
+.title {
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.attachment:is([data-state="uploading"], [data-state="processing"]) .title {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.description {
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  margin-block-start: calc(var(--ac-space-1) / 2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment[data-state="error"] .description {
+  color: var(--ac-destructive);
+}
+
+.actions {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.attachment[data-orientation="vertical"] > .actions {
+  position: absolute;
+  top: var(--ac-space-3);
+  inset-inline-end: var(--ac-space-3);
+  gap: var(--ac-space-1);
+}
+
+.action {
+  min-inline-size: var(--ac-size-sm);
+  min-block-size: var(--ac-size-sm);
+}
+
+.trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border: 0;
+  border-radius: inherit;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+}
+
+.group {
+  display: flex;
+  min-inline-size: 0;
+  gap: var(--ac-space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-block: var(--ac-space-1);
+  scroll-padding-inline: var(--ac-space-1);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, transparent, black var(--ac-space-1), black calc(100% - var(--ac-space-1)), transparent);
+}
+
+.group::-webkit-scrollbar {
+  display: none;
+}
+
+.group > [data-slot="attachment"] {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attachment {
+    transition: none;
+  }
+
+  .attachment .title {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .attachment[data-state="error"] {
+    border-color: CanvasText;
+  }
+
+  .trigger:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .group {
+    mask-image: none;
+    scrollbar-width: auto;
+  }
+}
+
+.storyStack {
+  display: flex;
+  inline-size: min(32rem, 90vw);
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.storyNarrow {
+  inline-size: min(15rem, 90vw);
+}

@@ -1,0 +1,156 @@
+import {fireEvent, render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {parse} from "postcss";
+import * as React from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import {describe, expect, expectTypeOf, it} from "vitest";
+
+import {Avatar, AvatarFallback} from "./avatar";
+import {Bubble, BubbleContent} from "./bubble";
+import {Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader} from "./message";
+import styles from "./message.module.css";
+
+const css = parse(readFileSync(resolve(process.cwd(), "packages/components/src/components/ui/message.module.css"), "utf8"));
+function cssClass(name: string): string {
+  const value = styles[name];
+  if (!value) throw new Error(`Missing message class: ${name}`);
+  return value;
+}
+
+function declarations(selector: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  css.walkRules(selector, (rule) => rule.walkDecls((declaration) => void (result[declaration.prop] = declaration.value)));
+  return result;
+}
+
+describe("Message", () => {
+  it("publishes native div refs for all server-compatible presentation slots", () => {
+    expectTypeOf<React.ComponentRef<typeof Message>>().toEqualTypeOf<HTMLDivElement>();
+    expectTypeOf<React.ComponentRef<typeof MessageGroup>>().toEqualTypeOf<HTMLDivElement>();
+    expectTypeOf<React.ComponentRef<typeof MessageAvatar>>().toEqualTypeOf<HTMLDivElement>();
+    expectTypeOf<React.ComponentRef<typeof MessageContent>>().toEqualTypeOf<HTMLDivElement>();
+    expectTypeOf<React.ComponentRef<typeof MessageHeader>>().toEqualTypeOf<HTMLDivElement>();
+    expectTypeOf<React.ComponentRef<typeof MessageFooter>>().toEqualTypeOf<HTMLDivElement>();
+  });
+
+  it("forwards every native ref in a complete real Avatar/Bubble composition", () => {
+    const group = React.createRef<HTMLDivElement>();
+    const root = React.createRef<HTMLDivElement>();
+    const avatar = React.createRef<HTMLDivElement>();
+    const content = React.createRef<HTMLDivElement>();
+    const header = React.createRef<HTMLDivElement>();
+    const footer = React.createRef<HTMLDivElement>();
+    const fixture: Message.Props = {ref: root, align: "start"};
+    expectTypeOf(fixture).toMatchTypeOf<Message.Props>();
+    const {unmount} = render(
+      <MessageGroup
+        ref={group}
+        className='caller-group'>
+        <Message {...fixture}>
+          <MessageAvatar ref={avatar}>
+            <Avatar>
+              <AvatarFallback>AL</AvatarFallback>
+            </Avatar>
+          </MessageAvatar>
+          <MessageContent ref={content}>
+            <MessageHeader ref={header}>Alex</MessageHeader>
+            <Bubble>
+              <BubbleContent>Hello from the caller</BubbleContent>
+            </Bubble>
+            <MessageFooter ref={footer}>Delivered</MessageFooter>
+          </MessageContent>
+        </Message>
+      </MessageGroup>,
+    );
+    for (const [ref, slot] of [
+      [group, "message-group"],
+      [root, "message"],
+      [avatar, "message-avatar"],
+      [content, "message-content"],
+      [header, "message-header"],
+      [footer, "message-footer"],
+    ] as const) {
+      expect(ref.current).toHaveAttribute("data-slot", slot);
+      expect(ref.current?.tagName).toBe("DIV");
+      expect(ref.current).not.toHaveAttribute("role");
+    }
+    expect(group.current).toHaveClass("caller-group");
+    expect(root.current).toHaveAttribute("data-align", "start");
+    expect(screen.getByText("AL")).toHaveAttribute("data-slot", "avatar-fallback");
+    expect(screen.getByText("Hello from the caller")).toHaveAttribute("data-slot", "bubble-content");
+    unmount();
+    for (const ref of [group, root, avatar, content, header, footer]) expect(ref.current).toBeNull();
+  });
+
+  it("preserves end alignment, RTL, caller metadata and bubbling native events", () => {
+    const calls: string[] = [];
+    const {container} = render(
+      <Message
+        dir='rtl'
+        align='end'
+        onClick={() => calls.push("message")}
+        className='caller'>
+        <MessageContent>
+          <MessageHeader>الاسم</MessageHeader>
+          <Bubble>
+            <BubbleContent>رسالة</BubbleContent>
+          </Bubble>
+          <MessageFooter>
+            <button
+              type='button'
+              onClick={() => calls.push("caller")}>
+              Retry
+            </button>
+          </MessageFooter>
+        </MessageContent>
+      </Message>,
+    );
+    expect(container.firstElementChild).toHaveAttribute("dir", "rtl");
+    expect(container.firstElementChild).toHaveAttribute("data-align", "end");
+    expect(container.firstElementChild).toHaveClass(cssClass("message"), "caller");
+    fireEvent.click(screen.getByRole("button", {name: "Retry"}));
+    expect(calls).toEqual(["caller", "message"]);
+  });
+
+  it("keeps empty and long caller content intact", () => {
+    const {rerender} = render(<MessageContent data-testid='content' />);
+    expect(screen.getByTestId("content")).toBeEmptyDOMElement();
+    const text = "CallerUnbrokenMessage".repeat(60);
+    rerender(<MessageContent data-testid='content'>{text}</MessageContent>);
+    expect(screen.getByTestId("content").textContent).toBe(text);
+  });
+
+  it("renders the pure native family on the server without inventing live log semantics", () => {
+    const html = renderToStaticMarkup(
+      <MessageGroup>
+        <Message>
+          <MessageAvatar>A</MessageAvatar>
+          <MessageContent>
+            <MessageHeader>Name</MessageHeader>Content<MessageFooter>Time</MessageFooter>
+          </MessageContent>
+        </Message>
+      </MessageGroup>,
+    );
+    expect(html).toContain('data-align="start"');
+    expect(html).toContain('data-slot="message-footer"');
+    expect(html).not.toContain("aria-live");
+    expect(html).not.toContain('role="log"');
+  });
+
+  it("binds shrinking rows, logical alignments and wrapped content CSS contracts", () => {
+    render(
+      <Message align='end'>
+        <MessageContent>Long content</MessageContent>
+        <MessageFooter>Footer</MessageFooter>
+      </Message>,
+    );
+    expect(screen.getByText("Long content")).toHaveClass(cssClass("content"));
+    expect(declarations(".message")).toMatchObject({display: "flex", "inline-size": "100%", "min-inline-size": "0"});
+    expect(declarations('.message[data-align="end"]')).toHaveProperty("flex-direction", "row-reverse");
+    expect(declarations(".content")).toMatchObject({"min-inline-size": "0", "overflow-wrap": "anywhere", "flex-direction": "column"});
+    expect(declarations('.message[data-align="end"] .footer')).toHaveProperty("justify-content", "flex-end");
+    expect(declarations('.message[data-align="end"] .content > [data-slot]')).toHaveProperty("align-self", "flex-end");
+    expect(declarations(".avatar")).toMatchObject({"flex-shrink": "0", overflow: "hidden", "align-self": "flex-end"});
+  });
+});
