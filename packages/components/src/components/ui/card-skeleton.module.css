@@ -48,3 +48,14 @@
   height: 2.25rem;
   border-radius: var(--ac-radius-md);
 }
+
+.storyPreview {
+  width: 48rem;
+  max-width: 100%;
+}
+
+.storyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--ac-space-6);
+}

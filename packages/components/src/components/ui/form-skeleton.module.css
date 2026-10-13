@@ -26,3 +26,22 @@
   height: 2.5rem;
   border-radius: var(--ac-radius-md);
 }
+
+.storyPreview {
+  width: 32rem;
+  max-width: 100%;
+}
+
+.storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.storyHeading {
+  margin: 0 0 var(--ac-space-6);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
