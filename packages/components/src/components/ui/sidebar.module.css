@@ -1,4 +1,7 @@
 .wrapper {
+  --ac-sidebar-width: 16rem;
+  --ac-sidebar-width-icon: 3rem;
+
   display: flex;
   width: 100%;
   min-height: 100svh;
@@ -29,7 +32,6 @@
   position: relative;
   width: var(--ac-sidebar-width);
   background-color: transparent;
-  transition: width var(--ac-transition-slow);
 }
 
 .desktopRoot[data-collapsible="offcanvas"] .gap {
@@ -40,22 +42,18 @@
   width: var(--ac-sidebar-width-icon);
 }
 
-.desktopRoot[data-variant="floating"] .gap,
-.desktopRoot[data-variant="inset"] .gap {
+.desktopRoot[data-variant="floating"][data-collapsible="icon"] .gap,
+.desktopRoot[data-variant="inset"][data-collapsible="icon"] .gap {
   width: calc(var(--ac-sidebar-width-icon) + var(--ac-space-4));
 }
 
 .panelWrap {
+  box-sizing: border-box;
   position: fixed;
   inset-block: 0;
   z-index: 20;
   display: none;
   width: var(--ac-sidebar-width);
-  transition:
-    left var(--ac-transition-slow),
-    right var(--ac-transition-slow),
-    width var(--ac-transition-slow),
-    padding var(--ac-transition-slow);
 }
 
 @media (min-width: 768px) {
@@ -65,19 +63,38 @@
 }
 
 .desktopRoot[data-side="left"] .panelWrap {
-  left: 0;
+  inset-inline-start: 0;
 }
 
 .desktopRoot[data-side="right"] .panelWrap {
-  right: 0;
+  inset-inline-end: 0;
 }
 
 .desktopRoot[data-side="left"][data-collapsible="offcanvas"] .panelWrap {
-  left: calc(var(--ac-sidebar-width) * -1);
+  inset-inline-start: calc(var(--ac-sidebar-width) * -1);
 }
 
 .desktopRoot[data-side="right"][data-collapsible="offcanvas"] .panelWrap {
-  right: calc(var(--ac-sidebar-width) * -1);
+  inset-inline-end: calc(var(--ac-sidebar-width) * -1);
+}
+
+/* Side names remain physical viewport edges when reading direction changes. */
+.desktopRoot:dir(rtl)[data-side="left"] .panelWrap {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+
+.desktopRoot:dir(rtl)[data-side="right"] .panelWrap {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+
+.desktopRoot:dir(rtl)[data-side="left"][data-collapsible="offcanvas"] .panelWrap {
+  inset-inline-end: calc(var(--ac-sidebar-width) * -1);
+}
+
+.desktopRoot:dir(rtl)[data-side="right"][data-collapsible="offcanvas"] .panelWrap {
+  inset-inline-start: calc(var(--ac-sidebar-width) * -1);
 }
 
 .desktopRoot[data-collapsible="icon"] .panelWrap {
@@ -91,10 +108,11 @@
 
 .desktopRoot[data-variant="floating"][data-collapsible="icon"] .panelWrap,
 .desktopRoot[data-variant="inset"][data-collapsible="icon"] .panelWrap {
-  width: calc(var(--ac-sidebar-width-icon) + var(--ac-space-4));
+  width: calc(var(--ac-sidebar-width-icon) + var(--ac-space-4) + 2px);
 }
 
 .panel {
+  box-sizing: border-box;
   display: flex;
   width: 100%;
   height: 100%;
@@ -112,6 +130,16 @@
   border-inline-start: 1px solid var(--ac-sidebar-border);
 }
 
+.desktopRoot:dir(rtl)[data-side="left"][data-variant="sidebar"] .panel {
+  border-inline-start: 1px solid var(--ac-sidebar-border);
+  border-inline-end: 0;
+}
+
+.desktopRoot:dir(rtl)[data-side="right"][data-variant="sidebar"] .panel {
+  border-inline-start: 0;
+  border-inline-end: 1px solid var(--ac-sidebar-border);
+}
+
 .desktopRoot[data-variant="floating"] .panel,
 .desktopRoot[data-variant="inset"] .panel {
   border: 1px solid var(--ac-sidebar-border);
@@ -119,35 +147,16 @@
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
 }
 
-.mobilePortal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-}
+.mobilePanel[data-slot="sheet-content"] {
+  --ac-sidebar-width: 18rem;
 
-.mobileOverlay {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: rgb(0 0 0 / 0.45);
-}
-
-.mobilePanel {
-  position: absolute;
-  inset-block: 0;
-  width: var(--ac-sidebar-width);
+  width: min(var(--ac-sidebar-width), 100vw);
+  gap: 0;
   padding: 0;
+  border: 0;
   background-color: var(--ac-sidebar);
   color: var(--ac-sidebar-foreground);
   box-shadow: 0 18px 50px rgb(0 0 0 / 0.18);
-}
-
-.mobilePanelLeft {
-  left: 0;
-}
-
-.mobilePanelRight {
-  right: 0;
 }
 
 .mobileContent {
@@ -201,21 +210,39 @@
 }
 
 .desktopRoot[data-side="left"] .rail {
-  right: -1rem;
+  inset-inline-end: -1rem;
 }
 
 .desktopRoot[data-side="right"] .rail {
-  left: 0;
+  inset-inline-start: 0;
 }
 
 .desktopRoot[data-collapsible="offcanvas"][data-side="left"] .rail {
-  right: -0.5rem;
+  inset-inline-end: -0.5rem;
   transform: none;
 }
 
 .desktopRoot[data-collapsible="offcanvas"][data-side="right"] .rail {
-  left: -0.5rem;
+  inset-inline-start: -0.5rem;
   transform: none;
+}
+
+.desktopRoot:dir(rtl)[data-side="left"] .rail {
+  inset-inline-start: -1rem;
+  inset-inline-end: auto;
+}
+
+.desktopRoot:dir(rtl)[data-side="right"] .rail {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+
+.desktopRoot:dir(rtl)[data-side="left"][data-collapsible="offcanvas"] .rail {
+  inset-inline-start: -0.5rem;
+}
+
+.desktopRoot:dir(rtl)[data-side="right"][data-collapsible="offcanvas"] .rail {
+  inset-inline-end: -0.5rem;
 }
 
 .inset {
@@ -228,15 +255,25 @@
 }
 
 @media (min-width: 768px) {
-  .desktopRoot[data-variant="inset"] ~ .inset {
+  .desktopRoot[data-variant="inset"] ~ .inset,
+  .inset:has(~ .desktopRoot[data-variant="inset"]) {
     margin: var(--ac-space-2);
-    margin-inline-start: 0;
     border-radius: var(--ac-radius-xl);
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
   }
 
-  .desktopRoot[data-state="collapsed"][data-variant="inset"] ~ .inset {
-    margin-inline-start: var(--ac-space-2);
+  .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="left"] ~ .inset:dir(ltr),
+  .inset:dir(ltr):has(~ .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="left"]),
+  .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="right"] ~ .inset:dir(rtl),
+  .inset:dir(rtl):has(~ .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="right"]) {
+    margin-inline-start: 0;
+  }
+
+  .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="right"] ~ .inset:dir(ltr),
+  .inset:dir(ltr):has(~ .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="right"]),
+  .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="left"] ~ .inset:dir(rtl),
+  .inset:dir(rtl):has(~ .desktopRoot[data-state="expanded"][data-variant="inset"][data-side="left"]) {
+    margin-inline-end: 0;
   }
 }
 
@@ -275,6 +312,7 @@
 }
 
 .group {
+  box-sizing: border-box;
   position: relative;
   display: flex;
   width: 100%;
@@ -294,9 +332,7 @@
   font-size: var(--ac-text-xs);
   font-weight: 500;
   outline: none;
-  transition:
-    margin var(--ac-transition-slow),
-    opacity var(--ac-transition-slow);
+  transition: opacity var(--ac-transition-slow);
 }
 
 .groupLabel > svg {
@@ -314,7 +350,7 @@
 .groupAction {
   position: absolute;
   top: 0.875rem;
-  right: 0.75rem;
+  inset-inline-end: 0.75rem;
   display: flex;
   width: 1.25rem;
   aspect-ratio: 1;
@@ -360,6 +396,7 @@
 }
 
 .menuButton {
+  box-sizing: border-box;
   display: flex;
   width: 100%;
   align-items: center;
@@ -371,14 +408,12 @@
   background: transparent;
   color: inherit;
   font-size: var(--ac-text-sm);
-  text-align: left;
+  text-align: start;
+  text-decoration: none;
   outline: none;
   transition:
     background-color var(--ac-transition-fast),
-    color var(--ac-transition-fast),
-    width var(--ac-transition-slow),
-    height var(--ac-transition-slow),
-    padding var(--ac-transition-slow);
+    color var(--ac-transition-fast);
 }
 
 .menuButton:hover,
@@ -395,8 +430,15 @@
 
 .menuButton:disabled,
 .menuButton[aria-disabled="true"] {
-  pointer-events: none;
   opacity: 0.5;
+}
+
+.groupAction:disabled,
+.groupAction[aria-disabled="true"],
+.menuAction:disabled,
+.menuAction[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .menuButton > svg {
@@ -439,6 +481,7 @@
   width: 2rem;
   min-width: 2rem;
   height: 2rem;
+  min-height: 2rem;
   justify-content: center;
   padding: var(--ac-space-2);
 }
@@ -457,7 +500,7 @@
 .menuAction {
   position: absolute;
   top: 50%;
-  right: 0.25rem;
+  inset-inline-end: 0.25rem;
   display: flex;
   width: 1.25rem;
   aspect-ratio: 1;
@@ -489,7 +532,10 @@
   }
 
   .menuItem:hover .menuActionShowOnHover,
-  .menuItem:focus-within .menuActionShowOnHover {
+  .menuItem:focus-within .menuActionShowOnHover,
+  .menuActionShowOnHover[data-popup-open],
+  .menuActionShowOnHover[data-state="open"],
+  .menuActionShowOnHover[aria-expanded="true"] {
     opacity: 1;
   }
 }
@@ -497,7 +543,7 @@
 .menuBadge {
   position: absolute;
   top: 50%;
-  right: 0.25rem;
+  inset-inline-end: 0.25rem;
   display: flex;
   min-width: 1.25rem;
   height: 1.25rem;
@@ -530,6 +576,8 @@
 }
 
 .menuSkeletonText {
+  --ac-skeleton-width: 70%;
+
   width: var(--ac-skeleton-width);
   max-width: var(--ac-skeleton-width);
   height: 1rem;
@@ -542,8 +590,9 @@
   flex-direction: column;
   gap: var(--ac-space-1);
   margin-inline: 0.875rem;
-  padding: 0.125rem 0 0.125rem var(--ac-space-3);
-  border-left: 1px solid var(--ac-sidebar-border);
+  padding-block: 0.125rem;
+  padding-inline-start: var(--ac-space-3);
+  border-inline-start: 1px solid var(--ac-sidebar-border);
 }
 
 .menuSubButton {
@@ -584,6 +633,27 @@
   font-size: var(--ac-text-sm);
 }
 
+.trigger:focus-visible,
+.rail:focus-visible,
+.groupAction:focus-visible,
+.menuButton:focus-visible,
+.menuAction:focus-visible,
+.menuSubButton:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail,
+  .groupLabel,
+  .groupAction,
+  .menuButton,
+  .menuAction,
+  .menuSubButton {
+    transition: none;
+  }
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -594,4 +664,34 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
   white-space: nowrap;
+}
+
+.storyMain {
+  align-items: flex-start;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-6);
+}
+
+.storyBrand {
+  padding: var(--ac-space-2);
+}
+
+.storyMenu {
+  min-width: 10rem;
+  padding: var(--ac-space-1);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+}
+
+.storyMenuItem {
+  padding: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  outline: none;
+}
+
+.storyMenuItem[data-highlighted] {
+  background-color: var(--ac-accent);
+  color: var(--ac-accent-foreground);
 }
