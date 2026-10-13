@@ -16,19 +16,19 @@ export type {GroupImperativeHandle, PanelImperativeHandle};
 /**
  * Props for the {@link ResizablePanelGroup} component.
  */
-export type ResizablePanelGroupProps = React.ComponentProps<typeof ResizablePrimitive.Group>;
+export type ResizablePanelGroupProps = ResizablePrimitive.GroupProps;
 
 /**
  * Props for the {@link ResizablePanel} component.
  */
-export type ResizablePanelProps = React.ComponentProps<typeof ResizablePrimitive.Panel>;
+export type ResizablePanelProps = ResizablePrimitive.PanelProps;
 
 /**
  * Props for the {@link ResizableHandle} component.
  *
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  */
-export interface ResizableHandleProps extends React.ComponentProps<typeof ResizablePrimitive.Separator> {
+export interface ResizableHandleProps extends ResizablePrimitive.SeparatorProps {
   /**
    * Renders a visual drag grip inside the resize handle to indicate that adjacent panels can be resized.
    *
@@ -44,6 +44,8 @@ export interface ResizableHandleProps extends React.ComponentProps<typeof Resiza
  * @remarks
  * - Third-party wrapper component (v4 API: `Group` with `orientation` prop)
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Use `elementRef` for the DOM element and `groupRef` for the v4 imperative layout API.
+ * - The primitive owns inline flex direction; separator ARIA orientation is perpendicular to this group.
  *
  * @example
  * ```tsx
@@ -68,6 +70,8 @@ function ResizablePanelGroup({className, ...props}: Readonly<ResizablePanelGroup
  * @remarks
  * - Third-party wrapper component
  * - Styling is applied by parent panel group and handles
+ * - Use `elementRef` for the DOM element and `panelRef` for the v4 imperative sizing API.
+ * - Numeric sizes represent pixels; use percentage strings such as `"50%"` for relative sizes.
  *
  * @example
  * ```tsx
@@ -85,6 +89,8 @@ const ResizablePanel = ResizablePrimitive.Panel;
  * @remarks
  * - Third-party wrapper component (v4 API: `Separator`)
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Vertical groups emit a horizontal separator; the stylesheet rotates only the optional visual grip.
+ * - `elementRef`, consumer children and primitive keyboard/pointer handlers are preserved.
  *
  * @example
  * ```tsx
