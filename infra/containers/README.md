@@ -189,6 +189,14 @@ The container keeps the standard `node server.js` entrypoint. Private values
 are not baked into image layers. Restarting the Node server reloads changed
 private configuration from exp.
 
+Cloud bootstrap gives token acquisition its own 30-second abort signal. The
+10-second exp HTTP deadline starts only after request credentials are available;
+managed-identity cold-start latency does not consume the exp request budget.
+Cloud failures identify `stage=authentication` or `stage=http`, elapsed time,
+known SDK/network error identifiers, and whether a managed-identity endpoint was
+configured. Provider messages, tokens, endpoint values, and private configuration
+are never included in these errors.
+
 The build workflow runs a bounded startup smoke test on the final image before
 publishing it. It uses the image's normal entrypoint and runner-stage environment
 (without setting `SITE_ENV` or private variables), plus a local exp fixture.
@@ -200,8 +208,12 @@ Run it on a Linux Docker host after building an image:
 node sites/arolariu.ro/tests/container/runtime-configuration.smoke.mjs <image> PRODUCTION
 ```
 
-The fixture and test container are temporary; no real Azure services or credentials
-are used.
+The smoke also exercises the real bundled Azure SDK against a loopback
+App Service-shaped managed-identity endpoint, checking the selected client ID,
+token audience and Authorization handoff. A delayed valid token response covers
+cold-start latency beyond the exp request deadline. Only the external identity
+and exp services are controlled; the normal server entrypoint remains unchanged.
+The fixtures and test containers are temporary; no real Azure credentials are used.
 
 | Variable | Description | Required |
 | ----------------------------------- | ------------------------------------ | -------- |

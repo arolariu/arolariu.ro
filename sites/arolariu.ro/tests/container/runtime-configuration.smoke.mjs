@@ -14,12 +14,7 @@ assert.ok(image, "Supply the final website image to test.");
 assert.ok(environment === "PRODUCTION" || environment === "DEVELOPMENT", "Supply the expected build-time SITE_ENV.");
 assert.equal(process.platform, "linux", "This smoke test uses Linux Docker host networking.");
 
-for (const {managedIdentity, identityDelayMs} of [
-  {managedIdentity: false, identityDelayMs: 0},
-  {managedIdentity: true, identityDelayMs: 0},
-  {managedIdentity: true, identityDelayMs: 11_000},
-]) {
-test(`the final image loads runtime configuration (${managedIdentity ? `App Service identity, ${identityDelayMs}ms cold start` : "local exp fixture"})`, {timeout: 60_000}, async () => {
+async function runStartupSmoke(managedIdentity, identityDelayMs) {
   const imageEnvironment = JSON.parse(execFileSync("docker", ["image", "inspect", "--format", "{{json .Config.Env}}", image], {
     encoding: "utf8",
   }));
@@ -108,12 +103,12 @@ test(`the final image loads runtime configuration (${managedIdentity ? `App Serv
     "--env", `EXP_PROXY_URL=${managedIdentity ? "" : fixtureOrigin}`,
     "--env", "INFRA=azure",
     "--env", `AZURE_CLIENT_ID=${managedIdentity ? identityClientId : ""}`,
-    ...managedIdentity ? [
+    ...(managedIdentity ? [
       "--env", `IDENTITY_ENDPOINT=${fixtureOrigin}/metadata/identity/oauth2/token`,
       "--env", `IDENTITY_HEADER=${identityHeader}`,
       "--env", "NODE_OPTIONS=--import=file:///tmp/exp-fetch.mjs",
       "--mount", `type=bind,src=${fetchHook},dst=/tmp/exp-fetch.mjs,readonly`,
-    ] : [],
+    ] : []),
     "--env", "OTEL_SDK_DISABLED=true",
     image,
   ], {stdio: ["ignore", "pipe", "pipe"]});
@@ -169,5 +164,14 @@ test(`the final image loads runtime configuration (${managedIdentity ? `App Serv
     await new Promise((resolve, reject) => fixture.close((error) => error ? reject(error) : resolve()));
     await rm(fixtureDirectory, {recursive: true, force: true});
   }
-});
+}
+
+for (const {managedIdentity, identityDelayMs} of [
+  {managedIdentity: false, identityDelayMs: 0},
+  {managedIdentity: true, identityDelayMs: 0},
+  {managedIdentity: true, identityDelayMs: 11_000},
+]) {
+  const scenario = managedIdentity ? `App Service identity, ${identityDelayMs}ms cold start` : "local exp fixture";
+  test(`the final image loads runtime configuration (${scenario})`, {timeout: 60_000}, () =>
+    runStartupSmoke(managedIdentity, identityDelayMs));
 }

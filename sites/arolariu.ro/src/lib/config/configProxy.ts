@@ -178,6 +178,56 @@ let runtimeConfiguration: Readonly<Record<string, string>> | null = null;
  * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
  */
 const CONFIG_FETCH_TIMEOUT_MS = IS_CLOUD_DEPLOYMENT ? 10_000 : 2000;
+const CONFIG_AUTHENTICATION_TIMEOUT_MS = 30_000;
+
+const SAFE_FAILURE_IDENTIFIERS = new Set([
+  "Error",
+  "TypeError",
+  "ReferenceError",
+  "AbortError",
+  "TimeoutError",
+  "RestError",
+  "AggregateAuthenticationError",
+  "AuthenticationError",
+  "AuthenticationRequiredError",
+  "CredentialUnavailableError",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "ENETUNREACH",
+  "EHOSTUNREACH",
+  "CERT_HAS_EXPIRED",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_SOCKET",
+  "ERR_MODULE_NOT_FOUND",
+  "MODULE_NOT_FOUND",
+]);
+
+function describeConfigurationFailure(failure: unknown): string {
+  const failures: unknown[] = [failure];
+  const identifiers = new Set<string>();
+  for (let index = 0; index < failures.length && index < 8; index += 1) {
+    const current = failures[index];
+    if (!isRecord(current)) continue;
+    for (const field of ["name", "code"]) {
+      const value = current[field];
+      if (typeof value === "string" && SAFE_FAILURE_IDENTIFIERS.has(value)) identifiers.add(value);
+    }
+    const status = current["statusCode"];
+    if (typeof status === "number" && Number.isInteger(status) && status >= 100 && status <= 599) {
+      identifiers.add(`status=${status}`);
+    }
+    if (current["cause"]) failures.push(current["cause"]);
+    const errors: unknown = current["errors"];
+    if (Array.isArray(errors)) failures.push(...errors.slice(0, 5));
+  }
+  return [...identifiers].join(",") || "unknown";
+}
 
 /**
  * Azure App Configuration label derived from `SITE_ENV`.
@@ -200,6 +250,9 @@ async function getBearerToken(signal?: AbortSignal): Promise<string> {
     ? await credential.getToken(EXP_SERVICE_TOKEN_SCOPE, {abortSignal: signal})
     : await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
 
+  if (signal && !token?.token) {
+    throw new Error("Azure credential returned no exp access token.");
+  }
   return token?.token ?? "";
 }
 
@@ -365,12 +418,22 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
   endpoint.searchParams.set("for", WEBSITE_TARGET);
   endpoint.searchParams.set("label", environment);
 
-  const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
-  const response = await getRequestHeaders(signal)
-    .then((headers) => fetch(endpoint.href, {cache: "no-store", headers, signal}))
-    .catch(() => {
+  let stage: "authentication" | "http" = "authentication";
+  const startedAt = Date.now();
+  const response = await getRequestHeaders(AbortSignal.timeout(CONFIG_AUTHENTICATION_TIMEOUT_MS))
+    .then((headers) => {
+      stage = "http";
+      const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
+      return fetch(endpoint.href, {cache: "no-store", headers, signal});
+    })
+    .catch((failure: unknown) => {
       if (IS_CLOUD_DEPLOYMENT) {
-        throw new Error("Unable to fetch private runtime configuration from exp. Check managed identity and exp availability.");
+        const identityEndpointConfigured = Boolean(process.env["IDENTITY_ENDPOINT"] || process.env["MSI_ENDPOINT"]);
+        throw new Error(
+          `Unable to fetch private runtime configuration from exp (stage=${stage}; `
+          + `failure=${describeConfigurationFailure(failure)}; elapsedMs=${Date.now() - startedAt}; `
+          + `identityEndpointConfigured=${identityEndpointConfigured}).`,
+        );
       }
       expCircuitOpen = true;
       expCircuitOpenedAt = Date.now();

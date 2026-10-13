@@ -216,6 +216,7 @@ describe("configProxy", () => {
 describe("initializeRuntimeEnvironmentConfiguration", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.doUnmock("@/lib/azure/credentials");
     vi.stubEnv("AZURE_CLIENT_ID", "");
     vi.stubEnv("EXP_PROXY_URL", "http://exp");
     vi.stubEnv("INFRA", "azure");
@@ -235,6 +236,7 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+    vi.doUnmock("@azure/identity");
   });
 
   function runtimeDocument(config: Readonly<Record<string, unknown>> = {}) {
@@ -461,6 +463,110 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
 
     await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("Unable to fetch private runtime configuration");
     expect(process.env["CLERK_SECRET_KEY"]).toBe("stale-local-value");
+  });
+
+  it("identifies token acquisition failures without disclosing provider messages", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("AZURE_CLIENT_ID", "frontend-managed-identity");
+    vi.doMock("@azure/identity", () => ({
+      DefaultAzureCredential: class {
+        public async getToken(): Promise<never> {
+          throw Object.assign(new Error("sensitive-identity-provider-message"), {
+            name: "CredentialUnavailableError",
+            code: "ECONNREFUSED",
+          });
+        }
+      },
+    }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error)).toContain("stage=authentication");
+    expect(String(error)).toContain("CredentialUnavailableError");
+    expect(String(error)).toContain("ECONNREFUSED");
+    expect(String(error)).not.toContain("sensitive-identity-provider-message");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("identifies exp DNS failures using the nested transport code without disclosing messages", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("sensitive-exp-request-message", {
+      cause: Object.assign(new Error("sensitive-exp-hostname"), {code: "ENOTFOUND"}),
+    })));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error)).toContain("stage=http");
+    expect(String(error)).toContain("ENOTFOUND");
+    expect(String(error)).not.toContain("sensitive-exp");
+  });
+
+  it("reports only allowlisted identifiers from an aggregate Azure credential failure", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("AZURE_CLIENT_ID", "frontend-managed-identity");
+    vi.doMock("@azure/identity", () => ({
+      DefaultAzureCredential: class {
+        public async getToken(): Promise<never> {
+          throw Object.assign(new Error("private-aggregate-description"), {
+            name: "AggregateAuthenticationError",
+            errors: [
+              Object.assign(new Error("private-managed-identity-response"), {
+                name: "AuthenticationError",
+                statusCode: 403,
+                cause: Object.assign(new Error("private-socket-details"), {code: "ECONNRESET"}),
+              }),
+            ],
+          });
+        }
+      },
+    }));
+    vi.stubGlobal("fetch", vi.fn());
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);
+
+    expect(String(error)).toContain("AggregateAuthenticationError");
+    expect(String(error)).toContain("AuthenticationError");
+    expect(String(error)).toContain("status=403");
+    expect(String(error)).toContain("ECONNRESET");
+    expect(String(error)).not.toContain("private-");
+  });
+
+  it("does not send an anonymous cloud configuration request when credentials return no token", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("AZURE_CLIENT_ID", "frontend-managed-identity");
+    vi.doMock("@azure/identity", () => ({
+      DefaultAzureCredential: class {
+        public async getToken(): Promise<null> {
+          return null;
+        }
+      },
+    }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("stage=authentication");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("omits unknown error names and codes instead of trusting arbitrary provider values", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue({
+      name: "private-error-name",
+      code: "private-error-code",
+      message: "private-error-message",
+    }));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);
+
+    expect(String(error)).toContain("failure=unknown");
+    expect(String(error)).not.toContain("private-error");
   });
 
   it("rejects invalid local exp configuration instead of hiding it with dotenv", async () => {
