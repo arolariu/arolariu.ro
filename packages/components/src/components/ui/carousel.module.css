@@ -4,6 +4,11 @@
 
 .viewport {
   overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+.viewport[data-orientation="vertical"] {
+  touch-action: pan-x pinch-zoom;
 }
 
 .content {
@@ -24,15 +29,15 @@
 }
 
 .itemVertical {
+  min-height: 0;
   padding-top: var(--ac-space-4);
   padding-left: 0;
 }
 
 .navigationButton {
   position: absolute;
-  width: 2rem;
-  height: 2rem;
   border-radius: 999px;
+  touch-action: manipulation;
 }
 
 .navigationButton[data-orientation="horizontal"] {
@@ -46,24 +51,24 @@
 }
 
 .previousButton[data-orientation="horizontal"] {
-  left: -3rem;
+  left: calc(var(--ac-space-6) * -2);
 }
 
 .nextButton[data-orientation="horizontal"] {
-  right: -3rem;
+  right: calc(var(--ac-space-6) * -2);
 }
 
 .previousButton[data-orientation="vertical"] {
-  top: -3rem;
+  top: calc(var(--ac-space-6) * -2);
 }
 
 .nextButton[data-orientation="vertical"] {
-  bottom: -3rem;
+  bottom: calc(var(--ac-space-6) * -2);
 }
 
 .navigationIcon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
 }
 
 .srOnly {
@@ -76,4 +81,77 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
   white-space: nowrap;
+}
+
+.storyFrame {
+  width: min(28rem, calc(100vw - var(--ac-space-8) * 2));
+  padding: calc(var(--ac-space-6) * 2);
+}
+
+.storyTrack[data-orientation="vertical"] {
+  height: 20rem;
+}
+
+.storyPanel {
+  display: flex;
+  min-height: 15rem;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.storyNumber {
+  font-size: calc(var(--ac-text-xl) * 2);
+  font-weight: 600;
+}
+
+.storyMultipleItem {
+  flex-basis: 100%;
+}
+
+@media (min-width: 40rem) {
+  .storyMultipleItem {
+    flex-basis: 50%;
+  }
+}
+
+.storyPicture {
+  width: 100%;
+  height: auto;
+  fill: var(--ac-primary);
+}
+
+.storyIndicators {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-4);
+  margin-top: var(--ac-space-6);
+  text-align: center;
+}
+
+.storyIndicators p {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.storyIndicatorRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ac-space-2);
+}
+
+.storyIndicator[aria-current="true"] {
+  border-color: var(--ac-primary);
+  background: var(--ac-primary);
+  color: var(--ac-primary-foreground);
 }
