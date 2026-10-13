@@ -34,6 +34,9 @@ export type {AlertProps, AlertVariant} from "./components/ui/alert";
 
 export {AspectRatio} from "./components/ui/aspect-ratio";
 
+export {AsyncBoundary} from "./components/ui/async-boundary";
+export type {AsyncBoundaryProps} from "./components/ui/async-boundary";
+
 export {Avatar, AvatarFallback, AvatarImage} from "./components/ui/avatar";
 
 export {Badge, badgeVariants} from "./components/ui/badge";
@@ -58,6 +61,9 @@ export {Calendar} from "./components/ui/calendar";
 export type {CalendarProps, DateRange, DayPickerProps, Matcher} from "./components/ui/calendar";
 
 export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
+
+export {CardSkeleton} from "./components/ui/card-skeleton";
+export type {CardSkeletonProps} from "./components/ui/card-skeleton";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi} from "./components/ui/carousel";
 export type {CarouselOptions, CarouselPlugin, CarouselProps} from "./components/ui/carousel";
@@ -235,6 +241,9 @@ export {
 
 export {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "./components/ui/empty";
 
+export {ErrorBoundary} from "./components/ui/error-boundary";
+export type {ErrorBoundaryProps} from "./components/ui/error-boundary";
+
 export {
   Field,
   FieldContent,
@@ -247,6 +256,9 @@ export {
   FieldSet,
   FieldTitle,
 } from "./components/ui/field";
+
+export {FocusScope} from "./components/ui/focus-scope";
+export type {FocusScopeProps} from "./components/ui/focus-scope";
 
 export {
   Controller,
@@ -284,6 +296,9 @@ export type {
   UseFieldArrayReturn,
   UseFormReturn,
 } from "./components/ui/form";
+
+export {FormSkeleton} from "./components/ui/form-skeleton";
+export type {FormSkeletonProps} from "./components/ui/form-skeleton";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger} from "./components/ui/hover-card";
 
@@ -332,6 +347,12 @@ export {
 export {Kbd, KbdGroup} from "./components/ui/kbd";
 
 export {Label} from "./components/ui/label";
+
+export {ListSkeleton} from "./components/ui/list-skeleton";
+export type {ListSkeletonProps} from "./components/ui/list-skeleton";
+
+export {LoadingOverlay} from "./components/ui/loading-overlay";
+export type {LoadingOverlayProps} from "./components/ui/loading-overlay";
 
 export {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./components/ui/meter";
 
@@ -469,6 +490,9 @@ export type {Toast} from "./components/ui/toast";
 export {Switch} from "./components/ui/switch";
 
 export {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "./components/ui/table";
+
+export {TableSkeleton} from "./components/ui/table-skeleton";
+export type {TableSkeletonProps} from "./components/ui/table-skeleton";
 
 export {Tabs, TabsContent, TabsList, TabsTrigger} from "./components/ui/tabs";
 

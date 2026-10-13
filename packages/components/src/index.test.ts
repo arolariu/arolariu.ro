@@ -1,7 +1,64 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, expectTypeOf, it} from "vitest";
+import {AsyncBoundary, type AsyncBoundaryProps as LocalAsyncBoundaryProps} from "./components/ui/async-boundary";
+import {CardSkeleton, type CardSkeletonProps as LocalCardSkeletonProps} from "./components/ui/card-skeleton";
+import {ErrorBoundary, type ErrorBoundaryProps as LocalErrorBoundaryProps} from "./components/ui/error-boundary";
+import {FocusScope, type FocusScopeProps as LocalFocusScopeProps} from "./components/ui/focus-scope";
+import {FormSkeleton, type FormSkeletonProps as LocalFormSkeletonProps} from "./components/ui/form-skeleton";
+import {ListSkeleton, type ListSkeletonProps as LocalListSkeletonProps} from "./components/ui/list-skeleton";
+import {LoadingOverlay, type LoadingOverlayProps as LocalLoadingOverlayProps} from "./components/ui/loading-overlay";
+import {TableSkeleton, type TableSkeletonProps as LocalTableSkeletonProps} from "./components/ui/table-skeleton";
 import * as exports from "./index";
+import type {
+  AsyncBoundaryProps,
+  CardSkeletonProps,
+  ErrorBoundaryProps,
+  FocusScopeProps,
+  FormSkeletonProps,
+  ListSkeletonProps,
+  LoadingOverlayProps,
+  TableSkeletonProps,
+} from "./index";
 
 describe("index.ts exports", () => {
+  it("exposes supported local loading primitives at the root", () => {
+    for (const name of [
+      "AsyncBoundary",
+      "CardSkeleton",
+      "ErrorBoundary",
+      "FocusScope",
+      "FormSkeleton",
+      "ListSkeleton",
+      "LoadingOverlay",
+      "TableSkeleton",
+    ]) {
+      expect(exports).toHaveProperty(name);
+    }
+  });
+
+  it.each([
+    ["AsyncBoundary", AsyncBoundary],
+    ["CardSkeleton", CardSkeleton],
+    ["ErrorBoundary", ErrorBoundary],
+    ["FocusScope", FocusScope],
+    ["FormSkeleton", FormSkeleton],
+    ["ListSkeleton", ListSkeleton],
+    ["LoadingOverlay", LoadingOverlay],
+    ["TableSkeleton", TableSkeleton],
+  ] as const)("re-exports %s from its public module", (name, component) => {
+    expect(exports[name]).toBe(component);
+  });
+
+  it("preserves the named public prop types at the root", () => {
+    expectTypeOf<AsyncBoundaryProps>().toEqualTypeOf<LocalAsyncBoundaryProps>();
+    expectTypeOf<CardSkeletonProps>().toEqualTypeOf<LocalCardSkeletonProps>();
+    expectTypeOf<ErrorBoundaryProps>().toEqualTypeOf<LocalErrorBoundaryProps>();
+    expectTypeOf<FocusScopeProps>().toEqualTypeOf<LocalFocusScopeProps>();
+    expectTypeOf<FormSkeletonProps>().toEqualTypeOf<LocalFormSkeletonProps>();
+    expectTypeOf<ListSkeletonProps>().toEqualTypeOf<LocalListSkeletonProps>();
+    expectTypeOf<LoadingOverlayProps>().toEqualTypeOf<LocalLoadingOverlayProps>();
+    expectTypeOf<TableSkeletonProps>().toEqualTypeOf<LocalTableSkeletonProps>();
+  });
+
   it("should export components and utilities", () => {
     expect(exports).toBeDefined();
     const exportKeys = Object.keys(exports);
