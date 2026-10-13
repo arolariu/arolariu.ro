@@ -3,18 +3,61 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--ac-avatar-size, 2.5rem);
+  height: var(--ac-avatar-size, 2.5rem);
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 9999px;
+  user-select: none;
+}
+
+.root::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ac-border);
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+}
+
+.sm {
+  --ac-avatar-size: var(--ac-size-sm);
+  --ac-avatar-text-size: var(--ac-text-xs);
+  --ac-avatar-badge-size: var(--ac-space-2);
+}
+
+.default {
+  --ac-avatar-size: 2.5rem;
+  --ac-avatar-text-size: var(--ac-text-sm);
+  --ac-avatar-badge-size: 0.625rem;
+}
+
+.lg {
+  --ac-avatar-size: 3rem;
+  --ac-avatar-text-size: var(--ac-text-base);
+  --ac-avatar-badge-size: var(--ac-space-3);
 }
 
 .image {
   aspect-ratio: 1 / 1;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
+  transition: opacity var(--ac-transition-fast);
+}
+
+.image[data-starting-style],
+.image[data-ending-style] {
+  opacity: 0;
+}
+
+.image[data-loading],
+.image[data-error] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .fallback {
@@ -23,9 +66,137 @@
   justify-content: center;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
+  background-color: var(--ac-muted);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-avatar-text-size, var(--ac-text-sm));
+  font-weight: 500;
+}
+
+.badge {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ac-avatar-badge-size, 0.625rem);
+  height: var(--ac-avatar-badge-size, 0.625rem);
+  border-radius: 9999px;
+  background-color: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+  box-shadow: 0 0 0 2px var(--ac-background);
+  user-select: none;
+}
+
+.badge > svg {
+  width: var(--ac-space-2);
+  height: var(--ac-space-2);
+}
+
+.sm > .badge > svg {
+  display: none;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  isolation: isolate;
+}
+
+.group > :global([data-slot="avatar"]),
+.group > .groupCount {
+  isolation: isolate;
+  box-shadow: 0 0 0 2px var(--ac-background);
+}
+
+.group > :global([data-slot="avatar"]):not(:first-child),
+.group > .groupCount:not(:first-child) {
+  margin-inline-start: calc(-1 * var(--ac-space-2));
+}
+
+.group > :global([data-slot="avatar"]):has(> :global([data-slot="avatar-badge"])) {
+  z-index: 1;
+}
+
+.group:has(> :global([data-slot="avatar"][data-size="sm"]):first-child) {
+  --ac-avatar-count-size: var(--ac-size-sm);
+  --ac-avatar-count-text-size: var(--ac-text-xs);
+}
+
+.group:has(> :global([data-slot="avatar"][data-size="lg"]):first-child) {
+  --ac-avatar-count-size: 3rem;
+  --ac-avatar-count-text-size: var(--ac-text-base);
+}
+
+.groupCount {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--ac-avatar-count-size, 2.5rem);
+  height: var(--ac-avatar-count-size, 2.5rem);
   border-radius: 9999px;
   background-color: var(--ac-muted);
   color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-sm);
+  box-shadow: 0 0 0 2px var(--ac-background);
+  font-size: var(--ac-avatar-count-text-size, var(--ac-text-sm));
   font-weight: 500;
+}
+
+.groupCount > svg {
+  width: 50%;
+  height: 50%;
+}
+
+.storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-6);
+}
+
+.storyColumn {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+.storyPanel {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root::after {
+    border-color: CanvasText;
+  }
+
+  .fallback,
+  .groupCount {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .badge {
+    border: 1px solid HighlightText;
+    background-color: Highlight;
+    color: HighlightText;
+    box-shadow: none;
+    outline: 2px solid Canvas;
+  }
+
+  .group > :global([data-slot="avatar"]),
+  .groupCount {
+    box-shadow: none;
+    outline: 2px solid CanvasText;
+  }
 }
