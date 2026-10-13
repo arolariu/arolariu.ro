@@ -4,6 +4,7 @@ import {Field as BaseField} from "@base-ui/react/field";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {Controller as RHFController, FormProvider, useForm as rhfUseForm, type Resolver} from "react-hook-form";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {
@@ -22,10 +23,14 @@ import {
   useFormField,
   useFormState,
   useWatch,
+  type FormDescriptionProps,
 } from "./form";
 import * as formExports from "./form";
 import styles from "./form.module.css";
+import * as formStories from "./form.stories";
 import {Input} from "./input";
+
+const {ObserverComposition: ObserverStory, FieldArrayAndWatch: FieldArrayStory} = composeStories(formStories);
 
 interface TestFormValues {
   email: string;
@@ -1160,6 +1165,41 @@ function MultipleMetadataFixture(): React.JSX.Element {
   );
 }
 
+interface NativeDescriptionFixtureProps {
+  readonly description: FormDescriptionProps;
+  readonly descriptionRef?: React.Ref<HTMLParagraphElement>;
+  readonly visible?: boolean;
+}
+
+function NativeDescriptionFixture({description, descriptionRef, visible = true}: NativeDescriptionFixtureProps): React.JSX.Element {
+  const methods = useForm<CompositionValues>({defaultValues: {email: ""}});
+  const value = useWatch({control: methods.control, name: "email"});
+  return (
+    <Form {...methods}>
+      <FormField
+        control={methods.control}
+        name='email'
+        render={({field}) => (
+          <FormItem>
+            <FormLabel>Native HTML description</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            {visible ? (
+              <FormDescription
+                {...description}
+                ref={descriptionRef}
+                data-testid='native-description'
+              />
+            ) : null}
+          </FormItem>
+        )}
+      />
+      <div data-testid='native-watched-value'>{value}</div>
+    </Form>
+  );
+}
+
 interface NativeValues {
   notes: string;
   choice: string;
@@ -1390,6 +1430,169 @@ describe("Form composition and metadata lifecycles", () => {
     expect(screen.getByLabelText("Choice observer")).toHaveTextContent("1:second");
     await user.click(screen.getByRole("button", {name: "Save native values"}));
     await waitFor(() => expect(screen.getByLabelText("Native submitted")).toHaveTextContent('{"notes":"Hello","choice":"second"}'));
+  });
+});
+
+describe("FormDescription mounted native HTML content", () => {
+  it("links trusted native HTML text while preserving native props, the paragraph ref, and RHF input updates", async () => {
+    const ref = React.createRef<HTMLParagraphElement>();
+    const user = userEvent.setup();
+    const {unmount} = render(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        description={{
+          id: "native-html-helper",
+          lang: "en",
+          title: "A native helper",
+          className: "native-helper-class",
+          dangerouslySetInnerHTML: {__html: "<span>A rendered <strong>native helper.</strong></span>"},
+        }}
+      />,
+    );
+    const paragraph = screen.getByTestId("native-description");
+    expect(paragraph).toHaveAttribute("id", "native-html-helper");
+    expect(paragraph).toHaveAttribute("lang", "en");
+    expect(paragraph).toHaveAttribute("title", "A native helper");
+    expect(paragraph).toHaveClass("native-helper-class");
+    expect(paragraph.querySelector("strong")).toHaveTextContent("native helper.");
+    expect(ref.current).toBe(paragraph);
+    const input = screen.getByRole("textbox", {name: "Native HTML description"});
+    expect(input).toHaveAttribute("aria-describedby", "native-html-helper");
+    expect(input).toHaveAccessibleDescription("A rendered native helper.");
+    await user.type(input, "Ada");
+    expect(screen.getByTestId("native-watched-value")).toHaveTextContent("Ada");
+    expect(input).toHaveAccessibleDescription("A rendered native helper.");
+    unmount();
+    expect(ref.current).toBeNull();
+  });
+
+  it("resamples actual HTML text and entities on same-ID updates, clears empty markup, and cleans up after unmount", () => {
+    const nodes: Array<HTMLParagraphElement | null> = [];
+    let cleanupCount = 0;
+    const ref: React.RefCallback<HTMLParagraphElement> = (node) => {
+      nodes.push(node);
+      return () => {
+        cleanupCount += 1;
+      };
+    };
+    const {rerender} = render(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        description={{id: "native-html-helper", dangerouslySetInnerHTML: {__html: "Initial native helper."}}}
+      />,
+    );
+    const input = screen.getByRole("textbox", {name: "Native HTML description"});
+    const paragraph = screen.getByTestId("native-description");
+    expect(nodes).toEqual([paragraph]);
+    expect(input).toHaveAccessibleDescription("Initial native helper.");
+    rerender(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        description={{id: "native-html-helper", dangerouslySetInnerHTML: {__html: "<strong>Updated &lt;text&gt; &amp; checks.</strong>"}}}
+      />,
+    );
+    expect(screen.getByTestId("native-description")).toBe(paragraph);
+    expect(input).toHaveAccessibleDescription("Updated <text> & checks.");
+    expect(input).toHaveAttribute("aria-describedby", "native-html-helper");
+    rerender(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        description={{id: "native-html-helper", dangerouslySetInnerHTML: {__html: "<!-- no description --><span></span><br>&nbsp;&#32;"}}}
+      />,
+    );
+    expect(paragraph.textContent?.trim()).toBe("");
+    expect(input).not.toHaveAttribute("aria-describedby");
+    rerender(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        description={{id: "updated-html-helper", dangerouslySetInnerHTML: {__html: "<em>Restored native helper.</em>"}}}
+      />,
+    );
+    expect(paragraph).toHaveAttribute("id", "updated-html-helper");
+    expect(document.getElementById("native-html-helper")).toBeNull();
+    expect(input).toHaveAttribute("aria-describedby", "updated-html-helper");
+    expect(input).toHaveAccessibleDescription("Restored native helper.");
+    expect(nodes).toEqual([paragraph]);
+    rerender(
+      <NativeDescriptionFixture
+        descriptionRef={ref}
+        visible={false}
+        description={{id: "updated-html-helper", dangerouslySetInnerHTML: {__html: "Restored native helper."}}}
+      />,
+    );
+    expect(screen.queryByTestId("native-description")).not.toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-describedby");
+    expect(cleanupCount).toBe(1);
+    expect(nodes).not.toContain(null);
+  });
+
+  it("retains children, zero, empty-content, and blank-ID policies when switching native content sources", () => {
+    const {rerender} = render(<NativeDescriptionFixture description={{id: "native-helper", children: <strong>React helper.</strong>}} />);
+    const input = screen.getByRole("textbox", {name: "Native HTML description"});
+    expect(input).toHaveAccessibleDescription("React helper.");
+    rerender(
+      <NativeDescriptionFixture description={{id: "native-helper", dangerouslySetInnerHTML: {__html: "<em>Native helper.</em>"}}} />,
+    );
+    expect(input).toHaveAccessibleDescription("Native helper.");
+    rerender(<NativeDescriptionFixture description={{id: "native-helper", children: 0}} />);
+    expect(input).toHaveAccessibleDescription("0");
+    rerender(<NativeDescriptionFixture description={{id: "native-helper", children: <> </>}} />);
+    expect(input).not.toHaveAttribute("aria-describedby");
+    rerender(<NativeDescriptionFixture description={{id: "", dangerouslySetInnerHTML: {__html: "0"}}} />);
+    const paragraph = screen.getByTestId("native-description");
+    expect(paragraph.id).not.toBe("");
+    expect(input).toHaveAttribute("aria-describedby", paragraph.id);
+    expect(input).toHaveAccessibleDescription("0");
+  });
+
+  it.each(["", " \n ", "<!-- only a comment -->", "<span><strong></strong></span><br>", "&nbsp;&#32;"])(
+    "keeps an empty native paragraph mounted without an empty description link (%j)",
+    (html) => {
+      const ref = React.createRef<HTMLParagraphElement>();
+      render(
+        <NativeDescriptionFixture
+          descriptionRef={ref}
+          description={{id: "empty-native-helper", dangerouslySetInnerHTML: {__html: html}}}
+        />,
+      );
+      const paragraph = screen.getByTestId("native-description");
+      expect(paragraph).toHaveAttribute("id", "empty-native-helper");
+      expect(paragraph.textContent?.trim()).toBe("");
+      expect(ref.current).toBe(paragraph);
+      expect(screen.getByRole("textbox", {name: "Native HTML description"})).not.toHaveAttribute("aria-describedby");
+    },
+  );
+});
+
+describe("Form story announcement policy", () => {
+  it("keeps real observer diagnostics non-live and announces only the submission result", async () => {
+    const user = userEvent.setup();
+    render(<ObserverStory />);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    await user.type(screen.getByRole("textbox", {name: "Nickname"}), "Ada");
+    expect(screen.getByText(/RHF: Ada · Observer: Ada · Changes: 3/u)).toBeInTheDocument();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    await user.click(screen.getByRole("button", {name: "Save nickname"}));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Nickname saved locally."));
+  });
+
+  it("keeps real field-array watch diagnostics non-live and uses one submission announcement for validation", async () => {
+    const user = userEvent.setup();
+    render(<FieldArrayStory />);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    await user.clear(screen.getByRole("textbox", {name: "Choice 1"}));
+    await user.type(screen.getByRole("textbox", {name: "Choice 1"}), "Updated");
+    expect(screen.getByText('Watched values: [{"label":"Updated"}]')).toBeInTheDocument();
+    await user.click(screen.getByRole("button", {name: "Save choices"}));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Saved 1 choices locally."));
+    await user.click(screen.getByRole("button", {name: "Add choice"}));
+    await user.click(screen.getByRole("button", {name: "Save choices"}));
+    expect(await screen.findByText("A choice label is required")).toBeInTheDocument();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("Complete the empty choices before saving.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
 

@@ -440,10 +440,10 @@ function ObserverCompositionDemo(): React.JSX.Element {
             </FormItem>
           )}
         />
-        <output className={styles.demoOutput}>
+        <div className={styles.demoOutput}>
           RHF: {nickname || "empty"} · Observer: {observedValue || "empty"} · Changes: {observedChanges}
           {observedChanges > 0 ? ` · Wrapper ref: ${wrapperRef.current?.tagName ?? "unmounted"}` : ""}
-        </output>
+        </div>
         <Button type='submit'>Save nickname</Button>
         <output
           className={styles.demoOutput}
@@ -510,7 +510,7 @@ function FieldArrayDemo(): React.JSX.Element {
           </Button>
           <Button type='submit'>Save choices</Button>
         </div>
-        <output className={styles.demoOutput}>Watched values: {JSON.stringify(choices)}</output>
+        <div className={styles.demoOutput}>Watched values: {JSON.stringify(choices)}</div>
         <output
           className={styles.demoOutput}
           aria-live='polite'>

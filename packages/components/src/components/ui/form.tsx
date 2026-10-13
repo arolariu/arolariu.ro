@@ -338,15 +338,21 @@ function metadataIds(item: FormItemContextValue, kind: MetadataKind): string[] {
   return [...new Set([...item.metadata.values()].filter((entry) => entry.kind === kind).map((entry) => entry.id))];
 }
 
-function useMountedMetadata(kind: MetadataKind, id: string | undefined): void {
+function useMountedMetadata(
+  kind: MetadataKind,
+  id: string | undefined,
+  renderedContent?: React.RefObject<HTMLElement | null>,
+  nativeMarkup?: React.HTMLAttributes<HTMLElement>["dangerouslySetInnerHTML"],
+): void {
   const item = React.useContext(FormItemContext);
   const registrationId = React.useId();
   if (!item) throw new Error("useFormField should be used within <FormItem>");
   const {register} = item;
+  const nativeHtml = nativeMarkup?.__html;
   React.useLayoutEffect(() => {
-    if (id) return register(kind, registrationId, id);
+    if (id && (!renderedContent || renderedContent.current?.textContent?.trim())) return register(kind, registrationId, id);
     return undefined;
-  }, [id, registrationId, kind, register]);
+  }, [id, registrationId, kind, register, renderedContent, nativeHtml]);
 }
 
 function mergeAriaDescribedBy(...describedByValues: Array<string | undefined>): string | undefined {
@@ -609,6 +615,10 @@ FormControl.displayName = "FormControl";
  * @remarks
  * - Renders a `<p>` element
  * - Built on the shared form field metadata hook
+ * - Trusted native HTML content is linked only when its mounted paragraph has
+ *   meaningful text; native DOM rendering, not string parsing, resolves entities
+ * - Native props and caller-owned HTML trust/sanitization responsibilities remain
+ *   unchanged, and empty native paragraphs remain valid mounted elements
  *
  * @example
  * ```tsx
@@ -621,13 +631,21 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, FormDescriptionPr
   ({className, id, children, ...props}: FormDescriptionProps, ref) => {
     const field = useFormField();
     const uniqueId = React.useId();
+    const paragraphRef = React.useRef<HTMLParagraphElement>(null);
+    const mergedRef = React.useMemo(() => composeRefs(ref, paragraphRef), [ref]);
+    const {dangerouslySetInnerHTML} = props;
     const descriptionId = id?.trim() || `${field.id}-${uniqueId}-form-item-description`;
-    useMountedMetadata("description", hasMeaningfulChildren(children) ? descriptionId : undefined);
+    useMountedMetadata(
+      "description",
+      hasMeaningfulChildren(children) || dangerouslySetInnerHTML ? descriptionId : undefined,
+      dangerouslySetInnerHTML ? paragraphRef : undefined,
+      dangerouslySetInnerHTML,
+    );
 
     return (
       <p
         {...props}
-        ref={ref}
+        ref={mergedRef}
         data-slot='form-description'
         id={descriptionId}
         className={cn(styles.description, className)}>
