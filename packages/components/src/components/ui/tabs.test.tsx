@@ -1,9 +1,52 @@
-import {act, render, screen} from "@testing-library/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
 import * as React from "react";
-import {describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
+import * as TabsModule from "./tabs";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
+import styles from "./tabs.module.css";
+
+afterEach(() => vi.restoreAllMocks());
+
+function cssDeclaration(selector: string, property: string): string {
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(readFileSync(resolve(import.meta.dirname, "tabs.module.css"), "utf8"));
+  for (const rule of Array.from(sheet.cssRules)) {
+    if (rule instanceof CSSStyleRule && rule.selectorText === selector) {
+      return rule.style.getPropertyValue(property);
+    }
+  }
+  return "";
+}
+
+// Supply only DOM geometry; Base UI still owns measuring and updating the indicator.
+function supplyTabGeometry(): void {
+  const rectangles: Record<string, DOMRect> = {
+    list: new DOMRect(10, 20, 240, 160),
+    one: new DOMRect(14, 24, 80, 32),
+    two: new DOMRect(106, 66, 120, 44),
+  };
+  const rectangleFor = (element: HTMLElement): DOMRect | undefined => rectangles[element.dataset.geometry ?? ""];
+  const originalRectangle = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    return rectangleFor(this) ?? originalRectangle.call(this);
+  });
+  for (const [property, dimension] of [
+    ["offsetWidth", "width"],
+    ["offsetHeight", "height"],
+    ["scrollWidth", "width"],
+    ["scrollHeight", "height"],
+    ["offsetLeft", "x"],
+    ["offsetTop", "y"],
+  ] as const) {
+    vi.spyOn(HTMLElement.prototype, property, "get").mockImplementation(function (this: HTMLElement) {
+      return rectangleFor(this)?.[dimension] ?? 0;
+    });
+  }
+}
 
 function renderTabs(): {
   accountTab: HTMLElement;
@@ -66,6 +109,27 @@ function renderThreeTabs(): {
 }
 
 describe("Tabs", () => {
+  it("supplies the actual active Tab state", () => {
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList>
+          <TabsTrigger
+            value='one'
+            render={(props, state) => (
+              <button
+                {...props}
+                data-contract-active={String(state.active)}>
+                One
+              </button>
+            )}
+          />
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+      </Tabs>,
+    );
+    expect(screen.getByRole("tab", {name: "One"})).toHaveAttribute("data-contract-active", "true");
+  });
+
   it("renders the tab structure, merges class names, and exposes accessible tab semantics", () => {
     // Arrange
     const {accountTab, passwordTab} = renderTabs();
@@ -139,7 +203,6 @@ describe("Tabs", () => {
   });
 
   it("works in controlled mode", async () => {
-    // ... (existing test unchanged)
     // Arrange
     const user = userEvent.setup();
     const handleValueChange = vi.fn<(value: string) => void>();
@@ -216,8 +279,587 @@ describe("Tabs", () => {
     expect(settingsTab).toHaveFocus();
   });
 
-  // Base UI Tabs follows ARIA's optional wrap-around recommendation and does implement
-  // it, but the behaviour requires the roving-tabindex composite to emit ArrowRight
-  // past the last item — which is not guaranteed in happy-dom's synthetic event model.
-  it.todo("wraps around from the last tab to the first tab with ArrowRight");
+  it("wraps keyboard focus from the last tab to the first tab", async () => {
+    const user = userEvent.setup();
+    const {accountTab, settingsTab} = renderThreeTabs();
+    act(() => settingsTab.focus());
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(accountTab).toHaveFocus();
+  });
+
+  it("keeps arrow focus separate from selection until Space activates the tab", async () => {
+    const user = userEvent.setup();
+    const {accountTab, passwordTab} = renderTabs();
+    act(() => accountTab.focus());
+
+    await user.keyboard("{ArrowRight}");
+    expect(passwordTab).toHaveFocus();
+    expect(accountTab).toHaveAttribute("aria-selected", "true");
+    await user.keyboard(" ");
+    expect(passwordTab).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{ArrowLeft}{Enter}");
+    expect(accountTab).toHaveFocus();
+    expect(accountTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("preserves vertical orientation, automatic keyboard activation, and Home/End", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs
+        defaultValue='one'
+        orientation='vertical'>
+        <TabsList activateOnFocus>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+          <TabsTrigger value='three'>Three</TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent value='two'>Panel two</TabsContent>
+        <TabsContent value='three'>Panel three</TabsContent>
+      </Tabs>,
+    );
+    const one = screen.getByRole("tab", {name: "One"});
+    const two = screen.getByRole("tab", {name: "Two"});
+    const three = screen.getByRole("tab", {name: "Three"});
+    expect(screen.getByRole("tablist")).toHaveAttribute("aria-orientation", "vertical");
+    expect(one).toHaveAttribute("data-orientation", "vertical");
+    act(() => one.focus());
+
+    await user.keyboard("{ArrowRight}");
+    expect(one).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(two).toHaveFocus();
+    expect(two).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel two");
+    await user.keyboard("{End}");
+    expect(three).toHaveFocus();
+    expect(three).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{ArrowUp}");
+    expect(two).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(one).toHaveFocus();
+    expect(one).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("forwards loopFocus=false without changing keyboard selection behavior", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList loopFocus={false}>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const two = screen.getByRole("tab", {name: "Two"});
+    act(() => two.focus());
+    await user.keyboard("{ArrowRight}");
+    expect(two).toHaveFocus();
+    expect(two).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("preserves focusable disabled native tabs without activating them", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList activateOnFocus>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger
+            value='disabled'
+            disabled
+            render={(props, state) => (
+              <button
+                {...props}
+                data-contract-disabled={String(state.disabled)}>
+                Disabled
+              </button>
+            )}
+          />
+          <TabsTrigger value='three'>Three</TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent value='disabled'>Unavailable panel</TabsContent>
+        <TabsContent value='three'>Panel three</TabsContent>
+      </Tabs>,
+    );
+    const one = screen.getByRole("tab", {name: "One"});
+    const disabled = screen.getByRole("tab", {name: "Disabled"});
+    const three = screen.getByRole("tab", {name: "Three"});
+    expect(disabled).toHaveAttribute("aria-disabled", "true");
+    expect(disabled).toHaveAttribute("data-disabled");
+    expect(disabled).toHaveAttribute("data-contract-disabled", "true");
+    await user.click(disabled);
+    expect(one).toHaveAttribute("aria-selected", "true");
+    act(() => one.focus());
+    await user.keyboard("{ArrowRight}");
+    expect(disabled).toHaveFocus();
+    expect(disabled).toHaveAttribute("aria-selected", "false");
+    expect(one).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter} {ArrowRight}");
+    expect(three).toHaveFocus();
+    expect(three).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps a disabled non-native render target inactive on pointer and keyboard input", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger
+            value='two'
+            disabled
+            nativeButton={false}
+            render={<a href='#two' />}>
+            Disabled link
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent value='two'>Panel two</TabsContent>
+      </Tabs>,
+    );
+    const disabled = screen.getByRole("tab", {name: "Disabled link"});
+    expect(disabled.tagName).toBe("A");
+    expect(disabled).toHaveAttribute("aria-disabled", "true");
+    expect(disabled).not.toHaveAttribute("disabled");
+    await user.click(disabled);
+    act(() => disabled.focus());
+    await user.keyboard("{Enter} ");
+    expect(disabled).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel one");
+  });
+
+  it("keeps controlled selection unchanged when the controller declines a request", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <Tabs
+        value='one'
+        onValueChange={onValueChange}>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent value='two'>Panel two</TabsContent>
+      </Tabs>,
+    );
+    await user.click(screen.getByRole("tab", {name: "Two"}));
+    expect(onValueChange.mock.calls.at(-1)?.[0]).toBe("two");
+    expect(onValueChange.mock.calls.at(-1)?.[1]).toMatchObject({reason: "none"});
+    expect(screen.getByRole("tab", {name: "One"})).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel one");
+  });
+
+  it("allows the primitive onValueChange details to cancel an uncontrolled change", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs
+        defaultValue='one'
+        onValueChange={(_value, details) => details.cancel()}>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    await user.click(screen.getByRole("tab", {name: "Two"}));
+    expect(screen.getByRole("tab", {name: "One"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("passes current root, list, tab, and panel state to render and class callbacks on rerender", async () => {
+    function Fixture({
+      value,
+      orientation,
+      variant,
+    }: Readonly<{
+      value: string;
+      orientation: "horizontal" | "vertical";
+      variant: "default" | "line";
+    }>): React.JSX.Element {
+      return (
+        <Tabs
+          value={value}
+          orientation={orientation}
+          className={(state) => `root-${state.orientation}`}
+          render={(props, state) => (
+            <section
+              {...props}
+              data-testid='callback-root'
+              data-direction={state.tabActivationDirection}
+              data-contract-orientation={state.orientation}
+            />
+          )}>
+          <TabsList
+            variant={variant}
+            className={(state) => `list-${state.orientation}-${state.variant}`}
+            render={(props, state) => (
+              <nav
+                {...props}
+                data-contract-orientation={state.orientation}
+                data-contract-variant={state.variant}
+              />
+            )}>
+            <TabsTrigger
+              value='one'
+              className={(state) => (state.active ? "active-tab" : undefined)}
+              render={(props, state) => (
+                <button
+                  {...props}
+                  data-contract-active={String(state.active)}
+                  data-contract-orientation={state.orientation}
+                />
+              )}>
+              One
+            </TabsTrigger>
+            <TabsTrigger value='two'>Two</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value='one'
+            keepMounted
+            className={(state) => (state.hidden ? "hidden-panel" : "visible-panel")}
+            render={(props, state) => (
+              <article
+                {...props}
+                data-testid='callback-panel'
+                data-contract-hidden={String(state.hidden)}
+                data-contract-orientation={state.orientation}
+                data-contract-transition={String(state.transitionStatus)}
+              />
+            )}>
+            Panel one
+          </TabsContent>
+          <TabsContent value='two'>Panel two</TabsContent>
+        </Tabs>
+      );
+    }
+    const {rerender} = render(
+      <Fixture
+        value='one'
+        orientation='horizontal'
+        variant='default'
+      />,
+    );
+    const root = screen.getByTestId("callback-root");
+    const list = screen.getByRole("tablist");
+    const one = screen.getByRole("tab", {name: "One"});
+    const panel = screen.getByTestId("callback-panel");
+    expect(root).toHaveClass(styles.root, "root-horizontal");
+    expect(root).toHaveAttribute("data-contract-orientation", "horizontal");
+    expect(root).toHaveAttribute("data-direction", "none");
+    expect(list).toHaveClass(styles.list, styles.default, "list-horizontal-default");
+    expect(list).toHaveAttribute("data-contract-variant", "default");
+    expect(one).toHaveClass(styles.tab, "active-tab");
+    expect(one).toHaveAttribute("data-contract-active", "true");
+    expect(panel).toHaveClass(styles.panel, "visible-panel");
+    expect(panel).toHaveAttribute("data-contract-hidden", "false");
+    expect(panel).toHaveAttribute("data-contract-transition", "undefined");
+    expect(panel).not.toHaveAttribute("hidden");
+
+    rerender(
+      <Fixture
+        value='two'
+        orientation='vertical'
+        variant='line'
+      />,
+    );
+    expect(root).toHaveClass("root-vertical");
+    expect(root).toHaveAttribute("data-contract-orientation", "vertical");
+    expect(list).toHaveClass(styles.line, "list-vertical-line");
+    expect(list).toHaveAttribute("aria-orientation", "vertical");
+    expect(list).toHaveAttribute("data-contract-variant", "line");
+    expect(one).not.toHaveClass("active-tab");
+    expect(one).toHaveAttribute("data-contract-active", "false");
+    expect(one).toHaveAttribute("data-contract-orientation", "vertical");
+    expect(panel).toHaveAttribute("data-contract-hidden", "false");
+    expect(panel).toHaveAttribute("data-contract-transition", "ending");
+    await waitFor(() => expect(panel).toHaveClass("hidden-panel"));
+    expect(panel).toHaveAttribute("data-contract-hidden", "true");
+    expect(panel).toHaveAttribute("data-contract-orientation", "vertical");
+    expect(panel).toHaveAttribute("hidden");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel two");
+  });
+
+  it("merges element render targets, wrapper and child refs, classes, handlers, and content", async () => {
+    const user = userEvent.setup();
+    const rootRef = React.createRef<HTMLDivElement>();
+    const listRef = React.createRef<HTMLDivElement>();
+    const tabRef = React.createRef<HTMLElement>();
+    const childTabRef = React.createRef<HTMLButtonElement>();
+    const panelRef = React.createRef<HTMLDivElement>();
+    const childRootRef = React.createRef<HTMLElement>();
+    const childListRef = React.createRef<HTMLElement>();
+    const childPanelRef = React.createRef<HTMLElement>();
+    const calls: string[] = [];
+    const {unmount} = render(
+      <Tabs
+        ref={rootRef}
+        defaultValue='one'
+        className='wrapper-root'
+        render={
+          <section
+            ref={childRootRef}
+            className='child-root'
+            data-testid='element-root'
+          />
+        }>
+        <TabsList
+          ref={listRef}
+          className='wrapper-list'
+          render={
+            <nav
+              ref={childListRef}
+              className='child-list'
+            />
+          }>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger
+            ref={tabRef}
+            value='two'
+            className='wrapper-tab'
+            onClick={() => calls.push("wrapper")}
+            render={
+              <button
+                ref={childTabRef}
+                className='child-tab'
+                onClick={() => calls.push("child")}
+              />
+            }>
+            Two
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='one'>Panel one</TabsContent>
+        <TabsContent
+          ref={panelRef}
+          value='two'
+          className='wrapper-panel'
+          render={
+            <article
+              ref={childPanelRef}
+              className='child-panel'
+            />
+          }>
+          Panel two
+        </TabsContent>
+      </Tabs>,
+    );
+    const root = screen.getByTestId("element-root");
+    const list = screen.getByRole("tablist");
+    const tab = screen.getByRole("tab", {name: "Two"});
+    expect(rootRef.current).toBe(root);
+    expect(childRootRef.current).toBe(root);
+    expect(root).toHaveClass(styles.root, "wrapper-root", "child-root");
+    expect(listRef.current).toBe(list);
+    expect(childListRef.current).toBe(list);
+    expect(list).toHaveClass(styles.list, "wrapper-list", "child-list");
+    expect(tabRef.current).toBe(tab);
+    expect(childTabRef.current).toBe(tab);
+    expect(tab).toHaveClass(styles.tab, "wrapper-tab", "child-tab");
+    await user.click(tab);
+    expect(calls).toEqual(["child", "wrapper"]);
+    const panel = screen.getByRole("tabpanel");
+    expect(panelRef.current).toBe(panel);
+    expect(childPanelRef.current).toBe(panel);
+    expect(panel).toHaveClass(styles.panel, "wrapper-panel", "child-panel");
+    expect(panel).toHaveTextContent("Panel two");
+    expect(tab).toHaveAttribute("aria-controls", panel.id);
+    expect(panel).toHaveAttribute("aria-labelledby", tab.id);
+    unmount();
+    expect(rootRef.current).toBeNull();
+    expect(listRef.current).toBeNull();
+    expect(tabRef.current).toBeNull();
+    expect(panelRef.current).toBeNull();
+  });
+
+  it("supports event cancellation on a composed tab without overriding primitive selection", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger
+            value='two'
+            onClick={(event) => event.preventBaseUIHandler()}
+            render={<button />}>
+            Cancelled
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    await user.click(screen.getByRole("tab", {name: "Cancelled"}));
+    expect(screen.getByRole("tab", {name: "One"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("forwards refs through primitive-owned function render callbacks", () => {
+    const rootRef = React.createRef<HTMLDivElement>();
+    const listRef = React.createRef<HTMLDivElement>();
+    const tabRef = React.createRef<HTMLElement>();
+    const panelRef = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
+      <Tabs
+        ref={rootRef}
+        defaultValue='one'
+        render={(props) => (
+          <div
+            {...props}
+            data-testid='function-root'
+          />
+        )}>
+        <TabsList
+          ref={listRef}
+          render={(props) => <div {...props} />}>
+          <TabsTrigger
+            ref={tabRef}
+            value='one'
+            render={(props) => <button {...props} />}>
+            One
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent
+          ref={panelRef}
+          value='one'
+          render={(props) => <div {...props} />}>
+          Panel one
+        </TabsContent>
+      </Tabs>,
+    );
+    expect(rootRef.current).toBe(screen.getByTestId("function-root"));
+    expect(listRef.current).toBe(screen.getByRole("tablist"));
+    expect(tabRef.current).toBe(screen.getByRole("tab", {name: "One"}));
+    expect(panelRef.current).toBe(screen.getByRole("tabpanel"));
+    unmount();
+    expect(rootRef.current).toBeNull();
+    expect(listRef.current).toBeNull();
+    expect(tabRef.current).toBeNull();
+    expect(panelRef.current).toBeNull();
+  });
+
+  it("keeps default tab triggers from submitting a surrounding form", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <Tabs defaultValue='one'>
+          <TabsList>
+            <TabsTrigger value='one'>One</TabsTrigger>
+            <TabsTrigger value='two'>Two</TabsTrigger>
+          </TabsList>
+          <TabsContent value='one'>Panel one</TabsContent>
+          <TabsContent value='two'>Panel two</TabsContent>
+        </Tabs>
+      </form>,
+    );
+    const two = screen.getByRole("tab", {name: "Two"});
+    expect(two).toHaveAttribute("type", "button");
+    await user.click(two);
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(two).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+describe("TabsList variants and indicator", () => {
+  it("exports a CSS Module variant generator with default and consumer classes", () => {
+    expect(TabsModule.tabsListVariants()).toContain(styles.list);
+    expect(TabsModule.tabsListVariants()).toContain(styles.default);
+    expect(TabsModule.tabsListVariants({className: "consumer"})).toContain("consumer");
+    expect(TabsModule.tabsListVariants({variant: "line"})).toContain(styles.line);
+    expect(TabsModule.tabsListVariants({variant: "line"})).not.toContain(styles.default);
+  });
+
+  it.each(["default", "line"] as const)("renders the %s list variant with one shared indicator", (variant) => {
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList
+          variant={variant}
+          className='consumer'>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const list = screen.getByRole("tablist");
+    expect(list).toHaveClass(styles.list, styles[variant], "consumer");
+    expect(list).toHaveAttribute("data-variant", variant);
+    expect(list.querySelectorAll('[role="presentation"]')).toHaveLength(1);
+    expect(list.querySelector('[role="presentation"]')).toHaveClass(styles.indicator);
+  });
+
+  it("uses the default list variant when omitted", () => {
+    renderTabs();
+    expect(screen.getByRole("tablist")).toHaveClass(styles.default);
+    expect(screen.getByRole("tablist")).toHaveAttribute("data-variant", "default");
+  });
+
+  it.each([
+    ["horizontal", "default"],
+    ["vertical", "default"],
+    ["horizontal", "line"],
+    ["vertical", "line"],
+  ] as const)("exposes primitive measurement variables for %s %s tabs under supplied geometry", async (orientation, variant) => {
+    supplyTabGeometry();
+    const user = userEvent.setup();
+    render(
+      <Tabs
+        defaultValue='one'
+        orientation={orientation}>
+        <TabsList
+          variant={variant}
+          data-geometry='list'>
+          <TabsTrigger
+            value='one'
+            data-geometry='one'>
+            One
+          </TabsTrigger>
+          <TabsTrigger
+            value='two'
+            data-geometry='two'>
+            Two
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const indicator = screen.getByRole("presentation");
+    expect(indicator).toHaveAttribute("data-orientation", orientation);
+    expect(indicator).not.toHaveAttribute("hidden");
+    expect(indicator.style.getPropertyValue("--active-tab-left")).toBe("4px");
+    expect(indicator.style.getPropertyValue("--active-tab-top")).toBe("4px");
+    expect(indicator.style.getPropertyValue("--active-tab-width")).toBe("80px");
+    expect(indicator.style.getPropertyValue("--active-tab-height")).toBe("32px");
+    await user.click(screen.getByRole("tab", {name: "Two"}));
+    expect(indicator.style.getPropertyValue("--active-tab-left")).toBe("96px");
+    expect(indicator.style.getPropertyValue("--active-tab-top")).toBe("46px");
+    expect(indicator.style.getPropertyValue("--active-tab-right")).toBe("24px");
+    expect(indicator.style.getPropertyValue("--active-tab-bottom")).toBe("70px");
+    expect(indicator.style.getPropertyValue("--active-tab-width")).toBe("120px");
+    expect(indicator.style.getPropertyValue("--active-tab-height")).toBe("44px");
+  });
+
+  it("does not invent an indicator when controlled selection is null", () => {
+    render(
+      <Tabs value={null}>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    expect(screen.queryByRole("presentation", {hidden: true})).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", {name: "One"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("maps CSS layout and shared indicator dimensions to the primitive orientation and variables", () => {
+    expect(cssDeclaration(".root", "flex-direction")).toBe("column");
+    expect(cssDeclaration('.root[data-orientation="vertical"]', "flex-direction")).toBe("row");
+    expect(cssDeclaration('.list[data-orientation="vertical"]', "flex-direction")).toBe("column");
+    expect(cssDeclaration(".indicator", "translate")).toBe("var(--active-tab-left) var(--active-tab-top)");
+    expect(cssDeclaration(".indicator", "width")).toBe("var(--active-tab-width)");
+    expect(cssDeclaration(".indicator", "height")).toBe("var(--active-tab-height)");
+    expect(cssDeclaration('.line[data-orientation="horizontal"] .indicator', "translate")).toBe("var(--active-tab-left) 0");
+    expect(cssDeclaration('.line[data-orientation="horizontal"] .indicator', "height")).toBe("2px");
+    expect(cssDeclaration('.line[data-orientation="vertical"] .indicator', "translate")).toBe("0 var(--active-tab-top)");
+    expect(cssDeclaration('.line[data-orientation="vertical"] .indicator', "width")).toBe("2px");
+    expect(cssDeclaration('.line[data-orientation="vertical"] .indicator', "height")).toBe("var(--active-tab-height)");
+    expect(cssDeclaration(".indicator[hidden]", "display")).toBe("none");
+  });
 });

@@ -1,20 +1,28 @@
+"use client";
+
 import {FileText, House, Settings} from "lucide-react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
+import {Tabs, TabsContent, TabsList, TabsTrigger, type TabsListVariant} from "./tabs";
+import styles from "./tabs.module.css";
 
 const meta = {
   title: "Components/Navigation/Tabs",
   component: Tabs,
   tags: ["autodocs"],
-  argTypes: {},
+  argTypes: {
+    orientation: {control: "select", options: ["horizontal", "vertical"]},
+  },
 } satisfies Meta<typeof Tabs>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
-    <Tabs defaultValue='account'>
+  render: (args) => (
+    <Tabs
+      defaultValue='account'
+      {...args}>
       <TabsList>
         <TabsTrigger value='account'>Account</TabsTrigger>
         <TabsTrigger value='password'>Password</TabsTrigger>
@@ -31,6 +39,101 @@ export const Default: Story = {
       </TabsContent>
     </Tabs>
   ),
+};
+
+function PresentationExample({
+  variant,
+  orientation = "horizontal",
+}: Readonly<{
+  variant: TabsListVariant;
+  orientation?: "horizontal" | "vertical";
+}>): React.JSX.Element {
+  return (
+    <Tabs
+      defaultValue='overview'
+      orientation={orientation}>
+      <TabsList
+        variant={variant}
+        aria-label='Sections'>
+        <TabsTrigger value='overview'>Overview</TabsTrigger>
+        <TabsTrigger value='activity'>Recent activity</TabsTrigger>
+        <TabsTrigger value='settings'>Settings</TabsTrigger>
+      </TabsList>
+      <TabsContent value='overview'>
+        <p>Explore the overview. The shared indicator adapts to each tab&apos;s size.</p>
+      </TabsContent>
+      <TabsContent value='activity'>
+        <p>Review recent activity.</p>
+      </TabsContent>
+      <TabsContent value='settings'>
+        <p>Adjust your settings.</p>
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+export const Line: Story = {
+  parameters: {
+    docs: {description: {story: "The line presentation retains the local animated underline shared between tabs."}},
+  },
+  render: () => <PresentationExample variant='line' />,
+};
+
+export const Vertical: Story = {
+  parameters: {
+    docs: {description: {story: "Vertical orientation is forwarded to Base UI: Up/Down navigate and Enter/Space select."}},
+  },
+  render: () => (
+    <PresentationExample
+      variant='default'
+      orientation='vertical'
+    />
+  ),
+};
+
+export const VerticalLine: Story = {
+  render: () => (
+    <PresentationExample
+      variant='line'
+      orientation='vertical'
+    />
+  ),
+};
+
+function ControlledExample(): React.JSX.Element {
+  const [value, setValue] = React.useState("overview");
+  return (
+    <Tabs
+      value={value}
+      onValueChange={setValue}>
+      <TabsList
+        variant='line'
+        activateOnFocus
+        aria-label='Controlled sections'>
+        <TabsTrigger value='overview'>Overview</TabsTrigger>
+        <TabsTrigger value='activity'>Activity</TabsTrigger>
+        <TabsTrigger
+          value='settings'
+          disabled>
+          Settings
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value='overview'>Overview selected by the controller.</TabsContent>
+      <TabsContent value='activity'>Activity selected by the controller.</TabsContent>
+      <TabsContent value='settings'>Settings are unavailable.</TabsContent>
+    </Tabs>
+  );
+}
+
+export const Controlled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "The controller owns selection; arrow focus activates enabled tabs. Disabled tabs remain focusable, but cannot activate.",
+      },
+    },
+  },
+  render: () => <ControlledExample />,
 };
 
 export const TwoTabs: Story = {
@@ -80,15 +183,15 @@ export const WithIcons: Story = {
     <Tabs defaultValue='home'>
       <TabsList>
         <TabsTrigger value='home'>
-          <House style={{width: "16px", height: "16px", marginRight: "0.5rem"}} />
+          <House aria-hidden='true' />
           Home
         </TabsTrigger>
         <TabsTrigger value='documents'>
-          <FileText style={{width: "16px", height: "16px", marginRight: "0.5rem"}} />
+          <FileText aria-hidden='true' />
           Documents
         </TabsTrigger>
         <TabsTrigger value='settings'>
-          <Settings style={{width: "16px", height: "16px", marginRight: "0.5rem"}} />
+          <Settings aria-hidden='true' />
           Settings
         </TabsTrigger>
       </TabsList>
@@ -108,7 +211,7 @@ export const WithIcons: Story = {
 export const ManyTabs: Story = {
   render: () => (
     <Tabs defaultValue='tab1'>
-      <TabsList style={{overflowX: "auto"}}>
+      <TabsList className={styles.scrollable}>
         <TabsTrigger value='tab1'>Tab 1</TabsTrigger>
         <TabsTrigger value='tab2'>Tab 2</TabsTrigger>
         <TabsTrigger value='tab3'>Tab 3</TabsTrigger>
