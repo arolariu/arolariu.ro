@@ -1,246 +1,239 @@
 .viewport {
+  --toast-gap: var(--ac-space-3, 0.75rem);
+  --toast-peek: 0.75rem;
+  --toast-sign: -1;
   position: fixed;
   z-index: 9999;
-  display: flex;
   width: min(calc(100vw - 2rem), 24rem);
-  flex-direction: column;
-  gap: var(--ac-space-3);
-  padding: var(--ac-space-4);
+  margin: 1rem;
+  outline: none;
   pointer-events: none;
 }
 
-.viewportTopLeft {
-  top: 0;
-  left: 0;
-  align-items: flex-start;
-}
-
-.viewportTopRight {
-  top: 0;
-  right: 0;
-  align-items: flex-end;
-}
-
-.viewportBottomLeft {
-  bottom: 0;
-  left: 0;
-  align-items: flex-start;
-}
-
-.viewportBottomRight {
+.viewport[data-position="bottom-right"] {
   right: 0;
   bottom: 0;
-  align-items: flex-end;
 }
-
-.viewportTopCenter {
+.viewport[data-position="bottom-left"] {
+  left: 0;
+  bottom: 0;
+}
+.viewport[data-position="bottom-center"] {
+  left: 50%;
+  bottom: 0;
+  margin-inline: 0;
+  transform: translateX(-50%);
+}
+.viewport[data-position="top-right"] {
+  top: 0;
+  right: 0;
+  --toast-sign: 1;
+}
+.viewport[data-position="top-left"] {
+  top: 0;
+  left: 0;
+  --toast-sign: 1;
+}
+.viewport[data-position="top-center"] {
   top: 0;
   left: 50%;
-  align-items: center;
+  margin-inline: 0;
   transform: translateX(-50%);
-}
-
-.viewportBottomCenter {
-  bottom: 0;
-  left: 50%;
-  align-items: center;
-  transform: translateX(-50%);
+  --toast-sign: 1;
 }
 
 .root {
-  pointer-events: auto;
+  --toast-stack-height: var(--toast-frontmost-height, var(--toast-height));
+  --toast-scale: max(0, calc(1 - var(--toast-index) * 0.1));
+  --toast-shrink: calc(1 - var(--toast-scale));
+  --toast-offset: calc(var(--toast-sign) * (var(--toast-offset-y) + var(--toast-index) * var(--toast-gap)) + var(--toast-swipe-movement-y));
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: calc(1000 - var(--toast-index));
   width: 100%;
+  height: var(--toast-stack-height);
+  transform-origin: bottom center;
+  transform: translateX(var(--toast-swipe-movement-x))
+    translateY(
+      calc(
+        var(--toast-swipe-movement-y) + var(--toast-sign) *
+          (var(--toast-index) * var(--toast-peek) + var(--toast-shrink) * var(--toast-stack-height))
+      )
+    )
+    scale(var(--toast-scale));
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-xl);
-  background: color-mix(in oklab, var(--ac-background), var(--ac-card, var(--ac-background)) 25%);
-  color: var(--ac-foreground);
-  box-shadow:
-    0 18px 40px -24px rgb(15 23 42 / 0.45),
-    0 10px 18px -12px rgb(15 23 42 / 0.28);
-  overflow: hidden;
-  backdrop-filter: blur(16px);
+  background: var(--ac-popover, var(--ac-background));
+  color: var(--ac-popover-foreground, var(--ac-foreground));
+  box-shadow: 0 10px 24px -12px rgb(15 23 42 / 0.3);
+  outline: none;
+  user-select: none;
+  pointer-events: auto;
+  will-change: transform;
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 500ms,
+    height 150ms;
+}
 
-  &[data-starting] {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-
-  &[data-ending] {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
+.viewport[data-position^="top"] .root {
+  top: 0;
+  bottom: auto;
+  transform-origin: top center;
+}
+.root::after {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: calc(var(--toast-gap) + 1px);
+  content: "";
+}
+.viewport[data-position^="top"] .root::after {
+  top: auto;
+  bottom: 100%;
+}
+.root:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+.root[data-expanded] {
+  height: var(--toast-height);
+  transform: translateX(var(--toast-swipe-movement-x)) translateY(var(--toast-offset));
+}
+.root[data-limited] {
+  opacity: 0;
+  pointer-events: none;
+}
+.root[data-starting-style] {
+  transform: translateY(calc(var(--toast-sign) * -150%));
+}
+.root[data-ending-style]:not([data-limited]):not([data-swipe-direction]) {
+  transform: translateY(calc(var(--toast-sign) * -150%));
+}
+.root[data-swiping] {
+  user-select: none;
+}
+.root[data-ending-style][data-swipe-direction="down"] {
+  transform: translateY(calc(var(--toast-swipe-movement-y) + 150%));
+}
+.root[data-ending-style][data-swipe-direction="up"] {
+  transform: translateY(calc(var(--toast-swipe-movement-y) - 150%));
+}
+.root[data-ending-style][data-swipe-direction="left"] {
+  transform: translateX(calc(var(--toast-swipe-movement-x) - 150%)) translateY(var(--toast-offset));
+}
+.root[data-ending-style][data-swipe-direction="right"] {
+  transform: translateX(calc(var(--toast-swipe-movement-x) + 150%)) translateY(var(--toast-offset));
+}
+.root[data-type="error"] {
+  border-color: var(--ac-destructive);
 }
 
 .content {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--ac-space-3);
-  align-items: flex-start;
-  padding: var(--ac-space-4);
-}
-
-.leading {
   display: flex;
+  height: 100%;
   align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-top: 0.125rem;
-  color: inherit;
+  gap: var(--ac-space-3);
+  overflow: hidden;
+  padding: var(--ac-space-4);
+  transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-
+.content[data-behind] {
+  opacity: 0;
+}
+.content[data-expanded] {
+  opacity: 1;
+}
 .body {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: var(--ac-space-1);
 }
-
 .title {
   margin: 0;
   font-size: var(--ac-text-sm);
   font-weight: 600;
   line-height: 1.4;
-  color: inherit;
 }
-
 .description {
   margin: 0;
   font-size: var(--ac-text-sm);
   line-height: 1.5;
   color: var(--ac-muted-foreground);
 }
-
-.close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: 0;
-  border-radius: calc(var(--ac-radius-md) - 2px);
-  background: transparent;
-  color: var(--ac-muted-foreground);
-  cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-
-  &:hover,
-  &:focus-visible {
-    background: color-mix(in oklab, var(--ac-muted) 84%, transparent);
-    color: var(--ac-foreground);
-    outline: none;
-  }
+.action,
+.close,
+.leading {
+  flex-shrink: 0;
 }
-
-.closeIcon,
+.close {
+  position: relative;
+  color: var(--ac-muted-foreground);
+}
+.close::after {
+  position: absolute;
+  inset: -0.5rem;
+  content: "";
+}
+.close:hover {
+  color: var(--ac-foreground);
+}
 .icon {
   width: 1rem;
   height: 1rem;
-  flex-shrink: 0;
+  pointer-events: none;
 }
-
 .iconSpin {
   animation: toast-spin 900ms linear infinite;
 }
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ac-space-2);
-  margin-top: var(--ac-space-2);
-}
-
-.primaryAction,
-.secondaryAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2rem;
-  padding: 0 var(--ac-space-3);
-  border-radius: var(--ac-radius-md);
-  border: 1px solid transparent;
-  font-size: var(--ac-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    color 140ms ease;
-}
-
-.primaryAction {
-  background: var(--ac-foreground);
-  color: var(--ac-background);
-
-  &:hover,
-  &:focus-visible {
-    background: color-mix(in oklab, var(--ac-foreground) 88%, white);
-    outline: none;
-  }
-}
-
-.secondaryAction {
-  background: transparent;
-  border-color: color-mix(in oklab, var(--ac-border) 75%, transparent);
-  color: var(--ac-foreground);
-
-  &:hover,
-  &:focus-visible {
-    background: color-mix(in oklab, var(--ac-muted) 72%, transparent);
-    outline: none;
-  }
-}
-
-.default {
-  border-color: color-mix(in oklab, var(--ac-border) 88%, transparent);
-}
-
-.success {
-  border-color: color-mix(in oklab, var(--ac-success, #16a34a) 45%, var(--ac-border));
-  background: color-mix(in oklab, var(--ac-success, #16a34a) 10%, var(--ac-background));
-  color: color-mix(in oklab, var(--ac-success, #16a34a) 78%, var(--ac-foreground));
-}
-
-.error {
-  border-color: color-mix(in oklab, var(--ac-destructive) 48%, var(--ac-border));
-  background: color-mix(in oklab, var(--ac-destructive) 10%, var(--ac-background));
-  color: color-mix(in oklab, var(--ac-destructive) 82%, var(--ac-foreground));
-}
-
-.info {
-  border-color: color-mix(in oklab, var(--ac-primary, #2563eb) 42%, var(--ac-border));
-  background: color-mix(in oklab, var(--ac-primary, #2563eb) 10%, var(--ac-background));
-  color: color-mix(in oklab, var(--ac-primary, #2563eb) 78%, var(--ac-foreground));
-}
-
-.warning {
-  border-color: color-mix(in oklab, #f59e0b 45%, var(--ac-border));
-  background: color-mix(in oklab, #f59e0b 12%, var(--ac-background));
-  color: color-mix(in oklab, #f59e0b 80%, var(--ac-foreground));
-}
-
-.loading {
-  border-color: color-mix(in oklab, var(--ac-muted-foreground) 34%, var(--ac-border));
-}
-
-.success .description,
-.error .description,
-.info .description,
-.warning .description {
-  color: color-mix(in oklab, currentcolor 68%, var(--ac-muted-foreground));
-}
-
 @keyframes toast-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .root[data-expanded],
+  .root[data-starting-style],
+  .root[data-ending-style],
+  .content,
+  .content[data-behind],
+  .content[data-expanded] {
+    transition: none;
+    will-change: auto;
+  }
+  .iconSpin {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root,
+  .root[data-type="error"] {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .root .description {
+    color: CanvasText;
+  }
+  .root .close,
+  .root .close:hover,
+  .root .close:focus-visible,
+  .root .action,
+  .root .action:hover,
+  .root .action:focus-visible {
+    color: ButtonText;
+    background: ButtonFace;
+    border-color: ButtonText;
+  }
+  .root:focus-visible {
+    outline-color: Highlight;
   }
 }
