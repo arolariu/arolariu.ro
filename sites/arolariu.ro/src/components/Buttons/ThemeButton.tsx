@@ -7,7 +7,7 @@
  * @remarks
  * **Rendering context**: Client Component (`"use client"`) because it relies on:
  * - `next-themes` (`useTheme`) which reads/writes theme state in the browser.
- * - React hooks (`useEffect`, `useState`, `useCallback`).
+ * - React hooks (`useSyncExternalStore`, `useCallback`).
  *
  * **Hydration**: This component intentionally waits until mount before rendering,
  * to avoid theme mismatches between SSR output and client hydration.
@@ -16,9 +16,12 @@
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useTheme} from "next-themes";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useSyncExternalStore} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
 import styles from "./ThemeButton.module.scss";
+
+const noop = (): void => undefined;
+const subscribeToHydration = (): (() => void) => noop;
 
 /**
  * Renders the moon icon with a small animation.
@@ -85,13 +88,9 @@ const SunIcon = (): React.JSX.Element => (
  * ```
  */
 export default function ThemeButton(): React.JSX.Element {
-  const [mounted, setMounted] = useState<boolean>(false);
+  const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const {theme, setTheme} = useTheme();
   const t = useTranslations();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleSetTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");

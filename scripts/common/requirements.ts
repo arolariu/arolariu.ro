@@ -13,11 +13,13 @@ import type {RepositoryPaths} from "./repository-paths.ts";
 const EXACT_PACKAGE_VERSION =
   /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
-/** A normalized three-component minimum version. */
+/** A normalized minimum version, optionally excluding intervening runtime major branches. */
 export interface MinimumVersion {
   readonly major: number;
   readonly minor: number;
   readonly patch: number;
+  /** When present, intervening majors are unsupported before this next runtime branch. */
+  readonly nextSupportedMajor?: number;
 }
 
 /** One exact root package requirement. */
@@ -91,21 +93,45 @@ function parseBareMajor(value: string, source: string, errors: string[]): Minimu
   return {major: Number(match[1]), minor: 0, patch: 0};
 }
 
-function parseMinimumMajor(value: unknown, source: string, errors: string[]): MinimumVersion | null {
+function parseMinimumVersion(value: unknown, source: string, errors: string[]): MinimumVersion | null {
   if (typeof value !== "string") {
     errors.push(`${source} must be a string using syntax such as >=24`);
     return null;
   }
-  const match = /^>=(0|[1-9]\d*)$/.exec(value.trim());
-  if (match === null) {
-    errors.push(`${source} uses unsupported syntax; expected a minimum major such as >=24`);
+  const version = value.trim().startsWith(">=") ? parseVersion(value.trim().slice(2)) : null;
+  if (version === null) {
+    errors.push(`${source} uses unsupported syntax; expected a minimum version such as >=24 or >=24.15.0`);
     return null;
   }
-  return {major: Number(match[1]), minor: 0, patch: 0};
+  return version;
 }
 
-function equalVersions(left: MinimumVersion, right: MinimumVersion): boolean {
-  return left.major === right.major && left.minor === right.minor && left.patch === right.patch;
+/**
+ * Parses a minimum Node version or an LTS caret branch followed by a future major minimum.
+ *
+ * @param value - Manifest engine constraint.
+ * @returns The normalized requirement, or `null` for unsupported syntax.
+ */
+export function parseNodeRequirement(value: string): MinimumVersion | null {
+  const trimmed = value.trim();
+  if (trimmed.startsWith(">=")) return parseVersion(trimmed.slice(2));
+  const match = /^\^(\d+\.\d+\.\d+)\s*\|\|\s*>=(0|[1-9]\d*)\.0\.0$/u.exec(trimmed);
+  if (match === null) return null;
+  const minimum = parseVersion(match[1] ?? "");
+  const nextSupportedMajor = Number(match[2]);
+  if (minimum === null || !Number.isSafeInteger(nextSupportedMajor) || nextSupportedMajor <= minimum.major) return null;
+  return {...minimum, nextSupportedMajor};
+}
+
+/**
+ * Formats a normalized requirement without hiding unsupported intervening runtime majors.
+ *
+ * @param requirement - Normalized runtime requirement.
+ * @returns Its supported engine constraint.
+ */
+export function formatVersionRequirement(requirement: MinimumVersion): string {
+  const minimum = `${requirement.major}.${requirement.minor}.${requirement.patch}`;
+  return requirement.nextSupportedMajor === undefined ? `>=${minimum}` : `^${minimum} || >=${requirement.nextSupportedMajor}.0.0`;
 }
 
 function readEngine(packageJson: UnknownRecord, engineName: string, errors: string[]): unknown {
@@ -294,9 +320,12 @@ function validateRequirements(paths: RepositoryPaths, errors: string[], sources:
 
   const nvmNode = nvmrc === null ? null : parseBareMajor(nvmrc, ".nvmrc", errors);
   const nodeVersion = nodeVersionFile === null ? null : parseBareMajor(nodeVersionFile, ".node-version", errors);
-  const engineNode =
-    packageJson === null ? null : parseMinimumMajor(readEngine(packageJson, "node", errors), "package.json#engines.node", errors);
-  const npm = packageJson === null ? null : parseMinimumMajor(readEngine(packageJson, "npm", errors), "package.json#engines.npm", errors);
+  const nodeEngine = packageJson === null ? undefined : readEngine(packageJson, "node", errors);
+  const engineNode = typeof nodeEngine === "string" ? parseNodeRequirement(nodeEngine) : null;
+  if (packageJson !== null && engineNode === null) {
+    errors.push("package.json#engines.node uses unsupported syntax; expected >=24.15.0 or ^24.15.0 || >=26.0.0");
+  }
+  const npm = packageJson === null ? null : parseMinimumVersion(readEngine(packageJson, "npm", errors), "package.json#engines.npm", errors);
   const dotnet = dotnetContents === null ? null : parseDotnetRequirement(dotnetContents, errors);
   const python = pythonContents === null ? null : parsePythonRequirement(pythonContents, errors);
   const packages =
@@ -304,10 +333,10 @@ function validateRequirements(paths: RepositoryPaths, errors: string[], sources:
       ? new Map<string, PackageRequirement>()
       : loadPackageRequirements(packageJson, packageLock, errors);
 
-  if (nvmNode !== null && engineNode !== null && !equalVersions(nvmNode, engineNode)) {
+  if (nvmNode !== null && engineNode !== null && nvmNode.major !== engineNode.major) {
     errors.push(".nvmrc disagrees with package.json#engines.node");
   }
-  if (nodeVersion !== null && engineNode !== null && !equalVersions(nodeVersion, engineNode)) {
+  if (nodeVersion !== null && engineNode !== null && nodeVersion.major !== engineNode.major) {
     errors.push(".node-version disagrees with package.json#engines.node");
   }
 
@@ -354,13 +383,16 @@ export function parseVersion(value: string): MinimumVersion | null {
 }
 
 /**
- * Determines whether an actual version meets a required minimum.
+ * Determines whether an actual version satisfies the minimum and supported runtime branches.
  *
  * @param actual - Installed version.
  * @param required - Required minimum version.
- * @returns Whether the actual version is greater than or equal to the minimum.
+ * @returns Whether the actual version is admitted by the requirement.
  */
 export function satisfiesMinimum(actual: MinimumVersion, required: MinimumVersion): boolean {
+  if (required.nextSupportedMajor !== undefined && actual.major > required.major && actual.major < required.nextSupportedMajor) {
+    return false;
+  }
   if (actual.major !== required.major) {
     return actual.major > required.major;
   }
@@ -368,4 +400,20 @@ export function satisfiesMinimum(actual: MinimumVersion, required: MinimumVersio
     return actual.minor > required.minor;
   }
   return actual.patch >= required.patch;
+}
+
+/**
+ * Checks that every version admitted by one runtime requirement satisfies another.
+ *
+ * @param candidate - Runtime requirement supplied by the root workspace.
+ * @param required - Runtime requirement demanded by a consumer.
+ * @returns Whether the candidate's supported branches are contained in the required branches.
+ */
+export function requirementSatisfies(candidate: MinimumVersion, required: MinimumVersion): boolean {
+  if (!satisfiesMinimum(candidate, required)) return false;
+  return (
+    required.nextSupportedMajor === undefined
+    || candidate.major >= required.nextSupportedMajor
+    || (candidate.nextSupportedMajor ?? candidate.major + 1) >= required.nextSupportedMajor
+  );
 }

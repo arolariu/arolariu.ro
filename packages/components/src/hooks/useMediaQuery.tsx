@@ -4,7 +4,7 @@ import * as React from "react";
 
 /**
  * Subscribes to a CSS media query and returns whether it currently matches.
- * SSR-safe — returns `false` on the server until hydration.
+ * SSR-safe — returns `false` on the server and during hydration, then the current match.
  *
  * @param query - A valid CSS media query string (e.g. `"(min-width: 768px)"`).
  * @returns `true` when the media query matches, `false` otherwise.
@@ -15,20 +15,26 @@ import * as React from "react";
  * ```
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = React.useState(false);
+  const store = React.useMemo(() => {
+    const mql = globalThis.window?.matchMedia(query);
+    let matches = mql?.matches ?? false;
 
-  React.useEffect(() => {
-    const mql = globalThis.window.matchMedia(query);
-    const onChange = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
+    const subscribe = (onStoreChange: () => void): (() => void) => {
+      const onChange = (event: MediaQueryListEvent): void => {
+        const {matches: nextMatches} = event;
+        matches = nextMatches;
+        onStoreChange();
+      };
+
+      mql?.addEventListener("change", onChange);
+      // Recheck after subscribing to catch changes between render and subscription or reconnection.
+      matches = mql?.matches ?? false;
+
+      return () => mql?.removeEventListener("change", onChange);
     };
 
-    // eslint-disable-next-line react-x/set-state-in-effect -- seeding state from the initial media-query match is the effect's purpose
-    setMatches(mql.matches);
-    mql.addEventListener("change", onChange);
-
-    return () => mql.removeEventListener("change", onChange);
+    return {getSnapshot: (): boolean => matches, subscribe};
   }, [query]);
 
-  return matches;
+  return React.useSyncExternalStore(store.subscribe, store.getSnapshot, () => false);
 }

@@ -267,20 +267,6 @@
       "tags": {}
     },
     {
-      "key": "Site:UseCdn",
-      "value": "false",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Site:UseCdn",
-      "value": "true",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
       "key": "FeatureManagement:website.commander.enabled",
       "value": "true",
       "label": "DEVELOPMENT",

@@ -7,10 +7,11 @@
  * The scripts tooling has no output masking: a secret stays `Redacted` until the call that needs it
  * and must never be rendered. `MSSQL_SA_PASSWORD` is needed only by `sqlcmd`, which reads it from
  * `SQLCMDPASSWORD` (spec §7: secrets travel through `env`, not arguments), so these cases pin that
- * it reaches exactly that variable of the one `exec` client and nothing else: no argument vector,
- * no other child environment, no rendered line (human, `--verbose`, or `--json`, on success or on a
- * failed `sqlcmd`), and no failure document. Every case runs the real `dev selfhost start` CLI path
- * on the `selfhostFixture` harness.
+ * it reaches exactly that variable of the `exec` client (once per attempt, as a failed `sqlcmd` is
+ * retried while SQL Server may be starting) and nothing else: no argument vector, no other child
+ * environment, no rendered line (human, `--verbose`, or `--json`, on success or on a failed
+ * `sqlcmd`), and no failure document. Every case runs the real `dev selfhost start` CLI path on the
+ * `selfhostFixture` harness.
  */
 
 import {describe, expect, it} from "vitest";
@@ -18,11 +19,14 @@ import {describe, expect, it} from "vitest";
 import {exitCodeFor} from "../platform/exit.ts";
 import {SELFHOST_SQL_PASSWORD, selfhostFixture, type SelfhostFixture} from "./selfhost.testing.ts";
 
+/** Attempts of a `sqlcmd` that keeps failing: the first one plus 12 retries. */
+const failingSqlcmdAttempts = 13;
+
 /** A fixture whose `sqlcmd` exits with code 1 and a diagnostic. */
 function failingSqlFixture(): SelfhostFixture {
   return selfhostFixture({
     process: (_command, args) =>
-      args.includes("/opt/mssql-tools/bin/sqlcmd")
+      args.includes("/opt/mssql-tools18/bin/sqlcmd")
         ? {kind: "exited", exitCode: 1, stdout: "", stderr: "Login failed for user 'sa'.", durationMs: 0}
         : {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0},
   });
@@ -81,7 +85,10 @@ describe("selfhost SQL password exposure", () => {
 
       // Assert
       expect(exitCodeFor(exit, undefined)).toBe(1);
-      expect(passwordReach(fixture)).toEqual({args: [], env: ["podman exec SQLCMDPASSWORD"]});
+      expect(passwordReach(fixture)).toEqual({
+        args: [],
+        env: Array.from({length: failingSqlcmdAttempts}, () => "podman exec SQLCMDPASSWORD"),
+      });
       const output = fixture.harness.output();
       expect(JSON.stringify(output)).not.toContain(SELFHOST_SQL_PASSWORD);
       const message = "SQL Server schema bootstrap failed: podman exec mssql sqlcmd exited with code 1.";

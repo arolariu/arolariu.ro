@@ -10,7 +10,15 @@ import {describe, expect, it} from "vitest";
 
 import {effectTest, makeTestLayer, repositoryFixtureRoot} from "../platform/testing.ts";
 import {createRepositoryPaths} from "./repository-paths.ts";
-import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type RequirementLoadResult} from "./requirements.ts";
+import {
+  formatVersionRequirement,
+  loadRepositoryRequirements,
+  parseNodeRequirement,
+  parseVersion,
+  requirementSatisfies,
+  satisfiesMinimum,
+  type RequirementLoadResult,
+} from "./requirements.ts";
 
 interface PackageJsonFixture {
   readonly name?: string;
@@ -120,6 +128,40 @@ describe("loadRepositoryRequirements", () => {
     }
   });
 
+  requirementsTest(
+    "loads a precise Node minimum while major selectors remain on the same LTS line",
+    fixture({"package.json": packageJson({engines: {node: ">=24.15.0", npm: ">=11"}})}),
+    (result) => {
+      expect(result.status).toBe("valid");
+      if (result.status === "valid") {
+        expect(result.requirements.node).toEqual({major: 24, minor: 15, patch: 0});
+      }
+    },
+  );
+
+  requirementsTest(
+    "retains the unsupported Node major between the LTS and current runtime branches",
+    fixture({"package.json": packageJson({engines: {node: "^24.15.0 || >=26.0.0", npm: ">=11"}})}),
+    (result) => {
+      expect(result.status).toBe("valid");
+      if (result.status === "valid") {
+        expect(result.requirements.node).toEqual({major: 24, minor: 15, patch: 0, nextSupportedMajor: 26});
+        for (const [version, expected] of [
+          ["24.14.9", false],
+          ["24.15.0", true],
+          ["24.99.0", true],
+          ["25.9.9", false],
+          ["26.0.0", true],
+          ["27.0.0", true],
+        ] as const) {
+          const actual = parseVersion(version);
+          expect(actual).not.toBeNull();
+          if (actual !== null) expect(satisfiesMinimum(actual, result.requirements.node)).toBe(expected);
+        }
+      }
+    },
+  );
+
   requirementsTest("rejects contradictory Node requirement sources", fixture({".node-version": "22\n"}), (result) => {
     expect(result).toEqual({
       status: "invalid",
@@ -224,4 +266,25 @@ describe("satisfiesMinimum", () => {
     expect(satisfiesMinimum({major: 24, minor: 1, patch: 0}, {major: 24, minor: 0, patch: 9})).toBe(true);
     expect(satisfiesMinimum({major: 23, minor: 99, patch: 99}, {major: 24, minor: 0, patch: 0})).toBe(false);
   });
+});
+
+describe("Node runtime branches", () => {
+  it("formats the real constraint and compares whole branches, not just their first version", () => {
+    const supported = parseNodeRequirement("^24.15.0 || >=26.0.0");
+    const narrower = parseNodeRequirement("^24.15.0 || >=28.0.0");
+    expect(supported).not.toBeNull();
+    expect(narrower).not.toBeNull();
+    if (supported !== null && narrower !== null) {
+      expect(formatVersionRequirement(supported)).toBe("^24.15.0 || >=26.0.0");
+      expect(requirementSatisfies(supported, narrower)).toBe(false);
+      expect(requirementSatisfies(narrower, supported)).toBe(true);
+      expect(requirementSatisfies({major: 24, minor: 15, patch: 0}, supported)).toBe(false);
+      expect(requirementSatisfies({major: 26, minor: 0, patch: 0}, supported)).toBe(true);
+    }
+  });
+
+  it.each(["^24", "^24.15.0", "^24.15.0 || >=26.1.0", "^24.15.0 || >=23.0.0", "^024.15.0 || >=26.0.0"])(
+    "rejects unsupported or contradictory branch constraint %s",
+    (constraint) => expect(parseNodeRequirement(constraint)).toBeNull(),
+  );
 });

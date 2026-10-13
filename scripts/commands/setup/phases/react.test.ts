@@ -100,7 +100,6 @@ const completeEnvironment = [
   "SITE_ENV=DEVELOPMENT",
   "SITE_NAME=dev.arolariu.ro",
   "SITE_URL=https://localhost:3000",
-  "USE_CDN=false",
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
   "CLERK_SECRET_KEY=sk_test_existing",
   "",
@@ -187,7 +186,7 @@ const emptyInventory: PackageInventoryFacts = {installed: {}, malformed: []};
 function environmentFacts(patch: Partial<EnvironmentFacts> = {}): EnvironmentFacts {
   return {
     syntaxErrors: [],
-    presentKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"],
+    presentKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SITE_ENV", "SITE_NAME", "SITE_URL"],
     missingCoreKeys: [],
     missingAuthenticationKeys: [],
     ...patch,
@@ -868,7 +867,6 @@ describe("website environment preparation", () => {
         "SITE_ENV=DEVELOPMENT",
         "SITE_NAME=dev.arolariu.ro",
         "SITE_URL=https://localhost:3000",
-        "USE_CDN=false",
         `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${publishable}`,
         `CLERK_SECRET_KEY=${secret}`,
         "# End arolariu.ro setup-managed values",
@@ -899,14 +897,14 @@ describe("website environment preparation", () => {
       fixture,
       react: [
         reactAvailable({environment: environmentFacts({presentKeys: []})}),
-        reactAvailable({environment: environmentFacts({presentKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL"]})}),
+        reactAvailable({environment: environmentFacts({presentKeys: ["SITE_ENV", "SITE_NAME"]})}),
       ],
     });
 
     const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toContain("USE_CDN");
+    expect(result.evidence).toContain("Written setup-owned environment key(s) remain absent: SITE_URL.");
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
   });
 
@@ -946,7 +944,7 @@ describe("website environment preparation", () => {
       fixture,
       react: [
         reactAvailable({environment: environmentFacts({presentKeys: ["SITE_NAME", "SITE_URL"]})}),
-        reactAvailable({environment: environmentFacts({presentKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"]})}),
+        reactAvailable({environment: environmentFacts({presentKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL"]})}),
       ],
     });
 
@@ -956,9 +954,7 @@ describe("website environment preparation", () => {
     expect(result.status).toBe("degraded");
     expect(written.startsWith(original)).toBe(true);
     expect(written.slice(original.length)).toBe(
-      ["# arolariu.ro setup-managed values", "SITE_ENV=DEVELOPMENT", "USE_CDN=false", "# End arolariu.ro setup-managed values", ""].join(
-        "\r\n",
-      ),
+      ["# arolariu.ro setup-managed values", "SITE_ENV=DEVELOPMENT", "# End arolariu.ro setup-managed values", ""].join("\r\n"),
     );
     expect(written).not.toContain("SITE_NAME=dev.arolariu.ro");
     expect(written).not.toContain("SITE_URL=https://localhost:3000");
@@ -969,7 +965,6 @@ describe("website environment preparation", () => {
       "SITE_ENV=DEVELOPMENT",
       "SITE_NAME=dev.arolariu.ro",
       "SITE_URL=https://localhost:3000",
-      "USE_CDN=false",
       "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=",
       "CLERK_SECRET_KEY=not-a-secret-key",
       "",
@@ -993,7 +988,6 @@ describe("website environment preparation", () => {
       "SITE_ENV=DEVELOPMENT",
       "SITE_NAME=dev.arolariu.ro",
       "SITE_URL=https://localhost:3000",
-      "USE_CDN=false",
       "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_existing",
       "",
     ].join("\n");
@@ -1497,7 +1491,7 @@ describe("react characterization (pre-Effect migration)", () => {
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
-          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "Playwright Chromium is installed for locked version 1.62.1.",
         ],
@@ -1528,7 +1522,7 @@ describe("react characterization (pre-Effect migration)", () => {
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
-          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "The installed Playwright browser inventory has no Chromium browser entry.",
           "Executed and verified action: react.playwright.chromium.install",
@@ -1561,7 +1555,7 @@ describe("react characterization (pre-Effect migration)", () => {
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
-          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "The installed Playwright browser inventory has no Chromium browser entry.",
           "Playwright Chromium installation failed.\nCommand exited with code 1.\nstderr: download failed",

@@ -27,9 +27,6 @@ const cspHeader = `
     ${upgradeInsecure}
 `;
 
-const isCdnEnabled = process.env["USE_CDN"] === "true";
-console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
-
 const isDebugBuild = process.env["NODE_ENV"] === "development";
 console.log(">>> isDebugBuild", isDebugBuild ? "✅" : "❌");
 console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
@@ -67,7 +64,7 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 100],
     remotePatterns: [
       {protocol: "https", hostname: "**.blob.core.windows.net"}, // Azure Blob Storage (any account).
-      {protocol: "https", hostname: "**.arolariu.ro"}, // Platform subdomains (including CDN).
+      {protocol: "https", hostname: "**.arolariu.ro"}, // Platform subdomains.
       {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
@@ -130,10 +127,6 @@ const nextConfig: NextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "https://cdn.arolariu.ro",
-          },
         ],
       },
     ];
@@ -143,6 +136,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   transpilePackages: ["import-in-the-middle", "require-in-the-middle", "prettier"],
+  serverExternalPackages: ["@opentelemetry/auto-instrumentations-node"],
 
   experimental: {
     // Enable server source maps in development for debugging
@@ -193,8 +187,7 @@ const nextConfig: NextConfig = {
   },
 
   pageExtensions: ["ts", "tsx"],
-  assetPrefix: isCdnEnabled ? "https://cdn.arolariu.ro" : undefined,
-  compress: false, // We use AFD built-in compression for static assets.
+  compress: false, // Responses are not compressed: Azure Front Door's production route has compression disabled.
   trailingSlash: true,
   typedRoutes: true,
 

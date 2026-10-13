@@ -50,12 +50,10 @@ export async function getResendClient(): Promise<Resend> {
     if (!apiKey) throw new Error("Resend API key not configured");
     cached = new Resend(apiKey);
     return cached;
-  })();
-  try {
-    return await inflight;
-  } finally {
+  })().finally(() => {
     inflight = null;
-  }
+  });
+  return inflight;
 }
 
 /**

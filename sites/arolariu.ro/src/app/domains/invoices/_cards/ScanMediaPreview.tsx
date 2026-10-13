@@ -24,6 +24,44 @@ type Props = Readonly<{
   centerOverlay?: ReactNode;
 }>;
 
+function ScanMedia({src, mediaKind, alt, loading}: Readonly<Pick<Props, "src" | "mediaKind" | "alt" | "loading">>): React.JSX.Element | null {
+  if (src && mediaKind === "image") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- scan URLs can be object/blob URLs and should bypass next/image processing.
+      <img
+        src={src}
+        alt={alt}
+        className={styles["imagePreview"]}
+        loading={loading}
+        decoding='async'
+      />
+    );
+  }
+  if (src && mediaKind === "pdf") {
+    return (
+      <div className={styles["placeholder"]}>
+        <TbFileTypePdf
+          aria-hidden='true'
+          className={styles["pdfIcon"]}
+        />
+        <span className={styles["placeholderLabel"]}>PDF</span>
+      </div>
+    );
+  }
+  if (!src || mediaKind === "unknown") {
+    return (
+      <div className={styles["placeholder"]}>
+        <TbPhotoOff
+          aria-hidden='true'
+          className={styles["missingIcon"]}
+        />
+        <span className={styles["placeholderLabel"]}>No preview</span>
+      </div>
+    );
+  }
+  return null;
+}
+
 /**
  * Renders scan media without owning route-specific scan behavior.
  *
@@ -58,44 +96,14 @@ export function ScanMediaPreview({
 
   const isInteractive = Boolean(onPreviewActivate);
 
-  return (
-    <div
-      className={`${styles["previewArea"]} ${isInteractive ? styles["interactive"] : ""}`}
-      role={isInteractive ? "button" : "img"}
-      aria-label={alt}
-      tabIndex={isInteractive ? 0 : undefined}
-      onClick={onPreviewActivate}
-      onKeyDown={handleKeyDown}>
-      {src && mediaKind === "image" ? (
-        // eslint-disable-next-line @next/next/no-img-element -- scan URLs can be object/blob/CDN URLs and should bypass next/image processing.
-        <img
-          src={src}
-          alt={alt}
-          className={styles["imagePreview"]}
-          loading={loading}
-          decoding='async'
-        />
-      ) : null}
-
-      {src && mediaKind === "pdf" ? (
-        <div className={styles["placeholder"]}>
-          <TbFileTypePdf
-            aria-hidden='true'
-            className={styles["pdfIcon"]}
-          />
-          <span className={styles["placeholderLabel"]}>PDF</span>
-        </div>
-      ) : null}
-
-      {!src || mediaKind === "unknown" ? (
-        <div className={styles["placeholder"]}>
-          <TbPhotoOff
-            aria-hidden='true'
-            className={styles["missingIcon"]}
-          />
-          <span className={styles["placeholderLabel"]}>No preview</span>
-        </div>
-      ) : null}
+  const content = (
+    <>
+      <ScanMedia
+        src={src}
+        mediaKind={mediaKind}
+        alt={alt}
+        loading={loading}
+      />
 
       {isInteractive ? (
         <div className={styles["previewOverlay"]}>
@@ -108,6 +116,29 @@ export function ScanMediaPreview({
       {bottomLeftOverlay ? <div className={styles["bottomLeft"]}>{bottomLeftOverlay}</div> : null}
       {bottomRightOverlay ? <div className={styles["bottomRight"]}>{bottomRightOverlay}</div> : null}
       {centerOverlay ? <div className={styles["centerOverlay"]}>{centerOverlay}</div> : null}
+    </>
+  );
+
+  if (onPreviewActivate) {
+    return (
+      <div
+        className={`${styles["previewArea"]} ${styles["interactive"]}`}
+        role='button'
+        aria-label={alt}
+        tabIndex={0}
+        onClick={onPreviewActivate}
+        onKeyDown={handleKeyDown}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={styles["previewArea"]}
+      role='img'
+      aria-label={alt}>
+      {content}
     </div>
   );
 }

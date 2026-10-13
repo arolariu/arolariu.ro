@@ -48,7 +48,6 @@ import {OTLPTraceExporter} from "@opentelemetry/exporter-trace-otlp-http";
 import {resourceFromAttributes} from "@opentelemetry/resources";
 import {PeriodicExportingMetricReader} from "@opentelemetry/sdk-metrics";
 import {NodeSDK} from "@opentelemetry/sdk-node";
-// eslint-disable-next-line n/no-extraneous-import -- sdk-logs ships with the pinned OpenTelemetry SDK family used by the website runtime
 import {BatchLogRecordProcessor, LoggerProvider} from "@opentelemetry/sdk-logs";
 import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
 import {parseSuppressionFlag, shouldSuppressTelemetry, SUPPRESSION_ENV_VAR} from "@/lib/telemetry/healthPolicy";

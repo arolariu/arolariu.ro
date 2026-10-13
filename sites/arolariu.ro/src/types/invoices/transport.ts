@@ -127,11 +127,11 @@ function parseOptionalStringField(record: Readonly<Record<string, unknown>>, fie
   return value;
 }
 
-function parseOptionalNonNegativeIntegerField(record: Readonly<Record<string, unknown>>, field: string, path: string): number {
-  const value = record[field];
-  if (!Object.hasOwn(record, field) || value === null) return 0;
+function parseOptionalNumberOfUpdates(record: Readonly<Record<string, unknown>>, path: string): number {
+  const value = record["numberOfUpdates"];
+  if (!Object.hasOwn(record, "numberOfUpdates") || value === null) return 0;
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
-    throw new TransportValidationError(`${path}.${field}`, "expected non-negative safe integer or null");
+    throw new TransportValidationError(`${path}.numberOfUpdates`, "expected non-negative safe integer or null");
   }
   return value;
 }
@@ -380,7 +380,7 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
   const createdBy = parseOptionalStringField(value, "createdBy", path);
   const lastUpdatedBy = parseOptionalStringField(value, "lastUpdatedBy", path);
 
-  const numberOfUpdates = parseOptionalNonNegativeIntegerField(value, "numberOfUpdates", path);
+  const numberOfUpdates = parseOptionalNumberOfUpdates(value, path);
 
   const rawIsImportant = parseBooleanField(value, "isImportant", path);
   const rawIsSoftDeleted = parseBooleanField(value, "isSoftDeleted", path);
@@ -556,7 +556,7 @@ function parseInvoiceResponseInternal(value: unknown, allowEmptyName: boolean): 
   const path = "invoice";
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
-  const numberOfUpdates = parseOptionalNonNegativeIntegerField(value, "numberOfUpdates", path);
+  const numberOfUpdates = parseOptionalNumberOfUpdates(value, path);
 
   return {
     id: parseGuidField(value, "id", path),

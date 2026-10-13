@@ -65,8 +65,7 @@ export function getClassificationLabel(classification: StandardClassification | 
  * @returns The root hierarchy node's `officialLabel`, or `null`.
  */
 export function getClassificationGroup(classification: StandardClassification | null): string | null {
-  if (classification === null) return null;
-  if (classification.hierarchy.length === 0) return null;
+  if (classification === null || classification.hierarchy.length === 0) return null;
   return classification.hierarchy[0]?.officialLabel ?? null;
 }
 

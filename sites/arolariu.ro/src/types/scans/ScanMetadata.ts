@@ -4,7 +4,7 @@
  */
 
 /** Canonical blob metadata keys used by scan storage projections. */
-export const ScanMetadataKey = {
+const scanMetadataKeys = {
   SCAN_ID: "scanId",
   OWNER_ID: "ownerId",
   DISPLAY_NAME: "displayName",
@@ -26,10 +26,11 @@ export const ScanMetadataKey = {
   ARCHIVED_BY: "archivedBy",
 } as const;
 
-export type ScanMetadataKey = (typeof ScanMetadataKey)[keyof typeof ScanMetadataKey];
+export {scanMetadataKeys as ScanMetadataKey};
+export type ScanMetadataKey = (typeof scanMetadataKeys)[keyof typeof scanMetadataKeys];
 
 /** Lifecycle states that may be persisted as blob metadata. */
-export const ScanMetadataStatus = {
+const scanMetadataStatuses = {
   READY: "ready",
   ATTACHED: "attached",
   DETACHED: "detached",
@@ -37,10 +38,11 @@ export const ScanMetadataStatus = {
   FAILED: "failed",
 } as const;
 
-export type ScanMetadataStatus = (typeof ScanMetadataStatus)[keyof typeof ScanMetadataStatus];
+export {scanMetadataStatuses as ScanMetadataStatus};
+export type ScanMetadataStatus = (typeof scanMetadataStatuses)[keyof typeof scanMetadataStatuses];
 
 /** User-facing document kind classification. */
-export const ScanDocumentKind = {
+const scanDocumentKinds = {
   RECEIPT: "receipt",
   INVOICE: "invoice",
   WARRANTY: "warranty",
@@ -48,10 +50,11 @@ export const ScanDocumentKind = {
   UNKNOWN: "unknown",
 } as const;
 
-export type ScanDocumentKind = (typeof ScanDocumentKind)[keyof typeof ScanDocumentKind];
+export {scanDocumentKinds as ScanDocumentKind};
+export type ScanDocumentKind = (typeof scanDocumentKinds)[keyof typeof scanDocumentKinds];
 
 /** Role of a scan in an invoice/document context. */
-export const ScanDocumentRole = {
+const scanDocumentRoles = {
   PRIMARY: "primary",
   ADDITIONAL_PAGE: "additional-page",
   FRONT_SIDE: "front-side",
@@ -60,7 +63,8 @@ export const ScanDocumentRole = {
   UNKNOWN: "unknown",
 } as const;
 
-export type ScanDocumentRole = (typeof ScanDocumentRole)[keyof typeof ScanDocumentRole];
+export {scanDocumentRoles as ScanDocumentRole};
+export type ScanDocumentRole = (typeof scanDocumentRoles)[keyof typeof scanDocumentRoles];
 
 /** Canonical typed metadata stored for scan blobs. */
 export type ScanMetadata = Readonly<{

@@ -8,7 +8,7 @@
  * failure detail rebuilt from the `ProcessError` fields.
  */
 
-import {Cause, Effect, Exit} from "effect";
+import {Cause, Effect, Exit, Result} from "effect";
 import {describe, expect, it} from "vitest";
 
 import type {ProbeOutcome} from "../inspection/probes.ts";
@@ -215,6 +215,31 @@ describe("assertNoDockerDesktopBackend", () => {
 
 describe("assertRancherBackend", () => {
   effectTest("accepts Rancher Desktop output", () => assertRancherBackend(), harnessWith(succeeded("Rancher Desktop 1.20.0")).layer);
+
+  for (const stream of ["stdout", "stderr"] as const) {
+    const podmanEndpoint = JSON.stringify({
+      Client: {Version: "29.6.2-rd"},
+      Server: {Components: [{Name: "Podman Engine", Version: "5.8.2"}]},
+    });
+    effectTest(
+      `rejects a Rancher-installed client connected to a Podman endpoint reported on ${stream}`,
+      () =>
+        Effect.gen(function* () {
+          const result = yield* Effect.exit(assertRancherBackend());
+
+          expect(result._tag).toBe("Failure");
+          if (Exit.isFailure(result)) {
+            const error = Cause.findError(result.cause);
+            expect(Result.isSuccess(error)).toBe(true);
+            if (Result.isSuccess(error)) {
+              expect(error.success).toBeInstanceOf(ContainerRuntimeError);
+              expect(error.success.message).toContain("endpoint is served by Podman");
+            }
+          }
+        }),
+      harnessWith(succeeded(stream === "stdout" ? podmanEndpoint : "", stream === "stderr" ? podmanEndpoint : "")).layer,
+    );
+  }
 
   effectTest(
     "rejects Docker Desktop output",

@@ -1,9 +1,48 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {ESLint} from "eslint";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import eslintConfig from "../../../../../eslint.config.ts";
 import type {LineFinding} from "../domain/types.ts";
 import {lintProvider, parseEslintJson, type EslintFileResult} from "./lintProvider.ts";
+
+describe("website framework-aware lint rules", () => {
+  it("requires optional-prop defaults using the React 19 default-argument contract", async () => {
+    const website = eslintConfig.find((config) => config.name === "[@arolariu/website]");
+    const rule = website?.rules?.["react/require-default-props"];
+    if (!website || !rule) {
+      throw new Error("Website default-prop rule is missing");
+    }
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: {
+        files: ["**/*.tsx"],
+        languageOptions: {...website.languageOptions, parserOptions: {ecmaFeatures: {jsx: true}}},
+        plugins: website.plugins,
+        rules: {"react/require-default-props": rule},
+        settings: website.settings,
+      },
+    });
+    const options = {filePath: path.join("sites", "arolariu.ro", "src", "DefaultPropsFixture.tsx")};
+    const [valid] = await eslint.lintText(
+      'type Props = {label?: string}; export function Example({label = "default"}: Props) {return <span>{label}</span>;}',
+      options,
+    );
+    const [invalid] = await eslint.lintText(
+      "type Props = {label?: string}; export function Example({label}: Props) {return <span>{label}</span>;}",
+      options,
+    );
+
+    expect(valid?.errorCount).toBe(0);
+    expect(invalid?.messages).toEqual([expect.objectContaining({ruleId: "react/require-default-props", severity: 2})]);
+  });
+
+  it("keeps extraneous-import checks at error severity while recognizing only the Next.js marker", () => {
+    const website = eslintConfig.find((config) => config.name === "[@arolariu/website]");
+    expect(website?.rules?.["n/no-extraneous-import"]).toEqual(["error", {allowModules: ["server-only"]}]);
+  });
+});
 
 describe("parseEslintJson", () => {
   it("returns [] for empty results", () => {
@@ -118,6 +157,7 @@ describe("lintProvider metadata", () => {
 
 describe("lintProvider.run", () => {
   beforeEach(() => vi.resetModules());
+  afterEach(() => vi.unstubAllEnvs());
 
   it("parses ESLint JSON output into findings", async () => {
     const eslintJson = JSON.stringify([
@@ -129,7 +169,10 @@ describe("lintProvider.run", () => {
       },
     ]);
     vi.doMock("@actions/exec", () => ({
-      getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: eslintJson, stderr: ""}),
+      getExecOutput: vi
+        .fn()
+        .mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""})
+        .mockResolvedValueOnce({exitCode: 1, stdout: eslintJson, stderr: ""}),
     }));
     const {lintProvider: provider} = await import("./lintProvider.ts");
     const result = await provider.run({
@@ -221,5 +264,67 @@ describe("lintProvider.run", () => {
     } finally {
       await fs.rm(workspaceRoot, {recursive: true, force: true});
     }
+  });
+
+  it("budgets the typed lint process without dropping existing Node options", async () => {
+    vi.stubEnv("NODE_OPTIONS", "--enable-source-maps");
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {lintProvider: provider} = await import("./lintProvider.ts");
+
+    await provider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+
+    const options = getExecOutput.mock.calls[0]?.[2] as {env?: NodeJS.ProcessEnv} | undefined;
+    expect(options?.env?.["NODE_OPTIONS"]).toBe("--enable-source-maps --max-old-space-size=8192");
+    expect(getExecOutput.mock.calls.map((call) => (call[1] as string[])[1]?.replace(/\\/g, "/"))).toEqual([
+      "sites/arolariu.ro",
+      "packages/components",
+      "sites/cv.arolariu.ro",
+      "sites/status.arolariu.ro",
+      ".",
+    ]);
+    expect(getExecOutput.mock.calls[4]?.[1]).toEqual([
+      "eslint",
+      ".",
+      "--ignore-pattern",
+      "sites/arolariu.ro/**",
+      "--ignore-pattern",
+      "packages/components/**",
+      "--ignore-pattern",
+      "sites/cv.arolariu.ro/**",
+      "--ignore-pattern",
+      "sites/status.arolariu.ro/**",
+      "--format",
+      "json",
+    ]);
+  });
+
+  it("reports the fatal process exit instead of a downstream JSON parse failure", async () => {
+    vi.doMock("@actions/exec", () => ({
+      getExecOutput: vi.fn().mockResolvedValue({
+        exitCode: 134,
+        stdout: "",
+        stderr: "FATAL ERROR: Reached heap limit Allocation failed",
+      }),
+    }));
+    const {lintProvider: provider} = await import("./lintProvider.ts");
+
+    await expect(
+      provider.run({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).rejects.toThrow("ESLint exited with code 134");
   });
 });

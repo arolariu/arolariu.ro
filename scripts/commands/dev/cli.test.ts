@@ -71,12 +71,13 @@ describe("dev command", () => {
     const argv = ["dev", "aspire", "--engine", "rancher"];
 
     // Act
-    const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "podman"});
+    const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "podman", ASPIRE_CONTAINER_RUNTIME: "podman"});
 
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls[0]?.request).toEqual({command: "docker", args: ["--version"]});
     expect(result.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/src/AppHost"]});
+    expect(result.calls.at(-1)?.options.env?.["ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
     expect(result.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
   });
 
@@ -90,6 +91,7 @@ describe("dev command", () => {
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls[0]?.request).toEqual({command: "podman", args: ["--version"]});
+    expect(result.calls.at(-1)?.options.env?.["ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
     expect(result.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
   });
 
@@ -103,7 +105,7 @@ describe("dev command", () => {
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls[0]).toBe("podman --version");
-    expect(result.calls).toContain("podman compose -f Management/docker-compose.yml up -d");
+    expect(result.calls).toContain("podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d");
     expect(result.lines.at(-1)).toBe("[arolariu::selfhost] ✅ Selfhost start completed for engine 'podman'.");
   });
 

@@ -21,6 +21,7 @@
       "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
+        "ASPIRE_CONTAINER_RUNTIME": "podman",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
       },
       "debuggers": {
@@ -38,6 +39,7 @@
       "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
+        "ASPIRE_CONTAINER_RUNTIME": "docker",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
       },
       "debuggers": {
@@ -64,6 +66,7 @@
       "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
+        "ASPIRE_CONTAINER_RUNTIME": "podman",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
       },
       "presentation": { "group": "10-aspire", "order": 3 }
@@ -76,6 +79,7 @@
       "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
+        "ASPIRE_CONTAINER_RUNTIME": "docker",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
       },
       "presentation": { "group": "10-aspire", "order": 4 }

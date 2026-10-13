@@ -331,7 +331,7 @@ async function createFrontendFixture(
     writes.push(
       writeFixtureFile(
         paths.websiteEnvironment,
-        input.websiteEnvContents ?? "SITE_ENV=DEVELOPMENT\nSITE_NAME=dev.arolariu.ro\nSITE_URL=https://localhost:3000\nUSE_CDN=false\n",
+        input.websiteEnvContents ?? "SITE_ENV=DEVELOPMENT\nSITE_NAME=dev.arolariu.ro\nSITE_URL=https://localhost:3000\n",
       ),
     );
   }
@@ -459,7 +459,7 @@ describe("createReactProvider", () => {
     expect(value.frameworkIssues).toEqual([]);
     expect(value.environment).toEqual({
       syntaxErrors: [],
-      presentKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"],
+      presentKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL"],
       missingCoreKeys: [],
       missingAuthenticationKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
     });
@@ -628,7 +628,7 @@ describe("createReactProvider", () => {
     expect(facts.environment).toEqual({
       syntaxErrors: [],
       presentKeys: [],
-      missingCoreKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"],
+      missingCoreKeys: ["SITE_ENV", "SITE_NAME", "SITE_URL"],
       missingAuthenticationKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
     });
   });

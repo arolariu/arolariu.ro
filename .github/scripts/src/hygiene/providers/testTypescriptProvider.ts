@@ -8,11 +8,11 @@
  * becomes its own SuiteResult so the PR comment surfaces per-project
  * sub-sections (scripts / website / components / cv / status).
  *
- * Each suite is run by invoking `npx vitest run --reporter=json` directly in
+ * Each suite is run by invoking `npx vitest run --reporter=json --outputFile=...` directly in
  * the project's directory (rather than via `nx run`) to:
  *   - Avoid nx target-specifier ambiguity warnings
  *   - Get deterministic, parseable JSON from an explicit per-run output file
- *   - Allow per-project parallelism via Promise.all
+ *   - Let each project's worker pool own parallelism without oversubscribing the runner
  */
 
 import * as exec from "@actions/exec";
@@ -76,7 +76,7 @@ async function runSuite(name: string, projectDirRel: string, workspaceRoot: stri
             file: `<vitest in ${projectDirRel}>`,
             line: 1,
             column: 1,
-            message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.substring(0, 300)}`,
+            message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.slice(-4000)}`,
             ruleId: `${name}/runner-failed`,
             suite: name,
           },
@@ -96,7 +96,7 @@ async function runSuite(name: string, projectDirRel: string, workspaceRoot: stri
           file: `<vitest in ${projectDirRel}>`,
           line: 1,
           column: 1,
-          message: `vitest exited with code ${result.exitCode} despite reporting no failed assertions. stderr: ${result.stderr.substring(0, 300)}`,
+          message: `vitest exited with code ${result.exitCode} despite reporting no failed assertions. stderr: ${result.stderr.slice(-4000)}`,
           ruleId: `${name}/runner-failed`,
           suite: name,
         },
@@ -118,11 +118,12 @@ export const testTypescriptProvider: CheckProvider<TestSuitesPayload> = {
     return suites === null || suites.length > 0;
   },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestSuitesPayload>> {
-    // Run all TypeScript suites in parallel. One slow / failing suite does not
-    // gate the others; each contributes its own SuiteResult to the payload.
     const selectedSuites = suitesForTypeScriptChanges(input);
     const suitesToRun = selectedSuites === null ? TYPESCRIPT_SUITES : TYPESCRIPT_SUITES.filter(([name]) => selectedSuites.includes(name));
-    const suiteResults = await Promise.all(suitesToRun.map(([name, dir]) => runSuite(name, dir, input.workspaceRoot)));
+    const suiteResults: SuiteResult[] = [];
+    for (const [name, dir] of suitesToRun) {
+      suiteResults.push(await runSuite(name, dir, input.workspaceRoot));
+    }
     return {
       payload: aggregateSuites(suiteResults),
       findings: flattenSuiteFindings(suiteResults),

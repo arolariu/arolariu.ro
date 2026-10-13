@@ -25,6 +25,7 @@ import {getContainerAdapter} from "./adapters.ts";
 import {cosmosBootstrapMaximumResponseBytes, type LocalBlobStorage} from "./selfhost.bootstrap.ts";
 import {
   advancingClock,
+  SELFHOST_PRIVATE_CONFIGURATION,
   SELFHOST_SQL_PASSWORD,
   selfhostFixture,
   type SelfhostFixture,
@@ -67,13 +68,13 @@ function formatCalls(fixture: SelfhostFixture): readonly string[] {
 }
 
 /**
- * Formats the process calls after the Podman preflight.
+ * Formats the process calls after preflight and the storage safety check.
  *
  * @param fixture - The selfhost fixture.
  * @returns `command args…` per business call, in order.
  */
-function businessCalls(fixture: SelfhostFixture): readonly string[] {
-  return formatCalls(fixture).slice(podmanPreflightProbeCount);
+function businessCalls(fixture: SelfhostFixture, checksStorage = true): readonly string[] {
+  return formatCalls(fixture).slice(podmanPreflightProbeCount + (checksStorage ? 1 : 0));
 }
 
 /**
@@ -85,6 +86,22 @@ function businessCalls(fixture: SelfhostFixture): readonly string[] {
 function delays(fixture: SelfhostFixture): readonly unknown[] {
   return fixture.timeline().flatMap((event) => ("delay" in event ? [event["delay"]] : []));
 }
+
+/**
+ * Counts the SQL schema bootstrap attempts of a fixture.
+ *
+ * @param fixture - The selfhost fixture.
+ * @returns The number of `sqlcmd` exec calls.
+ */
+function sqlcmdCalls(fixture: SelfhostFixture): number {
+  return formatCalls(fixture).filter((call) => call.includes("/opt/mssql-tools18/bin/sqlcmd")).length;
+}
+
+/** Attempts of a storage bootstrap step whose service keeps failing as still starting. */
+const storageStartupAttempts = 13;
+
+/** The 5 s pauses before each of the 12 retries of such a step. */
+const storageStartupRetryDelays: readonly number[] = Array.from({length: storageStartupAttempts - 1}, () => 5_000);
 
 /**
  * Registers a case that runs `runSelfhost(input)` (or a custom body) on a fresh fixture.
@@ -146,7 +163,7 @@ describe("buildSelfhostPlan", () => {
     expect(plan.map((command) => command.args.join(" "))).toEqual([
       "compose -f Frontend/docker-compose.yml down",
       "compose -f Backend/docker-compose.yml down",
-      "compose -f Storage/docker-compose.yml down",
+      "compose -f Storage/docker-compose.yml --profile selfhost down",
       "compose -f Management/docker-compose.yml down",
     ]);
   });
@@ -217,6 +234,63 @@ describe("getRequiredSqlPassword", () => {
 });
 
 describe("runSelfhost start", () => {
+  for (const action of ["start", "stop"] as const) {
+    selfhostTest(
+      `refuses ${action} before reconciling legacy writable-layer databases`,
+      {
+        process: (_command, args) => ({
+          kind: "succeeded",
+          exitCode: 0,
+          durationMs: 0,
+          stderr: "",
+          stdout: args[0] === "ps" ? "mssql\ncosmosdb\n" : args[0] === "inspect" ? "[]" : "",
+        }),
+      },
+      (fixture) =>
+        Effect.gen(function* () {
+          const result = yield* Effect.exit(runSelfhost({action, engine: "podman"}));
+
+          expect(result._tag).toBe("Failure");
+          expect(fixture.harness.processCalls().some(({request}) => request.args.includes("up") || request.args.includes("down"))).toBe(
+            false,
+          );
+          expect(fixture.traefik()).toBeNull();
+        }),
+    );
+  }
+
+  selfhostTest(
+    "permits existing databases only when their intended named data volumes are attached",
+    {
+      process: (_command, args) => ({
+        kind: "succeeded",
+        exitCode: 0,
+        durationMs: 0,
+        stderr: "",
+        stdout:
+          args[0] === "ps"
+            ? "mssql\ncosmosdb\n"
+            : args[0] === "inspect"
+              ? JSON.stringify([
+                  {
+                    Type: "volume",
+                    Name: args.includes("mssql") ? "arolariu-selfhost-mssql-data" : "arolariu-selfhost-cosmos-data",
+                    Destination: args.includes("mssql") ? "/var/opt/mssql" : "/data",
+                  },
+                ])
+              : "",
+      }),
+    },
+    (fixture) =>
+      Effect.gen(function* () {
+        const result = yield* runSelfhost({action: "start", engine: "podman"});
+
+        expect(result.action).toBe("start");
+        expect(fixture.harness.processCalls().filter(({request}) => request.args[0] === "inspect")).toHaveLength(2);
+        expect(fixture.harness.processCalls().some(({request}) => request.args.includes("up"))).toBe(true);
+      }),
+  );
+
   selfhostTest("runs preflight, then the exact engine-owned stack and bootstrap commands in order", {}, (fixture) =>
     Effect.gen(function* () {
       // Act
@@ -225,12 +299,12 @@ describe("runSelfhost start", () => {
       // Assert
       expect(result).toEqual({action: "start", engine: "podman", stacks: ["management", "storage", "profile", "backend", "frontend"]});
       expect(businessCalls(fixture)).toEqual([
-        "podman compose -f Management/docker-compose.yml up -d",
-        "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+        "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
+        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b",
         "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-        "podman compose -f Backend/docker-compose.yml up -d",
-        "podman compose -f Frontend/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Backend/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Frontend/docker-compose.yml up -d",
       ]);
       expect(fixture.harness.processCalls().at(-1)?.options).toEqual({cwd: "infra/Local", output: "tee", echo: false});
     }),
@@ -284,7 +358,7 @@ describe("runSelfhost start", () => {
       // Assert
       const commands = fixture.harness.processCalls().map((call) => call.request.command);
       expect(commands.filter((command) => command === "unzip")).toHaveLength(1);
-      expect(commands.indexOf("unzip")).toBe(podmanPreflightProbeCount);
+      expect(commands.indexOf("unzip")).toBe(podmanPreflightProbeCount + 1);
       expect(fixture.harness.httpCalls()).toHaveLength(3);
       expect(fixture.harness.output().some((record) => record.text.includes("artifact"))).toBe(false);
     }),
@@ -297,7 +371,7 @@ describe("runSelfhost start", () => {
 
       // Assert
       expect(error._tag).toBe("TaxonomySourceUnavailable");
-      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount);
+      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
       expect(fixture.traefik()).toBeNull();
     }),
   );
@@ -310,10 +384,61 @@ describe("runSelfhost start", () => {
       // Assert
       expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
       expect(error.message).toContain("MSSQL_SA_PASSWORD environment variable is required");
-      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount);
+      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
       expect(fixture.cosmosCalls()).toEqual([]);
       expect(fixture.traefik()).toBeNull();
     }),
+  );
+
+  for (const {name, missing, expected} of [
+    {
+      name: "exp Docker configuration",
+      missing: "sites/exp.arolariu.ro/config.docker.json",
+      expected: "Copy sites/exp.arolariu.ro/config.template.json to config.docker.json.",
+    },
+    {name: "website build secret", missing: "sites/arolariu.ro/.env", expected: "Run `npm run setup` to create it."},
+  ]) {
+    selfhostTest(
+      `requires the ${name} before generating artifacts or starting any stack`,
+      {privateConfiguration: Object.fromEntries(Object.entries(SELFHOST_PRIVATE_CONFIGURATION).filter(([path]) => path !== missing))},
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+          // Assert
+          expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
+          expect(error.message).toContain("Required private runtime configuration is missing:");
+          expect(error.message.replaceAll("\\", "/")).toContain(missing);
+          expect(error.message).toContain(expected);
+          expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
+          expect(fixture.harness.httpCalls()).toEqual([]);
+          expect(fixture.traefik()).toBeNull();
+        }),
+    );
+  }
+
+  selfhostTest(
+    "rejects a private configuration path that a container engine turned into a directory",
+    {
+      privateConfiguration: {
+        "sites/exp.arolariu.ro/config.docker.json/created-by-engine": "",
+        "sites/arolariu.ro/.env": "SITE_ENV=DEVELOPMENT",
+      },
+    },
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
+        expect(error.message.replaceAll("\\", "/")).toContain("Private runtime configuration must be a file: ");
+        expect(error.message.replaceAll("\\", "/")).toContain("sites/exp.arolariu.ro/config.docker.json");
+        expect(error.message).toContain("Remove it, then: Copy sites/exp.arolariu.ro/config.template.json to config.docker.json.");
+        expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
+        expect(fixture.harness.httpCalls()).toEqual([]);
+      }),
   );
 
   selfhostTest("writes the generated Traefik config and keeps it as requested persistent state", {}, (fixture) =>
@@ -346,8 +471,8 @@ describe("runSelfhost start", () => {
   );
 
   selfhostTest(
-    "fails with a step-only message when the SQL schema bootstrap fails",
-    {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? exited(1) : succeededAnswer())},
+    "retries a failing SQL schema bootstrap for a bounded time, then fails with a step-only message",
+    {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? exited(1) : succeededAnswer())},
     (fixture) =>
       Effect.gen(function* () {
         // Act
@@ -358,9 +483,37 @@ describe("runSelfhost start", () => {
           _tag: "ContainerRuntimeError",
           message: "SQL Server schema bootstrap failed: podman exec mssql sqlcmd exited with code 1.",
         });
+        expect(sqlcmdCalls(fixture)).toBe(storageStartupAttempts);
+        expect(delays(fixture)).toEqual([3_000, 10_000, ...storageStartupRetryDelays]);
         expect(fixture.cosmosCalls()).toEqual([]);
       }),
   );
+
+  {
+    let sqlcmdRuns = 0;
+    selfhostTest(
+      "retries the SQL schema bootstrap every 5 seconds until SQL Server accepts it",
+      {
+        process: (_command, args) => {
+          if (!args.includes("/opt/mssql-tools18/bin/sqlcmd")) {
+            return succeededAnswer();
+          }
+          sqlcmdRuns += 1;
+          return sqlcmdRuns <= 2 ? exited(1, "Login timeout expired") : succeededAnswer();
+        },
+      },
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          yield* runSelfhost({action: "start", engine: "podman"});
+
+          // Assert
+          expect(sqlcmdCalls(fixture)).toBe(3);
+          expect(delays(fixture)).toEqual([3_000, 10_000, 5_000, 5_000, 3_000, 3_000, 3_000]);
+          expect(fixture.cosmosCalls()).toEqual(["/dbs", "/dbs/primary/colls", "/dbs/primary/colls"]);
+        }),
+    );
+  }
 
   for (const [answer, expected] of [
     [{kind: "signalled", signal: "SIGKILL", stdout: "", stderr: "", durationMs: 0}, "was terminated by SIGKILL."],
@@ -368,15 +521,17 @@ describe("runSelfhost start", () => {
     [{kind: "timed-out", stdout: "", stderr: "", durationMs: 0}, "timed out."],
   ] as const satisfies readonly (readonly [ProbeOutcome, string])[]) {
     selfhostTest(
-      `describes a ${answer.kind} SQL schema bootstrap without its command line`,
-      {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? answer : succeededAnswer())},
-      () =>
+      `describes a ${answer.kind} SQL schema bootstrap without its command line or a retry`,
+      {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? answer : succeededAnswer())},
+      (fixture) =>
         Effect.gen(function* () {
           // Act
           const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
 
           // Assert
           expect(error.message).toBe(`SQL Server schema bootstrap failed: podman exec mssql sqlcmd ${expected}`);
+          expect(sqlcmdCalls(fixture)).toBe(1);
+          expect(delays(fixture)).toEqual([3_000, 10_000]);
         }),
     );
   }
@@ -396,6 +551,49 @@ describe("runSelfhost start", () => {
             "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Response exceeded the 65536 byte limit.",
         });
         expect(fixture.cosmosCalls()).toEqual(["/dbs"]);
+      }),
+  );
+
+  {
+    let cosmosRequests = 0;
+    selfhostTest(
+      "retries the Cosmos bootstrap every 5 seconds while the emulator refuses connections",
+      {
+        cosmos: () => {
+          cosmosRequests += 1;
+          return cosmosRequests <= 2 ? "refused" : {status: 201, body: "{}"};
+        },
+      },
+      (fixture) =>
+        Effect.gen(function* () {
+          // Act
+          yield* runSelfhost({action: "start", engine: "podman"});
+
+          // Assert
+          expect(fixture.cosmosCalls()).toEqual(["/dbs", "/dbs", "/dbs", "/dbs/primary/colls", "/dbs/primary/colls"]);
+          expect(delays(fixture)).toEqual([3_000, 10_000, 5_000, 5_000, 3_000, 3_000, 3_000]);
+          expect(fixture.timeline().filter((event) => "blob" in event)).toHaveLength(3);
+        }),
+    );
+  }
+
+  selfhostTest(
+    "fails with the Cosmos bootstrap message once the emulator keeps refusing connections",
+    {cosmos: () => "refused"},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({
+          _tag: "ContainerRuntimeError",
+          message:
+            "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Transport error (POST http://localhost:8081/dbs)",
+        });
+        expect(fixture.cosmosCalls()).toEqual(Array.from({length: storageStartupAttempts}, () => "/dbs"));
+        expect(delays(fixture)).toEqual([3_000, 10_000, ...storageStartupRetryDelays]);
+        expect(fixture.timeline().some((event) => "blob" in event)).toBe(false);
       }),
   );
 
@@ -444,8 +642,8 @@ describe("runSelfhost start", () => {
           // Assert
           expect(Exit.hasInterrupts(exit)).toBe(true);
           expect(businessCalls(fixture)).toEqual([
-            "podman compose -f Management/docker-compose.yml up -d",
-            "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
+            "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+            "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
           ]);
           expect(fixture.cosmosCalls()).toEqual([]);
           expect(delays(fixture)).toEqual([3_000]);
@@ -514,12 +712,12 @@ describe("runSelfhost HTTPS certificates", () => {
         expect(result.action).toBe("start");
         expect(businessCalls(fixture)).toEqual([
           "mkcert --version",
-          "podman compose -f Management/docker-compose.yml up -d",
-          "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+          "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
+          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b",
           "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-          "podman compose -f Backend/docker-compose.yml up -d",
-          "podman compose -f Frontend/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Backend/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Frontend/docker-compose.yml up -d",
         ]);
         expect(fixture.harness.output().some((record) => record.text.includes("mkcert is not available"))).toBe(true);
       }),
@@ -529,7 +727,11 @@ describe("runSelfhost HTTPS certificates", () => {
 describe("runSelfhost stop", () => {
   selfhostTest(
     "stops stacks in reverse order, removes the generated Traefik config, and skips artifacts and bootstrap",
-    {variables: {}, files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated"}},
+    {
+      variables: {},
+      privateConfiguration: {},
+      files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated"},
+    },
     (fixture) =>
       Effect.gen(function* () {
         // Act
@@ -540,7 +742,7 @@ describe("runSelfhost stop", () => {
         expect(businessCalls(fixture)).toEqual([
           "podman compose -f Frontend/docker-compose.yml down",
           "podman compose -f Backend/docker-compose.yml down",
-          "podman compose -f Storage/docker-compose.yml down",
+          "podman compose -f Storage/docker-compose.yml --profile selfhost down",
           "podman compose -f Management/docker-compose.yml down",
         ]);
         expect(delays(fixture)).toEqual([3_000, 3_000, 3_000, 3_000]);
@@ -559,7 +761,7 @@ describe("runSelfhost logs", () => {
 
       // Assert
       expect(result).toEqual({action: "logs", engine: "podman", stacks: ["profile", "backend", "frontend"]});
-      expect(businessCalls(fixture)).toEqual([
+      expect(businessCalls(fixture, false)).toEqual([
         "podman logs --tail 100 exp-arolariu-ro",
         "podman logs --tail 100 api-arolariu-ro",
         "podman logs --tail 100 website-arolariu-ro",
@@ -672,6 +874,8 @@ const RANCHER_PREFLIGHT = [
   {process: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
 ] as const;
 
+const PERSISTENCE_CHECK = {process: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}} as const;
+
 /** The artifact generation's archive extraction (the legacy nested artifacts invocation). */
 const ARTIFACTS = {process: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: {output: "capture"}} as const;
 
@@ -690,7 +894,7 @@ const SQLCMD = {
     "-e",
     "SQLCMDPASSWORD",
     "mssql",
-    "/opt/mssql-tools/bin/sqlcmd",
+    "/opt/mssql-tools18/bin/sqlcmd",
     "-C",
     "-S",
     "localhost",
@@ -700,7 +904,7 @@ const SQLCMD = {
     "master",
     "-i",
     "/usr/sql/sqlSchema.sql",
-    "-No",
+    "-b",
   ],
   options: {cwd: "infra/Local", env: {SQLCMDPASSWORD: "<sql-password>"}, output: "tee", echo: false},
 } as const;
@@ -730,6 +934,7 @@ const COSMOS = [
 /** The successful start timeline from preflight to the last stack pause. */
 const START_TIMELINE = [
   ...RANCHER_PREFLIGHT,
+  PERSISTENCE_CHECK,
   ARTIFACTS,
   ...TRAEFIK_WRITE,
   {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
@@ -770,7 +975,7 @@ const PASSWORD_ARGS: readonly unknown[] = [];
 
 /** The echo line of the SQL schema bootstrap. */
 const SQLCMD_ECHO =
-  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No";
+  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b";
 
 describe("dev selfhost characterization", () => {
   it("start: preflight, artifacts, certificates, Traefik file, ordered stacks, bootstrap, and success line", async () => {
@@ -812,6 +1017,7 @@ describe("dev selfhost characterization", () => {
       ],
       timeline: [
         ...RANCHER_PREFLIGHT,
+        PERSISTENCE_CHECK,
         ARTIFACTS,
         ...TRAEFIK_WRITE,
         {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
@@ -827,6 +1033,35 @@ describe("dev selfhost characterization", () => {
     });
   });
 
+  it("start with a SQL Server that is still starting: the retry is announced and the command echoed again", async () => {
+    let sqlcmdRuns = 0;
+    const result = await characterizeSelfhost("start", {
+      process: (_command, args) => {
+        if (!args.includes("/opt/mssql-tools18/bin/sqlcmd")) {
+          return succeededAnswer();
+        }
+        sqlcmdRuns += 1;
+        return sqlcmdRuns === 1 ? exited(1) : succeededAnswer();
+      },
+    });
+
+    expect(result).toMatchObject({
+      exitCode: 0,
+      output: [
+        {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d"},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {stream: "stderr", text: "[arolariu::selfhost] ⚠️ SQL Server is not ready yet. Retrying in 5000ms (attempt 2/13)."},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {stream: "stdout", text: "$ dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only"},
+        {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'."},
+      ],
+      timeline: START_TIMELINE.flatMap((event) => (event === SQLCMD ? [SQLCMD, {delay: 5000}, SQLCMD] : [event])),
+    });
+  });
+
   it("start without MSSQL_SA_PASSWORD: exit 1 before any stack command", async () => {
     expect(await characterizeSelfhost("start", {variables: {}})).toEqual({
       exitCode: 1,
@@ -836,7 +1071,7 @@ describe("dev selfhost characterization", () => {
           text: "[arolariu::cli] ⛔ MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
         },
       ],
-      timeline: [...RANCHER_PREFLIGHT, ARTIFACTS],
+      timeline: [...RANCHER_PREFLIGHT, PERSISTENCE_CHECK, ARTIFACTS],
       taxonomyRequests: 3,
       traefik: null,
       passwordArgs: [],
@@ -853,17 +1088,18 @@ describe("dev selfhost characterization", () => {
       output: [
         {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml down"},
         {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml down"},
-        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml down"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost down"},
         {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml down"},
         {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost stop completed for engine 'rancher'."},
       ],
       timeline: [
         ...RANCHER_PREFLIGHT,
+        PERSISTENCE_CHECK,
         {process: "docker", args: ["compose", "-f", "Frontend/docker-compose.yml", "down"], options: TEE},
         {delay: 3000},
         {process: "docker", args: ["compose", "-f", "Backend/docker-compose.yml", "down"], options: TEE},
         {delay: 3000},
-        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "down"], options: TEE},
+        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "down"], options: TEE},
         {delay: 3000},
         {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "down"], options: TEE},
         {delay: 3000},

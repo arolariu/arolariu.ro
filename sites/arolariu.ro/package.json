@@ -8,7 +8,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": "^24.15.0 || >=26.0.0"
   },
   "keywords": [
     "NextJS",
@@ -45,7 +45,7 @@
     "test:storybook": "storybook build -o storybook-static --test"
   },
   "dependencies": {
-    "@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.3.0.tgz",
+    "@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.4.0.tgz",
     "@azure/identity": "*",
     "@azure/monitor-opentelemetry-exporter": "*",
     "@azure/storage-blob": "*",
@@ -58,6 +58,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "*",
     "@opentelemetry/instrumentation": "*",
     "@opentelemetry/resources": "*",
+    "@opentelemetry/sdk-logs": "*",
     "@opentelemetry/sdk-metrics": "*",
     "@opentelemetry/sdk-node": "*",
     "@opentelemetry/sdk-trace-node": "*",
@@ -67,16 +68,16 @@
     "dexie": "*",
     "jose": "*",
     "motion": "*",
+    "next": "*",
     "next-intl": "*",
     "next-intl-selector": "*",
     "next-themes": "*",
-    "next": "*",
+    "react": "*",
     "react-dom": "*",
     "react-dropzone": "*",
     "react-email": "*",
     "react-icons": "*",
     "react-qr-code": "*",
-    "react": "*",
     "recharts": "*",
     "resend": "*",
     "three": "*",
@@ -94,8 +95,8 @@
     "@testing-library/jest-dom": "*",
     "@testing-library/react": "*",
     "@types/node": "*",
-    "@types/react-dom": "*",
     "@types/react": "*",
+    "@types/react-dom": "*",
     "@types/three": "*",
     "@vitejs/plugin-react": "*",
     "@vitest/coverage-v8": "*",

@@ -61,7 +61,10 @@ const podmanAdapter: ContainerRuntimeAdapter = {
   displayName: "Podman Desktop",
   primaryCli: "podman",
   aspireRuntime: "podman",
-  compose: (args) => ({command: "podman", args: ["compose", ...args]}),
+  compose: (args) => ({
+    command: "podman",
+    args: ["compose", ...(args.includes("up") || args.includes("build") ? ["--podman-build-args=--format=docker"] : []), ...args],
+  }),
   exec: (containerName, args, environment = []) => ({
     command: "podman",
     args: ["exec", ...environmentFlags(environment), containerName, ...args],

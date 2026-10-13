@@ -103,7 +103,6 @@ const LOCAL_DEFAULTS = new Map<string, string>([
   ["SITE_ENV", "DEVELOPMENT"],
   ["SITE_NAME", "dev.arolariu.ro"],
   ["SITE_URL", "https://localhost:3000"],
-  ["USE_CDN", "false"],
 ]);
 const CLERK_KEYS = ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"] as const;
 const SETUP_OWNED_KEYS = [...LOCAL_DEFAULTS.keys(), ...CLERK_KEYS] as const;

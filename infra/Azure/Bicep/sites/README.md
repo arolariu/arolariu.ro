@@ -219,7 +219,7 @@ module sitesDeployment 'sites/deploymentFile.bicep' = {
 - **Type**: Static Web App (Free tier)
 - **Source**: GitHub repository
 - **Branch**: main
-- **CDN**: Disabled (cost optimization)
+- **Enterprise-grade edge**: Disabled (cost optimization)
 
 **Features:**
 

@@ -38,14 +38,17 @@ public sealed partial class AzureStorageQueueBroker
     ArgumentNullException.ThrowIfNull(blobEndpoint);
     var builder = new UriBuilder(blobEndpoint);
 
+    if (builder.Port == 10000
+        && (builder.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            || builder.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || builder.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)))
+    {
+      builder.Port = 10001;
+    }
+
     if (builder.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
         || builder.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
     {
-      if (builder.Port == 10000)
-      {
-        builder.Port = 10001;
-      }
-
       return builder.Uri;
     }
 

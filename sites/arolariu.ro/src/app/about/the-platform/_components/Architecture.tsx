@@ -28,7 +28,7 @@ const gradientClassMap = {
 
 const layerConfigs: LayerConfig[] = [
   {id: "client", icon: TbDeviceDesktop, colorKey: "blueCyan"},
-  {id: "cdn", icon: TbWorldWww, colorKey: "greenEmerald"},
+  {id: "edge", icon: TbWorldWww, colorKey: "greenEmerald"},
   {id: "api", icon: TbApi, colorKey: "purpleViolet"},
   {id: "services", icon: TbServer, colorKey: "orangeAmber"},
   {id: "auth", icon: TbLock, colorKey: "redPink"},

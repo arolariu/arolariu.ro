@@ -8,7 +8,9 @@
  * lock the per-target shape so a regression in the dispatch table is caught.
  */
 
+import {ESLint} from "eslint";
 import {describe, expect, it} from "vitest";
+import eslintConfig from "../../eslint.config.ts";
 import {stepsForTarget} from "./lint.worker.ts";
 import type {LintWorkerInput} from "../types/lint.ts";
 
@@ -49,5 +51,16 @@ describe("stepsForTarget contract", () => {
       expect(steps.length).toBeGreaterThanOrEqual(1);
       expect(steps.length).toBeLessThanOrEqual(2);
     }
+  });
+});
+describe("ESLint generated-output boundary", () => {
+  it("globally ignores generated JavaScript without excluding application or tooling source", async () => {
+    const eslint = new ESLint({overrideConfigFile: true, overrideConfig: eslintConfig});
+
+    expect(await eslint.isPathIgnored("sites/arolariu.ro/.next/server/app/page.js")).toBe(true);
+    expect(await eslint.isPathIgnored("packages/components/dist/index.js")).toBe(true);
+    expect(await eslint.isPathIgnored("packages/components/storybook-static/sb-manager/globals-runtime.js")).toBe(true);
+    expect(await eslint.isPathIgnored("sites/arolariu.ro/src/app/page.tsx")).toBe(false);
+    expect(await eslint.isPathIgnored("scripts/cli.ts")).toBe(false);
   });
 });

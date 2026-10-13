@@ -18,15 +18,16 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy root package files for workspace resolution
-COPY package.json package-lock.json .npmrc ./
+COPY package.json package-lock.json ./
 COPY tsconfig.json vitest.config.ts ./
 
 # Copy workspace package manifests
 COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
-# Install all dependencies (this resolves workspace links)
-RUN npm ci
+# Install all dependencies (this resolves workspace links). The repository .npmrc is excluded from the
+# build context, so enforce its engine-strict policy here: a cached Node base below engines.node fails.
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm ci --engine-strict
 
 # ========================================
 # Stage 2: Build the application
@@ -44,11 +45,9 @@ ARG INFRA
 ARG SITE_ENV
 ARG SITE_URL
 ARG SITE_NAME
-# NEXT_PUBLIC_ prefix → Next.js also replaces this in the client bundle at build time
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 # Make them available during build (Next.js embeds these at build time)
-# NOTE: SITE_ENV / SITE_URL / SITE_NAME / NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+# NOTE: SITE_ENV / SITE_URL / SITE_NAME
 #       are intentionally NOT propagated to the runner stage — they are baked into the
 #       .next/standalone bundle and do not need to be re-set as container runtime envs.
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
@@ -58,8 +57,7 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     INFRA=${INFRA} \
     SITE_ENV=${SITE_ENV} \
     SITE_URL=${SITE_URL} \
-    SITE_NAME=${SITE_NAME} \
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    SITE_NAME=${SITE_NAME}
 
 # Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules
@@ -79,7 +77,7 @@ RUN test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name
 
 # Build the website
 WORKDIR /app/sites/arolariu.ro
-RUN npm run build
+RUN --mount=type=secret,id=website_env node scripts/containerBuild.ts
 
 # ========================================
 # Stage 3: Prepare the production image
@@ -101,16 +99,16 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     COMMIT_SHA=${COMMIT_SHA} \
     INFRA=${INFRA}
 
-RUN mkdir .next && chown nextjs:nodejs .next
-COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
-# The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js
-COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/sites/arolariu.ro/ ./
-# Copy the node_modules from the standalone output (contains only required dependencies)
-COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./sites/arolariu.ro/public
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./sites/arolariu.ro/.next/static
+
+WORKDIR /app/sites/arolariu.ro
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/api/health/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 CMD ["dumb-init","node","server.js"]

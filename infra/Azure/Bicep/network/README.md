@@ -1,14 +1,14 @@
 # 🌐 Network Module
 
-This module provisions the global networking infrastructure for the arolariu.ro platform, including Azure Front Door for global content delivery, load balancing, and DNS management.
+This module provisions the global networking infrastructure for the arolariu.ro platform, including Azure Front Door for global edge routing, WAF protection, load balancing, and DNS management.
 
 ## 📋 **Overview**
 
 The network module creates a comprehensive global networking solution that:
 
-- **Provides global content delivery** through Azure Front Door
+- **Provides global edge routing** through Azure Front Door
 - **Enables high availability** with load balancing and failover
-- **Implements security features** with CORS and header management
+- **Implements security features** with a WAF policy and managed TLS certificates
 - **Manages DNS** for the domain
 - **Optimizes performance** with edge caching and routing
 
@@ -16,12 +16,10 @@ The network module creates a comprehensive global networking solution that:
 
 | Resource Type             | Name Pattern    | Purpose                            |
 | ------------------------- | --------------- | ---------------------------------- |
-| CDN Profile               | `{prefix}-afd`  | Modern Front Door CDN profile      |
+| Front Door Profile        | `{prefix}-afd`  | Azure Front Door Standard profile  |
+| WAF Policy                | `productionWAF` | Web Application Firewall policy    |
 | AFD Endpoint              | `production`    | Production traffic endpoint        |
-| AFD Endpoint              | `cdn`           | CDN traffic endpoint               |
 | Origin Group              | `production`    | Production origin servers          |
-| Origin Group              | `cdn`           | CDN origin servers                 |
-| Rule Set                  | `CdnRuleSet`    | Traffic routing and header rules   |
 | DNS Zone                  | `{domain-name}` | Public DNS zone management         |
 | DNSSEC Config             | `default`       | Cryptographic DNS security         |
 
@@ -30,7 +28,7 @@ The network module creates a comprehensive global networking solution that:
 | File                       | Purpose                              |
 | -------------------------- | ------------------------------------ |
 | `deploymentFile.bicep`     | Orchestrates network deployments     |
-| `azureFrontDoor.bicep`     | Azure Front Door CDN profile         |
+| `azureFrontDoor.bicep`     | Azure Front Door profile and WAF     |
 | `dnsZone.bicep`            | DNS Zone with all records            |
 
 ## 📊 **Architecture**
@@ -46,16 +44,14 @@ graph TB
 
         subgraph "Endpoints"
             EP_PROD[Production Endpoint<br/>Global Edge Locations]
-            EP_CDN[CDN Endpoint<br/>Static Content Delivery]
         end
 
-        subgraph "Rule Engine"
-            RULES[CDN Rules<br/>CORS & Headers]
+        subgraph "Security"
+            WAF[WAF Policy<br/>Prevention Mode]
         end
 
         subgraph "Origin Groups"
             OG_PROD[Production Origins<br/>Session Affinity: Enabled]
-            OG_CDN[CDN Origins<br/>Session Affinity: Disabled]
         end
     end
 
@@ -76,18 +72,13 @@ graph TB
 
     USERS --> AFD_PROFILE
     AFD_PROFILE --> EP_PROD
-    AFD_PROFILE --> EP_CDN
 
-    EP_PROD --> RULES
-    EP_CDN --> RULES
+    EP_PROD --> WAF
 
-    RULES --> OG_PROD
-    RULES --> OG_CDN
+    WAF --> OG_PROD
 
     OG_PROD --> APEX
     OG_PROD --> WWW
-    OG_CDN --> APEX
-    OG_CDN --> WWW
 
     APEX --> APP_PROD
     WWW --> APP_PROD
@@ -103,8 +94,8 @@ graph TB
     classDef backend fill:#e0f2f1,stroke:#00695c,stroke-width:2px
 
     class USERS user
-    class AFD_PROFILE,RULES frontdoor
-    class EP_PROD,EP_CDN,OG_PROD,OG_CDN endpoint
+    class AFD_PROFILE,WAF frontdoor
+    class EP_PROD,OG_PROD endpoint
     class APEX,WWW origin
     class DNS_ZONE dns
     class APP_PROD,APP_API,APP_DEV backend
@@ -140,13 +131,12 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 | Output                    | Type   | Description                         |
 | ------------------------- | ------ | ----------------------------------- |
 | `frontDoorProductionFqdn` | string | Front Door production endpoint FQDN |
-| `frontDoorCdnFqdn`        | string | Front Door CDN endpoint FQDN        |
 | `frontDoorProfileId`      | string | Front Door profile resource ID      |
 | `dnsZoneName`             | string | DNS zone name (arolariu.ro)         |
 
 ## 🌍 **Front Door Configuration**
 
-### **CDN Profile Settings**
+### **Profile Settings**
 
 **SKU**: Standard_AzureFrontDoor
 
@@ -162,13 +152,6 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 - **Session affinity**: Enabled (sticky sessions)
 - **Load balancing**: 4 samples, 3 successful required
 - **Additional latency**: 50ms tolerance
-
-#### **CDN Endpoint**
-
-- **Purpose**: Static content delivery
-- **Session affinity**: Disabled (optimal caching)
-- **Load balancing**: Same as production
-- **Optimized for**: Static assets, images, scripts
 
 ### **Origin Configuration**
 
@@ -190,39 +173,13 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 
 ## 🔒 **Security & Performance**
 
-### **CORS Management**
+### **Web Application Firewall**
 
-The module implements sophisticated CORS handling through rule sets:
+The `productionWAF` policy is attached to the production endpoint for all paths (`/*`):
 
-```bicep
-// CORS rule configuration
-conditions: [
-  {
-    name: 'RequestHeader'
-    parameters: {
-      operator: 'Equal'
-      selector: 'Origin'
-      matchValues: ['https://arolariu.ro', 'https://www.arolariu.ro']
-    }
-  }
-]
-actions: [
-  {
-    name: 'ModifyResponseHeader'
-    parameters: {
-      headerAction: 'Overwrite'
-      headerName: 'Access-Control-Allow-Origin'
-      value: 'https://arolariu.ro'
-    }
-  }
-]
-```
-
-### **Custom Headers**
-
-- **X-Woff2-Access**: ALLOW (for web font delivery)
-- **Access-Control-Allow-Origin**: Controlled CORS policy
-- **Security headers**: Can be extended with additional security policies
+- **Mode**: Prevention (matching requests are blocked)
+- **Request body inspection**: Enabled
+- **Rules**: Custom rules only; managed rule sets (DRS, Bot Manager) require the Premium SKU
 
 ### **SSL/TLS**
 
@@ -248,14 +205,12 @@ The module creates a public DNS zone with DNSSEC enabled for the arolariu.ro dom
 | ----------- | ------------------------- | -------------------------------------------- |
 | **A**       | `@`                       | Apex domain → Front Door (ALIAS)             |
 | **CNAME**   | `www`                     | WWW subdomain → Front Door                   |
-| **CNAME**   | `cdn`                     | CDN endpoint → Front Door CDN                |
 | **CNAME**   | `api`                     | API subdomain → App Service                  |
 | **CNAME**   | `dev`                     | Dev subdomain → App Service                  |
 | **CNAME**   | `cv`                      | CV subdomain → Static Web App                |
 | **CNAME**   | `docs`                    | Docs subdomain → Static Web App              |
 | **TXT**     | `_dnsauth`                | Front Door apex domain validation            |
 | **TXT**     | `_dnsauth.www`            | Front Door WWW domain validation             |
-| **TXT**     | `_dnsauth.cdn`            | Front Door CDN domain validation             |
 | **TXT**     | `asuid.api`               | App Service API domain verification          |
 | **TXT**     | `asuid.dev`               | App Service Dev domain verification          |
 | **TXT**     | `_dmarc`                  | DMARC email authentication policy            |
@@ -309,7 +264,7 @@ az network dns record-set cname set-record \
 | Resource                   | Tier/SKU                | Estimated Monthly Cost\* |
 | -------------------------- | ----------------------- | ------------------------ |
 | Azure Front Door (Legacy)  | Standard                | €5-15                    |
-| CDN Profile (Standard AFD) | Standard_AzureFrontDoor | €20-50                   |
+| Front Door Profile         | Standard_AzureFrontDoor | €20-50                   |
 | DNS Zone                   | Public zone             | €0.50                    |
 | **Data Transfer**          | Global egress           | €5-20                    |
 | **Total**                  |                         | **€30-85**               |
@@ -437,7 +392,7 @@ az network front-door show \
 | **DNS propagation delays** | Domain not resolving          | Wait 24-48h for global DNS propagation             |
 | **SSL certificate issues** | HTTPS errors or warnings      | Verify domain ownership and certificate validation |
 | **Origin health failures** | 502/503 errors                | Check backend application health and accessibility |
-| **CORS errors**            | Cross-origin request failures | Review and update CORS rule configurations         |
+| **CORS errors**            | Cross-origin request failures | Review App Service CORS origins in `sites/*.bicep` |
 | **High latency**           | Slow response times           | Check origin performance and Front Door routing    |
 
 ### **Validation Commands**
@@ -480,7 +435,6 @@ az monitor metrics list \
 
 - [Azure Front Door](https://docs.microsoft.com/en-us/azure/frontdoor/)
 - [Azure DNS](https://docs.microsoft.com/en-us/azure/dns/)
-- [CDN Profiles](https://docs.microsoft.com/en-us/azure/cdn/)
 - [Front Door Routing](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-routing-architecture)
 - [Azure Front Door Security](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-faq)
 

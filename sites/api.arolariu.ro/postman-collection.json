@@ -381,7 +381,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"initialScan\": {\n    \"type\": 2,\n    \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt.png\",\n    \"metadata\": {\n      \"source\": \"postman-test\",\n      \"uploadedAt\": \"2025-01-17T12:00:00Z\"\n    }\n  },\n  \"metadata\": {\n    \"testRun\": \"true\",\n    \"author\": \"PostmanCollection\"\n  }\n}",
+              "raw": "{\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"initialScan\": {\n    \"type\": 2,\n    \"location\": \"https://storage.blob.core.windows.net/invoices/test-receipt.png\",\n    \"metadata\": {\n      \"source\": \"postman-test\",\n      \"uploadedAt\": \"2025-01-17T12:00:00Z\"\n    }\n  },\n  \"metadata\": {\n    \"testRun\": \"true\",\n    \"author\": \"PostmanCollection\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1301,7 +1301,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": 3,\n  \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt-page2.pdf\",\n  \"metadata\": {\n    \"page\": \"2\",\n    \"addedVia\": \"postman-test\"\n  }\n}",
+              "raw": "{\n  \"type\": 3,\n  \"location\": \"https://storage.blob.core.windows.net/invoices/test-receipt-page2.pdf\",\n  \"metadata\": {\n    \"page\": \"2\",\n    \"addedVia\": \"postman-test\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1373,7 +1373,7 @@
             },
             "description": "Delete a specific scan by its location field. Expected: 204 No Content.",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans/https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans/https%3A%2F%2Fstorage.blob.core.windows.net%2Finvoices%2Ftest-receipt-page2.pdf",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1383,7 +1383,7 @@
                 "invoices",
                 "{{invoiceIdentifier}}",
                 "scans",
-                "https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf"
+                "https%3A%2F%2Fstorage.blob.core.windows.net%2Finvoices%2Ftest-receipt-page2.pdf"
               ]
             }
           }

@@ -94,7 +94,7 @@ function updateEditableItem(item: Product, field: string, value: string): Produc
 export default function ItemsDialog(): React.JSX.Element {
   const t = useTranslations();
   const {
-    currentDialog: {payload},
+    currentDialog: {payload = null},
     isOpen,
     close,
   } = useDialog("EDIT_INVOICE__ITEMS");
@@ -104,7 +104,7 @@ export default function ItemsDialog(): React.JSX.Element {
   // production gate which only renders this component once `open()` has already
   // set a real invoice payload). Fall back to an empty items list so the
   // component never crashes on an initial closed render.
-  const invoice: Invoice | null = payload ?? null;
+  const invoice: Invoice | null = payload;
   const items = invoice?.items ?? [];
 
   const [editableItems, setEditableItems] = useState<Product[]>(items);

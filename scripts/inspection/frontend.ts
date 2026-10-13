@@ -123,7 +123,7 @@ function failureOutcome<T>(failure: FrontendInspectionFailure): InspectionOutcom
 }
 
 const WORKSPACE_LINKED_PACKAGE = "@arolariu/components";
-const CORE_ENVIRONMENT_KEYS = ["SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"] as const;
+const CORE_ENVIRONMENT_KEYS = ["SITE_ENV", "SITE_NAME", "SITE_URL"] as const;
 const AUTHENTICATION_ENVIRONMENT_KEYS = ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"] as const;
 const RECOGNIZED_ENVIRONMENT_KEYS: ReadonlySet<string> = new Set([...CORE_ENVIRONMENT_KEYS, ...AUTHENTICATION_ENVIRONMENT_KEYS]);
 const ENVIRONMENT_KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/u;

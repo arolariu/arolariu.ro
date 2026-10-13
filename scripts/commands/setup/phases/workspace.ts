@@ -14,7 +14,13 @@ import {resolve} from "node:path";
 
 import {Clock, Effect, type Terminal} from "effect";
 
-import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {
+  formatVersionRequirement,
+  loadRepositoryRequirements,
+  parseVersion,
+  satisfiesMinimum,
+  type MinimumVersion,
+} from "../../../common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import {Environment} from "../../../platform/Environment.ts";
@@ -66,7 +72,11 @@ function normalizedVersion(version: MinimumVersion): string {
 }
 
 function validRequirement(version: MinimumVersion): boolean {
-  return [version.major, version.minor, version.patch].every((part) => Number.isSafeInteger(part) && part >= 0);
+  return (
+    [version.major, version.minor, version.patch].every((part) => Number.isSafeInteger(part) && part >= 0)
+    && (version.nextSupportedMajor === undefined
+      || (Number.isSafeInteger(version.nextSupportedMajor) && version.nextSupportedMajor > version.major))
+  );
 }
 
 /**
@@ -155,13 +165,13 @@ function inspectRuntimeVersion(
   if (!satisfiesMinimum(parsed, minimum)) {
     return {
       version: parsed,
-      evidence: [`${name} ${normalizedVersion(parsed)} does not satisfy >=${normalizedVersion(minimum)}.`],
+      evidence: [`${name} ${normalizedVersion(parsed)} does not satisfy ${formatVersionRequirement(minimum)}.`],
       nextActions: [`Install a supported ${name} version manually, then rerun setup.`],
     };
   }
   return {
     version: parsed,
-    evidence: [`${name} ${outcome.stdout.trim()} satisfies >=${normalizedVersion(minimum)}.`],
+    evidence: [`${name} ${outcome.stdout.trim()} satisfies ${formatVersionRequirement(minimum)}.`],
     nextActions: [],
   };
 }

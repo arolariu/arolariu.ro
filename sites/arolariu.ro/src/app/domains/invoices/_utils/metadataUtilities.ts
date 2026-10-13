@@ -5,6 +5,36 @@
 
 import {type ScanMetadata, ScanDocumentKind, ScanDocumentRole, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
 
+function readRequiredMetadata(metadata: Readonly<Record<string, string | undefined>>, key: ScanMetadataKey): string {
+  const value = metadata[key];
+  if (!value) {
+    throw new Error(`Missing required blob metadata: ${key}`);
+  }
+  return value;
+}
+
+function readMetadataChoice<T extends string>(
+  metadata: Readonly<Record<string, string | undefined>>,
+  key: ScanMetadataKey,
+  choices: Readonly<Record<string, T>>,
+): T {
+  const value = readRequiredMetadata(metadata, key);
+  const choice = Object.values(choices).find((candidate) => candidate === value);
+  if (choice === undefined) {
+    throw new Error(`Invalid blob metadata ${key}: ${value}`);
+  }
+  return choice;
+}
+
+function readOptionalMetadataDate(metadata: Readonly<Record<string, string | undefined>>, key: ScanMetadataKey): Date | undefined {
+  const value = metadata[key];
+  const date = value ? new Date(value) : undefined;
+  if (date && Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid blob metadata date: ${key}`);
+  }
+  return date;
+}
+
 /**
  * Serializes typed scan metadata into provider-neutral blob metadata.
  *
@@ -73,80 +103,21 @@ export function writeBlobMetadata(metadata: ScanMetadata): Record<string, string
  * ```
  */
 export function readBlobMetadata(metadata: Readonly<Record<string, string | undefined>>): ScanMetadata {
-  const scanId = metadata[ScanMetadataKey.SCAN_ID];
-  if (!scanId) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.SCAN_ID}`);
-  }
-
-  const ownerId = metadata[ScanMetadataKey.OWNER_ID];
-  if (!ownerId) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.OWNER_ID}`);
-  }
-
-  const documentKindValue = metadata[ScanMetadataKey.DOCUMENT_KIND];
-  if (!documentKindValue) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.DOCUMENT_KIND}`);
-  }
-  if (!Object.values(ScanDocumentKind).includes(documentKindValue as ScanDocumentKind)) {
-    throw new Error(`Invalid blob metadata documentKind: ${documentKindValue}`);
-  }
-  const documentKind = documentKindValue as ScanDocumentKind;
-
-  const documentRoleValue = metadata[ScanMetadataKey.DOCUMENT_ROLE];
-  if (!documentRoleValue) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.DOCUMENT_ROLE}`);
-  }
-  if (!Object.values(ScanDocumentRole).includes(documentRoleValue as ScanDocumentRole)) {
-    throw new Error(`Invalid blob metadata documentRole: ${documentRoleValue}`);
-  }
-  const documentRole = documentRoleValue as ScanDocumentRole;
-
-  const statusValue = metadata[ScanMetadataKey.STATUS];
-  if (!statusValue) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.STATUS}`);
-  }
-  if (!Object.values(ScanMetadataStatus).includes(statusValue as ScanMetadataStatus)) {
-    throw new Error(`Invalid blob metadata status: ${statusValue}`);
-  }
-  const status = statusValue as ScanMetadataStatus;
-
-  const uploadedAtValue = metadata[ScanMetadataKey.UPLOADED_AT];
-  if (!uploadedAtValue) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.UPLOADED_AT}`);
-  }
-  const uploadedAt = new Date(uploadedAtValue);
+  const scanId = readRequiredMetadata(metadata, ScanMetadataKey.SCAN_ID);
+  const ownerId = readRequiredMetadata(metadata, ScanMetadataKey.OWNER_ID);
+  const documentKind = readMetadataChoice(metadata, ScanMetadataKey.DOCUMENT_KIND, ScanDocumentKind);
+  const documentRole = readMetadataChoice(metadata, ScanMetadataKey.DOCUMENT_ROLE, ScanDocumentRole);
+  const status = readMetadataChoice(metadata, ScanMetadataKey.STATUS, ScanMetadataStatus);
+  const uploadedAt = new Date(readRequiredMetadata(metadata, ScanMetadataKey.UPLOADED_AT));
   if (Number.isNaN(uploadedAt.getTime())) {
     throw new TypeError(`Invalid blob metadata date: ${ScanMetadataKey.UPLOADED_AT}`);
   }
 
-  const uploadedBy = metadata[ScanMetadataKey.UPLOADED_BY];
-  if (!uploadedBy) {
-    throw new Error(`Missing required blob metadata: ${ScanMetadataKey.UPLOADED_BY}`);
-  }
-
-  const lastModifiedAtValue = metadata[ScanMetadataKey.LAST_MODIFIED_AT];
-  const lastModifiedAt = lastModifiedAtValue ? new Date(lastModifiedAtValue) : undefined;
-  if (lastModifiedAt && Number.isNaN(lastModifiedAt.getTime())) {
-    throw new Error(`Invalid blob metadata date: ${ScanMetadataKey.LAST_MODIFIED_AT}`);
-  }
-
-  const attachedAtValue = metadata[ScanMetadataKey.ATTACHED_AT];
-  const attachedAt = attachedAtValue ? new Date(attachedAtValue) : undefined;
-  if (attachedAt && Number.isNaN(attachedAt.getTime())) {
-    throw new Error(`Invalid blob metadata date: ${ScanMetadataKey.ATTACHED_AT}`);
-  }
-
-  const detachedAtValue = metadata[ScanMetadataKey.DETACHED_AT];
-  const detachedAt = detachedAtValue ? new Date(detachedAtValue) : undefined;
-  if (detachedAt && Number.isNaN(detachedAt.getTime())) {
-    throw new Error(`Invalid blob metadata date: ${ScanMetadataKey.DETACHED_AT}`);
-  }
-
-  const archivedAtValue = metadata[ScanMetadataKey.ARCHIVED_AT];
-  const archivedAt = archivedAtValue ? new Date(archivedAtValue) : undefined;
-  if (archivedAt && Number.isNaN(archivedAt.getTime())) {
-    throw new Error(`Invalid blob metadata date: ${ScanMetadataKey.ARCHIVED_AT}`);
-  }
+  const uploadedBy = readRequiredMetadata(metadata, ScanMetadataKey.UPLOADED_BY);
+  const lastModifiedAt = readOptionalMetadataDate(metadata, ScanMetadataKey.LAST_MODIFIED_AT);
+  const attachedAt = readOptionalMetadataDate(metadata, ScanMetadataKey.ATTACHED_AT);
+  const detachedAt = readOptionalMetadataDate(metadata, ScanMetadataKey.DETACHED_AT);
+  const archivedAt = readOptionalMetadataDate(metadata, ScanMetadataKey.ARCHIVED_AT);
 
   return {
     scanId,

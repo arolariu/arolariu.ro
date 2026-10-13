@@ -50,7 +50,7 @@ type Props = {
   readonly currency: string;
 };
 
-type DayCell = {
+type CalendarDay = {
   date: string;
   dayNumber: number;
   amount: number;
@@ -58,7 +58,7 @@ type DayCell = {
   level: number;
 };
 
-type WeekRow = DayCell[];
+type WeekRow = CalendarDay[];
 
 type MonthGrid = {
   monthLabel: string;
@@ -133,10 +133,10 @@ function buildMonthGrid(year: number, month: number, dataMap: Map<string, DailyS
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
-  const emptyCell = (): DayCell => ({date: "", dayNumber: 0, amount: 0, invoiceCount: 0, level: 0});
+  const emptyCell = (): CalendarDay => ({date: "", dayNumber: 0, amount: 0, invoiceCount: 0, level: 0});
 
   const weeks: WeekRow[] = [];
-  let currentWeek: DayCell[] = [];
+  let currentWeek: CalendarDay[] = [];
 
   // Pad days before the first of the month so weeks line up Mon→Sun.
   // `getDay()` is 0=Sun..6=Sat; shift so Monday becomes the first column.
@@ -202,7 +202,7 @@ function generateYearGrid(data: DailySpending[], yearOffset: number): {months: M
 /**
  * Individual day cell component with tooltip.
  */
-function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: string; locale: string}>): React.JSX.Element {
+function DayCell({day, currency, locale}: Readonly<{day: CalendarDay; currency: string; locale: string}>): React.JSX.Element {
   const t = useTranslations();
 
   if (!day.date) {
@@ -348,21 +348,24 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
                 {/* Calendar weeks */}
                 <div className={styles["weeksContainer"]}>
-                  {month.weeks.map((week, weekIdx) => (
-                    <div
-                      key={`${month.monthLabel}-week-${weekIdx}`}
-                      className={styles["weekRow"]}
-                      role='row'>
-                      {week.map((day) => (
-                        <DayCell
-                          key={day.date ? day.date : `${month.monthLabel}-empty-${weekIdx}-${week.indexOf(day)}`}
-                          day={day}
-                          currency={currency}
-                          locale={locale}
-                        />
-                      ))}
-                    </div>
-                  ))}
+                  {month.weeks.map((week) => {
+                    const weekKey = week.map((day) => day.date).join("|");
+                    return (
+                      <div
+                        key={weekKey}
+                        className={styles["weekRow"]}
+                        role='row'>
+                        {week.map((day) => (
+                          <DayCell
+                            key={day.date ? day.date : `${month.monthLabel}-empty-${weekKey}-${week.indexOf(day)}`}
+                            day={day}
+                            currency={currency}
+                            locale={locale}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>

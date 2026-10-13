@@ -397,7 +397,7 @@ export class InvoiceBuilder {
    *
    * **Scan Types:** Supports JPEG, PNG, PDF formats via {@link InvoiceScanType}.
    *
-   * **Storage:** Scan locations are CDN URLs pointing to Azure Blob Storage.
+   * **Storage:** Scan locations are Azure Blob Storage URLs.
    *
    * @param scans - Array of {@link InvoiceScan} objects representing invoice photos/documents
    * @returns This InvoiceBuilder instance for method chaining

@@ -19,6 +19,53 @@ import {WorkerError, WorkerTimeoutError} from "./workerErrors";
 /** No-op callback used to suppress unhandled-rejection noise on race losers. */
 const noop = (): void => undefined;
 
+type WorkerMethod = (...args: unknown[]) => Promise<unknown>;
+
+async function invokeWorkerMethod(
+  method: WorkerMethod,
+  args: readonly unknown[],
+  name: string,
+): Promise<unknown> {
+  try {
+    return await method(...args);
+  } catch (error) {
+    if (typeof error === "object" && error !== null && (error as {__workerError?: unknown}).__workerError === true) {
+      throw new WorkerError(error, name);
+    }
+    throw error;
+  }
+}
+
+function createWorkerCall(
+  method: WorkerMethod,
+  args: readonly unknown[],
+  name: string,
+  signal: AbortSignal | undefined,
+): () => Promise<unknown> {
+  return () => raceWithSignal(invokeWorkerMethod(method, args, name), signal);
+}
+
+function createCallTimeout(
+  name: string,
+  durationMs: number,
+  callStartMs: number,
+): Readonly<{promise: Promise<never>; cancel: () => void}> {
+  let handle: ReturnType<typeof setTimeout> | null = null;
+  const promise = new Promise<never>((_resolve, reject) => {
+    handle = setTimeout(() => {
+      reject(new WorkerTimeoutError(name, Math.round(performance.now() - callStartMs)));
+    }, durationMs);
+  });
+  return {
+    promise,
+    cancel: (): void => {
+      if (handle !== null) {
+        clearTimeout(handle);
+      }
+    },
+  };
+}
+
 export type CallProxyDeps<TApi> = Readonly<{
   inFlight: InFlightRegistry;
   bridge: TelemetryBridge;
@@ -83,38 +130,24 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           deps.lifecycle.beginCall();
 
           const callStartMs = performance.now();
-          let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-          let timeoutPromise: Promise<never> | null = null;
+          let timeout: ReturnType<typeof createCallTimeout> | null = null;
           if (deps.defaultCallTimeoutMs > 0 && Number.isFinite(deps.defaultCallTimeoutMs)) {
-            timeoutPromise = new Promise<never>((_resolve, reject) => {
-              timeoutHandle = setTimeout(() => {
-                reject(new WorkerTimeoutError(prop, Math.round(performance.now() - callStartMs)));
-              }, deps.defaultCallTimeoutMs);
-            });
+            timeout = createCallTimeout(prop, deps.defaultCallTimeoutMs, callStartMs);
           }
 
           try {
-            const wrapped = deps.bridge.wrapCall(prop, async () => {
-              const callPromise = (async (): Promise<unknown> => {
-                try {
-                  return await (fn as (...a: unknown[]) => Promise<unknown>)(...callArgs);
-                } catch (error) {
-                  if (typeof error === "object" && error !== null && (error as {__workerError?: unknown}).__workerError === true) {
-                    throw new WorkerError(error, prop);
-                  }
-                  throw error;
-                }
-              })();
-              return raceWithSignal(callPromise, signal);
-            });
+            const wrapped = deps.bridge.wrapCall(
+              prop,
+              createWorkerCall(fn as WorkerMethod, callArgs, prop, signal),
+            );
 
-            if (timeoutPromise) {
+            if (timeout) {
               wrapped.catch(noop);
-              return await Promise.race([wrapped, timeoutPromise]);
+              return await Promise.race([wrapped, timeout.promise]);
             }
             return await wrapped;
           } finally {
-            if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+            timeout?.cancel();
             deps.lifecycle.endCall();
           }
         };

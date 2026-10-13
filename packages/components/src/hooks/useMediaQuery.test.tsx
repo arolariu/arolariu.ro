@@ -1,4 +1,5 @@
-import {act, renderHook} from "@testing-library/react";
+import {act, render, renderHook} from "@testing-library/react";
+import {StrictMode} from "react";
 import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -84,11 +85,41 @@ describe("useMediaQuery", () => {
     expect(result.current).toBe(false);
 
     act(() => {
+      if (mediaQueryList) {
+        Object.defineProperty(mediaQueryList, "matches", {value: true});
+      }
       mediaQueryList?.listeners.forEach((listener) => {
         listener({matches: true});
       });
     });
 
+    expect(result.current).toBe(true);
+
+    act(() => {
+      if (mediaQueryList) {
+        Object.defineProperty(mediaQueryList, "matches", {value: false});
+      }
+      mediaQueryList?.listeners.forEach((listener) => {
+        listener({matches: false});
+      });
+    });
+
+    expect(result.current).toBe(false);
+  });
+
+  it("rechecks the match when it changes between render and subscription", () => {
+    // Arrange
+    const query = "(min-width: 1024px)";
+    const mediaQueryList = globalThis.window.matchMedia(query) as MockedMediaQueryList;
+    mediaQueryList.addEventListener.mockImplementation((_event: string, listener: MediaQueryListener) => {
+      Object.defineProperty(mediaQueryList, "matches", {value: true});
+      mediaQueryList.listeners.push(listener);
+    });
+
+    // Act
+    const {result} = renderHook(() => useMediaQuery(query));
+
+    // Assert
     expect(result.current).toBe(true);
   });
 
@@ -104,11 +135,12 @@ describe("useMediaQuery", () => {
     } as MediaQueryList);
 
     const {unmount} = renderHook(() => useMediaQuery("(min-width: 768px)"));
+    const listener = addEventListener.mock.calls[0]?.[1];
 
     unmount();
 
     expect(addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
-    expect(removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith("change", listener);
   });
 
   it("returns false during server rendering when window is unavailable", () => {
@@ -126,18 +158,89 @@ describe("useMediaQuery", () => {
   it("removes the old listener and subscribes again when the query changes", () => {
     const initialQuery = "(min-width: 768px)";
     const nextQuery = "(min-width: 1024px)";
-    const {rerender} = renderHook(({query}) => useMediaQuery(query), {
+    const {result, rerender, unmount} = renderHook(({query}) => useMediaQuery(query), {
       initialProps: {query: initialQuery},
     });
 
     const initialMediaQueryList = mediaQueryLists.get(initialQuery);
     const initialListener = initialMediaQueryList?.addEventListener.mock.calls[0]?.[1];
+    expect(result.current).toBe(false);
 
+    currentMatches = true;
     rerender({query: nextQuery});
 
     const nextMediaQueryList = mediaQueryLists.get(nextQuery);
 
     expect(initialMediaQueryList?.removeEventListener).toHaveBeenCalledWith("change", initialListener);
+    expect(initialMediaQueryList?.listeners).toHaveLength(0);
     expect(nextMediaQueryList?.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+    expect(result.current).toBe(true);
+
+    // A callback retained by the old external source cannot overwrite the new query.
+    act(() => initialListener?.({matches: false}));
+    expect(result.current).toBe(true);
+
+    unmount();
+    expect(nextMediaQueryList?.listeners).toHaveLength(0);
+  });
+
+  it("preserves the server snapshot during hydration before showing a matching client query", () => {
+    // Arrange
+    const query = "(min-width: 1024px)";
+    const renderedMatches: boolean[] = [];
+    const onRecoverableError = vi.fn();
+    function TestComponent(): React.JSX.Element {
+      const matches = useMediaQuery(query);
+      renderedMatches.push(matches);
+      return <span>{String(matches)}</span>;
+    }
+
+    currentMatches = true;
+    const browserWindow = globalThis.window;
+    vi.stubGlobal("window", undefined);
+    const markup = renderToString(<TestComponent />);
+    expect(markup).toContain("false");
+    expect(browserWindow.matchMedia).not.toHaveBeenCalled();
+    vi.stubGlobal("window", browserWindow);
+
+    const container = document.createElement("div");
+    container.innerHTML = markup;
+    renderedMatches.length = 0;
+
+    // Act
+    const {unmount} = render(<TestComponent />, {container, hydrate: true, onRecoverableError});
+
+    // Assert
+    expect(renderedMatches[0]).toBe(false);
+    expect(renderedMatches.at(-1)).toBe(true);
+    expect(container).toHaveTextContent("true");
+    expect(onRecoverableError).not.toHaveBeenCalled();
+
+    unmount();
+    expect(mediaQueryLists.get(query)?.listeners).toHaveLength(0);
+  });
+
+  it("keeps one live listener through Strict Mode replay and same-query rerenders", () => {
+    // Arrange
+    const query = "(min-width: 1024px)";
+    currentMatches = true;
+
+    // Act
+    const {result, rerender, unmount} = renderHook(() => useMediaQuery(query), {wrapper: StrictMode});
+    const mediaQueryList = mediaQueryLists.get(query);
+    rerender();
+
+    // Assert
+    expect(result.current).toBe(true);
+    expect(mediaQueryList?.listeners).toHaveLength(1);
+
+    // Act
+    unmount();
+
+    // Assert
+    expect(mediaQueryList?.listeners).toHaveLength(0);
+    for (const [, listener] of mediaQueryList?.addEventListener.mock.calls ?? []) {
+      expect(mediaQueryList?.removeEventListener).toHaveBeenCalledWith("change", listener);
+    }
   });
 });

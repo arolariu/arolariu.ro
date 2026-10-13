@@ -1,6 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {AggregateFile} from "../types/status";
 
+const performanceNow = performance.now.bind(performance);
+
 // jsdom's default hostname is "localhost", which would otherwise route
 // every fetch through the mock generator. These tests exercise the real
 // network + cache code paths, so we pin isLocalHost() to false.
@@ -192,6 +194,7 @@ describe("isHardReload branches (module-load side effect)", () => {
     // Simulate a reload navigation entry with non-zero transferSize (not from cache)
     const reloadEntry = {type: "reload", transferSize: 1024};
     vi.stubGlobal("performance", {
+      now: performanceNow,
       getEntriesByType: (type: string) => (type === "navigation" ? [reloadEntry] : []),
     });
 
@@ -212,6 +215,7 @@ describe("isHardReload branches (module-load side effect)", () => {
     // Simulate navigate (not reload)
     const navigateEntry = {type: "navigate", transferSize: 0};
     vi.stubGlobal("performance", {
+      now: performanceNow,
       getEntriesByType: (type: string) => (type === "navigation" ? [navigateEntry] : []),
     });
 
@@ -226,6 +230,7 @@ describe("isHardReload branches (module-load side effect)", () => {
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
     const reloadEntry = {type: "reload", transferSize: 1024};
     vi.stubGlobal("performance", {
+      now: performanceNow,
       getEntriesByType: (type: string) => (type === "navigation" ? [reloadEntry] : []),
     });
     Object.defineProperty(globalThis, "localStorage", {

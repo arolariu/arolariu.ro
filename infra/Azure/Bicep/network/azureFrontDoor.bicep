@@ -1,17 +1,17 @@
 // =====================================================================================
-// Azure Front Door - Global CDN, WAF, and Load Balancer
+// Azure Front Door - Global Edge Routing, WAF, and Load Balancer
 // =====================================================================================
 // This module provisions Azure Front Door Standard tier which provides:
-// - Global CDN with 118+ edge locations worldwide
+// - Global anycast edge network with 118+ points of presence worldwide
 // - Web Application Firewall (WAF) protection
 // - SSL/TLS termination with managed certificates
 // - Intelligent routing and load balancing
 // - Origin health probes and automatic failover
 //
 // Deployed Resources:
-// - Front Door Profile (CDN/AFD resource)
+// - Front Door Profile (Microsoft.Cdn/profiles resource type)
 // - WAF Policy (Web Application Firewall rules)
-// - Custom Domains (arolariu.ro, www.arolariu.ro, cdn.arolariu.ro)
+// - Custom Domains (arolariu.ro, www.arolariu.ro)
 // - Endpoints and Routes (production traffic routing)
 // - Origin Groups (backend App Services)
 //
@@ -28,7 +28,6 @@
 // Custom Domains:
 // - apex (arolariu.ro) - requires DNS ALIAS record
 // - www (www.arolariu.ro) - uses CNAME record
-// - cdn (cdn.arolariu.ro) - static asset delivery
 //
 // TLS Configuration:
 // - Minimum TLS 1.2 enforced
@@ -40,7 +39,7 @@
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Azure Front Door with WAF, custom domains, and CDN'
+metadata description = 'Azure Front Door with WAF and custom domains'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -95,7 +94,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   }
   tags: union(commonTags, {
     displayName: 'Azure Front Door Profile'
-    resourceType: 'CDN Profile'
+    resourceType: 'Front Door Profile'
   })
 
   // WAF Policy Attachment
@@ -136,18 +135,6 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
     name: 'www-arolariu-ro'
     properties: {
       hostName: 'www.arolariu.ro'
-      tlsSettings: {
-        certificateType: 'ManagedCertificate'
-        minimumTlsVersion: 'TLS12'
-      }
-    }
-  }
-
-  // Custom Domain for CDN
-  resource cdnCustomDomain 'customDomains@2025-09-01-preview' = {
-    name: 'cdn-arolariu-ro'
-    properties: {
-      hostName: 'cdn.arolariu.ro'
       tlsSettings: {
         certificateType: 'ManagedCertificate'
         minimumTlsVersion: 'TLS12'
@@ -228,90 +215,10 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
       ]
     }
   }
-
-  // CDN Endpoint
-  resource cdnEndpoint 'afdEndpoints@2025-09-01-preview' = {
-    name: 'cdn'
-    location: 'Global'
-    properties: { enabledState: 'Enabled' }
-    tags: union(commonTags, {
-      displayName: 'CDN Endpoint'
-    })
-
-    resource cdnRoute 'routes@2025-09-01-preview' = {
-      name: 'cdn-route'
-      properties: {
-        cacheConfiguration: {
-          compressionSettings: {
-            isCompressionEnabled: true
-            contentTypesToCompress: [
-              'application/eot'
-              'application/font'
-              'application/font-sfnt'
-              'application/javascript'
-              'application/json'
-              'application/opentype'
-              'application/otf'
-              'application/pkcs7-mime'
-              'application/truetype'
-              'application/ttf'
-              'application/vnd.ms-fontobject'
-              'application/xhtml+xml'
-              'application/xml'
-              'application/xml+rss'
-              'application/x-font-opentype'
-              'application/x-font-truetype'
-              'application/x-font-ttf'
-              'application/x-httpd-cgi'
-              'application/x-javascript'
-              'application/x-mpegurl'
-              'application/x-opentype'
-              'application/x-otf'
-              'application/x-perl'
-              'application/x-ttf'
-              'font/eot'
-              'font/ttf'
-              'font/otf'
-              'font/opentype'
-              'image/svg+xml'
-              'text/css'
-              'text/csv'
-              'text/html'
-              'text/javascript'
-              'text/js'
-              'text/plain'
-              'text/richtext'
-              'text/tab-separated-values'
-              'text/xml'
-              'text/x-script'
-              'text/x-component'
-              'text/x-java-source'
-            ]
-          }
-          queryStringCachingBehavior: 'UseQueryString'
-        }
-        customDomains: [
-          { id: cdnCustomDomain.id }
-        ]
-        originGroup: { id: productionOriginGroup.id }
-        supportedProtocols: ['Https']
-        patternsToMatch: ['/*']
-        forwardingProtocol: 'MatchRequest'
-        linkToDefaultDomain: 'Disabled'
-        httpsRedirect: 'Enabled'
-        enabledState: 'Enabled'
-      }
-      dependsOn: [
-        productionOriginGroup::productionOrigin
-      ]
-    }
-  }
 }
 
 output frontDoorProductionFqdn string = frontDoorProfile::productionEndpoint.properties.hostName
-output frontDoorCdnFqdn string = frontDoorProfile::cdnEndpoint.properties.hostName
 output frontDoorProfileId string = frontDoorProfile.id
 
 output frontDoorApexToken string = frontDoorProfile::apexCustomDomain.properties.validationProperties.validationToken
 output frontDoorWwwToken string = frontDoorProfile::wwwCustomDomain.properties.validationProperties.validationToken
-output frontDoorCdnToken string = frontDoorProfile::cdnCustomDomain.properties.validationProperties.validationToken

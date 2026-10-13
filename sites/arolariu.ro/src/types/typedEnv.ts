@@ -163,14 +163,12 @@ type LegacyRuntimeEnvironmentVariables = Readonly<
  * **Environment Variables**:
  * - `TIMESTAMP`: ISO 8601 build timestamp (e.g., "2025-11-26T12:00:00Z")
  * - `COMMIT_SHA`: Git commit hash for traceability
- * - `USE_CDN`: Whether to use Azure CDN for static assets prefix
  *
  * The commit SHA is attached to telemetry spans for deployment tracking.
  */
 type MetadataEnvironmentVariables = Readonly<{
   readonly TIMESTAMP: string;
   readonly COMMIT_SHA: string;
-  readonly USE_CDN: boolean;
 }>;
 
 /**
@@ -180,7 +178,7 @@ type MetadataEnvironmentVariables = Readonly<{
  * The preferred runtime contract is now:
  * - site metadata (`SITE_*`)
  * - Clerk keys
- * - build metadata (`TIMESTAMP`, `COMMIT_SHA`, `USE_CDN`)
+ * - build metadata (`TIMESTAMP`, `COMMIT_SHA`)
  * - optional Azure managed-identity identifiers
  *
  * API endpoint, auth secret, Resend key, and configuration-store access are

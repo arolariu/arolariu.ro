@@ -45,7 +45,9 @@ export function useWorker<TApi>(factory: () => WorkerHost<TApi>): WorkerHost<TAp
   // a stale reference if the consumer ever changes the factory between
   // renders (uncommon but cheap to support).
   const factoryRef = useRef(factory);
-  factoryRef.current = factory;
+  useEffect(() => {
+    factoryRef.current = factory;
+  }, [factory]);
 
   useEffect(() => {
     if (host.state === "disposed") {

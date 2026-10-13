@@ -4211,11 +4211,6 @@
               "name": "Identité et Sécurité",
               "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
             },
-            "cdn": {
-              "description": "Distribution de contenu mondiale avec mise en cache edge et optimisation",
-              "name": "Edge et CDN",
-              "technologies": "Azure CDN,Vercel Edge,Static Assets"
-            },
             "client": {
               "description": "Frontends modernes basés sur React avec capacités SSR et SSG",
               "name": "Couche Client",
@@ -4225,6 +4220,11 @@
               "description": "Stratégie de base de données multi-modèle pour des performances optimales",
               "name": "Couche Données",
               "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+            },
+            "edge": {
+              "description": "Routage mondial en périphérie avec certificats TLS gérés et protection par pare-feu d'applications web",
+              "name": "Edge et WAF",
+              "technologies": "Azure Front Door,WAF,TLS géré,Azure DNS"
             },
             "infra": {
               "description": "Infrastructure Azure entièrement gérée avec déploiement IaC",

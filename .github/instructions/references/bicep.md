@@ -532,7 +532,7 @@ touching Azure.
   constraints
 - `infra/Azure/Bicep/compute/appServicePlans.bicep`, `COST_OPTIMIZATION.md` —
   SKU rationale and current cost distribution
-- `infra/Azure/Bicep/network/azureFrontDoor.bicep` — WAF/CDN tier ceiling
+- `infra/Azure/Bicep/network/azureFrontDoor.bicep` — Front Door/WAF tier ceiling
 - `infra/Azure/Bicep/observability/README.md` — documented-but-not-deployed
   diagnostic settings shape
 - `infra/Azure/Bicep/DEPLOYMENT_GUIDE.md` — the only live `az bicep`/

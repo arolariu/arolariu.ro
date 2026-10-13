@@ -137,7 +137,7 @@ export const assertNoDockerDesktopBackend: () => Effect.Effect<void, ContainerRu
  * Verifies Rancher Desktop owns the Docker-compatible CLI path.
  *
  * @returns An effect failing with {@link ContainerRuntimeError} when the backend is unavailable or
- * Docker Desktop is active.
+ * Docker Desktop or a Podman compatibility endpoint is active.
  */
 export const assertRancherBackend: () => Effect.Effect<void, ContainerRuntimeError, Process> = Effect.fn("containers.assertRancherBackend")(
   function* () {
@@ -150,6 +150,12 @@ export const assertRancherBackend: () => Effect.Effect<void, ContainerRuntimeErr
       return yield* new ContainerRuntimeError({
         message:
           "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
+      });
+    }
+    if (combinedOutputForBannerDetection(result).includes("podman")) {
+      return yield* new ContainerRuntimeError({
+        message:
+          "Rancher engine selected but the Docker-compatible endpoint is served by Podman. Start Rancher Desktop in Moby/dockerd mode and select its endpoint, or use --engine podman.",
       });
     }
   },

@@ -340,7 +340,6 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
 - **Static websites**: CSS, JavaScript, images
 - **User uploads**: Profile pictures, documents
 - **Application data**: Logs, backups, exports
-- **CDN integration**: Azure Front Door for global delivery
 
 #### **Table Storage**
 
@@ -634,7 +633,6 @@ az cosmosdb sql database throughput show \
 **Storage Account:**
 
 - **Hot tier**: Frequently accessed data
-- **CDN integration**: Static content delivery
 - **Parallel uploads**: Multi-part upload for large files
 
 **SQL Database:**

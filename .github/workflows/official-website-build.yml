@@ -148,10 +148,10 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           install-playwright: 'true'
-          run-generate: 'true'
+          run-generate: "true"
 
       - name: 🧬 TypeScript type-check (tsgo)
-        working-directory: './sites/arolariu.ro'
+        working-directory: "./sites/arolariu.ro"
         run: |
           echo "::group::🧬 Running tsgo --noEmit"
           START_TIME=$(date +%s)
@@ -177,7 +177,7 @@ jobs:
           echo "| Tool | @typescript/native-preview (tsgo) |" >> $GITHUB_STEP_SUMMARY
 
       - name: 🧪 Running unit tests...
-        working-directory: './sites/arolariu.ro'
+        working-directory: "./sites/arolariu.ro"
         run: |
           echo "::group::🧪 Running Vitest Unit Tests"
           echo "📍 Framework: Vitest"
@@ -196,8 +196,6 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Framework | Vitest |" >> $GITHUB_STEP_SUMMARY
-        env: # We will use local assets for the tests
-          USE_CDN: "false"
 
       - name: 🧪 Running E2E tests...
         working-directory: './sites/arolariu.ro'
@@ -219,8 +217,7 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Framework | Playwright |" >> $GITHUB_STEP_SUMMARY
-        env: # We will use local assets for the tests
-          USE_CDN: "false"
+        env:
           # Run Playwright against `next build && next start` instead of `next dev`.
           # This also disables `output: "standalone"` in next.config.ts (incompatible with next start).
           E2E_USE_PROD: "true"
@@ -307,12 +304,12 @@ jobs:
           run-generate: 'true'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
+        working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: 📋 Verify generated .env file exists
+      - name: 📋 Verify generated public build configuration exists
         run: |
           if [ -f "sites/arolariu.ro/.env" ]; then
             echo "✅ .env file found"
@@ -321,7 +318,7 @@ jobs:
             exit 1
           fi
         shell: bash
-        working-directory: '.'
+        working-directory: "."
 
       - name: 🏗️ Building the docker container...
         working-directory: '.'
@@ -346,6 +343,7 @@ jobs:
 
           START_TIME=$(date +%s)
           docker build -f infra/containers/Dockerfile.frontend \
+            --secret id=website_env,src=sites/arolariu.ro/.env \
             --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
             --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
             --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \

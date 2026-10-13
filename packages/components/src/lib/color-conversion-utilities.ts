@@ -126,10 +126,12 @@ export function calculateComplementaryHexColor(hexColor: string): string {
  */
 export function adjustHexColorLightness(hexColor: string, lightnessAdjustment: number): string {
   const hsl = convertHexToHslString(hexColor);
-  const [h, s, l] = hsl.split(" ").map((v, i) => (i === 0 ? Number.parseInt(v, 10) : Number.parseInt(v.replace("%", ""), 10)));
+  const [h = 0, s = 50, l = 50] = hsl
+    .split(" ")
+    .map((v, i) => (i === 0 ? Number.parseInt(v, 10) : Number.parseInt(v.replace("%", ""), 10)));
 
-  const newL = Math.max(0, Math.min(100, (l ?? 50) + lightnessAdjustment));
-  return convertHslToHexString(h ?? 0, s ?? 50, newL);
+  const newL = Math.max(0, Math.min(100, l + lightnessAdjustment));
+  return convertHslToHexString(h, s, newL);
 }
 
 /**

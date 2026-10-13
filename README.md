@@ -190,7 +190,7 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 | Category | Features |
 |:--------:|:---------|
 | 🏛️ **Architecture** | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard |
-| ⚡ **Performance** | React Server Components • Edge Caching • CDN Optimization • Lazy Loading |
+| ⚡ **Performance** | React Server Components • Edge Caching • Lazy Loading |
 | 🔒 **Security** | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC |
 | 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana |
 | 🧪 **Quality** | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier |
@@ -218,7 +218,7 @@ never installs or upgrades Git, Node.js, or npm:
 | Tool | Version | Purpose |
 |:----:|:-------:|:--------|
 | ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white) | — | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
-| ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime — bootstrap prerequisite |
+| ![Node.js](https://img.shields.io/badge/Node.js-24.15%2B_or_26%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 24.15.0+ (24.x) or ≥26 | JavaScript runtime — bootstrap prerequisite |
 | ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager — bootstrap prerequisite |
 | ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost — prepared by `npm run setup` |
 | Container engine | Rancher Desktop or Podman Desktop | Local SQL, Cosmos, Azurite, and Redis containers — selected/persisted by `npm run setup` (Docker Desktop is not supported) |
@@ -261,7 +261,7 @@ npm run dev:website        # Next.js only
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;
-- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
+- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
 - Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
 
 Container engine selection precedence for `npm run setup`: `npm run setup -- --engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`,
@@ -381,7 +381,7 @@ npx nx show project website      # 🔍 Show project details
 - **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
 - **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
 
-VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`DOTNET_ASPIRE_CONTAINER_RUNTIME=docker`). The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
+VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`docker`) through both `ASPIRE_CONTAINER_RUNTIME` and its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias, as `npm run dev -- --engine` does, so a stale host-level value cannot override the chosen engine. The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
 
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
 
@@ -682,7 +682,7 @@ graph LR
     end
 
     subgraph "☁️ Azure Cloud"
-        AFD["🌐 Azure Front Door<br/><i>CDN + WAF</i>"]
+        AFD["🌐 Azure Front Door<br/><i>Edge routing + WAF</i>"]
         DATA["📦 Data Layer<br/><i>SQL + Cosmos DB + Blob</i>"]
         AI["🤖 Azure OpenAI<br/><i>Model deployments</i>"]
     end
@@ -755,7 +755,7 @@ logout handler do not use the Invoices service hierarchy.
 
 | Layer | Components | Purpose |
 |:-----:|:-----------|:--------|
-| 🌐 **Networking** | Azure Front Door, DNS Zone | Global CDN, WAF, traffic routing |
+| 🌐 **Networking** | Azure Front Door, DNS Zone | Global edge routing, WAF, DNS |
 | 🖥️ **Compute** | App Service Plans | Production and development hosting |
 | 🌍 **Sites** | App Services and Static Web Apps | Web applications |
 | 🔐 **Identity** | User-Assigned Managed Identities | Workload identity |
@@ -775,7 +775,7 @@ graph TB
         direction TB
 
         subgraph NET["🌐 Networking"]
-            AFD["Azure Front Door<br/><i>CDN + WAF</i>"]
+            AFD["Azure Front Door<br/><i>Edge routing + WAF</i>"]
             DNS["DNS Zone<br/><i>arolariu.ro</i>"]
         end
 

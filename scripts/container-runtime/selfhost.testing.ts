@@ -16,7 +16,7 @@
 import {dirname, join} from "node:path";
 
 import {Clock, Duration, Effect, Exit, Fiber, FileSystem, Layer, Redacted} from "effect";
-import {HttpClient, HttpClientResponse, type HttpClientError, type HttpClientRequest} from "effect/http";
+import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
 import {TestClock} from "effect/testing";
 
 import {makeRootCommand, runCli} from "../cli.ts";
@@ -44,6 +44,12 @@ const WORKSPACE_FILES: Readonly<Record<string, string>> = {
 export const SELFHOST_CERTIFICATES: Readonly<Record<string, string>> = {
   "infra/Local/Management/certs/local-cert.pem": "local-cert",
   "infra/Local/Management/certs/local-key.pem": "local-key",
+};
+
+/** Gitignored exp bind mount and website build secret the start action requires. */
+export const SELFHOST_PRIVATE_CONFIGURATION: Readonly<Record<string, string>> = {
+  "sites/exp.arolariu.ro/config.docker.json": "{}",
+  "sites/arolariu.ro/.env": "SITE_ENV=DEVELOPMENT",
 };
 
 /** Pinned GS1 archive URL. */
@@ -102,8 +108,11 @@ const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
   },
 ];
 
-/** A Cosmos emulator answer, or `"never"` for a request that never completes. */
-export type CosmosAnswer = {readonly status: number; readonly body: string} | "never";
+/**
+ * A Cosmos emulator answer, `"refused"` for a connection the emulator refuses (a transport failure),
+ * or `"never"` for a request that never completes.
+ */
+export type CosmosAnswer = {readonly status: number; readonly body: string} | "refused" | "never";
 
 /** A process answer, or `"never"` for a process that never exits. */
 export type ProcessAnswer = ProbeOutcome | "never";
@@ -122,6 +131,8 @@ export interface SelfhostFixtureOptions {
   readonly variables?: Readonly<Record<string, string>>;
   /** Seeded files merged over the workspace manifests; defaults to {@link SELFHOST_CERTIFICATES}. */
   readonly files?: Readonly<Record<string, string>>;
+  /** Private configuration seeded under {@link files}; defaults to {@link SELFHOST_PRIVATE_CONFIGURATION}. */
+  readonly privateConfiguration?: Readonly<Record<string, string>>;
   /** Answers every non-`unzip` process request; defaults to success with empty output. */
   readonly process?: (command: string, args: readonly string[]) => ProcessAnswer;
   /** Answers every Cosmos request by path; defaults to `201 {}`. */
@@ -275,7 +286,11 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
   const harness = makeTestLayer({
     context: "selfhost",
     environment: {platform: "linux", variables},
-    files: {...WORKSPACE_FILES, ...(options.files ?? SELFHOST_CERTIFICATES)},
+    files: {
+      ...WORKSPACE_FILES,
+      ...(options.privateConfiguration ?? SELFHOST_PRIVATE_CONFIGURATION),
+      ...(options.files ?? SELFHOST_CERTIFICATES),
+    },
     http: options.taxonomy === "unavailable" ? [{match: () => true, respond: {status: 503, body: "Unavailable"}}] : TAXONOMY_SOURCES,
     processes: [
       {
@@ -320,6 +335,10 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
         cosmosCalls.push(url.pathname);
         record({http: request.method, url: url.href, headers: {"Content-Type": body.contentType}, body: body.text});
         const answer = options.cosmos?.(url.pathname) ?? {status: 201, body: "{}"};
+        if (answer === "refused") {
+          const cause = new Error(`connect ECONNREFUSED 127.0.0.1:${url.port}`);
+          return Effect.fail(new HttpClientError.HttpClientError({reason: new HttpClientError.TransportError({request, cause})}));
+        }
         return answer === "never"
           ? Effect.never
           : Effect.succeed(HttpClientResponse.fromWeb(request, new Response(answer.body, {status: answer.status})));

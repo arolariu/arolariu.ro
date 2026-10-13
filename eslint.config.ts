@@ -105,6 +105,7 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
     "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
     "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-uint8array-hex": "off", // Uint8Array.toHex() requires Node 25; our supported floor is Node 24.
     "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
 
     // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
@@ -204,6 +205,7 @@ const websiteEslintConfig: Config = defineConfig({
     "react/react-in-jsx-scope": "off", // Next.JS injects React in namespace.
     "react/forbid-component-props": "off", // We allow component props.
     "react/destructuring-assignment": "off", // Layout, RSC, RCC props are marked as props.
+    "react/require-default-props": ["error", {functions: "defaultArguments"}], // React 19 function components use default arguments, not defaultProps.
 
     // eslint-plugin-react@7.37.5 rules that call ESLint APIs removed in ESLint 10 and crash at runtime; no newer plugin release exists. The spacing rules are owned by Prettier regardless.
     "react/forward-ref-uses-ref": "off", // Calls removed context.getSourceCode().
@@ -232,6 +234,7 @@ const websiteEslintConfig: Config = defineConfig({
     "react-x/set-state-in-effect": "off", // We allow direct setState calls in useEffect (react-hooks-extra rule absorbed into react-x@5).
 
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
+    "n/no-extraneous-import": ["error", {allowModules: ["server-only"]}], // Next.js supplies this server-boundary marker through its compiler.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
@@ -890,7 +893,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
 
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
-// Add the global ignores to the default config.
+// Keep project-specific exclusions separate from global directory ignores and tooling rules.
 for (const individualEslintConfig of projectEslintConfig) {
   const eslintPathsIgnoreList = [
     "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts,tests}/**", // dirs
@@ -902,6 +905,11 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig);
+const eslintConfig = defineConfig(
+  {ignores: ["**/{node_modules,.storybook,storybook-static,.superpowers,.svelte-kit,.next,out,bin,build,dist}/**", "docs/superpowers/**"]},
+  projectEslintConfig,
+  toolingOutputConfig,
+  toolingPromptOutputConfig,
+);
 
 export default eslintConfig;
