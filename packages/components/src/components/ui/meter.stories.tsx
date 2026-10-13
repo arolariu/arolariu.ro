@@ -19,6 +19,7 @@ type Story = StoryObj<typeof meta>;
  * Default meter showing storage usage.
  */
 export const Default: Story = {
+  args: {value: 72},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -39,6 +40,7 @@ export const Default: Story = {
  * Low value meter.
  */
 export const LowValue: Story = {
+  args: {value: 25},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -59,6 +61,7 @@ export const LowValue: Story = {
  * High value meter.
  */
 export const HighValue: Story = {
+  args: {value: 95},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -79,6 +82,7 @@ export const HighValue: Story = {
  * Meter turning red when value exceeds 80% threshold.
  */
 export const DangerThreshold: Story = {
+  args: {value: 85},
   render: () => (
     <div style={{width: "16rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
       <Meter
@@ -99,6 +103,7 @@ export const DangerThreshold: Story = {
  * Meter with descriptive label showing percentage value.
  */
 export const WithLabel = {
+  args: {value: 65},
   render: () => (
     <div className={styles.storyContainer}>
       <Meter
@@ -147,5 +152,6 @@ function AnimatedMeterContent(): React.JSX.Element {
  * Meter that animates to its value on mount.
  */
 export const Animated: Story = {
+  args: {value: 0},
   render: () => <AnimatedMeterContent />,
 };
