@@ -1,4 +1,5 @@
 import {render, screen} from "@testing-library/react";
+import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
 import {
@@ -301,11 +302,112 @@ describe("Field", () => {
       </Field>,
     );
 
-    // Assert - An empty errors array still renders the container, but no content
-    const error = screen.queryByTestId("field-error-empty-array");
-    expect(error).toBeInTheDocument();
-    // Check that there's no visible content
-    expect(error?.textContent).toBe("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("suppresses empty field errors and deduplicates messages", () => {
+    const {rerender} = render(<FieldError errors={[]} />);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    rerender(<FieldError errors={[{message: "Required"}, {message: "Required"}]} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Required");
+    expect(screen.getAllByText("Required")).toHaveLength(1);
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  it("renders repeated meaningful errors only once", () => {
+    render(<FieldError errors={[{message: "Required"}, {message: "Required"}]} />);
+    expect(screen.getAllByText("Required")).toHaveLength(1);
+  });
+
+  it("normalizes meaningful messages before choosing a single message or ordered list", () => {
+    const {rerender} = render(<FieldError errors={[undefined, {}, {message: ""}, {message: " \n "}]} />);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    rerender(<FieldError errors={[undefined, {message: " Required "}, {message: "Required"}, {message: ""}]} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Required");
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+    rerender(<FieldError errors={[{message: " Required "}, {message: "Invalid"}, {message: "Required"}]} />);
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Required", "Invalid"]);
+  });
+
+  it("prioritizes explicit children including zero and supports error ref lifecycle", () => {
+    const ref = createRef<HTMLDivElement>();
+    const {rerender} = render(
+      <FieldError
+        ref={ref}
+        errors={[{message: "Ignored"}]}>
+        {0}
+      </FieldError>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("0");
+    expect(ref.current).toBe(screen.getByRole("alert"));
+    expect(screen.queryByText("Ignored")).not.toBeInTheDocument();
+    rerender(
+      <FieldError
+        ref={ref}
+        errors={[]}
+      />,
+    );
+    expect(ref.current).toBeNull();
+    rerender(<FieldError errors={[{message: "Fallback"}]}>{false}</FieldError>);
+    expect(screen.getByRole("alert")).toHaveTextContent("Fallback");
+  });
+
+  it("does not announce empty React children arrays or whitespace", () => {
+    const {rerender} = render(<FieldError>{[null, false, "", "  "]}</FieldError>);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    rerender(<FieldError errors={[{message: "Fallback"}]}>{[null, false, " "]}</FieldError>);
+    expect(screen.getByRole("alert")).toHaveTextContent("Fallback");
+    rerender(
+      <FieldError errors={[{message: "Ignored"}]}>
+        <strong>Custom error</strong>
+      </FieldError>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Custom error");
+    expect(screen.queryByText("Ignored")).not.toBeInTheDocument();
+  });
+
+  it("preserves numeric separator content", () => {
+    render(<FieldSeparator data-testid='numeric-separator'>{0}</FieldSeparator>);
+    expect(screen.getByTestId("numeric-separator")).toHaveTextContent("0");
+    expect(screen.getByTestId("numeric-separator")).toHaveAttribute("data-content", "true");
+  });
+
+  it("keeps caller-owned labels, descriptions and disabled fieldset semantics", () => {
+    render(
+      <FieldSet disabled>
+        <FieldLegend>Contact</FieldLegend>
+        <FieldGroup>
+          <Field
+            data-disabled='true'
+            data-invalid='true'
+            aria-labelledby='contact-label'
+            orientation='responsive'>
+            <FieldLabel
+              id='contact-label'
+              htmlFor='contact-input'>
+              Contact email
+            </FieldLabel>
+            <FieldContent>
+              <input
+                id='contact-input'
+                aria-describedby='contact-hint contact-error'
+                aria-invalid='true'
+              />
+              <FieldDescription id='contact-hint'>Use a reachable address.</FieldDescription>
+              <FieldError
+                id='contact-error'
+                errors={[{message: "Required"}]}
+              />
+            </FieldContent>
+          </Field>
+        </FieldGroup>
+      </FieldSet>,
+    );
+    const input = screen.getByRole("textbox", {name: "Contact email"});
+    expect(input).toBeDisabled();
+    expect(input).toHaveAccessibleDescription("Use a reachable address. Required");
+    expect(screen.getByRole("group", {name: "Contact"}).tagName).toBe("FIELDSET");
+    expect(screen.getByRole("group", {name: "Contact email"})).toHaveAttribute("data-invalid", "true");
   });
 
   it("filters out undefined errors in FieldError list", () => {

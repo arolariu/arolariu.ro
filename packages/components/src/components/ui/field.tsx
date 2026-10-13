@@ -1,9 +1,6 @@
-"use client";
-
-/* eslint-disable jsx-a11y/label-has-associated-control */
-
 import * as React from "react";
 
+import {Label} from "@/components/ui/label";
 import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
 import styles from "./field.module.css";
@@ -17,69 +14,69 @@ export type FieldLegendVariant = "legend" | "label";
 /** Shape of error objects accepted by {@link FieldError}. */
 export interface FieldErrorItem {
   /** Human-readable validation error message. @default undefined */
-  message?: string;
+  readonly message?: string;
 }
 
 /**
  * Props for the {@link FieldSet} component.
  */
-export type FieldSetProps = React.ComponentPropsWithoutRef<"fieldset">;
+export type FieldSetProps = Readonly<React.ComponentPropsWithoutRef<"fieldset">>;
 
 /**
  * Props for the {@link FieldLegend} component.
  */
 export interface FieldLegendProps extends React.ComponentPropsWithoutRef<"legend"> {
   /** Visual treatment used for the legend content. @default "legend" */
-  variant?: FieldLegendVariant;
+  readonly variant?: FieldLegendVariant;
 }
 
 /**
  * Props for the {@link FieldGroup} component.
  */
-export type FieldGroupProps = React.ComponentPropsWithoutRef<"div">;
+export type FieldGroupProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link Field} component.
  */
 export interface FieldProps extends React.ComponentPropsWithoutRef<"div"> {
   /** Layout used to arrange labels and controls. @default "vertical" */
-  orientation?: FieldOrientation;
+  readonly orientation?: FieldOrientation;
 }
 
 /**
  * Props for the {@link FieldContent} component.
  */
-export type FieldContentProps = React.ComponentPropsWithoutRef<"div">;
+export type FieldContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link FieldLabel} component.
  */
-export type FieldLabelProps = React.ComponentPropsWithoutRef<"label">;
+export type FieldLabelProps = Label.Props;
 
 /**
  * Props for the {@link FieldTitle} component.
  */
-export type FieldTitleProps = React.ComponentPropsWithoutRef<"div">;
+export type FieldTitleProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link FieldDescription} component.
  */
-export type FieldDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+export type FieldDescriptionProps = Readonly<React.ComponentPropsWithoutRef<"p">>;
 
 /**
  * Props for the {@link FieldSeparator} component.
  */
-export type FieldSeparatorProps = React.ComponentPropsWithoutRef<"div">;
+export type FieldSeparatorProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link FieldError} component.
  */
 export interface FieldErrorProps extends React.ComponentPropsWithoutRef<"div"> {
   /** Validation errors rendered when children are not provided. @default undefined */
-  errors?: Array<FieldErrorItem | undefined>;
+  readonly errors?: ReadonlyArray<FieldErrorItem | undefined>;
 }
 
-function getFieldOrientationClass(orientation: FieldOrientation): string {
+function getFieldOrientationClass(orientation: FieldOrientation): string | undefined {
   switch (orientation) {
     case "horizontal": {
       return styles.horizontal;
@@ -91,6 +88,15 @@ function getFieldOrientationClass(orientation: FieldOrientation): string {
       return styles.vertical;
     }
   }
+}
+
+function hasMeaningfulChildren(children: React.ReactNode): boolean {
+  if (Array.isArray(children)) {
+    return children.some((child: React.ReactNode) => hasMeaningfulChildren(child));
+  }
+  return typeof children === "string"
+    ? children.trim().length > 0
+    : children !== null && children !== undefined && typeof children !== "boolean";
 }
 
 /**
@@ -155,6 +161,7 @@ const FieldLegend = React.forwardRef<HTMLLegendElement, FieldLegendProps>(
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Establishes the available-width container for responsive field rows
  *
  * @example
  * ```tsx
@@ -178,6 +185,8 @@ const FieldGroup = React.forwardRef<HTMLDivElement, FieldGroupProps>(
 
 /**
  * Creates a styled field row for labels, descriptions, and controls.
+ * Callers own IDs and ARIA relationships; this layout adds no validation context.
+ * Place responsive rows in a {@link FieldGroup} to query available width.
  *
  * @remarks
  * - Pure CSS component (no Base UI primitive)
@@ -248,7 +257,7 @@ const FieldContent = React.forwardRef<HTMLDivElement, FieldContentProps>(
 const FieldLabel = React.forwardRef<HTMLLabelElement, FieldLabelProps>(
   ({className, ...props}: Readonly<FieldLabelProps>, ref): React.JSX.Element => {
     return (
-      <label
+      <Label
         ref={ref}
         data-slot='field-label'
         className={cn(styles.label, className)}
@@ -326,17 +335,26 @@ const FieldDescription = React.forwardRef<HTMLParagraphElement, FieldDescription
  * @see {@link FieldSeparatorProps} for available props
  */
 const FieldSeparator = React.forwardRef<HTMLDivElement, FieldSeparatorProps>(
-  ({children, className, ...props}: Readonly<FieldSeparatorProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='field-separator'
-      data-content={children ? "true" : undefined}
-      className={cn(styles.separator, className)}
-      {...props}>
-      <Separator className={styles.separatorLine} />
-      {children ? <span className={styles.separatorContent}>{children}</span> : null}
-    </div>
-  ),
+  ({children, className, ...props}: Readonly<FieldSeparatorProps>, ref): React.JSX.Element => {
+    const hasContent = hasMeaningfulChildren(children);
+    return (
+      <div
+        ref={ref}
+        data-slot='field-separator'
+        data-content={hasContent ? "true" : undefined}
+        className={cn(styles.separator, className)}
+        {...props}>
+        <Separator className={styles.separatorLine} />
+        {hasContent ? (
+          <span
+            data-slot='field-separator-content'
+            className={styles.separatorContent}>
+            {children}
+          </span>
+        ) : null}
+      </div>
+    );
+  },
 );
 
 /**
@@ -345,6 +363,8 @@ const FieldSeparator = React.forwardRef<HTMLDivElement, FieldSeparatorProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element when content exists
+ * - Trims, filters and deduplicates messages in first-occurrence order
+ * - Explicit children take precedence, including numeric zero
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -356,27 +376,20 @@ const FieldSeparator = React.forwardRef<HTMLDivElement, FieldSeparatorProps>(
  */
 const FieldError = React.forwardRef<HTMLDivElement, FieldErrorProps>(
   ({className, children, errors, ...props}: Readonly<FieldErrorProps>, ref): React.JSX.Element | null => {
-    const content = React.useMemo((): React.JSX.Element | null => {
-      if (children) {
-        return <span>{children}</span>;
-      }
-
-      if (!errors) {
-        return null;
-      }
-
-      if (errors.length === 1 && errors[0]?.message) {
-        return <span>{errors[0].message}</span>;
-      }
-
-      return (
-        <ul className={styles.errorList}>{errors.map((error, index) => (error?.message ? <li key={index}>{error.message}</li> : null))}</ul>
-      );
-    }, [children, errors]);
-
-    if (!content) {
-      return null;
-    }
+    const messages = [...new Set(errors?.map((error) => error?.message?.trim()).filter((message): message is string => Boolean(message)))];
+    const hasChildren = hasMeaningfulChildren(children);
+    if (!hasChildren && messages.length === 0) return null;
+    const content = hasChildren ? (
+      children
+    ) : messages.length === 1 ? (
+      messages[0]
+    ) : (
+      <ul className={styles.errorList}>
+        {messages.map((message) => (
+          <li key={message}>{message}</li>
+        ))}
+      </ul>
+    );
 
     return (
       <div
@@ -401,5 +414,38 @@ FieldTitle.displayName = "FieldTitle";
 FieldDescription.displayName = "FieldDescription";
 FieldSeparator.displayName = "FieldSeparator";
 FieldError.displayName = "FieldError";
+
+/* eslint-disable no-redeclare -- canonical component namespace typing API */
+namespace FieldSet {
+  export type Props = Readonly<FieldSetProps>;
+}
+namespace FieldLegend {
+  export type Props = Readonly<FieldLegendProps>;
+}
+namespace FieldGroup {
+  export type Props = Readonly<FieldGroupProps>;
+}
+namespace Field {
+  export type Props = Readonly<FieldProps>;
+}
+namespace FieldContent {
+  export type Props = Readonly<FieldContentProps>;
+}
+namespace FieldLabel {
+  export type Props = Readonly<FieldLabelProps>;
+}
+namespace FieldTitle {
+  export type Props = Readonly<FieldTitleProps>;
+}
+namespace FieldDescription {
+  export type Props = Readonly<FieldDescriptionProps>;
+}
+namespace FieldSeparator {
+  export type Props = Readonly<FieldSeparatorProps>;
+}
+namespace FieldError {
+  export type Props = Readonly<FieldErrorProps>;
+}
+/* eslint-enable no-redeclare */
 
 export {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle};

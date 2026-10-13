@@ -1,6 +1,8 @@
-import {useState} from "react";
+import {type JSX, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Textarea} from "./textarea";
+import {Label} from "./label";
+import styles from "./textarea.module.css";
 
 const meta = {
   title: "Components/Forms/Textarea",
@@ -21,6 +23,7 @@ export const Default: Story = {
   args: {
     placeholder: "Enter your message here...",
     rows: 4,
+    "aria-label": "Message",
   },
 };
 
@@ -31,6 +34,7 @@ export const WithValue: Story = {
   args: {
     defaultValue: "This is a pre-filled message that can be edited.",
     rows: 5,
+    "aria-label": "Editable message",
   },
 };
 
@@ -42,35 +46,34 @@ export const Disabled: Story = {
     placeholder: "This textarea is disabled",
     disabled: true,
     rows: 4,
+    "aria-label": "Disabled message",
   },
 };
 
 /**
  * Textarea with character count display.
  */
-function WithCharCountDemo() {
+function WithCharCountDemo(): JSX.Element {
   const [text, setText] = useState("");
   const maxChars = 200;
 
   return (
-    <div style={{width: "400px"}}>
+    <div className={styles.storyStack}>
+      <Label htmlFor='bio'>Biography</Label>
       <Textarea
+        id='bio'
+        aria-describedby='bio-count'
         placeholder='Enter your bio (max 200 characters)...'
         value={text}
         onChange={(e) => setText(e.target.value)}
         maxLength={maxChars}
         rows={5}
       />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          fontSize: "0.875rem",
-          marginTop: "0.5rem",
-          color: text.length >= maxChars ? "red" : "gray",
-        }}>
+      <output
+        id='bio-count'
+        className={styles.storyCount}>
         {text.length} / {maxChars}
-      </div>
+      </output>
     </div>
   );
 }
@@ -80,32 +83,44 @@ export const WithCharCount: Story = {
 };
 
 /**
- * Textarea with different row sizes.
+ * Native manual resizing with different initial row sizes (not JavaScript autosizing).
  */
 export const AutoResize: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: "1rem", width: "400px"}}>
+    <div className={styles.storyStack}>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Small (2 rows)</label>
+        <Label htmlFor='small-notes'>Small (2 rows)</Label>
         <Textarea
+          id='small-notes'
           placeholder='Compact textarea'
           rows={2}
         />
       </div>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Medium (5 rows)</label>
+        <Label htmlFor='medium-notes'>Medium (5 rows)</Label>
         <Textarea
+          id='medium-notes'
           placeholder='Standard textarea'
           rows={5}
         />
       </div>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Large (10 rows)</label>
+        <Label htmlFor='large-notes'>Large (10 rows)</Label>
         <Textarea
+          id='large-notes'
           placeholder='Expanded textarea'
           rows={10}
         />
       </div>
     </div>
   ),
+};
+
+/** Opt-in CSS content sizing, with native manual resizing as the browser fallback. */
+export const ContentSized: Story = {
+  args: {"aria-label": "Content-sized notes", "data-sizing": "content", placeholder: "Type multiple lines to grow in supporting browsers."},
+};
+
+export const Invalid: Story = {
+  args: {"aria-label": "Invalid notes", "aria-invalid": true, defaultValue: "Needs more detail"},
 };

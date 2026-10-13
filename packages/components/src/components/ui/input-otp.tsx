@@ -24,25 +24,25 @@ export type {OTPInputProps, SlotProps};
 /**
  * Props for the {@link InputOTP} component.
  */
-export type InputOTPProps = React.ComponentPropsWithoutRef<typeof OTPInput>;
+export type InputOTPProps = Readonly<React.ComponentPropsWithoutRef<typeof OTPInput>>;
 
 /**
  * Props for the {@link InputOTPGroup} component.
  */
-export type InputOTPGroupProps = React.ComponentPropsWithoutRef<"div">;
+export type InputOTPGroupProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Props for the {@link InputOTPSlot} component.
  */
 export interface InputOTPSlotProps extends React.ComponentPropsWithoutRef<"div"> {
   /** Zero-based slot index resolved from the shared OTP input context. */
-  index: number;
+  readonly index: number;
 }
 
 /**
  * Props for the {@link InputOTPSeparator} component.
  */
-export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
+export type InputOTPSeparatorProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
 
 /**
  * Wraps the `input-otp` root component with shared library styling.
@@ -51,10 +51,16 @@ export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
  * - Third-party wrapper component
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Forwards all supported `input-otp` root props to the underlying primitive
+ * - Provide either slot children or a custom `render` callback, as required by input-otp
+ * - Spell checking retains the dependency's false default; callers can opt in
  *
  * @example
  * ```tsx
- * <InputOTP maxLength={6} />
+ * <InputOTP maxLength={4} aria-label="Verification code">
+ *   <InputOTPGroup>
+ *     {[0, 1, 2, 3].map((index) => <InputOTPSlot key={index} index={index} />)}
+ *   </InputOTPGroup>
+ * </InputOTP>
  * ```
  *
  * @param props.maxLength - Required OTP length used to generate the expected number of slots.
@@ -69,7 +75,11 @@ export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
  * spaces or dashes from pasted codes.
  * @example
  * ```tsx
- * <InputOTP pasteTransformer={(text) => text.replace(/\D/g, "")} />
+ * <InputOTP
+ *   maxLength={4}
+ *   pasteTransformer={(text) => text.replace(/\D/g, "")}
+ *   render={({slots}) => <output>{slots.map((slot) => slot.char).join("")}</output>}
+ * />
  * ```
  * @param props.value - Controlled OTP value. Use with `onChange` for controlled mode.
  * @param props.onChange - Callback fired when the OTP value changes in controlled mode.
@@ -83,6 +93,7 @@ export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
 const InputOTP = React.forwardRef<React.ComponentRef<typeof OTPInput>, InputOTPProps>(
   ({className, containerClassName, ...props}: Readonly<InputOTPProps>, ref): React.JSX.Element => (
     <OTPInput
+      data-slot='input-otp'
       ref={ref}
       containerClassName={cn(styles.container, containerClassName)}
       className={cn(styles.input, className)}
@@ -112,6 +123,7 @@ const InputOTP = React.forwardRef<React.ComponentRef<typeof OTPInput>, InputOTPP
 const InputOTPGroup = React.forwardRef<React.ComponentRef<"div">, InputOTPGroupProps>(
   ({className, ...props}: Readonly<InputOTPGroupProps>, ref): React.JSX.Element => (
     <div
+      data-slot='input-otp-group'
       ref={ref}
       className={cn(styles.group, className)}
       {...props}
@@ -126,6 +138,9 @@ const InputOTPGroup = React.forwardRef<React.ComponentRef<"div">, InputOTPGroupP
  * - Third-party wrapper component
  * - Renders a `<div>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Empty inactive slots display the primitive's placeholder, falling back to `·`
+ * - Fake-caret slots suppress the placeholder while the backing input is focused
+ * - Invalid indexes and slots outside an OTP root fail fast with an index error
  *
  * @example
  * ```tsx
@@ -138,7 +153,7 @@ const InputOTPGroup = React.forwardRef<React.ComponentRef<"div">, InputOTPGroupP
 const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotProps>(
   ({index, className, ...props}: Readonly<InputOTPSlotProps>, ref): React.JSX.Element => {
     const inputOTPContext = React.useContext(OTPInputContext);
-    const slot = inputOTPContext.slots[index];
+    const slot = Number.isSafeInteger(index) && index >= 0 ? inputOTPContext.slots?.[index] : undefined;
 
     if (!slot) {
       throw new Error(`InputOTPSlot could not find slot at index ${index}.`);
@@ -150,12 +165,17 @@ const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotPro
 
     return (
       <div
+        data-slot='input-otp-slot'
+        data-active={isActive}
         ref={ref}
         className={cn(styles.slot, isActive && styles.slotActive, className)}
         {...props}>
         {displayCharacter}
         {Boolean(hasFakeCaret) && (
-          <div className={styles.fakeCaretContainer}>
+          <div
+            data-slot='input-otp-caret'
+            aria-hidden='true'
+            className={styles.fakeCaretContainer}>
             <div className={styles.fakeCaret} />
           </div>
         )}
@@ -183,11 +203,15 @@ const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotPro
 const InputOTPSeparator = React.forwardRef<React.ComponentRef<"div">, InputOTPSeparatorProps>(
   ({className, ...props}: Readonly<InputOTPSeparatorProps>, ref): React.JSX.Element => (
     <div
+      data-slot='input-otp-separator'
       ref={ref}
       role='separator'
       className={cn(styles.separator, className)}
       {...props}>
-      <Minus className={styles.separatorIcon} />
+      <Minus
+        aria-hidden='true'
+        className={styles.separatorIcon}
+      />
     </div>
   ),
 );
@@ -196,5 +220,21 @@ InputOTP.displayName = "InputOTP";
 InputOTPGroup.displayName = "InputOTPGroup";
 InputOTPSlot.displayName = "InputOTPSlot";
 InputOTPSeparator.displayName = "InputOTPSeparator";
+
+/* eslint-disable no-redeclare -- canonical component namespace typing API */
+namespace InputOTP {
+  export type Props = Readonly<InputOTPProps>;
+}
+namespace InputOTPGroup {
+  export type Props = Readonly<InputOTPGroupProps>;
+}
+namespace InputOTPSlot {
+  export type Props = Readonly<InputOTPSlotProps>;
+  export type State = Readonly<SlotProps>;
+}
+namespace InputOTPSeparator {
+  export type Props = Readonly<InputOTPSeparatorProps>;
+}
+/* eslint-enable no-redeclare */
 
 export {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot};

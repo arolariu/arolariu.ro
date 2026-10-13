@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-6);
+  min-inline-size: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
 
 .legend {
@@ -19,6 +23,7 @@
 }
 
 .group {
+  container: field-group / inline-size;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -33,6 +38,7 @@
   display: flex;
   width: 100%;
   gap: var(--ac-space-3);
+  min-width: 0;
 }
 
 .field[data-invalid="true"] {
@@ -52,6 +58,10 @@
   align-items: center;
 }
 
+.horizontal:has(> [data-slot="field-content"]) {
+  align-items: flex-start;
+}
+
 .horizontal > [data-slot="field-label"] {
   flex: 0 0 auto;
 }
@@ -64,7 +74,7 @@
   width: 100%;
 }
 
-@media (min-width: 768px) {
+@container field-group (min-width: 28rem) {
   .responsive {
     flex-direction: row;
     align-items: center;
@@ -77,6 +87,10 @@
   .responsive > [data-slot="field-label"] {
     flex: 0 0 auto;
     min-width: 10rem;
+  }
+
+  .responsive:has(> [data-slot="field-content"]) {
+    align-items: flex-start;
   }
 }
 
@@ -101,8 +115,15 @@
   user-select: none;
 }
 
-.field[data-disabled="true"] .label {
+.field[data-disabled="true"] .label,
+.fieldSet:disabled .label,
+.field[data-disabled="true"] .title {
   opacity: 0.5;
+}
+
+.field[data-invalid="true"] .label,
+.field[data-invalid="true"] .title {
+  color: var(--ac-destructive);
 }
 
 .label:has([data-slot="field"]) {
@@ -174,6 +195,29 @@
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-1);
-  padding-left: var(--ac-space-4);
+  padding-inline-start: var(--ac-space-4);
   margin: 0;
+}
+
+.storyNarrow {
+  width: min(100%, 24rem);
+}
+
+.storyWide {
+  width: min(100%, 56rem);
+}
+
+@media (forced-colors: active) {
+  .error,
+  .field[data-invalid="true"] .label,
+  .field[data-invalid="true"] .title {
+    color: LinkText;
+  }
+
+  .fieldSet:disabled .label,
+  .field[data-disabled="true"] .label,
+  .field[data-disabled="true"] .title {
+    color: GrayText;
+    opacity: 1;
+  }
 }

@@ -1,6 +1,18 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Field, FieldContent, FieldDescription, FieldError, FieldLabel} from "./field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldGroup,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldTitle,
+} from "./field";
 import {Input} from "./input";
+import styles from "./field.module.css";
 
 const meta = {
   title: "Components/Forms/Field",
@@ -39,12 +51,13 @@ export const WithDescription: Story = {
   render: () => (
     <Field>
       <FieldLabel htmlFor='username'>Username</FieldLabel>
-      <FieldDescription>Choose a unique username. This will be your public identifier.</FieldDescription>
       <FieldContent>
         <Input
           id='username'
+          aria-describedby='username-hint'
           placeholder='johndoe'
         />
+        <FieldDescription id='username-hint'>Choose a unique username. This will be your public identifier.</FieldDescription>
       </FieldContent>
     </Field>
   ),
@@ -55,7 +68,7 @@ export const WithDescription: Story = {
  */
 export const WithError: Story = {
   render: () => (
-    <Field>
+    <Field data-invalid='true'>
       <FieldLabel htmlFor='password'>Password</FieldLabel>
       <FieldContent>
         <Input
@@ -63,31 +76,34 @@ export const WithError: Story = {
           type='password'
           placeholder='Enter password'
           aria-invalid='true'
+          aria-describedby='password-error'
         />
       </FieldContent>
-      <FieldError errors={[{message: "Password must be at least 8 characters"}]} />
+      <FieldError
+        id='password-error'
+        errors={[{message: "Password must be at least 8 characters"}, {message: "Password must be at least 8 characters"}]}
+      />
     </Field>
   ),
 };
 
 /**
- * Field with required asterisk indicator.
+ * Field with an accessible required indicator.
  */
 export const Required: Story = {
   render: () => (
     <Field>
-      <FieldLabel htmlFor='email'>
-        Email address <span style={{color: "#ef4444"}}>*</span>
-      </FieldLabel>
+      <FieldLabel htmlFor='email'>Email address (required)</FieldLabel>
       <FieldContent>
         <Input
           id='email'
           type='email'
           placeholder='you@example.com'
           required
+          aria-describedby='required-email-hint'
         />
       </FieldContent>
-      <FieldDescription>Required field - must be a valid email address</FieldDescription>
+      <FieldDescription id='required-email-hint'>Required field - must be a valid email address</FieldDescription>
     </Field>
   ),
 };
@@ -97,58 +113,96 @@ export const Required: Story = {
  */
 export const Horizontal: Story = {
   render: () => (
-    <Field>
-      <div style={{display: "flex", alignItems: "center", gap: "1rem"}}>
-        <FieldLabel
-          htmlFor='username'
-          style={{minWidth: "120px", marginBottom: 0}}>
-          Username:
-        </FieldLabel>
-        <FieldContent style={{flex: 1}}>
-          <Input
-            id='username'
-            placeholder='johndoe'
-          />
-        </FieldContent>
-      </div>
+    <Field orientation='horizontal'>
+      <FieldLabel htmlFor='horizontal-username'>Username:</FieldLabel>
+      <FieldContent>
+        <Input
+          id='horizontal-username'
+          placeholder='johndoe'
+        />
+      </FieldContent>
     </Field>
   ),
 };
 
 /**
- * Field with help icon tooltip.
+ * A caller-owned description relationship; no tooltip provider is necessary.
  */
 export const WithHint: Story = {
   render: () => (
     <Field>
-      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-        <FieldLabel htmlFor='api-key'>API Key</FieldLabel>
-        <span
-          title='Your unique API key for authentication. Keep this secret!'
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "16px",
-            height: "16px",
-            background: "#3b82f6",
-            color: "white",
-            borderRadius: "50%",
-            fontSize: "0.75rem",
-            fontWeight: "bold",
-            cursor: "help",
-          }}>
-          ?
-        </span>
-      </div>
+      <FieldLabel htmlFor='recovery-address'>Recovery address</FieldLabel>
       <FieldContent>
         <Input
-          id='api-key'
-          type='password'
-          placeholder='sk_live_...'
+          id='recovery-address'
+          type='email'
+          placeholder='you@example.com'
+          aria-describedby='recovery-hint'
         />
       </FieldContent>
-      <FieldDescription>This key provides full access to your account</FieldDescription>
+      <FieldDescription id='recovery-hint'>Use an address you can access.</FieldDescription>
     </Field>
+  ),
+};
+
+/** A narrow container stays stacked even on a wide Storybook viewport. */
+export const ResponsiveNarrow: Story = {
+  render: () => (
+    <FieldGroup className={styles.storyNarrow}>
+      <Field orientation='responsive'>
+        <FieldLabel htmlFor='narrow-email'>Email</FieldLabel>
+        <FieldContent>
+          <Input
+            id='narrow-email'
+            type='email'
+          />
+          <FieldDescription>Responsive to this container, not the viewport.</FieldDescription>
+        </FieldContent>
+      </Field>
+    </FieldGroup>
+  ),
+};
+
+export const ResponsiveWide: Story = {
+  parameters: {layout: "padded"},
+  render: () => (
+    <FieldGroup className={styles.storyWide}>
+      <Field orientation='responsive'>
+        <FieldLabel htmlFor='wide-email'>Email</FieldLabel>
+        <FieldContent>
+          <Input
+            id='wide-email'
+            type='email'
+          />
+        </FieldContent>
+      </Field>
+    </FieldGroup>
+  ),
+};
+
+/** Native fieldset/legend naming, disabled association, section separators and title. */
+export const DisabledFieldset: Story = {
+  render: () => (
+    <FieldSet disabled>
+      <FieldLegend>Contact preferences</FieldLegend>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor='disabled-contact'>Email</FieldLabel>
+          <FieldContent>
+            <Input id='disabled-contact' />
+          </FieldContent>
+        </Field>
+        <FieldSeparator>Other details</FieldSeparator>
+        <Field>
+          <FieldTitle>Unavailable while preferences are locked</FieldTitle>
+        </Field>
+      </FieldGroup>
+    </FieldSet>
+  ),
+};
+
+export const NormalizedErrors: Story = {
+  render: () => (
+    <FieldError errors={[undefined, {message: "  Required  "}, {message: "Required"}, {message: ""}, {message: "Use a valid value"}]} />
   ),
 };

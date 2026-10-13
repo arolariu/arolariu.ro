@@ -10,18 +10,13 @@ import styles from "./label.module.css";
  * Extends native `<label>` attributes so the component can participate in accessible
  * form relationships while exposing a documented class override.
  */
-export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
-  /**
-   * Additional CSS classes merged with the default label typography.
-   */
-  className?: string;
-}
+export type LabelProps = Readonly<React.ComponentPropsWithoutRef<"label">>;
 
 /**
  * An accessible text label for form controls and field groups.
  *
  * @remarks
- * **Rendering Context**: Client Component.
+ * Pure native display module; compatible with server and client rendering.
  *
  * Renders a styled `<label>` element that pairs naturally with form inputs through
  * `htmlFor`. Use it to provide clear, clickable context for interactive controls.
@@ -31,17 +26,28 @@ export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> 
  * <Label htmlFor="email">Email address</Label>
  * ```
  *
- * @see {@link https://base-ui.com/react/components/label Base UI Label docs}
+ * No generated IDs or context are introduced; callers own the `htmlFor`/`id`
+ * relationship. Disabled fieldsets retain native control semantics.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label | Native label}
  */
-const Label = React.forwardRef<HTMLLabelElement, LabelProps>(({children, className, htmlFor, ...props}, ref) => (
-  <label
-    ref={ref}
-    className={cn(styles.label, className)}
-    htmlFor={htmlFor}
-    {...props}>
-    {children}
-  </label>
-));
+const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
+  ({children, className, htmlFor, ...props}: Readonly<LabelProps>, ref): React.JSX.Element => (
+    <label
+      data-slot='label'
+      ref={ref}
+      className={cn(styles.label, className)}
+      htmlFor={htmlFor}
+      {...props}>
+      {children}
+    </label>
+  ),
+);
 Label.displayName = "Label";
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Label {
+  export type Props = Readonly<LabelProps>;
+}
 
 export {Label};
