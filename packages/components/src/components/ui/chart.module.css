@@ -69,6 +69,12 @@
   align-items: center;
 }
 
+.tooltipItem > svg {
+  width: 0.625rem;
+  height: 0.625rem;
+  color: var(--ac-muted-foreground);
+}
+
 .tooltipValueRow {
   display: flex;
   flex: 1;
@@ -160,4 +166,41 @@
   height: 0.5rem;
   flex-shrink: 0;
   border-radius: 2px;
+  background-color: var(--ac-chart-indicator-background, transparent);
+}
+
+.storyFrame {
+  width: min(600px, calc(100vw - 2rem));
+}
+
+.storyCompact {
+  width: min(500px, calc(100vw - 2rem));
+}
+
+.storyLarge {
+  width: min(800px, calc(100vw - 2rem));
+  padding: var(--ac-space-6);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+}
+
+.storyHeading {
+  margin-block: 0 var(--ac-space-4);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-lg);
+  font-weight: 600;
+}
+
+.storySamples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--ac-space-6);
+}
+
+.storyDark {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
 }
