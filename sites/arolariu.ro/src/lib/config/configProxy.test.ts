@@ -305,6 +305,24 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps subsequent per-key reads on local exp when a local Azure identity is configured", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("EXP_PROXY_URL", "");
+    vi.stubEnv("AZURE_CLIENT_ID", "local-resource-identity");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(runtimeDocument()))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("website.commander.enabled", "true")));
+    vi.stubGlobal("fetch", fetchMock);
+    const {initializeRuntimeEnvironmentConfiguration, fetchConfigValue} = await import("./configProxy");
+
+    await initializeRuntimeEnvironmentConfiguration();
+    expect(await fetchConfigValue("website.commander.enabled")).toBe("true");
+
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("http://exp/api/v1/config");
+    expect(fetchMock.mock.calls[1]?.[1].headers).not.toHaveProperty("Authorization");
+  });
+
   it("uses dotenv aliases for subsequent reads when local exp is unavailable", async () => {
     vi.stubEnv("INFRA", "local");
     vi.stubEnv("STORAGE_BLOB_ENDPOINT", "https://offline-storage.example.test");
@@ -346,7 +364,7 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
 
   it("selects the production label from SITE_ENV", async () => {
     vi.stubEnv("SITE_ENV", "PRODUCTION");
-    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument({"Site:Environment": "PRODUCTION"})));
     vi.stubGlobal("fetch", fetchMock);
     const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
 
@@ -357,13 +375,23 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
 
   it("normalizes a valid environment before selecting its label", async () => {
     vi.stubEnv("SITE_ENV", " production ");
-    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument()));
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument({"Site:Environment": "PRODUCTION"})));
     vi.stubGlobal("fetch", fetchMock);
     const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
 
     await initializeRuntimeEnvironmentConfiguration();
 
     expect(fetchMock.mock.calls[0]?.[0]).toContain("label=PRODUCTION");
+  });
+
+  it("rejects a runtime document from the wrong environment before applying private values", async () => {
+    vi.stubEnv("SITE_ENV", "PRODUCTION");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createJsonResponse(runtimeDocument())));
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+
+    await expect(initializeRuntimeEnvironmentConfiguration()).rejects.toThrow("does not match PRODUCTION");
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("");
+    expect(process.env["API_JWT"]).toBe("");
   });
 
   it("treats Azure App Service as cloud even without an infrastructure flag", async () => {

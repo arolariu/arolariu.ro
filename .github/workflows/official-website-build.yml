@@ -107,6 +107,8 @@ env:
   SITE_ENV: ${{ inputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
   SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
   SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+  # Each job's deployment environment selects the same-named environment secret/variable.
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
 jobs:
   test:
@@ -114,8 +116,6 @@ jobs:
     name: 🧪 Test phase (1/2)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
-    env:
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     timeout-minutes: 60
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
@@ -271,8 +271,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
-    env:
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v7
@@ -373,6 +371,13 @@ jobs:
           echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
           echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🧪 Smoke test final image runtime configuration
+        env:
+          CONTAINER_NAME: ${{ inputs.container_name || 'frontend/dev.arolariu' }}
+          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+        run: node tests/container/runtime-configuration.smoke.mjs "${ACR_LOGIN_SERVER}/${CONTAINER_NAME}:${CONTAINER_TAG}" "$SITE_ENV"
 
       - name: ⏫ Pushing the docker container...
         env:
