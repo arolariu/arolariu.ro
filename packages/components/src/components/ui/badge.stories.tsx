@@ -1,5 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Badge} from "./badge";
+import {Badge, type BadgeProps} from "./badge";
+import styles from "./badge.module.css";
 
 const meta = {
   title: "Components/Data Display/Badge",
@@ -8,7 +9,7 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["default", "secondary", "destructive", "outline"],
+      options: ["default", "secondary", "destructive", "outline", "ghost", "link"],
       description: "Visual style variant",
     },
   },
@@ -23,6 +24,34 @@ export const Default: Story = {
     variant: "default",
   },
 };
+
+export const Ghost = {
+  args: {
+    children: "Ghost",
+    variant: "ghost",
+  } satisfies BadgeProps,
+} satisfies Story;
+
+export const Link = {
+  args: {
+    children: "Release notes",
+    variant: "link",
+    render: <a href='#release-notes' />,
+  } satisfies BadgeProps,
+} satisfies Story;
+
+export const CallbackRender = {
+  args: {
+    children: "Preview",
+    variant: "outline",
+    render: (props, state) => (
+      <span
+        {...props}
+        aria-label={`${state.variant} badge`}
+      />
+    ),
+  } satisfies BadgeProps,
+} satisfies Story;
 
 export const Secondary: Story = {
   args: {
@@ -50,81 +79,66 @@ export const Outline: Story = {
  */
 function BadgeWithDot(): React.JSX.Element {
   return (
-    <div style={{display: "flex", gap: "12px", flexWrap: "wrap"}}>
+    <div className={styles.storyRow}>
       <Badge variant='default'>
         <span
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            backgroundColor: "currentColor",
-            display: "inline-block",
-            marginRight: "6px",
-          }}></span>
+          aria-hidden='true'
+          className={styles.statusDot}
+        />
         Active
       </Badge>
       <Badge variant='secondary'>
         <span
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            backgroundColor: "#fbbf24",
-            display: "inline-block",
-            marginRight: "6px",
-          }}></span>
+          aria-hidden='true'
+          className={styles.statusDot}
+        />
         Pending
       </Badge>
       <Badge variant='outline'>
         <span
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            backgroundColor: "#22c55e",
-            display: "inline-block",
-            marginRight: "6px",
-          }}></span>
+          aria-hidden='true'
+          className={styles.statusDot}
+        />
         Online
       </Badge>
     </div>
   );
 }
 
-export const WithDot: Story = {
+export const WithDot = {
   render: () => <BadgeWithDot />,
-};
+} satisfies Story;
 
 /**
  * Badge with larger text and padding.
  */
 function LargeBadge(): React.JSX.Element {
   return (
-    <div style={{display: "flex", gap: "12px", flexWrap: "wrap"}}>
+    <div className={styles.storyRow}>
       <Badge
         variant='default'
-        style={{fontSize: "16px", padding: "8px 16px"}}>
+        className={styles.storyLarge}>
         Large Default
       </Badge>
       <Badge
         variant='secondary'
-        style={{fontSize: "16px", padding: "8px 16px"}}>
+        className={styles.storyLarge}>
         Large Secondary
       </Badge>
       <Badge
         variant='destructive'
-        style={{fontSize: "16px", padding: "8px 16px"}}>
+        className={styles.storyLarge}>
         Large Destructive
       </Badge>
       <Badge
         variant='outline'
-        style={{fontSize: "16px", padding: "8px 16px"}}>
+        className={styles.storyLarge}>
         Large Outline
       </Badge>
     </div>
   );
 }
 
-export const Large: Story = {
+export const Large = {
   render: () => <LargeBadge />,
-};
+} satisfies Story;

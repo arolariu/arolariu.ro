@@ -1,5 +1,7 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
@@ -9,33 +11,41 @@ import styles from "./button-group.module.css";
 /** Supported layout directions for {@link ButtonGroup}. */
 export type ButtonGroupOrientation = "horizontal" | "vertical";
 
-interface ButtonGroupVariantOptions {
+/** Options for generating {@link ButtonGroup} layout classes. */
+export interface ButtonGroupVariantOptions {
   /** Orientation used to resolve the root style classes. @default "horizontal" */
-  orientation?: ButtonGroupOrientation;
+  readonly orientation?: ButtonGroupOrientation;
   /** Additional classes merged into the generated variant string. @default undefined */
-  className?: string;
+  readonly className?: string;
 }
 
 /**
  * Props for the {@link ButtonGroup} component.
  */
-export interface ButtonGroupProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Arrangement of grouped controls. @default "horizontal" */
-  orientation?: ButtonGroupOrientation;
-}
+export type ButtonGroupProps = Readonly<
+  React.ComponentPropsWithoutRef<"div"> & {
+    /** Arrangement of grouped controls. @default "horizontal" */
+    orientation?: ButtonGroupOrientation;
+  }
+>;
+
+/** State exposed to {@link ButtonGroupText} render callbacks. */
+export type ButtonGroupTextState = Readonly<{slot: "button-group-text"}>;
 
 /**
  * Props for the {@link ButtonGroupText} component.
  */
-export interface ButtonGroupTextProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Enables rendering an existing div-compatible child element. @default false */
-  asChild?: boolean;
-}
+export type ButtonGroupTextProps = Readonly<
+  useRender.ComponentProps<"div", ButtonGroupTextState, React.ComponentPropsWithRef<"div">> & {
+    /** Enables rendering an existing div-compatible child element. @default false */
+    asChild?: boolean;
+  }
+>;
 
 /**
  * Props for the {@link ButtonGroupSeparator} component.
  */
-export type ButtonGroupSeparatorProps = React.ComponentPropsWithoutRef<typeof Separator>;
+export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithoutRef<typeof Separator>>;
 
 /**
  * Returns the CSS class list for a button group root.
@@ -87,8 +97,9 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  * Adds descriptive text content within a button group layout.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a `<div>` element by default
+ * - Base UI owns render composition, merging both refs and event handlers.
+ * - Renders a `<div>` by default; prefer `render` for labels or other markup.
+ * - Legacy `asChild` remains a compatible alias for a single child element.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -99,28 +110,16 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  * @see {@link ButtonGroupTextProps} for available props
  */
 const ButtonGroupText = React.forwardRef<HTMLDivElement, ButtonGroupTextProps>(
-  ({className, asChild = false, children, ...props}: Readonly<ButtonGroupTextProps>, ref): React.JSX.Element => {
-    const mergedClassName = cn(styles.text, className);
+  ({className, render, asChild = false, children, ...props}: Readonly<ButtonGroupTextProps>, ref): React.ReactElement => {
+    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
 
-    if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<React.ComponentPropsWithoutRef<"div"> & {ref?: React.Ref<HTMLDivElement>}>;
-
-      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
-      return React.cloneElement(child, {
-        ...props,
-        ref,
-        className: cn(mergedClassName, child.props.className),
-      });
-    }
-
-    return (
-      <div
-        ref={ref}
-        className={mergedClassName}
-        {...props}>
-        {children}
-      </div>
-    );
+    return useRender<ButtonGroupTextState, HTMLDivElement>({
+      defaultTagName: "div",
+      ref,
+      render: legacyChild ?? render,
+      state: {slot: "button-group-text"},
+      props: mergeProps<"div">({className: cn(styles.text, className)}, props, {children: legacyChild ? undefined : children}),
+    });
   },
 );
 

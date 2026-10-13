@@ -18,14 +18,14 @@
 }
 
 .horizontal > *:not(:first-child) {
-  margin-left: -1px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  margin-inline-start: -1px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
 }
 
 .horizontal > *:not(:last-child) {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
 }
 
 .vertical {
@@ -59,6 +59,7 @@
 }
 
 .text svg {
+  pointer-events: none;
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;

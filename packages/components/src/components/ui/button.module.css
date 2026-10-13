@@ -1,6 +1,7 @@
 .button {
   box-sizing: border-box;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: var(--ac-space-2);
@@ -127,6 +128,18 @@
   border-radius: var(--ac-radius-sm);
 }
 
+.sizeXs {
+  height: var(--ac-size-sm);
+  padding: 0 var(--ac-space-2);
+  font-size: var(--ac-text-xs);
+  border-radius: var(--ac-radius-sm);
+
+  & svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
 .sizeLg {
   height: var(--ac-size-lg);
   padding: var(--ac-space-1) var(--ac-space-4);
@@ -138,4 +151,35 @@
   width: var(--ac-size-default);
   height: var(--ac-size-default);
   padding: 0;
+}
+
+.sizeIconXs {
+  width: var(--ac-size-sm);
+  height: var(--ac-size-sm);
+  padding: 0;
+  border-radius: var(--ac-radius-sm);
+
+  & svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
+.sizeIconSm {
+  width: var(--ac-size-md);
+  height: var(--ac-size-md);
+  padding: 0;
+  border-radius: var(--ac-radius-sm);
+}
+
+.sizeIconLg {
+  width: var(--ac-size-lg);
+  height: var(--ac-size-lg);
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
 }

@@ -1,7 +1,13 @@
+import {mergeProps} from "@base-ui/react/merge-props";
 import {render, screen} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import userEvent from "@testing-library/user-event";
+import {createRef} from "react";
+import {describe, expect, it, vi} from "vitest";
 
-import {ButtonGroup, ButtonGroupSeparator, ButtonGroupText} from "./button-group";
+import {Button} from "./button";
+import {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./button-group";
+import styles from "./button-group.module.css";
+import {CallbackText, LegacyText, RenderedLabel} from "./button-group.stories";
 
 describe("ButtonGroup", () => {
   it("renders ButtonGroup components with children, custom classes, and forwarded refs", () => {
@@ -74,5 +80,224 @@ describe("ButtonGroup", () => {
     expect(textElement).toHaveClass("custom-div");
     expect(textElement.tagName).toBe("DIV");
     expect(screen.getByText("Custom Text")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["horizontal", styles.horizontal],
+    ["vertical", styles.vertical],
+  ] as const)("exposes %s orientation, styles, and an accessible group label", (orientation, orientationClass) => {
+    render(
+      <ButtonGroup
+        orientation={orientation}
+        aria-label='Page actions'>
+        <Button>Previous</Button>
+        <Button>Next</Button>
+      </ButtonGroup>,
+    );
+    const group = screen.getByRole("group", {name: "Page actions"});
+    expect(group).toHaveClass(styles.root, orientationClass);
+    expect(group).toHaveAttribute("data-orientation", orientation);
+    expect(group).toHaveAttribute("data-slot", "button-group");
+  });
+
+  it("generates default and customized orientation classes", () => {
+    expect(buttonGroupVariants()).toContain(styles.root);
+    expect(buttonGroupVariants()).toContain(styles.horizontal);
+    expect(buttonGroupVariants({orientation: "vertical", className: "consumer"})).toContain(styles.vertical);
+    expect(buttonGroupVariants({className: "consumer"})).toContain("consumer");
+  });
+
+  it("retains sequential keyboard behavior of real grouped controls", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(
+      <ButtonGroup aria-label='Actions'>
+        <Button>Previous</Button>
+        <ButtonGroupText>Page 1</ButtonGroupText>
+        <ButtonGroupSeparator />
+        <Button
+          nativeButton={false}
+          render={<div />}
+          onClick={onClick}>
+          Next
+        </Button>
+        <Button disabled>Unavailable</Button>
+      </ButtonGroup>,
+    );
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Previous"})).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Next"})).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onClick).toHaveBeenCalledTimes(1);
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Unavailable"})).not.toHaveFocus();
+  });
+
+  it("merges legacy child refs, events, classes, and preserves child content", async () => {
+    const user = userEvent.setup();
+    const wrapperRef = createRef<HTMLDivElement>();
+    const childRef = createRef<HTMLSpanElement>();
+    const calls: string[] = [];
+    const {unmount} = render(
+      <ButtonGroupText
+        asChild
+        ref={wrapperRef}
+        className='wrapper'
+        onClick={() => calls.push("wrapper")}>
+        <span
+          ref={childRef}
+          className='child'
+          onClick={() => calls.push("child")}>
+          Quantity
+        </span>
+      </ButtonGroupText>,
+    );
+    const text = screen.getByText("Quantity");
+    expect(wrapperRef.current).toBe(text);
+    expect(childRef.current).toBe(text);
+    expect(text).toHaveClass(styles.text, "wrapper", "child");
+    expect(text).toHaveAttribute("data-slot", "button-group-text");
+    await user.click(text);
+    expect(calls).toEqual(["child", "wrapper"]);
+    unmount();
+    expect(wrapperRef.current).toBeNull();
+    expect(childRef.current).toBeNull();
+  });
+
+  it("supports canonical render elements with both refs and wrapper content", async () => {
+    const user = userEvent.setup();
+    const wrapperRef = createRef<HTMLDivElement>();
+    const childRef = createRef<HTMLLabelElement>();
+    const onClick = vi.fn();
+    render(
+      <>
+        <ButtonGroupText
+          ref={wrapperRef}
+          onClick={onClick}
+          render={
+            <label
+              ref={childRef}
+              htmlFor='quantity'
+            />
+          }>
+          Quantity
+        </ButtonGroupText>
+        <input id='quantity' />
+      </>,
+    );
+    const text = screen.getByText("Quantity");
+    expect(text.tagName).toBe("LABEL");
+    expect(wrapperRef.current).toBe(text);
+    expect(childRef.current).toBe(text);
+    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
+    await user.click(text);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Quantity")).toHaveFocus();
+  });
+
+  it("exposes text slot state to callback renders with props and ref intact", () => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <ButtonGroupText
+        ref={ref}
+        render={(props, state) => (
+          <div
+            {...props}
+            aria-label={state.slot}
+          />
+        )}>
+        Callback text
+      </ButtonGroupText>,
+    );
+    const text = screen.getByLabelText("button-group-text");
+    expect(text).toHaveTextContent("Callback text");
+    expect(text).toHaveClass(styles.text);
+    expect(ref.current).toBe(text);
+  });
+
+  it.each([true, false])("honors child event cancellation for legacy=%s composition", async (asChild) => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const child = (
+      <span
+        {...mergeProps<"span">(
+          {},
+          {
+            onClick: (event) => event.preventBaseUIHandler(),
+          },
+        )}>
+        Cancelled
+      </span>
+    );
+    render(
+      <ButtonGroupText
+        asChild={asChild}
+        render={asChild ? undefined : child}
+        onClick={onClick}>
+        {asChild ? child : undefined}
+      </ButtonGroupText>,
+    );
+    await user.click(screen.getByText("Cancelled"));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("keeps plain-text legacy children in the default div", () => {
+    render(<ButtonGroupText asChild>Fallback</ButtonGroupText>);
+    const text = screen.getByText("Fallback");
+    expect(text.tagName).toBe("DIV");
+    expect(text).toHaveAttribute("data-slot", "button-group-text");
+  });
+
+  it("keeps fragment legacy children inside the default text div", () => {
+    render(
+      <ButtonGroupText asChild>
+        <>
+          <span>Fragment content</span>
+        </>
+      </ButtonGroupText>,
+    );
+    expect(screen.getByText("Fragment content").parentElement).toHaveAttribute("data-slot", "button-group-text");
+    expect(screen.getByText("Fragment content").parentElement?.tagName).toBe("DIV");
+  });
+
+  it.each(["horizontal", "vertical"] as const)("forwards %s separator orientation, classes, and ref", (orientation) => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <ButtonGroupSeparator
+        ref={ref}
+        orientation={orientation}
+        className='consumer'
+      />,
+    );
+    const separator = screen.getByRole("separator");
+    expect(separator).toHaveAttribute("aria-orientation", orientation);
+    expect(separator).toHaveAttribute("data-orientation", orientation);
+    expect(separator).toHaveClass(styles.separator, "consumer");
+    expect(ref.current).toBe(separator);
+  });
+
+  it("defaults the separator to the vertical axis for a horizontal group", () => {
+    render(<ButtonGroupSeparator />);
+    expect(screen.getByRole("separator")).toHaveAttribute("data-orientation", "vertical");
+  });
+
+  it("preserves label association and keyboard semantics in real composition stories", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <RenderedLabel.render />
+        <CallbackText.render />
+        <LegacyText.render />
+      </>,
+    );
+    const input = screen.getByRole("spinbutton", {name: "Quantity"});
+    await user.click(screen.getByText("Quantity"));
+    expect(input).toHaveFocus();
+    expect(screen.getByLabelText("button-group-text")).toHaveTextContent("Page 1 of 5");
+    expect(screen.getByRole("button", {name: "Next"}).tagName).toBe("DIV");
+    expect(screen.getByRole("button", {name: "Last page"})).toBeDisabled();
+    expect(screen.getByText("Display").tagName).toBe("SPAN");
+    expect(screen.getByRole("button", {name: "Compact"})).toHaveAttribute("data-size", "xs");
   });
 });
