@@ -66,4 +66,56 @@ describe("ScanMediaPreview", () => {
     expect(select).toHaveBeenCalledOnce();
     expect(activate).not.toHaveBeenCalled();
   });
+
+  it("preserves every overlay slot and explicit image loading behavior", () => {
+    const {container, rerender} = render(
+      <ScanMediaPreview
+        src='blob:receipt'
+        mediaKind='image'
+        alt='Receipt'
+        loading='eager'
+        topLeftOverlay={<span>Selection</span>}
+        topRightOverlay={<span>Actions</span>}
+        bottomLeftOverlay={<span>Status</span>}
+        bottomRightOverlay={<span>Linked invoice</span>}
+        centerOverlay={<span>Processing</span>}
+      />,
+    );
+
+    expect(container.querySelector("img")).toHaveAttribute("src", "blob:receipt");
+    expect(container.querySelector("img")).toHaveAttribute("loading", "eager");
+    for (const label of ["Selection", "Actions", "Status", "Linked invoice", "Processing"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+
+    rerender(
+      <ScanMediaPreview
+        src='blob:receipt'
+        mediaKind='image'
+        alt='Receipt'
+      />,
+    );
+
+    expect(container.querySelector("img")).toHaveAttribute("loading", "lazy");
+    for (const label of ["Selection", "Actions", "Status", "Linked invoice", "Processing"]) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
+  });
+
+  it.each([
+    ["", "image"],
+    ["", "pdf"],
+    ["blob:unknown", "unknown"],
+  ] as const)("shows a missing preview for source %s and media kind %s", (src, mediaKind) => {
+    render(
+      <ScanMediaPreview
+        src={src}
+        mediaKind={mediaKind}
+        alt='Unavailable scan'
+      />,
+    );
+
+    expect(screen.getByText("No preview")).toBeInTheDocument();
+    expect(screen.queryByText("PDF")).not.toBeInTheDocument();
+  });
 });

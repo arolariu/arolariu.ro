@@ -16,12 +16,13 @@ import * as React from "react";
  */
 export function useMediaQuery(query: string): boolean {
   const store = React.useMemo(() => {
-    const mql = typeof globalThis.window === "undefined" ? undefined : globalThis.window.matchMedia(query);
+    const mql = globalThis.window?.matchMedia(query);
     let matches = mql?.matches ?? false;
 
     const subscribe = (onStoreChange: () => void): (() => void) => {
       const onChange = (event: MediaQueryListEvent): void => {
-        matches = event.matches;
+        const {matches: nextMatches} = event;
+        matches = nextMatches;
         onStoreChange();
       };
 

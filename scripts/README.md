@@ -250,6 +250,34 @@ import). It reaches [`types/format.ts`](./types/format.ts), [`types/lint.ts`](./
 
 Migrating the closure, and removing `execa` and `logger.ts` with it, is future work.
 
+### Full ESLint verification
+
+`npm run lint` is a mixed-tool, cached development runner: website/packages use ESLint, CV/status run Svelte checks before ESLint,
+and API/experimental targets use .NET/Ruff. It does not dispatch the root tooling rules. A Svelte check failure prevents that target's
+ESLint step from running, and its synthetic failure count is not an ESLint diagnostic.
+
+For a full uncached ESLint check, use the existing hygiene provider's scope: website, components, CV, status, then the repository
+remainder without those four prefixes. Separate processes release typed-project state between projects. After the normal workspace
+setup (including component build and SvelteKit sync), the equivalent PowerShell commands are:
+
+```powershell
+$env:NODE_OPTIONS = "--max-old-space-size=8192"
+npx --no-install eslint sites\arolariu.ro --no-cache --max-warnings 0
+npx --no-install eslint packages\components --no-cache --max-warnings 0
+npx --no-install eslint sites\cv.arolariu.ro --no-cache --max-warnings 0
+npx --no-install eslint sites\status.arolariu.ro --no-cache --max-warnings 0
+npx --no-install eslint . --no-cache --max-warnings 0 --ignore-pattern "sites/arolariu.ro/**" --ignore-pattern "packages/components/**" --ignore-pattern "sites/cv.arolariu.ro/**" --ignore-pattern "sites/status.arolariu.ro/**"
+```
+
+This means all **configured** ESLint coverage, not every tracked file. `eslint.config.ts` owns generated/build exclusions and existing
+project exclusions for tests, stories, configuration, declarations, and nested scripts/tests. The Svelte configurations select TypeScript,
+not `.svelte` markup; the root tooling rules have their own scope. Do not interpret unconfigured or ignored files as analyzed files.
+
+The existing hygiene workflow preserves diagnostics and `errorCount`, `warningCount`, and `filesChecked` in `outcome-lint.json`.
+Its normal gate blocks errors only: zero-diagnostic acceptance additionally requires `warningCount === 0`, nonzero file coverage,
+and verification that the run selected the full scope rather than only changed files. Parser/configuration failures and runner failures
+must remain explicit; they are not clean lint results.
+
 ## Architecture rules
 
 [`architecture.test.ts`](./architecture.test.ts) sanctions `scripts/platform/**` as the only owner of ambient `process.*`, timer,

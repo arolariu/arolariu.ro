@@ -283,7 +283,8 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     },
     ref,
   ) => {
-    const [selectedItemId, setActiveItemId] = React.useState<string | null>(null);
+    const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
+    const setActiveItemId = setSelectedItemId;
     const [search, setSearch] = React.useState("");
     const itemOrderRef = React.useRef(0);
     const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());

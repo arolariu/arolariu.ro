@@ -1,9 +1,48 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import {ESLint} from "eslint";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import eslintConfig from "../../../../../eslint.config.ts";
 import type {LineFinding} from "../domain/types.ts";
 import {lintProvider, parseEslintJson, type EslintFileResult} from "./lintProvider.ts";
+
+describe("website framework-aware lint rules", () => {
+  it("requires optional-prop defaults using the React 19 default-argument contract", async () => {
+    const website = eslintConfig.find((config) => config.name === "[@arolariu/website]");
+    const rule = website?.rules?.["react/require-default-props"];
+    if (!website || !rule) {
+      throw new Error("Website default-prop rule is missing");
+    }
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: {
+        files: ["**/*.tsx"],
+        languageOptions: {...website.languageOptions, parserOptions: {ecmaFeatures: {jsx: true}}},
+        plugins: website.plugins,
+        rules: {"react/require-default-props": rule},
+        settings: website.settings,
+      },
+    });
+    const options = {filePath: path.join("sites", "arolariu.ro", "src", "DefaultPropsFixture.tsx")};
+    const [valid] = await eslint.lintText(
+      'type Props = {label?: string}; export function Example({label = "default"}: Props) {return <span>{label}</span>;}',
+      options,
+    );
+    const [invalid] = await eslint.lintText(
+      "type Props = {label?: string}; export function Example({label}: Props) {return <span>{label}</span>;}",
+      options,
+    );
+
+    expect(valid?.errorCount).toBe(0);
+    expect(invalid?.messages).toEqual([expect.objectContaining({ruleId: "react/require-default-props", severity: 2})]);
+  });
+
+  it("keeps extraneous-import checks at error severity while recognizing only the Next.js marker", () => {
+    const website = eslintConfig.find((config) => config.name === "[@arolariu/website]");
+    expect(website?.rules?.["n/no-extraneous-import"]).toEqual(["error", {allowModules: ["server-only"]}]);
+  });
+});
 
 describe("parseEslintJson", () => {
   it("returns [] for empty results", () => {

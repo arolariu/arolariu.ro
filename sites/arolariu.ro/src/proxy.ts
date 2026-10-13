@@ -17,15 +17,18 @@ class MalformedAdminPathError extends Error {
   }
 }
 
-function isProtectedAdminPath(pathname: string): boolean {
-  let decodedPath: string;
+function decodeAdminPath(pathname: string): string {
   try {
-    decodedPath = decodeURI(pathname);
+    return decodeURI(pathname);
   } catch (error) {
     throw new MalformedAdminPathError(pathname, error);
   }
+}
+
+function isProtectedAdminPath(pathname: string): boolean {
+  const decodedPath = decodeAdminPath(pathname);
   // Preserve Clerk's existing decoding, repeated-slash normalization and /admin(.*) prefix policy.
-  return /^\/admin.*$/iu.test(decodedPath.replace(/\/\/+/gu, "/"));
+  return /^\/admin.*$/iu.test(decodedPath.replaceAll(/\/\/+/gu, "/"));
 }
 
 export default authMiddleware(async (auth, req) => {

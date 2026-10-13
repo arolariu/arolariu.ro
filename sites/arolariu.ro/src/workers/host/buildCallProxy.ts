@@ -19,8 +19,10 @@ import {WorkerError, WorkerTimeoutError} from "./workerErrors";
 /** No-op callback used to suppress unhandled-rejection noise on race losers. */
 const noop = (): void => undefined;
 
+type WorkerMethod = (...args: unknown[]) => Promise<unknown>;
+
 async function invokeWorkerMethod(
-  method: (...args: unknown[]) => Promise<unknown>,
+  method: WorkerMethod,
   args: readonly unknown[],
   name: string,
 ): Promise<unknown> {
@@ -35,7 +37,7 @@ async function invokeWorkerMethod(
 }
 
 function createWorkerCall(
-  method: (...args: unknown[]) => Promise<unknown>,
+  method: WorkerMethod,
   args: readonly unknown[],
   name: string,
   signal: AbortSignal | undefined,
@@ -120,7 +122,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           try {
             const wrapped = deps.bridge.wrapCall(
               prop,
-              createWorkerCall(fn as (...args: unknown[]) => Promise<unknown>, callArgs, prop, signal),
+              createWorkerCall(fn as WorkerMethod, callArgs, prop, signal),
             );
 
             if (timeoutPromise) {
