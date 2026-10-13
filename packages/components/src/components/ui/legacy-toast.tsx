@@ -118,11 +118,21 @@ interface ToasterRegistration {
   readonly closeButton: boolean;
   readonly toastOptions: LegacyToastOptions;
 }
+interface PromiseOperation {
+  readonly id: string;
+  readonly lifetime: symbol | null;
+  readonly generation: symbol | undefined;
+  readonly version: number;
+}
 
 const manager = ToastPrimitive.createToastManager<LegacyToastMetadata>();
 const records = new Map<string, ToastRecord>();
 const history: LegacyToastSnapshot[] = [];
 const registrations = new Map<string, ToasterRegistration>();
+const operations = new Map<string, PromiseOperation>();
+const publicationVersions = new Map<string, number>();
+let providerLifetime: symbol | null = null;
+let publicationVersion = 0;
 const variantStyles: Readonly<Record<LegacyToastVariant, string | undefined>> = {
   default: styles.default,
   error: styles.error,
@@ -202,7 +212,17 @@ function renderable(value?: LegacyToastRenderable): React.ReactNode {
   return typeof value === "function" ? React.createElement(value) : value;
 }
 
+function markPublication(id: string): number {
+  publicationVersion += 1;
+  publicationVersions.set(id, publicationVersion);
+  return publicationVersion;
+}
+
 function save(record: ToastRecord, update = false): void {
+  if (!update) {
+    operations.delete(record.snapshot.id);
+    markPublication(record.snapshot.id);
+  }
   records.set(record.snapshot.id, record);
   const index = update ? history.findLastIndex((snapshot) => snapshot.id === record.snapshot.id) : -1;
   if (index === -1) {
@@ -215,6 +235,8 @@ function save(record: ToastRecord, update = false): void {
 function remove(record: ToastRecord): void {
   if (records.get(record.snapshot.id)?.generation === record.generation) {
     records.delete(record.snapshot.id);
+    operations.delete(record.snapshot.id);
+    markPublication(record.snapshot.id);
   }
 }
 
@@ -261,11 +283,15 @@ function show(
 function dismiss(id?: LegacyToastIdentifier): string | undefined {
   if (id === undefined) {
     records.clear();
+    operations.clear();
+    publicationVersions.clear();
     manager.close();
     return undefined;
   }
   const normalized = String(id);
   records.delete(normalized);
+  operations.delete(normalized);
+  markPublication(normalized);
   manager.close(normalized);
   return normalized;
 }
@@ -330,27 +356,35 @@ function promiseState(
   return isResolvedOptions(state) ? {message: state.message, options: {...base, ...state}} : {message: state, options: base};
 }
 
-function settle(
-  id: string | undefined,
-  generation: symbol | undefined,
-  state: ResolvedState,
-  variant: LegacyToastVariant,
-  base: LegacyToastOptions,
-): void {
-  if (id !== undefined && records.get(id)?.generation !== generation) {
+function ownsOperation(operation: PromiseOperation): boolean {
+  return (
+    providerLifetime !== null
+    && operation.lifetime === providerLifetime
+    && operations.get(operation.id) === operation
+    && (operation.generation === undefined || records.get(operation.id)?.generation === operation.generation)
+  );
+}
+
+function settle(operation: PromiseOperation, state: ResolvedState, variant: LegacyToastVariant, base: LegacyToastOptions): void {
+  if (!ownsOperation(operation)) {
     return;
   }
   if (state === null || state === undefined) {
-    if (id !== undefined) {
-      dismiss(id);
+    if (operation.generation !== undefined) {
+      dismiss(operation.id);
     }
     return;
   }
   const resolved = promiseState(state, base);
-  if (id !== undefined) {
-    update(id, {...resolved.options, message: resolved.message, variant});
+  if (operation.generation !== undefined) {
+    update(operation.id, {...resolved.options, message: resolved.message, variant});
   } else {
-    show(resolved.message, variant, resolved.options);
+    const targetId = identifier(resolved.options.id ?? registration().toastOptions.id ?? operation.id);
+    const owner = operations.get(targetId);
+    if ((publicationVersions.get(targetId) ?? 0) > operation.version || (owner !== undefined && owner !== operation)) {
+      return;
+    }
+    show(resolved.message, variant, {...resolved.options, id: targetId});
   }
 }
 
@@ -358,11 +392,31 @@ function isPromiseSource(value: unknown): value is PromiseLike<unknown> {
   return typeof value === "object" && value !== null && "then" in value && typeof value.then === "function";
 }
 
+function finishOperation(operation: PromiseOperation): void {
+  if (operations.get(operation.id) === operation) {
+    operations.delete(operation.id);
+  }
+  if (operations.size === 0) {
+    publicationVersions.clear();
+  }
+}
+
 async function promise<Value>(value: LegacyToastPromise<Value>, options: LegacyToastPromiseOptions<Value> = {}): Promise<Value> {
   const {loading, success, error: errorState, finally: onFinally, ...base} = options;
+  const defaults = [...registrations.values()].at(-1)?.toastOptions;
+  const invocationOptions = {...defaults, ...base};
+  validateOptions(invocationOptions);
   const pending = promiseState(loading, base);
-  const id = pending.message === null || pending.message === undefined ? undefined : show(pending.message, "loading", pending.options);
-  const generation = id === undefined ? undefined : records.get(id)?.generation;
+  validateOptions({...defaults, ...pending.options});
+  const hasLoading = pending.message !== null && pending.message !== undefined;
+  const id = hasLoading ? show(pending.message, "loading", pending.options) : identifier(invocationOptions.id);
+  const operation: PromiseOperation = {
+    id,
+    lifetime: providerLifetime,
+    generation: hasLoading ? records.get(id)?.generation : undefined,
+    version: markPublication(id),
+  };
+  operations.set(id, operation);
   try {
     const source = typeof value === "function" ? value() : value;
     if (!isPromiseSource(source)) {
@@ -370,21 +424,25 @@ async function promise<Value>(value: LegacyToastPromise<Value>, options: LegacyT
     }
     const result = await source;
     const state = typeof success === "function" ? await success(result) : success;
-    settle(id, generation, state, "success", base);
+    settle(operation, state, "success", base);
     return result;
   } catch (error: unknown) {
     try {
       const state = typeof errorState === "function" ? await errorState(error) : errorState;
-      settle(id, generation, state, "error", base);
+      settle(operation, state, "error", base);
     } catch (formatterError: unknown) {
-      if (id !== undefined && records.get(id)?.generation === generation) {
+      if (ownsOperation(operation) && operation.generation !== undefined) {
         dismiss(id);
       }
       throw formatterError;
     }
     throw error;
   } finally {
-    await onFinally?.();
+    try {
+      await onFinally?.();
+    } finally {
+      finishOperation(operation);
+    }
   }
 }
 
@@ -559,6 +617,7 @@ const LegacyToaster = React.forwardRef<HTMLDivElement, LegacyToasterProps>(
       throw new RangeError("LegacyToaster visibleToasts must be a positive integer.");
     }
     React.useEffect(() => {
+      providerLifetime ??= Symbol("legacy-toaster-lifetime");
       registrations.delete(id);
       registrations.set(id, {closeButton, toastOptions: toastOptions ?? {}});
     }, [closeButton, toastOptions, id]);
@@ -567,6 +626,9 @@ const LegacyToaster = React.forwardRef<HTMLDivElement, LegacyToasterProps>(
         registrations.delete(id);
         if (registrations.size === 0) {
           records.clear();
+          operations.clear();
+          publicationVersions.clear();
+          providerLifetime = null;
         }
       },
       [id],

@@ -233,7 +233,9 @@
     background: ButtonFace;
     border-color: ButtonText;
   }
-  .root:focus-visible {
-    outline-color: Highlight;
+  .root:focus-visible,
+  .root .close:focus-visible,
+  .root .action:focus-visible {
+    outline: 2px solid Highlight;
   }
 }

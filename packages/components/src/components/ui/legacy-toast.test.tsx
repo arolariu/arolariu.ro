@@ -4,12 +4,114 @@ import * as React from "react";
 import {readFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
+import {Features, transform, transformStyleAttribute} from "lightningcss";
+import postcss from "postcss";
+import selectorParser from "postcss-selector-parser";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {legacyToast as toast, LegacyToaster as Toaster} from "./legacy-toast";
-import {toast as canonicalToast, Toaster as CanonicalToaster} from "./toast";
+import {toast as canonicalToast, Toaster as CanonicalToaster, createToastManager} from "./toast";
 import * as LegacyToastStories from "./legacy-toast.stories";
+import buttonStyles from "./button.module.css";
+import canonicalStyles from "./toast.module.css";
+import legacyStyles from "./legacy-toast.module.css";
+
+interface OutlineWinner {
+  readonly value: unknown;
+  readonly specificity: number;
+  readonly important: boolean;
+}
+
+function focusedOutline(element: HTMLElement, forcedColors: boolean): Map<string, OutlineWinner> {
+  const winners = new Map<string, OutlineWinner>();
+  for (const [name, classes] of [
+    ["button", buttonStyles],
+    ["toast", canonicalStyles],
+    ["legacy-toast", legacyStyles],
+  ] as const) {
+    const filename = join(dirname(fileURLToPath(import.meta.url)), `${name}.module.css`);
+    const compiled = transform({
+      filename,
+      code: readFileSync(filename),
+      include: Features.Nesting,
+      cssModules: true,
+      pseudoClasses: {focusVisible: "keyboard-focus", focus: "programmatic-focus", hover: "pointer-hover", active: "pointer-active"},
+    });
+    const exports = compiled.exports ?? {};
+    const names = new Map(Object.entries(exports).map(([key, value]) => [value.name, key]));
+    postcss.parse(compiled.code.toString()).walkRules((rule) => {
+      let parent = rule.parent;
+      while (parent && parent.type !== "root") {
+        if (parent.type === "atrule" && parent.name === "media") {
+          if (parent.params.includes("forced-colors") ? !forcedColors : true) {
+            return;
+          }
+        }
+        parent = parent.parent;
+      }
+      const selectors = selectorParser().astSync(rule.selector);
+      for (const selector of selectors.nodes) {
+        let specificity = 0;
+        selector.walk((node) => {
+          if (node.type === "id") {
+            specificity += 10000;
+          }
+          if (node.type === "class" || node.type === "attribute" || node.type === "pseudo") {
+            specificity += 100;
+          }
+          if (node.type === "tag") {
+            specificity += 1;
+          }
+          if (node.type === "class") {
+            const original = names.get(node.value);
+            if (original === "keyboard-focus") {
+              node.value = "keyboard-focus";
+            } else if (original === "programmatic-focus") {
+              node.value = "programmatic-focus";
+            } else if (original) {
+              node.value = classes[original] ?? node.value;
+            }
+          }
+        });
+        if (!element.matches(selector.toString())) {
+          continue;
+        }
+        for (const declaration of rule.nodes) {
+          if (declaration.type !== "decl" || !declaration.prop.startsWith("outline")) {
+            continue;
+          }
+          const apply = (property: string, value: unknown): void => {
+            const previous = winners.get(property);
+            const important = Boolean(declaration.important);
+            if (
+              !previous
+              || (important && !previous.important)
+              || (important === previous.important && specificity >= previous.specificity)
+            ) {
+              winners.set(property, {value, specificity, important});
+            }
+          };
+          transformStyleAttribute({
+            code: Buffer.from(`${declaration.prop}: ${declaration.value.replaceAll("var(--ac-ring)", "#123456")};`),
+            visitor: {
+              Declaration(parsed) {
+                if (parsed.property === "outline") {
+                  apply("outline-width", parsed.value.width);
+                  apply("outline-style", parsed.value.style);
+                  apply("outline-color", parsed.value.color);
+                } else if (parsed.property.startsWith("outline-") && "value" in parsed) {
+                  apply(parsed.property, parsed.value);
+                }
+              },
+            },
+          });
+        }
+      }
+    });
+  }
+  return winners;
+}
 
 describe("legacyToast compatibility", () => {
   afterEach(() => {
@@ -1179,7 +1281,7 @@ describe("legacyToast compatibility", () => {
     const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "legacy-toast.module.css"), "utf8");
     expect(css).not.toMatch(/\.root\s*\{[^}]*overflow:\s*hidden/u);
     expect(css).toContain(".primaryAction:focus-visible");
-    expect(css).toContain("outline-color: Highlight");
+    expect(css).toContain("outline: 2px solid Highlight");
     expect(css).toContain("@media (forced-colors: active)");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
   });
@@ -1206,5 +1308,326 @@ describe("legacyToast compatibility", () => {
     expect(screen.getByText("New defaults")).toBeInTheDocument();
     expect(toast.getToasts()).toHaveLength(2);
     expect(screen.getAllByLabelText("Close notification")).toHaveLength(1);
+  });
+
+  it.each(["resolve", "reject"] as const)(
+    "owns a no-loading %s operation without overwriting a later same-ID notification",
+    async (outcome) => {
+      const source = Promise.withResolvers<string>();
+      const failure = new Error("Source rejected");
+      const success = vi.fn((value: string) => `Stale ${value}`);
+      const error = vi.fn(() => "Stale error");
+      const onFinally = vi.fn();
+      render(<Toaster />);
+      const history = toast.getHistory();
+      let pending: Promise<string> | undefined;
+      act(() => {
+        pending = toast.promise(source.promise, {id: "no-loader-replacement", success, error, finally: onFinally});
+      });
+      expect(toast.getToasts()).toHaveLength(0);
+      expect(toast.getHistory()).toEqual(history);
+      act(() => {
+        toast("Replacement", {id: "no-loader-replacement", duration: 0});
+      });
+      await act(async () => {
+        if (outcome === "resolve") {
+          source.resolve("value");
+          expect(await pending).toBe("value");
+        } else {
+          source.reject(failure);
+          await expect(pending).rejects.toBe(failure);
+        }
+      });
+      expect(toast.getToasts()).toEqual([expect.objectContaining({title: "Replacement"})]);
+      expect(toast.getHistory().slice(history.length)).toEqual([expect.objectContaining({title: "Replacement"})]);
+      expect(outcome === "resolve" ? success : error).toHaveBeenCalledOnce();
+      expect(onFinally).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("supersedes older no-loader operations without reserving fake active/history snapshots", async () => {
+    const first = Promise.withResolvers<number>();
+    const second = Promise.withResolvers<number>();
+    render(<Toaster />);
+    const history = toast.getHistory();
+    const earlier = toast.promise(first.promise, {id: "no-loader-operation", success: "Old result"});
+    const later = toast.promise(second.promise, {id: "no-loader-operation", success: "New result"});
+    expect(toast.getToasts()).toHaveLength(0);
+    expect(toast.getHistory()).toEqual(history);
+    await act(async () => {
+      first.resolve(1);
+      expect(await earlier).toBe(1);
+    });
+    expect(toast.getToasts()).toHaveLength(0);
+    await act(async () => {
+      second.resolve(2);
+      expect(await later).toBe(2);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({title: "New result"})]);
+    expect(toast.getHistory().slice(history.length)).toHaveLength(1);
+  });
+
+  it.each(["specific", "all"] as const)("invalidates no-loader operation ownership on %s dismissal", async (kind) => {
+    const source = Promise.withResolvers<number>();
+    render(<Toaster />);
+    const history = toast.getHistory();
+    const pending = toast.promise(source.promise, {id: "no-loader-dismiss", success: "Should not publish"});
+    act(() => {
+      toast.dismiss(kind === "specific" ? "no-loader-dismiss" : undefined);
+    });
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toHaveLength(0);
+    expect(toast.getHistory()).toEqual(history);
+  });
+
+  it.each(["resolve", "reject"] as const)("does not publish no-loader %s work into a remounted provider lifetime", async (outcome) => {
+    const source = Promise.withResolvers<number>();
+    const failure = new Error("Previous lifetime failed");
+    const success = vi.fn(() => "Previous lifetime succeeded");
+    const error = vi.fn(() => "Previous lifetime failed");
+    const onFinally = vi.fn();
+    const history = toast.getHistory();
+    const {unmount} = render(<Toaster />);
+    const pending = toast.promise(source.promise, {success, error, finally: onFinally});
+    unmount();
+    render(<Toaster />);
+    await act(async () => {
+      if (outcome === "resolve") {
+        source.resolve(42);
+        expect(await pending).toBe(42);
+      } else {
+        source.reject(failure);
+        await expect(pending).rejects.toBe(failure);
+      }
+    });
+    expect(toast.getToasts()).toHaveLength(0);
+    expect(toast.getHistory()).toEqual(history);
+    expect(outcome === "resolve" ? success : error).toHaveBeenCalledOnce();
+    expect(onFinally).toHaveBeenCalledOnce();
+  });
+
+  it("keeps no-loader formatter/finally promises intact when unmount happens after source settlement", async () => {
+    const formatted = Promise.withResolvers<string>();
+    const finalized = Promise.withResolvers<void>();
+    const onFinally = vi.fn(() => finalized.promise);
+    const success = vi.fn(() => formatted.promise);
+    const {unmount} = render(<Toaster />);
+    const history = toast.getHistory();
+    const pending = toast.promise(Promise.resolve(42), {success, finally: onFinally});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(success).toHaveBeenCalledOnce();
+    unmount();
+    render(<Toaster />);
+    await act(async () => {
+      formatted.resolve("Old formatted content");
+      await Promise.resolve();
+    });
+    expect(onFinally).toHaveBeenCalledOnce();
+    expect(toast.getToasts()).toHaveLength(0);
+    await act(async () => {
+      finalized.resolve();
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getHistory()).toEqual(history);
+  });
+
+  it("settles no-loader sources after unmount without throwing a missing-provider UI error", async () => {
+    const source = Promise.withResolvers<number>();
+    const success = vi.fn(() => "Unmounted completion");
+    const onFinally = vi.fn();
+    const {unmount} = render(<Toaster />);
+    const history = toast.getHistory();
+    const pending = toast.promise(source.promise, {success, finally: onFinally});
+    unmount();
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(success).toHaveBeenCalledOnce();
+    expect(onFinally).toHaveBeenCalledOnce();
+    expect(toast.getHistory()).toEqual(history);
+  });
+
+  it("preserves resolved-state IDs without overwriting a notification created during the operation", async () => {
+    const source = Promise.withResolvers<number>();
+    render(<Toaster />);
+    const pending = toast.promise(source.promise, {success: () => ({id: "resolved-target", message: "Old completion"})});
+    act(() => {
+      toast("Target replacement", {id: "resolved-target", duration: 0});
+    });
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "resolved-target", title: "Target replacement"})]);
+  });
+
+  it.each([false, true])(
+    "keeps real action/cancel keyboard outlines after the full CSS cascade (forced colors %s)",
+    async (forcedColors) => {
+      const user = userEvent.setup();
+      render(<Toaster />);
+      act(() => {
+        toast("Focus contract", {
+          duration: 0,
+          action: {label: "Action", onClick: (event) => event.preventDefault()},
+          cancel: {label: "Cancel", onClick: (event) => event.preventDefault()},
+        });
+      });
+      for (const label of ["Cancel", "Action"]) {
+        const button = screen.getByRole("button", {name: label});
+        for (let count = 0; count < 5 && document.activeElement !== button; count += 1) {
+          await user.tab();
+        }
+        expect(button).toHaveFocus();
+        button.classList.add("keyboard-focus");
+        const outline = focusedOutline(button, forcedColors);
+        expect(outline.get("outline-style")?.value).toEqual({type: "line-style", value: "solid"});
+        expect(outline.get("outline-width")?.value).toEqual({type: "length", value: {type: "value", value: {unit: "px", value: 2}}});
+        if (forcedColors) {
+          expect(outline.get("outline-color")?.value).toBe("highlight");
+        }
+        button.classList.remove("keyboard-focus");
+      }
+    },
+  );
+
+  it.each([false, true])(
+    "keeps canonical action/close keyboard outlines in the combined module cascade (forced colors %s)",
+    async (forcedColors) => {
+      const user = userEvent.setup();
+      const manager = createToastManager();
+      render(
+        <CanonicalToaster
+          toastManager={manager}
+          timeout={0}
+        />,
+      );
+      act(() => {
+        manager.add({title: "Canonical focus", actionProps: {children: "Canonical action"}});
+      });
+      for (const label of ["Canonical action", "Close toast"]) {
+        const button = label === "Close toast" ? screen.getByLabelText(label) : screen.getByRole("button", {name: label});
+        for (let count = 0; count < 5 && document.activeElement !== button; count += 1) {
+          await user.tab();
+        }
+        expect(button).toHaveFocus();
+        button.classList.add("keyboard-focus");
+        const outline = focusedOutline(button, forcedColors);
+        expect(outline.get("outline-style")?.value).toEqual({type: "line-style", value: "solid"});
+        expect(outline.get("outline-width")?.value).toEqual({type: "length", value: {type: "value", value: {unit: "px", value: 2}}});
+        if (forcedColors) {
+          expect(outline.get("outline-color")?.value).toBe("highlight");
+        }
+        button.classList.remove("keyboard-focus");
+      }
+    },
+  );
+
+  it("preserves untouched resolved-state IDs and zero-valued no-loader content", async () => {
+    render(<Toaster />);
+    const history = toast.getHistory();
+    await act(async () => {
+      expect(
+        await toast.promise(Promise.resolve(42), {
+          id: "operation-key",
+          success: () => ({id: "result-key", message: 0, description: 0, duration: 0}),
+        }),
+      ).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "result-key", title: 0, description: 0})]);
+    expect(toast.getHistory().slice(history.length)).toHaveLength(1);
+    expect(screen.getAllByText("0")).toHaveLength(2);
+  });
+
+  it("keeps no-loader ownership independent of canonical managers and unrelated legacy IDs", async () => {
+    const source = Promise.withResolvers<number>();
+    const canonical = createToastManager();
+    render(
+      <>
+        <Toaster />
+        <CanonicalToaster
+          toastManager={canonical}
+          timeout={0}
+          viewportProps={{"aria-label": "Canonical independent"}}
+        />
+      </>,
+    );
+    const pending = toast.promise(source.promise, {id: "isolated-operation", success: "Owned completion"});
+    act(() => {
+      canonical.add({id: "isolated-operation", title: "Canonical same ID"});
+      canonical.close("isolated-operation");
+      toast("Unrelated", {id: "unrelated", duration: 0});
+      toast.dismiss("unrelated");
+    });
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "isolated-operation", title: "Owned completion"})]);
+    expect(screen.getByText("Owned completion").closest("[aria-label=Notifications]")).toBeInTheDocument();
+  });
+
+  it("does not invalidate no-loader ownership during a defaults rerender", async () => {
+    const source = Promise.withResolvers<number>();
+    const {rerender} = render(<Toaster toastOptions={{duration: 0, description: "Initial default"}} />);
+    const pending = toast.promise(source.promise, {id: "no-loader-rerender", success: "Still owned"});
+    rerender(
+      <Toaster
+        closeButton={false}
+        toastOptions={{duration: 0, className: "updated-defaults", description: "Current default"}}
+      />,
+    );
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "no-loader-rerender", title: "Still owned"})]);
+    expect(screen.getByText("Current default")).toBeInTheDocument();
+  });
+
+  it("does not let a superseded finalizer erase newer no-loader ownership", async () => {
+    const finalizer = Promise.withResolvers<void>();
+    const source = Promise.withResolvers<number>();
+    const entered = vi.fn(() => finalizer.promise);
+    render(<Toaster />);
+    const earlier = toast.promise(Promise.resolve(1), {id: "finally-owner", finally: entered});
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(entered).toHaveBeenCalledOnce();
+    const later = toast.promise(source.promise, {id: "finally-owner", success: "Newer operation"});
+    const finalError = new Error("Old finalizer rejected");
+    await act(async () => {
+      finalizer.reject(finalError);
+      await expect(earlier).rejects.toBe(finalError);
+    });
+    await act(async () => {
+      source.resolve(2);
+      expect(await later).toBe(2);
+    });
+    expect(toast.getToasts()).toEqual([expect.objectContaining({id: "finally-owner", title: "Newer operation"})]);
+  });
+
+  it("runs no-loader source/formatters/finally before the first provider without adopting a later lifetime", async () => {
+    const source = Promise.withResolvers<number>();
+    const success = vi.fn(() => "Should not adopt");
+    const onFinally = vi.fn();
+    const history = toast.getHistory();
+    const pending = toast.promise(() => source.promise, {success, finally: onFinally});
+    render(<Toaster />);
+    await act(async () => {
+      source.resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(success).toHaveBeenCalledExactlyOnceWith(42);
+    expect(onFinally).toHaveBeenCalledOnce();
+    expect(toast.getToasts()).toHaveLength(0);
+    expect(toast.getHistory()).toEqual(history);
   });
 });

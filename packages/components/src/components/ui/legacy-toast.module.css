@@ -114,13 +114,6 @@
     color 140ms ease;
 }
 
-.close:focus-visible,
-.primaryAction:focus-visible,
-.secondaryAction:focus-visible {
-  outline: 2px solid var(--ac-ring);
-  outline-offset: 2px;
-}
-
 .primaryAction {
   background: var(--ac-foreground);
   color: var(--ac-background);
@@ -142,6 +135,13 @@
     background: color-mix(in oklab, var(--ac-muted) 72%, transparent);
     outline: none;
   }
+}
+
+.close:focus-visible,
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
 }
 
 .default {
@@ -244,7 +244,7 @@
   .close:focus-visible,
   .primaryAction:focus-visible,
   .secondaryAction:focus-visible {
-    outline-color: Highlight;
+    outline: 2px solid Highlight;
   }
 }
 
