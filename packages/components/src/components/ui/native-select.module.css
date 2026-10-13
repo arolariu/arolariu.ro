@@ -1,0 +1,136 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+
+  &:has(> .select:disabled) {
+    opacity: 0.5;
+  }
+
+  &:has(> .select[dir="rtl"]) {
+    direction: rtl;
+  }
+
+  &:has(> .select[dir="ltr"]) {
+    direction: ltr;
+  }
+}
+
+.select {
+  box-sizing: border-box;
+  appearance: none;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  block-size: var(--ac-size-default);
+  padding-block: var(--ac-space-1);
+  padding-inline: var(--ac-space-3) calc(var(--ac-space-3) + 1.5rem);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  font-family: inherit;
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
+
+  &[data-size="sm"] {
+    block-size: var(--ac-size-sm);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: 2px;
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--ac-destructive);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &[multiple] {
+    block-size: auto;
+    min-block-size: var(--ac-size-default);
+    padding-inline-end: var(--ac-space-3);
+  }
+
+  &[multiple][data-size="sm"] {
+    min-block-size: var(--ac-size-sm);
+  }
+}
+
+.icon {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--ac-space-3);
+  inline-size: 1rem;
+  block-size: 1rem;
+  color: var(--ac-muted-foreground);
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.select[multiple] + .icon {
+  display: none;
+}
+
+.option,
+.optGroup {
+  background-color: Canvas;
+  color: CanvasText;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .wrapper:has(> .select:disabled) {
+    opacity: 1;
+  }
+
+  .select {
+    appearance: auto;
+    padding-inline-end: var(--ac-space-3);
+    background-color: Canvas;
+    color: CanvasText;
+    border-color: ButtonText;
+
+    &:focus-visible {
+      outline-color: Highlight;
+    }
+
+    &:disabled {
+      color: GrayText;
+      border-color: GrayText;
+    }
+  }
+
+  .example {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--ac-space-2);
+  }
+
+  .exampleActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-2);
+  }
+
+  .icon {
+    display: none;
+  }
+}
