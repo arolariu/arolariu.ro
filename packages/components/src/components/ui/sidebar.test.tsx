@@ -1,4 +1,5 @@
 import {Menu as BaseMenu} from "@base-ui/react/menu";
+import {Field as BaseField} from "@base-ui/react/field";
 import {useDirection} from "@base-ui/react/direction-provider";
 import {mergeProps} from "@base-ui/react/merge-props";
 import type {BaseUIEvent, HTMLProps} from "@base-ui/react/types";
@@ -53,6 +54,52 @@ const {getRole} = accessibilityApi;
 let changeMobile: (mobile: boolean) => void;
 let mobileQuery: MediaQueryList;
 const stylesheetFixtures: HTMLStyleElement[] = [];
+
+describe("Sidebar primitive-owned class callbacks", () => {
+  it("resolves Input classes using the actual focused and invalid Field state", async () => {
+    const user = userEvent.setup();
+    const states: Array<{focused: boolean; disabled: boolean}> = [];
+    render(
+      <BaseField.Root invalid>
+        <SidebarInput
+          aria-label='Stateful search'
+          className={(state) => {
+            states.push(state);
+            return state.focused ? "consumer-focused" : "consumer-idle";
+          }}
+        />
+      </BaseField.Root>,
+    );
+    const input = screen.getByRole("textbox", {name: "Stateful search"});
+    expect(input).toHaveClass(styles["input"]!, "consumer-idle");
+    await user.click(input);
+    expect(input).toHaveClass("consumer-focused");
+    expect(states.at(-1)).toMatchObject({focused: true, disabled: false, valid: false});
+    await user.tab();
+    expect(input).toHaveClass("consumer-idle");
+  });
+
+  it("resolves Separator classes from the actual orientation on each rerender", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {rerender} = render(
+      <SidebarSeparator
+        ref={ref}
+        orientation='vertical'
+        className={(state) => `consumer-${state.orientation}`}
+      />,
+    );
+    expect(ref.current).toHaveClass(styles["separator"]!, "consumer-vertical");
+    rerender(
+      <SidebarSeparator
+        ref={ref}
+        orientation='horizontal'
+        className={(state) => `consumer-${state.orientation}`}
+      />,
+    );
+    expect(ref.current).toHaveClass("consumer-horizontal");
+    expect(ref.current).not.toHaveClass("consumer-vertical");
+  });
+});
 
 function installDesktopStyles(): void {
   const desktopStyles = root();
@@ -128,6 +175,16 @@ const ReviewNonAnchor = React.forwardRef<HTMLDivElement, Readonly<React.Componen
   },
 );
 ReviewNonAnchor.displayName = "ReviewNonAnchor";
+
+const ReviewNativeButton = React.forwardRef<HTMLButtonElement, Readonly<React.ComponentPropsWithoutRef<"button">>>(
+  (props, ref): React.JSX.Element => (
+    <button
+      {...props}
+      ref={ref}
+    />
+  ),
+);
+ReviewNativeButton.displayName = "ReviewNativeButton";
 
 function expectState(expected: Readonly<{open: boolean; state: string; isMobile: boolean; openMobile: boolean}>): void {
   expect(screen.getByTestId("state")).toHaveTextContent(JSON.stringify(expected));
@@ -705,6 +762,61 @@ describe("Sidebar review: resolved navigation and action targets", () => {
       expect(click).toHaveBeenCalledTimes(2);
     },
   );
+
+  it.each(
+    controls.flatMap(([name, Part]) =>
+      (["opaque", "callback"] as const).flatMap((kind) =>
+        [false, true].flatMap((native) => (native ? [false, true] : [true]).map((disabled) => ({name, Part, kind, native, disabled}))),
+      ),
+    ),
+  )("preserves $name $kind actual target activation (native=$native, disabled=$disabled)", async ({Part, kind, native, disabled}) => {
+    const user = userEvent.setup();
+    const ref = React.createRef<HTMLElement>();
+    const childClick = vi.fn();
+    const wrapperClick = vi.fn();
+    render(
+      <SidebarProvider>
+        <Part
+          disabled={disabled}
+          nativeButton={native}
+          ref={ref}
+          onClick={wrapperClick}
+          render={
+            kind === "opaque" ? (
+              native ? (
+                <ReviewNativeButton onClick={childClick}>Opaque action</ReviewNativeButton>
+              ) : (
+                <ReviewNonAnchor onClick={childClick}>Opaque action</ReviewNonAnchor>
+              )
+            ) : (
+              (props: HTMLProps) =>
+                native ? (
+                  <ReviewNativeButton {...mergeProps<"button">(props, {onClick: childClick})}>Opaque action</ReviewNativeButton>
+                ) : (
+                  <ReviewNonAnchor {...mergeProps<"div">(props, {onClick: childClick})}>Opaque action</ReviewNonAnchor>
+                )
+            )
+          }
+        />
+      </SidebarProvider>,
+    );
+    const action = screen.getByRole("button", {name: "Opaque action"});
+    expect(ref.current).toBe(action);
+    expect(action.tagName).toBe(native ? "BUTTON" : "DIV");
+    if (disabled) {
+      if (native) expect(action).toBeDisabled();
+      else expect(action).toHaveAttribute("aria-disabled", "true");
+      expect(action).not.toHaveAttribute("tabindex", "0");
+    } else {
+      expect(action).not.toBeDisabled();
+      expect(action).toHaveAttribute("type", "button");
+    }
+    await user.click(action);
+    act(() => action.focus());
+    await user.keyboard("{Enter} ");
+    expect(childClick).toHaveBeenCalledTimes(disabled ? 0 : 3);
+    expect(wrapperClick).toHaveBeenCalledTimes(disabled ? 0 : 3);
+  });
 
   it.each(controls)("tracks %s opaque href presence without replacing its native node or invoking its component", async (_name, Part) => {
     const ref = React.createRef<HTMLElement>();

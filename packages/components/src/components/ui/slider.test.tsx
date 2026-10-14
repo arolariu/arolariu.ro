@@ -2,9 +2,11 @@ import {Slider as BaseSlider} from "@base-ui/react/slider";
 import {act, fireEvent, render as renderComponent, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Slider} from "./slider";
+import * as stories from "./slider.stories";
 
 async function render(element: React.ReactElement): Promise<ReturnType<typeof renderComponent>> {
   return act(async () => renderComponent(element));
@@ -17,6 +19,20 @@ function getPart(container: HTMLElement, slot: string): HTMLElement {
 }
 
 describe("Slider", () => {
+  it("applies playground controls to the real Slider and supplies vertical story geometry", async () => {
+    const {Default} = composeStories(stories);
+    const {container} = await render(
+      <Default
+        orientation='vertical'
+        disabled
+        thumbAlignment='center'
+      />,
+    );
+    expect(container.querySelector('[data-slot="slider"]')).toHaveAttribute("data-orientation", "vertical");
+    expect(screen.getByRole("slider")).toBeDisabled();
+    expect(container.firstElementChild?.className).toContain("storyVertical");
+  });
+
   beforeEach(() => {
     // Happy DOM has no layout. Supply only the measurement boundary; Base UI owns value/position math.
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element): DOMRect {
@@ -95,6 +111,50 @@ describe("Slider", () => {
     );
     expect(await screen.findAllByRole("slider")).toHaveLength(1);
     expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "20");
+  });
+
+  it.each(
+    (["controlled", "uncontrolled"] as const).flatMap((mode) =>
+      [
+        {value: 127, expected: [100], name: "out-of-range"},
+        {value: [80, 20], expected: [20, 80], name: "reversed"},
+        {value: 23, expected: [23], name: "off-step"},
+      ].map((sample) => ({mode, ...sample})),
+    ),
+  )("characterizes $mode $name initial values against the real SDK without wrapper normalization", async ({mode, value, expected}) => {
+    const valueProps = mode === "controlled" ? {value} : {defaultValue: value};
+    await render(
+      <>
+        <BaseSlider.Root<number | readonly number[]>
+          {...valueProps}
+          min={0}
+          max={100}
+          step={10}
+          render={(props, state) => (
+            <div
+              {...props}
+              data-testid='sdk-values'
+              data-values={JSON.stringify(state.values)}
+            />
+          )}
+        />
+        <Slider<number | readonly number[]>
+          {...valueProps}
+          min={0}
+          max={100}
+          step={10}
+          render={(props, state) => (
+            <div
+              {...props}
+              data-testid='wrapper-values'
+              data-values={JSON.stringify(state.values)}
+            />
+          )}
+        />
+      </>,
+    );
+    expect(screen.getByTestId("sdk-values")).toHaveAttribute("data-values", JSON.stringify(expected));
+    expect(screen.getByTestId("wrapper-values")).toHaveAttribute("data-values", JSON.stringify(expected));
   });
 
   it("does not manufacture a thumb for an explicitly empty range", async () => {
@@ -291,6 +351,9 @@ describe("Slider", () => {
     );
     expect(screen.getByRole("group", {name: "Replaced content"})).toBeInTheDocument();
     expect(screen.getByText("Replacement content")).toBeInTheDocument();
+    expect(screen.queryAllByRole("slider")).toHaveLength(0);
+    expect(document.querySelector('[data-slot="slider-control"]')).toBeNull();
+    expect(document.querySelector('[data-slot="slider-thumb"]')).toBeNull();
   });
 
   it("forwards the center alignment override without replacing primitive positioning", async () => {

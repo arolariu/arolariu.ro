@@ -603,7 +603,7 @@ const SidebarInput = React.forwardRef<React.ComponentRef<typeof Input>, SidebarI
     <Input
       ref={ref}
       data-sidebar='input'
-      className={cn(styles.input, className)}
+      className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
       {...props}
     />
   ),
@@ -681,7 +681,7 @@ const SidebarSeparator = React.forwardRef<React.ComponentRef<typeof Separator>, 
     <Separator
       ref={ref}
       data-sidebar='separator'
-      className={cn(styles.separator, className)}
+      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
       {...props}
     />
   ),

@@ -95,6 +95,19 @@
   }
 }
 
+.example {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ac-space-2);
+}
+
+.exampleActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+
 @media (forced-colors: active) {
   .wrapper:has(> .select:disabled) {
     opacity: 1;
@@ -115,19 +128,6 @@
       color: GrayText;
       border-color: GrayText;
     }
-  }
-
-  .example {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    gap: var(--ac-space-2);
-  }
-
-  .exampleActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ac-space-2);
   }
 
   .icon {

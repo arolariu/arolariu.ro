@@ -91,12 +91,16 @@ function getFieldOrientationClass(orientation: FieldOrientation): string | undef
 }
 
 function hasMeaningfulChildren(children: React.ReactNode): boolean {
-  if (Array.isArray(children)) {
-    return children.some((child: React.ReactNode) => hasMeaningfulChildren(child));
+  let content = children;
+  while (React.isValidElement<{children?: React.ReactNode}>(content) && content.type === React.Fragment) {
+    content = content.props.children;
   }
-  return typeof children === "string"
-    ? children.trim().length > 0
-    : children !== null && children !== undefined && typeof children !== "boolean";
+  if (Array.isArray(content)) {
+    return content.some((child: React.ReactNode) => hasMeaningfulChildren(child));
+  }
+  return typeof content === "string"
+    ? content.trim().length > 0
+    : content !== null && content !== undefined && typeof content !== "boolean";
 }
 
 /**

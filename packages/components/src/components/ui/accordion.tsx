@@ -61,8 +61,8 @@ export type AccordionProps = AccordionArrayProps | AccordionSingleProps | Accord
 interface AccordionComponent {
   (props: Readonly<AccordionSingleProps>): React.ReactNode;
   (props: Readonly<AccordionMultipleProps>): React.ReactNode;
-  (props: Readonly<AccordionProps>): React.ReactNode;
   (props: Readonly<AccordionArrayProps>): React.ReactNode;
+  (props: Readonly<AccordionProps>): React.ReactNode;
   // eslint-disable-next-line sonarjs/no-redundant-optional -- React displayName metadata permits explicit undefined under exactOptionalPropertyTypes
   displayName?: string | undefined;
 }

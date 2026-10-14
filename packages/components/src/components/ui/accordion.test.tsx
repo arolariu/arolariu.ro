@@ -38,6 +38,31 @@ function renderAccordion(): {
 }
 
 describe("Accordion", () => {
+  it("reflects every discriminated public prop contract without weakening JSX inference", () => {
+    expectTypeOf<React.ComponentProps<typeof Accordion>>().toEqualTypeOf<Readonly<Accordion.Props>>();
+    const reflectedSingle: React.ComponentProps<typeof Accordion> = {type: "single", value: "one"};
+    const reflectedArray: React.ComponentProps<typeof Accordion> = {value: ["one"]};
+    expect(reflectedSingle.value).toBe("one");
+    expect(reflectedArray.value).toEqual(["one"]);
+    const single = (
+      <Accordion
+        type='single'
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<string | undefined>();
+        }}
+      />
+    );
+    const array = (
+      <Accordion
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<string[]>();
+        }}
+      />
+    );
+    expect(React.isValidElement(single)).toBe(true);
+    expect(React.isValidElement(array)).toBe(true);
+  });
+
   it("keeps legacy empty selection controlled and clears it on external rerenders", async () => {
     const user = userEvent.setup();
     const changes: (string | undefined)[] = [];

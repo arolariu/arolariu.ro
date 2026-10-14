@@ -57,6 +57,9 @@ function authoredStyles(element: HTMLElement, reducedMotion = false, forcedColor
     if (!matching.length) return;
     const specificity = Math.max(...matching.map((selector) => selector.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/gu)?.length ?? 0));
     rule.walkDecls((declaration) => {
+      for (let parent: AnyNode["parent"] = declaration.parent; parent && parent !== rule; parent = parent.parent) {
+        if (parent instanceof AtRule) return;
+      }
       const priority = specificity + (declaration.important ? 1000 : 0);
       if (priority >= (values.get(declaration.prop)?.priority ?? -1)) {
         values.set(declaration.prop, {value: declaration.value, priority});
@@ -67,6 +70,12 @@ function authoredStyles(element: HTMLElement, reducedMotion = false, forcedColor
 }
 
 describe("Drawer authored gesture presentation (no layout/paint assertion)", () => {
+  it("does not apply declarations nested inside unsupported conditional at-rules", () => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "backdrop";
+    expect(authoredStyles(backdrop).get("position")).toBe("fixed");
+  });
+
   it.each([
     {direction: "down", axis: "y", edge: "bottom", closed: "100%"},
     {direction: "up", axis: "y", edge: "top", closed: "-100%"},

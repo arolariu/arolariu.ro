@@ -7,6 +7,7 @@ import {useRender} from "@base-ui/react/use-render";
 import {Check, ChevronRight, Circle} from "lucide-react";
 import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./dropdown-menu.module.css";
 
@@ -97,6 +98,11 @@ export type DropdownMenuShortcutProps = Readonly<
 
 type MenuRender<State> = React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined;
 
+// Preserve payload inference while using the actual React18/19 forwardRef runtime.
+const withRef: <Element, Props>(
+  render: (props: React.PropsWithoutRef<Props>, ref: React.ForwardedRef<Element>) => React.ReactNode,
+) => (props: React.PropsWithoutRef<Props> & React.RefAttributes<Element>) => React.ReactNode = React.forwardRef;
+
 function getMenuRenderElement<State>(render: MenuRender<State>): React.ReactElement<{children?: React.ReactNode}> | undefined {
   if (typeof render === "function") return undefined;
   // eslint-disable-next-line react-x/no-children-to-array -- React's public resolver unwraps Flight-lazy render elements supported by Base UI.
@@ -134,57 +140,62 @@ const DropdownMenuSub = BaseMenu.SubmenuRoot;
  * asChild targets infer nativeButton; opaque custom targets retain the native
  * default unless the caller explicitly selects non-native behavior.
  */
-function DropdownMenuTrigger<Payload>(props: Readonly<DropdownMenuTrigger.Props<Payload>>): React.JSX.Element {
-  const {asChild = false, children, render, nativeButton, ref, ...otherProps} = props;
-  const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-  const renderProp = legacyChild ?? render;
-  // The primitive accepts HTMLElement refs at runtime, but its default-tag Props still include a button ref.
-  const primitiveRef = React.useCallback(
-    (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
-      if (typeof ref === "function") return ref(element);
-      if (ref) ref.current = element;
+const DropdownMenuTrigger = Object.assign(
+  withRef(
+    <Payload,>(
+      props: Readonly<Omit<DropdownMenuTrigger.Props<Payload>, "ref">>,
+      ref: React.ForwardedRef<HTMLElement>,
+    ): React.JSX.Element => {
+      const {asChild = false, children, render, nativeButton, ...otherProps} = props;
+      const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
+      const renderProp = legacyChild ?? render;
+      const primitiveRef = useMergedRefs(ref);
+      return (
+        <BaseMenu.Trigger
+          data-slot='dropdown-menu-trigger'
+          {...otherProps}
+          ref={primitiveRef}
+          nativeButton={nativeButton ?? (typeof legacyChild?.type === "string" ? legacyChild.type === "button" : true)}
+          render={legacyChild || children === undefined ? renderProp : withMenuChildren(renderProp, children)}>
+          {legacyChild ? undefined : children}
+        </BaseMenu.Trigger>
+      );
     },
-    [ref],
-  );
-  return (
-    <BaseMenu.Trigger
-      data-slot='dropdown-menu-trigger'
-      {...otherProps}
-      ref={primitiveRef}
-      nativeButton={nativeButton ?? (typeof legacyChild?.type === "string" ? legacyChild.type === "button" : true)}
-      render={legacyChild || children === undefined ? renderProp : withMenuChildren(renderProp, children)}>
-      {legacyChild ? undefined : children}
-    </BaseMenu.Trigger>
-  );
-}
+  ),
+  {displayName: "DropdownMenuTrigger"},
+);
 
 /** Opens a submenu, retaining primitive render/class state and a direction-aware decorative arrow. */
-function DropdownMenuSubTrigger(props: Readonly<DropdownMenuSubTrigger.Props>): React.ReactElement {
-  const direction = useDirection();
-  const {className, children, inset = false, render, ...otherProps} = props;
-  const content = (
-    <>
-      {getMenuChildren(children, render)}
-      <ChevronRight
-        aria-hidden='true'
-        data-direction={direction}
-        className={styles.subTriggerIcon}
-      />
-    </>
-  );
-  return (
-    <BaseMenu.SubmenuTrigger
-      data-slot='dropdown-menu-sub-trigger'
-      data-inset={inset}
-      {...otherProps}
-      className={(state) =>
-        cn(styles.item, styles.subTrigger, inset && styles.inset, typeof className === "function" ? className(state) : className)
-      }
-      render={withMenuChildren(render, content)}>
-      {content}
-    </BaseMenu.SubmenuTrigger>
-  );
-}
+const DropdownMenuSubTrigger = React.forwardRef<React.ComponentRef<typeof BaseMenu.SubmenuTrigger>, DropdownMenuSubTrigger.Props>(
+  (props, ref): React.ReactElement => {
+    const direction = useDirection();
+    const {className, children, inset = false, render, ...otherProps} = props;
+    const content = (
+      <>
+        {getMenuChildren(children, render)}
+        <ChevronRight
+          aria-hidden='true'
+          data-direction={direction}
+          className={styles.subTriggerIcon}
+        />
+      </>
+    );
+    return (
+      <BaseMenu.SubmenuTrigger
+        data-slot='dropdown-menu-sub-trigger'
+        data-inset={inset}
+        {...otherProps}
+        ref={ref}
+        className={(state) =>
+          cn(styles.item, styles.subTrigger, inset && styles.inset, typeof className === "function" ? className(state) : className)
+        }
+        render={withMenuChildren(render, content)}>
+        {content}
+      </BaseMenu.SubmenuTrigger>
+    );
+  },
+);
+DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
 
 /**
  * Portals and positions the role-bearing Popup.
@@ -261,139 +272,163 @@ const DropdownMenuContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
 /** Portaled submenu Popup. Defaults: inline-end/start (right in LTR), offsets 0/-3. */
-function DropdownMenuSubContent(props: Readonly<DropdownMenuSubContent.Props>): React.ReactElement {
-  const {align = "start", alignOffset = -3, side = "inline-end", sideOffset = 0, ...otherProps} = props;
-  return (
-    <DropdownMenuContent
-      data-slot='dropdown-menu-sub-content'
-      align={align}
-      alignOffset={alignOffset}
-      side={side}
-      sideOffset={sideOffset}
-      {...otherProps}
-    />
-  );
-}
+const DropdownMenuSubContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.Popup>, DropdownMenuSubContent.Props>(
+  (props, ref): React.ReactElement => {
+    const {align = "start", alignOffset = -3, side = "inline-end", sideOffset = 0, ...otherProps} = props;
+    return (
+      <DropdownMenuContent
+        data-slot='dropdown-menu-sub-content'
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        {...otherProps}
+        ref={ref}
+      />
+    );
+  },
+);
+DropdownMenuSubContent.displayName = "DropdownMenuSubContent";
 
 /** Activates a primitive-owned menu item with optional inset and destructive presentation. */
-function DropdownMenuItem(props: Readonly<DropdownMenuItem.Props>): React.ReactElement {
-  const {asChild = false, children, className, inset = false, variant = "default", render, nativeButton, ...otherProps} = props;
-  const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-  const renderProp = legacyChild ?? render;
-  return (
-    <BaseMenu.Item
-      data-slot='dropdown-menu-item'
-      data-inset={inset}
-      data-variant={variant}
-      {...otherProps}
-      nativeButton={nativeButton ?? (legacyChild ? legacyChild.type === "button" : false)}
-      className={(state) => cn(styles.item, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-      render={legacyChild || children === undefined ? renderProp : withMenuChildren(renderProp, children)}>
-      {legacyChild ? undefined : children}
-    </BaseMenu.Item>
-  );
-}
+const DropdownMenuItem = React.forwardRef<React.ComponentRef<typeof BaseMenu.Item>, DropdownMenuItem.Props>(
+  (props, ref): React.ReactElement => {
+    const {asChild = false, children, className, inset = false, variant = "default", render, nativeButton, ...otherProps} = props;
+    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
+    const renderProp = legacyChild ?? render;
+    return (
+      <BaseMenu.Item
+        data-slot='dropdown-menu-item'
+        data-inset={inset}
+        data-variant={variant}
+        {...otherProps}
+        ref={ref}
+        nativeButton={nativeButton ?? (legacyChild ? legacyChild.type === "button" : false)}
+        className={(state) => cn(styles.item, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+        render={legacyChild || children === undefined ? renderProp : withMenuChildren(renderProp, children)}>
+        {legacyChild ? undefined : children}
+      </BaseMenu.Item>
+    );
+  },
+);
+DropdownMenuItem.displayName = "DropdownMenuItem";
 
 /** Toggles the real Menu checkbox; its indicator and label share the render target. */
-function DropdownMenuCheckboxItem(props: Readonly<DropdownMenuCheckboxItem.Props>): React.ReactElement {
-  const {className, children, inset = false, render, ...otherProps} = props;
-  const content = (
-    <>
-      <span className={styles.indicatorSlot}>
-        <BaseMenu.CheckboxItemIndicator>
-          <Check
-            aria-hidden='true'
-            className={styles.indicatorIcon}
-          />
-        </BaseMenu.CheckboxItemIndicator>
-      </span>
-      {getMenuChildren(children, render)}
-    </>
-  );
-  return (
-    <BaseMenu.CheckboxItem
-      data-slot='dropdown-menu-checkbox-item'
-      data-inset={inset}
-      {...otherProps}
-      className={(state) =>
-        cn(
-          styles.item,
-          styles.indicatorItem,
-          inset && styles.indicatorInset,
-          typeof className === "function" ? className(state) : className,
-        )
-      }
-      render={withMenuChildren(render, content)}>
-      {content}
-    </BaseMenu.CheckboxItem>
-  );
-}
+const DropdownMenuCheckboxItem = React.forwardRef<React.ComponentRef<typeof BaseMenu.CheckboxItem>, DropdownMenuCheckboxItem.Props>(
+  (props, ref): React.ReactElement => {
+    const {className, children, inset = false, render, ...otherProps} = props;
+    const content = (
+      <>
+        <span className={styles.indicatorSlot}>
+          <BaseMenu.CheckboxItemIndicator>
+            <Check
+              aria-hidden='true'
+              className={styles.indicatorIcon}
+            />
+          </BaseMenu.CheckboxItemIndicator>
+        </span>
+        {getMenuChildren(children, render)}
+      </>
+    );
+    return (
+      <BaseMenu.CheckboxItem
+        data-slot='dropdown-menu-checkbox-item'
+        data-inset={inset}
+        {...otherProps}
+        ref={ref}
+        className={(state) =>
+          cn(
+            styles.item,
+            styles.indicatorItem,
+            inset && styles.indicatorInset,
+            typeof className === "function" ? className(state) : className,
+          )
+        }
+        render={withMenuChildren(render, content)}>
+        {content}
+      </BaseMenu.CheckboxItem>
+    );
+  },
+);
+DropdownMenuCheckboxItem.displayName = "DropdownMenuCheckboxItem";
 
 /** Selects a native Menu radio value with an indicator relative to its own row. */
-function DropdownMenuRadioItem(props: Readonly<DropdownMenuRadioItem.Props>): React.ReactElement {
-  const {className, children, inset = false, render, ...otherProps} = props;
-  const content = (
-    <>
-      <span className={styles.indicatorSlot}>
-        <BaseMenu.RadioItemIndicator>
-          <Circle
-            aria-hidden='true'
-            className={styles.radioIndicatorIcon}
-          />
-        </BaseMenu.RadioItemIndicator>
-      </span>
-      {getMenuChildren(children, render)}
-    </>
-  );
-  return (
-    <BaseMenu.RadioItem
-      data-slot='dropdown-menu-radio-item'
-      data-inset={inset}
-      {...otherProps}
-      className={(state) =>
-        cn(
-          styles.item,
-          styles.indicatorItem,
-          inset && styles.indicatorInset,
-          typeof className === "function" ? className(state) : className,
-        )
-      }
-      render={withMenuChildren(render, content)}>
-      {content}
-    </BaseMenu.RadioItem>
-  );
-}
+const DropdownMenuRadioItem = React.forwardRef<React.ComponentRef<typeof BaseMenu.RadioItem>, DropdownMenuRadioItem.Props>(
+  (props, ref): React.ReactElement => {
+    const {className, children, inset = false, render, ...otherProps} = props;
+    const content = (
+      <>
+        <span className={styles.indicatorSlot}>
+          <BaseMenu.RadioItemIndicator>
+            <Circle
+              aria-hidden='true'
+              className={styles.radioIndicatorIcon}
+            />
+          </BaseMenu.RadioItemIndicator>
+        </span>
+        {getMenuChildren(children, render)}
+      </>
+    );
+    return (
+      <BaseMenu.RadioItem
+        data-slot='dropdown-menu-radio-item'
+        data-inset={inset}
+        {...otherProps}
+        ref={ref}
+        className={(state) =>
+          cn(
+            styles.item,
+            styles.indicatorItem,
+            inset && styles.indicatorInset,
+            typeof className === "function" ? className(state) : className,
+          )
+        }
+        render={withMenuChildren(render, content)}>
+        {content}
+      </BaseMenu.RadioItem>
+    );
+  },
+);
+DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
 
 /** Names the surrounding primitive Menu group; not a substitute for Popup aria-label. */
-function DropdownMenuLabel(props: Readonly<DropdownMenuLabel.Props>): React.ReactElement {
-  const {className, children, render, inset = false, ...otherProps} = props;
-  return (
-    <BaseMenu.GroupLabel
-      data-slot='dropdown-menu-label'
-      data-inset={inset}
-      {...otherProps}
-      render={children === undefined ? render : withMenuChildren(render, children)}
-      className={(state) => cn(styles.label, inset && styles.inset, typeof className === "function" ? className(state) : className)}>
-      {children}
-    </BaseMenu.GroupLabel>
-  );
-}
+const DropdownMenuLabel = React.forwardRef<React.ComponentRef<typeof BaseMenu.GroupLabel>, DropdownMenuLabel.Props>(
+  (props, ref): React.ReactElement => {
+    const {className, children, render, inset = false, ...otherProps} = props;
+    return (
+      <BaseMenu.GroupLabel
+        data-slot='dropdown-menu-label'
+        data-inset={inset}
+        {...otherProps}
+        ref={ref}
+        render={children === undefined ? render : withMenuChildren(render, children)}
+        className={(state) => cn(styles.label, inset && styles.inset, typeof className === "function" ? className(state) : className)}>
+        {children}
+      </BaseMenu.GroupLabel>
+    );
+  },
+);
+DropdownMenuLabel.displayName = "DropdownMenuLabel";
 
 /** Separates Menu sections using the real separator primitive and its render state. */
-function DropdownMenuSeparator(props: Readonly<DropdownMenuSeparator.Props>): React.ReactElement {
-  const {className, ...otherProps} = props;
-  return (
-    <BaseMenu.Separator
-      data-slot='dropdown-menu-separator'
-      {...otherProps}
-      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const DropdownMenuSeparator = React.forwardRef<React.ComponentRef<typeof BaseMenu.Separator>, DropdownMenuSeparator.Props>(
+  (props, ref): React.ReactElement => {
+    const {className, ...otherProps} = props;
+    return (
+      <BaseMenu.Separator
+        data-slot='dropdown-menu-separator'
+        {...otherProps}
+        ref={ref}
+        className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
+DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
 
 /** Displays a trailing shortcut hint; does not register a keyboard shortcut. */
-function DropdownMenuShortcut(props: Readonly<DropdownMenuShortcut.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ref, ...otherProps} = props;
+const DropdownMenuShortcut = React.forwardRef<HTMLSpanElement, DropdownMenuShortcut.Props>((props, ref): React.ReactElement => {
+  const {asChild = false, children, className, render, ...otherProps} = props;
   const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
   const renderProp = legacyChild ?? render;
   return useRender({
@@ -407,7 +442,8 @@ function DropdownMenuShortcut(props: Readonly<DropdownMenuShortcut.Props>): Reac
       ...(legacyChild || children === undefined ? {} : {children}),
     },
   });
-}
+});
+DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 
 // eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenu {

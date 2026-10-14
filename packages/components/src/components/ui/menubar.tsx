@@ -65,6 +65,10 @@ const MenubarRadioGroup = DropdownMenuRadioGroup;
 /** Real nested Menu root, preserving keyboard behavior. */
 const MenubarSub = DropdownMenuSub;
 
+const withRef: <Element, Props>(
+  render: (props: React.PropsWithoutRef<Props>, ref: React.ForwardedRef<Element>) => React.ReactNode,
+) => (props: React.PropsWithoutRef<Props> & React.RefAttributes<Element>) => React.ReactNode = React.forwardRef;
+
 /** Coordinates real menubar roving focus, orientation and accessible naming. */
 const Menubar = React.forwardRef<React.ComponentRef<typeof BaseMenubar>, Menubar.Props>(
   (props: Readonly<Menubar.Props>, ref): React.ReactElement => {
@@ -91,107 +95,147 @@ const Menubar = React.forwardRef<React.ComponentRef<typeof BaseMenubar>, Menubar
 Menubar.displayName = "Menubar";
 
 /** Uses the corrected Menu trigger; Base UI supplies menubar role and navigation state. */
-function MenubarTrigger<Payload>(props: Readonly<MenubarTrigger.Props<Payload>>): React.ReactElement {
-  const {className, ...otherProps} = props;
-  return (
-    <DropdownMenuTrigger
-      data-slot='menubar-trigger'
-      {...otherProps}
-      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const MenubarTrigger = Object.assign(
+  withRef(
+    <Payload,>(props: Readonly<Omit<MenubarTrigger.Props<Payload>, "ref">>, ref: React.ForwardedRef<HTMLElement>): React.ReactElement => {
+      const {className, ...otherProps} = props;
+      return (
+        <DropdownMenuTrigger
+          data-slot='menubar-trigger'
+          {...otherProps}
+          ref={ref}
+          className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+        />
+      );
+    },
+  ),
+  {displayName: "MenubarTrigger"},
+);
 
 /** Portaled Menu Popup with canonical bottom/start placement and offsets 8/-4. */
-function MenubarContent(props: Readonly<MenubarContent.Props>): React.ReactElement {
-  const {align = "start", alignOffset = -4, sideOffset = 8, className, ...otherProps} = props;
-  return (
-    <DropdownMenuContent
-      data-slot='menubar-content'
-      align={align}
-      alignOffset={alignOffset}
-      sideOffset={sideOffset}
-      {...otherProps}
-      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const MenubarContent = React.forwardRef<React.ComponentRef<typeof DropdownMenuContent>, MenubarContent.Props>(
+  (props, ref): React.ReactElement => {
+    const {align = "start", alignOffset = -4, sideOffset = 8, className, ...otherProps} = props;
+    return (
+      <DropdownMenuContent
+        data-slot='menubar-content'
+        align={align}
+        alignOffset={alignOffset}
+        sideOffset={sideOffset}
+        {...otherProps}
+        ref={ref}
+        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
+MenubarContent.displayName = "MenubarContent";
 
 /** Portaled submenu with the shared inline-end/start placement and offsets 0/-3. */
-function MenubarSubContent(props: Readonly<MenubarSubContent.Props>): React.ReactElement {
-  const {className, ...otherProps} = props;
-  return (
-    <DropdownMenuSubContent
-      data-slot='menubar-sub-content'
-      {...otherProps}
-      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const MenubarSubContent = React.forwardRef<React.ComponentRef<typeof DropdownMenuSubContent>, MenubarSubContent.Props>(
+  (props, ref): React.ReactElement => {
+    const {className, ...otherProps} = props;
+    return (
+      <DropdownMenuSubContent
+        data-slot='menubar-sub-content'
+        {...otherProps}
+        ref={ref}
+        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
+MenubarSubContent.displayName = "MenubarSubContent";
 
 /** Native Menu activation with the shared destructive/inset contract. */
-function MenubarItem(props: Readonly<MenubarItem.Props>): React.ReactElement {
+const MenubarItem = React.forwardRef<React.ComponentRef<typeof DropdownMenuItem>, MenubarItem.Props>((props, ref): React.ReactElement => {
   return (
     <DropdownMenuItem
       data-slot='menubar-item'
       {...props}
+      ref={ref}
     />
   );
-}
+});
+MenubarItem.displayName = "MenubarItem";
 /** Native Menu checkbox with primitive checked state and cancellation details. */
-function MenubarCheckboxItem(props: Readonly<MenubarCheckboxItem.Props>): React.ReactElement {
-  return (
-    <DropdownMenuCheckboxItem
-      data-slot='menubar-checkbox-item'
-      {...props}
-    />
-  );
-}
+const MenubarCheckboxItem = React.forwardRef<React.ComponentRef<typeof DropdownMenuCheckboxItem>, MenubarCheckboxItem.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuCheckboxItem
+        data-slot='menubar-checkbox-item'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarCheckboxItem.displayName = "MenubarCheckboxItem";
 /** Native Menu radio value with the shared relative indicator. */
-function MenubarRadioItem(props: Readonly<MenubarRadioItem.Props>): React.ReactElement {
-  return (
-    <DropdownMenuRadioItem
-      data-slot='menubar-radio-item'
-      {...props}
-    />
-  );
-}
+const MenubarRadioItem = React.forwardRef<React.ComponentRef<typeof DropdownMenuRadioItem>, MenubarRadioItem.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuRadioItem
+        data-slot='menubar-radio-item'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarRadioItem.displayName = "MenubarRadioItem";
 /** Native submenu trigger with the shared direction-aware arrow. */
-function MenubarSubTrigger(props: Readonly<MenubarSubTrigger.Props>): React.ReactElement {
-  return (
-    <DropdownMenuSubTrigger
-      data-slot='menubar-sub-trigger'
-      {...props}
-    />
-  );
-}
+const MenubarSubTrigger = React.forwardRef<React.ComponentRef<typeof DropdownMenuSubTrigger>, MenubarSubTrigger.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuSubTrigger
+        data-slot='menubar-sub-trigger'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarSubTrigger.displayName = "MenubarSubTrigger";
 /** Names the surrounding Menu group using primitive relationships. */
-function MenubarLabel(props: Readonly<MenubarLabel.Props>): React.ReactElement {
-  return (
-    <DropdownMenuLabel
-      data-slot='menubar-label'
-      {...props}
-    />
-  );
-}
+const MenubarLabel = React.forwardRef<React.ComponentRef<typeof DropdownMenuLabel>, MenubarLabel.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuLabel
+        data-slot='menubar-label'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarLabel.displayName = "MenubarLabel";
 /** Separates sections with the shared real Menu separator. */
-function MenubarSeparator(props: Readonly<MenubarSeparator.Props>): React.ReactElement {
-  return (
-    <DropdownMenuSeparator
-      data-slot='menubar-separator'
-      {...props}
-    />
-  );
-}
+const MenubarSeparator = React.forwardRef<React.ComponentRef<typeof DropdownMenuSeparator>, MenubarSeparator.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuSeparator
+        data-slot='menubar-separator'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarSeparator.displayName = "MenubarSeparator";
 /** Displays a trailing shortcut hint rather than a separately styled lookalike. */
-function MenubarShortcut(props: Readonly<MenubarShortcut.Props>): React.ReactElement {
-  return (
-    <DropdownMenuShortcut
-      data-slot='menubar-shortcut'
-      {...props}
-    />
-  );
-}
+const MenubarShortcut = React.forwardRef<React.ComponentRef<typeof DropdownMenuShortcut>, MenubarShortcut.Props>(
+  (props, ref): React.ReactElement => {
+    return (
+      <DropdownMenuShortcut
+        data-slot='menubar-shortcut'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
+MenubarShortcut.displayName = "MenubarShortcut";
 
 // eslint-disable-next-line no-redeclare -- public component namespace API
 namespace Menubar {

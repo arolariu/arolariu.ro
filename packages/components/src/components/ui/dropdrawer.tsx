@@ -374,256 +374,243 @@ function DropDrawer<Payload = unknown>({
 }
 
 /** Opens the current primitive, preserving native/custom composition and merged refs. */
-function DropDrawerTrigger({
-  ref,
-  drawerProps,
-  asChild = false,
-  children,
-  render,
-  disabled,
-  handle,
-  ...props
-}: DropDrawerTriggerProps): React.JSX.Element {
-  const root = useRoot();
-  const controlRef = React.useRef<HTMLElement>(null);
-  const mergedRef = useMergedRefs(ref, root.triggerRef, controlRef);
-  const child = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-  const renderProp = child ?? render;
-  const inlineBoundary =
-    !React.isValidElement(renderProp)
-    || typeof renderProp.type !== "string"
-    || !/^(?:div|p|section|article|aside|nav|header|footer|main|form|fieldset|ul|ol|li|table|h[1-6])$/u.test(renderProp.type);
-  const {delay, closeDelay, openOnHover, ...buttonProps} = props;
-  const trigger = root.isMobile ? (
-    <DrawerTrigger
-      data-slot='drop-drawer-trigger'
-      {...buttonProps}
-      handle={handle instanceof BaseDrawer.Handle ? handle : undefined}
-      {...drawerProps}
-      ref={mergedRef}
-      disabled={root.disabled || disabled}
-      nativeButton={props.nativeButton ?? (typeof child?.type === "string" ? child.type === "button" : true)}
-      render={child || children === undefined ? renderProp : withChildren(renderProp, children)}>
-      {child ? undefined : children}
-    </DrawerTrigger>
-  ) : (
-    <DropdownMenuTrigger
-      data-slot='drop-drawer-trigger'
-      {...props}
-      handle={handle instanceof BaseMenu.Handle ? handle : undefined}
-      ref={mergedRef}
-      asChild={asChild}
-      render={render}
-      disabled={root.disabled || disabled}>
-      {children}
-    </DropdownMenuTrigger>
-  );
-  return (
-    <ActivationBoundary
-      inline={inlineBoundary}
-      disabled={root.disabled || Boolean(disabled)}
-      controlRef={controlRef}>
-      {trigger}
-    </ActivationBoundary>
-  );
-}
+const DropDrawerTrigger = React.forwardRef<HTMLElement, DropDrawerTriggerProps>(
+  ({drawerProps, asChild = false, children, render, disabled, handle, ...props}: DropDrawerTriggerProps, ref): React.JSX.Element => {
+    const root = useRoot();
+    const controlRef = React.useRef<HTMLElement>(null);
+    const mergedRef = useMergedRefs(ref, root.triggerRef, controlRef);
+    const child = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
+    const renderProp = child ?? render;
+    const inlineBoundary =
+      !React.isValidElement(renderProp)
+      || typeof renderProp.type !== "string"
+      || !/^(?:div|p|section|article|aside|nav|header|footer|main|form|fieldset|ul|ol|li|table|h[1-6])$/u.test(renderProp.type);
+    const {delay, closeDelay, openOnHover, ...buttonProps} = props;
+    const trigger = root.isMobile ? (
+      <DrawerTrigger
+        data-slot='drop-drawer-trigger'
+        {...buttonProps}
+        handle={handle instanceof BaseDrawer.Handle ? handle : undefined}
+        {...drawerProps}
+        ref={mergedRef}
+        disabled={root.disabled || disabled}
+        nativeButton={props.nativeButton ?? (typeof child?.type === "string" ? child.type === "button" : true)}
+        render={child || children === undefined ? renderProp : withChildren(renderProp, children)}>
+        {child ? undefined : children}
+      </DrawerTrigger>
+    ) : (
+      <DropdownMenuTrigger
+        data-slot='drop-drawer-trigger'
+        {...props}
+        handle={handle instanceof BaseMenu.Handle ? handle : undefined}
+        ref={mergedRef}
+        asChild={asChild}
+        render={render}
+        disabled={root.disabled || disabled}>
+        {children}
+      </DropdownMenuTrigger>
+    );
+    return (
+      <ActivationBoundary
+        inline={inlineBoundary}
+        disabled={root.disabled || Boolean(disabled)}
+        controlRef={controlRef}>
+        {trigger}
+      </ActivationBoundary>
+    );
+  },
+);
 
 /** Live mobile navigation: register actual nodes, never copied/cached React children. */
-function MobileContent({
-  children,
-  className,
-  render,
-  ref,
-  drawerProps,
-  initialFocus,
-  finalFocus,
-  ...props
-}: DropDrawerContentProps): React.JSX.Element {
-  const root = useRoot();
-  const popupRender = drawerProps?.render ?? render;
-  const drawerClassName = drawerProps?.className;
-  const [path, setPath] = React.useState<readonly string[]>([]);
-  const [previousOpen, setPreviousOpen] = React.useState(root.open);
-  // Reset navigation on the state transition without remounting the SDK popup or delaying reset until an effect.
-  if (previousOpen !== root.open) {
-    setPreviousOpen(root.open);
-    if (!root.open) setPath([]);
-  }
-  const [panelHost, setPanelHost] = React.useState<HTMLDivElement | null>(null);
-  const mainRef = React.useRef<HTMLDivElement>(null);
-  const entriesRef = React.useRef(new Map<string, SubmenuRegistration>());
-  const openingRequestsRef = React.useRef(new Set<string>());
-  const pendingFocusRef = React.useRef<"entry" | HTMLElement | null>(null);
-  const activeId = path.at(-1) ?? null;
-  const active = activeId === null ? undefined : entriesRef.current.get(activeId);
-  const closePath = React.useCallback((id: string): void => {
-    setPath((previous) => {
-      const index = previous.indexOf(id);
-      if (index === -1) return previous;
-      pendingFocusRef.current = entriesRef.current.get(id)?.triggerRef.current ?? "entry";
-      return previous.slice(0, index);
-    });
-  }, []);
-  const activateRequestedPath = React.useCallback((): void => {
-    if (!root.open) return;
-    let candidate: readonly string[] = [];
-    for (const requestedId of openingRequestsRef.current) {
-      const livePath = getLivePath(requestedId, entriesRef.current);
-      if (livePath && livePath.length >= candidate.length) candidate = livePath;
+const MobileContent = React.forwardRef<HTMLElement, DropDrawerContentProps>(
+  ({children, className, render, drawerProps, initialFocus, finalFocus, ...props}: DropDrawerContentProps, ref): React.JSX.Element => {
+    const root = useRoot();
+    const popupRender = drawerProps?.render ?? render;
+    const drawerClassName = drawerProps?.className;
+    const [path, setPath] = React.useState<readonly string[]>([]);
+    const [previousOpen, setPreviousOpen] = React.useState(root.open);
+    // Reset navigation on the state transition without remounting the SDK popup or delaying reset until an effect.
+    if (previousOpen !== root.open) {
+      setPreviousOpen(root.open);
+      if (!root.open) setPath([]);
     }
-    if (candidate.length === 0) return;
-    setPath((previous) => {
-      if (previous.length === candidate.length && previous.every((value, index) => value === candidate[index])) return previous;
-      pendingFocusRef.current = "entry";
-      return candidate;
-    });
-  }, [root.open]);
-  const synchronize = React.useCallback(
-    (id: string, nextOpen: boolean): void => {
-      if (!nextOpen) {
-        openingRequestsRef.current.delete(id);
-        for (const requestedId of openingRequestsRef.current) {
-          let ancestorId = entriesRef.current.get(requestedId)?.parentId;
-          while (ancestorId !== null && ancestorId !== undefined) {
-            if (ancestorId === id) {
-              openingRequestsRef.current.delete(requestedId);
-              break;
+    const [panelHost, setPanelHost] = React.useState<HTMLDivElement | null>(null);
+    const mainRef = React.useRef<HTMLDivElement>(null);
+    const entriesRef = React.useRef(new Map<string, SubmenuRegistration>());
+    const openingRequestsRef = React.useRef(new Set<string>());
+    const pendingFocusRef = React.useRef<"entry" | HTMLElement | null>(null);
+    const activeId = path.at(-1) ?? null;
+    const active = activeId === null ? undefined : entriesRef.current.get(activeId);
+    const closePath = React.useCallback((id: string): void => {
+      setPath((previous) => {
+        const index = previous.indexOf(id);
+        if (index === -1) return previous;
+        pendingFocusRef.current = entriesRef.current.get(id)?.triggerRef.current ?? "entry";
+        return previous.slice(0, index);
+      });
+    }, []);
+    const activateRequestedPath = React.useCallback((): void => {
+      if (!root.open) return;
+      let candidate: readonly string[] = [];
+      for (const requestedId of openingRequestsRef.current) {
+        const livePath = getLivePath(requestedId, entriesRef.current);
+        if (livePath && livePath.length >= candidate.length) candidate = livePath;
+      }
+      if (candidate.length === 0) return;
+      setPath((previous) => {
+        if (previous.length === candidate.length && previous.every((value, index) => value === candidate[index])) return previous;
+        pendingFocusRef.current = "entry";
+        return candidate;
+      });
+    }, [root.open]);
+    const synchronize = React.useCallback(
+      (id: string, nextOpen: boolean): void => {
+        if (!nextOpen) {
+          openingRequestsRef.current.delete(id);
+          for (const requestedId of openingRequestsRef.current) {
+            let ancestorId = entriesRef.current.get(requestedId)?.parentId;
+            while (ancestorId !== null && ancestorId !== undefined) {
+              if (ancestorId === id) {
+                openingRequestsRef.current.delete(requestedId);
+                break;
+              }
+              ancestorId = entriesRef.current.get(ancestorId)?.parentId;
             }
-            ancestorId = entriesRef.current.get(ancestorId)?.parentId;
           }
+          closePath(id);
+          return;
         }
-        closePath(id);
+        openingRequestsRef.current.delete(id);
+        openingRequestsRef.current.add(id);
+        activateRequestedPath();
+      },
+      [activateRequestedPath, closePath],
+    );
+    const panelAvailabilityChanged = React.useCallback(
+      (id: string): void => {
+        if (!entriesRef.current.get(id)?.panelRef.current?.isConnected) closePath(id);
+        activateRequestedPath();
+      },
+      [activateRequestedPath, closePath],
+    );
+    const register = React.useCallback(
+      (entry: SubmenuRegistration): (() => void) => {
+        const registered = entriesRef.current.get(entry.id);
+        if (registered && registered !== entry) throw new Error(`Duplicate DropDrawerSub id: ${entry.id}`);
+        entriesRef.current.set(entry.id, entry);
+        activateRequestedPath();
+        return () => {
+          if (entriesRef.current.get(entry.id) !== entry) return;
+          closePath(entry.id);
+          entriesRef.current.delete(entry.id);
+          openingRequestsRef.current.delete(entry.id);
+        };
+      },
+      [activateRequestedPath, closePath],
+    );
+    React.useLayoutEffect(() => {
+      if (!root.open) openingRequestsRef.current.clear();
+    }, [root.open]);
+    const navigate = React.useCallback(
+      (id: string, event: MouseEvent): void => {
+        const entry = entriesRef.current.get(id);
+        if (!entry?.panelRef.current?.isConnected || entry.optionsRef.current.disabled || !requestSubmenuChange(entry, true, event)) return;
+        synchronize(id, true);
+      },
+      [synchronize],
+    );
+    React.useLayoutEffect(() => {
+      const target = pendingFocusRef.current;
+      if (!root.open || !target) return;
+      pendingFocusRef.current = null;
+      if (target !== "entry" && target.isConnected) {
+        target.focus();
         return;
       }
-      openingRequestsRef.current.delete(id);
-      openingRequestsRef.current.add(id);
-      activateRequestedPath();
-    },
-    [activateRequestedPath, closePath],
-  );
-  const panelAvailabilityChanged = React.useCallback(
-    (id: string): void => {
-      if (!entriesRef.current.get(id)?.panelRef.current?.isConnected) closePath(id);
-      activateRequestedPath();
-    },
-    [activateRequestedPath, closePath],
-  );
-  const register = React.useCallback(
-    (entry: SubmenuRegistration): (() => void) => {
-      const registered = entriesRef.current.get(entry.id);
-      if (registered && registered !== entry) throw new Error(`Duplicate DropDrawerSub id: ${entry.id}`);
-      entriesRef.current.set(entry.id, entry);
-      activateRequestedPath();
-      return () => {
-        if (entriesRef.current.get(entry.id) !== entry) return;
-        closePath(entry.id);
-        entriesRef.current.delete(entry.id);
-        openingRequestsRef.current.delete(entry.id);
-      };
-    },
-    [activateRequestedPath, closePath],
-  );
-  React.useLayoutEffect(() => {
-    if (!root.open) openingRequestsRef.current.clear();
-  }, [root.open]);
-  const navigate = React.useCallback(
-    (id: string, event: MouseEvent): void => {
-      const entry = entriesRef.current.get(id);
-      if (!entry?.panelRef.current?.isConnected || entry.optionsRef.current.disabled || !requestSubmenuChange(entry, true, event)) return;
-      synchronize(id, true);
-    },
-    [synchronize],
-  );
-  React.useLayoutEffect(() => {
-    const target = pendingFocusRef.current;
-    if (!root.open || !target) return;
-    pendingFocusRef.current = null;
-    if (target !== "entry" && target.isConnected) {
-      target.focus();
-      return;
-    }
-    const panel = activeId === null ? mainRef.current : entriesRef.current.get(activeId)?.panelRef.current;
-    const first = panel?.querySelector<HTMLElement>('button:not(:disabled), a[href]:not([aria-disabled="true"]), [tabindex="0"]');
-    (first ?? panel)?.focus();
-  }, [activeId, path, root.open]);
-  const goBack = (event: React.MouseEvent<HTMLButtonElement>): void => {
-    if (!active || !requestSubmenuChange(active, false, event.nativeEvent)) return;
-    synchronize(active.id, false);
-  };
-  const navigation = React.useMemo(
-    () => ({activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged}),
-    [activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged],
-  );
-  const {
-    align,
-    alignOffset,
-    side,
-    sideOffset,
-    anchor,
-    positionMethod,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    arrowPadding,
-    disableAnchorTracking,
-    collisionAvoidance,
-    positionerProps,
-    portalProps,
-    ...popupProps
-  } = props;
+      const panel = activeId === null ? mainRef.current : entriesRef.current.get(activeId)?.panelRef.current;
+      const first = panel?.querySelector<HTMLElement>('button:not(:disabled), a[href]:not([aria-disabled="true"]), [tabindex="0"]');
+      (first ?? panel)?.focus();
+    }, [activeId, path, root.open]);
+    const goBack = (event: React.MouseEvent<HTMLButtonElement>): void => {
+      if (!active || !requestSubmenuChange(active, false, event.nativeEvent)) return;
+      synchronize(active.id, false);
+    };
+    const navigation = React.useMemo(
+      () => ({activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged}),
+      [activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged],
+    );
+    const {
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      anchor,
+      positionMethod,
+      collisionBoundary,
+      collisionPadding,
+      sticky,
+      arrowPadding,
+      disableAnchorTracking,
+      collisionAvoidance,
+      positionerProps,
+      portalProps,
+      ...popupProps
+    } = props;
 
-  return (
-    <NavigationContext.Provider value={navigation}>
-      <DrawerContent
-        data-slot='drop-drawer-content'
-        {...popupProps}
-        {...drawerProps}
-        ref={ref}
-        initialFocus={drawerProps?.initialFocus ?? initialFocus}
-        finalFocus={drawerProps?.finalFocus ?? finalFocus ?? root.triggerRef}
-        render={popupRender}
-        className={(state) =>
-          cn(
-            styles.mobileContent,
-            typeof className === "function" ? className(state) : className,
-            typeof drawerClassName === "function" ? drawerClassName(state) : drawerClassName,
-          )
-        }>
-        <div className={cn(styles.mobileHeader, activeId === null && styles.screenReaderOnlyHeader)}>
-          {activeId !== null && (
-            <button
-              type='button'
-              aria-label={root.backLabel}
-              className={styles.backButton}
-              onClick={goBack}>
-              <ChevronLeft
-                aria-hidden='true'
-                className={styles.chevron}
-              />
-            </button>
-          )}
-          <DrawerTitle>{active?.triggerRef.current?.textContent || root.mobileTitle}</DrawerTitle>
-        </div>
-        <div
-          ref={mainRef}
-          hidden={activeId !== null}
-          tabIndex={-1}
-          className={styles.mobilePanel}>
-          {contentOf(children, popupRender)}
-        </div>
-        <div
-          ref={setPanelHost}
-          className={styles.mobilePanelHost}
-        />
-      </DrawerContent>
-    </NavigationContext.Provider>
-  );
-}
+    return (
+      <NavigationContext.Provider value={navigation}>
+        <DrawerContent
+          data-slot='drop-drawer-content'
+          {...popupProps}
+          {...drawerProps}
+          ref={ref}
+          initialFocus={drawerProps?.initialFocus ?? initialFocus}
+          finalFocus={drawerProps?.finalFocus ?? finalFocus ?? root.triggerRef}
+          render={popupRender}
+          className={(state) =>
+            cn(
+              styles.mobileContent,
+              typeof className === "function" ? className(state) : className,
+              typeof drawerClassName === "function" ? drawerClassName(state) : drawerClassName,
+            )
+          }>
+          <div className={cn(styles.mobileHeader, activeId === null && styles.screenReaderOnlyHeader)}>
+            {activeId !== null && (
+              <button
+                type='button'
+                aria-label={root.backLabel}
+                className={styles.backButton}
+                onClick={goBack}>
+                <ChevronLeft
+                  aria-hidden='true'
+                  className={styles.chevron}
+                />
+              </button>
+            )}
+            <DrawerTitle>{active?.triggerRef.current?.textContent || root.mobileTitle}</DrawerTitle>
+          </div>
+          <div
+            ref={mainRef}
+            hidden={activeId !== null}
+            tabIndex={-1}
+            className={styles.mobilePanel}>
+            {contentOf(children, popupRender)}
+          </div>
+          <div
+            ref={setPanelHost}
+            className={styles.mobilePanelHost}
+          />
+        </DrawerContent>
+      </NavigationContext.Provider>
+    );
+  },
+);
+MobileContent.displayName = "DropDrawerMobileContent";
 
 /** Popup refs/events/render callbacks target the real role-bearing primitive in both branches. */
-function DropDrawerContent(props: DropDrawerContentProps): React.JSX.Element {
+const DropDrawerContent = React.forwardRef<HTMLElement, DropDrawerContentProps>((props, ref): React.JSX.Element => {
   const root = useRoot();
-  const {ref, drawerProps, initialFocus, finalFocus, className, ...menuProps} = props;
+  const {drawerProps, initialFocus, finalFocus, className, ...menuProps} = props;
   const mergedRef = useMergedRefs<HTMLElement>(ref);
   if (root.isMobile)
     return (
@@ -642,121 +629,131 @@ function DropDrawerContent(props: DropDrawerContentProps): React.JSX.Element {
       className={(state) => cn(styles.desktopContent, typeof className === "function" ? className(state) : className)}
     />
   );
-}
+});
 
 /** Action callbacks precede primitive closing; cancellation and disabled state suppress activation. */
-function DropDrawerItem({
-  children,
-  render,
-  asChild = false,
-  ref,
-  className,
-  disabled = false,
-  closeOnClick = true,
-  onClick,
-  onSelect,
-  onKeyDown,
-  icon,
-  inset,
-  nativeButton,
-  label,
-  variant,
-  ...props
-}: DropDrawerItemProps): React.JSX.Element {
-  const root = useRoot();
-  const controlRef = React.useRef<HTMLElement>(null);
-  const mergedRef = useMergedRefs<HTMLElement>(ref, controlRef);
-  const isDisabled = root.disabled || disabled;
-  const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-  const renderProp = legacyChild ?? render;
-  const content = (
-    <>
-      {contentOf(legacyChild ? undefined : children, renderProp)}
-      {icon ? <span className={styles.itemIcon}>{icon}</span> : null}
-    </>
-  );
-  const handleClick: NonNullable<ResponsiveDOMEvents["onClick"]> = (event) => {
-    if (isDisabled) {
-      cancelActivation(event);
-      return;
-    }
-    onClick?.(event);
-    if (!isActivationCancelled(event)) onSelect?.(event.nativeEvent);
-    if (isActivationCancelled(event)) cancelActivation(event);
-  };
-  const handleKeyDown: NonNullable<ResponsiveDOMEvents["onKeyDown"]> = (event) => {
-    if (isDisabled) cancelActivation(event);
-    else onKeyDown?.(event);
-  };
-  const Action = closeOnClick ? DrawerClose : BaseButton;
-  const action = root.isMobile ? (
-    <Action
-      data-slot='drop-drawer-item'
-      data-inset={inset}
-      data-variant={variant}
-      {...props}
-      ref={mergedRef}
-      disabled={isDisabled}
-      nativeButton={
-        nativeButton
-        ?? (typeof renderProp === "object" && React.isValidElement(renderProp) && typeof renderProp.type === "string"
-          ? renderProp.type === "button"
-          : true)
+const DropDrawerItem = React.forwardRef<React.ComponentRef<typeof DropdownMenuItem>, DropDrawerItemProps>(
+  (
+    {
+      children,
+      render,
+      asChild = false,
+      className,
+      disabled = false,
+      closeOnClick = true,
+      onClick,
+      onSelect,
+      onKeyDown,
+      icon,
+      inset,
+      nativeButton,
+      label,
+      variant,
+      ...props
+    }: DropDrawerItemProps,
+    ref,
+  ): React.JSX.Element => {
+    const root = useRoot();
+    const controlRef = React.useRef<HTMLElement>(null);
+    const mergedRef = useMergedRefs<HTMLElement>(ref, controlRef);
+    const isDisabled = root.disabled || disabled;
+    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
+    const renderProp = legacyChild ?? render;
+    const content = (
+      <>
+        {contentOf(legacyChild ? undefined : children, renderProp)}
+        {icon ? <span className={styles.itemIcon}>{icon}</span> : null}
+      </>
+    );
+    const handleClick: NonNullable<ResponsiveDOMEvents["onClick"]> = (event) => {
+      if (isDisabled) {
+        cancelActivation(event);
+        return;
       }
-      render={withChildren(renderProp, content)}
-      className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}>
-      {content}
-    </Action>
-  ) : (
-    <DropdownMenuItem
-      data-slot='drop-drawer-item'
-      {...props}
-      ref={mergedRef}
-      disabled={isDisabled}
-      closeOnClick={closeOnClick}
-      inset={inset}
-      label={label}
-      variant={variant}
-      nativeButton={nativeButton ?? legacyChild?.type === "button"}
-      render={withChildren(renderProp, content)}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      className={className}>
-      {content}
-    </DropdownMenuItem>
-  );
-  return (
-    <ActivationBoundary
-      disabled={isDisabled}
-      controlRef={controlRef}>
-      {action}
-    </ActivationBoundary>
-  );
-}
+      onClick?.(event);
+      if (!isActivationCancelled(event)) onSelect?.(event.nativeEvent);
+      if (isActivationCancelled(event)) cancelActivation(event);
+    };
+    const handleKeyDown: NonNullable<ResponsiveDOMEvents["onKeyDown"]> = (event) => {
+      if (isDisabled) cancelActivation(event);
+      else onKeyDown?.(event);
+    };
+    const Action = closeOnClick ? DrawerClose : BaseButton;
+    const action = root.isMobile ? (
+      <Action
+        data-slot='drop-drawer-item'
+        data-inset={inset}
+        data-variant={variant}
+        {...props}
+        ref={mergedRef}
+        disabled={isDisabled}
+        nativeButton={
+          nativeButton
+          ?? (typeof renderProp === "object" && React.isValidElement(renderProp) && typeof renderProp.type === "string"
+            ? renderProp.type === "button"
+            : true)
+        }
+        render={withChildren(renderProp, content)}
+        className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}>
+        {content}
+      </Action>
+    ) : (
+      <DropdownMenuItem
+        data-slot='drop-drawer-item'
+        {...props}
+        ref={mergedRef}
+        disabled={isDisabled}
+        closeOnClick={closeOnClick}
+        inset={inset}
+        label={label}
+        variant={variant}
+        nativeButton={nativeButton ?? legacyChild?.type === "button"}
+        render={withChildren(renderProp, content)}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        className={className}>
+        {content}
+      </DropdownMenuItem>
+    );
+    return (
+      <ActivationBoundary
+        disabled={isDisabled}
+        controlRef={controlRef}>
+        {action}
+      </ActivationBoundary>
+    );
+  },
+);
 /** A real desktop menu separator; mobile groups use CSS boundaries rather than menu roles. */
-function DropDrawerSeparator(props: DropDrawerSeparatorProps): React.JSX.Element | null {
-  return useRoot().isMobile ? null : (
-    <DropdownMenuSeparator
-      data-slot='drop-drawer-separator'
-      {...props}
-    />
-  );
-}
+const DropDrawerSeparator = React.forwardRef<React.ComponentRef<typeof DropdownMenuSeparator>, DropDrawerSeparatorProps>(
+  (props, ref): React.JSX.Element | null => {
+    return useRoot().isMobile ? null : (
+      <DropdownMenuSeparator
+        data-slot='drop-drawer-separator'
+        {...props}
+        ref={ref}
+      />
+    );
+  },
+);
 /** Section labels use the group label owner and do not overwrite the mobile dialog title. */
-function DropDrawerLabel({className, ...props}: DropDrawerLabelProps): React.JSX.Element {
-  const root = useRoot();
-  return (
-    <DropdownMenuLabel
-      data-slot='drop-drawer-label'
-      {...props}
-      className={(state) => cn(root.isMobile && styles.mobileLabel, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const DropDrawerLabel = React.forwardRef<React.ComponentRef<typeof DropdownMenuLabel>, DropDrawerLabelProps>(
+  ({className, ...props}, ref): React.JSX.Element => {
+    const root = useRoot();
+    return (
+      <DropdownMenuLabel
+        data-slot='drop-drawer-label'
+        {...props}
+        ref={ref}
+        className={(state) => cn(root.isMobile && styles.mobileLabel, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
 /** Native footer layout with state-free render composition. */
-function DropDrawerFooter({className, ref, render, ...props}: DropDrawerFooterProps): React.ReactElement {
+const DropDrawerFooter = React.forwardRef<HTMLElement, DropDrawerFooterProps>(({className, render, ...props}, ref): React.ReactElement => {
   const root = useRoot();
   return useRender<Record<string, never>, HTMLElement>({
     defaultTagName: "div",
@@ -768,19 +765,22 @@ function DropDrawerFooter({className, ref, render, ...props}: DropDrawerFooterPr
     },
     render,
   });
-}
+});
 
 /** The real Group/GroupLabel relationship is valid for both menus and native action groups. */
-function DropDrawerGroup({className, ...props}: DropDrawerGroupProps): React.JSX.Element {
-  const root = useRoot();
-  return (
-    <DropdownMenuGroup
-      data-slot='drop-drawer-group'
-      {...props}
-      className={(state) => cn(root.isMobile && styles.mobileGroup, typeof className === "function" ? className(state) : className)}
-    />
-  );
-}
+const DropDrawerGroup = React.forwardRef<React.ComponentRef<typeof DropdownMenuGroup>, DropDrawerGroupProps>(
+  ({className, ...props}, ref): React.JSX.Element => {
+    const root = useRoot();
+    return (
+      <DropdownMenuGroup
+        data-slot='drop-drawer-group'
+        {...props}
+        ref={ref}
+        className={(state) => cn(root.isMobile && styles.mobileGroup, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
+);
 
 /** Maintains a stable submenu identity and live registration, including wrapped/nested children. */
 function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
@@ -819,143 +819,140 @@ function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
 }
 
 /** Disabled guards precede callbacks; enabled native buttons supply Enter/Space activation. */
-function DropDrawerSubTrigger({
-  ref,
-  children,
-  render,
-  className,
-  disabled = false,
-  inset,
-  onClick,
-  onKeyDown,
-  ...props
-}: DropDrawerSubTriggerProps): React.JSX.Element {
-  const root = useRoot();
-  const entry = useSubmenu();
-  const navigation = React.useContext(NavigationContext);
-  const controlRef = React.useRef<HTMLElement>(null);
-  const mergedRef = useMergedRefs(ref, entry.triggerRef, controlRef);
-  const isDisabled = root.disabled || disabled || entry.disabled;
-  const content = (
-    <>
-      {contentOf(children, render)}
-      <ChevronRight
-        aria-hidden='true'
-        className={styles.chevron}
-      />
-    </>
-  );
-  const handleClick: NonNullable<ResponsiveDOMEvents["onClick"]> = (event) => {
-    if (isDisabled) {
-      cancelActivation(event);
-      return;
-    }
-    onClick?.(event);
-    if (isActivationCancelled(event)) {
-      cancelActivation(event);
-      return;
-    }
-    if (root.isMobile) navigation?.navigate(entry.id, event.nativeEvent);
-  };
-  const handleKeyDown: NonNullable<ResponsiveDOMEvents["onKeyDown"]> = (event) => {
-    if (isDisabled) cancelActivation(event);
-    else onKeyDown?.(event);
-  };
-  const {delay, closeDelay, openOnHover, label, ...buttonProps} = props;
-  const trigger = root.isMobile ? (
-    <BaseButton
-      data-slot='drop-drawer-sub-trigger'
-      {...buttonProps}
-      ref={mergedRef}
-      disabled={isDisabled}
-      aria-controls={entry.panelId}
-      aria-expanded={navigation?.activeId === entry.id}
-      render={withChildren(render, content)}
-      className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}>
-      {content}
-    </BaseButton>
-  ) : (
-    <DropdownMenuSubTrigger
-      data-slot='drop-drawer-sub-trigger'
-      {...props}
-      ref={mergedRef}
-      disabled={isDisabled}
-      inset={inset}
-      className={className}
-      render={render}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}>
-      {children}
-    </DropdownMenuSubTrigger>
-  );
-  return (
-    <ActivationBoundary
-      disabled={isDisabled}
-      controlRef={controlRef}>
-      {trigger}
-    </ActivationBoundary>
-  );
-}
+const DropDrawerSubTrigger = React.forwardRef<React.ComponentRef<typeof DropdownMenuSubTrigger>, DropDrawerSubTriggerProps>(
+  (
+    {children, render, className, disabled = false, inset, onClick, onKeyDown, ...props}: DropDrawerSubTriggerProps,
+    ref,
+  ): React.JSX.Element => {
+    const root = useRoot();
+    const entry = useSubmenu();
+    const navigation = React.useContext(NavigationContext);
+    const controlRef = React.useRef<HTMLElement>(null);
+    const mergedRef = useMergedRefs(ref, entry.triggerRef, controlRef);
+    const isDisabled = root.disabled || disabled || entry.disabled;
+    const content = (
+      <>
+        {contentOf(children, render)}
+        <ChevronRight
+          aria-hidden='true'
+          className={styles.chevron}
+        />
+      </>
+    );
+    const handleClick: NonNullable<ResponsiveDOMEvents["onClick"]> = (event) => {
+      if (isDisabled) {
+        cancelActivation(event);
+        return;
+      }
+      onClick?.(event);
+      if (isActivationCancelled(event)) {
+        cancelActivation(event);
+        return;
+      }
+      if (root.isMobile) navigation?.navigate(entry.id, event.nativeEvent);
+    };
+    const handleKeyDown: NonNullable<ResponsiveDOMEvents["onKeyDown"]> = (event) => {
+      if (isDisabled) cancelActivation(event);
+      else onKeyDown?.(event);
+    };
+    const {delay, closeDelay, openOnHover, label, ...buttonProps} = props;
+    const trigger = root.isMobile ? (
+      <BaseButton
+        data-slot='drop-drawer-sub-trigger'
+        {...buttonProps}
+        ref={mergedRef}
+        disabled={isDisabled}
+        aria-controls={entry.panelId}
+        aria-expanded={navigation?.activeId === entry.id}
+        render={withChildren(render, content)}
+        className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}>
+        {content}
+      </BaseButton>
+    ) : (
+      <DropdownMenuSubTrigger
+        data-slot='drop-drawer-sub-trigger'
+        {...props}
+        ref={mergedRef}
+        disabled={isDisabled}
+        inset={inset}
+        className={className}
+        render={render}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}>
+        {children}
+      </DropdownMenuSubTrigger>
+    );
+    return (
+      <ActivationBoundary
+        disabled={isDisabled}
+        controlRef={controlRef}>
+        {trigger}
+      </ActivationBoundary>
+    );
+  },
+);
 
 /** Keeps mobile panel descendants mounted in a portal, so registration and child updates remain live. */
-function MobileSubContent({children, className, render, ref, id, ...props}: DropDrawerSubContentProps): React.ReactElement | null {
-  const entry = useSubmenu();
-  const navigation = useNavigation();
-  const {panelAvailabilityChanged} = navigation;
-  const notifyPanelRef = React.useCallback(() => panelAvailabilityChanged(entry.id), [entry.id, panelAvailabilityChanged]);
-  const mergedRef = useMergedRefs(ref, entry.panelRef, notifyPanelRef);
-  const open = navigation.activeId === entry.id;
-  const renderElement = React.isValidElement<{children?: React.ReactNode; id?: string}>(render) ? render : undefined;
-  const panelId = renderElement?.props.id ?? id ?? `${entry.id}-panel`;
-  const {setPanelId} = entry;
-  React.useLayoutEffect(() => {
-    setPanelId(panelId);
-  }, [panelId, setPanelId]);
-  const {
-    align,
-    alignOffset,
-    side,
-    sideOffset,
-    anchor,
-    positionMethod,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    arrowPadding,
-    disableAnchorTracking,
-    collisionAvoidance,
-    positionerProps,
-    portalProps,
-    finalFocus,
-    style,
-    ...panelProps
-  } = props;
-  const panel = useRender<DropDrawerPanelState, HTMLElement>({
-    defaultTagName: "div",
-    ref: mergedRef,
-    render: withChildren(render, contentOf(children, render)),
-    state: {open},
-    props: {
-      ...panelProps,
-      "data-slot": "drop-drawer-sub-content",
-      id: panelId,
-      hidden: !open,
-      tabIndex: -1,
-      className: cn(styles.mobilePanel, typeof className === "function" ? className({open}) : className),
-      style: typeof style === "function" ? style({open}) : style,
-      children: contentOf(children, render),
-    },
-  });
-  return navigation.panelHost ? createPortal(panel, navigation.panelHost) : null;
-}
+const MobileSubContent = React.forwardRef<HTMLElement, DropDrawerSubContentProps>(
+  ({children, className, render, id, ...props}, ref): React.ReactElement | null => {
+    const entry = useSubmenu();
+    const navigation = useNavigation();
+    const {panelAvailabilityChanged} = navigation;
+    const notifyPanelRef = React.useCallback(() => panelAvailabilityChanged(entry.id), [entry.id, panelAvailabilityChanged]);
+    const mergedRef = useMergedRefs(ref, entry.panelRef, notifyPanelRef);
+    const open = navigation.activeId === entry.id;
+    const renderElement = React.isValidElement<{children?: React.ReactNode; id?: string}>(render) ? render : undefined;
+    const panelId = renderElement?.props.id ?? id ?? `${entry.id}-panel`;
+    const {setPanelId} = entry;
+    React.useLayoutEffect(() => {
+      setPanelId(panelId);
+    }, [panelId, setPanelId]);
+    const {
+      align,
+      alignOffset,
+      side,
+      sideOffset,
+      anchor,
+      positionMethod,
+      collisionBoundary,
+      collisionPadding,
+      sticky,
+      arrowPadding,
+      disableAnchorTracking,
+      collisionAvoidance,
+      positionerProps,
+      portalProps,
+      finalFocus,
+      style,
+      ...panelProps
+    } = props;
+    const panel = useRender<DropDrawerPanelState, HTMLElement>({
+      defaultTagName: "div",
+      ref: mergedRef,
+      render: withChildren(render, contentOf(children, render)),
+      state: {open},
+      props: {
+        ...panelProps,
+        "data-slot": "drop-drawer-sub-content",
+        id: panelId,
+        hidden: !open,
+        tabIndex: -1,
+        className: cn(styles.mobilePanel, typeof className === "function" ? className({open}) : className),
+        style: typeof style === "function" ? style({open}) : style,
+        children: contentOf(children, render),
+      },
+    });
+    return navigation.panelHost ? createPortal(panel, navigation.panelHost) : null;
+  },
+);
+MobileSubContent.displayName = "DropDrawerMobileSubContent";
 
 /** Desktop uses a real SDK submenu popup; mobile uses the local panel owner with precise open state. */
-function DropDrawerSubContent(props: DropDrawerSubContentProps): React.JSX.Element | null {
+const DropDrawerSubContent = React.forwardRef<HTMLElement, DropDrawerSubContentProps>((props, ref): React.JSX.Element | null => {
   const root = useRoot();
   const entry = useSubmenu();
-  const {ref} = props;
   const mergedRef = useMergedRefs<HTMLElement>(ref, entry.panelRef);
   if (root.isMobile)
     return (
@@ -971,7 +968,7 @@ function DropDrawerSubContent(props: DropDrawerSubContentProps): React.JSX.Eleme
       ref={mergedRef}
     />
   );
-}
+});
 
 DropDrawer.displayName = "DropDrawer";
 DropDrawerTrigger.displayName = "DropDrawerTrigger";

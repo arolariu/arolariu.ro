@@ -9,6 +9,7 @@ const meta: Meta<typeof Slider> = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    controls: {disable: true},
   },
   argTypes: {
     orientation: {control: "select", options: ["horizontal", "vertical"]},
@@ -24,13 +25,16 @@ type Story = StoryObj<typeof meta>;
  * Default slider with single value.
  */
 export const Default: Story = {
-  render: () => (
-    <div className={styles.story}>
+  parameters: {controls: {disable: false, include: ["orientation", "disabled", "thumbAlignment"]}},
+  args: {orientation: "horizontal", disabled: false, thumbAlignment: "edge"},
+  render: (args) => (
+    <div className={args.orientation === "vertical" ? styles.storyVertical : styles.story}>
       <Slider
         aria-label='Volume'
         defaultValue={50}
         min={0}
         max={100}
+        {...args}
       />
     </div>
   ),

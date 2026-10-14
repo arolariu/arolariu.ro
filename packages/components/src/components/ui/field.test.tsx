@@ -305,6 +305,34 @@ describe("Field", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("falls through transparent empty Fragments to normalized errors and preserves numeric zero", () => {
+    const {rerender} = render(
+      <FieldError>
+        <>
+          {null}
+          {false} <></>
+        </>
+      </FieldError>,
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    rerender(
+      <FieldError errors={[{message: " Required "}, {message: "Required"}]}>
+        <>
+          <>{false}</>
+        </>
+      </FieldError>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Required");
+    expect(screen.getAllByText("Required")).toHaveLength(1);
+    rerender(
+      <FieldError errors={[{message: "Ignored"}]}>
+        <>{0}</>
+      </FieldError>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("0");
+    expect(screen.queryByText("Ignored")).not.toBeInTheDocument();
+  });
+
   it("suppresses empty field errors and deduplicates messages", () => {
     const {rerender} = render(<FieldError errors={[]} />);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();

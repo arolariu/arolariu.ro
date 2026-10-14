@@ -1,5 +1,8 @@
 import {render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
 import {createRef, useState} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
@@ -35,6 +38,21 @@ function ControlledFruit(): React.JSX.Element {
 }
 
 describe("NativeSelect", () => {
+  it("keeps ordinary story layout outside forced-color media while retaining system-color overrides", () => {
+    const stylesheet = parse(readFileSync(join(import.meta.dirname, "native-select.module.css"), "utf8"));
+    const layouts: string[] = [];
+    stylesheet.walkRules((rule) => {
+      if (rule.selector === ".example" || rule.selector === ".exampleActions") {
+        expect(rule.parent?.type).toBe("root");
+        layouts.push(rule.selector);
+      }
+    });
+    expect(layouts).toEqual([".example", ".exampleActions"]);
+    const forced = stylesheet.nodes.find((node) => node.type === "atrule" && node.params === "(forced-colors: active)");
+    expect(forced?.toString()).toContain("background-color: Canvas");
+    expect(forced?.toString()).toContain("border-color: GrayText");
+  });
+
   it("keeps NativeSelect a native form control", () => {
     render(
       <form aria-label='Fruit form'>
@@ -212,9 +230,10 @@ describe("NativeSelect", () => {
     const select = screen.getByRole("combobox", {name: "Fruit"});
     await user.tab();
     expect(select).toHaveFocus();
-    await user.keyboard("{ArrowDown}");
+    const arrow = new KeyboardEvent("keydown", {key: "ArrowDown", bubbles: true, cancelable: true});
+    expect(select.dispatchEvent(arrow)).toBe(false);
+    expect(arrow.defaultPrevented).toBe(true);
     expect(keys).toEqual(["ArrowDown"]);
-    expect(select).toHaveValue("pear");
     await user.tab();
     expect(screen.getByRole("button", {name: "Next control"})).toHaveFocus();
   });

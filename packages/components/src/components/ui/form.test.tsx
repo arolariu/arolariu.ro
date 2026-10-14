@@ -742,6 +742,60 @@ function WithoutProvider(): React.JSX.Element {
 }
 
 describe("Form real RHF contracts", () => {
+  it("preserves absent observer keys and cleans replaced wrapper refs without detaching the child", () => {
+    let received: React.ComponentPropsWithoutRef<"input"> | undefined;
+    const Probe = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<"input">>((props, ref) => {
+      received = props;
+      return (
+        <input
+          {...props}
+          ref={ref}
+        />
+      );
+    });
+    Probe.displayName = "ObserverKeyProbe";
+    const childRef = React.createRef<HTMLInputElement>();
+    const firstCleanup = vi.fn();
+    const secondCleanup = vi.fn();
+    const first = vi.fn((node: HTMLInputElement | null) => (node ? firstCleanup : undefined));
+    const second = vi.fn((node: HTMLInputElement | null) => (node ? secondCleanup : undefined));
+    function Fixture({replacement = false}: Readonly<{replacement?: boolean}>): React.JSX.Element {
+      const methods = useForm<{name: string}>({defaultValues: {name: ""}});
+      return (
+        <Form {...methods}>
+          <FormField
+            control={methods.control}
+            name='name'
+            render={() => (
+              <FormItem>
+                <FormControl ref={replacement ? second : first}>
+                  <Probe
+                    ref={childRef}
+                    aria-label='Ref probe'
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </Form>
+      );
+    }
+    const {rerender, unmount} = render(<Fixture />);
+    const input = screen.getByRole("textbox", {name: "Ref probe"});
+    expect(childRef.current).toBe(input);
+    expect(Object.keys(received ?? {}).filter((key) => key.startsWith("on"))).toEqual([]);
+    expect(first).toHaveBeenCalledExactlyOnceWith(input);
+    rerender(<Fixture replacement />);
+    expect(firstCleanup).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledExactlyOnceWith(input);
+    expect(childRef.current).toBe(input);
+    unmount();
+    expect(childRef.current).toBeNull();
+    expect(secondCleanup).toHaveBeenCalledTimes(1);
+    expect(first).not.toHaveBeenCalledWith(null);
+    expect(second).not.toHaveBeenCalledWith(null);
+  });
+
   it("keeps all 15 runtime exports and aliases Form to RHF FormProvider without adding a native form", () => {
     expect(Form).toBe(FormProvider);
     expect(Controller).toBe(RHFController);

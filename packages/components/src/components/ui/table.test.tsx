@@ -1,11 +1,61 @@
 import * as React from "react";
 
 import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
 import {describe, expect, it} from "vitest";
 
 import {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "./table";
+import styles from "./table.module.css";
 
 describe("Table", () => {
+  it.each(["selected", "row-expanded", "descendant-expanded"] as const)(
+    "matches only the authored %s highlight selector and drops it on false/removal",
+    (kind) => {
+      const selectors: string[] = [];
+      parse(readFileSync(join(import.meta.dirname, "table.module.css"), "utf8")).walkRules((rule) => {
+        if (rule.parent?.type === "root" && rule.selector.includes('.row[data-state="selected"]')) selectors.push(...rule.selectors);
+      });
+      expect(selectors).toEqual(['.row[data-state="selected"]', '.row[aria-expanded="true"]', '.row:has([aria-expanded="true"])']);
+      const expected = selectors[["selected", "row-expanded", "descendant-expanded"].indexOf(kind)];
+      const fixture = (active: boolean | undefined): React.JSX.Element => (
+        <Table>
+          <TableBody>
+            <TableRow
+              data-testid='highlight-row'
+              data-state={kind === "selected" && active !== undefined ? (active ? "selected" : "idle") : undefined}
+              aria-expanded={kind === "row-expanded" ? active : undefined}>
+              <TableCell>
+                <button
+                  type='button'
+                  aria-expanded={kind === "descendant-expanded" ? active : undefined}>
+                  Details
+                </button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+      const {rerender} = render(fixture(true));
+      const row = screen.getByTestId("highlight-row");
+      const matching = (): string[] => {
+        // Happy DOM caches :has matches across descendant attribute updates.
+        // A fresh native clone queries the current DOM attributes, not that cache.
+        const current = row.cloneNode(true);
+        if (!(current instanceof HTMLElement)) throw new TypeError("Expected a cloned native row.");
+        return selectors.filter((selector) => current.matches(selector.replaceAll(".row", `.${styles["row"]}`)));
+      };
+      expect(matching()).toEqual([expected]);
+      rerender(fixture(false));
+      if (kind === "descendant-expanded") expect(row.querySelector("button")).toHaveAttribute("aria-expanded", "false");
+      expect(matching()).toEqual([]);
+      rerender(fixture(undefined));
+      if (kind === "descendant-expanded") expect(row.querySelector("button")).not.toHaveAttribute("aria-expanded");
+      expect(matching()).toEqual([]);
+    },
+  );
+
   it("keeps native table attributes and refs on their actual nodes, including expandable row controls", () => {
     const table = React.createRef<HTMLTableElement>();
     const header = React.createRef<HTMLTableSectionElement>();

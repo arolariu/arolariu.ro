@@ -31,6 +31,7 @@ import {
 } from "react-hook-form";
 
 import {cn} from "@/lib/utilities";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 
 import styles from "./form.module.css";
 import type {Input} from "./input";
@@ -100,26 +101,22 @@ export type FormControlProps<TElement extends HTMLElement = HTMLInputElement> = 
   }
 >;
 
-function composeRefs<TValue>(...refs: Array<React.Ref<TValue> | undefined>): React.RefCallback<TValue> {
-  return (value: TValue | null): (() => void) => {
-    const cleanups = refs.map((ref) => {
-      if (typeof ref === "function") {
-        const cleanup = ref(value);
-        return typeof cleanup === "function"
-          ? cleanup
-          : (): void => {
-              ref(null);
-            };
-      }
-      if (ref) ref.current = value;
-      return (): void => {
-        if (ref) ref.current = null;
-      };
-    });
-    return (): void => {
-      for (const cleanup of cleanups) cleanup();
-    };
-  };
+function isControlRef(value: unknown): value is React.Ref<HTMLElement> {
+  return value === null || typeof value === "function" || (typeof value === "object" && "current" in value);
+}
+
+function controlRef(child: React.ReactElement<FormControlElementProps> | null): React.Ref<HTMLElement> | undefined {
+  if (!child) return undefined;
+  // React18 stores ref on the element; React19 stores it in props. Neither
+  // version's development warning getter is a data property we should invoke.
+  for (const source of [child.props, child]) {
+    const descriptor = Object.getOwnPropertyDescriptor(source, "ref");
+    if (descriptor && "value" in descriptor) {
+      const {value}: Readonly<{value?: unknown}> = descriptor;
+      return isControlRef(value) ? value : undefined;
+    }
+  }
+  return undefined;
 }
 
 function unlessCancelled<TEvent extends React.SyntheticEvent>(
@@ -310,7 +307,7 @@ function cancellableObservers(props: React.HTMLAttributes<HTMLElement>): React.H
     onToggle: unlessCancelled(props.onToggle),
     onBeforeToggle: unlessCancelled(props.onBeforeToggle),
   } satisfies ObserverEvents;
-  return {...props, ...observers};
+  return {...props, ...Object.fromEntries(Object.entries(observers).filter(([, observer]) => observer !== undefined))};
 }
 
 function hasMeaningfulChildren(children: React.ReactNode): boolean {
@@ -561,7 +558,8 @@ type FormControlTarget = React.ForwardRefExoticComponent<React.HTMLAttributes<HT
  * field.onChange in the child's own handler. Base UI cancellation is also honored.
  *
  * Classes, native props, child content, and callback/object refs (including React
- * cleanup returns) are preserved. Input render/class callbacks stay primitive-owned.
+ * cleanup returns) are preserved on React18/19; the merged ref itself returns void.
+ * Input render/class callbacks stay primitive-owned.
  * Wrapper ID overrides child ID; either retargets FormLabel. A label-only htmlFor
  * becomes the control ID. Generated description/message IDs are linked only while
  * meaningful content is mounted. Caller-supplied ARIA tokens remain caller-owned.
@@ -574,8 +572,7 @@ const FormControl: FormControlComponent = React.forwardRef<HTMLElement, FormCont
     const child = React.isValidElement<FormControlElementProps>(children) && children.type !== React.Fragment ? children : null;
     const explicitId = id?.trim() || child?.props.id?.trim() || undefined;
     useMountedMetadata("control", explicitId);
-    const childRef = child?.props.ref;
-    const mergedRef = React.useMemo(() => composeRefs(ref, childRef), [childRef, ref]);
+    const mergedRef = useMergedRefs(ref, controlRef(child));
     const describedBy = mergeAriaDescribedBy(child?.props["aria-describedby"], props["aria-describedby"], ...descriptionIds, ...messageIds);
     const ariaInvalid = invalid ? true : (props["aria-invalid"] ?? child?.props["aria-invalid"] ?? false);
 
@@ -632,7 +629,7 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, FormDescriptionPr
     const field = useFormField();
     const uniqueId = React.useId();
     const paragraphRef = React.useRef<HTMLParagraphElement>(null);
-    const mergedRef = React.useMemo(() => composeRefs(ref, paragraphRef), [ref]);
+    const mergedRef = useMergedRefs(ref, paragraphRef);
     const {dangerouslySetInnerHTML} = props;
     const descriptionId = id?.trim() || `${field.id}-${uniqueId}-form-item-description`;
     useMountedMetadata(
