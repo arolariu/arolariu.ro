@@ -2,9 +2,26 @@ import {Bold, Italic, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline} 
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {ToggleGroup, ToggleGroupItem} from "./toggle-group";
-import styles from "./toggle-group.module.css";
+const storyStyles = `
+.ac-story-toggle-group-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-toggle-group-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Actions/ToggleGroup",
   component: ToggleGroup,
   tags: ["autodocs"],
@@ -72,7 +89,7 @@ export const Multiple: Story = {
 function ControlledDemo(): React.JSX.Element {
   const [value, setValue] = React.useState<string[]>(["bold", "italic"]);
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <ToggleGroup
         aria-label='Controlled formatting'
         value={value}
@@ -157,7 +174,7 @@ export const Vertical: Story = {
 };
 export const ItemOverrides: Story = {
   render: () => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <p>Explicit item size and variant take precedence over group defaults.</p>
       <ToggleGroup
         aria-label='Item overrides'

@@ -9,8 +9,3 @@
   white-space: nowrap;
   border: 0;
 }
-
-.storyRow {
-  display: flex;
-  gap: var(--ac-space-2);
-}

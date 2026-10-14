@@ -5,23 +5,15 @@ import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage} from "./avatar";
 import styles from "./avatar.module.css";
-import {
-  AvatarStack,
-  BadgeSizes,
-  DarkTheme,
-  Group,
-  GroupCount,
-  GroupSizes,
-  RenderState,
-  RightToLeft,
-  Sizes,
-  WithDelay,
-  WithStatus,
-} from "./avatar.stories";
+import * as stories from "./avatar.stories";
+
+const {AvatarStack, BadgeSizes, DarkTheme, Group, GroupCount, GroupSizes, RenderState, RightToLeft, Sizes, WithDelay, WithStatus} =
+  composeStories(stories);
 
 afterEach(() => {
   cleanup();
@@ -677,17 +669,17 @@ describe("Avatar", () => {
   });
 
   it("documents the real public badge rather than a manual positioned span", () => {
-    render(<WithStatus.render />);
+    render(<WithStatus />);
     const badge = screen.getByLabelText("Online");
     expect(badge).toHaveAttribute("data-slot", "avatar-badge");
     expect(badge.parentElement).toHaveAttribute("data-slot", "avatar");
   });
 
   it("documents the real group and trailing count rather than manual story divs", () => {
-    render(<Group.render />);
+    render(<Group />);
     expect(screen.getByRole("group", {name: "Contributors"})).toHaveAttribute("data-slot", "avatar-group");
     cleanup();
-    render(<AvatarStack.render />);
+    render(<AvatarStack />);
     const group = screen.getByRole("group", {name: "Team members"});
     expect(group).toHaveAttribute("data-slot", "avatar-group");
     expect(group.lastElementChild).toHaveAttribute("data-slot", "avatar-group-count");
@@ -695,7 +687,7 @@ describe("Avatar", () => {
   });
 
   it("documents all three size presets without inline-style replacements", () => {
-    render(<Sizes.render />);
+    render(<Sizes />);
     for (const [label, size] of [
       ["Small avatar", "sm"],
       ["Default avatar", "default"],
@@ -708,14 +700,14 @@ describe("Avatar", () => {
   });
 
   it("renders the real badge-size, group-size, and standalone count stories", () => {
-    render(<BadgeSizes.render />);
+    render(<BadgeSizes />);
     for (const size of ["sm", "default", "lg"]) {
       const badge = screen.getByRole("img", {name: `${size} available`});
       expect(badge).toHaveAttribute("data-slot", "avatar-badge");
       expect(badge.parentElement).toHaveAttribute("data-size", size);
     }
     cleanup();
-    render(<GroupSizes.render />);
+    render(<GroupSizes />);
     for (const size of ["sm", "default", "lg"]) {
       const group = screen.getByRole("group", {name: `${size} contributors`});
       expect(group).toHaveAttribute("data-slot", "avatar-group");
@@ -723,13 +715,13 @@ describe("Avatar", () => {
       expect(group.lastElementChild).toHaveAttribute("data-slot", "avatar-group-count");
     }
     cleanup();
-    render(<GroupCount.render />);
+    render(<GroupCount />);
     expect(screen.getByText("+5")).toHaveAttribute("data-slot", "avatar-group-count");
   });
 
   it("renders the real delayed fallback story with its primitive timing", () => {
     vi.useFakeTimers();
-    render(<WithDelay.render />);
+    render(<WithDelay />);
     expect(screen.queryByText("AO")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(599));
     expect(screen.queryByText("AO")).not.toBeInTheDocument();
@@ -739,7 +731,7 @@ describe("Avatar", () => {
 
   it("renders the real callback story with live image status and size", () => {
     const loader = supplyImageLoader();
-    render(<RenderState.render />);
+    render(<RenderState />);
     const avatar = screen.getByRole("img", {name: "lg avatar: loading"});
     expect(avatar).toHaveAttribute("data-size", "lg");
     act(() => fireEvent.load(loader.latest()));
@@ -750,8 +742,8 @@ describe("Avatar", () => {
   it("renders real themed and RTL groups with deliberate badge nesting", () => {
     render(
       <>
-        <DarkTheme.render />
-        <RightToLeft.render />
+        <DarkTheme />
+        <RightToLeft />
       </>,
     );
     const darkGroup = screen.getByRole("group", {name: "Dark theme contributors"});

@@ -4,11 +4,37 @@ import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "./table";
-import styles from "./table.module.css";
+const storyStyles = `
+.ac-story-table-storyStriped :where(tbody > tr:nth-child(odd)) {
+  background-color: var(--ac-muted);
+}
 
-const meta = {title: "Components/Data Display/Table", component: Table, tags: ["autodocs"], parameters: {layout: "padded"}} satisfies Meta<
-  typeof Table
->;
+.ac-story-table-storyCompact th,
+.ac-story-table-storyCompact td {
+  height: auto;
+  padding: var(--ac-space-1) var(--ac-space-2);
+}
+`;
+
+const storyClasses = {
+  storyStriped: "ac-story-table-storyStriped",
+  storyCompact: "ac-story-table-storyCompact",
+} as const;
+
+const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
+  title: "Components/Data Display/Table",
+  component: Table,
+  tags: ["autodocs"],
+  parameters: {layout: "padded"},
+} satisfies Meta<typeof Table>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -55,8 +81,8 @@ function SampleTable({
 export const Default: Story = {render: (): React.JSX.Element => <SampleTable />};
 export const WithCaption: Story = {render: (): React.JSX.Element => <SampleTable caption />};
 export const WithFooter: Story = {render: (): React.JSX.Element => <SampleTable footer />};
-export const Striped: Story = {render: (): React.JSX.Element => <SampleTable className={styles.storyStriped} />};
-export const Compact: Story = {render: (): React.JSX.Element => <SampleTable className={styles.storyCompact} />};
+export const Striped: Story = {render: (): React.JSX.Element => <SampleTable className={storyClasses.storyStriped} />};
+export const Compact: Story = {render: (): React.JSX.Element => <SampleTable className={storyClasses.storyCompact} />};
 
 function ExpandableTable(): React.JSX.Element {
   const [expanded, setExpanded] = React.useState(false);

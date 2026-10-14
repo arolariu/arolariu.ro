@@ -1,9 +1,39 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {RadioGroup, RadioGroupItem} from "./radio-group";
-import styles from "./radio-group.module.css";
+const storyStyles = `
+.ac-story-radio-group-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+
+  & small {
+    display: block;
+    color: var(--ac-muted-foreground);
+  }
+}
+
+.ac-story-radio-group-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-radio-group-storyRow",
+  storyStack: "ac-story-radio-group-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/RadioGroup",
   component: RadioGroup,
   tags: ["autodocs"],
@@ -23,7 +53,7 @@ export const Default: Story = {
       {["one", "two", "three"].map((value) => (
         <label
           key={value}
-          className={styles.storyRow}>
+          className={storyClasses.storyRow}>
           <RadioGroupItem value={value} />
           Option {value}
         </label>
@@ -37,7 +67,7 @@ export const WithDescriptions: Story = {
     <RadioGroup
       aria-label='Quality'
       defaultValue='standard'>
-      <label className={styles.storyRow}>
+      <label className={storyClasses.storyRow}>
         <RadioGroupItem
           value='standard'
           aria-describedby='standard-description'
@@ -46,7 +76,7 @@ export const WithDescriptions: Story = {
           Standard <small id='standard-description'>Balanced quality</small>
         </span>
       </label>
-      <label className={styles.storyRow}>
+      <label className={storyClasses.storyRow}>
         <RadioGroupItem
           value='high'
           aria-describedby='high-description'
@@ -67,7 +97,7 @@ export const WithDisabled: Story = {
       {["one", "two", "three"].map((value) => (
         <label
           key={value}
-          className={styles.storyRow}>
+          className={storyClasses.storyRow}>
           <RadioGroupItem
             value={value}
             disabled={value === "two"}
@@ -88,7 +118,7 @@ export const PaymentMethod: Story = {
       {["card", "bank", "other"].map((value) => (
         <label
           key={value}
-          className={styles.storyRow}>
+          className={storyClasses.storyRow}>
           <RadioGroupItem value={value} />
           {value}
         </label>
@@ -118,7 +148,7 @@ export const Disabled: Story = {
 function ControlledDemo(): React.JSX.Element {
   const [value, setValue] = React.useState(1);
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <RadioGroup
         aria-label='Numeric selection'
         value={value}
@@ -126,7 +156,7 @@ function ControlledDemo(): React.JSX.Element {
         {[1, 2, 3].map((item) => (
           <label
             key={item}
-            className={styles.storyRow}>
+            className={storyClasses.storyRow}>
             <RadioGroupItem
               value={item}
               render={(props, state) => (

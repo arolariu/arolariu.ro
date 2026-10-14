@@ -18,17 +18,6 @@ fieldset:disabled .label,
   opacity: 0.7;
 }
 
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-2);
-}
-
-.storyInline {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-2);
-}
-
 @media (forced-colors: active) {
   .label {
     color: CanvasText;

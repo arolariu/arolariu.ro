@@ -2,8 +2,75 @@ import {Bold, Italic, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline} 
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./toolbar";
+const storyStyles = `
+.ac-story-toolbar-dropdownPositioner {
+  position: relative;
+}
+
+.ac-story-toolbar-dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 120px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 0.25rem;
+  z-index: 10;
+}
+
+.ac-story-toolbar-dropdownOption {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ac-story-toolbar-editor {
+  width: 100%;
+  max-width: 600px;
+}
+
+.ac-story-toolbar-editorToolbar {
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ac-story-toolbar-editorContent {
+  min-height: 200px;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+`;
+
+const storyClasses = {
+  dropdownPositioner: "ac-story-toolbar-dropdownPositioner",
+  dropdownMenu: "ac-story-toolbar-dropdownMenu",
+  dropdownOption: "ac-story-toolbar-dropdownOption",
+  editor: "ac-story-toolbar-editor",
+  editorToolbar: "ac-story-toolbar-editorToolbar",
+  editorContent: "ac-story-toolbar-editorContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Toolbar",
   component: Toolbar,
   tags: ["autodocs"],
@@ -100,53 +167,23 @@ function ToolbarWithDropdownContent(): React.JSX.Element {
         </ToolbarButton>
       </ToolbarGroup>
       <ToolbarSeparator />
-      <div style={{position: "relative"}}>
+      <div className={storyClasses.dropdownPositioner}>
         <ToolbarButton
           onClick={() => setShowDropdown(!showDropdown)}
           aria-label='More options'>
           More ▾
         </ToolbarButton>
         {showDropdown ? (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 4px)",
-              left: 0,
-              minWidth: "120px",
-              background: "white",
-              border: "1px solid #e5e7eb",
-              borderRadius: "6px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-              padding: "0.25rem",
-              zIndex: 10,
-            }}>
+          <div className={storyClasses.dropdownMenu}>
             <button
               type='button'
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                fontSize: "0.875rem",
-                textAlign: "left",
-                background: "transparent",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className={storyClasses.dropdownOption}
               onClick={() => setShowDropdown(false)}>
               Clear formatting
             </button>
             <button
               type='button'
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                fontSize: "0.875rem",
-                textAlign: "left",
-                background: "transparent",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className={storyClasses.dropdownOption}
               onClick={() => setShowDropdown(false)}>
               Insert link
             </button>
@@ -169,15 +206,10 @@ export const WithDropdown: Story = {
  */
 export const EditorToolbar: Story = {
   render: () => (
-    <div style={{width: "100%", maxWidth: "600px"}}>
+    <div className={storyClasses.editor}>
       <Toolbar
         aria-label='Text formatting'
-        style={{
-          padding: "0.5rem",
-          background: "#f9fafb",
-          borderRadius: "8px 8px 0 0",
-          borderBottom: "1px solid #e5e7eb",
-        }}>
+        className={storyClasses.editorToolbar}>
         <ToolbarGroup>
           <ToolbarButton aria-label='Bold'>
             <Bold className='h-4 w-4' />
@@ -203,14 +235,7 @@ export const EditorToolbar: Story = {
         </ToolbarGroup>
       </Toolbar>
       <div
-        style={{
-          minHeight: "200px",
-          padding: "1rem",
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderTop: "none",
-          borderRadius: "0 0 8px 8px",
-        }}
+        className={storyClasses.editorContent}
         contentEditable
         suppressContentEditableWarning>
         Start typing...

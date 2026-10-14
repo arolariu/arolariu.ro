@@ -2,12 +2,80 @@ import {useId, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "./dialog";
 import {FocusScope} from "./focus-scope";
-import styles from "./focus-scope.module.css";
+const storyStyles = `
+.ac-story-focus-scope-button:focus-visible,
+.ac-story-focus-scope-input:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.ac-story-focus-scope-demo,
+.ac-story-focus-scope-controls {
+  display: grid;
+  gap: var(--ac-space-4);
+  color: var(--ac-foreground);
+}
+
+.ac-story-focus-scope-panel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+}
+
+.ac-story-focus-scope-input {
+  display: block;
+  margin-block-start: var(--ac-space-2);
+  padding: var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  font: inherit;
+}
+
+.ac-story-focus-scope-button {
+  justify-self: start;
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ac-story-focus-scope-button:hover {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.ac-story-focus-scope-hidden {
+  display: none;
+}
+`;
+
+const storyClasses = {
+  button: "ac-story-focus-scope-button",
+  input: "ac-story-focus-scope-input",
+  demo: "ac-story-focus-scope-demo",
+  controls: "ac-story-focus-scope-controls",
+  panel: "ac-story-focus-scope-panel",
+  hidden: "ac-story-focus-scope-hidden",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Utilities/FocusScope",
   component: FocusScope,
-  args: {children: null},
+  args: {children: null as React.ReactNode},
   tags: ["autodocs"],
   parameters: {
     docs: {
@@ -33,18 +101,18 @@ export const Default: Story = {
     contain: true,
     autoFocus: true,
     children: (
-      <div className={styles.controls}>
+      <div className={storyClasses.controls}>
         <label>
           First field
-          <input className={styles.input} />
+          <input className={storyClasses.input} />
         </label>
         <label>
           Second field
-          <input className={styles.input} />
+          <input className={storyClasses.input} />
         </label>
         <button
           type='button'
-          className={styles.button}>
+          className={storyClasses.button}>
           Final visible action
         </button>
         <button
@@ -56,16 +124,16 @@ export const Default: Story = {
     ),
   },
   render: (args) => (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>Tab from the final visible action returns to the first field.</p>
       <FocusScope
         {...args}
         aria-label='Local workbench'
-        className={styles.panel}
+        className={storyClasses.panel}
       />
       <button
         type='button'
-        className={styles.button}>
+        className={storyClasses.button}>
         Outside the scope
       </button>
     </section>
@@ -81,8 +149,8 @@ export const UnavailableControls: Story = {
     <FocusScope
       autoFocus
       aria-label='Available controls'
-      className={styles.panel}>
-      <div className={styles.controls}>
+      className={storyClasses.panel}>
+      <div className={storyClasses.controls}>
         <div hidden>
           <button type='button'>Hidden ancestor</button>
         </div>
@@ -99,15 +167,15 @@ export const UnavailableControls: Story = {
         </button>
         <button
           type='button'
-          className={styles.button}>
+          className={storyClasses.button}>
           First available
         </button>
         <button
           type='button'
-          className={styles.button}>
+          className={storyClasses.button}>
           Last available
         </button>
-        <div className={styles.hidden}>
+        <div className={storyClasses.hidden}>
           <button type='button'>CSS-hidden final action</button>
         </div>
       </div>
@@ -122,7 +190,7 @@ export const EmptyScope: Story = {
     <FocusScope
       {...args}
       aria-label='Empty workbench'
-      className={styles.panel}
+      className={storyClasses.panel}
     />
   ),
 };
@@ -130,29 +198,29 @@ export const EmptyScope: Story = {
 function RestoreFocusDemo(): React.JSX.Element {
   const [open, setOpen] = useState(false);
   return (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>The draft's native autofocus takes entry focus. Closing the inline scope still returns focus to its original trigger.</p>
       <button
         type='button'
-        className={styles.button}
+        className={storyClasses.button}
         onClick={() => setOpen(true)}>
         Open inline workbench
       </button>
       {open && (
         <FocusScope
           aria-label='Inline workbench'
-          className={styles.panel}>
-          <div className={styles.controls}>
+          className={storyClasses.panel}>
+          <div className={storyClasses.controls}>
             <label>
               Draft
               <input
                 autoFocus
-                className={styles.input}
+                className={storyClasses.input}
               />
             </label>
             <button
               type='button'
-              className={styles.button}
+              className={storyClasses.button}
               onClick={() => setOpen(false)}>
               Close workbench
             </button>
@@ -169,7 +237,7 @@ export const WithRestoreFocus: Story = {render: () => <RestoreFocusDemo />};
 function UncheckedRadioGroupDemo(): React.JSX.Element {
   const groupName = useId();
   return (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>
         Until a choice is checked, this controller uses the first locally eligible radio as one logical stop. Tab from that stop wraps to
         the first action. Reverse wrapping uses the same representative; a different peer reached by native navigation resolves to that
@@ -178,11 +246,11 @@ function UncheckedRadioGroupDemo(): React.JSX.Element {
       <FocusScope
         autoFocus
         aria-label='Unchecked radio workbench'
-        className={styles.panel}>
-        <div className={styles.controls}>
+        className={storyClasses.panel}>
+        <div className={storyClasses.controls}>
           <button
             type='button'
-            className={styles.button}>
+            className={storyClasses.button}>
             First workbench action
           </button>
           <label>
@@ -203,7 +271,7 @@ function UncheckedRadioGroupDemo(): React.JSX.Element {
       </FocusScope>
       <button
         type='button'
-        className={styles.button}>
+        className={storyClasses.button}>
         Outside the workbench
       </button>
     </section>
@@ -216,7 +284,7 @@ export const UncheckedRadioGroup: Story = {render: () => <UncheckedRadioGroupDem
 function NestedScopeOwnershipDemo(): React.JSX.Element {
   const groupName = useId();
   return (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>
         These radios share one native group across two local scopes. Once focus enters the contained child, its native interior Tab and
         Shift+Tab transitions belong to that child, not the ancestor's radio alias sequence. Pointer focus remains available outside because
@@ -225,8 +293,8 @@ function NestedScopeOwnershipDemo(): React.JSX.Element {
       <FocusScope
         autoFocus
         aria-label='Outer local scope'
-        className={styles.panel}>
-        <div className={styles.controls}>
+        className={storyClasses.panel}>
+        <div className={storyClasses.controls}>
           <label>
             <input
               type='radio'
@@ -236,13 +304,13 @@ function NestedScopeOwnershipDemo(): React.JSX.Element {
           </label>
           <button
             type='button'
-            className={styles.button}>
+            className={storyClasses.button}>
             Outer intervening action
           </button>
           <FocusScope
             aria-label='Contained child scope'
-            className={styles.panel}>
-            <div className={styles.controls}>
+            className={storyClasses.panel}>
+            <div className={storyClasses.controls}>
               <label>
                 <input
                   type='radio'
@@ -252,7 +320,7 @@ function NestedScopeOwnershipDemo(): React.JSX.Element {
               </label>
               <button
                 type='button'
-                className={styles.button}>
+                className={storyClasses.button}>
                 Inner next action
               </button>
             </div>
@@ -276,7 +344,7 @@ export const SdkOwnedModal: Story = {
         <DialogDescription>Base UI handles focus entry, containment and restoration. No manual trap is added.</DialogDescription>
         <label>
           Example field
-          <input className={styles.input} />
+          <input className={storyClasses.input} />
         </label>
       </DialogContent>
     </Dialog>

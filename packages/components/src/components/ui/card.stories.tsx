@@ -4,10 +4,40 @@ import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
-import styles from "./card.module.css";
 import {Skeleton} from "./skeleton";
+const storyStyles = `
+.ac-story-card-storyCard {
+  width: min(100%, 28rem);
+}
+
+.ac-story-card-storyImage {
+  width: 100%;
+  height: auto;
+  color: var(--ac-muted-foreground);
+  background-color: var(--ac-muted);
+}
+
+.ac-story-card-storyLoadingLine {
+  width: 100%;
+  height: 1rem;
+}
+`;
+
+const storyClasses = {
+  storyCard: "ac-story-card-storyCard",
+  storyImage: "ac-story-card-storyImage",
+  storyLoadingLine: "ac-story-card-storyLoadingLine",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Card",
   component: Card,
   tags: ["autodocs"],
@@ -21,7 +51,7 @@ export const Default: Story = {
   render: (args): React.JSX.Element => (
     <Card
       {...args}
-      className={styles.storyCard}>
+      className={storyClasses.storyCard}>
       <CardHeader>
         <CardTitle>Card title</CardTitle>
         <CardDescription>Supporting information for the content below.</CardDescription>
@@ -38,7 +68,7 @@ export const Small: Story = {...Default, args: {size: "sm"}};
 
 export const WithoutFooter: Story = {
   render: (): React.JSX.Element => (
-    <Card className={styles.storyCard}>
+    <Card className={storyClasses.storyCard}>
       <CardHeader>
         <CardTitle>Simple card</CardTitle>
       </CardHeader>
@@ -49,7 +79,7 @@ export const WithoutFooter: Story = {
 
 export const ContentOnly: Story = {
   render: (): React.JSX.Element => (
-    <Card className={styles.storyCard}>
+    <Card className={storyClasses.storyCard}>
       <CardContent>Content-only cards keep their interior padding.</CardContent>
     </Card>
   ),
@@ -59,7 +89,7 @@ export const WithAction: Story = {
   render: (): React.JSX.Element => (
     <Card
       size='sm'
-      className={styles.storyCard}>
+      className={storyClasses.storyCard}>
       <CardHeader>
         <CardTitle>A_long_unbroken_title_that_should_not_push_the_header_action_out_of_its_column</CardTitle>
         <CardDescription>Descriptions wrap independently of header controls.</CardDescription>
@@ -78,9 +108,9 @@ export const WithAction: Story = {
 
 export const WithImage: Story = {
   render: (): React.JSX.Element => (
-    <Card className={styles.storyCard}>
+    <Card className={storyClasses.storyCard}>
       <svg
-        className={styles.storyImage}
+        className={storyClasses.storyImage}
         role='img'
         aria-label='Mountain illustration'
         viewBox='0 0 320 160'>
@@ -104,7 +134,7 @@ export const WithImage: Story = {
 function InteractiveCard(): React.JSX.Element {
   const [saved, setSaved] = React.useState(false);
   return (
-    <Card className={styles.storyCard}>
+    <Card className={storyClasses.storyCard}>
       <CardHeader>
         <CardTitle>Reading list</CardTitle>
         <CardDescription>Native button behavior, not a clickable div.</CardDescription>
@@ -130,13 +160,13 @@ export const Loading: Story = {
     <Card
       aria-busy='true'
       aria-label='Loading content'
-      className={styles.storyCard}>
+      className={storyClasses.storyCard}>
       <CardHeader>
-        <Skeleton className={styles.storyLoadingLine} />
-        <Skeleton className={styles.storyLoadingLine} />
+        <Skeleton className={storyClasses.storyLoadingLine} />
+        <Skeleton className={storyClasses.storyLoadingLine} />
       </CardHeader>
       <CardContent>
-        <Skeleton className={styles.storyLoadingLine} />
+        <Skeleton className={storyClasses.storyLoadingLine} />
       </CardContent>
       <CardFooter>
         <span role='status'>Preparing content…</span>

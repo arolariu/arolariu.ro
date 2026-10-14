@@ -665,33 +665,3 @@
   border: 0;
   white-space: nowrap;
 }
-
-.storyMain {
-  align-items: flex-start;
-  gap: var(--ac-space-4);
-  padding: var(--ac-space-6);
-}
-
-.storyBrand {
-  padding: var(--ac-space-2);
-}
-
-.storyMenu {
-  min-width: 10rem;
-  padding: var(--ac-space-1);
-  border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-md);
-  background-color: var(--ac-popover);
-  color: var(--ac-popover-foreground);
-}
-
-.storyMenuItem {
-  padding: var(--ac-space-2);
-  border-radius: var(--ac-radius-sm);
-  outline: none;
-}
-
-.storyMenuItem[data-highlighted] {
-  background-color: var(--ac-accent);
-  color: var(--ac-accent-foreground);
-}

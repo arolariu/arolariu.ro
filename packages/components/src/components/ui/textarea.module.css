@@ -44,19 +44,6 @@
   }
 }
 
-.storyStack {
-  display: grid;
-  width: min(100%, 28rem);
-  gap: var(--ac-space-3);
-}
-
-.storyCount {
-  margin: 0;
-  color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-sm);
-  text-align: end;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .textarea {
     transition: none;

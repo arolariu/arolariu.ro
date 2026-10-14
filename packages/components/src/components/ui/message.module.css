@@ -71,8 +71,3 @@
 .message[data-align="end"] .footer {
   justify-content: flex-end;
 }
-
-.storyStack {
-  inline-size: min(32rem, 90vw);
-  gap: var(--ac-space-6);
-}

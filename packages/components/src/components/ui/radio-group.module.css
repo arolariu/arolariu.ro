@@ -43,23 +43,6 @@
   fill: currentcolor;
 }
 
-.storyRow {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-2);
-  font-size: var(--ac-text-sm);
-
-  & small {
-    display: block;
-    color: var(--ac-muted-foreground);
-  }
-}
-
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .item {
     transition: none;

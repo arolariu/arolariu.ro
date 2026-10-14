@@ -13,19 +13,3 @@
     color: CanvasText;
   }
 }
-
-.demo {
-  position: relative;
-  height: 24rem;
-  overflow: hidden;
-  border-radius: var(--ac-radius-lg);
-  color: var(--ac-foreground);
-}
-
-.demoContent {
-  display: grid;
-  place-content: center;
-  min-height: 100%;
-  gap: 1rem;
-  padding: 2rem;
-}

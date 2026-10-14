@@ -64,12 +64,6 @@
     }
   }
 
-  .storyContent {
-    display: grid;
-    gap: var(--ac-space-1);
-    max-width: 16rem;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     & {
       transition: none;
@@ -95,10 +89,4 @@
     opacity: 0;
     transform: scale(0.96);
   }
-}
-
-.storyGroup {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ac-space-3);
 }

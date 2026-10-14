@@ -199,14 +199,6 @@
   margin: 0;
 }
 
-.storyNarrow {
-  width: min(100%, 24rem);
-}
-
-.storyWide {
-  width: min(100%, 56rem);
-}
-
 @media (forced-colors: active) {
   .error,
   .field[data-invalid="true"] .label,

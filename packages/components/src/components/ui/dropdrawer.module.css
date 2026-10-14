@@ -138,17 +138,6 @@
   padding-inline-start: 2rem;
 }
 
-.storyContainer {
-  width: min(24rem, 100%);
-  padding: 1.5rem;
-}
-
-.storyStatus {
-  margin-block-start: 1rem;
-  font-size: var(--ac-text-sm);
-  color: var(--ac-muted-foreground);
-}
-
 @media (forced-colors: active) {
   .mobileGroup {
     border: 1px solid CanvasText;

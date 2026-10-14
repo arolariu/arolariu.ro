@@ -14,9 +14,102 @@ import {
   type CarouselApi,
   type CarouselProps,
 } from "./carousel";
-import styles from "./carousel.module.css";
+const storyStyles = `
+.ac-story-carousel-storyFrame {
+  width: min(28rem, calc(100vw - var(--ac-space-8) * 2));
+  padding: calc(var(--ac-space-6) * 2);
+}
+
+.ac-story-carousel-storyTrack[data-orientation="vertical"] {
+  height: 20rem;
+}
+
+.ac-story-carousel-storyPanel {
+  display: flex;
+  min-height: 15rem;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.ac-story-carousel-storyNumber {
+  font-size: calc(var(--ac-text-xl) * 2);
+  font-weight: 600;
+}
+
+.ac-story-carousel-storyMultipleItem {
+  flex-basis: 100%;
+}
+
+@media (min-width: 40rem) {
+  .ac-story-carousel-storyMultipleItem {
+    flex-basis: 50%;
+  }
+}
+
+.ac-story-carousel-storyPicture {
+  width: 100%;
+  height: auto;
+  fill: var(--ac-primary);
+}
+
+.ac-story-carousel-storyIndicators {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-4);
+  margin-top: var(--ac-space-6);
+  text-align: center;
+}
+
+.ac-story-carousel-storyIndicators p {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-carousel-storyIndicatorRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-carousel-storyIndicator[aria-current="true"] {
+  border-color: var(--ac-primary);
+  background: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-carousel-storyFrame",
+  storyTrack: "ac-story-carousel-storyTrack",
+  storyPanel: "ac-story-carousel-storyPanel",
+  storyNumber: "ac-story-carousel-storyNumber",
+  storyMultipleItem: "ac-story-carousel-storyMultipleItem",
+  storyPicture: "ac-story-carousel-storyPicture",
+  storyIndicators: "ac-story-carousel-storyIndicators",
+  storyIndicatorRow: "ac-story-carousel-storyIndicatorRow",
+  storyIndicator: "ac-story-carousel-storyIndicator",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Carousel",
   component: Carousel,
   tags: ["autodocs"],
@@ -32,16 +125,16 @@ function Slides({
   pictures = false,
 }: Readonly<{count?: number; multiple?: boolean; pictures?: boolean}>): React.ReactElement {
   return (
-    <CarouselContent className={styles.storyTrack}>
+    <CarouselContent className={storyClasses.storyTrack}>
       {Array.from({length: count}, (_, index) => (
         <CarouselItem
           key={index}
-          className={multiple ? styles.storyMultipleItem : undefined}
+          className={multiple ? storyClasses.storyMultipleItem : undefined}
           aria-label={`Slide ${index + 1} of ${count}`}>
-          <div className={styles.storyPanel}>
+          <div className={storyClasses.storyPanel}>
             {pictures ? (
               <svg
-                className={styles.storyPicture}
+                className={storyClasses.storyPicture}
                 role='img'
                 aria-label={`Illustrated landscape ${index + 1}`}
                 viewBox='0 0 320 180'>
@@ -53,7 +146,7 @@ function Slides({
                 <path d='M0 180 110 65 185 130 245 85 320 180Z' />
               </svg>
             ) : (
-              <span className={styles.storyNumber}>{index + 1}</span>
+              <span className={storyClasses.storyNumber}>{index + 1}</span>
             )}
             <Button
               variant='outline'
@@ -74,7 +167,7 @@ function Demo({
   ...props
 }: Readonly<CarouselProps & {count?: number; multiple?: boolean; pictures?: boolean}>): React.ReactElement {
   return (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <Carousel
         aria-label='Featured slides'
         {...props}>
@@ -93,7 +186,7 @@ function Demo({
 /** Focus a slide button and use Left/Right; omitted orientation is horizontal. */
 export const Default: Story = {render: () => <Demo />};
 
-/** Slide sizing belongs to a CSS Module rather than utility class strings. */
+/** Slide sizing belongs to mounted story CSS rather than utility class strings. */
 export const MultipleItems: Story = {
   render: () => (
     <Demo
@@ -154,13 +247,13 @@ function SelectionControls(): React.ReactElement {
   const count = Number(snapshot.split(":")[1]);
 
   return (
-    <div className={styles.storyIndicators}>
+    <div className={storyClasses.storyIndicators}>
       <output
         aria-label='Slide position'
         aria-live='polite'>
         {count ? `Slide ${selectedIndex + 1} of ${count}` : "Initializing carousel"}
       </output>
-      <div className={styles.storyIndicatorRow}>
+      <div className={storyClasses.storyIndicatorRow}>
         {Array.from({length: count}, (_, index) => (
           <Button
             key={index}
@@ -168,7 +261,7 @@ function SelectionControls(): React.ReactElement {
             size='icon-sm'
             aria-label={`Go to slide ${index + 1}`}
             aria-current={index === selectedIndex ? "true" : undefined}
-            className={cn(styles.storyIndicator)}
+            className={cn(storyClasses.storyIndicator)}
             onClick={() => api?.scrollTo(index)}>
             {index + 1}
           </Button>
@@ -181,7 +274,7 @@ function SelectionControls(): React.ReactElement {
 /** Custom thumbnail controls scroll the real API and stay synchronized on select/reInit. */
 export const WithThumbnails: Story = {
   render: () => (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <Carousel aria-label='Slides with thumbnail controls'>
         <Slides pictures />
         <CarouselPrevious />
@@ -195,9 +288,9 @@ export const WithThumbnails: Story = {
 function HookControls(): React.ReactElement {
   const {orientation, canScrollPrev, canScrollNext, scrollPrev, scrollNext} = useCarousel();
   return (
-    <div className={styles.storyIndicators}>
+    <div className={storyClasses.storyIndicators}>
       <p>Custom controls, resolved axis: {orientation}</p>
-      <div className={styles.storyIndicatorRow}>
+      <div className={storyClasses.storyIndicatorRow}>
         <Button
           disabled={!canScrollPrev}
           onClick={scrollPrev}>
@@ -216,7 +309,7 @@ function HookControls(): React.ReactElement {
 /** useCarousel supplies resolved orientation and safe, reactive navigation availability. */
 export const CustomControls: Story = {
   render: () => (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <Carousel aria-label='Custom carousel controls'>
         <Slides />
         <HookControls />
@@ -236,7 +329,7 @@ function AutoPlayDemo(): React.ReactElement {
   }, [api, playing]);
 
   return (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <Carousel
         aria-label='Opt-in automatic carousel'
         opts={{loop: true}}
@@ -247,7 +340,7 @@ function AutoPlayDemo(): React.ReactElement {
         <CarouselPrevious />
         <CarouselNext />
       </Carousel>
-      <div className={styles.storyIndicators}>
+      <div className={storyClasses.storyIndicators}>
         <Button
           aria-pressed={playing}
           onClick={() => setPlaying((value) => !value)}>
@@ -265,7 +358,7 @@ export const AutoPlay: Story = {render: () => <AutoPlayDemo />};
 /** The shared Button primitive supplies the render callback's actual disabled state. */
 export const ComposedControls: Story = {
   render: () => (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <Carousel aria-label='Composed navigation controls'>
         <Slides />
         <CarouselPrevious

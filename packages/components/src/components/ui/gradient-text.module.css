@@ -26,23 +26,6 @@
   }
 }
 
-.demo {
-  display: grid;
-  place-content: center;
-  padding: 3rem;
-  border-radius: var(--ac-radius-lg);
-  color: var(--ac-foreground);
-  background: var(--ac-background);
-}
-
-.demoHeading {
-  font-size: clamp(1.5rem, 4vw, 3rem);
-}
-
-.customGradientDemo {
-  opacity: 0.9;
-}
-
 .neon {
   position: absolute;
   inset: 0;

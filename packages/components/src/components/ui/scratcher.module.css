@@ -63,21 +63,3 @@
     background: ButtonFace;
   }
 }
-
-.demo {
-  display: grid;
-  justify-items: center;
-  gap: 1rem;
-  padding: 2rem;
-}
-
-.demoPrize {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-content: center;
-  border-radius: var(--ac-radius-lg);
-  color: var(--ac-foreground);
-  background: var(--ac-muted);
-  font-size: 1.5rem;
-}

@@ -1,9 +1,54 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import * as React from "react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue} from "./select";
-import styles from "./select.module.css";
+const storyStyles = `
+.ac-story-select-scrollExample {
+  max-height: calc(var(--ac-size-default) * 6);
+}
+
+.ac-story-select-storyStack {
+  display: grid;
+  gap: var(--ac-space-3);
+}
+
+.ac-story-select-storyOutput {
+  display: block;
+  margin-block-start: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-select-focusTarget {
+  margin-block-start: var(--ac-space-3);
+  padding: var(--ac-space-2) var(--ac-space-3);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  font: inherit;
+}
+
+.ac-story-select-focusTarget:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+`;
+
+const storyClasses = {
+  scrollExample: "ac-story-select-scrollExample",
+  storyStack: "ac-story-select-storyStack",
+  storyOutput: "ac-story-select-storyOutput",
+  focusTarget: "ac-story-select-focusTarget",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Select",
   component: Select,
   tags: ["autodocs"],
@@ -98,7 +143,7 @@ export const WithScrollButtons: Story = {
       <SelectTrigger aria-label='Country'>
         <SelectValue placeholder='Select a country' />
       </SelectTrigger>
-      <SelectContent listProps={{className: styles.scrollExample}}>
+      <SelectContent listProps={{className: storyClasses.scrollExample}}>
         <SelectItem value='us'>United States</SelectItem>
         <SelectItem value='uk'>United Kingdom</SelectItem>
         <SelectItem value='ca'>Canada</SelectItem>
@@ -159,7 +204,7 @@ function MultipleSelectExample(): React.JSX.Element {
         </SelectContent>
       </Select>
       <output
-        className={styles.storyOutput}
+        className={storyClasses.storyOutput}
         aria-live='polite'>
         Selected values: {value.join(", ") || "none"}
       </output>
@@ -226,7 +271,7 @@ function FinalFocusExample(): React.JSX.Element {
         </SelectContent>
       </Select>
       <button
-        className={styles.focusTarget}
+        className={storyClasses.focusTarget}
         ref={target}>
         Focus returns here after closing
       </button>
@@ -240,7 +285,7 @@ export const CustomFinalFocus: Story = {
 
 export const TriggerSizes: Story = {
   render: () => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       {(["default", "sm"] as const).map((size) => (
         <Select
           key={size}

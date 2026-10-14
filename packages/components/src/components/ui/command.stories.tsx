@@ -13,9 +13,35 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./command";
-import styles from "./command.module.css";
+const storyStyles = `
+.ac-story-command-story {
+  width: min(28rem, calc(100vw - 2rem));
+  border: 1px solid var(--ac-border);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.ac-story-command-storyControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+  margin-block-end: var(--ac-space-3);
+}
+`;
+
+const storyClasses = {
+  story: "ac-story-command-story",
+  storyControls: "ac-story-command-storyControls",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Command",
   component: Command,
   tags: ["autodocs"],
@@ -35,7 +61,7 @@ type Story = StoryObj<typeof meta>;
 /** Searchable grouped actions, including a disabled native option. */
 export const Default: Story = {
   render: () => (
-    <Command className={styles.story}>
+    <Command className={storyClasses.story}>
       <CommandInput
         placeholder='Type a command or search...'
         aria-label='Search commands'
@@ -69,7 +95,7 @@ export const Default: Story = {
 /** Icons remain decorative; shortcut text uses the public presentation helper. */
 export const WithIcons: Story = {
   render: () => (
-    <Command className={styles.story}>
+    <Command className={storyClasses.story}>
       <CommandInput aria-label='Search actions' />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
@@ -100,7 +126,7 @@ export const WithIcons: Story = {
 export const WithMultipleGroups: Story = {
   render: () => (
     <Command
-      className={styles.story}
+      className={storyClasses.story}
       loop>
       <CommandInput aria-label='Search grouped actions' />
       <CommandList>
@@ -124,7 +150,7 @@ export const WithMultipleGroups: Story = {
 export const WithoutSearch: Story = {
   render: () => (
     <Command
-      className={styles.story}
+      className={storyClasses.story}
       defaultValue='print'>
       <CommandList>
         <CommandGroup heading='Quick actions'>
@@ -140,7 +166,7 @@ export const WithoutSearch: Story = {
 /** Retained categories and icon presentation without inline or utility styling. */
 export const WithCategories: Story = {
   render: () => (
-    <Command className={styles.story}>
+    <Command className={storyClasses.story}>
       <CommandInput aria-label='Search all categories' />
       <CommandList>
         <CommandEmpty>No matching commands.</CommandEmpty>
@@ -170,7 +196,7 @@ export const WithCategories: Story = {
 export const WithRecentItems: Story = {
   render: () => (
     <Command
-      className={styles.story}
+      className={storyClasses.story}
       defaultValue='notes'>
       <CommandInput aria-label='Search recent documents' />
       <CommandList>
@@ -195,7 +221,7 @@ export const WithRecentItems: Story = {
 /** Empty live status with an initial nonmatching uncontrolled query. */
 export const Empty: Story = {
   render: () => (
-    <Command className={styles.story}>
+    <Command className={storyClasses.story}>
       <CommandInput
         defaultValue='zz'
         aria-label='Search commands'
@@ -216,7 +242,7 @@ function ControlledPalette(): React.JSX.Element {
   const [reject, setReject] = React.useState(false);
   return (
     <div>
-      <div className={styles.storyControls}>
+      <div className={storyClasses.storyControls}>
         <Button onClick={() => setSearch("zz")}>No matches</Button>
         <Button onClick={() => setSearch("app")}>Find apple directly</Button>
         <Button
@@ -226,7 +252,7 @@ function ControlledPalette(): React.JSX.Element {
         </Button>
       </div>
       <Command
-        className={styles.story}
+        className={storyClasses.story}
         value={selected}
         onValueChange={(proposal) => {
           if (!reject) setSelected(proposal);
@@ -260,7 +286,7 @@ export const Controlled: Story = {render: () => <ControlledPalette />};
 export const Scored: Story = {
   render: () => (
     <Command
-      className={styles.story}
+      className={storyClasses.story}
       filter={(value) => (value === "first" ? 0.2 : 0.9)}>
       <CommandInput
         defaultValue='query'

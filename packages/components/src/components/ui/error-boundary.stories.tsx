@@ -2,11 +2,41 @@ import {useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {ErrorBoundary} from "./error-boundary";
 import styles from "./error-boundary.module.css";
+const storyStyles = `
+.ac-story-error-boundary-demo {
+  display: grid;
+  gap: var(--ac-space-4);
+  max-inline-size: 40rem;
+  color: var(--ac-foreground);
+}
+
+.ac-story-error-boundary-panel {
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  padding: var(--ac-space-6);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  overflow-wrap: anywhere;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-error-boundary-demo",
+  panel: "ac-story-error-boundary-panel",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Utilities/ErrorBoundary",
   component: ErrorBoundary,
-  args: {children: null},
+  args: {children: null as React.ReactNode},
   tags: ["autodocs"],
   parameters: {
     docs: {
@@ -23,7 +53,7 @@ type Story = StoryObj<typeof meta>;
 
 function UnstableContent({shouldThrow = true}: Readonly<{shouldThrow?: boolean}>): React.JSX.Element {
   if (shouldThrow) throw new Error("The example resource is unavailable.");
-  return <p className={styles.panel}>Content recovered successfully.</p>;
+  return <p className={storyClasses.panel}>Content recovered successfully.</p>;
 }
 
 /** Default alert and retry; an unchanged failing condition remains a failure. */
@@ -42,7 +72,7 @@ export const CustomNode: Story = {
       fallback={
         <p
           role='alert'
-          className={styles.panel}>
+          className={storyClasses.panel}>
           This panel is temporarily unavailable.
         </p>
       }>
@@ -54,7 +84,7 @@ export const CustomNode: Story = {
 /** Explicit null is supported when an owner deliberately wants no fallback UI. */
 export const EmptyFallback: Story = {
   render: () => (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>The protected panel below is intentionally empty after failure.</p>
       <ErrorBoundary fallback={null}>
         <UnstableContent />
@@ -76,7 +106,7 @@ function RecoveryDemo(): React.JSX.Element {
   const [shouldThrow, setShouldThrow] = useState(true);
   const [reported, setReported] = useState<string | null>(null);
   return (
-    <section className={styles.demo}>
+    <section className={storyClasses.demo}>
       <p>Retry repairs the parent-owned condition before remounting the failed subtree.</p>
       <ErrorBoundary
         onError={(error) => setReported(error.message)}
@@ -111,13 +141,13 @@ export const WithRetry: Story = {render: () => <RecoveryDemo />};
 export const NestedBoundaries: Story = {
   render: () => (
     <ErrorBoundary>
-      <section className={styles.demo}>
+      <section className={storyClasses.demo}>
         <h2>Outer content remains available</h2>
         <ErrorBoundary
           fallback={
             <p
               role='alert'
-              className={styles.panel}>
+              className={storyClasses.panel}>
               Only the inner panel failed.
             </p>
           }>

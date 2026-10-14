@@ -1,8 +1,47 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {DotBackground} from "./dot-background";
-import styles from "./dot-background.module.css";
+const storyStyles = `
+.ac-story-dot-background-demo,
+.ac-story-dot-background-resizableDemo {
+  position: relative;
+  height: 24rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-dot-background-resizableDemo {
+  width: 70%;
+  min-width: 12rem;
+  min-height: 10rem;
+  resize: both;
+}
+
+.ac-story-dot-background-demoContent {
+  position: relative;
+  display: grid;
+  place-content: center;
+  min-height: 100%;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-dot-background-demo",
+  resizableDemo: "ac-story-dot-background-resizableDemo",
+  demoContent: "ac-story-dot-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/DotBackground",
   component: DotBackground,
   tags: ["autodocs"],
@@ -17,9 +56,9 @@ const meta = {
     },
   },
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <DotBackground {...args} />
-      <h2 className={styles.demoContent}>Dot background</h2>
+      <h2 className={storyClasses.demoContent}>Dot background</h2>
     </div>
   ),
 } satisfies Meta<typeof DotBackground>;
@@ -31,9 +70,9 @@ export const Dense: Story = {args: {width: 4, height: 4, glow: true}};
 /** Resize the native element without resizing the browser window. */
 export const ElementResize: Story = {
   render: (args) => (
-    <div className={styles.resizableDemo}>
+    <div className={storyClasses.resizableDemo}>
       <DotBackground {...args} />
-      <p className={styles.demoContent}>Drag the resize handle</p>
+      <p className={storyClasses.demoContent}>Drag the resize handle</p>
     </div>
   ),
 };

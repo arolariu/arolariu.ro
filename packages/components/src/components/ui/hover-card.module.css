@@ -23,33 +23,6 @@
   transform: scale(0.96);
 }
 
-.storyContent {
-  display: grid;
-  gap: var(--ac-space-2);
-  font-size: var(--ac-text-sm);
-}
-
-.storyTitle {
-  margin: 0;
-  font-size: var(--ac-text-sm);
-  font-weight: 600;
-}
-
-.storyDescription {
-  margin: 0;
-  color: var(--ac-muted-foreground);
-}
-
-.storyLink {
-  color: var(--ac-primary);
-  text-underline-offset: var(--ac-space-1);
-}
-
-.storyWide {
-  width: 20rem;
-  max-width: var(--available-width);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .popup {
     transition: none;
@@ -62,9 +35,5 @@
     background: Canvas;
     color: CanvasText;
     box-shadow: none;
-  }
-
-  .storyDescription {
-    color: CanvasText;
   }
 }

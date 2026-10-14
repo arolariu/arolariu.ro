@@ -2,12 +2,44 @@ import type {ReactElement} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage} from "./avatar";
-import styles from "./avatar.module.css";
 
 const portrait =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23dbeafe'/%3E%3Ccircle cx='32' cy='24' r='12' fill='%233b82f6'/%3E%3Cpath d='M10 64a22 22 0 0 1 44 0' fill='%231d4ed8'/%3E%3C/svg%3E";
+const storyStyles = `
+.ac-story-avatar-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-6);
+}
+
+.ac-story-avatar-storyColumn {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-avatar-storyPanel {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-avatar-storyRow",
+  storyColumn: "ac-story-avatar-storyColumn",
+  storyPanel: "ac-story-avatar-storyPanel",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Avatar",
   component: Avatar,
   tags: ["autodocs"],
@@ -122,7 +154,7 @@ export const GroupCount = {
 /** Small 24px, backward-compatible default 40px, and large 48px avatars. */
 export const Sizes = {
   render: (): ReactElement => (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <Avatar
         size='sm'
         role='img'
@@ -147,7 +179,7 @@ export const Sizes = {
 /** Small badges become dots; default and large badges can display an icon. */
 export const BadgeSizes = {
   render: (): ReactElement => (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       {(["sm", "default", "lg"] as const).map((size) => (
         <Avatar
           key={size}
@@ -174,7 +206,7 @@ export const BadgeSizes = {
 /** Counts follow the first direct avatar; badge-bearing avatars remain above peers. */
 export const GroupSizes = {
   render: (): ReactElement => (
-    <div className={styles.storyColumn}>
+    <div className={storyClasses.storyColumn}>
       {(["sm", "default", "lg"] as const).map((size) => (
         <AvatarGroup
           key={size}
@@ -233,7 +265,7 @@ export const DarkTheme = {
   render: (): ReactElement => (
     <div
       data-theme='dark'
-      className={styles.storyPanel}>
+      className={storyClasses.storyPanel}>
       <AvatarGroup
         role='group'
         aria-label='Dark theme contributors'>

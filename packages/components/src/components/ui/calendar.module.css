@@ -387,39 +387,3 @@
     outline: 2px solid Highlight;
   }
 }
-
-.storyFrame {
-  border: 1px solid var(--ac-border);
-}
-
-.storyStack {
-  display: flex;
-  max-width: 24rem;
-  flex-direction: column;
-  gap: var(--ac-space-3);
-}
-
-.storyHeading {
-  margin: 0;
-  color: var(--ac-foreground);
-  font-size: var(--ac-text-base);
-  font-weight: 600;
-}
-
-.storyDescription {
-  margin: 0;
-  color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-sm);
-  line-height: 1.5;
-}
-
-.storyDayCell {
-  width: var(--ac-size-default);
-}
-
-.eventDot {
-  width: var(--ac-space-1);
-  height: var(--ac-space-1);
-  border-radius: 50%;
-  background-color: currentColor;
-}

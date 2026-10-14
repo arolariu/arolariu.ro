@@ -3,9 +3,39 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {cn} from "@/lib/utilities";
 import {Button} from "./button";
 import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
-import styles from "./typewriter.module.css";
+const storyStyles = `
+.ac-story-typewriter-storyAccent {
+  color: var(--ac-primary);
+}
+
+.ac-story-typewriter-storyCode {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ac-story-typewriter-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyAccent: "ac-story-typewriter-storyAccent",
+  storyCode: "ac-story-typewriter-storyCode",
+  storyStack: "ac-story-typewriter-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Typography/Typewriter",
   component: TypewriterText,
   tags: ["autodocs"],
@@ -16,7 +46,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const StyledWords: Story = {
-  args: {words: [{text: "Build"}, {text: "accessible", className: cn(styles.storyAccent)}, {text: "interfaces"}]},
+  args: {words: [{text: "Build"}, {text: "accessible", className: cn(storyClasses.storyAccent)}, {text: "interfaces"}]},
 };
 export const Smooth: Story = {
   render: (args) => (
@@ -30,11 +60,11 @@ export const LongText: Story = {
   args: {words: [{text: "Experience"}, {text: "the"}, {text: "power"}, {text: "of"}, {text: "accessible"}, {text: "text"}]},
 };
 export const CodeTyping: Story = {
-  args: {words: [{text: "npm"}, {text: "install"}, {text: "@arolariu/components"}], className: styles.storyCode},
+  args: {words: [{text: "npm"}, {text: "install"}, {text: "@arolariu/components"}], className: storyClasses.storyCode},
 };
 export const MultiLine: Story = {
   render: (args) => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <TypewriterText {...args} />
       <TypewriterTextSmooth words={[{text: "Complete"}, {text: "accessible"}, {text: "phrase"}]} />
     </div>
@@ -45,7 +75,7 @@ function ChangingWords(): React.JSX.Element {
   const [changed, setChanged] = React.useState(false);
   const words = changed ? [{text: "Updated"}, {text: "phrase"}] : [{text: "Initial"}, {text: "phrase"}];
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <TypewriterText words={words} />
       <TypewriterTextSmooth words={words} />
       <Button

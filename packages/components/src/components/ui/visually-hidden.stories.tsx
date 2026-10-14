@@ -3,9 +3,26 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Spinner} from "./spinner";
 import {VisuallyHidden} from "./visually-hidden";
-import styles from "./visually-hidden.module.css";
+const storyStyles = `
+.ac-story-visually-hidden-storyRow {
+  display: flex;
+  gap: var(--ac-space-2);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-visually-hidden-storyRow",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Utilities/VisuallyHidden",
   component: VisuallyHidden,
   tags: ["autodocs"],
@@ -24,7 +41,7 @@ export const IconButton: Story = {
 };
 export const IconGroup: Story = {
   render: () => (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <Button
         size='icon-sm'
         variant='secondary'>

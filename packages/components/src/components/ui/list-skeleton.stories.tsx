@@ -1,6 +1,31 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {ListSkeleton} from "./list-skeleton";
-import styles from "./list-skeleton.module.css";
+const storyStyles = `
+.ac-story-list-skeleton-storyPreview {
+  width: 36rem;
+  max-width: 100%;
+}
+
+.ac-story-list-skeleton-storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-list-skeleton-storyHeading {
+  margin: 0 0 var(--ac-space-4);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-list-skeleton-storyPreview",
+  storyPanel: "ac-story-list-skeleton-storyPanel",
+  storyHeading: "ac-story-list-skeleton-storyHeading",
+} as const;
 
 const meta = {
   title: "Components/Feedback/ListSkeleton",
@@ -13,9 +38,16 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className={styles.storyPreview}>
+      <div className={storyClasses.storyPreview}>
         <Story />
       </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
     ),
   ],
   argTypes: {
@@ -80,13 +112,13 @@ export const Static: Story = {
 export const InContainer: Story = {
   render: () => (
     <section
-      className={styles.storyPanel}
+      className={storyClasses.storyPanel}
       role='status'
       aria-labelledby='list-skeleton-heading'
       aria-busy>
       <h2
         id='list-skeleton-heading'
-        className={styles.storyHeading}>
+        className={storyClasses.storyHeading}>
         Loading results
       </h2>
       <ListSkeleton

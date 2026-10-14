@@ -1,8 +1,37 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {GradientBackground} from "./gradient-background";
-import styles from "./gradient-background.module.css";
+const storyStyles = `
+.ac-story-gradient-background-demo {
+  position: relative;
+  height: 24rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  color: var(--ac-foreground);
+}
+
+.ac-story-gradient-background-demoContent {
+  display: grid;
+  place-content: center;
+  min-height: 100%;
+  gap: 1rem;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-gradient-background-demo",
+  demoContent: "ac-story-gradient-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/GradientBackground",
   component: GradientBackground,
   tags: ["autodocs"],
@@ -15,9 +44,9 @@ const meta = {
     },
   },
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <GradientBackground {...args}>
-        <h2 className={styles.demoContent}>Gradient background</h2>
+        <h2 className={storyClasses.demoContent}>Gradient background</h2>
       </GradientBackground>
     </div>
   ),
@@ -28,9 +57,9 @@ export const Default: Story = {};
 export const FastAnimation: Story = {args: {transition: {duration: 5, ease: "easeInOut", repeat: Infinity}}};
 export const WithContent: Story = {
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <GradientBackground {...args}>
-        <div className={styles.demoContent}>
+        <div className={storyClasses.demoContent}>
           <h2>Foreground content</h2>
           <button type='button'>Native action</button>
         </div>

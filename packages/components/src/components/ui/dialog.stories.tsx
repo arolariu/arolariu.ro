@@ -3,9 +3,45 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {Button} from "./button";
 import {Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "./dialog";
-import styles from "./dialog.module.css";
+const storyStyles = `
+.ac-story-dialog-formFields,
+.ac-story-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-dialog-formFields {
+  gap: var(--ac-space-4);
+  padding-block: var(--ac-space-4);
+}
+
+.ac-story-dialog-scrollContent {
+  overflow-y: auto;
+  max-height: 25rem;
+}
+
+.ac-story-dialog-wide {
+  width: 50rem;
+}
+`;
+
+const storyClasses = {
+  formFields: "ac-story-dialog-formFields",
+  field: "ac-story-dialog-field",
+  scrollContent: "ac-story-dialog-scrollContent",
+  wide: "ac-story-dialog-wide",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/Dialog",
   component: Dialog,
   tags: ["autodocs"],
@@ -67,9 +103,9 @@ function WithFormDemo(): ReactElement {
           <DialogTitle>Edit details</DialogTitle>
           <DialogDescription>This example keeps form values in the caller.</DialogDescription>
         </DialogHeader>
-        <div className={styles.formFields}>
+        <div className={storyClasses.formFields}>
           <label
-            className={styles.field}
+            className={storyClasses.field}
             htmlFor={`${id}-name`}>
             Name
             <input
@@ -79,7 +115,7 @@ function WithFormDemo(): ReactElement {
             />
           </label>
           <label
-            className={styles.field}
+            className={storyClasses.field}
             htmlFor={`${id}-email`}>
             Email
             <input
@@ -109,7 +145,7 @@ export const Scrollable: Story = {
           <DialogTitle>Long-form details</DialogTitle>
           <DialogDescription>Content scrolls inside the bounded popup.</DialogDescription>
         </DialogHeader>
-        <div className={styles.scrollContent}>
+        <div className={storyClasses.scrollContent}>
           {Array.from({length: 12}, (_, index) => (
             <p key={index}>Section {index + 1}: review the details and use the explicit controls when finished.</p>
           ))}
@@ -125,11 +161,11 @@ export const CustomWidth: Story = {
     <Dialog>
       <DialogTrigger render={<Button />}>Wide Dialog</DialogTrigger>
       <DialogContent
-        className={styles.wide}
+        className={storyClasses.wide}
         showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Custom width</DialogTitle>
-          <DialogDescription>A caller CSS Module changes width; the automatic icon is disabled.</DialogDescription>
+          <DialogDescription>Mounted story CSS changes width; the automatic icon is disabled.</DialogDescription>
         </DialogHeader>
         <DialogFooter showCloseButton />
       </DialogContent>
@@ -141,7 +177,7 @@ function FocusContractDemo(): ReactElement {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   return (
-    <div className={styles.formFields}>
+    <div className={storyClasses.formFields}>
       <p>
         Open by keyboard. Focus enters the field. Check Tab and Shift+Tab containment, nested Escape dismissal, background inertness, and
         focus return to each trigger in a real browser.
@@ -154,7 +190,7 @@ function FocusContractDemo(): ReactElement {
             <DialogDescription>The automatic close follows all supplied content in DOM order.</DialogDescription>
           </DialogHeader>
           <label
-            className={styles.field}
+            className={storyClasses.field}
             htmlFor={id}>
             First field
             <input

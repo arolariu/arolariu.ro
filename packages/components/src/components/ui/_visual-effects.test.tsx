@@ -1,10 +1,9 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {renderToString} from "react-dom/server";
-import {readFileSync} from "node:fs";
-import {join} from "node:path";
 import postcss from "postcss";
 import {act, render} from "@testing-library/react";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {BackgroundBeams} from "./background-beams";
@@ -18,6 +17,13 @@ import {HoleBackground} from "./hole-background";
 import {Scratcher} from "./scratcher";
 import * as bubbleStories from "./bubble-background.stories";
 import * as gradientStories from "./gradient-text.stories";
+import * as beamsStories from "./background-beams.stories";
+import * as dotStories from "./dot-background.stories";
+import * as fireworksStories from "./fireworks-background.stories";
+import * as gradientBackgroundStories from "./gradient-background.stories";
+import * as highlightStories from "./highlight-text.stories";
+import * as holeStories from "./hole-background.stories";
+import * as scratcherStories from "./scratcher.stories";
 import {useVisualEffectPolicy} from "./_visual-effects";
 
 let observers: ViewBoundary[] = [];
@@ -57,7 +63,7 @@ class ResizeBoundary implements ResizeObserver {
   disconnect(): void {}
 }
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -339,16 +345,37 @@ describe("visual effect policy consumer contracts", () => {
 });
 
 describe("normal-mode visual effect stories", () => {
-  it.each(families)("$name's general demo layout is unconditional, not nested in forced colors", ({name}) => {
-    const css = postcss.parse(readFileSync(join(import.meta.dirname, `${name}.module.css`), "utf8"));
+  const storyFamilies = [
+    {name: "background-beams", Story: composeStories(beamsStories).Default},
+    {name: "bubble-background", Story: composeStories(bubbleStories).Default},
+    {name: "dot-background", Story: composeStories(dotStories).Default},
+    {name: "fireworks-background", Story: composeStories(fireworksStories).Default},
+    {name: "gradient-background", Story: composeStories(gradientBackgroundStories).Default},
+    {name: "gradient-text", Story: composeStories(gradientStories).Default},
+    {name: "highlight-text", Story: composeStories(highlightStories).Default},
+    {name: "hole-background", Story: composeStories(holeStories).Default},
+    {name: "scratcher", Story: composeStories(scratcherStories).Default},
+  ];
+  it.each(storyFamilies)("$name's general demo layout is unconditional, not nested in forced colors", ({name, Story}) => {
+    const {container, unmount} = render(<Story />);
+    const sheet = container.querySelector("style");
+    if (!sheet?.textContent) throw new Error("Expected the mounted story stylesheet");
+    const css = postcss.parse(sheet.textContent);
     const generalRules: postcss.Rule[] = [];
     css.walkRules((rule) => {
-      if (rule.selectors.some((selector) => /(?:\.demo(?:Content|Pair|Prize|Heading|FullScreen|Lead)?|\.resizableDemo)$/u.test(selector))) {
+      if (
+        rule.selectors.some((selector) =>
+          new RegExp(`^\\.ac-story-${name}-(?:demo(?:Content|Pair|Prize|Heading|FullScreen|Lead)?|resizableDemo)$`, "u").test(selector),
+        )
+      ) {
         generalRules.push(rule);
       }
     });
     expect(generalRules.length).toBeGreaterThan(0);
     for (const rule of generalRules) expect(rule.parent?.type, rule.selector).toBe("root");
+    expect(container.querySelector(`[class*="ac-story-${name}-"]`)).not.toBeNull();
+    unmount();
+    expect(sheet.isConnected).toBe(false);
   });
   it("uses CSS classes rather than fixed inline opacity in authored palette/gradient stories", () => {
     expect(bubbleStories.CustomColors.args?.style).toBeUndefined();

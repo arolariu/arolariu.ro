@@ -24,17 +24,3 @@
     color-mix(in oklch, #a855f7, white 15%) 100%
   );
 }
-
-.demo {
-  padding: 2rem;
-  font-size: 1.25rem;
-  line-height: 2;
-  color: var(--ac-foreground);
-  background: var(--ac-background);
-}
-
-.demoLead {
-  display: grid;
-  min-height: 100svh;
-  place-content: center;
-}

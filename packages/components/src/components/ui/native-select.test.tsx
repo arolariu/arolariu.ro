@@ -5,9 +5,11 @@ import {join} from "node:path";
 import {parse} from "postcss";
 import {createRef, useState} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it} from "vitest";
 
 import {NativeSelect, NativeSelectOptGroup, NativeSelectOption} from "./native-select";
+import * as stories from "./native-select.stories";
 
 function FruitOptions(): React.JSX.Element {
   return (
@@ -39,16 +41,22 @@ function ControlledFruit(): React.JSX.Element {
 
 describe("NativeSelect", () => {
   it("keeps ordinary story layout outside forced-color media while retaining system-color overrides", () => {
-    const stylesheet = parse(readFileSync(join(import.meta.dirname, "native-select.module.css"), "utf8"));
+    const {Default} = composeStories(stories);
+    const {container} = render(<Default />);
+    const sheet = container.querySelector("style");
+    if (!sheet?.textContent) throw new Error("Expected the mounted native-select story stylesheet");
+    const stylesheet = parse(sheet.textContent);
     const layouts: string[] = [];
     stylesheet.walkRules((rule) => {
-      if (rule.selector === ".example" || rule.selector === ".exampleActions") {
+      if (rule.selector === ".ac-story-native-select-example" || rule.selector === ".ac-story-native-select-exampleActions") {
         expect(rule.parent?.type).toBe("root");
         layouts.push(rule.selector);
       }
     });
-    expect(layouts).toEqual([".example", ".exampleActions"]);
-    const forced = stylesheet.nodes.find((node) => node.type === "atrule" && node.params === "(forced-colors: active)");
+    expect(layouts).toEqual([".ac-story-native-select-example", ".ac-story-native-select-exampleActions"]);
+    expect(getComputedStyle(screen.getByRole("form", {name: "Native fruit form"})).display).toBe("flex");
+    const productionStyles = parse(readFileSync(join(import.meta.dirname, "native-select.module.css"), "utf8"));
+    const forced = productionStyles.nodes.find((node) => node.type === "atrule" && node.params === "(forced-colors: active)");
     expect(forced?.toString()).toContain("background-color: Canvas");
     expect(forced?.toString()).toContain("border-color: GrayText");
   });

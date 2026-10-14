@@ -79,19 +79,3 @@
     box-shadow: none;
   }
 }
-
-.storyCard {
-  width: min(100%, 28rem);
-}
-
-.storyImage {
-  width: 100%;
-  height: auto;
-  color: var(--ac-muted-foreground);
-  background-color: var(--ac-muted);
-}
-
-.storyLoadingLine {
-  width: 100%;
-  height: 1rem;
-}

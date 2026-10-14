@@ -12,9 +12,44 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "./drawer";
-import styles from "./drawer.module.css";
+const storyStyles = `
+.ac-story-drawer-storyContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-4);
+}
+
+.ac-story-drawer-storyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-drawer-scrollArea {
+  min-height: 0;
+  max-height: 60dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+`;
+
+const storyClasses = {
+  storyContent: "ac-story-drawer-storyContent",
+  storyActions: "ac-story-drawer-storyActions",
+  scrollArea: "ac-story-drawer-scrollArea",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/Drawer",
   component: Drawer,
   tags: ["autodocs"],
@@ -43,7 +78,7 @@ export const Default: Story = {
           <DrawerTitle>Edit Profile</DrawerTitle>
           <DrawerDescription>Make changes to your profile here. Click save when you're done.</DrawerDescription>
         </DrawerHeader>
-        <div className={styles.storyContent}>
+        <div className={storyClasses.storyContent}>
           <p>Drawer content goes here.</p>
         </div>
         <DrawerFooter>
@@ -67,8 +102,8 @@ export const WithHandle: Story = {
           <DrawerTitle>Settings</DrawerTitle>
           <DrawerDescription>Configure your preferences and options.</DrawerDescription>
         </DrawerHeader>
-        <div className={styles.storyContent}>
-          <div className={styles.storyActions}>
+        <div className={storyClasses.storyContent}>
+          <div className={storyClasses.storyActions}>
             <span>Notifications</span>
             <Button
               variant='outline'
@@ -76,7 +111,7 @@ export const WithHandle: Story = {
               Enable
             </Button>
           </div>
-          <div className={styles.storyActions}>
+          <div className={storyClasses.storyActions}>
             <span>Dark Mode</span>
             <Button
               variant='outline'
@@ -84,7 +119,7 @@ export const WithHandle: Story = {
               Toggle
             </Button>
           </div>
-          <div className={styles.storyActions}>
+          <div className={storyClasses.storyActions}>
             <span>Auto-save</span>
             <Button
               variant='outline'
@@ -113,7 +148,7 @@ export const WithScrollableContent: Story = {
           <DrawerTitle>Product Information</DrawerTitle>
           <DrawerDescription>Detailed specifications and features.</DrawerDescription>
         </DrawerHeader>
-        <div className={styles.scrollArea}>
+        <div className={storyClasses.scrollArea}>
           <section>
             <h3>Features</h3>
             <ul>
@@ -160,7 +195,7 @@ export const WithoutFooter: Story = {
           <DrawerTitle>Welcome!</DrawerTitle>
           <DrawerDescription>Thank you for joining our platform.</DrawerDescription>
         </DrawerHeader>
-        <div className={styles.storyContent}>
+        <div className={storyClasses.storyContent}>
           <p>We're excited to have you here. Explore the features and let us know if you need any help getting started.</p>
         </div>
       </DrawerContent>
@@ -183,7 +218,7 @@ export const WithNavigation: Story = {
           <DrawerDescription>Navigate to different sections.</DrawerDescription>
         </DrawerHeader>
         <nav
-          className={styles.storyContent}
+          className={storyClasses.storyContent}
           aria-label='Drawer navigation'>
           <a href='#home'>Home</a>
           <a href='#profile'>Profile</a>
@@ -210,7 +245,7 @@ function NestedDrawerDemo(): React.ReactElement {
           <DrawerTitle>Primary Drawer</DrawerTitle>
           <DrawerDescription>This drawer can open another drawer.</DrawerDescription>
         </DrawerHeader>
-        <div className={styles.storyContent}>
+        <div className={storyClasses.storyContent}>
           <p>Click the button below to open a nested drawer on top of this one.</p>
           <Drawer
             showSwipeHandle
@@ -221,7 +256,7 @@ function NestedDrawerDemo(): React.ReactElement {
                 <DrawerTitle>Nested Drawer</DrawerTitle>
                 <DrawerDescription>This is a drawer opened from within another drawer.</DrawerDescription>
               </DrawerHeader>
-              <div className={styles.storyContent}>
+              <div className={storyClasses.storyContent}>
                 <p>You can have multiple layers of drawers. Close this one to return to the primary drawer.</p>
               </div>
               <DrawerFooter>
@@ -245,7 +280,7 @@ export const Nested: Story = {
 /** Four directions use the same real viewport/controller, with axis-specific presentation. */
 export const Directions: Story = {
   render: () => (
-    <div className={styles.storyActions}>
+    <div className={storyClasses.storyActions}>
       {(["down", "up", "left", "right"] as const).map((direction) => (
         <Drawer
           key={direction}
@@ -271,7 +306,7 @@ export const Directions: Story = {
 export const NonModal: Story = {
   args: {modal: false, swipeDirection: "right", showSwipeHandle: true},
   render: (args) => (
-    <div className={styles.storyContent}>
+    <div className={storyClasses.storyContent}>
       <label>
         Outside input <input placeholder='Still usable while the drawer is open' />
       </label>
@@ -317,7 +352,7 @@ function SnapPointsDemo(): React.ReactElement {
         <DrawerTitle>Snap points</DrawerTitle>
         <DrawerDescription>This demo explicitly supplies three snap heights; the component has no snap-point defaults.</DrawerDescription>
         <output>Active snap: {snapPoint}</output>
-        <div className={styles.storyActions}>
+        <div className={storyClasses.storyActions}>
           <Button onClick={() => setSnapPoint(0.35)}>35%</Button>
           <Button onClick={() => setSnapPoint(0.7)}>70%</Button>
           <Button onClick={() => setSnapPoint(1)}>Expand</Button>

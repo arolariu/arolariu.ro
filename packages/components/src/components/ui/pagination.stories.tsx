@@ -11,9 +11,46 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "./pagination";
-import styles from "./pagination.module.css";
+const storyStyles = `
+.ac-story-pagination-storyStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-pagination-storyPageSize {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-pagination-storyPageSize select {
+  padding: var(--ac-space-1) var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  font: inherit;
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-pagination-storyStack",
+  storyPageSize: "ac-story-pagination-storyPageSize",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Pagination",
   component: Pagination,
   tags: ["autodocs"],
@@ -200,7 +237,7 @@ function PaginationWithPageSize(): React.JSX.Element {
   const pageSizeId = React.useId();
 
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Pagination>
         <PaginationContent>
           <PaginationItem>
@@ -224,7 +261,7 @@ function PaginationWithPageSize(): React.JSX.Element {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-      <div className={styles.storyPageSize}>
+      <div className={storyClasses.storyPageSize}>
         <label htmlFor={pageSizeId}>Items per page:</label>
         <select
           id={pageSizeId}

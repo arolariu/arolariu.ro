@@ -16,9 +16,35 @@ import {
   ItemSeparator,
   ItemTitle,
 } from "./item";
-import styles from "./item.module.css";
+const storyStyles = `
+.ac-story-item-storyStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  width: min(36rem, 90vw);
+}
+
+.ac-story-item-storyCheckbox {
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
+  accent-color: var(--ac-primary);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-item-storyStack",
+  storyCheckbox: "ac-story-item-storyCheckbox",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Item",
   component: Item,
   tags: ["autodocs"],
@@ -146,7 +172,7 @@ export const WithCheckbox: Story = {
       <input
         id='export-project'
         type='checkbox'
-        className={styles.storyCheckbox}
+        className={storyClasses.storyCheckbox}
       />
       <ItemMedia variant='icon'>
         <Folder />
@@ -223,7 +249,7 @@ export const LegacyAsChild: Story = {
 /** Extra-small sizing scales leading media and retains header/footer/action slots. */
 export const ExtraSmall: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Item
         size='xs'
         variant='outline'>
@@ -264,7 +290,7 @@ export const ExtraSmall: Story = {
 /** Title and rich description clamp to one and two lines; full content remains accessible. */
 export const RichOverflow: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Item variant='outline'>
         <ItemMedia variant='icon'>
           <Folder />
@@ -284,7 +310,7 @@ export const RichOverflow: Story = {
 /** Render callbacks receive item-owned state and can produce a correctly typed native label. */
 export const RenderCallback: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Item
         size='xs'
         variant='muted'
@@ -300,7 +326,7 @@ export const RenderCallback: Story = {
       <input
         id='callback-project'
         type='checkbox'
-        className={styles.storyCheckbox}
+        className={storyClasses.storyCheckbox}
       />
     </div>
   ),

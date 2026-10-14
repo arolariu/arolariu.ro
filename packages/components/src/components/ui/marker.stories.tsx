@@ -3,9 +3,28 @@ import type * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {Marker, MarkerContent, MarkerIcon, markerVariants} from "./marker";
-import styles from "./marker.module.css";
+const storyStyles = `
+.ac-story-marker-storyStack {
+  display: flex;
+  inline-size: min(32rem, 90vw);
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-marker-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Marker",
   component: Marker,
   tags: ["autodocs"],
@@ -28,7 +47,7 @@ export const Default: Story = {
 
 export const CompoundSurfaces: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Marker>
         <MarkerIcon>
           <Check />
@@ -52,7 +71,7 @@ export const CompoundSurfaces: Story = {
 
 export const NativeCompositionAndHelper: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Marker
         variant='border'
         render={<a href='#marker-history' />}>
@@ -79,7 +98,7 @@ export const NativeCompositionAndHelper: Story = {
 export const EmptyErrorLongContentAndRTL: Story = {
   render: (): React.JSX.Element => (
     <div
-      className={styles.storyStack}
+      className={storyClasses.storyStack}
       dir='rtl'>
       <Marker
         variant='separator'

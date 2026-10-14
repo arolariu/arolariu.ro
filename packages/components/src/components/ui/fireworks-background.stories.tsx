@@ -1,8 +1,48 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {FireworksBackground} from "./fireworks-background";
-import styles from "./fireworks-background.module.css";
+const storyStyles = `
+.ac-story-fireworks-background-demo,
+.ac-story-fireworks-background-resizableDemo {
+  position: relative;
+  height: 24rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-fireworks-background-resizableDemo {
+  width: 70%;
+  min-width: 12rem;
+  min-height: 10rem;
+  resize: both;
+}
+
+.ac-story-fireworks-background-demoContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 100%;
+  place-content: center;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-fireworks-background-demo",
+  resizableDemo: "ac-story-fireworks-background-resizableDemo",
+  demoContent: "ac-story-fireworks-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/FireworksBackground",
   component: FireworksBackground,
   tags: ["autodocs"],
@@ -17,9 +57,9 @@ const meta = {
     },
   },
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <FireworksBackground {...args}>
-        <h2 className={styles.demoContent}>Click to launch</h2>
+        <h2 className={storyClasses.demoContent}>Click to launch</h2>
       </FireworksBackground>
     </div>
   ),
@@ -33,9 +73,9 @@ export const CustomColors: Story = {args: {color: ["#ff0080", "#00ff80", "#0080f
 export const ElementResize: Story = {
   args: {population: 0},
   render: (args) => (
-    <div className={styles.resizableDemo}>
+    <div className={storyClasses.resizableDemo}>
       <FireworksBackground {...args}>
-        <p className={styles.demoContent}>Resize, then click</p>
+        <p className={storyClasses.demoContent}>Resize, then click</p>
       </FireworksBackground>
     </div>
   ),

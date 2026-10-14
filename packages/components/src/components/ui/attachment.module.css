@@ -277,14 +277,3 @@
     scrollbar-width: auto;
   }
 }
-
-.storyStack {
-  display: flex;
-  inline-size: min(32rem, 90vw);
-  flex-direction: column;
-  gap: var(--ac-space-4);
-}
-
-.storyNarrow {
-  inline-size: min(15rem, 90vw);
-}

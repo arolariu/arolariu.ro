@@ -45,25 +45,6 @@
   font-size: var(--ac-text-sm);
 }
 
-.storyForm {
-  display: grid;
-  gap: var(--ac-space-3);
-}
-
-.storyField {
-  display: grid;
-  gap: var(--ac-space-1);
-  font-size: var(--ac-text-sm);
-}
-
-.storyInput {
-  padding: var(--ac-space-1) var(--ac-space-2);
-  border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-sm);
-  background: var(--ac-background);
-  color: var(--ac-foreground);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .popup {
     transition: none;

@@ -3,8 +3,37 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 import styles from "./tooltip.module.css";
+const storyStyles = `
+.${styles.popup} {
+
+  .ac-story-tooltip-storyContent {
+    display: grid;
+    gap: var(--ac-space-1);
+    max-width: 16rem;
+  }
+}
+
+.ac-story-tooltip-storyGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-3);
+}
+`;
+
+const storyClasses = {
+  storyContent: "ac-story-tooltip-storyContent",
+  storyGroup: "ac-story-tooltip-storyGroup",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Overlays/Tooltip",
   component: Tooltip,
   tags: ["autodocs"],
@@ -73,7 +102,7 @@ export const WithDelay: Story = {
     <TooltipProvider
       delayDuration={1000}
       timeout={400}>
-      <div className={styles.storyGroup}>
+      <div className={storyClasses.storyGroup}>
         <Tooltip>
           <TooltipTrigger render={<Button variant='outline' />}>First tooltip (1s)</TooltipTrigger>
           <TooltipContent>Wait one second on hover; keyboard focus opens immediately.</TooltipContent>
@@ -94,7 +123,7 @@ export const WithRichContent: Story = {
       <Tooltip>
         <TooltipTrigger render={<Button variant='outline' />}>Hover for details</TooltipTrigger>
         <TooltipContent showArrow={false}>
-          <div className={styles.storyContent}>
+          <div className={storyClasses.storyContent}>
             <strong>Product Information</strong>
             <span>Status: In stock</span>
             <span>Price: $49.99</span>
@@ -121,7 +150,7 @@ export const LegacyRootDelay: Story = {
 /** Wrapper-owned semantics merge an existing hint with a real, SDK-opened tooltip description. */
 export const AccessibleDescription: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyGroup}>
+    <div className={storyClasses.storyGroup}>
       <span id='tooltip-existing-hint'>An existing description remains associated.</span>
       <Tooltip delayDuration={0}>
         <TooltipTrigger

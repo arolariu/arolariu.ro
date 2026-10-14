@@ -26,19 +26,3 @@
   background: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary), white 10%) 0%, var(--ac-primary) 100%);
   transition: width var(--ac-transition-slow);
 }
-
-.storyContainer {
-  width: 16rem;
-}
-
-.storyLabelRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.storyValue {
-  color: var(--ac-primary);
-  font-size: var(--ac-text-sm);
-  font-weight: 600;
-}

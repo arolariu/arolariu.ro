@@ -7,8 +7,98 @@ import {
   NumberFieldInput,
   NumberFieldScrubArea,
 } from "./number-field";
+const storyStyles = `
+.ac-story-number-field-currencyStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ac-story-number-field-currencyLabel {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ac-story-number-field-currencyPositioner {
+  position: relative;
+}
+
+.ac-story-number-field-currencyPrefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #6b7280;
+  z-index: 1;
+}
+
+.ac-story-number-field-currencyInput {
+  padding-left: 28px;
+}
+
+.ac-story-number-field-description {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ac-story-number-field-percentageStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ac-story-number-field-percentageLabel {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ac-story-number-field-rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ac-story-number-field-progressTrack {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ac-story-number-field-progressIndicator {
+  width: 50%;
+  height: 100%;
+  background: #3b82f6;
+  transition: width 0.3s;
+}
+`;
+
+const storyClasses = {
+  currencyStack: "ac-story-number-field-currencyStack",
+  currencyLabel: "ac-story-number-field-currencyLabel",
+  currencyPositioner: "ac-story-number-field-currencyPositioner",
+  currencyPrefix: "ac-story-number-field-currencyPrefix",
+  currencyInput: "ac-story-number-field-currencyInput",
+  description: "ac-story-number-field-description",
+  percentageStack: "ac-story-number-field-percentageStack",
+  percentageLabel: "ac-story-number-field-percentageLabel",
+  rangeLabels: "ac-story-number-field-rangeLabels",
+  progressTrack: "ac-story-number-field-progressTrack",
+  progressIndicator: "ac-story-number-field-progressIndicator",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/NumberField",
   component: NumberField,
   tags: ["autodocs"],
@@ -112,21 +202,10 @@ export const Currency: Story = {
  */
 export const WithCurrency: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-      <label style={{fontSize: "14px", fontWeight: 500}}>Budget Amount</label>
-      <div style={{position: "relative"}}>
-        <span
-          style={{
-            position: "absolute",
-            left: "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: "14px",
-            color: "#6b7280",
-            zIndex: 1,
-          }}>
-          $
-        </span>
+    <div className={storyClasses.currencyStack}>
+      <label className={storyClasses.currencyLabel}>Budget Amount</label>
+      <div className={storyClasses.currencyPositioner}>
+        <span className={storyClasses.currencyPrefix}>$</span>
         <NumberField
           defaultValue={1000}
           min={0}
@@ -140,13 +219,13 @@ export const WithCurrency: Story = {
             <NumberFieldDecrement />
             <NumberFieldInput
               aria-label='Budget'
-              style={{paddingLeft: "28px"}}
+              className={storyClasses.currencyInput}
             />
             <NumberFieldIncrement />
           </NumberFieldGroup>
         </NumberField>
       </div>
-      <p style={{fontSize: "12px", color: "#6b7280"}}>Set your monthly budget in USD</p>
+      <p className={storyClasses.description}>Set your monthly budget in USD</p>
     </div>
   ),
 };
@@ -156,8 +235,8 @@ export const WithCurrency: Story = {
  */
 export const MinMax: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-      <label style={{fontSize: "14px", fontWeight: 500}}>Progress Percentage</label>
+    <div className={storyClasses.percentageStack}>
+      <label className={storyClasses.percentageLabel}>Progress Percentage</label>
       <NumberField
         defaultValue={50}
         min={0}
@@ -169,26 +248,12 @@ export const MinMax: Story = {
           <NumberFieldIncrement />
         </NumberFieldGroup>
       </NumberField>
-      <div style={{display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#6b7280"}}>
+      <div className={storyClasses.rangeLabels}>
         <span>Min: 0%</span>
         <span>Max: 100%</span>
       </div>
-      <div
-        style={{
-          width: "100%",
-          height: "8px",
-          background: "#e5e7eb",
-          borderRadius: "4px",
-          overflow: "hidden",
-        }}>
-        <div
-          style={{
-            width: "50%",
-            height: "100%",
-            background: "#3b82f6",
-            transition: "width 0.3s",
-          }}
-        />
+      <div className={storyClasses.progressTrack}>
+        <div className={storyClasses.progressIndicator} />
       </div>
     </div>
   ),

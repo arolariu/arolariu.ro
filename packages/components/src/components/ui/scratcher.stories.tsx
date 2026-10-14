@@ -1,13 +1,12 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Scratcher, type ScratcherProps} from "./scratcher";
-import styles from "./scratcher.module.css";
 
 function ResettableCard(args: Readonly<ScratcherProps>): React.JSX.Element {
   const [reset, setReset] = React.useState(0);
   const [completions, setCompletions] = React.useState(0);
   return (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <Scratcher
         key={reset}
         {...args}
@@ -27,11 +26,44 @@ function ResettableCard(args: Readonly<ScratcherProps>): React.JSX.Element {
     </div>
   );
 }
+const storyStyles = `
+.ac-story-scratcher-demo {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.ac-story-scratcher-demoPrize {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-content: center;
+  border-radius: var(--ac-radius-lg);
+  color: var(--ac-foreground);
+  background: var(--ac-muted);
+  font-size: 1.5rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-scratcher-demo",
+  demoPrize: "ac-story-scratcher-demoPrize",
+} as const;
+
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Interactions/Scratcher",
   component: Scratcher,
   tags: ["autodocs"],
-  args: {width: 320, height: 180, minScratchPercentage: 50, children: <div className={styles.demoPrize}>Content revealed</div>},
+  args: {width: 320, height: 180, minScratchPercentage: 50, children: <div className={storyClasses.demoPrize}>Content revealed</div>},
   argTypes: {
     width: {control: {type: "number", min: 1}},
     height: {control: {type: "number", min: 1}},

@@ -1,6 +1,31 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {TableSkeleton} from "./table-skeleton";
-import styles from "./table-skeleton.module.css";
+const storyStyles = `
+.ac-story-table-skeleton-storyPreview {
+  width: 48rem;
+  max-width: 100%;
+}
+
+.ac-story-table-skeleton-storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-table-skeleton-storyHeading {
+  margin: 0 0 var(--ac-space-4);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-table-skeleton-storyPreview",
+  storyPanel: "ac-story-table-skeleton-storyPanel",
+  storyHeading: "ac-story-table-skeleton-storyHeading",
+} as const;
 
 const meta = {
   title: "Components/Feedback/TableSkeleton",
@@ -13,9 +38,16 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className={styles.storyPreview}>
+      <div className={storyClasses.storyPreview}>
         <Story />
       </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
     ),
   ],
   argTypes: {
@@ -96,13 +128,13 @@ export const Static: Story = {
 export const InContainer: Story = {
   render: () => (
     <section
-      className={styles.storyPanel}
+      className={storyClasses.storyPanel}
       role='status'
       aria-labelledby='table-skeleton-heading'
       aria-busy>
       <h2
         id='table-skeleton-heading'
-        className={styles.storyHeading}>
+        className={storyClasses.storyHeading}>
         Loading records
       </h2>
       <TableSkeleton

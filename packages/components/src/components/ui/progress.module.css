@@ -43,25 +43,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.storyDemo {
-  width: min(100%, 25rem);
-}
-
-.storyTrack {
-  height: 0.75rem;
-  border-radius: 0.25rem;
-}
-
-.storyIndicator {
-  border-radius: inherit;
-  background-color: var(--ac-accent-foreground);
-}
-
-.storyStatus {
-  color: var(--ac-muted-foreground);
-  font-size: 0.75rem;
-}
-
 @keyframes indeterminate {
   from {
     transform: translateX(-100%);

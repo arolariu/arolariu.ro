@@ -1,9 +1,12 @@
 import {render, screen} from "@testing-library/react";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./meter";
-import {WithLabel} from "./meter.stories";
+import * as stories from "./meter.stories";
+
+const {WithLabel} = composeStories(stories);
 
 describe("Meter", () => {
   it.each(["root", "track", "indicator", "label"])("supplies owning props and the real empty Meter state to %s", (part) => {
@@ -192,7 +195,8 @@ describe("Meter", () => {
   });
 
   it("renders the WithLabel story with its label inside the owning root", () => {
-    render(WithLabel.render());
+    const {container} = render(<WithLabel />);
+    expect(container.querySelector("style")?.textContent).toContain(".ac-story-meter-storyContainer");
     expect(screen.getByRole("meter", {name: "CPU Usage"})).toHaveAttribute("aria-valuenow", "65");
   });
 

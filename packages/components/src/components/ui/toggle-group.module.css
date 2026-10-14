@@ -52,11 +52,6 @@
   }
 }
 
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
 .item[data-spacing="0"] {
   border-radius: 0;
 }

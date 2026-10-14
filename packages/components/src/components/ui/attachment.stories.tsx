@@ -14,10 +14,34 @@ import {
   AttachmentTrigger,
   type AttachmentStatus,
 } from "./attachment";
-import styles from "./attachment.module.css";
 import {Button} from "./button";
+const storyStyles = `
+.ac-story-attachment-storyStack {
+  display: flex;
+  inline-size: min(32rem, 90vw);
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-attachment-storyNarrow {
+  inline-size: min(15rem, 90vw);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-attachment-storyStack",
+  storyNarrow: "ac-story-attachment-storyNarrow",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Attachment",
   component: Attachment,
   tags: ["autodocs"],
@@ -67,7 +91,7 @@ export const Default: Story = {
 
 export const StatesAndSizes: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       {(["default", "sm", "xs"] as const).map((size) => (
         <AttachmentGroup
           key={size}
@@ -104,7 +128,7 @@ function CallerOwnedAttachment(): React.JSX.Element {
   const [status, setStatus] = React.useState<AttachmentStatus>("error");
   const [detail, setDetail] = React.useState("Nothing opened");
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       {present ? (
         <Attachment state={status}>
           <AttachmentMedia>
@@ -159,7 +183,7 @@ export const CallerOwnedErrorAndEmpty: Story = {
 
 export const VerticalImages: Story = {
   render: (): React.JSX.Element => (
-    <AttachmentGroup className={styles.storyNarrow}>
+    <AttachmentGroup className={storyClasses.storyNarrow}>
       {(["done", "processing", "error"] as const).map((state) => (
         <Attachment
           key={state}
@@ -192,12 +216,12 @@ export const LongContentAndRTL: Story = {
   render: (): React.JSX.Element => (
     <AttachmentGroup
       dir='rtl'
-      className={styles.storyNarrow}>
+      className={storyClasses.storyNarrow}>
       {["مستند-طويل-للغاية-مع-عنوان-كامل.txt", "VeryLongUnbrokenCallerFilenameWithNoSpacesAndItsOriginalExtension.pdf", "Next.txt"].map(
         (name) => (
           <Attachment
             key={name}
-            className={styles.storyNarrow}>
+            className={storyClasses.storyNarrow}>
             <AttachmentMedia>
               <FileText aria-hidden='true' />
             </AttachmentMedia>

@@ -18,9 +18,33 @@ import {
   DropDrawerSubTrigger,
   DropDrawerTrigger,
 } from "./dropdrawer";
-import styles from "./dropdrawer.module.css";
+const storyStyles = `
+.ac-story-dropdrawer-storyContainer {
+  width: min(24rem, 100%);
+  padding: 1.5rem;
+}
+
+.ac-story-dropdrawer-storyStatus {
+  margin-block-start: 1rem;
+  font-size: var(--ac-text-sm);
+  color: var(--ac-muted-foreground);
+}
+`;
+
+const storyClasses = {
+  storyContainer: "ac-story-dropdrawer-storyContainer",
+  storyStatus: "ac-story-dropdrawer-storyStatus",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/DropDrawer",
   component: DropDrawer,
   tags: ["autodocs"],
@@ -34,7 +58,7 @@ function ActionExample({nested = false, controlled = false}: Readonly<{nested?: 
   const [open, setOpen] = React.useState(false);
   const [selection, setSelection] = React.useState("No action selected");
   return (
-    <div className={styles.storyContainer}>
+    <div className={storyClasses.storyContainer}>
       <DropDrawer
         open={controlled ? open : undefined}
         onOpenChange={(nextOpen) => setOpen(nextOpen)}
@@ -97,7 +121,7 @@ function ActionExample({nested = false, controlled = false}: Readonly<{nested?: 
       </DropDrawer>
       <p
         role='status'
-        className={styles.storyStatus}>
+        className={storyClasses.storyStatus}>
         {selection}
       </p>
     </div>

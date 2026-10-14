@@ -13,9 +13,37 @@ import {
   SheetTrigger,
   type SheetSide,
 } from "./sheet";
-import styles from "./sheet.module.css";
+const storyStyles = `
+.ac-story-sheet-formFields,
+.ac-story-sheet-field,
+.ac-story-sheet-storyStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-sheet-formFields,
+.ac-story-sheet-storyStack {
+  gap: var(--ac-space-4);
+  padding-block: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  formFields: "ac-story-sheet-formFields",
+  field: "ac-story-sheet-field",
+  storyStack: "ac-story-sheet-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/Sheet",
   component: Sheet,
   tags: ["autodocs"],
@@ -45,9 +73,9 @@ function FormSheet({side = "right", showCloseButton = true}: Readonly<{side?: Sh
           <SheetTitle>Edit preferences</SheetTitle>
           <SheetDescription>Focus enters the first field; the icon close follows all content.</SheetDescription>
         </SheetHeader>
-        <div className={styles.formFields}>
+        <div className={storyClasses.formFields}>
           <label
-            className={styles.field}
+            className={storyClasses.field}
             htmlFor={id}>
             Display name
             <input
@@ -56,7 +84,7 @@ function FormSheet({side = "right", showCloseButton = true}: Readonly<{side?: Sh
             />
           </label>
           <label
-            className={styles.field}
+            className={storyClasses.field}
             htmlFor={`${id}-email`}>
             Email
             <input
@@ -130,7 +158,7 @@ export const FocusContract: Story = {
     },
   },
   render: (): ReactElement => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <p>Keyboard-focus and backdrop contract across all four edges.</p>
       <FormSheet side='top' />
       <FormSheet side='right' />

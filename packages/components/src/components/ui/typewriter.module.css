@@ -56,22 +56,6 @@
   height: 1rem;
 }
 
-.storyAccent {
-  color: var(--ac-primary);
-}
-
-.storyCode {
-  padding: var(--ac-space-4);
-  border-radius: var(--ac-radius-lg);
-  background: var(--ac-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
 @media (min-width: 640px) {
   .root {
     font-size: 1.25rem;

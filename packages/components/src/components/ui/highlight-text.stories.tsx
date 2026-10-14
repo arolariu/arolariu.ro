@@ -1,8 +1,35 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {HighlightText} from "./highlight-text";
-import styles from "./highlight-text.module.css";
+const storyStyles = `
+.ac-story-highlight-text-demo {
+  padding: 2rem;
+  font-size: 1.25rem;
+  line-height: 2;
+  color: var(--ac-foreground);
+  background: var(--ac-background);
+}
+
+.ac-story-highlight-text-demoLead {
+  display: grid;
+  min-height: 100svh;
+  place-content: center;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-highlight-text-demo",
+  demoLead: "ac-story-highlight-text-demoLead",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Typography/HighlightText",
   component: HighlightText,
   tags: ["autodocs"],
@@ -16,7 +43,7 @@ const meta = {
     },
   },
   render: (args) => (
-    <p className={styles.demo}>
+    <p className={storyClasses.demo}>
       Content with <HighlightText {...args} /> in the middle of a paragraph.
     </p>
   ),
@@ -28,8 +55,8 @@ export const OnScroll: Story = {
   args: {text: "important information", inView: true, inViewOnce: false},
   render: (args) => (
     <div>
-      <div className={styles.demoLead}>Scroll down to the highlight</div>
-      <p className={styles.demo}>
+      <div className={storyClasses.demoLead}>Scroll down to the highlight</div>
+      <p className={storyClasses.demo}>
         Read the <HighlightText {...args} />. Reduced motion shows the completed highlight immediately.
       </p>
     </div>
@@ -37,7 +64,7 @@ export const OnScroll: Story = {
 };
 export const Multiple: Story = {
   render: () => (
-    <p className={styles.demo}>
+    <p className={storyClasses.demo}>
       Build <HighlightText text='faster' />, deploy <HighlightText text='easier' />, and scale <HighlightText text='confidently' />.
     </p>
   ),

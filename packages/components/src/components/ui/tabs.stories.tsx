@@ -4,9 +4,25 @@ import {FileText, House, Settings} from "lucide-react";
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger, type TabsListVariant} from "./tabs";
-import styles from "./tabs.module.css";
+const storyStyles = `
+.ac-story-tabs-scrollable {
+  overflow-x: auto;
+}
+`;
+
+const storyClasses = {
+  scrollable: "ac-story-tabs-scrollable",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Tabs",
   component: Tabs,
   tags: ["autodocs"],
@@ -211,7 +227,7 @@ export const WithIcons: Story = {
 export const ManyTabs: Story = {
   render: () => (
     <Tabs defaultValue='tab1'>
-      <TabsList className={styles.scrollable}>
+      <TabsList className={storyClasses.scrollable}>
         <TabsTrigger value='tab1'>Tab 1</TabsTrigger>
         <TabsTrigger value='tab2'>Tab 2</TabsTrigger>
         <TabsTrigger value='tab3'>Tab 3</TabsTrigger>

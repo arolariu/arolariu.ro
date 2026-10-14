@@ -179,10 +179,6 @@
   padding-inline-start: var(--ac-space-4);
 }
 
-.scrollable {
-  overflow-x: auto;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .tab,
   .indicator {

@@ -12,9 +12,30 @@ import {
   FieldTitle,
 } from "./field";
 import {Input} from "./input";
-import styles from "./field.module.css";
+const storyStyles = `
+.ac-story-field-storyNarrow {
+  width: min(100%, 24rem);
+}
+
+.ac-story-field-storyWide {
+  width: min(100%, 56rem);
+}
+`;
+
+const storyClasses = {
+  storyNarrow: "ac-story-field-storyNarrow",
+  storyWide: "ac-story-field-storyWide",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Field",
   component: Field,
   tags: ["autodocs"],
@@ -148,7 +169,7 @@ export const WithHint: Story = {
 /** A narrow container stays stacked even on a wide Storybook viewport. */
 export const ResponsiveNarrow: Story = {
   render: () => (
-    <FieldGroup className={styles.storyNarrow}>
+    <FieldGroup className={storyClasses.storyNarrow}>
       <Field orientation='responsive'>
         <FieldLabel htmlFor='narrow-email'>Email</FieldLabel>
         <FieldContent>
@@ -166,7 +187,7 @@ export const ResponsiveNarrow: Story = {
 export const ResponsiveWide: Story = {
   parameters: {layout: "padded"},
   render: () => (
-    <FieldGroup className={styles.storyWide}>
+    <FieldGroup className={storyClasses.storyWide}>
       <Field orientation='responsive'>
         <FieldLabel htmlFor='wide-email'>Email</FieldLabel>
         <FieldContent>

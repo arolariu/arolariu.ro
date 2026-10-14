@@ -170,36 +170,6 @@
   margin: 0 var(--ac-space-1);
 }
 
-.scrollExample {
-  max-height: calc(var(--ac-size-default) * 6);
-}
-
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-3);
-}
-
-.storyOutput {
-  display: block;
-  margin-block-start: var(--ac-space-2);
-  font-size: var(--ac-text-sm);
-}
-
-.focusTarget {
-  margin-block-start: var(--ac-space-3);
-  padding: var(--ac-space-2) var(--ac-space-3);
-  border: 1px solid var(--ac-input);
-  border-radius: var(--ac-radius-md);
-  background-color: var(--ac-background);
-  color: var(--ac-foreground);
-  font: inherit;
-}
-
-.focusTarget:focus-visible {
-  outline: 2px solid var(--ac-ring);
-  outline-offset: 2px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .popup {

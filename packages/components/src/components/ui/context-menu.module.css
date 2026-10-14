@@ -36,18 +36,6 @@
   color: var(--ac-foreground);
 }
 
-.storyTarget {
-  display: grid;
-  place-items: center;
-  min-width: 18rem;
-  min-height: 9rem;
-  padding: var(--ac-space-4);
-  border: 1px dashed var(--ac-border);
-  border-radius: var(--ac-radius-md);
-  color: var(--ac-foreground);
-  font-size: var(--ac-text-sm);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .content {
     transition: none;

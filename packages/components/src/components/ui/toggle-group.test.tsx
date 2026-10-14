@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -17,6 +18,7 @@ import {
 import type {Toggle} from "./toggle";
 import toggleStyles from "./toggle.module.css";
 import styles from "./toggle-group.module.css";
+import * as stories from "./toggle-group.stories";
 
 describe("ToggleGroup", () => {
   it("keeps React 18-compatible forwarded ref component identities", () => {
@@ -60,29 +62,16 @@ describe("ToggleGroup", () => {
   });
 
   it("applies standalone story layout without requiring a toggle item ancestor", () => {
-    const storyClass = styles.storyStack;
-    if (!storyClass) throw new Error("Expected story layout class");
-    const sheet = document.createElement("style");
-    sheet.textContent = readFileSync(join(import.meta.dirname, "toggle-group.module.css"), "utf8").replaceAll(
-      ".storyStack",
-      `.${storyClass}`,
-    );
-    document.head.append(sheet);
-    try {
-      render(
-        <div
-          className={storyClass}
-          data-testid='story-layout'>
-          <ToggleGroup>
-            <ToggleGroupItem value='a'>A</ToggleGroupItem>
-          </ToggleGroup>
-          <output>Selected: none</output>
-        </div>,
-      );
-      expect(window.getComputedStyle(screen.getByTestId("story-layout")).display).toBe("grid");
-    } finally {
-      sheet.remove();
-    }
+    const {Controlled} = composeStories(stories);
+    const {container, unmount} = render(<Controlled />);
+    const layout = screen.getByText("Selected: bold, italic").parentElement;
+    expect(layout).toHaveClass("ac-story-toggle-group-storyStack");
+    expect(layout?.closest('[data-slot="toggle-group-item"]')).toBeNull();
+    expect(window.getComputedStyle(layout as HTMLElement).display).toBe("grid");
+    const sheet = container.querySelector("style");
+    expect(sheet?.textContent).toContain(".ac-story-toggle-group-storyStack");
+    unmount();
+    expect(sheet?.isConnected).toBe(false);
   });
 
   it.each([false, true])("joins outline item borders on the logical axis with render element children=%s", (composed) => {

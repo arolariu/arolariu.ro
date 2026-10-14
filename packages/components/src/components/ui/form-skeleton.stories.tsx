@@ -1,6 +1,31 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {FormSkeleton} from "./form-skeleton";
-import styles from "./form-skeleton.module.css";
+const storyStyles = `
+.ac-story-form-skeleton-storyPreview {
+  width: 32rem;
+  max-width: 100%;
+}
+
+.ac-story-form-skeleton-storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-form-skeleton-storyHeading {
+  margin: 0 0 var(--ac-space-6);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-form-skeleton-storyPreview",
+  storyPanel: "ac-story-form-skeleton-storyPanel",
+  storyHeading: "ac-story-form-skeleton-storyHeading",
+} as const;
 
 const meta = {
   title: "Components/Feedback/FormSkeleton",
@@ -13,9 +38,16 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className={styles.storyPreview}>
+      <div className={storyClasses.storyPreview}>
         <Story />
       </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
     ),
   ],
   argTypes: {
@@ -73,13 +105,13 @@ export const Static: Story = {
 export const InCard: Story = {
   render: () => (
     <section
-      className={styles.storyPanel}
+      className={storyClasses.storyPanel}
       role='status'
       aria-labelledby='form-skeleton-heading'
       aria-busy>
       <h2
         id='form-skeleton-heading'
-        className={styles.storyHeading}>
+        className={storyClasses.storyHeading}>
         Loading form
       </h2>
       <FormSkeleton fields={5} />

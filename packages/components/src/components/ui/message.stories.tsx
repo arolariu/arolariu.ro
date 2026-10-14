@@ -8,9 +8,26 @@ import {Bubble, BubbleContent, BubbleGroup, BubbleReactions} from "./bubble";
 import {Button} from "./button";
 import {Marker, MarkerContent} from "./marker";
 import {Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader} from "./message";
-import styles from "./message.module.css";
+const storyStyles = `
+.ac-story-message-storyStack {
+  inline-size: min(32rem, 90vw);
+  gap: var(--ac-space-6);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-message-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Message",
   component: Message,
   tags: ["autodocs"],
@@ -44,7 +61,7 @@ export const Default: Story = {
 export const CompleteConversation: Story = {
   render: (): React.JSX.Element => (
     <MessageGroup
-      className={styles.storyStack}
+      className={storyClasses.storyStack}
       aria-label='Example conversation'>
       <Marker variant='separator'>
         <MarkerContent>Today</MarkerContent>
@@ -103,7 +120,7 @@ export const CompleteConversation: Story = {
 
 export const CallerOwnedEmptyAndError: Story = {
   render: (): React.JSX.Element => (
-    <MessageGroup className={styles.storyStack}>
+    <MessageGroup className={storyClasses.storyStack}>
       <Marker>
         <MarkerContent>No earlier messages. The caller supplies this empty state.</MarkerContent>
       </Marker>
@@ -134,7 +151,7 @@ export const LongContentAndRTL: Story = {
   render: (): React.JSX.Element => (
     <MessageGroup
       dir='rtl'
-      className={styles.storyStack}>
+      className={storyClasses.storyStack}>
       <Message>
         <MessageAvatar>
           <Avatar size='sm'>

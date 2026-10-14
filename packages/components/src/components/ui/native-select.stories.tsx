@@ -2,9 +2,35 @@ import {useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {NativeSelect, NativeSelectOptGroup, NativeSelectOption, type NativeSelectProps} from "./native-select";
-import styles from "./native-select.module.css";
+const storyStyles = `
+.ac-story-native-select-example {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-native-select-exampleActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+`;
+
+const storyClasses = {
+  example: "ac-story-native-select-example",
+  exampleActions: "ac-story-native-select-exampleActions",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/NativeSelect",
   component: NativeSelect,
   tags: ["autodocs"],
@@ -60,7 +86,7 @@ function NativeFormExample({
   return (
     <form
       aria-label='Native fruit form'
-      className={styles.example}
+      className={storyClasses.example}
       onSubmit={(event) => {
         event.preventDefault();
         const values = new FormData(event.currentTarget).getAll(name);
@@ -79,7 +105,7 @@ function NativeFormExample({
         {children ?? <FruitOptions />}
       </NativeSelect>
       <p id={`${id}-hint`}>Choose a fruit, then submit to inspect native FormData.</p>
-      <div className={styles.exampleActions}>
+      <div className={storyClasses.exampleActions}>
         <button type='submit'>Submit form</button>
         <button type='reset'>Reset form</button>
       </div>
@@ -92,7 +118,7 @@ function ControlledExample({defaultValue, value, onChange, ...props}: Readonly<N
   const [fruit, setFruit] = useState("pear");
 
   return (
-    <div className={styles.example}>
+    <div className={storyClasses.example}>
       <NativeFormExample
         {...props}
         id='controlled-native-fruit'

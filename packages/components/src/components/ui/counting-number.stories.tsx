@@ -1,8 +1,32 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CountingNumber} from "./counting-number";
-import styles from "./counting-number.module.css";
+const storyStyles = `
+.ac-story-counting-number-storyValue {
+  font-size: calc(var(--ac-text-xl) * 2);
+  font-weight: 700;
+}
+
+.ac-story-counting-number-storyDeferred {
+  margin-block-start: 110vh;
+  padding: var(--ac-space-4);
+  background: var(--ac-muted);
+}
+`;
+
+const storyClasses = {
+  storyValue: "ac-story-counting-number-storyValue",
+  storyDeferred: "ac-story-counting-number-storyDeferred",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/CountingNumber",
   component: CountingNumber,
   tags: ["autodocs"],
@@ -19,18 +43,18 @@ export const NegativePadded: Story = {args: {number: -123.45, fromNumber: -5.25,
 export const InView: Story = {
   args: {number: 5000, fromNumber: 37, inView: true},
   render: (args) => (
-    <div className={styles.storyDeferred}>
+    <div className={storyClasses.storyDeferred}>
       <p>Scroll to the nonzero counter.</p>
       <CountingNumber
         {...args}
-        className={styles.storyValue}
+        className={storyClasses.storyValue}
       />
     </div>
   ),
 };
 export const Currency: Story = {
   render: () => (
-    <div className={styles.storyValue}>
+    <div className={storyClasses.storyValue}>
       $
       <CountingNumber
         number={1234.56}
@@ -42,7 +66,7 @@ export const Currency: Story = {
 };
 export const Percentage: Story = {
   render: () => (
-    <div className={styles.storyValue}>
+    <div className={storyClasses.storyValue}>
       <CountingNumber
         number={100}
         fromNumber={25}
@@ -51,4 +75,4 @@ export const Percentage: Story = {
     </div>
   ),
 };
-export const Large: Story = {args: {number: 1_000_000, className: styles.storyValue}};
+export const Large: Story = {args: {number: 1_000_000, className: storyClasses.storyValue}};

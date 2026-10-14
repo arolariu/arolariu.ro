@@ -46,19 +46,3 @@
     stroke: CanvasText;
   }
 }
-
-.storyMedium {
-  width: 2rem;
-  height: 2rem;
-}
-
-.storyLarge {
-  width: 4rem;
-  height: 4rem;
-}
-
-.storyLabel {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-3);
-}

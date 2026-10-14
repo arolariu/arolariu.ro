@@ -1,9 +1,59 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {HoverCard, HoverCardContent, HoverCardTrigger} from "./hover-card";
-import styles from "./hover-card.module.css";
+const storyStyles = `
+.ac-story-hover-card-storyContent {
+  display: grid;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-hover-card-storyTitle {
+  margin: 0;
+  font-size: var(--ac-text-sm);
+  font-weight: 600;
+}
+
+.ac-story-hover-card-storyDescription {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+}
+
+.ac-story-hover-card-storyLink {
+  color: var(--ac-primary);
+  text-underline-offset: var(--ac-space-1);
+}
+
+.ac-story-hover-card-storyWide {
+  width: 20rem;
+  max-width: var(--available-width);
+}
+
+@media (forced-colors: active) {
+
+  .ac-story-hover-card-storyDescription {
+    color: CanvasText;
+  }
+}
+`;
+
+const storyClasses = {
+  storyContent: "ac-story-hover-card-storyContent",
+  storyTitle: "ac-story-hover-card-storyTitle",
+  storyDescription: "ac-story-hover-card-storyDescription",
+  storyLink: "ac-story-hover-card-storyLink",
+  storyWide: "ac-story-hover-card-storyWide",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Overlays/HoverCard",
   component: HoverCard,
   tags: ["autodocs"],
@@ -19,14 +69,14 @@ export const Default: Story = {
     <HoverCard>
       <HoverCardTrigger
         href='https://react.dev'
-        className={styles.storyLink}>
+        className={storyClasses.storyLink}>
         React
       </HoverCardTrigger>
       <HoverCardContent
-        className={styles.storyContent}
+        className={storyClasses.storyContent}
         aria-label='React preview'>
-        <h3 className={styles.storyTitle}>React</h3>
-        <p className={styles.storyDescription}>A library for building user interfaces.</p>
+        <h3 className={storyClasses.storyTitle}>React</h3>
+        <p className={storyClasses.storyDescription}>A library for building user interfaces.</p>
       </HoverCardContent>
     </HoverCard>
   ),
@@ -40,7 +90,7 @@ export const Simple: Story = {
         href='#details'
         delay={0}
         closeDelay={0}
-        className={styles.storyLink}>
+        className={storyClasses.storyLink}>
         Preview immediately
       </HoverCardTrigger>
       <HoverCardContent>Additional non-interactive information.</HoverCardContent>
@@ -54,12 +104,12 @@ export const ProductInfo: Story = {
     <HoverCard>
       <HoverCardTrigger
         href='#product'
-        className={styles.storyLink}>
+        className={storyClasses.storyLink}>
         View product details
       </HoverCardTrigger>
-      <HoverCardContent className={styles.storyContent}>
-        <h3 className={styles.storyTitle}>Premium Headphones</h3>
-        <p className={styles.storyDescription}>Wireless audio with active noise cancellation.</p>
+      <HoverCardContent className={storyClasses.storyContent}>
+        <h3 className={storyClasses.storyTitle}>Premium Headphones</h3>
+        <p className={storyClasses.storyDescription}>Wireless audio with active noise cancellation.</p>
         <span>$299.99 · In stock</span>
       </HoverCardContent>
     </HoverCard>
@@ -73,19 +123,19 @@ export const RepositoryStats: Story = {
       <HoverCardTrigger
         href='https://github.com/facebook/react'
         delay={300}
-        className={styles.storyLink}
+        className={storyClasses.storyLink}
         render={(props, state): React.ReactElement => <a {...props}>React repository{state.open ? " — preview open" : ""}</a>}
       />
       <HoverCardContent
-        className={styles.storyContent}
+        className={storyClasses.storyContent}
         render={(props, state): React.ReactElement => (
           <section
             {...props}
             data-preview-open={state.open}
           />
         )}>
-        <h3 className={styles.storyTitle}>facebook/react</h3>
-        <p className={styles.storyDescription}>Source code and community contributions.</p>
+        <h3 className={storyClasses.storyTitle}>facebook/react</h3>
+        <p className={storyClasses.storyDescription}>Source code and community contributions.</p>
       </HoverCardContent>
     </HoverCard>
   ),
@@ -99,12 +149,12 @@ export const UserProfile: Story = {
         href='#profile'
         delay={1000}
         closeDelay={300}
-        className={styles.storyLink}>
+        className={storyClasses.storyLink}>
         Profile (1s delay)
       </HoverCardTrigger>
-      <HoverCardContent className={styles.storyContent}>
-        <h3 className={styles.storyTitle}>Sarah Anderson</h3>
-        <p className={styles.storyDescription}>Developer interested in accessible web experiences.</p>
+      <HoverCardContent className={storyClasses.storyContent}>
+        <h3 className={storyClasses.storyTitle}>Sarah Anderson</h3>
+        <p className={storyClasses.storyDescription}>Developer interested in accessible web experiences.</p>
         <span>1,234 followers · 567 following</span>
       </HoverCardContent>
     </HoverCard>
@@ -117,18 +167,18 @@ export const LinkPreview: Story = {
     <HoverCard>
       <HoverCardTrigger
         href='#article'
-        className={styles.storyLink}>
+        className={storyClasses.storyLink}>
         Read the full article
       </HoverCardTrigger>
       <HoverCardContent
-        className={styles.storyWide}
+        className={storyClasses.storyWide}
         side='top'
         align='start'
         sideOffset={8}
         alignOffset={0}>
-        <div className={styles.storyContent}>
-          <h3 className={styles.storyTitle}>Building Better React Applications</h3>
-          <p className={styles.storyDescription}>Patterns for scalable, accessible user interfaces.</p>
+        <div className={storyClasses.storyContent}>
+          <h3 className={storyClasses.storyTitle}>Building Better React Applications</h3>
+          <p className={storyClasses.storyDescription}>Patterns for scalable, accessible user interfaces.</p>
           <span>5 min read · example.com</span>
         </div>
       </HoverCardContent>

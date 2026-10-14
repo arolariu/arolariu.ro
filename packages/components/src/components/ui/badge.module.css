@@ -105,25 +105,6 @@
   }
 }
 
-.storyRow {
-  display: flex;
-  gap: var(--ac-space-3);
-  flex-wrap: wrap;
-}
-
-.statusDot {
-  width: 0.5rem;
-  height: 0.5rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background-color: currentColor;
-}
-
-.storyLarge {
-  font-size: var(--ac-text-base);
-  padding: var(--ac-space-2) var(--ac-space-4);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .badge {
     transition: none;

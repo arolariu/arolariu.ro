@@ -59,18 +59,6 @@
   transform: translateX(calc(var(--switch-thumb-travel) * var(--switch-direction)));
 }
 
-.storyRow {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-3);
-  font-size: var(--ac-text-sm);
-}
-
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .root,
   .thumb {

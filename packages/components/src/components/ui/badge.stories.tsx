@@ -1,8 +1,41 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Badge, type BadgeProps} from "./badge";
-import styles from "./badge.module.css";
+const storyStyles = `
+.ac-story-badge-storyRow {
+  display: flex;
+  gap: var(--ac-space-3);
+  flex-wrap: wrap;
+}
+
+.ac-story-badge-statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.ac-story-badge-storyLarge {
+  font-size: var(--ac-text-base);
+  padding: var(--ac-space-2) var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-badge-storyRow",
+  statusDot: "ac-story-badge-statusDot",
+  storyLarge: "ac-story-badge-storyLarge",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Badge",
   component: Badge,
   tags: ["autodocs"],
@@ -79,25 +112,25 @@ export const Outline: Story = {
  */
 function BadgeWithDot(): React.JSX.Element {
   return (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <Badge variant='default'>
         <span
           aria-hidden='true'
-          className={styles.statusDot}
+          className={storyClasses.statusDot}
         />
         Active
       </Badge>
       <Badge variant='secondary'>
         <span
           aria-hidden='true'
-          className={styles.statusDot}
+          className={storyClasses.statusDot}
         />
         Pending
       </Badge>
       <Badge variant='outline'>
         <span
           aria-hidden='true'
-          className={styles.statusDot}
+          className={storyClasses.statusDot}
         />
         Online
       </Badge>
@@ -114,25 +147,25 @@ export const WithDot = {
  */
 function LargeBadge(): React.JSX.Element {
   return (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <Badge
         variant='default'
-        className={styles.storyLarge}>
+        className={storyClasses.storyLarge}>
         Large Default
       </Badge>
       <Badge
         variant='secondary'
-        className={styles.storyLarge}>
+        className={storyClasses.storyLarge}>
         Large Secondary
       </Badge>
       <Badge
         variant='destructive'
-        className={styles.storyLarge}>
+        className={storyClasses.storyLarge}>
         Large Destructive
       </Badge>
       <Badge
         variant='outline'
-        className={styles.storyLarge}>
+        className={storyClasses.storyLarge}>
         Large Outline
       </Badge>
     </div>

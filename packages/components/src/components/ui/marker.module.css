@@ -87,10 +87,3 @@ a.marker,
     background-color: CanvasText;
   }
 }
-
-.storyStack {
-  display: flex;
-  inline-size: min(32rem, 90vw);
-  flex-direction: column;
-  gap: var(--ac-space-4);
-}

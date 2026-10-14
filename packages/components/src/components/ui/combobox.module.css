@@ -175,22 +175,6 @@
   cursor: not-allowed;
 }
 
-.story {
-  display: grid;
-  gap: var(--ac-space-3);
-  width: 20rem;
-  max-width: 100%;
-}
-
-.valueTrigger {
-  width: 100%;
-  padding: var(--ac-space-2) var(--ac-space-3);
-  border: 1px solid var(--ac-input);
-  border-radius: var(--ac-radius-md);
-  background: var(--ac-background);
-  color: var(--ac-foreground);
-}
-
 .trigger:focus-visible,
 .chip:focus-visible {
   outline: 2px solid var(--ac-ring);

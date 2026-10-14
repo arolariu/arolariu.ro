@@ -174,8 +174,3 @@ a.content:focus-visible {
     outline-color: Highlight;
   }
 }
-
-.storyStack {
-  inline-size: min(32rem, 90vw);
-  gap: var(--ac-space-6);
-}

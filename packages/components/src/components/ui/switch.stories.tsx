@@ -1,9 +1,34 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Switch} from "./switch";
-import styles from "./switch.module.css";
+const storyStyles = `
+.ac-story-switch-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-switch-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-switch-storyRow",
+  storyStack: "ac-story-switch-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Switch",
   component: Switch,
   tags: ["autodocs"],
@@ -25,7 +50,7 @@ export const OnDisabled: Story = {args: {defaultChecked: true, disabled: true}};
 
 export const WithLabel: Story = {
   render: () => (
-    <label className={styles.storyRow}>
+    <label className={storyClasses.storyRow}>
       <Switch name='airplane' />
       Airplane mode
     </label>
@@ -34,12 +59,12 @@ export const WithLabel: Story = {
 
 export const Small: Story = {
   render: () => (
-    <div className={styles.storyStack}>
-      <label className={styles.storyRow}>
+    <div className={storyClasses.storyStack}>
+      <label className={storyClasses.storyRow}>
         <Switch defaultChecked />
         Default size
       </label>
-      <label className={styles.storyRow}>
+      <label className={storyClasses.storyRow}>
         <Switch
           size='sm'
           defaultChecked
@@ -54,12 +79,12 @@ export const RightToLeft: Story = {
   render: () => (
     <div
       dir='rtl'
-      className={styles.storyStack}>
-      <label className={styles.storyRow}>
+      className={storyClasses.storyStack}>
+      <label className={storyClasses.storyRow}>
         <Switch defaultChecked />
         Default RTL
       </label>
-      <label className={styles.storyRow}>
+      <label className={storyClasses.storyRow}>
         <Switch
           size='sm'
           defaultChecked
@@ -73,8 +98,8 @@ export const RightToLeft: Story = {
 function ControlledDemo(): React.JSX.Element {
   const [checked, setChecked] = React.useState(false);
   return (
-    <div className={styles.storyStack}>
-      <label className={styles.storyRow}>
+    <div className={storyClasses.storyStack}>
+      <label className={storyClasses.storyRow}>
         <Switch
           checked={checked}
           onCheckedChange={setChecked}

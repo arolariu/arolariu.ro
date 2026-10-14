@@ -33,7 +33,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "./sidebar";
-import styles from "./sidebar.module.css";
 
 function SidebarStatus(): React.JSX.Element {
   const {state, isMobile, openMobile} = useSidebar();
@@ -44,7 +43,7 @@ function Navigation(): React.JSX.Element {
   return (
     <>
       <SidebarHeader>
-        <strong className={styles.storyBrand}>Workspace</strong>
+        <strong className={storyClasses.storyBrand}>Workspace</strong>
         <SidebarInput
           aria-label='Search navigation'
           placeholder='Search navigation…'
@@ -92,9 +91,9 @@ function Navigation(): React.JSX.Element {
                   </BaseMenu.Trigger>
                   <BaseMenu.Portal>
                     <BaseMenu.Positioner>
-                      <BaseMenu.Popup className={styles.storyMenu}>
-                        <BaseMenu.Item className={styles.storyMenuItem}>Rename project</BaseMenu.Item>
-                        <BaseMenu.Item className={styles.storyMenuItem}>Archive project</BaseMenu.Item>
+                      <BaseMenu.Popup className={storyClasses.storyMenu}>
+                        <BaseMenu.Item className={storyClasses.storyMenuItem}>Rename project</BaseMenu.Item>
+                        <BaseMenu.Item className={storyClasses.storyMenuItem}>Archive project</BaseMenu.Item>
                       </BaseMenu.Popup>
                     </BaseMenu.Positioner>
                   </BaseMenu.Portal>
@@ -160,7 +159,7 @@ function SidebarDemo({
   const main = (
     <SidebarInset
       key='main'
-      className={styles.storyMain}>
+      className={storyClasses.storyMain}>
       <SidebarTrigger />
       <h1 id='home'>Responsive navigation</h1>
       <p>Toggle with the control or Ctrl+B / ⌘B. Below 768px, the real Sheet provides modal focus and dismissal.</p>
@@ -186,7 +185,7 @@ function ControlledDemo(): React.JSX.Element {
       <Sidebar collapsible='icon'>
         <Navigation />
       </Sidebar>
-      <SidebarInset className={styles.storyMain}>
+      <SidebarInset className={storyClasses.storyMain}>
         <SidebarTrigger />
         <h1>Controlled sidebar</h1>
         <Button onClick={() => setOpen((value) => !value)}>Owner toggle</Button>
@@ -195,8 +194,54 @@ function ControlledDemo(): React.JSX.Element {
     </SidebarProvider>
   );
 }
+const storyStyles = `
+.ac-story-sidebar-storyMain {
+  align-items: flex-start;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-6);
+}
+
+.ac-story-sidebar-storyBrand {
+  padding: var(--ac-space-2);
+}
+
+.ac-story-sidebar-storyMenu {
+  min-width: 10rem;
+  padding: var(--ac-space-1);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+}
+
+.ac-story-sidebar-storyMenuItem {
+  padding: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  outline: none;
+}
+
+.ac-story-sidebar-storyMenuItem[data-highlighted] {
+  background-color: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+`;
+
+const storyClasses = {
+  storyMain: "ac-story-sidebar-storyMain",
+  storyBrand: "ac-story-sidebar-storyBrand",
+  storyMenu: "ac-story-sidebar-storyMenu",
+  storyMenuItem: "ac-story-sidebar-storyMenuItem",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Layout/Sidebar",
   component: Sidebar,
   tags: ["autodocs"],

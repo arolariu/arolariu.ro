@@ -1,9 +1,61 @@
 import React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Slider} from "./slider";
-import styles from "./slider.module.css";
+const storyStyles = `
+.ac-story-slider-story {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 16rem;
+  max-width: 100%;
+}
+
+.ac-story-slider-storyHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.ac-story-slider-storyValue {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-story-slider-storyLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--ac-muted-foreground);
+}
+
+.ac-story-slider-storyVertical {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  height: 16rem;
+}
+`;
+
+const storyClasses = {
+  story: "ac-story-slider-story",
+  storyHeader: "ac-story-slider-storyHeader",
+  storyValue: "ac-story-slider-storyValue",
+  storyLabels: "ac-story-slider-storyLabels",
+  storyVertical: "ac-story-slider-storyVertical",
+} as const;
 
 const meta: Meta<typeof Slider> = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Slider",
   component: Slider,
   tags: ["autodocs"],
@@ -28,7 +80,7 @@ export const Default: Story = {
   parameters: {controls: {disable: false, include: ["orientation", "disabled", "thumbAlignment"]}},
   args: {orientation: "horizontal", disabled: false, thumbAlignment: "edge"},
   render: (args) => (
-    <div className={args.orientation === "vertical" ? styles.storyVertical : styles.story}>
+    <div className={args.orientation === "vertical" ? storyClasses.storyVertical : storyClasses.story}>
       <Slider
         aria-label='Volume'
         defaultValue={50}
@@ -45,8 +97,8 @@ export const Default: Story = {
  */
 export const CustomRange: Story = {
   render: () => (
-    <div className={styles.story}>
-      <div className={styles.storyHeader}>Price range: $0 – $1000</div>
+    <div className={storyClasses.story}>
+      <div className={storyClasses.storyHeader}>Price range: $0 – $1000</div>
       <Slider
         aria-label='Price range'
         defaultValue={[250, 750]}
@@ -65,10 +117,10 @@ function ControlledDemo(): React.JSX.Element {
   const [value, setValue] = React.useState(30);
 
   return (
-    <div className={styles.story}>
-      <div className={styles.storyHeader}>
+    <div className={storyClasses.story}>
+      <div className={storyClasses.storyHeader}>
         <span>Volume</span>
-        <output className={styles.storyValue}>{value}%</output>
+        <output className={storyClasses.storyValue}>{value}%</output>
       </div>
       <Slider
         aria-label='Volume'
@@ -90,7 +142,7 @@ export const Controlled: Story = {
  */
 export const Disabled: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Slider
         aria-label='Unavailable range'
         defaultValue={[25, 75]}
@@ -109,10 +161,10 @@ function RangeSliderDemo(): React.JSX.Element {
   const [range, setRange] = React.useState([25, 75]);
 
   return (
-    <div className={styles.story}>
-      <div className={styles.storyHeader}>
+    <div className={storyClasses.story}>
+      <div className={storyClasses.storyHeader}>
         <span>Price Range</span>
-        <output className={styles.storyValue}>
+        <output className={storyClasses.storyValue}>
           ${range[0]} – ${range[1]}
         </output>
       </div>
@@ -137,14 +189,14 @@ export const RangeSlider: Story = {
  */
 export const WithLabels: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Slider
         aria-label='Labeled value'
         defaultValue={[50]}
         min={0}
         max={100}
       />
-      <div className={styles.storyLabels}>
+      <div className={storyClasses.storyLabels}>
         <span>0</span>
         <span>50</span>
         <span>100</span>
@@ -158,8 +210,8 @@ export const WithLabels: Story = {
  */
 export const PrimitiveDefault: Story = {
   render: () => (
-    <div className={styles.story}>
-      <div className={styles.storyHeader}>No supplied value: starts at 20</div>
+    <div className={storyClasses.story}>
+      <div className={storyClasses.storyHeader}>No supplied value: starts at 20</div>
       <Slider
         aria-label='Primitive default'
         min={20}
@@ -174,12 +226,12 @@ export const PrimitiveDefault: Story = {
  */
 export const EdgeAligned: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Slider
         aria-label='Full range'
         defaultValue={[0, 100]}
       />
-      <div className={styles.storyLabels}>
+      <div className={storyClasses.storyLabels}>
         <span>0</span>
         <span>100</span>
       </div>
@@ -188,11 +240,11 @@ export const EdgeAligned: Story = {
 };
 
 /**
- * Vertical scalar geometry uses a CSS Module container with a definite height.
+ * Vertical scalar geometry uses a story-owned CSS container with a definite height.
  */
 export const Vertical: Story = {
   render: () => (
-    <div className={styles.storyVertical}>
+    <div className={storyClasses.storyVertical}>
       <Slider
         aria-label='Vertical volume'
         defaultValue={50}
@@ -211,14 +263,14 @@ export const Vertical: Story = {
 function VerticalRangeDemo(): React.JSX.Element {
   const [range, setRange] = React.useState([25, 75]);
   return (
-    <div className={styles.story}>
-      <div className={styles.storyHeader}>
+    <div className={storyClasses.story}>
+      <div className={storyClasses.storyHeader}>
         <span>Vertical range</span>
-        <output className={styles.storyValue}>
+        <output className={storyClasses.storyValue}>
           {range[0]} – {range[1]}
         </output>
       </div>
-      <div className={styles.storyVertical}>
+      <div className={storyClasses.storyVertical}>
         <Slider
           aria-label='Vertical range'
           orientation='vertical'

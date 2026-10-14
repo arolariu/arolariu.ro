@@ -17,7 +17,6 @@ import {
   XAxis,
   type ChartConfig,
 } from "./chart";
-import styles from "./chart.module.css";
 
 const chartData = [
   {month: "January", desktop: 186, mobile: 80},
@@ -38,8 +37,62 @@ const chartConfig = {
     color: "#60a5fa",
   },
 } satisfies ChartConfig;
+const storyStyles = `
+.ac-story-chart-storyFrame {
+  width: min(600px, calc(100vw - 2rem));
+}
+
+.ac-story-chart-storyCompact {
+  width: min(500px, calc(100vw - 2rem));
+}
+
+.ac-story-chart-storyLarge {
+  width: min(800px, calc(100vw - 2rem));
+  padding: var(--ac-space-6);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+}
+
+.ac-story-chart-storyHeading {
+  margin-block: 0 var(--ac-space-4);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-lg);
+  font-weight: 600;
+}
+
+.ac-story-chart-storySamples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--ac-space-6);
+}
+
+.ac-story-chart-storyDark {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-chart-storyFrame",
+  storyCompact: "ac-story-chart-storyCompact",
+  storyLarge: "ac-story-chart-storyLarge",
+  storyHeading: "ac-story-chart-storyHeading",
+  storySamples: "ac-story-chart-storySamples",
+  storyDark: "ac-story-chart-storyDark",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Chart",
   component: ChartContainer,
   tags: ["autodocs"],
@@ -52,7 +105,7 @@ const meta = {
       },
     },
   },
-  args: {config: chartConfig, children: undefined},
+  args: {config: chartConfig, children: undefined as React.ReactNode},
 } satisfies Meta<typeof ChartContainer>;
 
 export default meta;
@@ -63,7 +116,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: (args): React.JSX.Element => (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <ChartContainer {...args}>
         <BarChart
           accessibilityLayer
@@ -115,7 +168,7 @@ export const Simple: Story = {
     };
 
     return (
-      <div className={styles.storyCompact}>
+      <div className={storyClasses.storyCompact}>
         <ChartContainer config={simpleConfig}>
           <BarChart data={simpleData}>
             <CartesianGrid strokeDasharray='3 3' />
@@ -138,8 +191,8 @@ export const Simple: Story = {
  */
 export const CustomSize: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyLarge}>
-      <h3 className={styles.storyHeading}>Monthly Revenue</h3>
+    <div className={storyClasses.storyLarge}>
+      <h3 className={storyClasses.storyHeading}>Monthly Revenue</h3>
       <ChartContainer
         config={chartConfig}
         aspect={2}
@@ -193,7 +246,7 @@ export const LineChart: Story = {
     };
 
     return (
-      <div className={styles.storyFrame}>
+      <div className={storyClasses.storyFrame}>
         <ChartContainer config={lineConfig}>
           <RechartsLineChart data={lineData}>
             <CartesianGrid
@@ -238,7 +291,7 @@ export const PieChart: Story = {
     };
 
     return (
-      <div className={styles.storyCompact}>
+      <div className={storyClasses.storyCompact}>
         <ChartContainer config={pieConfig}>
           <RechartsPieChart>
             <ChartTooltip
@@ -285,7 +338,7 @@ export const Stacked: Story = {
     };
 
     return (
-      <div className={styles.storyFrame}>
+      <div className={storyClasses.storyFrame}>
         <ChartContainer config={stackedConfig}>
           <BarChart data={stackedData}>
             <CartesianGrid
@@ -331,13 +384,13 @@ const themedConfig = {
  */
 export const Themes: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storySamples}>
+    <div className={storyClasses.storySamples}>
       {["light", "dark"].map((theme) => (
         <div
           key={theme}
-          className={theme === "dark" ? `dark ${styles.storyDark}` : undefined}>
-          <h3 className={styles.storyHeading}>{theme === "dark" ? "Dark palette" : "Light palette"}</h3>
-          <div className={styles.storyCompact}>
+          className={theme === "dark" ? `dark ${storyClasses.storyDark}` : undefined}>
+          <h3 className={storyClasses.storyHeading}>{theme === "dark" ? "Dark palette" : "Light palette"}</h3>
+          <div className={storyClasses.storyCompact}>
             <ChartContainer config={themedConfig}>
               <BarChart
                 data={chartData}
@@ -391,12 +444,12 @@ const contentConfig = {
  */
 export const HelperContent: Story = {
   render: (): React.JSX.Element => (
-    <div className={styles.storyFrame}>
+    <div className={storyClasses.storyFrame}>
       <ChartContainer
         config={contentConfig}
         width={600}
         height={320}>
-        <div className={styles.storySamples}>
+        <div className={storyClasses.storySamples}>
           {(["dot", "line", "dashed"] as const).map((indicator) => (
             <ChartTooltipContent
               key={indicator}

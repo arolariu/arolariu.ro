@@ -183,19 +183,6 @@
   color: color-mix(in oklab, currentcolor 68%, var(--ac-muted-foreground));
 }
 
-.storyControls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ac-space-3);
-}
-
-.customBody {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-3);
-  min-width: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .close,
   .primaryAction,

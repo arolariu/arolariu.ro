@@ -30,7 +30,10 @@ describe("Slider", () => {
     );
     expect(container.querySelector('[data-slot="slider"]')).toHaveAttribute("data-orientation", "vertical");
     expect(screen.getByRole("slider")).toBeDisabled();
-    expect(container.firstElementChild?.className).toContain("storyVertical");
+    const layout = container.querySelector(".ac-story-slider-storyVertical");
+    expect(layout).not.toBeNull();
+    expect(getComputedStyle(layout as HTMLElement).height).toBe("256px");
+    expect(container.querySelector("style")?.textContent).toContain(".ac-story-slider-storyVertical");
   });
 
   beforeEach(() => {

@@ -1,10 +1,35 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Timeline, TimelineContent, TimelineDot, TimelineItem} from "./timeline";
-import styles from "./timeline.module.css";
+const storyStyles = `
+.ac-story-timeline-storyMeta {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
 
-const meta = {title: "Components/Data Display/Timeline", component: Timeline, tags: ["autodocs"], args: {children: null}} satisfies Meta<
-  typeof Timeline
->;
+.ac-story-timeline-storyCompletedDot {
+  background: var(--ac-primary);
+}
+`;
+
+const storyClasses = {
+  storyMeta: "ac-story-timeline-storyMeta",
+  storyCompletedDot: "ac-story-timeline-storyCompletedDot",
+} as const;
+
+const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
+  title: "Components/Data Display/Timeline",
+  component: Timeline,
+  tags: ["autodocs"],
+  args: {children: null as React.ReactNode},
+} satisfies Meta<typeof Timeline>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -15,21 +40,21 @@ export const Default: Story = {
         <TimelineDot />
         <TimelineContent>
           <strong>Project created</strong>
-          <p className={styles.storyMeta}>January 1</p>
+          <p className={storyClasses.storyMeta}>January 1</p>
         </TimelineContent>
       </TimelineItem>
       <TimelineItem>
         <TimelineDot />
         <TimelineContent>
           <strong>First release</strong>
-          <p className={styles.storyMeta}>January 15</p>
+          <p className={storyClasses.storyMeta}>January 15</p>
         </TimelineContent>
       </TimelineItem>
       <TimelineItem>
         <TimelineDot />
         <TimelineContent>
           <strong>Documentation updated</strong>
-          <p className={styles.storyMeta}>February 1</p>
+          <p className={storyClasses.storyMeta}>February 1</p>
         </TimelineContent>
       </TimelineItem>
     </Timeline>
@@ -56,7 +81,7 @@ export const WithDates: Story = {
         <TimelineDot />
         <TimelineContent>
           <strong>Version released</strong>
-          <p className={styles.storyMeta}>
+          <p className={storyClasses.storyMeta}>
             <time dateTime='2026-10-13'>October 13, 2026</time>
           </p>
           <a href='#release-notes'>Read release notes</a>
@@ -69,10 +94,10 @@ export const Completed: Story = {
   render: () => (
     <Timeline>
       <TimelineItem>
-        <TimelineDot className={styles.storyCompletedDot} />
+        <TimelineDot className={storyClasses.storyCompletedDot} />
         <TimelineContent>
           <strong>Completed</strong>
-          <p className={styles.storyMeta}>All milestones finished.</p>
+          <p className={storyClasses.storyMeta}>All milestones finished.</p>
         </TimelineContent>
       </TimelineItem>
     </Timeline>

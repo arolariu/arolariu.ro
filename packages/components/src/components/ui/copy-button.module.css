@@ -34,18 +34,3 @@
   width: 1rem;
   height: 1rem;
 }
-
-.storyRow {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-2);
-}
-
-.storyPanel {
-  display: grid;
-  gap: var(--ac-space-3);
-  padding: var(--ac-space-4);
-  border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-lg);
-  background: var(--ac-muted);
-}

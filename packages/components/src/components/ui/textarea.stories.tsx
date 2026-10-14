@@ -2,9 +2,35 @@ import {type JSX, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Textarea} from "./textarea";
 import {Label} from "./label";
-import styles from "./textarea.module.css";
+const storyStyles = `
+.ac-story-textarea-storyStack {
+  display: grid;
+  width: min(100%, 28rem);
+  gap: var(--ac-space-3);
+}
+
+.ac-story-textarea-storyCount {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  text-align: end;
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-textarea-storyStack",
+  storyCount: "ac-story-textarea-storyCount",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Textarea",
   component: Textarea,
   tags: ["autodocs"],
@@ -58,7 +84,7 @@ function WithCharCountDemo(): JSX.Element {
   const maxChars = 200;
 
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Label htmlFor='bio'>Biography</Label>
       <Textarea
         id='bio'
@@ -71,7 +97,7 @@ function WithCharCountDemo(): JSX.Element {
       />
       <output
         id='bio-count'
-        className={styles.storyCount}>
+        className={storyClasses.storyCount}>
         {text.length} / {maxChars}
       </output>
     </div>
@@ -87,7 +113,7 @@ export const WithCharCount: Story = {
  */
 export const AutoResize: Story = {
   render: () => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <div>
         <Label htmlFor='small-notes'>Small (2 rows)</Label>
         <Textarea

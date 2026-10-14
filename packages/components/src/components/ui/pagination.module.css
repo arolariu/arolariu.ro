@@ -77,27 +77,3 @@
     display: inline;
   }
 }
-
-.storyStack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ac-space-4);
-}
-
-.storyPageSize {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-2);
-  color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-sm);
-}
-
-.storyPageSize select {
-  padding: var(--ac-space-1) var(--ac-space-2);
-  border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-sm);
-  background-color: var(--ac-background);
-  color: var(--ac-foreground);
-  font: inherit;
-}

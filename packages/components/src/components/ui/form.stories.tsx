@@ -1,11 +1,93 @@
 import * as React from "react";
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFieldArray, useForm, useWatch} from "./form";
-import styles from "./form.module.css";
 import {Input} from "./input";
+const storyStyles = `
+.ac-story-form-demoForm {
+  display: grid;
+  gap: var(--ac-space-4);
+  inline-size: min(26rem, 100%);
+}
+
+.ac-story-form-demoFields {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-form-demoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-form-demoComposedControl {
+  min-inline-size: 0;
+}
+
+.ac-story-form-demoFocusedControl {
+  border-color: var(--ac-primary);
+}
+
+.ac-story-form-demoOutput {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.ac-story-form-demoSummary {
+  border: 1px solid var(--ac-destructive);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-destructive);
+  padding: var(--ac-space-3);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-form-demoProgress {
+  display: grid;
+  gap: var(--ac-space-2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-form-demoProgress progress {
+  accent-color: var(--ac-primary);
+  inline-size: 100%;
+}
+
+.ac-story-form-demoProgress p {
+  margin: 0;
+}
+
+@media (forced-colors: active) {
+
+  .ac-story-form-demoSummary {
+    border-color: CanvasText;
+    color: CanvasText;
+  }
+}
+`;
+
+const storyClasses = {
+  demoForm: "ac-story-form-demoForm",
+  demoFields: "ac-story-form-demoFields",
+  demoActions: "ac-story-form-demoActions",
+  demoComposedControl: "ac-story-form-demoComposedControl",
+  demoFocusedControl: "ac-story-form-demoFocusedControl",
+  demoOutput: "ac-story-form-demoOutput",
+  demoSummary: "ac-story-form-demoSummary",
+  demoProgress: "ac-story-form-demoProgress",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story: Parameters<Decorator>[0]) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Form",
   component: BasicFormDemo,
   tags: ["autodocs"],
@@ -32,7 +114,7 @@ function BasicFormDemo(): React.JSX.Element {
   return (
     <Form {...form}>
       <form
-        className={styles.demoForm}
+        className={storyClasses.demoForm}
         noValidate
         onSubmit={form.handleSubmit(setSubmitted)}>
         <FormField
@@ -73,7 +155,7 @@ function BasicFormDemo(): React.JSX.Element {
         />
         <Button type='submit'>Submit</Button>
         <output
-          className={styles.demoOutput}
+          className={storyClasses.demoOutput}
           aria-live='polite'>
           {submitted ? `Saved ${submitted.username}: ${submitted.email}` : "Complete the fields, then submit."}
         </output>
@@ -98,7 +180,7 @@ function LoginFormDemo(): React.JSX.Element {
   return (
     <Form {...form}>
       <form
-        className={styles.demoForm}
+        className={storyClasses.demoForm}
         noValidate
         onSubmit={form.handleSubmit(() => setSubmitted(true))}>
         <FormField
@@ -139,7 +221,7 @@ function LoginFormDemo(): React.JSX.Element {
         />
         <Button type='submit'>Validate credentials</Button>
         <output
-          className={styles.demoOutput}
+          className={storyClasses.demoOutput}
           aria-live='polite'>
           {submitted
             ? "Credentials passed local validation. No request was sent."
@@ -173,7 +255,7 @@ function ValidationErrorsFormContent(): React.JSX.Element {
             setSubmitted(true);
           },
         )}
-        className={styles.demoForm}
+        className={storyClasses.demoForm}
         noValidate>
         <FormField
           control={form.control}
@@ -241,7 +323,7 @@ function ValidationErrorsFormContent(): React.JSX.Element {
         {submitted && !form.formState.isValid ? (
           <div
             role='alert'
-            className={styles.demoSummary}>
+            className={storyClasses.demoSummary}>
             Please fix the errors above before submitting.
           </div>
         ) : null}
@@ -265,8 +347,8 @@ function MultiStepFormContent(): React.JSX.Element {
   const [submitted, setSubmitted] = React.useState(false);
 
   return (
-    <div className={styles.demoForm}>
-      <div className={styles.demoProgress}>
+    <div className={storyClasses.demoForm}>
+      <div className={storyClasses.demoProgress}>
         <progress
           aria-label='Form progress'
           max={2}
@@ -279,7 +361,7 @@ function MultiStepFormContent(): React.JSX.Element {
 
       <Form {...form}>
         <form
-          className={styles.demoFields}
+          className={storyClasses.demoFields}
           noValidate
           onSubmit={form.handleSubmit(() => setSubmitted(true))}>
           {step === 1 ? (
@@ -368,7 +450,7 @@ function MultiStepFormContent(): React.JSX.Element {
                   </FormItem>
                 )}
               />
-              <div className={styles.demoActions}>
+              <div className={storyClasses.demoActions}>
                 <Button
                   type='button'
                   variant='outline'
@@ -380,7 +462,7 @@ function MultiStepFormContent(): React.JSX.Element {
             </>
           )}
           <output
-            className={styles.demoOutput}
+            className={storyClasses.demoOutput}
             aria-live='polite'>
             {submitted ? "Both steps passed local validation." : "Values are retained when moving between steps."}
           </output>
@@ -407,7 +489,7 @@ function ObserverCompositionDemo(): React.JSX.Element {
   return (
     <Form {...form}>
       <form
-        className={styles.demoForm}
+        className={storyClasses.demoForm}
         onSubmit={form.handleSubmit(() => setSubmitted(true))}>
         <FormField
           control={form.control}
@@ -418,14 +500,14 @@ function ObserverCompositionDemo(): React.JSX.Element {
               <FormControl
                 id='observed-nickname'
                 ref={wrapperRef}
-                className={styles.demoComposedControl}
+                className={storyClasses.demoComposedControl}
                 onChange={(event) => {
                   setObservedValue(event.currentTarget.value);
                   setObservedChanges((count) => count + 1);
                 }}>
                 <Input
                   {...field}
-                  className={(state) => (state.focused ? styles.demoFocusedControl : undefined)}
+                  className={(state) => (state.focused ? storyClasses.demoFocusedControl : undefined)}
                   render={(props, state) => (
                     <input
                       {...props}
@@ -440,13 +522,13 @@ function ObserverCompositionDemo(): React.JSX.Element {
             </FormItem>
           )}
         />
-        <div className={styles.demoOutput}>
+        <div className={storyClasses.demoOutput}>
           RHF: {nickname || "empty"} · Observer: {observedValue || "empty"} · Changes: {observedChanges}
           {observedChanges > 0 ? ` · Wrapper ref: ${wrapperRef.current?.tagName ?? "unmounted"}` : ""}
         </div>
         <Button type='submit'>Save nickname</Button>
         <output
-          className={styles.demoOutput}
+          className={storyClasses.demoOutput}
           aria-live='polite'>
           {submitted ? "Nickname saved locally." : ""}
         </output>
@@ -472,7 +554,7 @@ function FieldArrayDemo(): React.JSX.Element {
   return (
     <Form {...form}>
       <form
-        className={styles.demoForm}
+        className={storyClasses.demoForm}
         noValidate
         onSubmit={form.handleSubmit(
           (values) => setAnnouncement(`Saved ${values.choices.length} choices locally.`),
@@ -501,7 +583,7 @@ function FieldArrayDemo(): React.JSX.Element {
             )}
           />
         ))}
-        <div className={styles.demoActions}>
+        <div className={storyClasses.demoActions}>
           <Button
             type='button'
             variant='outline'
@@ -510,9 +592,9 @@ function FieldArrayDemo(): React.JSX.Element {
           </Button>
           <Button type='submit'>Save choices</Button>
         </div>
-        <div className={styles.demoOutput}>Watched values: {JSON.stringify(choices)}</div>
+        <div className={storyClasses.demoOutput}>Watched values: {JSON.stringify(choices)}</div>
         <output
-          className={styles.demoOutput}
+          className={storyClasses.demoOutput}
           aria-live='polite'>
           {announcement}
         </output>

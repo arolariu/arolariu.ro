@@ -19,9 +19,38 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from "./combobox";
-import styles from "./combobox.module.css";
+const storyStyles = `
+.ac-story-combobox-story {
+  display: grid;
+  gap: var(--ac-space-3);
+  width: 20rem;
+  max-width: 100%;
+}
+
+.ac-story-combobox-valueTrigger {
+  width: 100%;
+  padding: var(--ac-space-2) var(--ac-space-3);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+`;
+
+const storyClasses = {
+  story: "ac-story-combobox-story",
+  valueTrigger: "ac-story-combobox-valueTrigger",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Combobox",
   component: Combobox,
   tags: ["autodocs"],
@@ -61,7 +90,7 @@ function FruitList(): React.JSX.Element {
 function DefaultDemo(): React.JSX.Element {
   const [value, setValue] = React.useState<Fruit | null>(null);
   return (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox
         items={items}
         value={value}
@@ -87,12 +116,12 @@ export const Default: Story = {render: () => <DefaultDemo />};
 /** Root metadata displays Apple immediately, without mounting the option list. */
 export const ClosedSelectedValue: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox
         items={items}
         defaultValue={apple}>
         <ComboboxTrigger
-          className={styles.valueTrigger}
+          className={storyClasses.valueTrigger}
           aria-label='Selected fruit'>
           <ComboboxValue placeholder='Choose a fruit' />
         </ComboboxTrigger>
@@ -109,7 +138,7 @@ function MultipleDemo(): React.JSX.Element {
   const anchor = useComboboxAnchor();
   const [value, setValue] = React.useState<Fruit[]>([apple]);
   return (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox
         items={items}
         multiple
@@ -148,7 +177,7 @@ export const Multiple: Story = {render: () => <MultipleDemo />};
 /** Collection renders only filtered groups/items, with accessible group labels. */
 export const WithGroups: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox items={groups}>
         <ComboboxInput
           aria-label='Grouped fruits'
@@ -184,7 +213,7 @@ export const WithGroups: Story = {
 /** Root-owned disabled state reaches the editable input, trigger and clear control. */
 export const Disabled: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox
         items={items}
         defaultValue={apple}
@@ -204,7 +233,7 @@ export const Disabled: Story = {
 /** An input without addons preserves its own native ref, class and render contract. */
 export const InputOnly: Story = {
   render: () => (
-    <div className={styles.story}>
+    <div className={storyClasses.story}>
       <Combobox items={items}>
         <ComboboxInput
           aria-label='Fruit'
@@ -223,7 +252,7 @@ export const InputOnly: Story = {
 /** Each option is an object; Base UI serializes its `value` for native form submission. */
 export const NativeForm: Story = {
   render: () => (
-    <form className={styles.story}>
+    <form className={storyClasses.story}>
       <Combobox
         items={items}
         defaultValue={pear}

@@ -2,11 +2,14 @@ import {mergeProps} from "@base-ui/react/merge-props";
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {createRef} from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {Badge, badgeVariants} from "./badge";
 import styles from "./badge.module.css";
-import {CallbackRender, Ghost, Large, Link, WithDot} from "./badge.stories";
+import * as stories from "./badge.stories";
+
+const {CallbackRender, Ghost, Large, Link, WithDot} = composeStories(stories);
 
 function requiredClass(name: string): string {
   const className = styles[name];
@@ -235,9 +238,9 @@ describe("Badge", () => {
   it("renders the real new variant and callback stories", () => {
     render(
       <>
-        <Badge {...Ghost.args} />
-        <Badge {...Link.args} />
-        <Badge {...CallbackRender.args} />
+        <Ghost />
+        <Link />
+        <CallbackRender />
       </>,
     );
     expect(screen.getByText("Ghost")).toHaveClass(requiredClass("ghost"));
@@ -245,14 +248,15 @@ describe("Badge", () => {
     expect(screen.getByLabelText("outline badge")).toHaveTextContent("Preview");
   });
 
-  it("renders real status and size stories with CSS Module styling", () => {
+  it("renders real status and size stories with mounted story-owned styling", () => {
     render(
       <>
-        <WithDot.render />
-        <Large.render />
+        <WithDot />
+        <Large />
       </>,
     );
     expect(screen.getByText("Active").querySelector("span")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByText("Large Default")).toHaveClass(requiredClass("storyLarge"));
+    expect(screen.getByText("Large Default")).toHaveClass("ac-story-badge-storyLarge");
+    expect(getComputedStyle(screen.getByText("Active").querySelector("span") as HTMLElement).borderRadius).toBe("50%");
   });
 });

@@ -72,17 +72,3 @@
 .step[data-state="upcoming"] .label {
   color: var(--ac-muted-foreground);
 }
-
-.storyStack {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
-.storyActions {
-  display: flex;
-  gap: var(--ac-space-2);
-}
-
-.storyError {
-  color: var(--ac-destructive);
-}

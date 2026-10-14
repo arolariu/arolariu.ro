@@ -3,12 +3,65 @@
 import {fr} from "date-fns/locale";
 import {useRef, useState} from "react";
 import {CalendarDay} from "react-day-picker";
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Calendar, CalendarDayButton, type DateRange as CalendarDateRange} from "./calendar";
-import styles from "./calendar.module.css";
+const storyStyles = `
+.ac-story-calendar-storyFrame {
+  border: 1px solid var(--ac-border);
+}
+
+.ac-story-calendar-storyStack {
+  display: flex;
+  max-width: 24rem;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+.ac-story-calendar-storyHeading {
+  margin: 0;
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-base);
+  font-weight: 600;
+}
+
+.ac-story-calendar-storyDescription {
+  margin: 0;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+}
+
+.ac-story-calendar-storyDayCell {
+  width: var(--ac-size-default);
+}
+
+.ac-story-calendar-eventDot {
+  width: var(--ac-space-1);
+  height: var(--ac-space-1);
+  border-radius: 50%;
+  background-color: currentColor;
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-calendar-storyFrame",
+  storyStack: "ac-story-calendar-storyStack",
+  storyHeading: "ac-story-calendar-storyHeading",
+  storyDescription: "ac-story-calendar-storyDescription",
+  storyDayCell: "ac-story-calendar-storyDayCell",
+  eventDot: "ac-story-calendar-eventDot",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story: Parameters<Decorator>[0]) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Calendar",
   component: Calendar,
   tags: ["autodocs"],
@@ -35,7 +88,7 @@ function DefaultDemo(): React.JSX.Element {
       defaultMonth={january}
       selected={date}
       onSelect={setDate}
-      className={styles.storyFrame}
+      className={storyClasses.storyFrame}
     />
   );
 }
@@ -54,7 +107,7 @@ function DateRangeDemo(): React.JSX.Element {
       defaultMonth={january}
       selected={dateRange}
       onSelect={setDateRange}
-      className={styles.storyFrame}
+      className={storyClasses.storyFrame}
       numberOfMonths={2}
     />
   );
@@ -71,7 +124,7 @@ function MultipleSelectionDemo(): React.JSX.Element {
       defaultMonth={january}
       selected={dates}
       onSelect={setDates}
-      className={styles.storyFrame}
+      className={storyClasses.storyFrame}
     />
   );
 }
@@ -88,7 +141,7 @@ function WithDisabledDatesDemo(): React.JSX.Element {
       selected={date}
       onSelect={setDate}
       disabled={[{from: new Date(2024, 0, 1), to: new Date(2024, 0, 5)}, {dayOfWeek: [0, 6]}]}
-      className={styles.storyFrame}
+      className={storyClasses.storyFrame}
     />
   );
 }
@@ -99,16 +152,16 @@ export const WithDisabledDates: Story = {render: () => <WithDisabledDatesDemo />
 function DisabledWeekendsDemo(): React.JSX.Element {
   const [date, setDate] = useState<Date | undefined>();
   return (
-    <section className={styles.storyStack}>
-      <h3 className={styles.storyHeading}>Select a weekday</h3>
-      <p className={styles.storyDescription}>Weekends are disabled. Use arrow keys to move between available dates.</p>
+    <section className={storyClasses.storyStack}>
+      <h3 className={storyClasses.storyHeading}>Select a weekday</h3>
+      <p className={storyClasses.storyDescription}>Weekends are disabled. Use arrow keys to move between available dates.</p>
       <Calendar
         mode='single'
         defaultMonth={january}
         selected={date}
         onSelect={setDate}
         disabled={{dayOfWeek: [0, 6]}}
-        className={styles.storyFrame}
+        className={storyClasses.storyFrame}
         footer={date ? `Selected: ${date.toLocaleDateString("en-US")}` : "No date selected"}
       />
     </section>
@@ -124,7 +177,7 @@ function EventDayButton(props: Readonly<CalendarDayButton.Props>): React.JSX.Ele
       {props.children}
       {props.modifiers["event"] && (
         <span
-          className={styles.eventDot}
+          className={storyClasses.eventDot}
           role='img'
           aria-label='Event scheduled'
         />
@@ -136,9 +189,11 @@ function EventDayButton(props: Readonly<CalendarDayButton.Props>): React.JSX.Ele
 function WithEventsDemo(): React.JSX.Element {
   const [date, setDate] = useState<Date | undefined>();
   return (
-    <section className={styles.storyStack}>
-      <h3 className={styles.storyHeading}>Custom day content</h3>
-      <p className={styles.storyDescription}>Dots mark custom event modifiers while date labels, locale and selection remain intact.</p>
+    <section className={storyClasses.storyStack}>
+      <h3 className={storyClasses.storyHeading}>Custom day content</h3>
+      <p className={storyClasses.storyDescription}>
+        Dots mark custom event modifiers while date labels, locale and selection remain intact.
+      </p>
       <Calendar
         mode='single'
         defaultMonth={january}
@@ -146,7 +201,7 @@ function WithEventsDemo(): React.JSX.Element {
         onSelect={setDate}
         modifiers={{event: [new Date(2024, 0, 5), new Date(2024, 0, 12), new Date(2024, 0, 20)]}}
         components={{DayButton: EventDayButton}}
-        className={styles.storyFrame}
+        className={storyClasses.storyFrame}
       />
     </section>
   );
@@ -165,7 +220,7 @@ export const DropdownCaptions: Story = {
     endMonth: new Date(2025, 11, 1),
     showWeekNumber: true,
     ISOWeek: true,
-    className: styles.storyFrame,
+    className: storyClasses.storyFrame,
   },
 };
 
@@ -176,7 +231,7 @@ export const Localized: Story = {
     defaultMonth: january,
     locale: fr,
     captionLayout: "dropdown",
-    className: styles.storyFrame,
+    className: storyClasses.storyFrame,
   },
 };
 
@@ -187,7 +242,7 @@ export const RightToLeft: Story = {
     defaultMonth: january,
     dir: "rtl",
     selected: {from: new Date(2024, 0, 10), to: new Date(2024, 0, 18)},
-    className: styles.storyFrame,
+    className: storyClasses.storyFrame,
   },
 };
 
@@ -195,8 +250,8 @@ function AnimatedDemo(): React.JSX.Element {
   const [date, setDate] = useState<Date | undefined>();
   const rootRef = useRef<HTMLDivElement>(null);
   return (
-    <section className={styles.storyStack}>
-      <p className={styles.storyDescription}>
+    <section className={storyClasses.storyStack}>
+      <p className={storyClasses.storyDescription}>
         Navigate months to inspect motion. The public ref and DayPicker animation ref share one root.
       </p>
       <Calendar
@@ -206,7 +261,7 @@ function AnimatedDemo(): React.JSX.Element {
         defaultMonth={january}
         selected={date}
         onSelect={setDate}
-        className={styles.storyFrame}
+        className={storyClasses.storyFrame}
       />
     </section>
   );
@@ -219,9 +274,9 @@ function StandaloneDayButtonDemo(): React.JSX.Element {
   const [selected, setSelected] = useState(true);
   const ref = useRef<HTMLButtonElement>(null);
   return (
-    <section className={styles.storyStack}>
-      <p className={styles.storyDescription}>The public day button exposes native refs, locale-aware metadata and custom content.</p>
-      <div className={styles.storyDayCell}>
+    <section className={storyClasses.storyStack}>
+      <p className={storyClasses.storyDescription}>The public day button exposes native refs, locale-aware metadata and custom content.</p>
+      <div className={storyClasses.storyDayCell}>
         <CalendarDayButton
           ref={ref}
           day={new CalendarDay(new Date(2024, 0, 15), january)}

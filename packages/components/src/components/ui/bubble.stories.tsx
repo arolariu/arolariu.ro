@@ -2,10 +2,27 @@ import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {Bubble, BubbleContent, BubbleGroup, BubbleReactions, type BubbleVariant} from "./bubble";
-import styles from "./bubble.module.css";
 import {Button} from "./button";
+const storyStyles = `
+.ac-story-bubble-storyStack {
+  inline-size: min(32rem, 90vw);
+  gap: var(--ac-space-6);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-bubble-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Bubble",
   component: Bubble,
   tags: ["autodocs"],
@@ -31,7 +48,7 @@ export const Default: Story = {
 
 export const SevenSurfaces: Story = {
   render: (): React.JSX.Element => (
-    <BubbleGroup className={styles.storyStack}>
+    <BubbleGroup className={storyClasses.storyStack}>
       {variants.map((variant, index) => (
         <Bubble
           key={variant}
@@ -49,7 +66,7 @@ export const SevenSurfaces: Story = {
 function CallerOwnedReaction(): React.JSX.Element {
   const [reacted, setReacted] = React.useState(false);
   return (
-    <BubbleGroup className={styles.storyStack}>
+    <BubbleGroup className={storyClasses.storyStack}>
       <Bubble variant='secondary'>
         <BubbleContent>The caller owns this reaction, not the Bubble.</BubbleContent>
         <BubbleReactions
@@ -83,7 +100,7 @@ export const CallerOwnedReactions: Story = {render: (): React.JSX.Element => <Ca
 
 export const NativeRenderAndNavigation: Story = {
   render: (): React.JSX.Element => (
-    <BubbleGroup className={styles.storyStack}>
+    <BubbleGroup className={storyClasses.storyStack}>
       <Bubble variant='outline'>
         <BubbleContent render={<a href='#bubble-details' />}>Open linked message</BubbleContent>
       </Bubble>
@@ -107,7 +124,7 @@ export const EmptyErrorLongContentAndRTL: Story = {
   render: (): React.JSX.Element => (
     <BubbleGroup
       dir='rtl'
-      className={styles.storyStack}>
+      className={storyClasses.storyStack}>
       <Bubble variant='ghost'>
         <BubbleContent>No message content yet.</BubbleContent>
       </Bubble>

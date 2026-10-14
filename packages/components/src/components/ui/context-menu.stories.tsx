@@ -16,9 +16,33 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./context-menu";
-import styles from "./context-menu.module.css";
+const storyStyles = `
+.ac-story-context-menu-storyTarget {
+  display: grid;
+  place-items: center;
+  min-width: 18rem;
+  min-height: 9rem;
+  padding: var(--ac-space-4);
+  border: 1px dashed var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-sm);
+}
+`;
+
+const storyClasses = {
+  storyTarget: "ac-story-context-menu-storyTarget",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/ContextMenu",
   component: ContextMenu,
   tags: ["autodocs"],
@@ -31,7 +55,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click or long press here</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click or long press here</ContextMenuTrigger>
       <ContextMenuContent aria-label='Page actions'>
         <ContextMenuItem>Back</ContextMenuItem>
         <ContextMenuItem disabled>Forward</ContextMenuItem>
@@ -48,7 +72,7 @@ export const Default: Story = {
 export const WithCheckboxes: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click for view options</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click for view options</ContextMenuTrigger>
       <ContextMenuContent aria-label='View options'>
         <ContextMenuItem>
           Cut<ContextMenuShortcut>⌘X</ContextMenuShortcut>
@@ -80,7 +104,7 @@ export const WithCheckboxes: Story = {
 export const WithSubmenus: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click for file actions</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click for file actions</ContextMenuTrigger>
       <ContextMenuContent aria-label='File actions'>
         <ContextMenuItem>
           <FilePlus aria-hidden='true' />
@@ -113,7 +137,7 @@ export const WithSubmenus: Story = {
 export const WithLabelsAndRadio: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click to choose view and sort order</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click to choose view and sort order</ContextMenuTrigger>
       <ContextMenuContent aria-label='View and sort'>
         <ContextMenuRadioGroup defaultValue='grid'>
           <ContextMenuLabel inset>View</ContextMenuLabel>
@@ -161,7 +185,7 @@ export const WithLabelsAndRadio: Story = {
 export const WithShortcuts: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click for edit actions</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click for edit actions</ContextMenuTrigger>
       <ContextMenuContent aria-label='Edit actions'>
         <ContextMenuItem>
           Undo<ContextMenuShortcut>⌘Z</ContextMenuShortcut>
@@ -188,7 +212,7 @@ export const WithShortcuts: Story = {
 export const NestedSubmenu: Story = {
   render: () => (
     <ContextMenu>
-      <ContextMenuTrigger className={styles.storyTarget}>Right click to export</ContextMenuTrigger>
+      <ContextMenuTrigger className={storyClasses.storyTarget}>Right click to export</ContextMenuTrigger>
       <ContextMenuContent aria-label='Export actions'>
         <ContextMenuItem>Open</ContextMenuItem>
         <ContextMenuSub>
@@ -216,7 +240,7 @@ export const StateAwareRender: Story = {
   render: () => (
     <ContextMenu>
       <ContextMenuTrigger
-        className={styles.storyTarget}
+        className={storyClasses.storyTarget}
         render={(props, state) => <section {...props}>{state.open ? "Menu open" : "Right click here"}</section>}
       />
       <ContextMenuContent

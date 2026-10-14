@@ -1,8 +1,50 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {BubbleBackground} from "./bubble-background";
-import styles from "./bubble-background.module.css";
+const storyStyles = `
+.ac-story-bubble-background-demo {
+  position: relative;
+  height: 24rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+}
+
+.ac-story-bubble-background-demoContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  min-height: 100%;
+  padding: 2rem;
+  color: var(--ac-foreground);
+}
+
+.ac-story-bubble-background-demoPair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.ac-story-bubble-background-customPaletteDemo {
+  opacity: 0.8;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-bubble-background-demo",
+  demoContent: "ac-story-bubble-background-demoContent",
+  demoPair: "ac-story-bubble-background-demoPair",
+  customPaletteDemo: "ac-story-bubble-background-customPaletteDemo",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/BubbleBackground",
   component: BubbleBackground,
   tags: ["autodocs"],
@@ -16,9 +58,9 @@ const meta = {
     },
   },
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <BubbleBackground {...args}>
-        <h2 className={styles.demoContent}>Bubble background</h2>
+        <h2 className={storyClasses.demoContent}>Bubble background</h2>
       </BubbleBackground>
     </div>
   ),
@@ -38,17 +80,17 @@ export const CustomColors: Story = {
       fifth: "147,112,219",
       sixth: "100% 0% 100%",
     },
-    className: styles.customPaletteDemo,
+    className: storyClasses.customPaletteDemo,
   },
 };
 /** Each goo filter is scoped to its own instance. */
 export const MultipleInstances: Story = {
   render: (args) => (
-    <div className={styles.demoPair}>
-      <div className={styles.demo}>
+    <div className={storyClasses.demoPair}>
+      <div className={storyClasses.demo}>
         <BubbleBackground {...args} />
       </div>
-      <div className={styles.demo}>
+      <div className={storyClasses.demo}>
         <BubbleBackground {...args} />
       </div>
     </div>

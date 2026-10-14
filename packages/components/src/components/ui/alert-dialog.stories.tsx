@@ -16,9 +16,32 @@ import {
   type AlertDialogSize,
 } from "./alert-dialog";
 import {Button, type ButtonVariant} from "./button";
-import styles from "./alert-dialog.module.css";
+const storyStyles = `
+.ac-story-alert-dialog-storyStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-alert-dialog-error {
+  color: var(--ac-destructive);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-alert-dialog-storyStack",
+  error: "ac-story-alert-dialog-error",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/AlertDialog",
   component: AlertDialog,
   tags: ["autodocs"],
@@ -141,12 +164,12 @@ function ControlledAsyncDemo(): ReactElement {
         {error && (
           <p
             role='alert'
-            className={styles.error}>
+            className={storyClasses.error}>
             {error}
           </p>
         )}
         {pending && (
-          <div className={styles.storyStack}>
+          <div className={storyClasses.storyStack}>
             <p role='status'>Work is pending.</p>
             <Button
               variant='secondary'
@@ -185,7 +208,7 @@ export const FocusContract: Story = {
     },
   },
   render: (): ReactElement => (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <p>Check the default focus contract and the owner-controlled pending/error path.</p>
       <ConfirmationDemo />
       <ControlledAsyncDemo />

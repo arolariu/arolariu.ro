@@ -200,19 +200,6 @@ a.item {
   }
 }
 
-.storyStack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ac-space-4);
-  width: min(36rem, 90vw);
-}
-
-.storyCheckbox {
-  width: var(--ac-space-4);
-  height: var(--ac-space-4);
-  accent-color: var(--ac-primary);
-}
-
 .header,
 .footer {
   display: flex;

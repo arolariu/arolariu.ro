@@ -1,9 +1,34 @@
 import * as React from "react";
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
-import styles from "./accordion.module.css";
+const storyStyles = `
+.ac-story-accordion-demo {
+  width: min(100%, 28rem);
+}
+
+.ac-story-accordion-demoActions,
+.ac-story-accordion-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-accordion-demo",
+  demoActions: "ac-story-accordion-demoActions",
+  label: "ac-story-accordion-label",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story: Parameters<Decorator>[0]) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Layout/Accordion",
   component: Accordion,
   tags: ["autodocs"],
@@ -16,7 +41,7 @@ type Story = StoryObj<typeof meta>;
 export const Single: Story = {
   render: () => (
     <Accordion
-      className={styles.demo}
+      className={storyClasses.demo}
       defaultValue={["item-1"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Is it accessible?</AccordionTrigger>
@@ -38,7 +63,7 @@ export const Multiple: Story = {
   render: () => (
     <Accordion
       multiple
-      className={styles.demo}
+      className={storyClasses.demo}
       defaultValue={["item-1", "item-2"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Feature 1</AccordionTrigger>
@@ -86,7 +111,7 @@ export const WithIcon: Story = {
       collapsible>
       <AccordionItem value='item-1'>
         <AccordionTrigger>
-          <span className={styles.label}>
+          <span className={storyClasses.label}>
             <span aria-hidden>📦</span>
             <span>Shipping Information</span>
           </span>
@@ -95,7 +120,7 @@ export const WithIcon: Story = {
       </AccordionItem>
       <AccordionItem value='item-2'>
         <AccordionTrigger>
-          <span className={styles.label}>
+          <span className={storyClasses.label}>
             <span aria-hidden>💳</span>
             <span>Payment Methods</span>
           </span>
@@ -104,7 +129,7 @@ export const WithIcon: Story = {
       </AccordionItem>
       <AccordionItem value='item-3'>
         <AccordionTrigger>
-          <span className={styles.label}>
+          <span className={storyClasses.label}>
             <span aria-hidden>🔒</span>
             <span>Security & Privacy</span>
           </span>
@@ -170,8 +195,8 @@ function ControlledEmptyDemo(): React.JSX.Element {
   const [value, setValue] = React.useState<string[]>([]);
 
   return (
-    <div className={styles.demo}>
-      <div className={styles.demoActions}>
+    <div className={storyClasses.demo}>
+      <div className={storyClasses.demoActions}>
         <button
           type='button'
           onClick={() => setValue([])}>

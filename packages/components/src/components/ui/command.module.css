@@ -169,19 +169,6 @@
   }
 }
 
-.story {
-  width: min(28rem, calc(100vw - 2rem));
-  border: 1px solid var(--ac-border);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-}
-
-.storyControls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ac-space-2);
-  margin-block-end: var(--ac-space-3);
-}
-
 .item svg {
   width: 1.25rem;
   height: 1.25rem;

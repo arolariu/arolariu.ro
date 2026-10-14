@@ -16,8 +16,69 @@ import {
   navigationMenuTriggerStyle,
 } from "./navigation-menu";
 import styles from "./navigation-menu.module.css";
+const storyStyles = `
+.ac-story-navigation-menu-storyPanel {
+  box-sizing: border-box;
+  display: grid;
+  width: 22rem;
+  max-width: calc(100vw - var(--ac-space-8));
+  gap: var(--ac-space-3);
+  margin: 0;
+  padding: var(--ac-space-4);
+  list-style: none;
+}
+
+.ac-story-navigation-menu-storyWidePanel {
+  width: 32rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ac-story-navigation-menu-storyLink {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-3);
+}
+
+.ac-story-navigation-menu-storyDescription,
+.ac-story-navigation-menu-storyHint {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+}
+
+.ac-story-navigation-menu-storyStack {
+  display: grid;
+  justify-items: start;
+  gap: var(--ac-space-4);
+}
+
+@media (max-width: 36rem) {
+  .ac-story-navigation-menu-storyWidePanel {
+    grid-template-columns: 1fr;
+  }
+}
+`;
+
+const storyClasses = {
+  storyPanel: "ac-story-navigation-menu-storyPanel",
+  storyWidePanel: "ac-story-navigation-menu-storyWidePanel",
+  storyLink: "ac-story-navigation-menu-storyLink",
+  storyDescription: "ac-story-navigation-menu-storyDescription",
+  storyHint: "ac-story-navigation-menu-storyHint",
+  storyStack: "ac-story-navigation-menu-storyStack",
+} as const;
 
 const meta: Meta<typeof NavigationMenu> = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/NavigationMenu",
   component: NavigationMenu,
   tags: ["autodocs"],
@@ -40,21 +101,21 @@ function DemoItems(): React.ReactElement {
       <NavigationMenuItem value='products'>
         <NavigationMenuTrigger>Products</NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className={styles.storyPanel}>
+          <ul className={storyClasses.storyPanel}>
             <li>
               <NavigationMenuLink
                 href='#analytics'
-                className={styles.storyLink}>
+                className={storyClasses.storyLink}>
                 <strong>Analytics</strong>
-                <span className={styles.storyDescription}>Understand trends with accessible charts.</span>
+                <span className={storyClasses.storyDescription}>Understand trends with accessible charts.</span>
               </NavigationMenuLink>
             </li>
             <li>
               <NavigationMenuLink
                 href='#automation'
-                className={styles.storyLink}>
+                className={storyClasses.storyLink}>
                 <strong>Automation</strong>
-                <span className={styles.storyDescription}>Build repeatable workflows.</span>
+                <span className={storyClasses.storyDescription}>Build repeatable workflows.</span>
               </NavigationMenuLink>
             </li>
           </ul>
@@ -63,14 +124,14 @@ function DemoItems(): React.ReactElement {
       <NavigationMenuItem value='resources'>
         <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className={cn(styles.storyPanel, styles.storyWidePanel)}>
+          <ul className={cn(storyClasses.storyPanel, storyClasses.storyWidePanel)}>
             {["Introduction", "Installation", "Components", "Accessibility", "Theming", "Changelog"].map((label) => (
               <li key={label}>
                 <NavigationMenuLink
                   href={`#${label.toLowerCase()}`}
-                  className={styles.storyLink}>
+                  className={storyClasses.storyLink}>
                   <strong>{label}</strong>
-                  <span className={styles.storyDescription}>Explore Base UI components and CSS Modules.</span>
+                  <span className={storyClasses.storyDescription}>Explore Base UI components and CSS Modules.</span>
                 </NavigationMenuLink>
               </li>
             ))}
@@ -132,8 +193,8 @@ export const MixedNavigation: Story = {
 export const ExplicitPositioner: Story = {
   args: {defaultValue: "resources", align: "end"},
   render: (args) => (
-    <div className={styles.storyStack}>
-      <p className={styles.storyHint}>Root's automatic popup is disabled when composing an explicit Positioner.</p>
+    <div className={storyClasses.storyStack}>
+      <p className={storyClasses.storyHint}>Root's automatic popup is disabled when composing an explicit Positioner.</p>
       <NavigationMenu
         {...args}
         positionerProps={false}>
@@ -162,8 +223,8 @@ export const ExplicitPositioner: Story = {
 /** Backward-compatible decorative Indicator and Viewport; neither pretends to own popup state. */
 export const LegacyViewport: Story = {
   render: (args) => (
-    <div className={styles.storyStack}>
-      <p className={styles.storyHint}>Deprecated Viewport props/ref still target the clipping viewport.</p>
+    <div className={storyClasses.storyStack}>
+      <p className={storyClasses.storyHint}>Deprecated Viewport props/ref still target the clipping viewport.</p>
       <NavigationMenu
         {...args}
         positionerProps={false}>
@@ -181,8 +242,8 @@ export const RightToLeft: Story = {
     <DirectionProvider direction='rtl'>
       <div
         dir='rtl'
-        className={styles.storyStack}>
-        <p className={styles.storyHint}>Use Left/Right arrows across items, Down to open, and Tab to enter links.</p>
+        className={storyClasses.storyStack}>
+        <p className={storyClasses.storyHint}>Use Left/Right arrows across items, Down to open, and Tab to enter links.</p>
         <NavigationMenu {...args}>
           <DemoItems />
         </NavigationMenu>
@@ -213,10 +274,10 @@ function ResizeExample(props: Readonly<NavigationMenu.Props>): React.ReactElemen
         <NavigationMenuItem value='updates'>
           <NavigationMenuTrigger>Updates</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <div className={styles.storyPanel}>
+            <div className={storyClasses.storyPanel}>
               <NavigationMenuLink
                 href='#latest'
-                className={styles.storyLink}>
+                className={storyClasses.storyLink}>
                 Latest release
               </NavigationMenuLink>
               <button
@@ -227,7 +288,7 @@ function ResizeExample(props: Readonly<NavigationMenu.Props>): React.ReactElemen
                 {expanded ? "Show fewer details" : "Show release details"}
               </button>
               {expanded && (
-                <p className={styles.storyDescription}>
+                <p className={storyClasses.storyDescription}>
                   More content changes the measured popup size without local geometry tokens or wrapper-owned observers.
                 </p>
               )}

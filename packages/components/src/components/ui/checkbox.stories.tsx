@@ -1,9 +1,34 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Checkbox} from "./checkbox";
-import styles from "./checkbox.module.css";
+const storyStyles = `
+.ac-story-checkbox-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-checkbox-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-checkbox-storyRow",
+  storyStack: "ac-story-checkbox-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Forms/Checkbox",
   component: Checkbox,
   tags: ["autodocs"],
@@ -26,7 +51,7 @@ export const CheckedDisabled: Story = {args: {defaultChecked: true, disabled: tr
 
 export const WithLabel: Story = {
   render: () => (
-    <label className={styles.storyRow}>
+    <label className={storyClasses.storyRow}>
       <Checkbox
         name='consent'
         value='accepted'
@@ -42,8 +67,8 @@ function SelectionDemo(): React.JSX.Element {
   const someSelected = selected.length > 0 && !allSelected;
 
   return (
-    <div className={styles.storyStack}>
-      <label className={styles.storyRow}>
+    <div className={storyClasses.storyStack}>
+      <label className={storyClasses.storyRow}>
         <Checkbox
           checked={allSelected}
           indeterminate={someSelected}
@@ -54,7 +79,7 @@ function SelectionDemo(): React.JSX.Element {
       {["Alpha", "Beta"].map((value) => (
         <label
           key={value}
-          className={styles.storyRow}>
+          className={storyClasses.storyRow}>
           <Checkbox
             checked={selected.includes(value)}
             onCheckedChange={(checked) =>

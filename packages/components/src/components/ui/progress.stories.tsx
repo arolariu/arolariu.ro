@@ -1,16 +1,50 @@
 import {useEffect, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Progress, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue} from "./progress";
-import styles from "./progress.module.css";
+const storyStyles = `
+.ac-story-progress-storyDemo {
+  width: min(100%, 25rem);
+}
+
+.ac-story-progress-storyTrack {
+  height: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.ac-story-progress-storyIndicator {
+  border-radius: inherit;
+  background-color: var(--ac-accent-foreground);
+}
+
+.ac-story-progress-storyStatus {
+  color: var(--ac-muted-foreground);
+  font-size: 0.75rem;
+}
+`;
+
+const storyClasses = {
+  storyDemo: "ac-story-progress-storyDemo",
+  storyTrack: "ac-story-progress-storyTrack",
+  storyIndicator: "ac-story-progress-storyIndicator",
+  storyStatus: "ac-story-progress-storyStatus",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/Progress",
   component: Progress,
   subcomponents: {ProgressTrack, ProgressIndicator, ProgressLabel, ProgressValue},
   tags: ["autodocs"],
   args: {
     "aria-label": "Task progress",
-    className: styles.storyDemo,
+    className: storyClasses.storyDemo,
     locale: "en-US",
   },
   argTypes: {
@@ -110,7 +144,7 @@ export const CustomTrack: Story = {
       aria-label={undefined}>
       <ProgressLabel>Custom track</ProgressLabel>
       <ProgressValue />
-      <ProgressTrack className={styles.storyTrack}>
+      <ProgressTrack className={storyClasses.storyTrack}>
         <ProgressIndicator />
       </ProgressTrack>
     </Progress>
@@ -131,11 +165,11 @@ export const CustomIndicator: Story = {
       <ProgressLabel>Custom indicator</ProgressLabel>
       <ProgressValue />
       <ProgressTrack render={<div aria-describedby='custom-track-description' />}>
-        <ProgressIndicator className={styles.storyIndicator} />
+        <ProgressIndicator className={storyClasses.storyIndicator} />
       </ProgressTrack>
       <span
         id='custom-track-description'
-        className={styles.storyStatus}>
+        className={storyClasses.storyStatus}>
         The track and fill can be customized separately.
       </span>
     </Progress>
@@ -183,7 +217,7 @@ export const RenderState: Story = {
           {...props}
           data-render-status={state.status}>
           {props.children}
-          <span className={styles.storyStatus}>Status: {state.status}</span>
+          <span className={storyClasses.storyStatus}>Status: {state.status}</span>
         </div>
       )}>
       <ProgressLabel>Rendered status</ProgressLabel>
@@ -214,7 +248,7 @@ function AnimatedProgressComponent(): React.JSX.Element {
     <Progress
       value={progress}
       locale='en-US'
-      className={styles.storyDemo}>
+      className={storyClasses.storyDemo}>
       <ProgressLabel>Transfer progress</ProgressLabel>
       <ProgressValue />
     </Progress>

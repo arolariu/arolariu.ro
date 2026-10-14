@@ -81,13 +81,3 @@
     outline-offset: -1px;
   }
 }
-
-.storyStriped :where(tbody > tr:nth-child(odd)) {
-  background-color: var(--ac-muted);
-}
-
-.storyCompact th,
-.storyCompact td {
-  height: auto;
-  padding: var(--ac-space-1) var(--ac-space-2);
-}

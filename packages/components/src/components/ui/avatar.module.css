@@ -152,24 +152,6 @@
   height: 50%;
 }
 
-.storyRow {
-  display: flex;
-  align-items: center;
-  gap: var(--ac-space-6);
-}
-
-.storyColumn {
-  display: grid;
-  gap: var(--ac-space-4);
-}
-
-.storyPanel {
-  padding: var(--ac-space-4);
-  border-radius: var(--ac-radius);
-  background-color: var(--ac-background);
-  color: var(--ac-foreground);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .image {
     transition: none;

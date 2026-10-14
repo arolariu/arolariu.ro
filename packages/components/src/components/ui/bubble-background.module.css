@@ -107,30 +107,3 @@
     display: none;
   }
 }
-
-.demo {
-  position: relative;
-  height: 24rem;
-  overflow: hidden;
-  border-radius: var(--ac-radius-lg);
-}
-
-.demoContent {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-content: center;
-  min-height: 100%;
-  padding: 2rem;
-  color: var(--ac-foreground);
-}
-
-.demoPair {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
-}
-
-.customPaletteDemo {
-  opacity: 0.8;
-}

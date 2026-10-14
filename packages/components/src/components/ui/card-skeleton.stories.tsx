@@ -1,6 +1,22 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CardSkeleton} from "./card-skeleton";
-import styles from "./card-skeleton.module.css";
+const storyStyles = `
+.ac-story-card-skeleton-storyPreview {
+  width: 48rem;
+  max-width: 100%;
+}
+
+.ac-story-card-skeleton-storyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--ac-space-6);
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-card-skeleton-storyPreview",
+  storyGrid: "ac-story-card-skeleton-storyGrid",
+} as const;
 
 const meta = {
   title: "Components/Feedback/CardSkeleton",
@@ -13,9 +29,16 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className={styles.storyPreview}>
+      <div className={storyClasses.storyPreview}>
         <Story />
       </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
     ),
   ],
   argTypes: {
@@ -73,7 +96,7 @@ export const Static: Story = {
 export const Grid: Story = {
   render: () => (
     <section
-      className={styles.storyGrid}
+      className={storyClasses.storyGrid}
       role='status'
       aria-label='Loading summaries'
       aria-busy>

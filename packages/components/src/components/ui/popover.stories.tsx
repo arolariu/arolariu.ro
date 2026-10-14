@@ -2,9 +2,42 @@ import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Popover, PopoverAnchor, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
-import styles from "./popover.module.css";
+const storyStyles = `
+.ac-story-popover-storyForm {
+  display: grid;
+  gap: var(--ac-space-3);
+}
+
+.ac-story-popover-storyField {
+  display: grid;
+  gap: var(--ac-space-1);
+  font-size: var(--ac-text-sm);
+}
+
+.ac-story-popover-storyInput {
+  padding: var(--ac-space-1) var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+`;
+
+const storyClasses = {
+  storyForm: "ac-story-popover-storyForm",
+  storyField: "ac-story-popover-storyField",
+  storyInput: "ac-story-popover-storyInput",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Overlays/Popover",
   component: Popover,
   tags: ["autodocs"],
@@ -34,23 +67,23 @@ export const WithForm: Story = {
   render: (): React.JSX.Element => (
     <Popover>
       <PopoverTrigger render={<Button />}>Settings</PopoverTrigger>
-      <PopoverContent className={styles.storyForm}>
+      <PopoverContent className={storyClasses.storyForm}>
         <PopoverHeader>
           <PopoverTitle>Dimensions</PopoverTitle>
           <PopoverDescription>Adjust width and height.</PopoverDescription>
         </PopoverHeader>
-        <label className={styles.storyField}>
+        <label className={storyClasses.storyField}>
           Width
           <input
-            className={styles.storyInput}
+            className={storyClasses.storyInput}
             type='number'
             defaultValue={300}
           />
         </label>
-        <label className={styles.storyField}>
+        <label className={storyClasses.storyField}>
           Height
           <input
-            className={styles.storyInput}
+            className={storyClasses.storyInput}
             type='number'
             defaultValue={200}
           />
@@ -84,7 +117,7 @@ export const Nested: Story = {
   render: (): React.JSX.Element => (
     <Popover>
       <PopoverTrigger render={<Button variant='outline' />}>Open Outer</PopoverTrigger>
-      <PopoverContent className={styles.storyForm}>
+      <PopoverContent className={storyClasses.storyForm}>
         <PopoverHeader>
           <PopoverTitle>Outer Popover</PopoverTitle>
           <PopoverDescription>This root coordinates its own focus and lifecycle.</PopoverDescription>
@@ -140,7 +173,7 @@ export const ExplicitAnchor: Story = {
 function FinalFocusExample(): React.JSX.Element {
   const finalFocus = React.useRef<HTMLButtonElement>(null);
   return (
-    <div className={styles.storyForm}>
+    <div className={storyClasses.storyForm}>
       <Button
         ref={finalFocus}
         variant='secondary'>

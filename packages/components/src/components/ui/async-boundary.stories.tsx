@@ -5,7 +5,7 @@ import {AsyncBoundary, type AsyncBoundaryProps} from "./async-boundary";
 const meta = {
   title: "Components/Utilities/AsyncBoundary",
   component: AsyncBoundary,
-  args: {children: null},
+  args: {children: null as React.ReactNode},
   tags: ["autodocs"],
   parameters: {
     docs: {

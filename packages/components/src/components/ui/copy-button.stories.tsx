@@ -1,9 +1,37 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CopyButton} from "./copy-button";
-import styles from "./copy-button.module.css";
+const storyStyles = `
+.ac-story-copy-button-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-copy-button-storyPanel {
+  display: grid;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-copy-button-storyRow",
+  storyPanel: "ac-story-copy-button-storyPanel",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Actions/CopyButton",
   component: CopyButton,
   tags: ["autodocs"],
@@ -25,7 +53,7 @@ export const Disabled: Story = {args: {disabled: true}};
 function CopyButtonFeedback(): React.JSX.Element {
   const [message, setMessage] = React.useState("Activate the button to copy the command.");
   return (
-    <div className={styles.storyPanel}>
+    <div className={storyClasses.storyPanel}>
       <code>npm install @arolariu/components</code>
       <CopyButton
         value='npm install @arolariu/components'
@@ -41,7 +69,7 @@ function CopyButtonFeedback(): React.JSX.Element {
 export const WithText: Story = {render: () => <CopyButtonFeedback />};
 export const LongValue: Story = {
   render: () => (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <code>https://github.com/arolariu/arolariu.ro</code>
       <CopyButton
         value='https://github.com/arolariu/arolariu.ro'
@@ -52,7 +80,7 @@ export const LongValue: Story = {
 };
 export const InCodeBlock: Story = {
   render: () => (
-    <div className={styles.storyPanel}>
+    <div className={storyClasses.storyPanel}>
       <pre>
         <code>npm install @arolariu/components</code>
       </pre>

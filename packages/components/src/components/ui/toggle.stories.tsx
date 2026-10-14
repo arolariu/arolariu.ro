@@ -2,9 +2,33 @@ import {Bold, Italic} from "lucide-react";
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Toggle} from "./toggle";
-import styles from "./toggle.module.css";
+const storyStyles = `
+.ac-story-toggle-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-toggle-storyStack {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-toggle-storyRow",
+  storyStack: "ac-story-toggle-storyStack",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Actions/Toggle",
   component: Toggle,
   tags: ["autodocs"],
@@ -31,7 +55,7 @@ export const Outline: Story = {args: {variant: "outline"}};
 export const Disabled: Story = {args: {disabled: true}};
 export const Sizes: Story = {
   render: () => (
-    <div className={styles.storyRow}>
+    <div className={storyClasses.storyRow}>
       <Toggle size='sm'>Small</Toggle>
       <Toggle>Default</Toggle>
       <Toggle size='lg'>Large</Toggle>
@@ -42,7 +66,7 @@ export const Sizes: Story = {
 function ControlledDemo(): React.JSX.Element {
   const [pressed, setPressed] = React.useState(false);
   return (
-    <div className={styles.storyStack}>
+    <div className={storyClasses.storyStack}>
       <Toggle
         pressed={pressed}
         onPressedChange={setPressed}

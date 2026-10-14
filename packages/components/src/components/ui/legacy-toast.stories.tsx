@@ -1,9 +1,35 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {LegacyToaster, legacyToast} from "./legacy-toast";
-import styles from "./legacy-toast.module.css";
+const storyStyles = `
+.ac-story-legacy-toast-storyControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-3);
+}
+
+.ac-story-legacy-toast-customBody {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  min-width: 0;
+}
+`;
+
+const storyClasses = {
+  storyControls: "ac-story-legacy-toast-storyControls",
+  customBody: "ac-story-legacy-toast-customBody",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/LegacyToast",
   component: LegacyToaster,
   tags: ["autodocs"],
@@ -26,7 +52,7 @@ export const Default: Story = {
 export const Statuses: Story = {
   render: () => (
     <>
-      <div className={styles.storyControls}>
+      <div className={storyClasses.storyControls}>
         <Button onClick={() => legacyToast.success("Saved")}>Success</Button>
         <Button onClick={() => legacyToast.error("Failed")}>Error</Button>
         <Button onClick={() => legacyToast.info("Information")}>Info</Button>
@@ -78,7 +104,7 @@ export const Custom: Story = {
       <Button
         onClick={() =>
           legacyToast.custom((id) => (
-            <div className={styles.customBody}>
+            <div className={storyClasses.customBody}>
               <strong>Custom content</strong>
               <Button
                 variant='outline'
@@ -100,7 +126,7 @@ export const Custom: Story = {
 export const PromiseLifecycle: Story = {
   render: () => (
     <>
-      <div className={styles.storyControls}>
+      <div className={storyClasses.storyControls}>
         <Button
           onClick={() => {
             void legacyToast.promise(
@@ -123,7 +149,7 @@ export const PromiseLifecycle: Story = {
                 loading: "Working",
                 error: (error) => (error instanceof Error ? error.message : String(error)),
               })
-              .catch(() => undefined);
+              .catch((): void => undefined);
           }}>
           Show handled rejection
         </Button>

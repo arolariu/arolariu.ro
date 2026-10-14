@@ -1,9 +1,72 @@
 import {useEffect, useRef, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {LoadingOverlay, type LoadingOverlayProps} from "./loading-overlay";
-import styles from "./loading-overlay.module.css";
+const storyStyles = `
+.ac-story-loading-overlay-owner {
+  position: relative;
+  min-block-size: 16rem;
+  max-inline-size: 42rem;
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-loading-overlay-demo,
+.ac-story-loading-overlay-progress {
+  display: grid;
+  gap: var(--ac-space-4);
+  color: var(--ac-foreground);
+}
+
+.ac-story-loading-overlay-progress {
+  text-align: center;
+}
+
+.ac-story-loading-overlay-button {
+  padding: var(--ac-space-2) var(--ac-space-4);
+  margin-inline-end: var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ac-story-loading-overlay-button:hover:not(:disabled) {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.ac-story-loading-overlay-button:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.ac-story-loading-overlay-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+`;
+
+const storyClasses = {
+  owner: "ac-story-loading-overlay-owner",
+  demo: "ac-story-loading-overlay-demo",
+  progress: "ac-story-loading-overlay-progress",
+  button: "ac-story-loading-overlay-button",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/LoadingOverlay",
   component: LoadingOverlay,
   tags: ["autodocs"],
@@ -28,13 +91,13 @@ function VisualOwner(props: Readonly<LoadingOverlayProps>): React.JSX.Element {
   const [activations, setActivations] = useState(0);
   return (
     <section
-      className={styles.owner}
+      className={storyClasses.owner}
       aria-label='Visual-only owner'>
       <h2>Visual feedback without blocking</h2>
       <p>Pointer and keyboard activation remain available underneath this overlay.</p>
       <button
         type='button'
-        className={styles.button}
+        className={storyClasses.button}
         onClick={() => setActivations((count) => count + 1)}>
         Background action
       </button>
@@ -58,7 +121,7 @@ export const WithProgress: Story = {
   args: {visible: true, blur: true, "aria-label": "Upload progress"},
   render: (args) => (
     <VisualOwner {...args}>
-      <div className={styles.progress}>
+      <div className={storyClasses.progress}>
         <strong>67%</strong>
         <span>Uploading three of ten items</span>
       </div>
@@ -78,16 +141,16 @@ function BlockingOwner(): React.JSX.Element {
     previousBusy.current = busy;
   }, [busy]);
   return (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <button
         type='button'
         ref={finishRef}
         disabled={!busy}
-        className={styles.button}
+        className={storyClasses.button}
         onClick={() => setBusy(false)}>
         Finish loading and restore focus
       </button>
-      <div className={styles.owner}>
+      <div className={storyClasses.owner}>
         <section
           aria-label='Explicit blocking owner'
           aria-busy={busy}>
@@ -98,14 +161,14 @@ function BlockingOwner(): React.JSX.Element {
               type='button'
               ref={startRef}
               disabled={busy}
-              className={styles.button}
+              className={storyClasses.button}
               onClick={() => setBusy(true)}>
               Start loading
             </button>
             <button
               type='button'
               disabled={busy}
-              className={styles.button}
+              className={storyClasses.button}
               onClick={() => setActivations((count) => count + 1)}>
               Owned action
             </button>

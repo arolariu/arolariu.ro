@@ -5,11 +5,13 @@ import {AtRule, parse, root, Rule, type Node} from "postcss";
 import {Tooltip as BaseTooltip} from "@base-ui/react/tooltip";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 import styles from "./tooltip.module.css";
 import {Sidebar, SidebarMenuButton, SidebarProvider} from "./sidebar";
+import * as stories from "./tooltip.stories";
 
 const authoredStyles = parse(readFileSync(join(import.meta.dirname, "tooltip.module.css"), "utf8"));
 const stylesheetFixtures: HTMLStyleElement[] = [];
@@ -511,30 +513,20 @@ describe("Tooltip", () => {
 
   it("applies the adjacent-tooltip group layout outside both portalled popups", async () => {
     installAuthoredStyles(null);
-    render(
-      <TooltipProvider delayDuration={1000}>
-        <div
-          className={styles.storyGroup}
-          data-testid='tooltip-story-group'>
-          <Tooltip>
-            <TooltipTrigger>First</TooltipTrigger>
-            <TooltipContent>First help</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>Adjacent</TooltipTrigger>
-            <TooltipContent>Adjacent help</TooltipContent>
-          </Tooltip>
-        </div>
-      </TooltipProvider>,
-    );
-
-    const group = screen.getByTestId("tooltip-story-group");
+    const {WithDelay} = composeStories(stories);
+    const {container, unmount} = render(<WithDelay />);
+    const group = screen.getByRole("button", {name: "First tooltip (1s)"}).parentElement;
+    if (!group) throw new Error("Expected the authored story group");
+    expect(group).toHaveClass("ac-story-tooltip-storyGroup");
     group.style.setProperty("--ac-space-3", "12px");
     expect(group.closest(`.${styles.popup}`)).toBeNull();
     expect(getComputedStyle(group).display).toBe("flex");
     expect(getComputedStyle(group).flexWrap).toBe("wrap");
     expect(getComputedStyle(group).gap).toBe("12px");
     expect(screen.getAllByRole("button")).toHaveLength(2);
+    const sheet = container.querySelector("style");
+    unmount();
+    expect(sheet?.isConnected).toBe(false);
   });
 
   it("preserves live Trigger render callbacks, refs and merged classes", async () => {

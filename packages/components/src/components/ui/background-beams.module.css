@@ -24,36 +24,3 @@
     display: none;
   }
 }
-
-.demo {
-  position: relative;
-  height: 24rem;
-  overflow: hidden;
-  border-radius: var(--ac-radius-lg);
-  background: var(--ac-background);
-  color: var(--ac-foreground);
-}
-
-.demoContent {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-content: center;
-  gap: 1rem;
-  min-height: 100%;
-  padding: 2rem;
-}
-
-.demoPair {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
-}
-
-.demoFullScreen {
-  position: relative;
-  height: 100svh;
-  overflow: hidden;
-  background: var(--ac-background);
-  color: var(--ac-foreground);
-}

@@ -1,8 +1,48 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {HoleBackground} from "./hole-background";
-import styles from "./hole-background.module.css";
+const storyStyles = `
+.ac-story-hole-background-demo,
+.ac-story-hole-background-resizableDemo {
+  position: relative;
+  height: 30rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-hole-background-resizableDemo {
+  width: 70%;
+  min-width: 12rem;
+  min-height: 10rem;
+  resize: both;
+}
+
+.ac-story-hole-background-demoContent {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  min-height: 100%;
+  place-content: center;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-hole-background-demo",
+  resizableDemo: "ac-story-hole-background-resizableDemo",
+  demoContent: "ac-story-hole-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/HoleBackground",
   component: HoleBackground,
   tags: ["autodocs"],
@@ -17,7 +57,7 @@ const meta = {
     },
   },
   render: (args) => (
-    <div className={styles.demo}>
+    <div className={storyClasses.demo}>
       <HoleBackground {...args} />
     </div>
   ),
@@ -30,9 +70,9 @@ export const Dense: Story = {args: {numberOfLines: 80, numberOfDiscs: 80, partic
 /** Resize the element; only decoration is hidden in forced colors. */
 export const ElementResize: Story = {
   render: (args) => (
-    <div className={styles.resizableDemo}>
+    <div className={storyClasses.resizableDemo}>
       <HoleBackground {...args}>
-        <h2 className={styles.demoContent}>Foreground content</h2>
+        <h2 className={storyClasses.demoContent}>Foreground content</h2>
       </HoleBackground>
     </div>
   ),
