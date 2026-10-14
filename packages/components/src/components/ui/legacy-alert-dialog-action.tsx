@@ -23,22 +23,21 @@ export type LegacyAlertDialogActionProps = Readonly<
  * @deprecated Prefer AlertDialogAction and close explicitly after successful work.
  * This adapter does not await asynchronous handlers and is unsuitable for pending/rejected work.
  */
-function LegacyAlertDialogAction({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}: Readonly<LegacyAlertDialogAction.Props>): React.ReactElement {
-  return (
+const LegacyAlertDialogAction = React.forwardRef<HTMLButtonElement, LegacyAlertDialogAction.Props>(
+  (
+    {className, variant = "default", size = "default", ...props}: Readonly<React.PropsWithoutRef<LegacyAlertDialogAction.Props>>,
+    ref,
+  ): React.ReactElement => (
     <BaseAlertDialog.Close
       data-slot='legacy-alert-dialog-action'
       data-variant={variant}
       data-size={size}
       {...props}
+      ref={ref}
       className={cn(buttonVariants({variant, size}), styles.action, className)}
     />
-  );
-}
+  ),
+);
 // eslint-disable-next-line sonarjs/deprecation -- configuring the intentional compatibility adapter itself.
 LegacyAlertDialogAction.displayName = "LegacyAlertDialogAction";
 

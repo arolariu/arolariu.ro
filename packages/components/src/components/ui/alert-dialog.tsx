@@ -233,22 +233,21 @@ const AlertDialogAction = React.forwardRef<HTMLElement, AlertDialogAction.Props>
 AlertDialogAction.displayName = "AlertDialogAction";
 
 /** An explicit Close-backed cancel control, using the shared Button's size/variant vocabulary. */
-function AlertDialogCancel({
-  className,
-  variant = "outline",
-  size = "default",
-  ...props
-}: Readonly<AlertDialogCancel.Props>): React.ReactElement {
-  return (
+const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>(
+  (
+    {className, variant = "outline", size = "default", ...props}: Readonly<React.PropsWithoutRef<AlertDialogCancel.Props>>,
+    ref,
+  ): React.ReactElement => (
     <BaseAlertDialog.Close
       data-slot='alert-dialog-cancel'
       data-variant={variant}
       data-size={size}
       {...props}
+      ref={ref}
       className={cn(buttonVariants({variant, size}), className)}
     />
-  );
-}
+  ),
+);
 AlertDialogCancel.displayName = "AlertDialogCancel";
 
 // eslint-disable-next-line no-redeclare -- public component namespace typing API

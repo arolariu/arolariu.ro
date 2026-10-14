@@ -1,14 +1,16 @@
+import {AlertDialog as BaseAlertDialog} from "@base-ui/react/alert-dialog";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
-import {afterEach, beforeEach, describe, expect, it, vi as vitest} from "vitest";
+import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi as vitest} from "vitest";
 import * as AlertDialogModule from "./alert-dialog";
 
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
+  type AlertDialogCancelProps,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -94,6 +96,56 @@ function AsyncConfirmation({work}: Readonly<{work: Promise<void>}>): React.React
 }
 
 describe("AlertDialog", () => {
+  it("retains the exact Cancel Props/State namespace and SDK composition/ref types", () => {
+    expectTypeOf<AlertDialogCancel.Props>().toEqualTypeOf<AlertDialogCancelProps>();
+    expectTypeOf<Readonly<React.ComponentPropsWithRef<typeof AlertDialogCancel>>>().toEqualTypeOf<AlertDialogCancelProps>();
+    expectTypeOf<AlertDialogCancel.State>().toEqualTypeOf<BaseAlertDialog.Close.State>();
+    expectTypeOf<Pick<AlertDialogCancel.Props, "ref" | "render" | "nativeButton" | "onClick">>().toEqualTypeOf<
+      Readonly<Pick<React.ComponentPropsWithRef<typeof BaseAlertDialog.Close>, "ref" | "render" | "nativeButton" | "onClick">>
+    >();
+  });
+
+  it("preserves Cancel callback-ref cleanup, native attributes and primitive render state", () => {
+    const events: Array<HTMLButtonElement | null | string> = [];
+    const ref: React.RefCallback<HTMLButtonElement> = (node) => {
+      events.push(node);
+      return () => {
+        events.push("cleanup");
+      };
+    };
+    const {unmount} = render(
+      <AlertDialog defaultOpen>
+        <AlertDialogContent>
+          <AlertDialogTitle>Ref contract</AlertDialogTitle>
+          <AlertDialogCancel
+            ref={ref}
+            disabled
+            name='cancel'
+            form='confirmation'
+            size='sm'
+            variant='secondary'
+            render={(props, state) => (
+              <button
+                {...props}
+                data-disabled={String(state.disabled)}
+              />
+            )}>
+            Cancel confirmation
+          </AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>,
+    );
+    const button = screen.getByRole("button", {name: "Cancel confirmation"});
+    expect(events).toEqual([button]);
+    expect(button).toHaveAttribute("name", "cancel");
+    expect(button).toHaveAttribute("form", "confirmation");
+    expect(button).toHaveAttribute("data-disabled", "true");
+    expect(button).toHaveAttribute("data-size", "sm");
+    expect(button).toHaveAttribute("data-variant", "secondary");
+    unmount();
+    expect(events).toEqual([button, "cleanup"]);
+  });
+
   it("customizes the CustomTrigger story's trigger instead of its confirmation action", async () => {
     const user = userEvent.setup();
     render(<CustomTriggerStory />);

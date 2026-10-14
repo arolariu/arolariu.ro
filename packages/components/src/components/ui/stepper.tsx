@@ -21,6 +21,13 @@ interface StepperProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
    */
   readonly activeStep: number;
   /**
+   * Caller-owned accessible text appended to completed steps.
+   * Pass localized text, or an empty string to suppress the announcement.
+   *
+   * @default "Completed"
+   */
+  readonly completedLabel?: string;
+  /**
    * Visual orientation of the stepper layout.
    *
    * @default "horizontal"
@@ -49,7 +56,7 @@ interface StepperProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
  * @see {@link https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/progressbar/progressbar.html | WAI progress indicator guidance}
  */
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({steps, activeStep, orientation = "horizontal", className, ...props}: Readonly<StepperProps>, ref) => (
+  ({steps, activeStep, completedLabel = "Completed", orientation = "horizontal", className, ...props}: Readonly<StepperProps>, ref) => (
     <div
       ref={ref}
       role='list'
@@ -85,7 +92,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               />
             ) : null}
             <span className={styles.label}>{label}</span>
-            {state === "completed" ? <VisuallyHidden> Completed</VisuallyHidden> : null}
+            {state === "completed" && completedLabel ? <VisuallyHidden> {completedLabel}</VisuallyHidden> : null}
           </div>
         );
       })}

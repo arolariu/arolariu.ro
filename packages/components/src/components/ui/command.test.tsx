@@ -17,6 +17,143 @@ import {
 } from "./command";
 
 describe("Command", () => {
+  it("keeps an Item callback ref attached across registry and search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: Array<HTMLDivElement | null> = [];
+    const selections: string[] = [];
+    const ref: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node);
+    };
+    const {unmount} = render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup heading='Fruit'>
+            <CommandItem
+              ref={ref}
+              onSelect={(value) => selections.push(value)}>
+              Apple
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const item = screen.getByRole("option", {name: "Apple"});
+    expect(events).toEqual([item]);
+    await user.type(screen.getByRole("combobox"), "missing");
+    expect(item).not.toBeVisible();
+    await user.clear(screen.getByRole("combobox"));
+    expect(screen.getByRole("option", {name: "Apple"})).toBe(item);
+    expect(item).toHaveAttribute("aria-selected", "true");
+    expect(events).toEqual([item]);
+    await user.keyboard("{Enter}");
+    expect(selections).toEqual(["Apple"]);
+    unmount();
+    expect(events).toEqual([item, null]);
+  });
+
+  it("runs Item callback cleanup exactly once on replacement and unmount, not search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: string[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "first:attach" : "first:null");
+      return () => {
+        events.push("first:cleanup");
+      };
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "second:attach" : "second:null");
+      return () => {
+        events.push("second:cleanup");
+      };
+    };
+    const fixture = (ref: React.Ref<HTMLDivElement>): React.JSX.Element => (
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem
+            ref={ref}
+            value='apple'>
+            Apple
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender, unmount} = render(fixture(first));
+    await user.type(screen.getByRole("combobox"), "missing");
+    await user.clear(screen.getByRole("combobox"));
+    rerender(fixture(second));
+    expect(events).toContain("first:cleanup");
+    expect(events).not.toContain("first:null");
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach"]);
+    await user.type(screen.getByRole("combobox"), "apple");
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach"]);
+    unmount();
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach", "second:cleanup"]);
+  });
+
+  it("keeps a Group callback ref attached across registry and search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: Array<HTMLDivElement | null> = [];
+    const ref: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node);
+    };
+    const {unmount} = render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup
+            ref={ref}
+            heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const group = screen.getByRole("group", {name: "Fruit"});
+    expect(events).toEqual([group]);
+    await user.type(screen.getByRole("combobox"), "missing");
+    expect(group).not.toBeVisible();
+    await user.clear(screen.getByRole("combobox"));
+    expect(group).toBeVisible();
+    expect(events).toEqual([group]);
+    unmount();
+    expect(events).toEqual([group, null]);
+  });
+
+  it("runs Group callback cleanup exactly once on replacement and unmount", () => {
+    const events: string[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "first:attach" : "first:null");
+      return () => {
+        events.push("first:cleanup");
+      };
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "second:attach" : "second:null");
+      return () => {
+        events.push("second:cleanup");
+      };
+    };
+    const fixture = (ref: React.Ref<HTMLDivElement>): React.JSX.Element => (
+      <Command>
+        <CommandList>
+          <CommandGroup
+            ref={ref}
+            heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender, unmount} = render(fixture(first));
+    rerender(fixture(second));
+    expect(events).toContain("first:cleanup");
+    expect(events).not.toContain("first:null");
+    unmount();
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach", "second:cleanup"]);
+  });
+
   it("keeps option-origin ArrowDown/Home/End focus and Enter/Space activation coherent", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

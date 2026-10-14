@@ -1,9 +1,54 @@
 import {render, screen} from "@testing-library/react";
+import * as React from "react";
 import {describe, expect, it} from "vitest";
 
 import {Stepper} from "./stepper";
 
 describe("Stepper", () => {
+  it("renders caller-localized completion text while retaining native attributes and refs", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
+      <Stepper
+        ref={ref}
+        steps={["Compte", "Profil", "Vérification"]}
+        activeStep={1}
+        completedLabel='Terminé'
+        aria-label='Progression de la configuration'
+        id='setup-progress'
+        title='Configuration'
+        data-workflow='setup'
+      />,
+    );
+    const list = screen.getByRole("list", {name: "Progression de la configuration"});
+    const items = screen.getAllByRole("listitem");
+    expect(ref.current).toBe(list);
+    expect(list).toHaveAttribute("id", "setup-progress");
+    expect(list).toHaveAttribute("title", "Configuration");
+    expect(list).toHaveAttribute("data-workflow", "setup");
+    expect(list).not.toHaveAttribute("completedLabel");
+    expect(items[0]).toHaveTextContent("Compte Terminé");
+    expect(items[0]).not.toHaveTextContent("Completed");
+    expect(items[1]).not.toHaveTextContent("Terminé");
+    expect(items[2]).not.toHaveTextContent("Terminé");
+    expect(items[1]).toHaveAttribute("aria-current", "step");
+    unmount();
+    expect(ref.current).toBeNull();
+  });
+
+  it("lets callers suppress completion text with an empty label", () => {
+    render(
+      <Stepper
+        steps={["Cont", "Profil"]}
+        activeStep={1}
+        completedLabel=''
+      />,
+    );
+    const completed = screen.getAllByRole("listitem")[0];
+    expect(completed).toHaveAttribute("data-state", "completed");
+    expect(completed).toHaveTextContent("✓Cont");
+    expect(completed).not.toHaveTextContent("Completed");
+  });
+
   it("exposes the active step as aria-current and readable completion text", () => {
     render(
       <Stepper

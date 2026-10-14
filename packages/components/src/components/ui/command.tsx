@@ -4,6 +4,7 @@ import {Separator as BaseSeparator} from "@base-ui/react/separator";
 import {Search} from "lucide-react";
 import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, type DialogProps} from "./dialog";
 import {InputGroup, InputGroupAddon} from "./input-group";
@@ -154,11 +155,6 @@ function useCommandContext(componentName: string): CommandContextValue {
   const context = React.useContext(CommandContext);
   if (!context) throw new Error(`${componentName} must be used within Command.`);
   return context;
-}
-
-function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
-  if (typeof ref === "function") ref(value);
-  else if (ref) ref.current = value;
 }
 
 function defaultCommandFilter(value: string, search: string, keywords: readonly string[] = []): number {
@@ -718,6 +714,7 @@ const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
     const externallyHidden = Boolean(hidden || parent?.hidden);
     const {hasVisibleItemsInGroup, isFiltering, registerGroup, unregisterGroup} = useCommandContext("CommandGroup");
     const groupRef = React.useRef<HTMLDivElement | null>(null);
+    const mergedRef = useMergedRefs(groupRef, ref);
     const groupContext = React.useMemo(
       () => ({id: groupId, forceMount: inheritedForceMount, hidden: externallyHidden}),
       [externallyHidden, groupId, inheritedForceMount],
@@ -732,10 +729,7 @@ const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
       <CommandGroupContext.Provider value={groupContext}>
         <div
           {...props}
-          ref={(node) => {
-            groupRef.current = node;
-            assignRef(ref, node);
-          }}
+          ref={mergedRef}
           id={groupId}
           role='group'
           aria-labelledby={props["aria-labelledby"] ?? (heading !== undefined && heading !== null ? headingId : undefined)}
@@ -807,6 +801,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
     const generatedId = React.useId();
     const itemId = id ?? generatedId;
     const itemRef = React.useRef<HTMLDivElement | null>(null);
+    const mergedRef = useMergedRefs(itemRef, ref);
     const inheritedForceMount = forceMount || (group?.forceMount ?? false);
     const externallyHidden = Boolean(hidden || group?.hidden);
     React.useLayoutEffect(() => {
@@ -832,10 +827,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
     return (
       <div
         {...props}
-        ref={(node) => {
-          itemRef.current = node;
-          assignRef(ref, node);
-        }}
+        ref={mergedRef}
         data-slot='command-item'
         aria-disabled={disabled || undefined}
         aria-selected={isSelected}
