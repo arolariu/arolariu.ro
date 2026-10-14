@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import {execFileSync} from "node:child_process";
 import path from "node:path";
+import {parse} from "postcss";
+import selectorParser from "postcss-selector-parser";
 import * as Recharts from "recharts";
 import * as ReactHookForm from "react-hook-form";
 import ts from "typescript";
@@ -480,6 +482,27 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
       }
     }
   }, 30000);
+
+  it("keeps mounted Storybook styles out of shipped source and executable assets", () => {
+    const directory = getPackedRoot();
+    const assets = ts.sys.readDirectory(directory, [".css", ".js", ".tsx"], ["node_modules"]);
+    const demoSelectors: string[] = [];
+    for (const file of assets) {
+      const content = fs.readFileSync(file, "utf8");
+      expect(content, path.relative(directory, file)).not.toContain("ac-story-");
+      if (!file.endsWith(".css")) continue;
+      parse(content, {from: file}).walkRules((rule) => {
+        selectorParser((selectors) => {
+          selectors.walkClasses((className) => {
+            if (/^_?(?:story|demo|example)(?:[A-Z_-]|$)/u.test(className.value)) {
+              demoSelectors.push(`${path.relative(directory, file)}: ${className.value}`);
+            }
+          });
+        }).processSync(rule.selector);
+      });
+    }
+    expect(demoSelectors).toEqual([]);
+  });
 
   it("loads every packed ESM entrypoint with real peers and rejects private helper imports", () => {
     const script = `

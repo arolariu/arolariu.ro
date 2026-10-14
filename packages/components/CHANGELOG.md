@@ -11,6 +11,16 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### [3.0.0] - Unreleased (release preparation)
 
+**Review follow-up**
+
+- Restore React 18 DOM ref forwarding for `AlertDialogCancel` and `LegacyAlertDialogAction`, retaining their existing dismissal behavior.
+- Preserve cleanup-returning React 19 `CommandGroup` refs through search, callback replacement and unmount, including legacy React 18 null
+  detachment.
+- Add caller-owned `Stepper.completedLabel`, defaulting to `"Completed"`, so completed-step assistive text can be localized or deliberately
+  omitted.
+- Move Storybook-only layouts and demonstration styles into their owning story files. Production component CSS Modules and npm assets no
+  longer carry demo rules.
+
 **Status:** unreleased artifact preparation. Component and Storybook documentation builds, three actual npm-packed artifact contracts, 18
 isolated React 18.2 packed fixtures and the parent's final post-wave component workspace coverage, scoped review, configured ESLint and
 383-changed-file Prettier checks have passed. This is not publication, PR or physical-browser approval. The website retains its official

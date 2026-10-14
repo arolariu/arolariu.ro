@@ -238,6 +238,20 @@ claimed to reproduce upstream pixels.
 | DropDrawer                       | Open state survives breakpoint changes; submenu path resets and the new primitive owns focus. Mobile actions are native buttons; desktop uses Menu. `closeOnClick` defaults true, including submenu actions. Live registrations are not cached React children. Desktop maps trap-focus to Menu modal mode; mobile follows Drawer backdrop rules. Shared states are engine unions: narrow them rather than assuming Menu highlighting on mobile.                                                                                                                                                                                                     |
 | Local visual/motion extensions   | All nine background/text/canvas extensions and Copy/Counting/Flip/Ripple/Stepper/Timeline/Typewriter/VisuallyHidden remain. HoleBackground ref targets canvas while className styles its div shell. Scratcher adds native keyboard reveal and validates dimensions/percentage. Copy failure has error state and `onCopyError(unknown)`; preserve caller-localized labels. Flip `right` is canonical; deprecated `righ` remains accepted. Extension buttons remain native/non-submitting by default; no new render/asChild engine. Typewriter exposes one immediate readable phrase with decorative motion copies/cursors and static reduced motion. |
 
+### Caller-owned Stepper completion copy
+
+`completedLabel` controls the assistive text appended to completed steps. Its default remains `"Completed"`; pass translated text for the
+consumer's locale, or an empty string to omit the completion suffix. The step labels and native root `aria-label` remain caller-owned.
+
+```tsx
+<Stepper
+  steps={["Compte", "Profil", "Vérification"]}
+  activeStep={1}
+  completedLabel='Terminé'
+  aria-label='Progression'
+/>
+```
+
 ### Exact Skeleton count/error policy
 
 Card `lines`, Form `fields`, List `items` and Table `rows`/`columns` must each be **finite nonnegative integers ≤ 10,000**. No coercion,

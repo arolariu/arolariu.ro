@@ -114,6 +114,10 @@ Shared package tokens live in `src/index.css` under the `--ac-*` namespace.
 - Keep website/domain styles outside the package.
 - Mark CSS as a package side effect so bundlers retain imported component styles.
 
+Storybook-only layouts and demo rules belong in the corresponding excluded `.stories.tsx` module, not the production component CSS Module.
+Stories mount their own namespaced style elements without a layout wrapper or application style objects. Shared component rules remain CSS
+Module-owned, including when a story uses them. Built and packed source, JavaScript and CSS must not contain the story-only style payload.
+
 ## Accessibility
 
 Accessibility is observable behavior:

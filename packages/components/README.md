@@ -86,6 +86,10 @@ warnings.
 
 ### Canonical APIs and explicit compatibility
 
+Storybook-only layout and demo styling is owned and mounted by the corresponding `.stories.tsx` file. Production CSS Modules contain only
+component styling; demo styles are not part of the built or packed library. Story mounting preserves scoped class names without adding
+application style objects or a styling dependency.
+
 - Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
   `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
 - Facade status helpers/custom/history/duration remain explicit: `legacyToast` + `LegacyToaster` from `/legacy-toast` or the root. No Sonner
