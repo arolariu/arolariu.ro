@@ -3,13 +3,13 @@ import {createRef} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
 
+import {CardSkeleton as RootCardSkeleton} from "../../index";
 import {CardSkeleton} from "./card-skeleton";
 import styles from "./card-skeleton.module.css";
 
 describe("CardSkeleton", () => {
-  it("has the same identity at the actual package root", async () => {
-    const root = await import("../../index");
-    expect(root.CardSkeleton).toBe(CardSkeleton);
+  it("has the same identity at the actual package root", () => {
+    expect(RootCardSkeleton).toBe(CardSkeleton);
   });
 
   it("renders the default number of skeleton lines", () => {

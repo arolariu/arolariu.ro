@@ -3,13 +3,13 @@ import {createRef} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
 
+import {TableSkeleton as RootTableSkeleton} from "../../index";
 import {TableSkeleton} from "./table-skeleton";
 import styles from "./table-skeleton.module.css";
 
 describe("TableSkeleton", () => {
-  it("has the same identity at the actual package root", async () => {
-    const root = await import("../../index");
-    expect(root.TableSkeleton).toBe(TableSkeleton);
+  it("has the same identity at the actual package root", () => {
+    expect(RootTableSkeleton).toBe(TableSkeleton);
   });
 
   it("renders the default number of rows and columns", () => {

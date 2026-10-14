@@ -3,13 +3,13 @@ import {createRef} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
 
+import {FormSkeleton as RootFormSkeleton} from "../../index";
 import {FormSkeleton} from "./form-skeleton";
 import styles from "./form-skeleton.module.css";
 
 describe("FormSkeleton", () => {
-  it("has the same identity at the actual package root", async () => {
-    const root = await import("../../index");
-    expect(root.FormSkeleton).toBe(FormSkeleton);
+  it("has the same identity at the actual package root", () => {
+    expect(RootFormSkeleton).toBe(FormSkeleton);
   });
 
   it("renders the default four fields and submit shape", () => {

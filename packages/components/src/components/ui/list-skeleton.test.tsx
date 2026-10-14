@@ -3,13 +3,13 @@ import {createRef} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it} from "vitest";
 
+import {ListSkeleton as RootListSkeleton} from "../../index";
 import {ListSkeleton} from "./list-skeleton";
 import styles from "./list-skeleton.module.css";
 
 describe("ListSkeleton", () => {
-  it("has the same identity at the actual package root", async () => {
-    const root = await import("../../index");
-    expect(root.ListSkeleton).toBe(ListSkeleton);
+  it("has the same identity at the actual package root", () => {
+    expect(RootListSkeleton).toBe(ListSkeleton);
   });
 
   it("renders the default number of items", () => {
