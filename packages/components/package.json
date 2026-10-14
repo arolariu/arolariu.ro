@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "2.4.0",
+  "version": "3.0.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -49,6 +49,7 @@
     "!src/**/*.stories.*",
     "LICENSE.md",
     "README.md",
+    "MIGRATION.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "DEBUGGING.md",
@@ -106,7 +107,7 @@
     "react-resizable-panels": "*"
   },
   "peerDependencies": {
-    "@base-ui/react": "^1",
+    "@base-ui/react": "^1.9",
     "motion": "^13 || ^14",
     "react": "^18.2 || ^19",
     "react-dom": "^18.2 || ^19",
@@ -165,6 +166,10 @@
       "import": "./dist/*.js",
       "default": "./dist/*.js"
     },
+    "./_*": null,
+    "./components/ui/_*": null,
+    "./hooks/_*": null,
+    "./lib/_*": null,
     "./accordion": {
       "types": "./dist/components/ui/accordion.d.ts",
       "import": "./dist/components/ui/accordion.js",
@@ -190,6 +195,11 @@
       "import": "./dist/components/ui/async-boundary.js",
       "default": "./dist/components/ui/async-boundary.js"
     },
+    "./attachment": {
+      "types": "./dist/components/ui/attachment.d.ts",
+      "import": "./dist/components/ui/attachment.js",
+      "default": "./dist/components/ui/attachment.js"
+    },
     "./avatar": {
       "types": "./dist/components/ui/avatar.d.ts",
       "import": "./dist/components/ui/avatar.js",
@@ -214,6 +224,11 @@
       "types": "./dist/components/ui/bubble-background.d.ts",
       "import": "./dist/components/ui/bubble-background.js",
       "default": "./dist/components/ui/bubble-background.js"
+    },
+    "./bubble": {
+      "types": "./dist/components/ui/bubble.d.ts",
+      "import": "./dist/components/ui/bubble.js",
+      "default": "./dist/components/ui/bubble.js"
     },
     "./button-group": {
       "types": "./dist/components/ui/button-group.d.ts",
@@ -294,6 +309,11 @@
       "types": "./dist/components/ui/dialog.d.ts",
       "import": "./dist/components/ui/dialog.js",
       "default": "./dist/components/ui/dialog.js"
+    },
+    "./direction": {
+      "types": "./dist/components/ui/direction.d.ts",
+      "import": "./dist/components/ui/direction.js",
+      "default": "./dist/components/ui/direction.js"
     },
     "./dot-background": {
       "types": "./dist/components/ui/dot-background.d.ts",
@@ -410,6 +430,21 @@
       "import": "./dist/components/ui/label.js",
       "default": "./dist/components/ui/label.js"
     },
+    "./legacy-alert-dialog-action": {
+      "types": "./dist/components/ui/legacy-alert-dialog-action.d.ts",
+      "import": "./dist/components/ui/legacy-alert-dialog-action.js",
+      "default": "./dist/components/ui/legacy-alert-dialog-action.js"
+    },
+    "./legacy-command-dialog": {
+      "types": "./dist/components/ui/legacy-command-dialog.d.ts",
+      "import": "./dist/components/ui/legacy-command-dialog.js",
+      "default": "./dist/components/ui/legacy-command-dialog.js"
+    },
+    "./legacy-toast": {
+      "types": "./dist/components/ui/legacy-toast.d.ts",
+      "import": "./dist/components/ui/legacy-toast.js",
+      "default": "./dist/components/ui/legacy-toast.js"
+    },
     "./list-skeleton": {
       "types": "./dist/components/ui/list-skeleton.d.ts",
       "import": "./dist/components/ui/list-skeleton.js",
@@ -420,15 +455,30 @@
       "import": "./dist/components/ui/loading-overlay.js",
       "default": "./dist/components/ui/loading-overlay.js"
     },
+    "./marker": {
+      "types": "./dist/components/ui/marker.d.ts",
+      "import": "./dist/components/ui/marker.js",
+      "default": "./dist/components/ui/marker.js"
+    },
     "./menubar": {
       "types": "./dist/components/ui/menubar.d.ts",
       "import": "./dist/components/ui/menubar.js",
       "default": "./dist/components/ui/menubar.js"
     },
+    "./message": {
+      "types": "./dist/components/ui/message.d.ts",
+      "import": "./dist/components/ui/message.js",
+      "default": "./dist/components/ui/message.js"
+    },
     "./meter": {
       "types": "./dist/components/ui/meter.d.ts",
       "import": "./dist/components/ui/meter.js",
       "default": "./dist/components/ui/meter.js"
+    },
+    "./native-select": {
+      "types": "./dist/components/ui/native-select.d.ts",
+      "import": "./dist/components/ui/native-select.js",
+      "default": "./dist/components/ui/native-select.js"
     },
     "./navigation-menu": {
       "types": "./dist/components/ui/navigation-menu.d.ts",

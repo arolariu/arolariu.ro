@@ -45,6 +45,7 @@ type ExportEntry = Readonly<
       default?: string;
     }
   | string
+  | null
 >;
 
 interface ExportDirectoryConfig {
@@ -67,6 +68,10 @@ const exports: Record<string, ExportEntry> = {
     import: "./dist/*.js",
     default: "./dist/*.js",
   },
+  "./_*": null,
+  "./components/ui/_*": null,
+  "./hooks/_*": null,
+  "./lib/_*": null,
 };
 
 /**
@@ -104,8 +109,8 @@ export function collectExportsFromDirectory(config: Readonly<ExportDirectoryConf
   items.forEach((item) => {
     const itemName = item.name;
 
-    // Skip test and story files
-    if (itemName.includes(".test.") || itemName.includes(".spec.") || itemName.includes(".stories.")) {
+    // Private modules may be emitted transitively, but are never package entrypoints.
+    if (itemName.startsWith("_") || itemName.includes(".test.") || itemName.includes(".spec.") || itemName.includes(".stories.")) {
       return;
     }
 

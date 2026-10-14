@@ -2,6 +2,11 @@
 
 > **Real-world examples to get you building faster.** Copy, paste, and customize these patterns for your projects.
 
+> **Upcoming v3 preparation:** use these APIs only after adopting an actually published artifact. The repository website keeps its official
+> 2.4 tarball and current runtime calls. See [MIGRATION.md](./MIGRATION.md) for precise 2.4 → 3 changes and the preserved historical guide.
+> Existing status-helper recipes below intentionally import the **explicit legacy facade**, not canonical toast or Sonner. Mount
+> `LegacyToaster` once in their application shell before emitting facade notifications.
+
 ## 🚀 Getting Started
 
 ### Installation & Setup
@@ -10,7 +15,7 @@
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion
+npm install react react-dom @base-ui/react@^1.9 motion react-hook-form recharts
 ```
 
 ```tsx
@@ -28,7 +33,10 @@ import {Button, Card} from "@arolariu/components";
 import styles from "./my-component.module.css";
 ```
 
-No utility CSS framework is required as a peer dependency in v1.0.0.
+No utility CSS framework is required. The upcoming Base UI minimum is verified `^1.9` (older consumers must upgrade); React/ReactDOM remain
+`^18.2 || ^19`. The verified minimum is not an earliest-version claim. Twelve isolated React 18.2 fixtures now pass against the actual
+npm-packed artifact, separately from React 19; broader compositions and physical-browser behavior are not implied. Publication and website
+adoption remain separately authorized actions.
 
 ### Useful Subpath Imports
 
@@ -45,7 +53,11 @@ import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
 import {Button} from "@arolariu/components";
 
 // Use render prop instead of asChild
-<Button render={<a href='/dashboard' />}>Go to Dashboard</Button>;
+<Button
+  nativeButton={false}
+  render={<a href='/dashboard' />}>
+  Go to Dashboard
+</Button>;
 ```
 
 ```css
@@ -59,6 +71,104 @@ import {Button} from "@arolariu/components";
 ---
 
 ## 🎨 Layout Examples
+
+### Canonical manager notifications and explicit Command root
+
+Unlike the legacy recipes, canonical toast is not callable and has no `.success()`/`.dismiss()` helpers. Manager fields use
+`title`/`timeout`/`type`/`actionProps`; provider configuration uses `timeout`/`limit`. Scoped `createToastManager<T>()` managers can be
+passed via `toastManager`; `useToastManager<T>()` sees only the nearest provider.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {toast, Toaster} from "@arolariu/components/toast";
+
+export function SaveNotification({save}: Readonly<{save: () => Promise<{name: string}>}>) {
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function notifySave(): Promise<void> {
+    setFailure(null);
+    try {
+      await toast.promise(save(), {
+        loading: "Saving...",
+        success: (result) => ({title: `Saved ${result.name}`, type: "success"}),
+        error: (error: unknown) => ({
+          title: error instanceof Error ? error.message : "Save failed",
+          type: "error",
+        }),
+      });
+    } catch (error: unknown) {
+      setFailure(error instanceof Error ? error.message : "Save failed");
+    }
+  }
+
+  return (
+    <Toaster
+      timeout={5000}
+      limit={3}>
+      <Button onClick={() => void notifySave()}>Save</Button>
+      {failure !== null && <p>{failure}</p>}
+    </Toaster>
+  );
+}
+```
+
+The Toaster is mounted before event-driven notification calls. Its children share the real provider manager. For custom lists use
+ToastProvider/ToastPortal/ToastViewport and Toast/Content/Title/Description/Action/Close rather than overriding `viewportProps.children`.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {Command, CommandDialog, CommandInput, CommandItem, CommandList} from "@arolariu/components/command";
+
+export function ActionsPalette() {
+  const [open, setOpen] = useState(false);
+  const [selection, setSelection] = useState("");
+  const [search, setSearch] = useState("");
+  const [lastAction, setLastAction] = useState("");
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open actions</Button>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title='Actions'
+        description='Choose an action'>
+        <Command
+          value={selection}
+          onValueChange={setSelection}>
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder='Search actions'
+          />
+          <CommandList>
+            <CommandItem
+              value='copy'
+              onSelect={setLastAction}>
+              Copy
+            </CommandItem>
+            <CommandItem
+              value='rename'
+              onSelect={setLastAction}>
+              Rename
+            </CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>
+      <p>Last action: {lastAction || "None"}</p>
+    </>
+  );
+}
+```
+
+Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. For proven old automatic-root
+composition import `LegacyCommandDialog` from `/legacy-command-dialog` and supply direct input/list children **without** a Command root. For
+explicit before/after examples, nullable Select/Combobox, async AlertDialog completion and exact Skeleton caps, see
+[MIGRATION.md](./MIGRATION.md).
 
 ### Simple Card Layout
 
@@ -1087,7 +1197,7 @@ import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} f
 import {Checkbox} from "@arolariu/components/checkbox";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./login-form.module.css";
 
 // Define validation schema
@@ -1321,7 +1431,7 @@ import {
 } from "@arolariu/components/dropdown-menu";
 import {Input} from "@arolariu/components/input";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@arolariu/components/table";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./data-table.module.css";
 
 interface User {
@@ -1640,7 +1750,7 @@ import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, Form
 import {Input} from "@arolariu/components/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./modal-form.module.css";
 
 const projectSchema = z.object({
@@ -1823,16 +1933,17 @@ export function CreateProjectModal() {
 
 ---
 
-### Recipe 4: Toast Notifications (Sonner)
+### Recipe 4: Toast Notifications (explicit legacy facade)
 
-**Comprehensive toast notification patterns for all use cases.**
+**Compatibility patterns for existing status-helper consumers, not canonical manager or Sonner APIs.** Mount the LegacyToaster shown here
+before using the facade. Prefer the canonical manager example below for new code.
 
 ```tsx
 import {CheckCircle2, Info, Loader2, XCircle} from "lucide-react";
 
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
-import {toast, Toaster} from "@arolariu/components/sonner";
+import {legacyToast as toast, LegacyToaster as Toaster} from "@arolariu/components/legacy-toast";
 import styles from "./toast-demo.module.css";
 
 export function ToastDemo() {
@@ -1871,31 +1982,38 @@ export function ToastDemo() {
   };
 
   // Promise toast (loading → success/error)
-  const showPromiseToast = () => {
-    const uploadPromise = new Promise((resolve, reject) => {
+  const showPromiseToast = async () => {
+    const uploadPromise = new Promise<{name: string}>((resolve, reject) => {
       setTimeout(() => {
         Math.random() > 0.5 ? resolve({name: "document.pdf"}) : reject(new Error("Upload failed"));
       }, 2000);
     });
 
-    toast.promise(uploadPromise, {
-      loading: "Uploading file...",
-      success: (data: {name: string}) => `${data.name} uploaded successfully!`,
-      error: "Failed to upload file.",
-    });
+    try {
+      await toast.promise(uploadPromise, {
+        loading: "Uploading file...",
+        success: (data) => `${data.name} uploaded successfully!`,
+        error: "Failed to upload file.",
+      });
+    } catch {
+      // The facade has displayed failure; the caller still handles the rejection.
+      return;
+    }
   };
 
   // Custom styled toast
   const showCustomToast = () => {
-    toast.custom(
-      <div className={styles.customToast}>
+    toast.custom((id) => (
+      <div
+        data-toast-id={id}
+        className={styles.customToast}>
         <CheckCircle2 className={styles.customIcon} />
         <div className={styles.customContent}>
           <div className={styles.customTitle}>Custom Toast</div>
           <div className={styles.customDescription}>This is a fully customized toast notification.</div>
         </div>
-      </div>,
-    );
+      </div>
+    ));
   };
 
   // Loading toast (manual control)
@@ -1909,10 +2027,7 @@ export function ToastDemo() {
 
   return (
     <>
-      <Toaster
-        position='top-right'
-        richColors
-      />
+      <Toaster position='top-right' />
 
       <div className={styles.container}>
         <Card>
@@ -2256,7 +2371,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@arolariu/components/dropdown-menu";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./dropdown-demo.module.css";
 
 export function AccessibleDropdownMenu() {
@@ -2562,7 +2677,7 @@ import {useState} from "react";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Progress} from "@arolariu/components/progress";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./file-upload.module.css";
 
 interface FileUpload {
@@ -2845,7 +2960,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@ar
 import {Switch} from "@arolariu/components/switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./settings-page.module.css";
 
 const profileSchema = z.object({
@@ -3227,7 +3342,7 @@ import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import {ErrorBoundary} from "@arolariu/components/error-boundary";
 import {Skeleton} from "@arolariu/components/skeleton";
-import {toast} from "@arolariu/components/sonner";
+import {legacyToast as toast} from "@arolariu/components/legacy-toast";
 import styles from "./error-handling.module.css";
 
 // Async data fetching component

@@ -39,6 +39,64 @@ for modern applications that demand both beauty and performance._
 
 The current package version is owned by [`package.json`](./package.json).
 
+### Upcoming major: preparation, not publication
+
+This workspace prepares **3.0.0**; it is not a claim that v3 is available on npm or that all producer/release gates passed. Read
+[MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes, exact Toast and Command examples,
+retained extensions and historical v0 → v1 guide. Website adoption remains a separate task: the repository website must keep its official
+published **2.4 tarball and runtime calls** until a new artifact is published and its adoption authorized.
+
+The approved upcoming Base UI minimum is **`^1.9`**: public 1.0 lacks the drawer export, whereas tested 1.9 supplies it and supports React
+17/18/19. Older Base UI consumers must upgrade; this is a verified policy minimum, not an earliest-version claim. React/ReactDOM remain
+**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **12 isolated
+React/ReactDOM 18.2 fixtures against the actual extracted npm artifact** now pass. Packed React 18 evidence is not inferred from React 19
+and is limited to the exercised contracts, not every possible consumer composition.
+
+The library build, Storybook documentation build and **three actual npm-packed ESM/declaration/subpath/style/client-boundary contracts** are
+verified. Private helpers are present transitively but reject public imports. This is artifact preparation, not npm publication, website
+adoption or physical-browser validation. The parent's final component workspace coverage checkpoint below passed; final branch review/lint/
+PR and the known source hook/story strict-typing baseline remain separate gates.
+
+### Validation checkpoint — 2026-10-14
+
+The parent ran the exact component workspace coverage command with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the real extracted npm artifact,
+not a source proxy:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 126 files / 3,008 tests / no skips**, including all three actual packed contracts. Thresholds and exclusions were unchanged:
+
+| Metric     | Coverage | Covered / total | Unchanged threshold |
+| ---------- | -------- | --------------- | ------------------- |
+| Statements | 98.36%   | 3726 / 3788     | 95%                 |
+| Branches   | 95.34%   | 2992 / 3138     | 80%                 |
+| Functions  | 99.42%   | 1029 / 1035     | 95%                 |
+| Lines      | 99.26%   | 3525 / 3551     | 95%                 |
+
+Expected Motion reduced-motion notices and npm configuration warnings remain visible; React Tabs act warnings were resolved by the
+fixture-only corrections. This is a component workspace checkpoint, **not an all-monorepo pass**: the known 15 baseline hook/story strong
+type diagnostics, website unit-fixture/build-environment blocks, final branch review/lint/PR and physical-browser acceptance remain
+separate.
+
+### Canonical APIs and explicit compatibility
+
+- Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
+  `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
+- Facade status helpers/custom/history/duration remain explicit: `legacyToast` + `LegacyToaster` from `/legacy-toast` or the root. No Sonner
+  export/dependency is introduced.
+- Canonical `CommandDialog` is a modal shell containing exactly one explicit `Command`. `LegacyCommandDialog` supplies the old automatic
+  root and must not contain another Command. Command is native substring/custom-score matching, not cmdk.
+- `AlertDialogAction` no longer closes automatically. Close explicitly after success; `LegacyAlertDialogAction` immediately closes without
+  awaiting work and is only a deliberate synchronous adapter.
+- Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
+  `Toaster` versus `LegacyToaster`; original `DirectionProvider`/`useDirection` with `TextDirection`.
+
+All supported runtime values, public named types and defined component namespaces are explicitly exposed at the root, with short
+component/hook/utility subpaths. All 59 chart aliases and existing RHF pass-throughs are retained. Private underscore modules may be packed
+transitively but are blocked as public entrypoints, including through the retained nested dist wildcard.
+
 ## 🚀 Quick Start
 
 Get up and running with @arolariu/components in under 2 minutes.
@@ -49,8 +107,11 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion react-hook-form recharts
+npm install react react-dom @base-ui/react@^1.9 motion react-hook-form recharts
 ```
+
+Install an **actually published** package version. The upcoming v3 examples below are migration preparation, not authorization to install an
+unpublished artifact or replace the website's published dependency.
 
 ### Basic Setup
 
@@ -170,6 +231,9 @@ Explore representative components below. The live public inventory is owned by `
 | **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
 | **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
 
+Upcoming additive families also include `NativeSelect`, exact Base UI direction context, `Attachment`, `Bubble`, `Marker` and `Message`.
+These are domain-independent native/composed display APIs, not upload controls or an AI/chat SDK. Callers supply text, data and policy.
+
 ### 🎛️ Form Controls
 
 | Component       | Description                        | Import                              |
@@ -192,6 +256,10 @@ Explore representative components below. The live public inventory is owned by `
 | **Skeleton** | Loading state placeholders      | `@arolariu/components/skeleton` |
 | **Toast**    | Base UI-backed toast system     | `@arolariu/components/toast`    |
 | **Spinner**  | Loading indicators              | `@arolariu/components/spinner`  |
+
+Card/Form/List/Table skeleton layouts keep their native div refs and defaults. Every count is a finite nonnegative integer ≤ 10,000; table
+total cells **including its optional default-visible header** are also capped at 10,000. Invalid/over-limit inputs throw RangeError before
+allocation, without coercion/clamping. `animated={false}` is explicit static presentation; callers own one loading announcement.
 
 ### 🎪 Animated Backgrounds
 
@@ -556,6 +624,11 @@ Inspect generated class names, Base UI data attributes, and source-mapped module
 
 **Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and
 better performance.
+
+These browser targets are not fresh physical-engine validation for the upcoming major. Vitest/Happy DOM and CSS parsing do not prove native
+focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech. Packed ESM/types/CSS/client directive
+checks, Storybook/build results and the passing component coverage checkpoint are not physical-engine proof. Final branch review/lint/PR and
+risk acceptance remain separate release work.
 
 ---
 

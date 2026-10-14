@@ -1,3 +1,9 @@
+import fs from "node:fs";
+import {execFileSync} from "node:child_process";
+import path from "node:path";
+import * as Recharts from "recharts";
+import * as ReactHookForm from "react-hook-form";
+import ts from "typescript";
 import {describe, expect, expectTypeOf, it} from "vitest";
 import {AsyncBoundary, type AsyncBoundaryProps as LocalAsyncBoundaryProps} from "./components/ui/async-boundary";
 import {CardSkeleton, type CardSkeletonProps as LocalCardSkeletonProps} from "./components/ui/card-skeleton";
@@ -18,6 +24,491 @@ import type {
   LoadingOverlayProps,
   TableSkeletonProps,
 } from "./index";
+
+const supportedComponentModules = [
+  "accordion",
+  "alert-dialog",
+  "alert",
+  "aspect-ratio",
+  "async-boundary",
+  "attachment",
+  "avatar",
+  "background-beams",
+  "badge",
+  "breadcrumb",
+  "bubble-background",
+  "bubble",
+  "button-group",
+  "button",
+  "calendar",
+  "card-skeleton",
+  "card",
+  "carousel",
+  "chart",
+  "checkbox-group",
+  "checkbox",
+  "collapsible",
+  "combobox",
+  "command",
+  "context-menu",
+  "copy-button",
+  "counting-number",
+  "dialog",
+  "direction",
+  "dot-background",
+  "drawer",
+  "dropdown-menu",
+  "dropdrawer",
+  "empty",
+  "error-boundary",
+  "field",
+  "fireworks-background",
+  "flip-button",
+  "focus-scope",
+  "form-skeleton",
+  "form",
+  "gradient-background",
+  "gradient-text",
+  "highlight-text",
+  "hole-background",
+  "hover-card",
+  "input-group",
+  "input-otp",
+  "input",
+  "item",
+  "kbd",
+  "label",
+  "legacy-alert-dialog-action",
+  "legacy-command-dialog",
+  "legacy-toast",
+  "list-skeleton",
+  "loading-overlay",
+  "marker",
+  "menubar",
+  "message",
+  "meter",
+  "native-select",
+  "navigation-menu",
+  "number-field",
+  "pagination",
+  "popover",
+  "progress",
+  "radio-group",
+  "resizable",
+  "ripple-button",
+  "scratcher",
+  "scroll-area",
+  "select",
+  "separator",
+  "sheet",
+  "sidebar",
+  "skeleton",
+  "slider",
+  "spinner",
+  "stepper",
+  "switch",
+  "table-skeleton",
+  "table",
+  "tabs",
+  "textarea",
+  "timeline",
+  "toast",
+  "toggle-group",
+  "toggle",
+  "toolbar",
+  "tooltip",
+  "typewriter",
+  "visually-hidden",
+] as const;
+
+const supportedHookModules = [
+  "useAnnounce",
+  "useBreakpoint",
+  "useClipboard",
+  "useColorScheme",
+  "useControllableState",
+  "useDebounce",
+  "useEventCallback",
+  "useFocusManager",
+  "useFocusVisible",
+  "useId",
+  "useIntersectionObserver",
+  "useInterval",
+  "useIsMobile",
+  "useLocalStorage",
+  "useMediaQuery",
+  "useMergedRefs",
+  "useOnClickOutside",
+  "usePrefersContrast",
+  "usePrevious",
+  "useReducedMotion",
+  "useThrottle",
+  "useTimeout",
+  "useWindowSize",
+] as const;
+
+const rootRuntime: Readonly<Record<string, unknown>> = exports;
+const retainedChartAliases = [
+  "AreaChart",
+  "BarChart",
+  "ComposedChart",
+  "FunnelChart",
+  "LineChart",
+  "PieChart",
+  "RadarChart",
+  "RadialBarChart",
+  "ScatterChart",
+  "Sankey",
+  "SunburstChart",
+  "Treemap",
+  "Area",
+  "Bar",
+  "BarStack",
+  "Funnel",
+  "Line",
+  "Pie",
+  "Radar",
+  "RadialBar",
+  "Scatter",
+  "CartesianGrid",
+  "PolarAngleAxis",
+  "PolarGrid",
+  "PolarRadiusAxis",
+  "XAxis",
+  "YAxis",
+  "ZAxis",
+  "Brush",
+  "ErrorBar",
+  "RechartsLabel",
+  "LabelList",
+  "ReferenceArea",
+  "ReferenceDot",
+  "ReferenceLine",
+  "ResponsiveContainer",
+  "Customized",
+  "Cell",
+  "Cross",
+  "Curve",
+  "Dot",
+  "Polygon",
+  "Rectangle",
+  "Sector",
+  "Symbols",
+  "Trapezoid",
+  "ZIndexLayer",
+  "DefaultZIndexes",
+  "useChartWidth",
+  "useChartHeight",
+  "useOffset",
+  "usePlotArea",
+  "useMargin",
+  "useIsTooltipActive",
+  "useActiveTooltipCoordinate",
+  "useActiveTooltipDataPoints",
+  "useActiveTooltipLabel",
+  "useXAxisDomain",
+  "useYAxisDomain",
+] as const;
+const retainedFormTypes = [
+  "Control",
+  "ControllerFieldState",
+  "ControllerProps",
+  "ControllerRenderProps",
+  "DefaultValues",
+  "RHFFieldError",
+  "FieldErrors",
+  "FieldPath",
+  "FieldValues",
+  "Path",
+  "RegisterOptions",
+  "Resolver",
+  "SubmitHandler",
+  "UseControllerReturn",
+  "UseFieldArrayReturn",
+  "UseFormReturn",
+] as const;
+
+describe("complete supported public surface", () => {
+  it("reconciles the 3.0 workspace while preserving the website's separate published 2.4 artifact", () => {
+    const repositoryDirectory = path.resolve(import.meta.dirname, "../../..");
+    const readManifest = (relativePath: string) => JSON.parse(fs.readFileSync(path.join(repositoryDirectory, relativePath), "utf8"));
+    const root = readManifest("package.json");
+    const lock = readManifest("package-lock.json");
+    const component = readManifest("packages/components/package.json");
+    const website = readManifest("sites/arolariu.ro/package.json");
+    const workspaceEntry = lock.packages["packages/components"];
+    const publishedEntry = lock.packages["sites/arolariu.ro/node_modules/@arolariu/components"];
+    const tarball = "https://registry.npmjs.org/@arolariu/components/-/components-2.4.0.tgz";
+
+    expect(root.devDependencies["@arolariu/components"]).toBe("3.0.0");
+    expect(root.devDependencies["@base-ui/react"]).toBe("1.9.0");
+    expect(lock.packages[""].devDependencies).toEqual(root.devDependencies);
+    expect(workspaceEntry.version).toBe(component.version);
+    expect(workspaceEntry.dependencies).toEqual(component.dependencies);
+    expect(workspaceEntry.devDependencies).toEqual(component.devDependencies);
+    expect(workspaceEntry.peerDependencies).toEqual(component.peerDependencies);
+    expect(lock.packages["node_modules/@arolariu/components"]).toEqual({resolved: "packages/components", link: true});
+    expect(website.dependencies["@arolariu/components"]).toBe(tarball);
+    expect(lock.packages["sites/arolariu.ro"].dependencies["@arolariu/components"]).toBe(tarball);
+    expect(publishedEntry.version).toBe("2.4.0");
+    expect(publishedEntry.resolved).toBe(tarball);
+    expect(publishedEntry.integrity).toBe(
+      "sha512-oAe3DaCDjQ/ETjgOFsfNXIU7tsYmKlVPxKh0BDKmHqVaiA8ldNER31lM9CH0JJKVCXGvLQtXK35OnilYyCPRdg==",
+    );
+    expect(publishedEntry.link).toBeUndefined();
+    const workspaceDirectory = fs.realpathSync(path.join(repositoryDirectory, "node_modules", "@arolariu", "components"));
+    const publishedDirectory = fs.realpathSync(
+      path.join(repositoryDirectory, "sites", "arolariu.ro", "node_modules", "@arolariu", "components"),
+    );
+    expect(workspaceDirectory).toBe(fs.realpathSync(path.join(repositoryDirectory, "packages", "components")));
+    expect(publishedDirectory).not.toBe(workspaceDirectory);
+    expect(JSON.parse(fs.readFileSync(path.join(publishedDirectory, "package.json"), "utf8")).version).toBe("2.4.0");
+  });
+
+  it.each(supportedComponentModules)("preserves every runtime export from the real %s module", async (name) => {
+    const module: Record<string, unknown> = await import(`./components/ui/${name}.tsx`);
+    for (const [exportName, value] of Object.entries(module)) {
+      expect(rootRuntime[exportName], `${name}.${exportName}`).toBe(value);
+    }
+  });
+
+  it.each(supportedHookModules)("preserves every runtime export from the real %s hook", async (name) => {
+    const module: Record<string, unknown> = await import(`./hooks/${name}.tsx`);
+    for (const [exportName, value] of Object.entries(module)) {
+      expect(rootRuntime[exportName], `${name}.${exportName}`).toBe(value);
+    }
+  });
+
+  it("preserves every named public type and merged namespace without wildcard ambiguity", () => {
+    const packageDirectory = path.resolve(import.meta.dirname, "..");
+    const configPath = path.join(packageDirectory, "tsconfig.json");
+    const config = ts.readConfigFile(configPath, ts.sys.readFile);
+    expect(config.error).toBeUndefined();
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, packageDirectory);
+    const files = [
+      ...supportedComponentModules.map((name) => path.join(import.meta.dirname, "components", "ui", `${name}.tsx`)),
+      ...supportedHookModules.map((name) => path.join(import.meta.dirname, "hooks", `${name}.tsx`)),
+      path.join(import.meta.dirname, "lib", "utilities.ts"),
+      path.join(import.meta.dirname, "lib", "color-conversion-utilities.ts"),
+      path.join(import.meta.dirname, "index.ts"),
+    ];
+    const program = ts.createProgram(files, {...parsed.options, noEmit: true, strict: true, strictNullChecks: true});
+    const checker = program.getTypeChecker();
+    const rootFile = program.getSourceFile(path.join(import.meta.dirname, "index.ts"));
+    if (!rootFile) throw new Error("The real package root was not loaded.");
+    const rootSymbol = checker.getSymbolAtLocation(rootFile);
+    if (!rootSymbol) throw new Error("The real package root has no module symbol.");
+    const rootExports = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    for (const name of retainedFormTypes) expect(rootExports.has(name), name).toBe(true);
+    const missing: string[] = [];
+    for (const file of files.slice(0, -1)) {
+      const source = program.getSourceFile(file);
+      if (!source) throw new Error(`Public source was not loaded: ${file}`);
+      const symbol = checker.getSymbolAtLocation(source);
+      if (!symbol) throw new Error(`Public source has no module symbol: ${file}`);
+      for (const sourceExport of checker.getExportsOfModule(symbol)) {
+        const rootName = path.basename(file) === "form.tsx" && sourceExport.name === "FieldError" ? "RHFFieldError" : sourceExport.name;
+        const rootExport = rootExports.get(rootName);
+        if (!rootExport) {
+          missing.push(`${path.basename(file)}:${rootName}`);
+          continue;
+        }
+        const sourceTarget = sourceExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sourceExport) : sourceExport;
+        const rootTarget = rootExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootExport) : rootExport;
+        expect(rootTarget, `${path.basename(file)}:${rootName} must retain its original type/namespace`).toBe(sourceTarget);
+      }
+    }
+    expect(missing).toEqual([]);
+  }, 30000);
+
+  it("retains all 59 Recharts aliases without colliding with the native Label", () => {
+    const dependency: Readonly<Record<string, unknown>> = Recharts;
+    expect(retainedChartAliases).toHaveLength(59);
+    for (const name of retainedChartAliases) {
+      expect(rootRuntime[name], name).toBe(dependency[name === "RechartsLabel" ? "Label" : name]);
+    }
+    expect(exports.ChartLegend).toBe(Recharts.Legend);
+    expect(exports.ChartTooltip).toBe(Recharts.Tooltip);
+    expect(exports.Label).not.toBe(Recharts.Label);
+  });
+
+  it("retains RHF identity rather than wrapping its provider, controller or hooks", () => {
+    expect(exports.Form).toBe(ReactHookForm.FormProvider);
+    expect(exports.Controller).toBe(ReactHookForm.Controller);
+    for (const name of ["useController", "useFieldArray", "useForm", "useFormContext", "useFormState", "useWatch"] as const) {
+      expect(exports[name]).toBe(ReactHookForm[name]);
+    }
+  });
+
+  it("does not expose private helpers or unselected optional engines at the root", () => {
+    for (const name of ["useVisualEffects", "useVisualEffectPolicy", "_visualEffects", "SonnerToaster", "Headless", "Cmdk"]) {
+      expect(exports).not.toHaveProperty(name);
+    }
+    expect(Object.keys(exports).some((name) => name.startsWith("_"))).toBe(false);
+  });
+
+  it("ships the migration guide and preserves the approved runtime peer contract", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
+    expect(manifest.version).toBe("3.0.0");
+    expect(manifest.files).toContain("MIGRATION.md");
+    expect(manifest.peerDependencies).toEqual({
+      "@base-ui/react": "^1.9",
+      motion: "^13 || ^14",
+      react: "^18.2 || ^19",
+      "react-dom": "^18.2 || ^19",
+      "react-hook-form": "^7",
+      recharts: "^3.8",
+    });
+    expect(manifest.dependencies).toEqual({
+      clsx: "*",
+      "embla-carousel-react": "*",
+      "input-otp": "*",
+      "lucide-react": "*",
+      "react-day-picker": "*",
+      "react-resizable-panels": "*",
+    });
+    expect(manifest.sideEffects).toEqual(["**/*.css"]);
+    expect(manifest.source).toBe("src/index.ts");
+    expect(manifest.main).toBe("dist/index.js");
+    expect(manifest.types).toBe("dist/index.d.ts");
+    expect(manifest.style).toBe("dist/index.css");
+    for (const excluded of ["!src/**/*.test.*", "!src/**/*.spec.*", "!src/**/*.stories.*"]) {
+      expect(manifest.files).toContain(excluded);
+    }
+  });
+});
+
+// Opt in only after the parent builds and installs the actual npm-packed artifact.
+const packedRoot = process.env["AROLARIU_COMPONENTS_PACKED_ROOT"];
+describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () => {
+  function getPackedRoot(): string {
+    if (!packedRoot) throw new Error("AROLARIU_COMPONENTS_PACKED_ROOT must identify the unpacked/installed npm artifact.");
+    const directory = fs.realpathSync(packedRoot);
+    if (directory === fs.realpathSync(path.resolve(import.meta.dirname, ".."))) {
+      throw new Error("The workspace is not a packed artifact.");
+    }
+    return directory;
+  }
+
+  it("contains the real public ESM/declaration/style modules and migration guide, not tests or stories", () => {
+    const directory = getPackedRoot();
+    const manifest = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"));
+    expect(manifest.name).toBe("@arolariu/components");
+    expect(manifest.version).toBe("3.0.0");
+    for (const required of ["MIGRATION.md", "src/index.ts", "dist/index.js", "dist/index.d.ts", "dist/index.css", "dist/styles.d.ts"]) {
+      expect(fs.existsSync(path.join(directory, required)), required).toBe(true);
+    }
+    for (const [sourceDirectory, names] of [
+      ["components/ui", supportedComponentModules],
+      ["hooks", supportedHookModules],
+      ["lib", ["utilities", "color-conversion-utilities"]],
+    ] as const) {
+      for (const name of names) {
+        const entry = manifest.exports[`./${name}`];
+        expect(entry).toEqual({
+          types: `./dist/${sourceDirectory}/${name}.d.ts`,
+          import: `./dist/${sourceDirectory}/${name}.js`,
+          default: `./dist/${sourceDirectory}/${name}.js`,
+        });
+        for (const target of [entry.types, entry.import]) expect(fs.existsSync(path.join(directory, target)), target).toBe(true);
+        if (sourceDirectory === "components/ui") {
+          const sourceText = fs.readFileSync(path.join(directory, "src", sourceDirectory, `${name}.tsx`), "utf8");
+          const outputText = fs.readFileSync(path.join(directory, entry.import), "utf8");
+          const hasClientDirective = (text: string, kind: ts.ScriptKind): boolean => {
+            const file = ts.createSourceFile(name, text, ts.ScriptTarget.Latest, true, kind);
+            const first = file.statements[0];
+            return (
+              first !== undefined
+              && ts.isExpressionStatement(first)
+              && ts.isStringLiteral(first.expression)
+              && first.expression.text === "use client"
+            );
+          };
+          expect(hasClientDirective(outputText, ts.ScriptKind.JS), `${name} client/server boundary`).toBe(
+            hasClientDirective(sourceText, ts.ScriptKind.TSX),
+          );
+        }
+      }
+    }
+    const packedFiles = ts.sys.readDirectory(directory, undefined, ["node_modules"]);
+    expect(packedFiles.filter((file) => /\.(test|spec|stories)\./u.test(file))).toEqual([]);
+    expect(Object.keys(manifest.exports).some((key) => key.includes("_") && manifest.exports[key] !== null)).toBe(false);
+  });
+
+  it("preserves named public declarations and namespace members through every packed subpath", () => {
+    const directory = getPackedRoot();
+    const files = supportedComponentModules.map((name) => path.join(directory, "dist", "components", "ui", `${name}.d.ts`));
+    files.push(...supportedHookModules.map((name) => path.join(directory, "dist", "hooks", `${name}.d.ts`)));
+    files.push(
+      path.join(directory, "dist", "lib", "utilities.d.ts"),
+      path.join(directory, "dist", "lib", "color-conversion-utilities.d.ts"),
+    );
+    const indexFile = path.join(directory, "dist", "index.d.ts");
+    const program = ts.createProgram([...files, indexFile], {
+      noEmit: true,
+      strict: true,
+      skipLibCheck: false,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+      types: ["node", "react", "react-dom"],
+    });
+    expect(ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual(
+      [],
+    );
+    const checker = program.getTypeChecker();
+    const source = program.getSourceFile(indexFile);
+    if (!source) throw new Error("Packed root declarations were not loaded.");
+    const rootSymbol = checker.getSymbolAtLocation(source);
+    if (!rootSymbol) throw new Error("Packed root declarations have no module symbol.");
+    const rootTypes = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    for (const name of retainedFormTypes) expect(rootTypes.has(name), name).toBe(true);
+    for (const file of files) {
+      const moduleFile = program.getSourceFile(file);
+      if (!moduleFile) throw new Error(`Packed declarations absent: ${file}`);
+      const moduleSymbol = checker.getSymbolAtLocation(moduleFile);
+      if (!moduleSymbol) throw new Error(`Packed declaration module absent: ${file}`);
+      for (const symbol of checker.getExportsOfModule(moduleSymbol)) {
+        const rootName = path.basename(file) === "form.d.ts" && symbol.name === "FieldError" ? "RHFFieldError" : symbol.name;
+        const rootType = rootTypes.get(rootName);
+        if (!rootType) throw new Error(`Packed root declaration omits ${rootName}.`);
+        const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+        const rootTarget = rootType.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootType) : rootType;
+        expect(rootTarget, rootName).toBe(target);
+      }
+    }
+  }, 30000);
+
+  it("loads every packed ESM entrypoint with real peers and rejects private helper imports", () => {
+    const script = `
+      import {registerHooks} from "node:module";
+      import {readFileSync} from "node:fs";
+      import assert from "node:assert/strict";
+      registerHooks({load(url, context, nextLoad) {
+        if (url.endsWith(".css")) {
+          readFileSync(new URL(url), "utf8");
+          return {format: "module", source: "export default {};", shortCircuit: true};
+        }
+        return nextLoad(url, context);
+      }});
+      const root = await import("@arolariu/components");
+      for (const name of ${JSON.stringify([...supportedComponentModules, ...supportedHookModules, "utilities", "color-conversion-utilities"])}) {
+        const module = await import("@arolariu/components/" + name);
+        for (const [key, value] of Object.entries(module)) assert.equal(root[key], value, name + "." + key);
+      }
+      for (const name of ${JSON.stringify(retainedChartAliases)}) assert.ok(root[name] !== undefined, name);
+      for (const specifier of ["@arolariu/components/_visual-effects", "@arolariu/components/components/ui/_visual-effects"]) {
+        await assert.rejects(import(specifier), {code: "ERR_PACKAGE_PATH_NOT_EXPORTED"});
+      }
+      console.log("Packed ESM root/subpath identities and private-path rejection passed.");
+    `;
+    // CSS is the sole Node platform boundary; actual CSS files must exist and are read.
+    const output = execFileSync(process.execPath, ["--input-type=module", "--eval", script], {cwd: getPackedRoot(), encoding: "utf8"});
+    expect(output).toContain("Packed ESM root/subpath identities and private-path rejection passed.");
+  }, 30000);
+});
 
 describe("index.ts exports", () => {
   it("exposes supported local loading primitives at the root", () => {
