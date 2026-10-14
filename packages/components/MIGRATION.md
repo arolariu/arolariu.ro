@@ -19,13 +19,13 @@ adopting v3.
 - ESM, declarations, original source, CSS Modules, `styles`/`styles.css`, CSS side effects and client/server boundaries remain supported.
   MIGRATION is included in the package file list. Short public subpaths are explicit; underscore helpers are private even when emitted or
   packed as transitive modules.
-- An isolated React/ReactDOM 18.2 source lane verified 18 fixtures independently of the React 19 source-root lane. All **18 fixtures also
+- An isolated React/ReactDOM 18.2 source lane verified 28 fixtures independently of the React 19 source-root lane. All **28 fixtures also
   pass against the actual npm-packed/extracted ESM artifact**, with isolated native-runtime/identity guards and zero source proxies. This is
   focused compatibility evidence, not a universal render/composition guarantee.
-- The actual component build, generated ESM/declarations/CSS/client directives, three extracted npm artifact contracts and Storybook
-  documentation build are verified. The parent's final post-wave component workspace coverage, scoped review, configured ESLint and
-  383-changed-file Prettier checks passed, as recorded below. The known source hook/story strict baseline, physical-browser risk acceptance,
-  publication and website adoption remain distinct limits or gates. No React 18 packed result is inferred from React 19.
+- The actual component build, generated ESM/declarations/CSS/client directives, four extracted npm artifact contracts and Storybook
+  documentation build are verified. The parent's latest review-followup component workspace coverage, scoped review, configured ESLint and
+  177-changed-file Prettier checks passed, as recorded below. The historical source hook/story strict baseline, physical-browser risk
+  acceptance, publication and website adoption remain distinct limits or gates. No React 18 packed result is inferred from React 19.
 
 ### Public names and collision rules
 
@@ -320,8 +320,36 @@ detachScanFromInvoice/createScan. These are adoption inventory, not authorizatio
 
 Focused Vitest contracts use real modules/primitives; no producer replacement mocks or alternate automated runner. Strong TypeScript
 source/test/story checks do not prove packed ESM/declaration/style availability; the upcoming major has separately passed its actual build,
-three extracted artifact contracts and 18 React 18 packed fixtures. Release gates retain 80% branch / 95% function, line and statement
+four extracted artifact contracts and 28 React 18 packed fixtures. Release gates retain 80% branch / 95% function, line and statement
 thresholds; focused coverage-disabled runs make no aggregate coverage claim.
+
+#### Latest review-followup checkpoint — 2026-10-14
+
+With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 127 files / 3,147 tests / no skips**, including all **four packed contracts** and **93 story-style mount tests**. Start **15:21:14
+local**, duration **335.46 seconds**. Statements **98.35% (3765/3828)**, branches **95.32% (2996/3143)**, functions **99.41% (1022/1028)**,
+lines **99.24% (3571/3598)**; thresholds/exclusions remain unchanged.
+
+Separate real React18 source and packed lanes passed **28 fixtures** each. The story migration moved **224 classes from 74 production CSS
+Modules** into **80 story-owned style mounts**; actual packed legacy selectors fell **432 → 0**, and uncompressed production CSS decreased
+**26,551 bytes**. Parent's **74 style graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks passed with zero
+diagnostics.
+
+Independent review (`328aa289`) reported no findings, with all four original items addressed and the story-style boundary approved. Parent's
+configured full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo error
+reporting and the chart zero-geometry warning remained visible; this is not a warning-free claim.
+
+The historical 15 hook/story strong-type baseline and website fixture/build-environment limits are not cleared by this component checkpoint;
+no all-monorepo, whole-project type, publication, website-adoption or physical-browser approval is inferred.
+
+#### Historical initial v3 checkpoint — 2026-10-14
+
+The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
 
 The parent ran the final post-wave component workspace coverage checkpoint on **2026-10-14**, with `AROLARIU_COMPONENTS_PACKED_ROOT` set to
 the genuine extracted npm artifact:

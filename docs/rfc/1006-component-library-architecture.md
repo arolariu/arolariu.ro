@@ -188,7 +188,34 @@ Colocated Vitest and Testing Library tests should cover the public interaction:
 Do not replace the component or Base UI behavior being asserted with a repository mock. Storybook stories provide interactive documentation
 and visual/a11y scenarios but do not replace focused tests.
 
-### Final post-wave validation checkpoint — 2026-10-14
+### Latest review-followup validation checkpoint — 2026-10-14
+
+With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+Exit **0**: **127 files / 3,147 tests / no skips**, including all **four packed ESM/type/subpath/style contracts** and **93 story-style
+mount tests**. Start **15:21:14 local**, duration **335.46 seconds**. Statements **98.35% (3765/3828)**, branches **95.32% (2996/3143)**,
+functions **99.41% (1022/1028)**, lines **99.24% (3571/3598)**. The existing thresholds/exclusions remain unchanged: 80% branches; 95%
+functions, lines and statements.
+
+Component/Storybook builds and the separate real React18 source and actual packed lanes are verified, with **28 fixtures** in each React18
+lane. Story ownership moved **224 classes from 74 production CSS Modules** into **80 story-owned style mounts**: actual packed legacy
+selectors fell **432 → 0**, and uncompressed production CSS decreased **26,551 bytes**. Parent's **74 style graphs / 3,611 preserved
+declarations** and **97-story TypeScript graph** checks passed with zero diagnostics.
+
+Independent review (`328aa289`) reported no findings: all four original items addressed, story-style boundary approved. Parent's configured
+full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo error reporting and
+the chart zero-geometry warning remained visible; no warning-free result is claimed.
+
+This is not an all-monorepo or whole-project type pass and does not clear the historical 15 hook/story strong-type baseline, website
+fixture/build-environment limits, physical-browser acceptance or publication/adoption gates.
+
+### Historical initial v3 validation checkpoint — 2026-10-14
+
+The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
 
 The parent verified the component workspace with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the actual extracted npm artifact:
 

@@ -48,17 +48,49 @@ published **2.4 tarball and runtime calls** until a new artifact is published an
 
 The approved upcoming Base UI minimum is **`^1.9`**: public 1.0 lacks the drawer export, whereas tested 1.9 supplies it and supports React
 17/18/19. Older Base UI consumers must upgrade; this is a verified policy minimum, not an earliest-version claim. React/ReactDOM remain
-**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **18 isolated
+**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **28 isolated
 React/ReactDOM 18.2 fixtures against the actual extracted npm artifact** now pass. Packed React 18 evidence is not inferred from React 19
 and is limited to the exercised contracts, not every possible consumer composition.
 
-The library build, Storybook documentation build and **three actual npm-packed ESM/declaration/subpath/style/client-boundary contracts** are
+The library build, Storybook documentation build and **four actual npm-packed ESM/declaration/subpath/style/client-boundary contracts** are
 verified. Private helpers are present transitively but reject public imports. This is artifact preparation, not npm publication, website
-adoption or physical-browser validation. The parent's final post-wave component workspace coverage, scoped review, configured ESLint and
-383-changed-file Prettier checks passed. The known source hook/story strict-typing baseline, publication, website adoption and physical
-acceptance remain separate.
+adoption or physical-browser validation. The parent's latest review-followup component workspace coverage, scoped review, configured ESLint
+and 177-changed-file Prettier checks passed. The historical source hook/story strict-typing baseline, publication, website adoption and
+physical acceptance remain separate.
 
-### Final post-wave validation checkpoint — 2026-10-14
+### Latest review-followup validation checkpoint — 2026-10-14
+
+With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 127 files / 3,147 tests / no skips**, including all **four actual packed contracts** and **93 story-style mount tests**. Start
+**15:21:14 local**, duration **335.46 seconds**. Thresholds and exclusions remain unchanged:
+
+| Metric     | Coverage | Covered / total | Unchanged threshold |
+| ---------- | -------- | --------------- | ------------------- |
+| Statements | 98.35%   | 3765 / 3828     | 95%                 |
+| Branches   | 95.32%   | 2996 / 3143     | 80%                 |
+| Functions  | 99.41%   | 1022 / 1028     | 95%                 |
+| Lines      | 99.24%   | 3571 / 3598     | 95%                 |
+
+The separate real React18 source and packed lanes passed **28 fixtures** each. Story ownership moved **224 classes from 74 production CSS
+Modules** into **80 story-owned style mounts**: actual packed legacy selector occurrences fell **432 → 0**, and uncompressed production
+`dist` CSS decreased **26,551 bytes**. Parent's **74 style graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks
+passed with zero diagnostics.
+
+Independent review (`328aa289`) reported no findings: all four original review items were addressed and the story-style boundary approved.
+Parent's configured full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo
+error reporting and the chart zero-geometry warning remained visible; this is not a warning-free claim.
+
+This is not an all-monorepo or whole-project type pass. The historical 15 hook/story strong-type diagnostic baseline, website
+fixture/build-environment limits, physical-browser acceptance, publication and website adoption are not cleared by this checkpoint.
+
+### Historical initial v3 validation checkpoint — 2026-10-14
+
+The following **3,043-test checkpoint is historical**, preceding the review/style follow-up above; it is not the latest validation.
 
 The parent ran the exact component workspace coverage command with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the real extracted npm artifact,
 not a source proxy:

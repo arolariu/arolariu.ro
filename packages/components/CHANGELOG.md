@@ -21,9 +21,9 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Move Storybook-only layouts and demonstration styles into their owning story files. Production component CSS Modules and npm assets no
   longer carry demo rules.
 
-**Status:** unreleased artifact preparation. Component and Storybook documentation builds, three actual npm-packed artifact contracts, 18
-isolated React 18.2 packed fixtures and the parent's final post-wave component workspace coverage, scoped review, configured ESLint and
-383-changed-file Prettier checks have passed. This is not publication, PR or physical-browser approval. The website retains its official
+**Status:** unreleased artifact preparation. Component and Storybook documentation builds, four actual npm-packed artifact contracts, 28
+isolated React 18.2 packed fixtures and the parent's latest review-followup component workspace coverage, scoped review, configured ESLint
+and 177-changed-file Prettier checks have passed. This is not publication, PR or physical-browser approval. The website retains its official
 published 2.4 tarball and runtime calls; adopting a new artifact is a separate authorized task.
 
 **Added**
@@ -62,13 +62,32 @@ published 2.4 tarball and runtime calls; adopting a new artifact is a separate a
 - Base UI peer minimum becomes **`^1.9`**, the actually tested drawer-capable version. Public 1.0 lacks `./drawer`; older Base UI consumers
   must upgrade. This is not a claim about the earliest possible supporting release.
 - React/ReactDOM **`^18.2 || ^19`** and all other runtime package names/ranges remain unchanged. Independent React 18.2 source smoke
-  evidence and all 18 fixtures against actual packed ESM have passed, distinct from React 19 and without source proxies.
+  evidence and all 28 fixtures against actual packed ESM have passed, distinct from React 19 and without source proxies.
 - CSS Modules/tokens/side effects, ESM/types/source/styles, retained visual extensions, deprecated Flip `righ`, chart metadata/no-ops and
   explicit compatibility flags remain. No Sonner, Headless UI or cmdk engine/dependency is introduced; unselected families stay gated.
 - Physical paint/native focus/inert/touch/scroll anchoring/screen-reader behavior and aggregate coverage are not inferred from focused
   Vitest/Happy DOM/source typing. See MIGRATION for full defaults/ref/value/render/error changes and deferred release evidence.
 
-**Validation — final parent post-wave checkpoint 2026-10-14**
+**Validation — latest review-followup checkpoint 2026-10-14**
+
+- With `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to the genuine new extraction,
+  `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **127 files / 3,147 tests / no
+  skips**, including all **four packed contracts** and **93 story-style mount tests**. Start **15:21:14 local**; duration **335.46
+  seconds**.
+- Statements **98.35% (3765/3828)**; branches **95.32% (2996/3143)**; functions **99.41% (1022/1028)**; lines **99.24% (3571/3598)**.
+  Existing thresholds/exclusions remain unchanged: 80% branches; 95% functions, lines and statements.
+- Real React18 source and packed lanes each passed **28 fixtures**. Story migration removed **224 classes from 74 production CSS Modules**
+  into **80 story-owned style mounts**; actual packed legacy selectors fell **432 → 0**, with **26,551 fewer uncompressed production CSS
+  bytes**. Parent's **74 graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks passed with zero diagnostics.
+- Independent review (`328aa289`) reported no findings: all four original review items addressed, story-style boundary approved. Parent's
+  configured full ESLint and **177-changed-file** format checks passed.
+- Expected Motion/npm notices, intentional ErrorBoundary demo error reporting and the chart zero-geometry warning stayed visible; this is
+  not a warning-free claim. The historical 15 hook/story strong-type baseline, website fixture/build-environment limits, physical-browser
+  acceptance, publication and website adoption are not cleared by this component checkpoint.
+
+**Validation — historical initial v3 checkpoint 2026-10-14**
+
+The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
 
 - With `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to the real extracted artifact,
   `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **126 files / 3,043 tests / no
