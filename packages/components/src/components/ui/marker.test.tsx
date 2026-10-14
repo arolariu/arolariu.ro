@@ -1,6 +1,6 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {parse} from "postcss";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it} from "vitest";
@@ -8,7 +8,7 @@ import {describe, expect, expectTypeOf, it} from "vitest";
 import {Marker, MarkerContent, MarkerIcon, markerVariants} from "./marker";
 import styles from "./marker.module.css";
 
-const css = parse(readFileSync(resolve(process.cwd(), "packages/components/src/components/ui/marker.module.css"), "utf8"));
+const css = parse(readFileSync(join(import.meta.dirname, "marker.module.css"), "utf8"));
 function cssClass(name: string): string {
   const value = styles[name];
   if (!value) throw new Error(`Missing marker class: ${name}`);

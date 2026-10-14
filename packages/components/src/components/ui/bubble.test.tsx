@@ -1,6 +1,6 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {parse} from "postcss";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it} from "vitest";
@@ -8,7 +8,7 @@ import {describe, expect, expectTypeOf, it} from "vitest";
 import {Bubble, BubbleContent, BubbleGroup, BubbleReactions} from "./bubble";
 import styles from "./bubble.module.css";
 
-const css = parse(readFileSync(resolve(process.cwd(), "packages/components/src/components/ui/bubble.module.css"), "utf8"));
+const css = parse(readFileSync(join(import.meta.dirname, "bubble.module.css"), "utf8"));
 function cssClass(name: string): string {
   const value = styles[name];
   if (!value) throw new Error(`Missing bubble class: ${name}`);

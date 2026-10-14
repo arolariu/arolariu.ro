@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {act, render, screen} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -124,7 +124,7 @@ describe("GradientText", () => {
   });
 
   it("authors readable forced-colors text instead of leaving a transparent gradient-only glyph", () => {
-    const css = readFileSync(resolve("packages", "components", "src", "components", "ui", "gradient-text.module.css"), "utf8");
+    const css = readFileSync(join(import.meta.dirname, "gradient-text.module.css"), "utf8");
     expect(css).toMatch(/@media\s*\(forced-colors:\s*active\)/u);
     expect(css).toMatch(/color:\s*CanvasText/u);
     expect(css).toMatch(/-webkit-text-fill-color:\s*CanvasText/u);

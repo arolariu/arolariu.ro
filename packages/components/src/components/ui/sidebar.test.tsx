@@ -8,7 +8,7 @@ import {act, cleanup, render, screen, waitFor, within} from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {AtRule, parse, root, type Node} from "postcss";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
@@ -43,8 +43,8 @@ import {
 import styles from "./sidebar.module.css";
 import * as stories from "./sidebar.stories";
 
-const stylesheet = readFileSync(resolve("packages", "components", "src", "components", "ui", "sidebar.module.css"), "utf8");
-const accessibilityApi: unknown = createRequire(resolve("packages", "components", "package.json"))("dom-accessibility-api");
+const stylesheet = readFileSync(join(import.meta.dirname, "sidebar.module.css"), "utf8");
+const accessibilityApi: unknown = createRequire(join(import.meta.dirname, "..", "..", "..", "package.json"))("dom-accessibility-api");
 function hasNativeRoleOracle(value: unknown): value is Readonly<{getRole: typeof NativeRoleOracle}> {
   return typeof value === "object" && value !== null && "getRole" in value && typeof value.getRole === "function";
 }

@@ -21,7 +21,6 @@ describe("CheckboxGroup", () => {
           />
         )}>
         <Checkbox
-          nativeButton
           value='email'
           aria-label='Email'
         />
@@ -52,13 +51,11 @@ describe("CheckboxGroup", () => {
             />
           )}>
           <Checkbox
-            nativeButton
             name='channels'
             value='email'
             aria-label='Email'
           />
           <Checkbox
-            nativeButton
             name='channels'
             value='sms'
             aria-label='SMS'
@@ -71,8 +68,13 @@ describe("CheckboxGroup", () => {
     const sms = screen.getByRole("checkbox", {name: "SMS"});
     const form = screen.getByRole<HTMLFormElement>("form", {name: "Preferences"});
 
+    expect(email.tagName).toBe("SPAN");
+    expect(sms.tagName).toBe("SPAN");
     expect(new FormData(form).getAll("channels")).toEqual(["email"]);
-    sms.focus();
+    await user.tab();
+    expect(email).toHaveFocus();
+    await user.tab();
+    expect(sms).toHaveFocus();
     await user.keyboard(" ");
     expect(changes).toEqual([["email", "sms"]]);
     expect(sms).toHaveAttribute("aria-checked", "false");
@@ -146,7 +148,6 @@ describe("CheckboxGroup", () => {
           details.cancel();
         }}>
         <Checkbox
-          nativeButton
           value='email'
           aria-label='Email'
         />

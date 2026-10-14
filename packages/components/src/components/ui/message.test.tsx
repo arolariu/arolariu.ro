@@ -1,6 +1,6 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {parse} from "postcss";
 import * as React from "react";
 import {renderToStaticMarkup} from "react-dom/server";
@@ -11,7 +11,7 @@ import {Bubble, BubbleContent} from "./bubble";
 import {Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader} from "./message";
 import styles from "./message.module.css";
 
-const css = parse(readFileSync(resolve(process.cwd(), "packages/components/src/components/ui/message.module.css"), "utf8"));
+const css = parse(readFileSync(join(import.meta.dirname, "message.module.css"), "utf8"));
 function cssClass(name: string): string {
   const value = styles[name];
   if (!value) throw new Error(`Missing message class: ${name}`);

@@ -2,7 +2,7 @@ import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {renderToString} from "react-dom/server";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import postcss from "postcss";
 import {act, render} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -340,7 +340,7 @@ describe("visual effect policy consumer contracts", () => {
 
 describe("normal-mode visual effect stories", () => {
   it.each(families)("$name's general demo layout is unconditional, not nested in forced colors", ({name}) => {
-    const css = postcss.parse(readFileSync(resolve("packages", "components", "src", "components", "ui", `${name}.module.css`), "utf8"));
+    const css = postcss.parse(readFileSync(join(import.meta.dirname, `${name}.module.css`), "utf8"));
     const generalRules: postcss.Rule[] = [];
     css.walkRules((rule) => {
       if (rule.selectors.some((selector) => /(?:\.demo(?:Content|Pair|Prize|Heading|FullScreen|Lead)?|\.resizableDemo)$/u.test(selector))) {

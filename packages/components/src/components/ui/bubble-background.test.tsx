@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
+import {join} from "node:path";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -91,7 +91,7 @@ describe("BubbleBackground", () => {
     expect(root?.style.getPropertyValue("--ac-bubble-fourth-color")).toBe("100 110 120");
     expect(root?.style.getPropertyValue("--ac-bubble-fifth-color")).toBe("130 140 150");
     expect(root?.style.getPropertyValue("--ac-bubble-sixth-color")).toBe("160 170 180");
-    const css = readFileSync(resolve("packages", "components", "src", "components", "ui", "bubble-background.module.css"), "utf8");
+    const css = readFileSync(join(import.meta.dirname, "bubble-background.module.css"), "utf8");
     expect(css).toMatch(/rgb\(var\(--ac-bubble-first-color\) \/ 0\.8\)/u);
   });
 
