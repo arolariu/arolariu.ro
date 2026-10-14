@@ -3,6 +3,8 @@ import {Menubar as BaseMenubar} from "@base-ui/react/menubar";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -53,7 +55,7 @@ function renderMenubar(): HTMLElement {
 
 describe("Menubar", () => {
   it.each(["open", "cancel"] as const)(
-    "preserves custom native-button asChild form/ref/state semantics when callbacks %s",
+    "preserves custom native-button composition form/ref/state semantics when callbacks %s",
     async (interaction) => {
       const user = userEvent.setup();
       const errors = vi.spyOn(console, "error");
@@ -71,21 +73,26 @@ describe("Menubar", () => {
             <Menubar>
               <MenubarMenu>
                 <MenubarTrigger
-                  asChild
                   ref={wrapperRef}
                   className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
-                  onClick={() => calls.push("wrapper")}>
-                  <LegacyControl
-                    ref={childRef}
-                    onMouseDown={(event) => {
-                      if (interaction === "cancel" && "preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-                        event.preventBaseUIHandler();
-                      }
-                    }}
-                    onClick={() => calls.push("child")}>
-                    File
-                  </LegacyControl>
-                </MenubarTrigger>
+                  onClick={() => calls.push("wrapper")}
+                  render={
+                    <LegacyControl
+                      ref={childRef}
+                      onMouseDown={(event) => {
+                        if (
+                          interaction === "cancel"
+                          && "preventBaseUIHandler" in event
+                          && typeof event.preventBaseUIHandler === "function"
+                        ) {
+                          event.preventBaseUIHandler();
+                        }
+                      }}
+                      onClick={() => calls.push("child")}>
+                      File
+                    </LegacyControl>
+                  }
+                />
                 <MenubarContent aria-label='Custom file actions'>
                   <MenubarItem>Rename</MenubarItem>
                 </MenubarContent>
@@ -123,10 +130,9 @@ describe("Menubar", () => {
         <Menubar>
           <MenubarMenu>
             <MenubarTrigger
-              asChild
-              nativeButton={false}>
-              <LegacyRegion>File</LegacyRegion>
-            </MenubarTrigger>
+              nativeButton={false}
+              render={<LegacyRegion>File</LegacyRegion>}
+            />
             <MenubarContent aria-label='Custom file actions'>
               <MenubarItem>Rename</MenubarItem>
             </MenubarContent>
@@ -924,9 +930,7 @@ describe("Menubar", () => {
             <MenubarContent>
               <MenubarItem>
                 Zoom in
-                <MenubarShortcut asChild>
-                  <span data-testid='shortcut-child'>⌘+</span>
-                </MenubarShortcut>
+                <MenubarShortcut render={<span data-testid='shortcut-child'>⌘+</span>} />
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
@@ -941,4 +945,8 @@ describe("Menubar", () => {
       expect(screen.getByTestId("shortcut-child").querySelector("span")).toBeNull();
     });
   });
+});
+it("refresh accessibility: authors a contrasting menubar keyboard focus outline", () => {
+  const css = readFileSync(join(import.meta.dirname, "menubar.module.css"), "utf8");
+  expect(css).toMatch(/\.trigger:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ac-ring\)/u);
 });

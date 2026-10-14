@@ -42,7 +42,7 @@ export type AttachmentDescriptionProps = Readonly<React.ComponentPropsWithRef<"s
 /** Native action collection props, layered above the covering trigger. */
 export type AttachmentActionsProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Reviewed Button props; defaults to ghost and icon-xs. */
-export type AttachmentActionProps = ButtonProps;
+export type AttachmentActionProps = Readonly<ButtonProps & ({readonly "aria-label": string} | {readonly "aria-labelledby": string})>;
 /** Actual Button-owned interaction and visual state for action render callbacks. */
 export type AttachmentActionState = ButtonState;
 /** State owned by the native attachment trigger renderer. */
@@ -75,107 +75,112 @@ const mediaStyles: Record<AttachmentMediaVariant, string | undefined> = {
  * Displays caller-provided file content and status without owning a file lifecycle.
  * Supply names/status copy and any live-region semantics at the application boundary.
  */
-const Attachment = React.forwardRef<HTMLDivElement, Attachment.Props>(
-  ({className, state = "done", size = "default", orientation = "horizontal", ...props}, ref): React.JSX.Element => (
-    <div
-      {...props}
-      ref={ref}
-      data-slot='attachment'
-      data-state={state}
-      data-size={size}
-      data-orientation={orientation}
-      className={cn(styles.attachment, sizeStyles[size], orientationStyles[orientation], className)}
-    />
-  ),
+const Attachment = ({
+  ref,
+  className,
+  state = "done",
+  size = "default",
+  orientation = "horizontal",
+  ...props
+}: Readonly<Attachment.Props>): React.JSX.Element => (
+  <div
+    {...props}
+    ref={ref}
+    data-slot='attachment'
+    data-state={state}
+    data-size={size}
+    data-orientation={orientation}
+    className={cn(styles.attachment, sizeStyles[size], orientationStyles[orientation], className)}
+  />
 );
 Attachment.displayName = "Attachment";
 
-/** Groups attachments in a horizontally scrollable, snap-aligned native container. */
-const AttachmentGroup = React.forwardRef<HTMLDivElement, AttachmentGroup.Props>(({className, ...props}, ref): React.JSX.Element => (
+/** Groups attachments in a wrapping native container without hiding filenames at narrow widths. */
+const AttachmentGroup = ({ref, className, ...props}: Readonly<AttachmentGroup.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='attachment-group'
     className={cn(styles.group, className)}
   />
-));
+);
 AttachmentGroup.displayName = "AttachmentGroup";
 
 /** Hosts caller-provided icons or images; image loading and accessible text are caller-owned. */
-const AttachmentMedia = React.forwardRef<HTMLDivElement, AttachmentMedia.Props>(
-  ({className, variant = "icon", ...props}, ref): React.JSX.Element => (
-    <div
-      {...props}
-      ref={ref}
-      data-slot='attachment-media'
-      data-variant={variant}
-      className={cn(styles.media, mediaStyles[variant], className)}
-    />
-  ),
+const AttachmentMedia = ({ref, className, variant = "icon", ...props}: Readonly<AttachmentMedia.Props>): React.JSX.Element => (
+  <div
+    {...props}
+    ref={ref}
+    data-slot='attachment-media'
+    data-variant={variant}
+    className={cn(styles.media, mediaStyles[variant], className)}
+  />
 );
 AttachmentMedia.displayName = "AttachmentMedia";
 
 /** Provides the shrinking text area beside or below attachment media. */
-const AttachmentContent = React.forwardRef<HTMLDivElement, AttachmentContent.Props>(({className, ...props}, ref): React.JSX.Element => (
+const AttachmentContent = ({ref, className, ...props}: Readonly<AttachmentContent.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='attachment-content'
     className={cn(styles.content, className)}
   />
-));
+);
 AttachmentContent.displayName = "AttachmentContent";
 
-/** Displays a visually ellipsized title while preserving its full DOM content. */
-const AttachmentTitle = React.forwardRef<HTMLSpanElement, AttachmentTitle.Props>(({className, ...props}, ref): React.JSX.Element => (
+/** Displays the full attachment title, including at narrow widths and increased text spacing. */
+const AttachmentTitle = ({ref, className, ...props}: Readonly<AttachmentTitle.Props>): React.JSX.Element => (
   <span
     {...props}
     ref={ref}
     data-slot='attachment-title'
     className={cn(styles.title, className)}
   />
-));
+);
 AttachmentTitle.displayName = "AttachmentTitle";
 
 /** Displays caller-provided supporting text, including explicit loading/error descriptions. */
-const AttachmentDescription = React.forwardRef<HTMLSpanElement, AttachmentDescription.Props>(
-  ({className, ...props}, ref): React.JSX.Element => (
-    <span
-      {...props}
-      ref={ref}
-      data-slot='attachment-description'
-      className={cn(styles.description, className)}
-    />
-  ),
+const AttachmentDescription = ({ref, className, ...props}: Readonly<AttachmentDescription.Props>): React.JSX.Element => (
+  <span
+    {...props}
+    ref={ref}
+    data-slot='attachment-description'
+    className={cn(styles.description, className)}
+  />
 );
 AttachmentDescription.displayName = "AttachmentDescription";
 
 /** Hosts independent action controls above the covering attachment trigger. */
-const AttachmentActions = React.forwardRef<HTMLDivElement, AttachmentActions.Props>(({className, ...props}, ref): React.JSX.Element => (
+const AttachmentActions = ({ref, className, ...props}: Readonly<AttachmentActions.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='attachment-actions'
     className={cn(styles.actions, className)}
   />
-));
+);
 AttachmentActions.displayName = "AttachmentActions";
 
 /**
  * Delegates interaction, composition, cancellation and refs to the reviewed Button.
  * Icon-only actions require a caller-supplied accessible name.
  */
-const AttachmentAction = React.forwardRef<HTMLElement, AttachmentAction.Props>(
-  ({className, variant = "ghost", size = "icon-xs", ...props}, ref): React.JSX.Element => (
-    <Button
-      {...props}
-      ref={ref}
-      data-slot='attachment-action'
-      variant={variant}
-      size={size}
-      className={cn(styles.action, className)}
-    />
-  ),
+const AttachmentAction = ({
+  ref,
+  className,
+  variant = "ghost",
+  size = "icon-xs",
+  ...props
+}: Readonly<AttachmentAction.Props>): React.JSX.Element => (
+  <Button
+    {...props}
+    ref={ref}
+    data-slot='attachment-action'
+    variant={variant}
+    size={size}
+    className={cn(styles.action, className)}
+  />
 );
 AttachmentAction.displayName = "AttachmentAction";
 
@@ -187,22 +192,20 @@ AttachmentAction.displayName = "AttachmentAction";
  * custom targets own their native type/role/keyboard semantics. Links receive no
  * invented button type or role. Place this beside, not around, AttachmentActions.
  */
-const AttachmentTrigger = React.forwardRef<HTMLElement, AttachmentTrigger.Props>(
-  ({className, render, type, ...props}: Readonly<React.PropsWithoutRef<AttachmentTrigger.Props>>, ref): React.ReactElement =>
-    useRender<AttachmentTrigger.State, HTMLElement>({
-      defaultTagName: "button",
-      ref,
-      render,
-      state: {slot: "attachment-trigger"},
-      props: mergeProps<"button">(
-        {
-          type: !render || (React.isValidElement(render) && render.type === "button") ? (type ?? "button") : type,
-          className: cn(styles.trigger, className),
-        },
-        props,
-      ),
-    }),
-);
+const AttachmentTrigger = ({ref, className, render, type, ...props}: Readonly<AttachmentTrigger.Props>): React.ReactElement =>
+  useRender<AttachmentTrigger.State, HTMLElement>({
+    defaultTagName: "button",
+    ref,
+    render,
+    state: {slot: "attachment-trigger"},
+    props: mergeProps<"button">(
+      {
+        type: !render || (React.isValidElement(render) && render.type === "button") ? (type ?? "button") : type,
+        className: cn(styles.trigger, className),
+      },
+      props,
+    ),
+  });
 AttachmentTrigger.displayName = "AttachmentTrigger";
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace

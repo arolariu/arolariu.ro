@@ -34,7 +34,6 @@ const meta = {
   args: {
     role: "status",
     "aria-label": "Loading results",
-    "aria-busy": true,
   },
   decorators: [
     (Story) => (
@@ -114,8 +113,7 @@ export const InContainer: Story = {
     <section
       className={storyClasses.storyPanel}
       role='status'
-      aria-labelledby='list-skeleton-heading'
-      aria-busy>
+      aria-labelledby='list-skeleton-heading'>
       <h2
         id='list-skeleton-heading'
         className={storyClasses.storyHeading}>

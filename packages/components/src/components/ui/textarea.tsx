@@ -7,7 +7,7 @@ import styles from "./textarea.module.css";
  * Props for the shared textarea wrapper.
  */
 export type TextareaProps = Readonly<
-  React.ComponentPropsWithoutRef<"textarea"> & {
+  React.ComponentPropsWithRef<"textarea"> & {
     /** CSS sizing policy; unsupported content sizing falls back to native sizing. @default "fixed" */
     "data-sizing"?: "fixed" | "content";
   }
@@ -28,20 +28,18 @@ export type TextareaProps = Readonly<
  *
  * @example Basic usage
  * ```tsx
- * <Textarea placeholder="Add additional details" />
+ * <Textarea aria-label="Additional details" placeholder="Add additional details" />
  * ```
  *
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/textarea | Native textarea}
  */
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({className, ...props}: Readonly<TextareaProps>, ref): React.JSX.Element => (
-    <textarea
-      data-slot='textarea'
-      ref={ref}
-      className={cn(styles.textarea, className)}
-      {...props}
-    />
-  ),
+const Textarea = ({ref, className, ...props}: Readonly<TextareaProps>): React.JSX.Element => (
+  <textarea
+    data-slot='textarea'
+    ref={ref}
+    className={cn(styles.textarea, className)}
+    {...props}
+  />
 );
 Textarea.displayName = "Textarea";
 

@@ -7,23 +7,11 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./tooltip.module.css";
 
-/** Shared primitive timing options with the legacy delayDuration alias. */
-export type TooltipProviderProps = Readonly<
-  React.ComponentProps<typeof BaseTooltip.Provider> & {
-    /** Delay in milliseconds before tooltip content becomes visible. @default undefined */
-    readonly delayDuration?: number;
-  }
->;
+/** Shared primitive timing options; use Provider.delay or Trigger.delay. */
+export type TooltipProviderProps = Readonly<React.ComponentProps<typeof BaseTooltip.Provider>>;
 
-/** SDK-owned generic payload/root options; legacy delayDuration is supplied to triggers, never Root.delay. */
-export type TooltipProps<Payload = unknown> = Readonly<
-  BaseTooltip.Root.Props<Payload> & {
-    /** Delay in milliseconds before tooltip content becomes visible. @default undefined */
-    readonly delayDuration?: number;
-  }
->;
-
-const TooltipDelayContext = React.createContext<number | undefined>(undefined);
+/** SDK-owned generic payload/root options. */
+export type TooltipProps<Payload = unknown> = Readonly<BaseTooltip.Root.Props<Payload>>;
 
 interface TooltipAriaContextValue {
   readonly popupId: string;
@@ -34,13 +22,9 @@ interface TooltipAriaContextValue {
 
 const TooltipAriaContext = React.createContext<TooltipAriaContextValue | null>(null);
 
-/** Primitive trigger options and legacy child-slot compatibility. */
+/** Primitive trigger options and React 19 composed-element ref. */
 export type TooltipTriggerProps<Payload = unknown> = Readonly<
-  Omit<BaseTooltip.Trigger.Props<Payload>, "ref">
-    & React.RefAttributes<HTMLElement> & {
-      /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer Base UI's `render` prop. */
-      readonly asChild?: boolean;
-    }
+  Omit<BaseTooltip.Trigger.Props<Payload>, "ref"> & React.RefAttributes<HTMLElement>
 >;
 
 /** Popup semantics plus explicit positioning/portal options; `side=top`, `sideOffset=4`. */
@@ -76,7 +60,7 @@ export type TooltipArrowProps = Readonly<React.ComponentPropsWithRef<typeof Base
  * @remarks
  * - Renders no DOM element and delegates shared delay/group timing to Base UI
  * - Built on {@link https://base-ui.com/react/components/tooltip | Base UI Tooltip}
- * - `delay` takes precedence over the legacy `delayDuration` alias
+ * - Native Provider/Trigger `delay` owns timing
  * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
  *
  * @example Basic usage
@@ -91,13 +75,8 @@ export type TooltipArrowProps = Readonly<React.ComponentPropsWithRef<typeof Base
  *
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
-function TooltipProvider({delayDuration, delay, ...props}: Readonly<TooltipProvider.Props>): React.ReactElement {
-  return (
-    <BaseTooltip.Provider
-      delay={delay ?? delayDuration}
-      {...props}
-    />
-  );
+function TooltipProvider(props: Readonly<TooltipProvider.Props>): React.ReactElement {
+  return <BaseTooltip.Provider {...props} />;
 }
 TooltipProvider.displayName = "TooltipProvider";
 
@@ -125,7 +104,7 @@ TooltipProvider.displayName = "TooltipProvider";
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
 function Tooltip<Payload = unknown>(props: Readonly<Tooltip.Props<Payload>>): React.ReactElement {
-  const {delayDuration, ...otherProps} = props;
+  const {disabled = false} = props;
   const popupId = `ac-tooltip-${React.useId()}`;
   const [descriptions, setDescriptions] = React.useState<ReadonlyMap<string, string>>(() => new Map());
   const register = React.useCallback((owner: string, id: string | null): void => {
@@ -138,25 +117,17 @@ function Tooltip<Payload = unknown>(props: Readonly<Tooltip.Props<Payload>>): Re
     });
   }, []);
   const [descriptionId] = descriptions.values();
-  const disabled = otherProps.disabled ?? false;
   const aria = React.useMemo<TooltipAriaContextValue>(
     () => ({popupId, descriptionId, disabled, register}),
     [popupId, descriptionId, disabled, register],
   );
   return (
-    <TooltipDelayContext.Provider value={delayDuration}>
-      <TooltipAriaContext.Provider value={aria}>
-        <BaseTooltip.Root {...otherProps} />
-      </TooltipAriaContext.Provider>
-    </TooltipDelayContext.Provider>
+    <TooltipAriaContext.Provider value={aria}>
+      <BaseTooltip.Root {...props} />
+    </TooltipAriaContext.Provider>
   );
 }
 Tooltip.displayName = "Tooltip";
-
-interface TooltipTriggerComponent {
-  <Payload = unknown>(props: TooltipTrigger.Props<Payload>): React.ReactNode;
-  displayName?: string;
-}
 
 /**
  * Anchors tooltip behavior to an interactive trigger element.
@@ -176,44 +147,36 @@ interface TooltipTriggerComponent {
  *
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
-const TooltipTrigger: TooltipTriggerComponent = React.forwardRef(
-  <Payload,>(props: Readonly<TooltipTrigger.Props<Payload>>, ref: React.ForwardedRef<HTMLElement>): React.ReactElement => {
-    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
-    const {asChild = false, children, className, delay, render, disabled, ...otherProps} = props;
-    const rootDelay = React.useContext(TooltipDelayContext);
-    // eslint-disable-next-line react-x/no-children-to-array -- public React normalization supports Base UI lazy element slots.
-    const slotChildren = asChild ? React.Children.toArray(children) : [];
-    const child = slotChildren.length === 1 ? slotChildren[0] : undefined;
-    const renderProp = React.isValidElement(child) ? child : render;
-    const primitiveRef = React.useCallback(
-      (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
-        if (typeof ref === "function") return ref(element);
-        if (ref) ref.current = element;
-        return undefined;
-      },
-      [ref],
-    );
+function TooltipTrigger<Payload = unknown>(props: Readonly<TooltipTrigger.Props<Payload>>): React.ReactElement {
+  const {ref, children, className, delay, render, disabled, ...otherProps} = props;
+  const primitiveRef = React.useCallback(
+    (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
 
-    return (
-      <BaseTooltip.Trigger
-        className={typeof className === "function" ? (state) => cn(styles.trigger, className(state)) : cn(styles.trigger, className)}
-        delay={delay ?? rootDelay}
-        disabled={disabled}
-        render={(elementProps, state) => (
-          <TooltipTriggerSurface
-            elementProps={elementProps}
-            state={state}
-            render={renderProp}
-            disabled={disabled ?? false}
-          />
-        )}
-        {...otherProps}
-        ref={primitiveRef}>
-        {React.isValidElement(child) ? undefined : children}
-      </BaseTooltip.Trigger>
-    );
-  },
-);
+  return (
+    <BaseTooltip.Trigger
+      className={typeof className === "function" ? (state) => cn(styles.trigger, className(state)) : cn(styles.trigger, className)}
+      delay={delay}
+      disabled={disabled}
+      render={(elementProps, state) => (
+        <TooltipTriggerSurface
+          elementProps={elementProps}
+          state={state}
+          render={render}
+          disabled={disabled ?? false}
+        />
+      )}
+      {...otherProps}
+      ref={primitiveRef}>
+      {children}
+    </BaseTooltip.Trigger>
+  );
+}
 TooltipTrigger.displayName = "TooltipTrigger";
 
 type TooltipTriggerRenderFunction = Exclude<BaseTooltip.Trigger.Props["render"], React.ReactElement | undefined>;
@@ -284,97 +247,93 @@ function TooltipTriggerSurface({elementProps, state, render, disabled}: TooltipT
  *
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
-const TooltipContent = React.forwardRef<React.ComponentRef<typeof BaseTooltip.Popup>, TooltipContent.Props>(
-  (props: Readonly<TooltipContent.Props>, ref): React.ReactElement => {
-    const {
-      className,
-      children,
-      render,
-      side = "top",
-      sideOffset = 4,
-      align = "center",
-      alignOffset = 0,
-      anchor,
-      positionMethod,
-      collisionBoundary,
-      collisionPadding,
-      collisionAvoidance,
-      sticky,
-      arrowPadding,
-      disableAnchorTracking,
-      keepMounted,
-      container,
-      showArrow = true,
-      ...popupProps
-    } = props;
-    return (
-      <BaseTooltip.Portal
-        keepMounted={keepMounted}
-        container={container}>
-        <BaseTooltip.Positioner
-          className={styles.positioner}
-          side={side}
-          sideOffset={sideOffset}
-          align={align}
-          alignOffset={alignOffset}
-          anchor={anchor}
-          positionMethod={positionMethod}
-          collisionBoundary={collisionBoundary}
-          collisionPadding={collisionPadding}
-          collisionAvoidance={collisionAvoidance}
-          sticky={sticky}
-          arrowPadding={arrowPadding}
-          disableAnchorTracking={disableAnchorTracking}>
-          <TooltipPopupWithArrow
-            ref={ref}
-            className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
-            render={render}
-            showArrow={showArrow}
-            {...popupProps}>
-            {children}
-          </TooltipPopupWithArrow>
-        </BaseTooltip.Positioner>
-      </BaseTooltip.Portal>
-    );
-  },
-);
+const TooltipContent = ({ref, ...props}: Readonly<TooltipContent.Props>): React.ReactElement => {
+  const {
+    className,
+    children,
+    render,
+    side = "top",
+    sideOffset = 4,
+    align = "center",
+    alignOffset = 0,
+    anchor,
+    positionMethod,
+    collisionBoundary,
+    collisionPadding,
+    collisionAvoidance,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    keepMounted,
+    container,
+    showArrow = true,
+    ...popupProps
+  } = props;
+  return (
+    <BaseTooltip.Portal
+      keepMounted={keepMounted}
+      container={container}>
+      <BaseTooltip.Positioner
+        className={styles.positioner}
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+        anchor={anchor}
+        positionMethod={positionMethod}
+        collisionBoundary={collisionBoundary}
+        collisionPadding={collisionPadding}
+        collisionAvoidance={collisionAvoidance}
+        sticky={sticky}
+        arrowPadding={arrowPadding}
+        disableAnchorTracking={disableAnchorTracking}>
+        <TooltipPopupWithArrow
+          ref={ref}
+          className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
+          render={render}
+          showArrow={showArrow}
+          {...popupProps}>
+          {children}
+        </TooltipPopupWithArrow>
+      </BaseTooltip.Positioner>
+    </BaseTooltip.Portal>
+  );
+};
 TooltipContent.displayName = "TooltipContent";
 
 type TooltipPopupWithArrowProps = Readonly<React.ComponentPropsWithRef<typeof BaseTooltip.Popup> & {showArrow: boolean}>;
 
 // This part only renders inside a mounted Portal, so unopened lazy render elements are not eagerly resolved.
-const TooltipPopupWithArrow = React.forwardRef<HTMLDivElement, TooltipPopupWithArrowProps>(
-  ({render, children, showArrow, ...props}: TooltipPopupWithArrowProps, ref): React.ReactElement => {
-    const renderWithArrow: BaseTooltip.Popup.Props["render"] =
-      !showArrow || !render
-        ? render
-        : typeof render === "function"
-          ? (renderProps, state) => appendTooltipArrow(render(renderProps, state), children)
-          : appendTooltipArrow(render, children);
+const TooltipPopupWithArrow = ({ref, render, children, showArrow, ...props}: Readonly<TooltipPopupWithArrowProps>): React.ReactElement => {
+  const renderWithArrow: BaseTooltip.Popup.Props["render"] =
+    !showArrow || !render
+      ? render
+      : typeof render === "function"
+        ? (renderProps, state) => appendTooltipArrow(render(renderProps, state), children)
+        : appendTooltipArrow(render, children);
 
-    return (
-      <BaseTooltip.Popup
-        {...props}
-        render={(elementProps, state) => (
-          <TooltipPopupSurface
-            elementProps={elementProps}
-            state={state}
-            render={renderWithArrow}
-          />
-        )}
-        ref={ref}>
-        {render !== undefined ? (
-          children
-        ) : (
-          <>
-            {children}
-            {showArrow ? <TooltipArrow /> : null}
-          </>
-        )}
-      </BaseTooltip.Popup>
-    );
-  },
-);
+  return (
+    <BaseTooltip.Popup
+      {...props}
+      render={(elementProps, state) => (
+        <TooltipPopupSurface
+          elementProps={elementProps}
+          state={state}
+          render={renderWithArrow}
+        />
+      )}
+      ref={ref}>
+      {render !== undefined ? (
+        children
+      ) : (
+        <>
+          {children}
+          {showArrow ? <TooltipArrow /> : null}
+        </>
+      )}
+    </BaseTooltip.Popup>
+  );
+};
 TooltipPopupWithArrow.displayName = "TooltipPopupWithArrow";
 
 interface TooltipPopupSurfaceProps {
@@ -426,16 +385,14 @@ function TooltipPopupSurface({elementProps, state, render}: TooltipPopupSurfaceP
 }
 
 /** Decorative arrow positioned by Base UI; omit the default arrow with `TooltipContent.showArrow=false` when composing this part. */
-const TooltipArrow = React.forwardRef<HTMLDivElement, TooltipArrow.Props>(
-  ({className, ...props}: Readonly<TooltipArrow.Props>, ref): React.ReactElement => (
-    <BaseTooltip.Arrow
-      ref={ref}
-      data-slot='tooltip-arrow'
-      aria-hidden='true'
-      className={typeof className === "function" ? (state) => cn(styles.arrow, className(state)) : cn(styles.arrow, className)}
-      {...props}
-    />
-  ),
+const TooltipArrow = ({ref, className, ...props}: Readonly<TooltipArrow.Props>): React.ReactElement => (
+  <BaseTooltip.Arrow
+    ref={ref}
+    data-slot='tooltip-arrow'
+    aria-hidden='true'
+    className={typeof className === "function" ? (state) => cn(styles.arrow, className(state)) : cn(styles.arrow, className)}
+    {...props}
+  />
 );
 TooltipArrow.displayName = "TooltipArrow";
 

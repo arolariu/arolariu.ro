@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {renderToString} from "react-dom/server";
 import * as RechartsPrimitive from "recharts";
+import * as ChartModule from "./chart";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -13,7 +14,6 @@ import {
   BarStack,
   Brush,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Cross,
   Curve,
@@ -89,7 +89,6 @@ const passThroughs = {
   BarStack,
   Brush,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Cross,
   Curve,
@@ -222,6 +221,65 @@ const config: ChartConfig = {
     color: "#abcdef",
   },
 };
+
+describe("Chart accessible alternatives", () => {
+  it("uses the real series shape API instead of the removed Cell helper", () => {
+    render(
+      <ChartContainer
+        config={{}}
+        accessibleData={<p>May: 42</p>}>
+        <BarChart data={[{value: 42}]}>
+          <Bar
+            dataKey='value'
+            isAnimationActive={false}
+            shape={
+              <Rectangle
+                data-testid='custom-shape'
+                stroke='#111827'
+              />
+            }
+          />
+        </BarChart>
+      </ChartContainer>,
+    );
+    expect(screen.getByTestId("custom-shape")).toHaveAttribute("stroke", "#111827");
+    expect(screen.getByText("May: 42")).toBeInTheDocument();
+  });
+
+  it("removes Cell and legacy no-op legend fields from the public contract", () => {
+    expect(ChartModule).not.toHaveProperty("Cell");
+    expectTypeOf<ChartLegendContentProps>().not.toHaveProperty("align");
+    expectTypeOf<ChartLegendContentProps>().not.toHaveProperty("onMouseOver");
+    expectTypeOf<ChartLegendContentProps>().not.toHaveProperty("onCopyCapture");
+  });
+  it("exposes a named chart and a persistent caller-owned data alternative", () => {
+    render(
+      <ChartContainer
+        config={{}}
+        aria-label='Revenue'
+        accessibleData={
+          <table>
+            <caption>Revenue data</caption>
+            <tbody>
+              <tr>
+                <th>May</th>
+                <td>42</td>
+              </tr>
+            </tbody>
+          </table>
+        }>
+        <BarChart data={[{month: "May", value: 42}]}>
+          <Bar
+            dataKey='value'
+            isAnimationActive={false}
+          />
+        </BarChart>
+      </ChartContainer>,
+    );
+    expect(screen.getByRole("group", {name: "Revenue"})).toBeInTheDocument();
+    expect(screen.getByRole("table", {name: "Revenue data"})).toHaveTextContent("May42");
+  });
+});
 
 function renderLegendContent(props: Readonly<DefaultLegendContentProps>): React.JSX.Element {
   return <ChartLegendContent {...props} />;

@@ -157,20 +157,20 @@ export const Interactive: Story = {render: (): React.JSX.Element => <Interactive
 
 export const Loading: Story = {
   render: (): React.JSX.Element => (
-    <Card
-      aria-busy='true'
-      aria-label='Loading content'
-      className={storyClasses.storyCard}>
-      <CardHeader>
-        <Skeleton className={storyClasses.storyLoadingLine} />
-        <Skeleton className={storyClasses.storyLoadingLine} />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className={storyClasses.storyLoadingLine} />
-      </CardContent>
-      <CardFooter>
-        <span role='status'>Preparing content…</span>
-      </CardFooter>
-    </Card>
+    <>
+      <p role='status'>Preparing content…</p>
+      <Card
+        aria-busy='true'
+        className={storyClasses.storyCard}>
+        <CardHeader>
+          <Skeleton className={storyClasses.storyLoadingLine} />
+          <Skeleton className={storyClasses.storyLoadingLine} />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className={storyClasses.storyLoadingLine} />
+        </CardContent>
+        <CardFooter>Loading preview</CardFooter>
+      </Card>
+    </>
   ),
 };

@@ -34,7 +34,6 @@ const meta = {
   args: {
     role: "status",
     "aria-label": "Loading form",
-    "aria-busy": true,
   },
   decorators: [
     (Story) => (
@@ -107,8 +106,7 @@ export const InCard: Story = {
     <section
       className={storyClasses.storyPanel}
       role='status'
-      aria-labelledby='form-skeleton-heading'
-      aria-busy>
+      aria-labelledby='form-skeleton-heading'>
       <h2
         id='form-skeleton-heading'
         className={storyClasses.storyHeading}>

@@ -21,9 +21,9 @@ import styles from "./toggle-group.module.css";
 import * as stories from "./toggle-group.stories";
 
 describe("ToggleGroup", () => {
-  it("keeps React 18-compatible forwarded ref component identities", () => {
-    expect(ToggleGroup).toMatchObject({$$typeof: Symbol.for("react.forward_ref")});
-    expect(ToggleGroupItem).toMatchObject({$$typeof: Symbol.for("react.forward_ref")});
+  it("uses React 19 functions without exotic ref boundaries", () => {
+    expect(typeof ToggleGroup).toBe("function");
+    expect(typeof ToggleGroupItem).toBe("function");
   });
 
   it("applies zero-gap and vertical layout through its CSS Module state selectors", () => {

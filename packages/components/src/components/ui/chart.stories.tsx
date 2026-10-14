@@ -14,6 +14,7 @@ import {
   LineChart as RechartsLineChart,
   Pie,
   PieChart as RechartsPieChart,
+  Rectangle,
   XAxis,
   type ChartConfig,
 } from "./chart";
@@ -37,6 +38,50 @@ const chartConfig = {
     color: "#60a5fa",
   },
 } satisfies ChartConfig;
+
+function DataTable({
+  data,
+  columns,
+  caption,
+}: Readonly<{
+  data: ReadonlyArray<Readonly<Record<string, string | number>>>;
+  columns: readonly string[];
+  caption: string;
+}>): React.JSX.Element {
+  return (
+    <table>
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th
+              key={column}
+              scope='col'>
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, index) => (
+          <tr key={index}>
+            {columns.map((column) => (
+              <td key={column}>{row[column]}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+const monthlyData = (
+  <DataTable
+    data={chartData}
+    columns={["month", "desktop", "mobile"]}
+    caption='Monthly visits data'
+  />
+);
 const storyStyles = `
 .ac-story-chart-storyFrame {
   width: min(600px, calc(100vw - 2rem));
@@ -101,11 +146,11 @@ const meta = {
     docs: {
       description: {
         component:
-          "Six config-aware helpers plus identity-preserving Recharts exports. Container refs and native attributes target the outer div. Separate SSR roots must use distinct React identifierPrefix values and retain them for hydration. Use content={<ChartTooltipContent />} or a callback returning that JSX—not content={ChartTooltipContent}; the same migration applies to ChartLegendContent. Legend content invokes only item click/enter/leave callbacks, never forwards item callbacks as native root handlers. Resize/layout are owned by Recharts; .dark ancestors select the dark palette.",
+          "Config-aware helpers plus identity-preserving Recharts exports. Name meaningful charts and provide accessibleData with equivalent text or a data table; hover tooltips are not alternatives. Use shape on series, not the removed Cell. Container refs/native attributes target the outer group. Separate SSR roots use distinct React identifierPrefix values. Recharts owns sizing, keyboard navigation and series animation (disable isAnimationActive for static/reduced-motion consumers). Legend content invokes only item click/enter/leave callbacks, never forwards engine events to the DOM. .dark ancestors select dark palettes; verify custom series contrast and distinguish series without color alone.",
       },
     },
   },
-  args: {config: chartConfig, children: undefined as React.ReactNode},
+  args: {config: chartConfig, children: undefined as React.ReactNode, "aria-label": "Monthly visits", accessibleData: monthlyData},
 } satisfies Meta<typeof ChartContainer>;
 
 export default meta;
@@ -147,6 +192,40 @@ export const Default: Story = {
   ),
 };
 
+/** Series shape composition replaces the removed deprecated Cell helper. */
+export const ShapeComposition: Story = {
+  render: () => (
+    <div className={storyClasses.storyFrame}>
+      <ChartContainer
+        config={chartConfig}
+        aria-label='Desktop visits'
+        accessibleData={
+          <DataTable
+            data={chartData}
+            columns={["month", "desktop"]}
+            caption='Desktop visits data'
+          />
+        }>
+        <BarChart
+          data={chartData}
+          accessibilityLayer>
+          <XAxis dataKey='month' />
+          <Bar
+            dataKey='desktop'
+            fill='var(--color-desktop)'
+            shape={
+              <Rectangle
+                stroke='var(--ac-foreground)'
+                strokeWidth={2}
+              />
+            }
+          />
+        </BarChart>
+      </ChartContainer>
+    </div>
+  ),
+};
+
 /**
  * Simple bar chart with single data series.
  */
@@ -169,7 +248,16 @@ export const Simple: Story = {
 
     return (
       <div className={storyClasses.storyCompact}>
-        <ChartContainer config={simpleConfig}>
+        <ChartContainer
+          config={simpleConfig}
+          aria-label='Sales'
+          accessibleData={
+            <DataTable
+              data={simpleData}
+              columns={["name", "value"]}
+              caption='Sales data'
+            />
+          }>
           <BarChart data={simpleData}>
             <CartesianGrid strokeDasharray='3 3' />
             <XAxis dataKey='name' />
@@ -194,6 +282,8 @@ export const CustomSize: Story = {
     <div className={storyClasses.storyLarge}>
       <h3 className={storyClasses.storyHeading}>Monthly Revenue</h3>
       <ChartContainer
+        aria-label='Monthly visits'
+        accessibleData={monthlyData}
         config={chartConfig}
         aspect={2}
         minHeight={200}
@@ -247,7 +337,16 @@ export const LineChart: Story = {
 
     return (
       <div className={storyClasses.storyFrame}>
-        <ChartContainer config={lineConfig}>
+        <ChartContainer
+          config={lineConfig}
+          aria-label='Sales trend'
+          accessibleData={
+            <DataTable
+              data={lineData}
+              columns={["month", "sales"]}
+              caption='Sales trend data'
+            />
+          }>
           <RechartsLineChart data={lineData}>
             <CartesianGrid
               strokeDasharray='3 3'
@@ -292,7 +391,16 @@ export const PieChart: Story = {
 
     return (
       <div className={storyClasses.storyCompact}>
-        <ChartContainer config={pieConfig}>
+        <ChartContainer
+          config={pieConfig}
+          aria-label='Device distribution'
+          accessibleData={
+            <DataTable
+              data={pieData}
+              columns={["name", "value"]}
+              caption='Device distribution data'
+            />
+          }>
           <RechartsPieChart>
             <ChartTooltip
               content={
@@ -339,7 +447,16 @@ export const Stacked: Story = {
 
     return (
       <div className={storyClasses.storyFrame}>
-        <ChartContainer config={stackedConfig}>
+        <ChartContainer
+          config={stackedConfig}
+          aria-label='Products by month'
+          accessibleData={
+            <DataTable
+              data={stackedData}
+              columns={["month", "productA", "productB", "productC"]}
+              caption='Products by month data'
+            />
+          }>
           <BarChart data={stackedData}>
             <CartesianGrid
               strokeDasharray='3 3'
@@ -391,7 +508,10 @@ export const Themes: Story = {
           className={theme === "dark" ? `dark ${storyClasses.storyDark}` : undefined}>
           <h3 className={storyClasses.storyHeading}>{theme === "dark" ? "Dark palette" : "Light palette"}</h3>
           <div className={storyClasses.storyCompact}>
-            <ChartContainer config={themedConfig}>
+            <ChartContainer
+              config={themedConfig}
+              aria-label='Monthly visits'
+              accessibleData={monthlyData}>
               <BarChart
                 data={chartData}
                 accessibilityLayer>

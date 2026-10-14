@@ -11,7 +11,7 @@ import {VisuallyHidden} from "./visually-hidden";
  * Extends native `<div>` attributes so step progress indicators can expose data
  * attributes, testing hooks, and ARIA metadata while remaining layout-flexible.
  */
-interface StepperProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+interface StepperProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Labels for each step in the progress sequence.
    */
@@ -55,49 +55,55 @@ interface StepperProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
  *
  * @see {@link https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/progressbar/progressbar.html | WAI progress indicator guidance}
  */
-const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({steps, activeStep, completedLabel = "Completed", orientation = "horizontal", className, ...props}: Readonly<StepperProps>, ref) => (
-    <div
-      ref={ref}
-      role='list'
-      aria-label='Progress'
-      data-orientation={orientation}
-      className={cn(styles.stepper, orientation === "vertical" && styles.vertical, className)}
-      {...props}>
-      {steps.map((label, index) => {
-        let state: "completed" | "active" | "upcoming" = "upcoming";
+const Stepper = ({
+  ref,
+  steps,
+  activeStep,
+  completedLabel = "Completed",
+  orientation = "horizontal",
+  className,
+  ...props
+}: Readonly<StepperProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    role='list'
+    aria-label='Progress'
+    data-orientation={orientation}
+    className={cn(styles.stepper, orientation === "vertical" && styles.vertical, className)}
+    {...props}>
+    {steps.map((label, index) => {
+      let state: "completed" | "active" | "upcoming" = "upcoming";
 
-        if (index < activeStep) {
-          state = "completed";
-        } else if (index === activeStep) {
-          state = "active";
-        }
+      if (index < activeStep) {
+        state = "completed";
+      } else if (index === activeStep) {
+        state = "active";
+      }
 
-        return (
+      return (
+        <div
+          key={`${label}-${index}`}
+          role='listitem'
+          aria-current={state === "active" ? "step" : undefined}
+          className={styles.step}
+          data-state={state}>
           <div
-            key={`${label}-${index}`}
-            role='listitem'
-            aria-current={state === "active" ? "step" : undefined}
-            className={styles.step}
-            data-state={state}>
-            <div
-              className={styles.indicator}
-              aria-hidden='true'>
-              {state === "completed" ? "✓" : index + 1}
-            </div>
-            {index < steps.length - 1 ? (
-              <div
-                className={styles.connector}
-                aria-hidden='true'
-              />
-            ) : null}
-            <span className={styles.label}>{label}</span>
-            {state === "completed" && completedLabel ? <VisuallyHidden> {completedLabel}</VisuallyHidden> : null}
+            className={styles.indicator}
+            aria-hidden='true'>
+            {state === "completed" ? "✓" : index + 1}
           </div>
-        );
-      })}
-    </div>
-  ),
+          {index < steps.length - 1 ? (
+            <div
+              className={styles.connector}
+              aria-hidden='true'
+            />
+          ) : null}
+          <span className={styles.label}>{label}</span>
+          {state === "completed" && completedLabel ? <VisuallyHidden> {completedLabel}</VisuallyHidden> : null}
+        </div>
+      );
+    })}
+  </div>
 );
 Stepper.displayName = "Stepper";
 

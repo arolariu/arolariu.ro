@@ -376,6 +376,7 @@ describe("Attachment", () => {
       <AttachmentAction
         variant='destructive'
         size='icon-sm'
+        aria-label='Remove'
         onClick={() => calls.push("remove")}>
         Remove
       </AttachmentAction>,
@@ -393,6 +394,7 @@ describe("Attachment", () => {
     render(
       <AttachmentAction
         nativeButton={false}
+        aria-label='Download'
         ref={ref}
         onClick={(event) => calls.push(`action:${event.defaultPrevented}`)}
         render={
@@ -416,7 +418,7 @@ describe("Attachment", () => {
     expect(link).toHaveAttribute("href", "#download");
   });
 
-  it("binds truncation, scroll snapping, logical positioning and action-above-trigger CSS contracts", () => {
+  it("React 19 refresh: binds full wrapping text, reflow and action-above-trigger CSS contracts", () => {
     render(
       <AttachmentGroup>
         <Attachment>
@@ -430,13 +432,13 @@ describe("Attachment", () => {
     );
     expect(screen.getByText("VeryLongUnbrokenCallerFilename")).toHaveClass(cssClass("title"));
     expect(declarations(".title")).toMatchObject({
-      overflow: "hidden",
-      "text-overflow": "ellipsis",
-      "white-space": "nowrap",
+      "overflow-wrap": "anywhere",
+      "white-space": "normal",
       "max-inline-size": "100%",
     });
-    expect(declarations(".group")).toMatchObject({"overflow-x": "auto", "scroll-snap-type": "x mandatory"});
-    expect(declarations('.group > [data-slot="attachment"]')).toMatchObject({"scroll-snap-align": "start", flex: "none"});
+    expect(declarations(".description")).toMatchObject({"overflow-wrap": "anywhere", "white-space": "normal"});
+    expect(declarations(".group")).toMatchObject({"flex-wrap": "wrap"});
+    expect(declarations('.group > [data-slot="attachment"]')).toMatchObject({flex: "none"});
     expect(declarations(".trigger")).toMatchObject({position: "absolute", inset: "0", "z-index": "10"});
     expect(declarations(".actions")).toMatchObject({position: "relative", "z-index": "20"});
     expect(declarations('.attachment[data-orientation="vertical"] > .actions')).toHaveProperty("inset-inline-end", "var(--ac-space-3)");

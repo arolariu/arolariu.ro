@@ -1,10 +1,19 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {describe, expect, it, vi} from "vitest";
 
 import {Timeline, TimelineContent, TimelineDot, TimelineItem} from "./timeline";
 
 describe("Timeline", () => {
+  it("React 19 refresh: authors logical connectors, wrapping content and forced-color markers", () => {
+    const css = readFileSync(join(import.meta.dirname, "timeline.module.css"), "utf8");
+    expect(css).toContain("inset-inline-start: 0.5625rem");
+    expect(css).toContain("overflow-wrap: anywhere");
+    expect(css).toContain("forced-colors: active");
+  });
+
   it("preserves native list/listitem decoration, caller handlers and all actual refs", () => {
     const root = React.createRef<HTMLDivElement>();
     const item = React.createRef<HTMLDivElement>();

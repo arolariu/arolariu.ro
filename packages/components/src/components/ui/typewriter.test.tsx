@@ -10,7 +10,7 @@ let media: MediaQueryList;
 let matchesDescriptor: PropertyDescriptor | undefined;
 let observed: ViewBoundary[] = [];
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -94,6 +94,9 @@ describe.each([TypewriterText, TypewriterTextSmooth])("Typewriter accessible ful
         data-testid='typing'
       />,
     );
+    act(() => {
+      for (const observer of observed) observer.enter();
+    });
     expect(screen.getByTestId("typing")).toHaveAttribute("data-motion", "running");
     act(() => {
       reduced = true;
@@ -193,7 +196,7 @@ describe("Typewriter viewport lifecycle with real Motion", () => {
     expect(ref.current).toBe(root);
     expect(setRef).toHaveBeenCalledTimes(1);
     expect(screen.getByText(after.map((word) => word.text).join(" "), {selector: '[data-slot="typewriter-text"]'})).toBe(readablePhrase);
-    expect(observed).toHaveLength(1);
+    expect(observed).toHaveLength(2);
     expect(root).toHaveAttribute("data-motion", "running");
     await waitFor(
       () => {

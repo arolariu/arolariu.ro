@@ -25,6 +25,23 @@ const sizeCases = [
 ] as const;
 
 describe("Pagination", () => {
+  it("React 19 refresh: uses localized visible text as the default accessible name", () => {
+    render(
+      <>
+        <PaginationPrevious
+          href='/previous'
+          text='Précédent'
+        />
+        <PaginationNext
+          href='/next'
+          text='Suivant'
+        />
+      </>,
+    );
+    expect(screen.getByRole("link", {name: "Précédent"})).toHaveAttribute("href", "/previous");
+    expect(screen.getByRole("link", {name: "Suivant"})).toHaveAttribute("href", "/next");
+  });
+
   it.each(sizeCases)("uses the reviewed %s Button sizing for a native pagination anchor", (size, className) => {
     if (className === undefined) throw new Error(`Missing Pagination ${size} Button CSS Module class`);
     render(
@@ -159,8 +176,8 @@ describe("Pagination", () => {
     expect(screen.getByText("1")).toHaveClass("custom-link");
     expect(screen.getByRole("link", {name: "1"})).toHaveAttribute("href", "/?page=1");
     expect(screen.getByRole("link", {name: "2"})).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", {name: /go to previous page/i})).toHaveAttribute("href", "/?page=1");
-    expect(screen.getByRole("link", {name: /go to next page/i})).toHaveAttribute("href", "/?page=3");
+    expect(screen.getByRole("link", {name: "Previous"})).toHaveAttribute("href", "/?page=1");
+    expect(screen.getByRole("link", {name: "Next"})).toHaveAttribute("href", "/?page=3");
     expect(screen.getByTestId("pagination-ellipsis")).toHaveAttribute("aria-hidden", "true");
   });
 });

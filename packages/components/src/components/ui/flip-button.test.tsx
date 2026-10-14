@@ -28,7 +28,7 @@ describe("FlipButton with real Motion", () => {
     expect(screen.getByRole("button", {name: "Open"})).toHaveAttribute("type", "button");
   });
 
-  it.each(["top", "bottom", "left", "righ"] as const)("retains the %s direction", (from) => {
+  it.each(["top", "bottom", "left", "right"] as const)("supports the %s direction", (from) => {
     render(
       <FlipButton
         frontText='Open'

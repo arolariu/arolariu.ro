@@ -10,7 +10,7 @@ import styles from "./focus-scope.module.css";
 /**
  * Represents the configurable props for the {@link FocusScope} component.
  */
-interface FocusScopeProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+interface FocusScopeProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Whether focus should be trapped within the scope.
    *
@@ -177,90 +177,94 @@ function resolveActiveTarget(active: Element | null, container: HTMLElement, can
  * </FocusScope>
  * ```
  */
-const FocusScope = React.forwardRef<HTMLDivElement, FocusScopeProps>(
-  (
-    {contain = true, restoreFocus = true, autoFocus = false, children, className, onKeyDown, ...props}: Readonly<FocusScopeProps>,
-    ref,
-  ): React.ReactElement => {
-    const containerRef = React.useRef<HTMLDivElement | null>(null);
-    const restoreFocusRef = React.useRef(restoreFocus);
-    const entryFocusRef = React.useRef<Element | null>(null);
-    const entryCapturedRef = React.useRef(false);
-    const captureEntryFocus = React.useCallback((marker: HTMLSpanElement | null): void => {
-      if (marker && !entryCapturedRef.current) {
-        entryFocusRef.current = marker.ownerDocument.activeElement;
-        entryCapturedRef.current = true;
-      }
-    }, []);
+const FocusScope = ({
+  ref,
+  contain = true,
+  restoreFocus = true,
+  autoFocus = false,
+  children,
+  className,
+  onKeyDown,
+  ...props
+}: Readonly<FocusScopeProps>): React.ReactElement => {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const restoreFocusRef = React.useRef(restoreFocus);
+  const entryFocusRef = React.useRef<Element | null>(null);
+  const entryCapturedRef = React.useRef(false);
+  const captureEntryFocus = React.useCallback((marker: HTMLSpanElement | null): void => {
+    if (marker && !entryCapturedRef.current) {
+      entryFocusRef.current = marker.ownerDocument.activeElement;
+      entryCapturedRef.current = true;
+    }
+  }, []);
 
-    React.useEffect(() => {
-      restoreFocusRef.current = restoreFocus;
-    }, [restoreFocus]);
+  React.useEffect(() => {
+    restoreFocusRef.current = restoreFocus;
+  }, [restoreFocus]);
 
-    React.useEffect(() => {
-      const container = containerRef.current;
-      return () => {
-        const previousFocus = entryFocusRef.current;
-        if (!container?.isConnected && restoreFocusRef.current && previousFocus instanceof HTMLElement && isAvailable(previousFocus)) {
-          previousFocus.focus();
-        }
-      };
-    }, []);
-
-    React.useEffect(() => {
-      const container = containerRef.current;
-      if (autoFocus && container && isAvailable(container)) {
-        (getFocusableElements(container)[0] ?? container).focus();
-      }
-    }, [autoFocus]);
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
-      onKeyDown?.(event);
-      if (!contain || event.key !== "Tab" || event.defaultPrevented || ownedTabEvents.has(event.nativeEvent)) return;
-      ownedTabEvents.add(event.nativeEvent);
-
-      const container = event.currentTarget;
-      const focusable = getFocusableElements(container);
-      const [first] = focusable;
-      const last = focusable.at(-1);
-      const {activeElement} = container.ownerDocument;
-      const active = resolveActiveTarget(activeElement, container, focusable);
-      if (!first || !last) {
-        event.preventDefault();
-        container.focus();
-      } else if (!active) {
-        event.preventDefault();
-        (event.shiftKey ? last : first).focus();
-      } else if (active !== activeElement || (event.shiftKey ? active === first : active === last)) {
-        event.preventDefault();
-        const offset = event.shiftKey ? -1 : 1;
-        const nextIndex = (focusable.indexOf(active) + offset + focusable.length) % focusable.length;
-        focusable[nextIndex]?.focus();
+  React.useEffect(() => {
+    const container = containerRef.current;
+    return () => {
+      const previousFocus = entryFocusRef.current;
+      if (!container?.isConnected && restoreFocusRef.current && previousFocus instanceof HTMLElement && isAvailable(previousFocus)) {
+        previousFocus.focus();
       }
     };
+  }, []);
 
-    return useRender({
-      defaultTagName: "div",
-      ref: [containerRef, ref],
-      props: {
-        ...props,
-        className: cn(styles.scope, className),
-        role: props.role ?? "group",
-        tabIndex: props.tabIndex ?? -1,
-        onKeyDown: handleKeyDown,
-        children: (
-          <>
-            <span
-              hidden
-              ref={captureEntryFocus}
-            />
-            {children}
-          </>
-        ),
-      },
-    });
-  },
-);
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (autoFocus && container && isAvailable(container)) {
+      (getFocusableElements(container)[0] ?? container).focus();
+    }
+  }, [autoFocus]);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    onKeyDown?.(event);
+    if (!contain || event.key !== "Tab" || event.defaultPrevented || ownedTabEvents.has(event.nativeEvent)) return;
+    ownedTabEvents.add(event.nativeEvent);
+
+    const container = event.currentTarget;
+    const focusable = getFocusableElements(container);
+    const [first] = focusable;
+    const last = focusable.at(-1);
+    const {activeElement} = container.ownerDocument;
+    const active = resolveActiveTarget(activeElement, container, focusable);
+    if (!first || !last) {
+      event.preventDefault();
+      container.focus();
+    } else if (!active) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (active !== activeElement || (event.shiftKey ? active === first : active === last)) {
+      event.preventDefault();
+      const offset = event.shiftKey ? -1 : 1;
+      const nextIndex = (focusable.indexOf(active) + offset + focusable.length) % focusable.length;
+      focusable[nextIndex]?.focus();
+    }
+  };
+
+  return useRender({
+    defaultTagName: "div",
+    ref: [containerRef, ref],
+    props: {
+      ...props,
+      className: cn(styles.scope, className),
+      role: props.role ?? "group",
+      tabIndex: props.tabIndex ?? -1,
+      onKeyDown: handleKeyDown,
+      children: (
+        <>
+          <span
+            hidden
+            ref={captureEntryFocus}
+          />
+          {children}
+        </>
+      ),
+    },
+  });
+};
 FocusScope.displayName = "FocusScope";
 
 export {FocusScope};

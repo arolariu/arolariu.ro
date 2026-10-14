@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {BackgroundBeams} from "./background-beams";
 const storyStyles = `
 .ac-story-background-beams-demo {
@@ -70,6 +72,24 @@ const meta = {
 } satisfies Meta<typeof BackgroundBeams>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Looping is intentional and has a keyboard-operable pause control. Defaults settle within five seconds. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume beams" : "Pause beams"}</Button>
+        <div className={storyClasses.demo}>
+          <BackgroundBeams
+            {...args}
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 
 /** Animated decorative beams with foreground content preserved inside the root. */
 export const Default: Story = {

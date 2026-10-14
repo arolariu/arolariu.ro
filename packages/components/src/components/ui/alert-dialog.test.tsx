@@ -44,8 +44,8 @@ function renderAlertDialog({
 }>) {
   return render(
     <AlertDialog defaultOpen={defaultOpen}>
-      <AlertDialogTrigger asChild={triggerAsChild}>
-        {triggerAsChild ? <button type='button'>Open alert dialog</button> : "Open alert dialog"}
+      <AlertDialogTrigger render={triggerAsChild ? <button type='button'>Open alert dialog</button> : undefined}>
+        {triggerAsChild ? undefined : "Open alert dialog"}
       </AlertDialogTrigger>
       <AlertDialogContent
         className={className}
@@ -183,9 +183,8 @@ describe("AlertDialog", () => {
       <AlertDialog>
         <AlertDialogTrigger
           ref={ref}
-          asChild>
-          <Button>Composed trigger</Button>
-        </AlertDialogTrigger>
+          render={<Button>Composed trigger</Button>}
+        />
       </AlertDialog>,
     );
     expect(screen.getByRole("button", {name: "Composed trigger"}).querySelector("button")).toBeNull();
@@ -222,16 +221,6 @@ describe("AlertDialog", () => {
     expect(action).not.toHaveAttribute("type");
     await user.click(action);
     expect(screen.getByRole("alertdialog")).toBeVisible();
-  });
-
-  it("rejects invalid trigger slot input without faking a Root", () => {
-    expect(() =>
-      render(
-        <AlertDialog>
-          <AlertDialogTrigger asChild>Invalid trigger</AlertDialogTrigger>
-        </AlertDialog>,
-      ),
-    ).toThrow(TypeError);
   });
 
   it("keeps pending confirmation open and lets its controlled owner close explicitly on success", async () => {
@@ -458,16 +447,18 @@ describe("AlertDialog", () => {
     render(
       <AlertDialog>
         <AlertDialogTrigger
-          asChild
           ref={triggerRef}
-          onClick={(event) => event.preventBaseUIHandler()}>
-          <a
-            href='#confirm'
-            ref={childRef}
-            onClick={(event) => event.preventDefault()}>
-            Cancelled trigger
-          </a>
-        </AlertDialogTrigger>
+          onClick={(event) => event.preventBaseUIHandler()}
+          nativeButton={false}
+          render={
+            <a
+              href='#confirm'
+              ref={childRef}
+              onClick={(event) => event.preventDefault()}>
+              Cancelled trigger
+            </a>
+          }
+        />
         <AlertDialogContent>
           <AlertDialogTitle>Cancelled confirmation</AlertDialogTitle>
         </AlertDialogContent>
@@ -502,15 +493,7 @@ describe("AlertDialog", () => {
     expect(screen.getByRole("alertdialog")).toBeVisible();
   });
 
-  it("surfaces invalid slots and consumer render failures", () => {
-    expect(() => render(<AlertDialogHeader asChild>Invalid slot</AlertDialogHeader>)).toThrow(TypeError);
-    expect(() =>
-      render(
-        <AlertDialogFooter asChild>
-          <>Invalid fragment</>
-        </AlertDialogFooter>,
-      ),
-    ).toThrow(TypeError);
+  it("surfaces consumer render failures", () => {
     expect(() =>
       render(
         <AlertDialogMedia
@@ -661,16 +644,15 @@ describe("AlertDialog", () => {
     expect(screen.getByRole("button", {name: "Cancel"})).toBeInTheDocument();
   });
 
-  it("renders AlertDialogHeader with asChild prop and valid element", async () => {
+  it("renders AlertDialogHeader with a composed element", async () => {
     // Arrange
     render(
       <AlertDialog defaultOpen>
         <AlertDialogContent>
           <AlertDialogHeader
-            asChild
-            data-testid='alert-header'>
-            <header>Custom Header</header>
-          </AlertDialogHeader>
+            data-testid='alert-header'
+            render={<header>Custom Header</header>}
+          />
         </AlertDialogContent>
       </AlertDialog>,
     );
@@ -682,17 +664,16 @@ describe("AlertDialog", () => {
     expect(screen.getByText("Custom Header")).toBeInTheDocument();
   });
 
-  it("renders AlertDialogFooter with asChild prop and valid element", async () => {
+  it("renders AlertDialogFooter with a composed element", async () => {
     // Arrange
     render(
       <AlertDialog defaultOpen>
         <AlertDialogContent>
           <AlertDialogTitle>Title</AlertDialogTitle>
           <AlertDialogFooter
-            asChild
-            data-testid='alert-footer'>
-            <footer>Custom Footer</footer>
-          </AlertDialogFooter>
+            data-testid='alert-footer'
+            render={<footer>Custom Footer</footer>}
+          />
         </AlertDialogContent>
       </AlertDialog>,
     );

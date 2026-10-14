@@ -119,16 +119,14 @@ function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOp
  * @see {@link badgeVariants} — Generates matching badge classes without rendering.
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Badge = React.forwardRef<HTMLElement, BadgeProps>(
-  ({className, variant = "default", render, ...props}: Readonly<React.PropsWithoutRef<BadgeProps>>, ref): React.ReactElement =>
-    useRender<BadgeState, HTMLElement>({
-      defaultTagName: "span",
-      ref,
-      render,
-      state: {slot: "badge", variant},
-      props: mergeProps<"span">({className: badgeVariants({variant, className})}, props),
-    }),
-);
+const Badge = ({ref, className, variant = "default", render, ...props}: Readonly<BadgeProps>): React.ReactElement =>
+  useRender<BadgeState, HTMLElement>({
+    defaultTagName: "span",
+    ref,
+    render,
+    state: {slot: "badge", variant},
+    props: mergeProps<"span">({className: badgeVariants({variant, className})}, props),
+  });
 Badge.displayName = "Badge";
 
 export {Badge, badgeVariants};

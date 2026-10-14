@@ -11,6 +11,23 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### [3.0.0] - Unreleased (release preparation)
 
+**Current breaking contract**
+
+- Require React and ReactDOM 19; package-owned DOM refs are ordinary typed props with callback cleanup.
+- Remove all `asChild` APIs, `Legacy*` adapters/subpaths, scalar Accordion/type adapters, Checkbox's legacy indeterminate shorthand, Tooltip
+  delay aliases, obsolete navigation/anchor parts, no-op compatibility props, deprecated color aliases, Flip's misspelling and Cell.
+- Deduplicate merged-ref identities and prevent obsolete attachment disposers from detaching replacement nodes.
+- Preserve automatic NavigationMenu and Drawer anatomy through actual opaque React Flight render transport.
+- Target applicable WCAG 2.2 A/AA with native/primitive keyboard and focus behavior, localized generated controls, corrected default token
+  contrast and bounded/controllable motion. Ship ACCESSIBILITY with explicit consumer responsibilities and native/AT evidence limits.
+- Retain CSS Modules and story-mounted demonstration styles. No alternate test runner, new dependency, publication or website adoption.
+
+**Current verification:** complete component workspace passed **127 files / 3,319 tests / zero skips**, including all four genuine packed
+contracts. Component/Storybook builds, configured source lint, full formatting and the 94-story type graph passed. Actual React 19.0 source
+and packed lanes passed 20 fixtures each. See MIGRATION's current checkpoint for coverage and explicit native/AT/provenance limits.
+
+**Historical intermediate preparation (superseded by the current contract above)**
+
 **Review follow-up**
 
 - Restore React 18 DOM ref forwarding for `AlertDialogCancel` and `LegacyAlertDialogAction`, retaining their existing dismissal behavior.

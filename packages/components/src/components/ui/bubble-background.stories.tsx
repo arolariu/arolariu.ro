@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {BubbleBackground} from "./bubble-background";
 const storyStyles = `
 .ac-story-bubble-background-demo {
@@ -67,6 +69,24 @@ const meta = {
 } satisfies Meta<typeof BubbleBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Defaults settle within five seconds; intentional loops need an operable pause control. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume bubbles" : "Pause bubbles"}</Button>
+        <div className={storyClasses.demo}>
+          <BubbleBackground
+            {...args}
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 export const Default: Story = {};
 export const Interactive: Story = {args: {interactive: true}};
 /** Both supported channel syntaxes produce the same modern slash-alpha CSS grammar. */

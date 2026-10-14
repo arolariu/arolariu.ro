@@ -35,12 +35,12 @@ type ItemRenderProps = Readonly<
 /**
  * Props for the {@link ItemGroup} component.
  */
-export type ItemGroupProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemGroupProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemSeparator} component.
  */
-export type ItemSeparatorProps = Readonly<React.ComponentPropsWithoutRef<typeof Separator>>;
+export type ItemSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
 
 /**
  * Props for the {@link Item} component.
@@ -49,13 +49,6 @@ export type ItemProps = Readonly<
   Omit<useRender.ComponentProps<"div", ItemState, ItemRenderProps>, "ref"> & {
     /** Ref to the actual rendered element; the default target is a div. */
     ref?: React.Ref<HTMLElement>;
-    /**
-     * Composes a single non-fragment child, preserving its content, handlers and refs.
-     * A valid child takes precedence over `render`; other content uses normal rendering.
-     * @default false
-     * @deprecated Prefer `render` for element composition.
-     */
-    asChild?: boolean;
     /** Compactness applied to the item container and direct media slots. @default "default" */
     size?: ItemSize;
     /** Visual surface treatment for the item container. @default "default" */
@@ -67,7 +60,7 @@ export type ItemProps = Readonly<
  * Props for the {@link ItemMedia} component.
  */
 export type ItemMediaProps = Readonly<
-  React.ComponentPropsWithoutRef<"div"> & {
+  React.ComponentPropsWithRef<"div"> & {
     /** Visual treatment used for the media slot. @default "default" */
     variant?: ItemMediaVariant;
   }
@@ -76,32 +69,32 @@ export type ItemMediaProps = Readonly<
 /**
  * Props for the {@link ItemContent} component.
  */
-export type ItemContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemTitle} component.
  */
-export type ItemTitleProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemDescription} component.
  */
-export type ItemDescriptionProps = Readonly<React.ComponentPropsWithoutRef<"p">>;
+export type ItemDescriptionProps = Readonly<React.ComponentPropsWithRef<"p">>;
 
 /**
  * Props for the {@link ItemActions} component.
  */
-export type ItemActionsProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemActionsProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemHeader} component.
  */
-export type ItemHeaderProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemHeaderProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemFooter} component.
  */
-export type ItemFooterProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type ItemFooterProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Groups a collection of list-like items with consistent spacing.
@@ -109,28 +102,25 @@ export type ItemFooterProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
- * - Assign `role="listitem"` to grouped entries when using list semantics.
+ * - Opt into `role="list"` and `role="listitem"` together when using list semantics.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemGroup>
+ * <ItemGroup role='list'>
  *   <Item role='listitem' />
  * </ItemGroup>
  * ```
  *
  * @see {@link ItemGroupProps} for available props
  */
-const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
-  ({className, ...props}: Readonly<ItemGroupProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      role='list'
-      data-slot='item-group'
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
+const ItemGroup = ({ref, className, ...props}: Readonly<ItemGroupProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-group'
+    className={cn(styles.group, className)}
+    {...props}
+  />
 );
 
 /**
@@ -148,16 +138,14 @@ const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
  *
  * @see {@link ItemSeparatorProps} for available props
  */
-const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
-  ({className, ...props}: Readonly<ItemSeparatorProps>, ref): React.JSX.Element => (
-    <Separator
-      ref={ref}
-      data-slot='item-separator'
-      orientation='horizontal'
-      className={cn(styles.separator, className)}
-      {...props}
-    />
-  ),
+const ItemSeparator = ({ref, className, ...props}: Readonly<ItemSeparatorProps>): React.JSX.Element => (
+  <Separator
+    ref={ref}
+    data-slot='item-separator'
+    orientation='horizontal'
+    className={typeof className === "function" ? (state) => cn(styles.separator, className(state)) : cn(styles.separator, className)}
+    {...props}
+  />
 );
 
 /**
@@ -183,40 +171,31 @@ const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
  *
  * @see {@link ItemProps} for available props
  */
-const Item = React.forwardRef<HTMLElement, Item.Props>(
-  (
-    {
-      className,
-      variant = "default",
-      size = "default",
-      render,
-      // eslint-disable-next-line sonarjs/deprecation -- retain the supported legacy composition API
-      asChild = false,
-      children,
-      ...props
-    }: Readonly<React.PropsWithoutRef<Item.Props>>,
+const Item = ({
+  ref,
+  className,
+  variant = "default",
+  size = "default",
+  render,
+  children,
+  ...props
+}: Readonly<Item.Props>): React.ReactElement => {
+  const mergedClassName = cn(
+    styles.item,
+    variant === "outline" && styles.outline,
+    variant === "muted" && styles.muted,
+    size === "xs" ? styles.sizeXs : size === "sm" ? styles.sizeSm : styles.sizeDefault,
+    className,
+  );
+
+  return useRender<Item.State, HTMLElement>({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const mergedClassName = cn(
-      styles.item,
-      variant === "outline" && styles.outline,
-      variant === "muted" && styles.muted,
-      size === "xs" ? styles.sizeXs : size === "sm" ? styles.sizeSm : styles.sizeDefault,
-      className,
-    );
-
-    const legacyChild =
-      asChild && React.isValidElement<{children?: React.ReactNode}>(children) && children.type !== React.Fragment ? children : undefined;
-
-    return useRender<Item.State, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render: legacyChild ?? render,
-      state: {slot: "item", variant, size},
-      props: mergeProps<"div">({className: mergedClassName}, props, {children: legacyChild ? legacyChild.props.children : children}),
-    });
-  },
-);
+    render,
+    state: {slot: "item", variant, size},
+    props: mergeProps<"div">({className: mergedClassName}, props, {children}),
+  });
+};
 
 /**
  * Renders the leading media slot for an item.
@@ -235,16 +214,14 @@ const Item = React.forwardRef<HTMLElement, Item.Props>(
  *
  * @see {@link ItemMediaProps} for available props
  */
-const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
-  ({className, variant = "default", ...props}: Readonly<ItemMediaProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-media'
-      data-variant={variant}
-      className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
-      {...props}
-    />
-  ),
+const ItemMedia = ({ref, className, variant = "default", ...props}: Readonly<ItemMediaProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-media'
+    data-variant={variant}
+    className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
+    {...props}
+  />
 );
 
 /**
@@ -263,15 +240,13 @@ const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
  *
  * @see {@link ItemContentProps} for available props
  */
-const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
-  ({className, ...props}: Readonly<ItemContentProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-content'
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
+const ItemContent = ({ref, className, ...props}: Readonly<ItemContentProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-content'
+    className={cn(styles.content, className)}
+    {...props}
+  />
 );
 
 /**
@@ -291,15 +266,13 @@ const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
  *
  * @see {@link ItemTitleProps} for available props
  */
-const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
-  ({className, ...props}: Readonly<ItemTitleProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-title'
-      className={cn(styles.title, className)}
-      {...props}
-    />
-  ),
+const ItemTitle = ({ref, className, ...props}: Readonly<ItemTitleProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-title'
+    className={cn(styles.title, className)}
+    {...props}
+  />
 );
 
 /**
@@ -320,15 +293,13 @@ const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
  *
  * @see {@link ItemDescriptionProps} for available props
  */
-const ItemDescription = React.forwardRef<HTMLParagraphElement, ItemDescriptionProps>(
-  ({className, ...props}: Readonly<ItemDescriptionProps>, ref): React.JSX.Element => (
-    <p
-      ref={ref}
-      data-slot='item-description'
-      className={cn(styles.description, className)}
-      {...props}
-    />
-  ),
+const ItemDescription = ({ref, className, ...props}: Readonly<ItemDescriptionProps>): React.JSX.Element => (
+  <p
+    ref={ref}
+    data-slot='item-description'
+    className={cn(styles.description, className)}
+    {...props}
+  />
 );
 
 /**
@@ -348,15 +319,13 @@ const ItemDescription = React.forwardRef<HTMLParagraphElement, ItemDescriptionPr
  *
  * @see {@link ItemActionsProps} for available props
  */
-const ItemActions = React.forwardRef<HTMLDivElement, ItemActionsProps>(
-  ({className, ...props}: Readonly<ItemActionsProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-actions'
-      className={cn(styles.actions, className)}
-      {...props}
-    />
-  ),
+const ItemActions = ({ref, className, ...props}: Readonly<ItemActionsProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-actions'
+    className={cn(styles.actions, className)}
+    {...props}
+  />
 );
 
 /**
@@ -376,15 +345,13 @@ const ItemActions = React.forwardRef<HTMLDivElement, ItemActionsProps>(
  *
  * @see {@link ItemHeaderProps} for available props
  */
-const ItemHeader = React.forwardRef<HTMLDivElement, ItemHeaderProps>(
-  ({className, ...props}: Readonly<ItemHeaderProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-header'
-      className={cn(styles.header, className)}
-      {...props}
-    />
-  ),
+const ItemHeader = ({ref, className, ...props}: Readonly<ItemHeaderProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-header'
+    className={cn(styles.header, className)}
+    {...props}
+  />
 );
 
 /**
@@ -402,15 +369,13 @@ const ItemHeader = React.forwardRef<HTMLDivElement, ItemHeaderProps>(
  *
  * @see {@link ItemFooterProps} for available props
  */
-const ItemFooter = React.forwardRef<HTMLDivElement, ItemFooterProps>(
-  ({className, ...props}: Readonly<ItemFooterProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-footer'
-      className={cn(styles.footer, className)}
-      {...props}
-    />
-  ),
+const ItemFooter = ({ref, className, ...props}: Readonly<ItemFooterProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-footer'
+    className={cn(styles.footer, className)}
+    {...props}
+  />
 );
 
 ItemGroup.displayName = "ItemGroup";

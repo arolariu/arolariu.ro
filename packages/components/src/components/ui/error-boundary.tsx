@@ -12,6 +12,12 @@ import styles from "./error-boundary.module.css";
  * recovery-oriented error handling in React client trees.
  */
 interface ErrorBoundaryProps {
+  /** Localized title for the built-in fallback. @default "Something went wrong" */
+  readonly errorTitle?: string;
+  /** Localized error detail; `null` omits it. Defaults to the captured error message. */
+  readonly errorDescription?: React.ReactNode;
+  /** Localized accessible and visible retry label. @default "Try again" */
+  readonly retryLabel?: string;
   /**
    * Content rendered when no error has been captured.
    */
@@ -91,10 +97,18 @@ class ErrorBoundary extends React.Component<Readonly<ErrorBoundaryProps>, Readon
 
   /** Rerenders when the descendant tree, recovery UI, reporter or captured failure changes. */
   override shouldComponentUpdate(nextProps: Readonly<ErrorBoundaryProps>, nextState: Readonly<ErrorBoundaryState>): boolean {
-    const {children, fallback, onError} = this.props;
+    const {children, fallback, onError, errorTitle, errorDescription, retryLabel} = this.props;
     const {error} = this.state;
 
-    return nextProps.children !== children || nextProps.fallback !== fallback || nextProps.onError !== onError || nextState.error !== error;
+    return (
+      nextProps.children !== children
+      || nextProps.fallback !== fallback
+      || nextProps.onError !== onError
+      || nextProps.errorTitle !== errorTitle
+      || nextProps.errorDescription !== errorDescription
+      || nextProps.retryLabel !== retryLabel
+      || nextState.error !== error
+    );
   }
 
   /** Reports React's captured error and component stack after the fallback commits. */
@@ -114,7 +128,7 @@ class ErrorBoundary extends React.Component<Readonly<ErrorBoundaryProps>, Readon
   // eslint-disable-next-line sonarjs/function-return-type -- Error boundary render paths intentionally return generic ReactNode content.
   override render(): React.ReactNode {
     const {error} = this.state;
-    const {children, fallback} = this.props;
+    const {children, fallback, errorTitle = "Something went wrong", errorDescription, retryLabel = "Try again"} = this.props;
     const content: React.ReactNode =
       error === null ? (
         children
@@ -126,13 +140,13 @@ class ErrorBoundary extends React.Component<Readonly<ErrorBoundaryProps>, Readon
         <div
           className={styles.fallback}
           role='alert'>
-          <p className={styles.title}>Something went wrong</p>
-          <p className={styles.message}>{error.message}</p>
+          <p className={styles.title}>{errorTitle}</p>
+          <p className={styles.message}>{errorDescription === undefined ? error.message : errorDescription}</p>
           <button
             type='button'
             className={styles.retry}
             onClick={this.handleReset}>
-            Try again
+            {retryLabel}
           </button>
         </div>
       );

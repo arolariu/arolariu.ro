@@ -19,6 +19,13 @@
   pointer-events: none;
 }
 
+.content {
+  position: relative;
+  z-index: 1;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
 @media (forced-colors: active) {
   .svg {
     display: none;

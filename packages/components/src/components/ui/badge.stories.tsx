@@ -80,6 +80,7 @@ export const CallbackRender = {
     render: (props, state) => (
       <span
         {...props}
+        role='status'
         aria-label={`${state.variant} badge`}
       />
     ),

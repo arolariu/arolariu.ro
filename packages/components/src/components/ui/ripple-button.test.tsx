@@ -33,6 +33,22 @@ afterAll(() => {
 });
 
 describe("RippleButton with real Motion", () => {
+  it("settles a caller-requested looping ripple within five seconds", async () => {
+    render(
+      <RippleButton
+        transition={{duration: 1, repeat: Infinity}}
+        rippleClassName='bounded-ripple'>
+        Activate
+      </RippleButton>,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    expect(document.querySelector(".bounded-ripple")).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5100);
+    });
+    expect(document.querySelector(".bounded-ripple")).toBeNull();
+  });
+
   it("activates with native Enter and Space without submitting the surrounding form", async () => {
     const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
     const onClick = vi.fn();

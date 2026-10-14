@@ -49,6 +49,28 @@ function otpDeclarations(element: Element, media?: string): Readonly<Record<stri
 }
 
 describe("InputOTP", () => {
+  it("exposes one named native input without duplicate decorative slot or separator announcements", () => {
+    render(
+      <InputOTP
+        maxLength={2}
+        aria-label='Verification code'
+        value='12'>
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+        </InputOTPGroup>
+        <InputOTPSeparator />
+        <InputOTPGroup>
+          <InputOTPSlot index={1} />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+    expect(screen.getByRole("textbox", {name: "Verification code"})).toHaveValue("12");
+    for (const slot of document.querySelectorAll('[data-slot="input-otp-slot"]')) {
+      expect(slot).toHaveAttribute("aria-hidden", "true");
+    }
+    expect(document.querySelector('[data-slot="input-otp-separator"]')).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+  });
   it("keeps accessibility media rules outside keyframes and retains them after compilation", () => {
     const code = readFileSync(join(import.meta.dirname, "input-otp.module.css"));
     const authored = parse(code.toString());
@@ -427,7 +449,7 @@ describe("InputOTP", () => {
     expect(inputRef.current).toBe(screen.getByRole("textbox"));
     expect(groupRef.current).toBe(screen.getByTestId("ref-group"));
     expect(slotRef.current).toBe(screen.getByTestId("ref-slot"));
-    expect(separatorRef.current).toBe(screen.getByRole("separator"));
+    expect(separatorRef.current).toBe(document.querySelector('[data-slot="input-otp-separator"]'));
     unmount();
     expect(inputRef.current).toBeNull();
     expect(groupRef.current).toBeNull();
@@ -503,7 +525,8 @@ describe("InputOTP", () => {
     // Assert
     const separator = screen.getByTestId("otp-separator");
     expect(separator).toBeInTheDocument();
-    expect(separator).toHaveAttribute("role", "separator");
+    expect(separator).toHaveAttribute("aria-hidden", "true");
+    expect(separator).not.toHaveAttribute("role");
   });
 
   it("renders active slot with fake caret when focused", () => {

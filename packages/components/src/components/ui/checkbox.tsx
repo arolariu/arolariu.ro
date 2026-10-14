@@ -9,18 +9,8 @@ import styles from "./checkbox.module.css";
 /** Primitive-owned checkbox and Field state passed to render and class callbacks. */
 export type CheckboxState = BaseCheckbox.Root.State;
 
-/** Readonly primitive props, retaining the legacy checked="indeterminate" shorthand. */
-export type CheckboxProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseCheckbox.Root>, "checked">
-    & Partial<{
-      /**
-       * Only the explicit legacy string maps to checked=true and indeterminate=true.
-       * Boolean/omitted checked values preserve the primitive's indeterminate prop.
-       * onCheckedChange always receives a boolean and the original cancellable details.
-       */
-      checked: boolean | "indeterminate" | undefined;
-    }>
->;
+/** Readonly primitive props: boolean selection and an independent mixed state. */
+export type CheckboxProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseCheckbox.Root>, "children">>;
 
 /**
  * Renders a selectable checkbox control with checked and indeterminate support.
@@ -34,52 +24,48 @@ export type CheckboxProps = Readonly<
  *
  * @example Basic usage
  * ```tsx
- * <Checkbox checked />
+ * <Checkbox aria-label="Accept terms" checked />
  * ```
  *
  * @see {@link https://base-ui.com/react/components/checkbox | Base UI Documentation}
  */
-const Checkbox = React.forwardRef<React.ComponentRef<typeof BaseCheckbox.Root>, Checkbox.Props>(
-  (props: Readonly<Checkbox.Props>, ref): React.ReactElement => {
-    const {checked, indeterminate, className, ...otherProps} = props;
+const Checkbox = (props: Readonly<Checkbox.Props>): React.ReactElement => {
+  const {ref, className, ...otherProps} = props;
 
-    return (
-      <BaseCheckbox.Root
-        ref={ref}
-        {...otherProps}
-        data-slot='checkbox'
-        checked={checked === "indeterminate" ? true : checked}
-        indeterminate={checked === "indeterminate" ? true : indeterminate}
-        className={(state) => cn(styles.checkbox, typeof className === "function" ? className(state) : className)}>
-        <BaseCheckbox.Indicator
-          data-slot='checkbox-indicator'
-          className={styles.indicator}>
-          <svg
-            aria-hidden='true'
-            className={styles.check}
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='3'
-            strokeLinecap='round'
-            strokeLinejoin='round'>
-            <polyline points='20 6 9 17 4 12' />
-          </svg>
-          <svg
-            aria-hidden='true'
-            className={styles.mixed}
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='3'>
-            <path d='M4 12h16' />
-          </svg>
-        </BaseCheckbox.Indicator>
-      </BaseCheckbox.Root>
-    );
-  },
-);
+  return (
+    <BaseCheckbox.Root
+      ref={ref}
+      {...otherProps}
+      data-slot='checkbox'
+      className={(state) => cn(styles.checkbox, typeof className === "function" ? className(state) : className)}>
+      <BaseCheckbox.Indicator
+        data-slot='checkbox-indicator'
+        className={styles.indicator}>
+        <svg
+          aria-hidden='true'
+          className={styles.check}
+          xmlns='http://www.w3.org/2000/svg'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='3'
+          strokeLinecap='round'
+          strokeLinejoin='round'>
+          <polyline points='20 6 9 17 4 12' />
+        </svg>
+        <svg
+          aria-hidden='true'
+          className={styles.mixed}
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='3'>
+          <path d='M4 12h16' />
+        </svg>
+      </BaseCheckbox.Indicator>
+    </BaseCheckbox.Root>
+  );
+};
 Checkbox.displayName = "Checkbox";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

@@ -12,11 +12,12 @@ import styles from "./meter.module.css";
  * @remarks
  * - Renders a `<div>` element by default
  * - Built on Base UI Meter primitives
- * - Intended for values such as storage usage, health, or completion
+ * - Intended for scalar measurements such as storage usage or health, not task progress
  *
  * @example
  * ```tsx
  * <Meter value={72}>
+ *   <MeterLabel>Storage used</MeterLabel>
  *   <MeterTrack>
  *     <MeterIndicator />
  *   </MeterTrack>
@@ -25,8 +26,8 @@ import styles from "./meter.module.css";
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const Meter = React.forwardRef<HTMLDivElement, Meter.Props>((props: Readonly<Meter.Props>, forwardedRef): React.ReactElement => {
-  const {className, children, render, ...otherProps} = props;
+const Meter = (props: Readonly<Meter.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
   return (
     <BaseMeter.Root
@@ -37,7 +38,7 @@ const Meter = React.forwardRef<HTMLDivElement, Meter.Props>((props: Readonly<Met
       {children}
     </BaseMeter.Root>
   );
-});
+};
 
 /**
  * Renders the background track for a meter.
@@ -53,21 +54,19 @@ const Meter = React.forwardRef<HTMLDivElement, Meter.Props>((props: Readonly<Met
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>(
-  (props: Readonly<MeterTrack.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const MeterTrack = (props: Readonly<MeterTrack.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseMeter.Track
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.track, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseMeter.Track>
-    );
-  },
-);
+  return (
+    <BaseMeter.Track
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.track, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseMeter.Track>
+  );
+};
 
 /**
  * Renders the filled indicator that reflects the current meter value.
@@ -83,21 +82,19 @@ const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>(
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>(
-  (props: Readonly<MeterIndicator.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const MeterIndicator = (props: Readonly<MeterIndicator.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseMeter.Indicator
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.indicator, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseMeter.Indicator>
-    );
-  },
-);
+  return (
+    <BaseMeter.Indicator
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.indicator, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseMeter.Indicator>
+  );
+};
 
 /**
  * Renders the accessible label associated with a meter.
@@ -113,21 +110,19 @@ const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>(
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabel.Props>(
-  (props: Readonly<MeterLabel.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const MeterLabel = (props: Readonly<MeterLabel.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseMeter.Label
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseMeter.Label>
-    );
-  },
-);
+  return (
+    <BaseMeter.Label
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseMeter.Label>
+  );
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Meter {

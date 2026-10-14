@@ -102,15 +102,13 @@ export const DefaultOpen: Story = {
       defaultOpen
       className={storyClasses.demo}>
       <CollapsibleTrigger
-        asChild
-        className={storyClasses.demoTrigger}>
-        <button type='button'>
-          Additional information
-          <ChevronDown
-            aria-hidden
-            className={storyClasses.icon}
-          />
-        </button>
+        className={storyClasses.demoTrigger}
+        render={<button type='button' />}>
+        Additional information
+        <ChevronDown
+          aria-hidden
+          className={storyClasses.icon}
+        />
       </CollapsibleTrigger>
       <CollapsibleContent className={storyClasses.demoContent}>
         <p>Item 1: First piece of information</p>

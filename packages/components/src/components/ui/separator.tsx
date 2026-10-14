@@ -12,8 +12,6 @@ import styles from "./separator.module.css";
 export interface SeparatorProps extends Readonly<React.ComponentPropsWithRef<typeof BaseSeparator>> {
   /** The visual axis used when rendering the separator line. @default "horizontal" */
   readonly orientation?: "horizontal" | "vertical";
-  /** Legacy compatibility flag retained by the wrapper but not forwarded to Base UI. @default true */
-  readonly decorative?: boolean;
 }
 
 /**
@@ -32,9 +30,8 @@ export interface SeparatorProps extends Readonly<React.ComponentPropsWithRef<typ
  *
  * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
-const Separator = React.forwardRef<HTMLDivElement, Separator.Props>((props: Readonly<Separator.Props>, forwardedRef): React.JSX.Element => {
+const Separator = ({ref: forwardedRef, ...props}: Readonly<Separator.Props>): React.JSX.Element => {
   const {className, orientation = "horizontal", render, ...otherProps} = props;
-  delete otherProps.decorative;
 
   return (
     <BaseSeparator
@@ -52,7 +49,7 @@ const Separator = React.forwardRef<HTMLDivElement, Separator.Props>((props: Read
       }
     />
   );
-});
+};
 Separator.displayName = "Separator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

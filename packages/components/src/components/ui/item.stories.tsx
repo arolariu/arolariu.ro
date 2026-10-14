@@ -107,7 +107,7 @@ export const Outline: Story = {
  */
 export const Group: Story = {
   render: (): React.JSX.Element => (
-    <ItemGroup>
+    <ItemGroup role='list'>
       <Item role='listitem'>
         <ItemMedia variant='icon'>
           <User />
@@ -117,7 +117,10 @@ export const Group: Story = {
           <ItemDescription>john@example.com</ItemDescription>
         </ItemContent>
       </Item>
-      <ItemSeparator />
+      <ItemSeparator
+        role='presentation'
+        aria-hidden='true'
+      />
       <Item role='listitem'>
         <ItemMedia variant='icon'>
           <User />
@@ -127,7 +130,10 @@ export const Group: Story = {
           <ItemDescription>jane@example.com</ItemDescription>
         </ItemContent>
       </Item>
-      <ItemSeparator />
+      <ItemSeparator
+        role='presentation'
+        aria-hidden='true'
+      />
       <Item role='listitem'>
         <ItemMedia variant='icon'>
           <User />
@@ -229,20 +235,21 @@ export const Clickable: Story = {
   ),
 };
 
-/** The deprecated child-slot API still produces one real link with original content. */
-export const LegacyAsChild: Story = {
+/** Render composition produces one real link with original content. */
+export const RenderLink: Story = {
   render: (): React.JSX.Element => (
     <Item
-      asChild
       size='sm'
-      variant='outline'>
-      <a href='#legacy-document'>
-        <ItemContent>
-          <ItemTitle>Legacy document link</ItemTitle>
-          <ItemDescription>Native navigation, not a synthetic keyboard button</ItemDescription>
-        </ItemContent>
-      </a>
-    </Item>
+      variant='outline'
+      render={
+        <a href='#render-document'>
+          <ItemContent>
+            <ItemTitle>Rendered document link</ItemTitle>
+            <ItemDescription>Native navigation, not a synthetic keyboard button</ItemDescription>
+          </ItemContent>
+        </a>
+      }
+    />
   ),
 };
 

@@ -49,39 +49,37 @@ function markerVariants({variant = "default", className, class: classValue}: Rea
  * Native render targets preserve content, ARIA, refs and child-first cancellable events.
  * No separator role or live-region policy is imposed on meaningful marker text.
  */
-const Marker = React.forwardRef<HTMLElement, Marker.Props>(
-  ({className, variant = "default", render, ...props}: Readonly<React.PropsWithoutRef<Marker.Props>>, ref): React.ReactElement =>
-    useRender<Marker.State, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render,
-      state: {slot: "marker", variant},
-      props: mergeProps<"div">({className: markerVariants({variant, className})}, props),
-    }),
-);
+const Marker = ({ref, className, variant = "default", render, ...props}: Readonly<Marker.Props>): React.ReactElement =>
+  useRender<Marker.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "marker", variant},
+    props: mergeProps<"div">({className: markerVariants({variant, className})}, props),
+  });
 Marker.displayName = "Marker";
 
 /** Contains decorative marker graphics; meaningful status belongs in MarkerContent. */
-const MarkerIcon = React.forwardRef<HTMLSpanElement, MarkerIcon.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MarkerIcon = ({ref, className, ...props}: Readonly<MarkerIcon.Props>): React.JSX.Element => (
   <span
+    aria-hidden='true'
     {...props}
     ref={ref}
     data-slot='marker-icon'
-    aria-hidden='true'
     className={cn(styles.icon, className)}
   />
-));
+);
 MarkerIcon.displayName = "MarkerIcon";
 
 /** Contains caller-provided wrapping text or phrasing links. */
-const MarkerContent = React.forwardRef<HTMLSpanElement, MarkerContent.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MarkerContent = ({ref, className, ...props}: Readonly<MarkerContent.Props>): React.JSX.Element => (
   <span
     {...props}
     ref={ref}
     data-slot='marker-content'
     className={cn(styles.content, className)}
   />
-));
+);
 MarkerContent.displayName = "MarkerContent";
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace

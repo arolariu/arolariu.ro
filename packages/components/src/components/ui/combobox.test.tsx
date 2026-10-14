@@ -1,7 +1,9 @@
 import {Combobox as BaseCombobox} from "@base-ui/react/combobox";
 import {cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {parse} from "postcss";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -22,11 +24,118 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from "./combobox";
+import * as stories from "./combobox.stories";
+
+describe("Combobox responsive story", () => {
+  it("caps the Default demo width by the viewport after centered-canvas and theme gutters", () => {
+    const {Default} = composeStories(stories);
+    const {container} = render(<Default />);
+    const input = screen.getByRole("combobox", {name: "Fruit"});
+    expect(input.closest(".ac-story-combobox-story")).toBeInTheDocument();
+    const mountedStyles = [...container.querySelectorAll("style")].find((style) => style.textContent?.includes(".ac-story-combobox-story"));
+    if (!mountedStyles) throw new Error("The Combobox story must mount its own responsive styles.");
+
+    // Assert the authored layout contract, not browser geometry simulated by Happy DOM.
+    const rules = parse(mountedStyles.textContent ?? "");
+    let width: string | undefined;
+    rules.walkRules(".ac-story-combobox-story", (rule) => {
+      rule.walkDecls("width", (declaration) => {
+        width = declaration.value;
+      });
+    });
+    expect(width).toBe("min(20rem, calc(100vw - 4rem))");
+  });
+});
 
 interface Fruit {
   readonly value: string;
   readonly label: string;
 }
+
+describe("Combobox naming defaults", () => {
+  it("uses a custom trigger callback's visible label rather than masking it with the icon fallback name", () => {
+    render(
+      <Combobox items={["Apple"]}>
+        <ComboboxInput
+          showTrigger={false}
+          aria-label='Fruit'
+        />
+        <ComboboxTrigger render={(props) => <button {...props}>Choose fruit</button>} />
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Choose fruit"})).toBeInTheDocument();
+  });
+
+  it("uses custom clear text in the accessible name", () => {
+    render(
+      <Combobox
+        items={["Apple"]}
+        defaultValue='Apple'>
+        <ComboboxInput
+          aria-label='Fruit'
+          showTrigger={false}
+          showClear
+          clearProps={{children: "Reset fruit"}}
+        />
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Reset fruit"})).toBeInTheDocument();
+  });
+
+  it("uses custom removal text in the accessible name", () => {
+    render(
+      <Combobox
+        multiple
+        items={["Apple"]}
+        defaultValue={["Apple"]}>
+        <ComboboxChips>
+          <ComboboxChip removeProps={{children: "Remove Apple"}}>Apple</ComboboxChip>
+          <ComboboxChipsInput aria-label='Fruits' />
+        </ComboboxChips>
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Remove Apple"})).toBeInTheDocument();
+  });
+
+  it("names a standalone icon-only trigger and lets callers localize its action", () => {
+    const {rerender} = render(
+      <Combobox items={["Apple"]}>
+        <ComboboxInput
+          showTrigger={false}
+          aria-label='Fruit'
+        />
+        <ComboboxTrigger />
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Show suggestions"})).toBeInTheDocument();
+    rerender(
+      <Combobox items={["Apple"]}>
+        <ComboboxInput
+          showTrigger={false}
+          aria-label='Fruit'
+        />
+        <ComboboxTrigger aria-label='Afficher les suggestions' />
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Afficher les suggestions"})).toBeInTheDocument();
+  });
+
+  it("preserves localizable clear action naming", () => {
+    render(
+      <Combobox
+        items={["Apple"]}
+        defaultValue='Apple'>
+        <ComboboxInput
+          showTrigger={false}
+          showClear
+          clearProps={{"aria-label": "Effacer la sélection"}}
+          aria-label='Fruit'
+        />
+      </Combobox>,
+    );
+    expect(screen.getByRole("button", {name: "Effacer la sélection"})).toBeInTheDocument();
+  });
+});
 
 const apple: Fruit = {value: "apple", label: "Apple"};
 const pear: Fruit = {value: "pear", label: "Pear"};
@@ -624,6 +733,7 @@ describe("Combobox", () => {
             aria-label='Fruit'
             showClear
             clearProps={{
+              "aria-label": "Clear selection",
               keepMounted: true,
               className: (state) => (state.visible ? "clear-visible" : "clear-hidden"),
               render: (props, state) => (
@@ -643,6 +753,7 @@ describe("Combobox", () => {
           <ComboboxChips>
             <ComboboxChip
               removeProps={{
+                "aria-label": "Remove selection",
                 className: (state) => (state.disabled ? "remove-disabled" : "remove-enabled"),
                 render: (props, state) => (
                   <button
@@ -818,7 +929,8 @@ describe("Combobox", () => {
     expect(wrapperRef.current).toBe(trigger);
     expect(childRef.current).toBe(trigger);
     expect(chipRef.current).toHaveTextContent("Apple chip");
-    expect(screen.getByRole("button", {name: "Remove selection"})).toHaveTextContent("Delete");
+    expect(screen.getByRole("button", {name: "Delete"})).toHaveTextContent("Delete");
+    expect(screen.getByRole("button", {name: "Delete"})).not.toHaveAttribute("aria-label");
     await user.click(trigger);
     const option = await screen.findByRole("option", {name: "Apple"});
     expect(itemRef.current).toBe(option);

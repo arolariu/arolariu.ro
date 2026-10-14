@@ -59,7 +59,7 @@ function withSelectChildren<State>(render: SelectRender<State>, children: React.
  * @example Basic usage
  * ```tsx
  * <Select defaultValue="one">
- *   <SelectTrigger />
+ *   <SelectTrigger aria-label='Option'><SelectValue /></SelectTrigger>
  *   <SelectContent>
  *     <SelectItem value="one">One</SelectItem>
  *   </SelectContent>
@@ -92,14 +92,12 @@ Select.displayName = "Select";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectGroup = React.forwardRef<React.ComponentRef<typeof BaseSelect.Group>, SelectGroup.Props>(
-  (props: Readonly<SelectGroup.Props>, ref): React.ReactElement => (
-    <BaseSelect.Group
-      data-slot='select-group'
-      {...props}
-      ref={ref}
-    />
-  ),
+const SelectGroup = ({ref, ...props}: Readonly<SelectGroup.Props>): React.ReactElement => (
+  <BaseSelect.Group
+    data-slot='select-group'
+    {...props}
+    ref={ref}
+  />
 );
 SelectGroup.displayName = "SelectGroup";
 /**
@@ -118,19 +116,17 @@ SelectGroup.displayName = "SelectGroup";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectValue = React.forwardRef<React.ComponentRef<typeof BaseSelect.Value>, SelectValue.Props>(
-  (props: Readonly<SelectValue.Props>, ref): React.ReactElement => {
-    const {className, ...otherProps} = props;
-    return (
-      <BaseSelect.Value
-        data-slot='select-value'
-        {...otherProps}
-        ref={ref}
-        className={(state) => cn(styles.value, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+const SelectValue = (props: Readonly<SelectValue.Props>): React.ReactElement => {
+  const {ref, className, ...otherProps} = props;
+  return (
+    <BaseSelect.Value
+      data-slot='select-value'
+      {...otherProps}
+      ref={ref}
+      className={(state) => cn(styles.value, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 SelectValue.displayName = "SelectValue";
 
 /**
@@ -152,33 +148,31 @@ SelectValue.displayName = "SelectValue";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectTrigger = React.forwardRef<React.ComponentRef<typeof BaseSelect.Trigger>, SelectTrigger.Props>(
-  (props: Readonly<SelectTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, size = "default", ...otherProps} = props;
-    const content = (
-      <>
-        {getSelectChildren(children, render)}
-        <BaseSelect.Icon
-          data-slot='select-trigger-icon'
-          className={styles.icon}>
-          <ChevronDown className={styles.iconSvg} />
-        </BaseSelect.Icon>
-      </>
-    );
+const SelectTrigger = (props: Readonly<SelectTrigger.Props>): React.ReactElement => {
+  const {ref, className, children, render, size = "default", ...otherProps} = props;
+  const content = (
+    <>
+      {getSelectChildren(children, render)}
+      <BaseSelect.Icon
+        data-slot='select-trigger-icon'
+        className={styles.icon}>
+        <ChevronDown className={styles.iconSvg} />
+      </BaseSelect.Icon>
+    </>
+  );
 
-    return (
-      <BaseSelect.Trigger
-        data-slot='select-trigger'
-        data-size={size}
-        ref={ref}
-        {...otherProps}
-        render={withSelectChildren(render, content)}
-        className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}>
-        {content}
-      </BaseSelect.Trigger>
-    );
-  },
-);
+  return (
+    <BaseSelect.Trigger
+      data-slot='select-trigger'
+      data-size={size}
+      ref={ref}
+      {...otherProps}
+      render={withSelectChildren(render, content)}
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}>
+      {content}
+    </BaseSelect.Trigger>
+  );
+};
 SelectTrigger.displayName = "SelectTrigger";
 
 /**
@@ -198,24 +192,22 @@ SelectTrigger.displayName = "SelectTrigger";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectScrollUpButton = React.forwardRef<React.ComponentRef<typeof BaseSelect.ScrollUpArrow>, SelectScrollUpButton.Props>(
-  (props: Readonly<SelectScrollUpButton.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-    const resolvedChildren = getSelectChildren(children, render);
-    const content = resolvedChildren === undefined ? <ChevronUp className={styles.scrollIcon} /> : resolvedChildren;
+const SelectScrollUpButton = (props: Readonly<SelectScrollUpButton.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
+  const resolvedChildren = getSelectChildren(children, render);
+  const content = resolvedChildren === undefined ? <ChevronUp className={styles.scrollIcon} /> : resolvedChildren;
 
-    return (
-      <BaseSelect.ScrollUpArrow
-        data-slot='select-scroll-up-button'
-        {...otherProps}
-        ref={ref}
-        render={withSelectChildren(render, content)}
-        className={(state) => cn(styles.scrollButton, styles.scrollUp, typeof className === "function" ? className(state) : className)}>
-        {content}
-      </BaseSelect.ScrollUpArrow>
-    );
-  },
-);
+  return (
+    <BaseSelect.ScrollUpArrow
+      data-slot='select-scroll-up-button'
+      {...otherProps}
+      ref={ref}
+      render={withSelectChildren(render, content)}
+      className={(state) => cn(styles.scrollButton, styles.scrollUp, typeof className === "function" ? className(state) : className)}>
+      {content}
+    </BaseSelect.ScrollUpArrow>
+  );
+};
 SelectScrollUpButton.displayName = "SelectScrollUpButton";
 
 /**
@@ -235,24 +227,22 @@ SelectScrollUpButton.displayName = "SelectScrollUpButton";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectScrollDownButton = React.forwardRef<React.ComponentRef<typeof BaseSelect.ScrollDownArrow>, SelectScrollDownButton.Props>(
-  (props: Readonly<SelectScrollDownButton.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-    const resolvedChildren = getSelectChildren(children, render);
-    const content = resolvedChildren === undefined ? <ChevronDown className={styles.scrollIcon} /> : resolvedChildren;
+const SelectScrollDownButton = (props: Readonly<SelectScrollDownButton.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
+  const resolvedChildren = getSelectChildren(children, render);
+  const content = resolvedChildren === undefined ? <ChevronDown className={styles.scrollIcon} /> : resolvedChildren;
 
-    return (
-      <BaseSelect.ScrollDownArrow
-        data-slot='select-scroll-down-button'
-        {...otherProps}
-        ref={ref}
-        render={withSelectChildren(render, content)}
-        className={(state) => cn(styles.scrollButton, styles.scrollDown, typeof className === "function" ? className(state) : className)}>
-        {content}
-      </BaseSelect.ScrollDownArrow>
-    );
-  },
-);
+  return (
+    <BaseSelect.ScrollDownArrow
+      data-slot='select-scroll-down-button'
+      {...otherProps}
+      ref={ref}
+      render={withSelectChildren(render, content)}
+      className={(state) => cn(styles.scrollButton, styles.scrollDown, typeof className === "function" ? className(state) : className)}>
+      {content}
+    </BaseSelect.ScrollDownArrow>
+  );
+};
 SelectScrollDownButton.displayName = "SelectScrollDownButton";
 
 /**
@@ -276,88 +266,92 @@ SelectScrollDownButton.displayName = "SelectScrollDownButton";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectContent = React.forwardRef<React.ComponentRef<typeof BaseSelect.Popup>, SelectContent.Props>(
-  (props: Readonly<SelectContent.Props>, ref): React.ReactElement => {
-    const {
-      className,
-      children,
-      render,
-      side = "bottom",
-      sideOffset = 4,
-      align = "center",
-      alignOffset = 0,
-      alignItemWithTrigger = true,
-      anchor,
-      positionMethod,
-      collisionBoundary,
-      collisionPadding,
-      sticky,
-      arrowPadding,
-      disableAnchorTracking,
-      collisionAvoidance,
-      positionerProps,
-      listProps,
-      ...popupProps
-    } = props;
-    const listChildren = getSelectChildren(getSelectChildren(children, render), listProps?.render);
-    const content = (
-      <>
-        <SelectScrollUpButton />
-        <BaseSelect.List
-          data-slot='select-list'
-          {...listProps}
-          render={withSelectChildren(listProps?.render, listChildren)}
-          className={(state) =>
-            cn(styles.list, typeof listProps?.className === "function" ? listProps.className(state) : listProps?.className)
-          }>
-          {listChildren}
-        </BaseSelect.List>
-        <SelectScrollDownButton />
-      </>
-    );
-    const popup = (
-      <BaseSelect.Popup
-        data-slot='select-content'
-        data-align-trigger={alignItemWithTrigger}
-        {...popupProps}
-        ref={ref}
-        render={withSelectChildren(render, content)}
-        className={(state) => cn(styles.popup, typeof className === "function" ? className(state) : className)}>
-        {content}
-      </BaseSelect.Popup>
-    );
-
-    return (
-      <BaseSelect.Portal>
-        <BaseSelect.Positioner
-          data-slot='select-positioner'
-          {...positionerProps}
-          render={withSelectChildren(positionerProps?.render, popup)}
-          side={side}
-          sideOffset={sideOffset}
-          align={align}
-          alignOffset={alignOffset}
-          alignItemWithTrigger={alignItemWithTrigger}
-          anchor={anchor}
-          positionMethod={positionMethod}
-          collisionBoundary={collisionBoundary}
-          collisionPadding={collisionPadding}
-          sticky={sticky}
-          arrowPadding={arrowPadding}
-          disableAnchorTracking={disableAnchorTracking}
-          collisionAvoidance={collisionAvoidance}
-          className={(state) =>
-            cn(
-              styles.positioner,
-              typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
-            )
-          }>
-          {popup}
-        </BaseSelect.Positioner>
-      </BaseSelect.Portal>
-    );
-  },
+const SelectContent = (props: Readonly<SelectContent.Props>): React.ReactElement => (
+  <BaseSelect.Portal>
+    <MountedSelectContent {...props} />
+  </BaseSelect.Portal>
 );
+
+/** Normalize static render elements only after the SDK Portal actually mounts its surfaces. */
+function MountedSelectContent(props: Readonly<SelectContent.Props>): React.ReactElement {
+  const {
+    ref,
+    className,
+    children,
+    render,
+    side = "bottom",
+    sideOffset = 4,
+    align = "center",
+    alignOffset = 0,
+    alignItemWithTrigger = true,
+    anchor,
+    positionMethod,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    collisionAvoidance,
+    positionerProps,
+    listProps,
+    ...popupProps
+  } = props;
+  const listChildren = getSelectChildren(getSelectChildren(children, render), listProps?.render);
+  const content = (
+    <>
+      <SelectScrollUpButton />
+      <BaseSelect.List
+        data-slot='select-list'
+        {...listProps}
+        render={withSelectChildren(listProps?.render, listChildren)}
+        className={(state) =>
+          cn(styles.list, typeof listProps?.className === "function" ? listProps.className(state) : listProps?.className)
+        }>
+        {listChildren}
+      </BaseSelect.List>
+      <SelectScrollDownButton />
+    </>
+  );
+  const popup = (
+    <BaseSelect.Popup
+      data-slot='select-content'
+      data-align-trigger={alignItemWithTrigger}
+      {...popupProps}
+      ref={ref}
+      render={withSelectChildren(render, content)}
+      className={(state) => cn(styles.popup, typeof className === "function" ? className(state) : className)}>
+      {content}
+    </BaseSelect.Popup>
+  );
+
+  return (
+    <BaseSelect.Positioner
+      data-slot='select-positioner'
+      {...positionerProps}
+      render={withSelectChildren(positionerProps?.render, popup)}
+      side={side}
+      sideOffset={sideOffset}
+      align={align}
+      alignOffset={alignOffset}
+      alignItemWithTrigger={alignItemWithTrigger}
+      anchor={anchor}
+      positionMethod={positionMethod}
+      collisionBoundary={collisionBoundary}
+      collisionPadding={collisionPadding}
+      sticky={sticky}
+      arrowPadding={arrowPadding}
+      disableAnchorTracking={disableAnchorTracking}
+      collisionAvoidance={collisionAvoidance}
+      className={(state) =>
+        cn(
+          styles.positioner,
+          typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
+        )
+      }>
+      {popup}
+    </BaseSelect.Positioner>
+  );
+}
 SelectContent.displayName = "SelectContent";
 
 /**
@@ -376,20 +370,18 @@ SelectContent.displayName = "SelectContent";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectLabel = React.forwardRef<React.ComponentRef<typeof BaseSelect.GroupLabel>, SelectLabel.Props>(
-  (props: Readonly<SelectLabel.Props>, ref): React.ReactElement => {
-    const {className, ...otherProps} = props;
+const SelectLabel = (props: Readonly<SelectLabel.Props>): React.ReactElement => {
+  const {ref, className, ...otherProps} = props;
 
-    return (
-      <BaseSelect.GroupLabel
-        data-slot='select-label'
-        {...otherProps}
-        ref={ref}
-        className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseSelect.GroupLabel
+      data-slot='select-label'
+      {...otherProps}
+      ref={ref}
+      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 SelectLabel.displayName = "SelectLabel";
 
 /**
@@ -408,36 +400,34 @@ SelectLabel.displayName = "SelectLabel";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectItem = React.forwardRef<React.ComponentRef<typeof BaseSelect.Item>, SelectItem.Props>(
-  (props: Readonly<SelectItem.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-    const content = (
-      <>
-        <BaseSelect.ItemText
-          data-slot='select-item-text'
-          className={styles.itemText}>
-          {getSelectChildren(children, render)}
-        </BaseSelect.ItemText>
-        <BaseSelect.ItemIndicator
-          data-slot='select-item-indicator'
-          className={styles.itemIndicatorSlot}>
-          <Check className={styles.itemIndicatorIcon} />
-        </BaseSelect.ItemIndicator>
-      </>
-    );
+const SelectItem = (props: Readonly<SelectItem.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
+  const content = (
+    <>
+      <BaseSelect.ItemText
+        data-slot='select-item-text'
+        className={styles.itemText}>
+        {getSelectChildren(children, render)}
+      </BaseSelect.ItemText>
+      <BaseSelect.ItemIndicator
+        data-slot='select-item-indicator'
+        className={styles.itemIndicatorSlot}>
+        <Check className={styles.itemIndicatorIcon} />
+      </BaseSelect.ItemIndicator>
+    </>
+  );
 
-    return (
-      <BaseSelect.Item
-        data-slot='select-item'
-        {...otherProps}
-        ref={ref}
-        render={withSelectChildren(render, content)}
-        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
-        {content}
-      </BaseSelect.Item>
-    );
-  },
-);
+  return (
+    <BaseSelect.Item
+      data-slot='select-item'
+      {...otherProps}
+      ref={ref}
+      render={withSelectChildren(render, content)}
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
+      {content}
+    </BaseSelect.Item>
+  );
+};
 SelectItem.displayName = "SelectItem";
 
 /**
@@ -456,20 +446,18 @@ SelectItem.displayName = "SelectItem";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-const SelectSeparator = React.forwardRef<React.ComponentRef<typeof BaseSelect.Separator>, SelectSeparator.Props>(
-  (props: Readonly<SelectSeparator.Props>, ref): React.ReactElement => {
-    const {className, ...otherProps} = props;
+const SelectSeparator = (props: Readonly<SelectSeparator.Props>): React.ReactElement => {
+  const {ref, className, ...otherProps} = props;
 
-    return (
-      <BaseSelect.Separator
-        data-slot='select-separator'
-        {...otherProps}
-        ref={ref}
-        className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseSelect.Separator
+      data-slot='select-separator'
+      {...otherProps}
+      ref={ref}
+      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 SelectSeparator.displayName = "SelectSeparator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

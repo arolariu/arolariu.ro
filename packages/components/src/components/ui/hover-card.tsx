@@ -67,24 +67,23 @@ function HoverCard(props: Readonly<HoverCard.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
-const HoverCardTrigger = React.forwardRef<HTMLElement, HoverCardTrigger.Props>(
-  (props: Readonly<HoverCardTrigger.Props>, ref): React.ReactElement => {
-    const primitiveRef = React.useCallback(
-      (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
-        if (typeof ref === "function") return ref(element);
-        if (ref) ref.current = element;
-        return undefined;
-      },
-      [ref],
-    );
-    return (
-      <BasePreviewCard.Trigger
-        {...props}
-        ref={primitiveRef}
-      />
-    );
-  },
-);
+const HoverCardTrigger = ({ref, className, ...props}: Readonly<HoverCardTrigger.Props>): React.ReactElement => {
+  const primitiveRef = React.useCallback(
+    (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
+  return (
+    <BasePreviewCard.Trigger
+      {...props}
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 
 /**
  * Renders the hover card content.
@@ -101,55 +100,53 @@ const HoverCardTrigger = React.forwardRef<HTMLElement, HoverCardTrigger.Props>(
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
-const HoverCardContent = React.forwardRef<React.ComponentRef<typeof BasePreviewCard.Popup>, HoverCardContent.Props>(
-  (props: Readonly<HoverCardContent.Props>, ref): React.ReactElement => {
-    const {
-      className,
-      side = "bottom",
-      align = "center",
-      sideOffset = 4,
-      alignOffset = 4,
-      anchor,
-      positionMethod,
-      collisionBoundary,
-      collisionPadding,
-      collisionAvoidance,
-      sticky,
-      arrowPadding,
-      disableAnchorTracking,
-      keepMounted,
-      container,
-      ...popupProps
-    } = props;
+const HoverCardContent = ({ref, ...props}: Readonly<HoverCardContent.Props>): React.ReactElement => {
+  const {
+    className,
+    side = "bottom",
+    align = "center",
+    sideOffset = 4,
+    alignOffset = 4,
+    anchor,
+    positionMethod,
+    collisionBoundary,
+    collisionPadding,
+    collisionAvoidance,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    keepMounted,
+    container,
+    ...popupProps
+  } = props;
 
-    return (
-      <BasePreviewCard.Portal
-        keepMounted={keepMounted}
-        container={container}>
-        <BasePreviewCard.Positioner
-          className={styles.positioner}
-          side={side}
-          align={align}
-          sideOffset={sideOffset}
-          alignOffset={alignOffset}
-          anchor={anchor}
-          positionMethod={positionMethod}
-          collisionBoundary={collisionBoundary}
-          collisionPadding={collisionPadding}
-          collisionAvoidance={collisionAvoidance}
-          sticky={sticky}
-          arrowPadding={arrowPadding}
-          disableAnchorTracking={disableAnchorTracking}>
-          <BasePreviewCard.Popup
-            ref={ref}
-            className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
-            {...popupProps}
-          />
-        </BasePreviewCard.Positioner>
-      </BasePreviewCard.Portal>
-    );
-  },
-);
+  return (
+    <BasePreviewCard.Portal
+      keepMounted={keepMounted}
+      container={container}>
+      <BasePreviewCard.Positioner
+        className={styles.positioner}
+        side={side}
+        align={align}
+        sideOffset={sideOffset}
+        alignOffset={alignOffset}
+        anchor={anchor}
+        positionMethod={positionMethod}
+        collisionBoundary={collisionBoundary}
+        collisionPadding={collisionPadding}
+        collisionAvoidance={collisionAvoidance}
+        sticky={sticky}
+        arrowPadding={arrowPadding}
+        disableAnchorTracking={disableAnchorTracking}>
+        <BasePreviewCard.Popup
+          ref={ref}
+          className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
+          {...popupProps}
+        />
+      </BasePreviewCard.Positioner>
+    </BasePreviewCard.Portal>
+  );
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace HoverCard {

@@ -34,7 +34,7 @@ const meta = {
   tags: ["autodocs"],
   args: {"aria-label": "Consent"},
   argTypes: {
-    checked: {control: "select", options: [true, false, "indeterminate"]},
+    checked: {control: "boolean"},
     indeterminate: {control: "boolean"},
     disabled: {control: "boolean"},
   },
@@ -45,7 +45,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Unchecked: Story = {args: {defaultChecked: false}};
 export const Checked: Story = {args: {defaultChecked: true}};
-export const Indeterminate: Story = {args: {checked: "indeterminate"}};
+export const Indeterminate: Story = {args: {checked: true, indeterminate: true}};
 export const Disabled: Story = {args: {disabled: true}};
 export const CheckedDisabled: Story = {args: {defaultChecked: true, disabled: true}};
 

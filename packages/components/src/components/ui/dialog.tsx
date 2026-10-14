@@ -16,8 +16,6 @@ export type DialogProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payl
 export type DialogTriggerProps = Readonly<
   Omit<BaseDialog.Trigger.Props, "ref"> & {
     ref?: React.Ref<HTMLElement>;
-    /** Legacy single-element slot. Prefer `render`. @default false */
-    asChild?: boolean;
   }
 >;
 /** Unstyled close control; presentation belongs to its caller. */
@@ -32,14 +30,14 @@ export type DialogContentProps = Readonly<
     className?: string;
     /** Append an accessible icon close after the content. @default true */
     showCloseButton?: boolean;
+    /** Caller-localizable accessible name for the automatic icon close. @default "Close" */
+    closeLabel?: string;
   }
 >;
 /** Layout composition uses Base UI's polymorphic callback props, not div-specific refs. */
 export type DialogHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
     ref?: React.Ref<HTMLElement>;
-    /** Legacy single-element slot. Prefer `render`. @default false */
-    asChild?: boolean;
   }
 >;
 /** Dialog action layout with an optional explicit dismissal button. */
@@ -47,6 +45,8 @@ export type DialogFooterProps = Readonly<
   DialogHeaderProps & {
     /** Append an outline Close button after the supplied actions. @default false */
     showCloseButton?: boolean;
+    /** Caller-localizable text for the optional footer close. @default "Close" */
+    closeLabel?: string;
   }
 >;
 /** Accessible dialog heading, wired by Base UI. */
@@ -98,40 +98,39 @@ function Dialog<Payload = unknown>(props: Readonly<Dialog.Props<Payload>>): Reac
 Dialog.displayName = "Dialog";
 
 /** Opens a dialog. Canonical `render` callers specify `nativeButton={false}` for non-buttons. */
-const DialogTrigger = React.forwardRef<HTMLElement, DialogTrigger.Props>(
-  ({asChild = false, children, render, nativeButton, ...props}: Readonly<DialogTrigger.Props>, ref): React.ReactElement => {
-    const child = asChild ? normalizedElement(children) : undefined;
-    const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
-      (element) => {
-        if (typeof ref === "function") return ref(element);
-        if (ref) ref.current = element;
-        return undefined;
-      },
-      [ref],
-    );
-    return (
-      <BaseDialog.Trigger
-        data-slot='dialog-trigger'
-        {...props}
-        ref={primitiveRef}
-        nativeButton={nativeButton ?? (child && typeof child.type === "string" ? child.type === "button" : true)}
-        render={child ?? render}>
-        {child ? undefined : children}
-      </BaseDialog.Trigger>
-    );
-  },
-);
+const DialogTrigger = ({ref, children, render, nativeButton, className, ...props}: Readonly<DialogTrigger.Props>): React.ReactElement => {
+  const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
+  return (
+    <BaseDialog.Trigger
+      data-slot='dialog-trigger'
+      {...props}
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={render}>
+      {children}
+    </BaseDialog.Trigger>
+  );
+};
 DialogTrigger.displayName = "DialogTrigger";
 
 /** Mounts dialog parts outside their local DOM hierarchy; supports `keepMounted`. */
 const DialogPortal = BaseDialog.Portal;
 
 /** Closes a dialog without imposing the automatic icon's positioning or styling. */
-function DialogClose(props: Readonly<DialogClose.Props>): React.ReactElement {
+function DialogClose({className, ...props}: Readonly<DialogClose.Props>): React.ReactElement {
   return (
     <BaseDialog.Close
       data-slot='dialog-close'
       {...props}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
     />
   );
 }
@@ -153,123 +152,122 @@ DialogOverlay.displayName = "DialogOverlay";
  * Portals a popup above its backdrop. Base UI owns modal/focus behavior.
  * The automatic icon close is last in DOM order; opt out with `showCloseButton={false}`.
  */
-const DialogContent = React.forwardRef<HTMLDivElement, DialogContent.Props>(
-  (
-    {className, children, render, showCloseButton = true, ...props}: Readonly<React.PropsWithoutRef<DialogContent.Props>>,
-    ref,
-  ): React.ReactElement => {
-    const closeControl = showCloseButton ? (
-      <DialogClose
-        aria-label='Close'
-        render={
-          <Button
-            variant='ghost'
-            size='icon-sm'
-            className={cn(styles.close)}
-          />
-        }>
-        <X
-          aria-hidden='true'
-          className={styles.closeIcon}
+const DialogContent = ({
+  ref,
+  className,
+  children,
+  render,
+  showCloseButton = true,
+  closeLabel = "Close",
+  ...props
+}: Readonly<DialogContent.Props>): React.ReactElement => {
+  const closeControl = showCloseButton ? (
+    <DialogClose
+      aria-label={closeLabel}
+      render={
+        <Button
+          aria-label={closeLabel}
+          variant='ghost'
+          size='icon-sm'
+          className={cn(styles.close)}
         />
-      </DialogClose>
-    ) : null;
-    const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
-    return (
-      <DialogPortal>
-        <DialogOverlay />
-        <BaseDialog.Popup
-          data-slot='dialog-content'
-          {...props}
-          ref={ref}
-          render={
-            decorateElement
-              ? (elementProps) => (
-                  <DecoratedDialogElement
-                    render={render}
-                    elementProps={elementProps}
-                    closeControl={closeControl}
-                  />
-                )
-              : render
-          }
-          className={cn(styles.popup, className)}>
-          {decorateElement ? (
-            children
-          ) : (
-            <>
-              {children}
-              {closeControl}
-            </>
-          )}
-        </BaseDialog.Popup>
-      </DialogPortal>
-    );
-  },
-);
+      }>
+      <X
+        aria-hidden='true'
+        className={styles.closeIcon}
+      />
+    </DialogClose>
+  ) : null;
+  const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <BaseDialog.Popup
+        data-slot='dialog-content'
+        {...props}
+        ref={ref}
+        render={
+          decorateElement
+            ? (elementProps) => (
+                <DecoratedDialogElement
+                  render={render}
+                  elementProps={elementProps}
+                  closeControl={closeControl}
+                />
+              )
+            : render
+        }
+        className={cn(styles.popup, className)}>
+        {decorateElement ? (
+          children
+        ) : (
+          <>
+            {children}
+            {closeControl}
+          </>
+        )}
+      </BaseDialog.Popup>
+    </DialogPortal>
+  );
+};
 DialogContent.displayName = "DialogContent";
 
 /** Composes the dialog heading layout without discarding children, events or refs. */
-const DialogHeader = React.forwardRef<HTMLElement, DialogHeader.Props>(
-  (
-    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<DialogHeader.Props>>,
+const DialogHeader = ({ref, children, className, render, ...props}: Readonly<DialogHeader.Props>): React.ReactElement => {
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = asChild ? normalizedElement(children) : undefined;
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      props: {
-        "data-slot": "dialog-header",
-        ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+    render,
+    props: {
+      "data-slot": "dialog-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 DialogHeader.displayName = "DialogHeader";
 
 /** Composes footer actions; `showCloseButton` adds a separate outline dismissal control. */
-const DialogFooter = React.forwardRef<HTMLElement, DialogFooter.Props>(
-  (
-    {asChild = false, children, className, render, showCloseButton = false, ...props}: Readonly<React.PropsWithoutRef<DialogFooter.Props>>,
+const DialogFooter = ({
+  ref,
+  children,
+  className,
+  render: renderElement,
+  showCloseButton = false,
+  closeLabel = "Close",
+  ...props
+}: Readonly<DialogFooter.Props>): React.ReactElement => {
+  const closeControl = showCloseButton ? <DialogClose render={<Button variant='outline' />}>{closeLabel}</DialogClose> : null;
+  const decorateElement = showCloseButton && renderElement !== undefined && typeof renderElement !== "function";
+  const suppliedChildren = children;
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = asChild ? normalizedElement(children) : undefined;
-    const renderElement = child ?? render;
-    const closeControl = showCloseButton ? <DialogClose render={<Button variant='outline' />}>Close</DialogClose> : null;
-    const decorateElement = showCloseButton && renderElement !== undefined && typeof renderElement !== "function";
-    const suppliedChildren = child ? undefined : children;
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: decorateElement
-        ? (elementProps) => (
-            <DecoratedDialogElement
-              render={renderElement}
-              elementProps={elementProps}
-              closeControl={closeControl}
-            />
-          )
-        : renderElement,
-      props: {
-        "data-slot": "dialog-footer",
-        ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
-          children: decorateElement ? (
-            suppliedChildren
-          ) : (
-            <>
-              {suppliedChildren}
-              {closeControl}
-            </>
-          ),
-        }),
-      },
-    });
-  },
-);
+    render: decorateElement
+      ? (elementProps) => (
+          <DecoratedDialogElement
+            render={renderElement}
+            elementProps={elementProps}
+            closeControl={closeControl}
+          />
+        )
+      : renderElement,
+    props: {
+      "data-slot": "dialog-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+        children: decorateElement ? (
+          suppliedChildren
+        ) : (
+          <>
+            {suppliedChildren}
+            {closeControl}
+          </>
+        ),
+      }),
+    },
+  });
+};
 DialogFooter.displayName = "DialogFooter";
 
 /** Renders the dialog's accessible heading with primitive-owned composition. */

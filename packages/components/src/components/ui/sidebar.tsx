@@ -73,8 +73,6 @@ type SidebarControlProps<State> = Readonly<
   Omit<ButtonPrimitive.Props, "render" | "className" | "style" | "ref" | "focusableWhenDisabled"> & {
     /** Element or callback composed by Base UI with the wrapper-owned state. */
     render?: useRender.ComponentProps<"button", State>["render"];
-    /** Legacy single-element slot. Prefer render. @default false */
-    asChild?: boolean;
     /** Presentation classes merged with both the wrapper and render element. */
     className?: string;
     /** Ref to the actual render target, including composed links. */
@@ -83,10 +81,6 @@ type SidebarControlProps<State> = Readonly<
     style?: React.CSSProperties;
   }
 >;
-
-function sidebarLegacyChild(children: React.ReactNode, asChild: boolean): React.ReactElement | undefined {
-  return asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-}
 
 function isSidebarNavigationTarget(element: HTMLElement): boolean {
   return element.tagName === "A" && element.hasAttribute("href");
@@ -277,91 +271,95 @@ export interface SidebarProviderProps extends Readonly<React.ComponentPropsWithR
  *
  * @see {@link https://react.dev/reference/react/useContext | React Context Docs}
  */
-const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
-  (
-    {defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, children, dir, ...props}: Readonly<SidebarProviderProps>,
-    ref,
-  ): React.JSX.Element => {
-    const isMobile = useIsMobile();
-    const inheritedDirection = useDirection();
-    const direction = dir === "rtl" || dir === "ltr" ? dir : inheritedDirection;
-    const [openMobile, setOpenMobile] = React.useState(false);
-    const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
-    const open = openProp ?? internalOpen;
+const SidebarProvider = ({
+  ref,
+  defaultOpen = true,
+  open: openProp,
+  onOpenChange: setOpenProp,
+  className,
+  children,
+  dir,
+  ...props
+}: Readonly<SidebarProviderProps>): React.JSX.Element => {
+  const isMobile = useIsMobile();
+  const inheritedDirection = useDirection();
+  const direction = dir === "rtl" || dir === "ltr" ? dir : inheritedDirection;
+  const [openMobile, setOpenMobile] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+  const open = openProp ?? internalOpen;
 
-    const setOpen = React.useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
-        const nextValue = typeof value === "function" ? value(open) : value;
+  const setOpen = React.useCallback(
+    (value: boolean | ((value: boolean) => boolean)) => {
+      const nextValue = typeof value === "function" ? value(open) : value;
 
-        if (setOpenProp) {
-          setOpenProp(nextValue);
-        } else {
-          setInternalOpen(nextValue);
-        }
-
-        // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-      },
-      [open, setOpenProp],
-    );
-
-    const toggleSidebar = React.useCallback(() => {
-      if (isMobile) {
-        setOpenMobile((currentOpen) => !currentOpen);
-        return;
+      if (setOpenProp) {
+        setOpenProp(nextValue);
+      } else {
+        setInternalOpen(nextValue);
       }
 
-      setOpen((currentOpen) => !currentOpen);
-    }, [isMobile, setOpen]);
+      // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    },
+    [open, setOpenProp],
+  );
 
-    React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (!event.defaultPrevented && event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
-          event.preventDefault();
-          toggleSidebar();
-        }
-      };
+  const toggleSidebar = React.useCallback(() => {
+    if (isMobile) {
+      setOpenMobile((currentOpen) => !currentOpen);
+      return;
+    }
 
-      globalThis.window.addEventListener("keydown", handleKeyDown);
+    setOpen((currentOpen) => !currentOpen);
+  }, [isMobile, setOpen]);
 
-      return () => {
-        globalThis.window.removeEventListener("keydown", handleKeyDown);
-      };
-    }, [toggleSidebar]);
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!event.defaultPrevented && event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
 
-    const state = open ? "expanded" : "collapsed";
+    globalThis.window.addEventListener("keydown", handleKeyDown);
 
-    const contextValue = React.useMemo<SidebarContextProps>(
-      () => ({
-        isMobile,
-        open,
-        openMobile,
-        setOpen,
-        setOpenMobile,
-        state,
-        toggleSidebar,
-      }),
-      [isMobile, open, openMobile, setOpen, state, toggleSidebar],
-    );
+    return () => {
+      globalThis.window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [toggleSidebar]);
 
-    return (
-      <DirectionProvider direction={direction}>
-        <SidebarContext.Provider value={contextValue}>
-          <TooltipProvider delay={0}>
-            <div
-              ref={ref}
-              dir={dir}
-              data-slot='sidebar-wrapper'
-              className={cn(styles.wrapper, className)}
-              {...props}>
-              {children}
-            </div>
-          </TooltipProvider>
-        </SidebarContext.Provider>
-      </DirectionProvider>
-    );
-  },
-);
+  const state = open ? "expanded" : "collapsed";
+
+  const contextValue = React.useMemo<SidebarContextProps>(
+    () => ({
+      isMobile,
+      open,
+      openMobile,
+      setOpen,
+      setOpenMobile,
+      state,
+      toggleSidebar,
+    }),
+    [isMobile, open, openMobile, setOpen, state, toggleSidebar],
+  );
+
+  return (
+    <DirectionProvider direction={direction}>
+      <SidebarContext.Provider value={contextValue}>
+        <TooltipProvider delay={0}>
+          <div
+            ref={ref}
+            dir={dir}
+            data-slot='sidebar-wrapper'
+            className={cn(styles.wrapper, className)}
+            {...props}>
+            {children}
+          </div>
+        </TooltipProvider>
+      </SidebarContext.Provider>
+    </DirectionProvider>
+  );
+};
 SidebarProvider.displayName = "SidebarProvider";
 
 /**
@@ -384,6 +382,10 @@ export type SidebarProps = Readonly<
      * @default "offcanvas"
      */
     collapsible?: "offcanvas" | "icon" | "none";
+    /** Caller-localizable mobile dialog title. @default "Sidebar" */
+    mobileTitle?: React.ReactNode;
+    /** Caller-localizable mobile dialog description. @default "Displays the mobile sidebar." */
+    mobileDescription?: React.ReactNode;
   }
 >;
 
@@ -403,81 +405,106 @@ export type SidebarProps = Readonly<
  *
  * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/dialog_role | ARIA Dialog Role}
  */
-const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
-  (
-    {side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, dir: dirProp, ...props}: Readonly<SidebarProps>,
-    ref,
-  ): React.JSX.Element => {
-    const {isMobile, openMobile, setOpenMobile, state} = useSidebar();
-    const direction = useDirection();
-    const dir = dirProp ?? direction;
-    const localDirection = dir === "rtl" || dir === "ltr" ? dir : direction;
+const Sidebar = ({
+  ref,
+  side = "left",
+  variant = "sidebar",
+  collapsible = "offcanvas",
+  mobileTitle = "Sidebar",
+  mobileDescription = "Displays the mobile sidebar.",
+  className,
+  children,
+  dir: dirProp,
+  ...props
+}: Readonly<SidebarProps>): React.JSX.Element => {
+  const {isMobile, openMobile, setOpenMobile, state} = useSidebar();
+  const direction = useDirection();
+  const dir = dirProp ?? direction;
+  const localDirection = dir === "rtl" || dir === "ltr" ? dir : direction;
 
-    if (collapsible === "none") {
-      return (
-        <DirectionProvider direction={localDirection}>
-          <div
-            ref={ref}
-            dir={dir}
-            data-sidebar='sidebar'
-            className={cn(styles.staticSidebar, className)}
-            {...props}>
-            {children}
-          </div>
-        </DirectionProvider>
-      );
-    }
-
-    if (isMobile) {
-      return (
-        <DirectionProvider direction={localDirection}>
-          <Sheet
-            open={openMobile}
-            onOpenChange={setOpenMobile}>
-            <SheetContent
-              {...props}
-              ref={ref}
-              dir={dir}
-              side={side}
-              data-sidebar='sidebar'
-              data-mobile='true'
-              showCloseButton={false}
-              className={cn(styles.mobilePanel, className)}>
-              <SheetTitle className={styles.srOnly}>Sidebar</SheetTitle>
-              <SheetDescription className={styles.srOnly}>Displays the mobile sidebar.</SheetDescription>
-              <div className={styles.mobileContent}>{children}</div>
-            </SheetContent>
-          </Sheet>
-        </DirectionProvider>
-      );
-    }
-
+  if (collapsible === "none") {
     return (
       <DirectionProvider direction={localDirection}>
         <div
           ref={ref}
           dir={dir}
-          className={styles.desktopRoot}
-          data-state={state}
-          data-collapsible={state === "collapsed" ? collapsible : ""}
-          data-variant={variant}
-          data-side={side}>
-          <div className={styles.gap} />
-          <div
-            className={cn(styles.panelWrap, className)}
-            {...props}>
-            <div
-              data-sidebar='sidebar'
-              className={styles.panel}>
-              {children}
-            </div>
-          </div>
+          data-sidebar='sidebar'
+          className={cn(styles.staticSidebar, className)}
+          {...props}>
+          {children}
         </div>
       </DirectionProvider>
     );
-  },
-);
+  }
+
+  if (isMobile) {
+    return (
+      <DirectionProvider direction={localDirection}>
+        <Sheet
+          open={openMobile}
+          onOpenChange={setOpenMobile}>
+          <SheetContent
+            {...props}
+            ref={ref}
+            dir={dir}
+            side={side}
+            data-sidebar='sidebar'
+            data-mobile='true'
+            showCloseButton={false}
+            className={cn(styles.mobilePanel, className)}>
+            <SheetTitle className={styles.srOnly}>{mobileTitle}</SheetTitle>
+            <SheetDescription className={styles.srOnly}>{mobileDescription}</SheetDescription>
+            <div className={styles.mobileContent}>{children}</div>
+          </SheetContent>
+        </Sheet>
+      </DirectionProvider>
+    );
+  }
+
+  return (
+    <DirectionProvider direction={localDirection}>
+      <div
+        ref={ref}
+        dir={dir}
+        className={styles.desktopRoot}
+        data-state={state}
+        data-collapsible={state === "collapsed" ? collapsible : ""}
+        data-variant={variant}
+        data-side={side}>
+        <div className={styles.gap} />
+        <div
+          className={cn(styles.panelWrap, className)}
+          {...props}>
+          <div
+            data-sidebar='sidebar'
+            className={styles.panel}>
+            {children}
+          </div>
+        </div>
+      </div>
+    </DirectionProvider>
+  );
+};
 Sidebar.displayName = "Sidebar";
+
+type SidebarTriggerRenderCallback = Exclude<SidebarTriggerProps["render"], React.ReactElement | undefined>;
+
+/** Preserve a composed target's own accessible name instead of imposing the icon-only default. */
+function SidebarTriggerSurface({
+  render,
+  elementProps,
+  state,
+  callerLabel,
+}: Readonly<{
+  render: NonNullable<SidebarTriggerProps["render"]>;
+  elementProps: Parameters<SidebarTriggerRenderCallback>[0];
+  state: Button.State;
+  callerLabel: string | undefined;
+}>): React.ReactElement {
+  const nativeProps = {...elementProps};
+  if (callerLabel === undefined) delete nativeProps["aria-label"];
+  return useRender({defaultTagName: "button", render, state: {...state}, props: nativeProps});
+}
 
 /**
  * Renders the primary button used to toggle the sidebar.
@@ -493,32 +520,54 @@ Sidebar.displayName = "Sidebar";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/button | HTML button element}
  */
-const SidebarTrigger = React.forwardRef<React.ComponentRef<typeof Button>, SidebarTriggerProps>(
-  ({className, onClick, ...props}: Readonly<SidebarTriggerProps>, ref): React.JSX.Element => {
-    const {toggleSidebar} = useSidebar();
+const SidebarTrigger = ({
+  ref,
+  className,
+  onClick,
+  "aria-label": ariaLabel,
+  render,
+  ...props
+}: Readonly<SidebarTriggerProps>): React.JSX.Element => {
+  const {toggleSidebar, isMobile, openMobile, open} = useSidebar();
 
-    return (
-      <Button
-        ref={ref}
-        data-sidebar='trigger'
-        variant='ghost'
-        size='icon'
-        className={cn(styles.trigger, className)}
-        {...mergeProps<"button">(
-          {
-            onClick: (event) => {
-              if (!event.defaultPrevented) toggleSidebar();
-            },
+  return (
+    <Button
+      ref={ref}
+      data-sidebar='trigger'
+      aria-label={ariaLabel ?? "Toggle Sidebar"}
+      aria-expanded={isMobile ? openMobile : open}
+      variant='ghost'
+      size='icon'
+      className={cn(styles.trigger, className)}
+      {...mergeProps<"button">(
+        {
+          onClick: (event) => {
+            if (!event.defaultPrevented) toggleSidebar();
           },
-          {onClick},
-        )}
-        {...props}>
-        <PanelLeft className={styles.triggerIcon} />
-        <span className={styles.srOnly}>Toggle Sidebar</span>
-      </Button>
-    );
-  },
-);
+        },
+        {onClick},
+      )}
+      {...props}
+      render={
+        render === undefined
+          ? undefined
+          : (elementProps, state) => (
+              <SidebarTriggerSurface
+                render={render}
+                elementProps={elementProps}
+                state={state}
+                callerLabel={ariaLabel}
+              />
+            )
+      }>
+      <PanelLeft
+        aria-hidden='true'
+        className={styles.triggerIcon}
+      />
+      <span className={styles.srOnly}>Toggle Sidebar</span>
+    </Button>
+  );
+};
 SidebarTrigger.displayName = "SidebarTrigger";
 
 /**
@@ -535,28 +584,26 @@ SidebarTrigger.displayName = "SidebarTrigger";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/button | HTML button element}
  */
-const SidebarRail = React.forwardRef<HTMLButtonElement, SidebarRailProps>(
-  ({className, onClick, ...props}: Readonly<SidebarRailProps>, ref): React.JSX.Element => {
-    const {toggleSidebar} = useSidebar();
+const SidebarRail = ({ref, className, onClick, ...props}: Readonly<SidebarRailProps>): React.JSX.Element => {
+  const {toggleSidebar, isMobile, openMobile, open} = useSidebar();
 
-    return (
-      <button
-        ref={ref}
-        data-sidebar='rail'
-        aria-label='Toggle Sidebar'
-        tabIndex={-1}
-        title='Toggle Sidebar'
-        type='button'
-        className={cn(styles.rail, className)}
-        onClick={(event) => {
-          onClick?.(event);
-          if (!event.defaultPrevented) toggleSidebar();
-        }}
-        {...props}
-      />
-    );
-  },
-);
+  return (
+    <button
+      ref={ref}
+      data-sidebar='rail'
+      aria-label='Toggle Sidebar'
+      aria-expanded={isMobile ? openMobile : open}
+      title='Toggle Sidebar'
+      type='button'
+      className={cn(styles.rail, className)}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) toggleSidebar();
+      }}
+      {...props}
+    />
+  );
+};
 SidebarRail.displayName = "SidebarRail";
 
 /**
@@ -573,14 +620,12 @@ SidebarRail.displayName = "SidebarRail";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/main | HTML main element}
  */
-const SidebarInset = React.forwardRef<HTMLElement, SidebarInsetProps>(
-  ({className, ...props}: Readonly<SidebarInsetProps>, ref): React.JSX.Element => (
-    <main
-      ref={ref}
-      className={cn(styles.inset, className)}
-      {...props}
-    />
-  ),
+const SidebarInset = ({ref, className, ...props}: Readonly<SidebarInsetProps>): React.JSX.Element => (
+  <main
+    ref={ref}
+    className={cn(styles.inset, className)}
+    {...props}
+  />
 );
 SidebarInset.displayName = "SidebarInset";
 
@@ -598,15 +643,13 @@ SidebarInset.displayName = "SidebarInset";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/input | HTML input element}
  */
-const SidebarInput = React.forwardRef<React.ComponentRef<typeof Input>, SidebarInputProps>(
-  ({className, ...props}: Readonly<SidebarInputProps>, ref): React.JSX.Element => (
-    <Input
-      ref={ref}
-      data-sidebar='input'
-      className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
-      {...props}
-    />
-  ),
+const SidebarInput = ({ref, className, ...props}: Readonly<SidebarInputProps>): React.JSX.Element => (
+  <Input
+    ref={ref}
+    data-sidebar='input'
+    className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
+    {...props}
+  />
 );
 SidebarInput.displayName = "SidebarInput";
 
@@ -624,15 +667,13 @@ SidebarInput.displayName = "SidebarInput";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarHeaderProps>(
-  ({className, ...props}: Readonly<SidebarHeaderProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='header'
-      className={cn(styles.header, className)}
-      {...props}
-    />
-  ),
+const SidebarHeader = ({ref, className, ...props}: Readonly<SidebarHeaderProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='header'
+    className={cn(styles.header, className)}
+    {...props}
+  />
 );
 SidebarHeader.displayName = "SidebarHeader";
 
@@ -650,15 +691,13 @@ SidebarHeader.displayName = "SidebarHeader";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarFooter = React.forwardRef<HTMLDivElement, SidebarFooterProps>(
-  ({className, ...props}: Readonly<SidebarFooterProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='footer'
-      className={cn(styles.footer, className)}
-      {...props}
-    />
-  ),
+const SidebarFooter = ({ref, className, ...props}: Readonly<SidebarFooterProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='footer'
+    className={cn(styles.footer, className)}
+    {...props}
+  />
 );
 SidebarFooter.displayName = "SidebarFooter";
 
@@ -676,15 +715,13 @@ SidebarFooter.displayName = "SidebarFooter";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/hr | HTML thematic break}
  */
-const SidebarSeparator = React.forwardRef<React.ComponentRef<typeof Separator>, SidebarSeparatorProps>(
-  ({className, ...props}: Readonly<SidebarSeparatorProps>, ref): React.JSX.Element => (
-    <Separator
-      ref={ref}
-      data-sidebar='separator'
-      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
-      {...props}
-    />
-  ),
+const SidebarSeparator = ({ref, className, ...props}: Readonly<SidebarSeparatorProps>): React.JSX.Element => (
+  <Separator
+    ref={ref}
+    data-sidebar='separator'
+    className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+    {...props}
+  />
 );
 SidebarSeparator.displayName = "SidebarSeparator";
 
@@ -704,15 +741,13 @@ SidebarSeparator.displayName = "SidebarSeparator";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarContent = React.forwardRef<HTMLDivElement, SidebarContentProps>(
-  ({className, ...props}: Readonly<SidebarContentProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='content'
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
+const SidebarContent = ({ref, className, ...props}: Readonly<SidebarContentProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='content'
+    className={cn(styles.content, className)}
+    {...props}
+  />
 );
 SidebarContent.displayName = "SidebarContent";
 
@@ -732,15 +767,13 @@ SidebarContent.displayName = "SidebarContent";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarGroup = React.forwardRef<HTMLDivElement, SidebarGroupProps>(
-  ({className, ...props}: Readonly<SidebarGroupProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='group'
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
+const SidebarGroup = ({ref, className, ...props}: Readonly<SidebarGroupProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='group'
+    className={cn(styles.group, className)}
+    {...props}
+  />
 );
 SidebarGroup.displayName = "SidebarGroup";
 
@@ -750,11 +783,6 @@ SidebarGroup.displayName = "SidebarGroup";
 export interface SidebarGroupLabelProps extends Readonly<Omit<useRender.ComponentProps<"div", SidebarGroupLabelState>, "ref">> {
   /** Ref to the actual native or composed label element. */
   readonly ref?: React.Ref<HTMLElement>;
-  /**
-   * Whether to merge props into the single child element instead of rendering a wrapper `<div>`.
-   * @default false
-   */
-  readonly asChild?: boolean;
 }
 
 /**
@@ -762,7 +790,7 @@ export interface SidebarGroupLabelProps extends Readonly<Omit<useRender.Componen
  *
  * @remarks
  * - Renders a `<div>` element by default
- * - Supports modern `render` and legacy `asChild` composition for custom markup
+ * - Supports `render` composition for custom markup
  *
  * @example
  * ```tsx
@@ -771,24 +799,18 @@ export interface SidebarGroupLabelProps extends Readonly<Omit<useRender.Componen
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
-const SidebarGroupLabel = React.forwardRef<HTMLElement, SidebarGroupLabelProps>(
-  (
-    {className, asChild = false, children, render, ...props}: Readonly<React.PropsWithoutRef<SidebarGroupLabelProps>>,
+const SidebarGroupLabel = ({ref, className, children, render, ...props}: Readonly<SidebarGroupLabelProps>): React.JSX.Element => {
+  return useRender<SidebarGroupLabelState, HTMLElement>({
+    defaultTagName: "div",
     ref,
-  ): React.JSX.Element => {
-    const child = sidebarLegacyChild(children, asChild);
-    return useRender<SidebarGroupLabelState, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      state: {},
-      props: {
-        "data-sidebar": "group-label",
-        ...mergeProps<"div">({className: cn(styles.groupLabel, className)}, props, {children: child ? undefined : children}),
-      },
-    });
-  },
-);
+    render,
+    state: {},
+    props: {
+      "data-sidebar": "group-label",
+      ...mergeProps<"div">({className: cn(styles.groupLabel, className)}, props, {children}),
+    },
+  });
+};
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 
 /**
@@ -801,7 +823,7 @@ export type SidebarGroupActionProps = SidebarControlProps<SidebarGroupActionStat
  *
  * @remarks
  * - Renders a `<button>` element by default
- * - Supports modern `render` and legacy `asChild` composition for custom controls
+ * - Supports `render` composition for custom controls
  *
  * @example
  * ```tsx
@@ -810,41 +832,35 @@ export type SidebarGroupActionProps = SidebarControlProps<SidebarGroupActionStat
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
-const SidebarGroupAction = React.forwardRef<HTMLElement, SidebarGroupActionProps>(
-  (
-    {
-      className,
-      asChild = false,
-      children,
-      render,
-      disabled = false,
-      nativeButton,
-      ...props
-    }: Readonly<React.PropsWithoutRef<SidebarGroupActionProps>>,
-    ref,
-  ): React.JSX.Element => {
-    const child = sidebarLegacyChild(children, asChild);
-    const renderProp = child ?? render;
-    const interactions = useSidebarControlInteractions(
-      typeof renderProp === "function" ? undefined : renderProp,
-      Boolean(renderProp),
-      disabled,
-      nativeButton,
-    );
-    return useRender<SidebarGroupActionState, HTMLElement>({
-      defaultTagName: "button",
-      ref: [ref, interactions.ref],
-      render: renderProp,
-      state: {disabled},
-      props: {
-        "data-sidebar": "group-action",
-        ...mergeProps<"button">(interactions.props, {className: cn(styles.groupAction, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+const SidebarGroupAction = ({
+  ref,
+  className,
+  children,
+  render,
+  disabled = false,
+  nativeButton,
+  ...props
+}: Readonly<SidebarGroupActionProps>): React.JSX.Element => {
+  const renderProp = render;
+  const interactions = useSidebarControlInteractions(
+    typeof renderProp === "function" ? undefined : renderProp,
+    Boolean(renderProp),
+    disabled,
+    nativeButton,
+  );
+  return useRender<SidebarGroupActionState, HTMLElement>({
+    defaultTagName: "button",
+    ref: [ref, interactions.ref],
+    render: renderProp,
+    state: {disabled},
+    props: {
+      "data-sidebar": "group-action",
+      ...mergeProps<"button">(interactions.props, {className: cn(styles.groupAction, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 SidebarGroupAction.displayName = "SidebarGroupAction";
 
 /**
@@ -863,15 +879,13 @@ SidebarGroupAction.displayName = "SidebarGroupAction";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarGroupContent = React.forwardRef<HTMLDivElement, SidebarGroupContentProps>(
-  ({className, ...props}: Readonly<SidebarGroupContentProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='group-content'
-      className={cn(styles.groupContent, className)}
-      {...props}
-    />
-  ),
+const SidebarGroupContent = ({ref, className, ...props}: Readonly<SidebarGroupContentProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='group-content'
+    className={cn(styles.groupContent, className)}
+    {...props}
+  />
 );
 SidebarGroupContent.displayName = "SidebarGroupContent";
 
@@ -891,15 +905,13 @@ SidebarGroupContent.displayName = "SidebarGroupContent";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/ul | HTML ul element}
  */
-const SidebarMenu = React.forwardRef<HTMLUListElement, SidebarMenuProps>(
-  ({className, ...props}: Readonly<SidebarMenuProps>, ref): React.JSX.Element => (
-    <ul
-      ref={ref}
-      data-sidebar='menu'
-      className={cn(styles.menu, className)}
-      {...props}
-    />
-  ),
+const SidebarMenu = ({ref, className, ...props}: Readonly<SidebarMenuProps>): React.JSX.Element => (
+  <ul
+    ref={ref}
+    data-sidebar='menu'
+    className={cn(styles.menu, className)}
+    {...props}
+  />
 );
 SidebarMenu.displayName = "SidebarMenu";
 
@@ -919,15 +931,13 @@ SidebarMenu.displayName = "SidebarMenu";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/li | HTML li element}
  */
-const SidebarMenuItem = React.forwardRef<HTMLLIElement, SidebarMenuItemProps>(
-  ({className, ...props}: Readonly<SidebarMenuItemProps>, ref): React.JSX.Element => (
-    <li
-      ref={ref}
-      data-sidebar='menu-item'
-      className={cn(styles.menuItem, className)}
-      {...props}
-    />
-  ),
+const SidebarMenuItem = ({ref, className, ...props}: Readonly<SidebarMenuItemProps>): React.JSX.Element => (
+  <li
+    ref={ref}
+    data-sidebar='menu-item'
+    className={cn(styles.menuItem, className)}
+    {...props}
+  />
 );
 SidebarMenuItem.displayName = "SidebarMenuItem";
 
@@ -946,11 +956,6 @@ const sidebarMenuButtonSizeStyles = {
  * Props for the sidebar menu button.
  */
 export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuButtonState> {
-  /**
-   * Whether to merge props into the single child element instead of rendering a wrapper `<button>`.
-   * @default false
-   */
-  readonly asChild?: boolean;
   /**
    * Whether the menu item should be styled as active.
    * @default false
@@ -978,7 +983,7 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
  *
  * @remarks
  * - Renders a `<button>` element by default
- * - Supports modern `render`, legacy `asChild`, and contextual tooltips when collapsed
+ * - Supports `render` and contextual tooltips when collapsed
  *
  * @example
  * ```tsx
@@ -993,79 +998,68 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
-const SidebarMenuButton = React.forwardRef<HTMLElement, SidebarMenuButtonProps>(
-  (
-    {
-      asChild = false,
-      isActive = false,
-      variant = "default",
-      size = "default",
-      tooltip,
-      className,
-      children,
-      render,
-      disabled = false,
-      nativeButton,
-      ...props
-    }: Readonly<React.PropsWithoutRef<SidebarMenuButtonProps>>,
-    ref,
-  ): React.JSX.Element => {
-    const {isMobile, state} = useSidebar();
-    const child = sidebarLegacyChild(children, asChild);
-    const renderProp = child ?? render;
-    const interactions = useSidebarControlInteractions(
-      typeof renderProp === "function" ? undefined : renderProp,
-      Boolean(renderProp),
-      disabled,
-      nativeButton,
-    );
-    const button = useRender<SidebarMenuButtonState, HTMLElement>({
-      defaultTagName: "button",
-      ref: [ref, interactions.ref],
-      render: renderProp,
-      state: {disabled, isActive, size, variant},
-      props: {
-        "data-active": isActive,
-        "data-sidebar": "menu-button",
-        "data-size": size,
-        ...mergeProps<"button">(
-          interactions.props,
-          {className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className)},
-          props,
-          {children: child ? undefined : children},
-        ),
-      },
-    });
+const SidebarMenuButton = ({
+  ref,
+  isActive = false,
+  variant = "default",
+  size = "default",
+  tooltip,
+  className,
+  children,
+  render,
+  disabled = false,
+  nativeButton,
+  ...props
+}: Readonly<SidebarMenuButtonProps>): React.JSX.Element => {
+  const {isMobile, state} = useSidebar();
+  const renderProp = render;
+  const interactions = useSidebarControlInteractions(
+    typeof renderProp === "function" ? undefined : renderProp,
+    Boolean(renderProp),
+    disabled,
+    nativeButton,
+  );
+  const button = useRender<SidebarMenuButtonState, HTMLElement>({
+    defaultTagName: "button",
+    ref: [ref, interactions.ref],
+    render: renderProp,
+    state: {disabled, isActive, size, variant},
+    props: {
+      "data-active": isActive,
+      "data-sidebar": "menu-button",
+      "data-size": size,
+      ...mergeProps<"button">(
+        interactions.props,
+        {className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className)},
+        props,
+        {children},
+      ),
+    },
+  });
 
-    if (!tooltip) {
-      return button;
-    }
+  if (!tooltip) {
+    return button;
+  }
 
-    const resolvedTooltip = typeof tooltip === "string" ? {children: tooltip} : tooltip;
+  const resolvedTooltip = typeof tooltip === "string" ? {children: tooltip} : tooltip;
 
-    return (
-      <Tooltip disabled={state !== "collapsed" || isMobile}>
-        <TooltipTrigger render={button} />
-        <TooltipContent
-          side='right'
-          align='center'
-          {...resolvedTooltip}
-        />
-      </Tooltip>
-    );
-  },
-);
+  return (
+    <Tooltip disabled={state !== "collapsed" || isMobile}>
+      <TooltipTrigger render={button} />
+      <TooltipContent
+        side='right'
+        align='center'
+        {...resolvedTooltip}
+      />
+    </Tooltip>
+  );
+};
 SidebarMenuButton.displayName = "SidebarMenuButton";
 
 /**
  * Props for the sidebar menu action button.
  */
 export interface SidebarMenuActionProps extends SidebarControlProps<SidebarMenuActionState> {
-  /**
-   * Whether to merge props into the single child element instead of rendering a wrapper `<button>`.
-   * @default false
-   */
-  readonly asChild?: boolean;
   /**
    * Whether the action should remain hidden until its parent item is hovered.
    * @default false
@@ -1078,7 +1072,7 @@ export interface SidebarMenuActionProps extends SidebarControlProps<SidebarMenuA
  *
  * @remarks
  * - Renders a `<button>` element by default
- * - Supports modern `render` and legacy `asChild` composition for custom controls
+ * - Supports `render` composition for custom controls
  *
  * @example
  * ```tsx
@@ -1090,45 +1084,39 @@ export interface SidebarMenuActionProps extends SidebarControlProps<SidebarMenuA
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
-const SidebarMenuAction = React.forwardRef<HTMLElement, SidebarMenuActionProps>(
-  (
-    {
-      className,
-      asChild = false,
-      showOnHover = false,
-      children,
-      render,
-      disabled = false,
-      nativeButton,
-      ...props
-    }: Readonly<React.PropsWithoutRef<SidebarMenuActionProps>>,
-    ref,
-  ): React.JSX.Element => {
-    const child = sidebarLegacyChild(children, asChild);
-    const renderProp = child ?? render;
-    const interactions = useSidebarControlInteractions(
-      typeof renderProp === "function" ? undefined : renderProp,
-      Boolean(renderProp),
-      disabled,
-      nativeButton,
-    );
-    return useRender<SidebarMenuActionState, HTMLElement>({
-      defaultTagName: "button",
-      ref: [ref, interactions.ref],
-      render: renderProp,
-      state: {disabled, showOnHover},
-      props: {
-        "data-sidebar": "menu-action",
-        ...mergeProps<"button">(
-          interactions.props,
-          {className: cn(styles.menuAction, showOnHover && styles.menuActionShowOnHover, className)},
-          props,
-          {children: child ? undefined : children},
-        ),
-      },
-    });
-  },
-);
+const SidebarMenuAction = ({
+  ref,
+  className,
+  showOnHover = false,
+  children,
+  render,
+  disabled = false,
+  nativeButton,
+  ...props
+}: Readonly<SidebarMenuActionProps>): React.JSX.Element => {
+  const renderProp = render;
+  const interactions = useSidebarControlInteractions(
+    typeof renderProp === "function" ? undefined : renderProp,
+    Boolean(renderProp),
+    disabled,
+    nativeButton,
+  );
+  return useRender<SidebarMenuActionState, HTMLElement>({
+    defaultTagName: "button",
+    ref: [ref, interactions.ref],
+    render: renderProp,
+    state: {disabled, showOnHover},
+    props: {
+      "data-sidebar": "menu-action",
+      ...mergeProps<"button">(
+        interactions.props,
+        {className: cn(styles.menuAction, showOnHover && styles.menuActionShowOnHover, className)},
+        props,
+        {children},
+      ),
+    },
+  });
+};
 SidebarMenuAction.displayName = "SidebarMenuAction";
 
 /**
@@ -1145,15 +1133,13 @@ SidebarMenuAction.displayName = "SidebarMenuAction";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarMenuBadge = React.forwardRef<HTMLDivElement, SidebarMenuBadgeProps>(
-  ({className, ...props}: Readonly<SidebarMenuBadgeProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-sidebar='menu-badge'
-      className={cn(styles.menuBadge, className)}
-      {...props}
-    />
-  ),
+const SidebarMenuBadge = ({ref, className, ...props}: Readonly<SidebarMenuBadgeProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-sidebar='menu-badge'
+    className={cn(styles.menuBadge, className)}
+    {...props}
+  />
 );
 SidebarMenuBadge.displayName = "SidebarMenuBadge";
 
@@ -1182,28 +1168,26 @@ export interface SidebarMenuSkeletonProps extends Readonly<React.ComponentPropsW
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
  */
-const SidebarMenuSkeleton = React.forwardRef<HTMLDivElement, SidebarMenuSkeletonProps>(
-  ({className, showIcon = false, ...props}: Readonly<SidebarMenuSkeletonProps>, ref): React.JSX.Element => {
-    return (
-      <div
-        ref={ref}
-        data-sidebar='menu-skeleton'
-        className={cn(styles.menuSkeleton, className)}
-        {...props}>
-        {Boolean(showIcon) && (
-          <Skeleton
-            className={styles.menuSkeletonIcon}
-            data-sidebar='menu-skeleton-icon'
-          />
-        )}
+const SidebarMenuSkeleton = ({ref, className, showIcon = false, ...props}: Readonly<SidebarMenuSkeletonProps>): React.JSX.Element => {
+  return (
+    <div
+      ref={ref}
+      data-sidebar='menu-skeleton'
+      className={cn(styles.menuSkeleton, className)}
+      {...props}>
+      {Boolean(showIcon) && (
         <Skeleton
-          className={styles.menuSkeletonText}
-          data-sidebar='menu-skeleton-text'
+          className={styles.menuSkeletonIcon}
+          data-sidebar='menu-skeleton-icon'
         />
-      </div>
-    );
-  },
-);
+      )}
+      <Skeleton
+        className={styles.menuSkeletonText}
+        data-sidebar='menu-skeleton-text'
+      />
+    </div>
+  );
+};
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton";
 
 /**
@@ -1222,15 +1206,13 @@ SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/ul | HTML ul element}
  */
-const SidebarMenuSub = React.forwardRef<HTMLUListElement, SidebarMenuSubProps>(
-  ({className, ...props}: Readonly<SidebarMenuSubProps>, ref): React.JSX.Element => (
-    <ul
-      ref={ref}
-      data-sidebar='menu-sub'
-      className={cn(styles.menuSub, className)}
-      {...props}
-    />
-  ),
+const SidebarMenuSub = ({ref, className, ...props}: Readonly<SidebarMenuSubProps>): React.JSX.Element => (
+  <ul
+    ref={ref}
+    data-sidebar='menu-sub'
+    className={cn(styles.menuSub, className)}
+    {...props}
+  />
 );
 SidebarMenuSub.displayName = "SidebarMenuSub";
 
@@ -1248,14 +1230,12 @@ SidebarMenuSub.displayName = "SidebarMenuSub";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/li | HTML li element}
  */
-const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, SidebarMenuSubItemProps>(
-  (props: Readonly<SidebarMenuSubItemProps>, ref): React.JSX.Element => (
-    <li
-      ref={ref}
-      data-sidebar='menu-sub-item'
-      {...props}
-    />
-  ),
+const SidebarMenuSubItem = ({ref, ...props}: Readonly<SidebarMenuSubItemProps>): React.JSX.Element => (
+  <li
+    ref={ref}
+    data-sidebar='menu-sub-item'
+    {...props}
+  />
 );
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem";
 
@@ -1265,11 +1245,6 @@ SidebarMenuSubItem.displayName = "SidebarMenuSubItem";
 export interface SidebarMenuSubButtonProps extends Readonly<Omit<useRender.ComponentProps<"a", SidebarMenuSubButtonState>, "ref">> {
   /** Ref to the actual native or composed link element. */
   readonly ref?: React.Ref<HTMLElement>;
-  /**
-   * Whether to merge props into the single child element instead of rendering a wrapper `<a>`.
-   * @default false
-   */
-  readonly asChild?: boolean;
   /**
    * Size preset for the nested menu link.
    * @default "md"
@@ -1287,7 +1262,7 @@ export interface SidebarMenuSubButtonProps extends Readonly<Omit<useRender.Compo
  *
  * @remarks
  * - Renders an `<a>` element by default
- * - Supports modern `render` and legacy `asChild` composition for custom link components
+ * - Supports `render` composition for custom link components
  *
  * @example
  * ```tsx
@@ -1296,38 +1271,32 @@ export interface SidebarMenuSubButtonProps extends Readonly<Omit<useRender.Compo
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
-const SidebarMenuSubButton = React.forwardRef<HTMLElement, SidebarMenuSubButtonProps>(
-  (
-    {
-      asChild = false,
-      size = "md",
-      isActive = false,
-      className,
-      children,
-      render,
-      ...props
-    }: Readonly<React.PropsWithoutRef<SidebarMenuSubButtonProps>>,
+const SidebarMenuSubButton = ({
+  ref,
+  size = "md",
+  isActive = false,
+  className,
+  children,
+  render,
+  ...props
+}: Readonly<SidebarMenuSubButtonProps>): React.JSX.Element => {
+  return useRender<SidebarMenuSubButtonState, HTMLElement>({
+    defaultTagName: "a",
     ref,
-  ): React.JSX.Element => {
-    const child = sidebarLegacyChild(children, asChild);
-    return useRender<SidebarMenuSubButtonState, HTMLElement>({
-      defaultTagName: "a",
-      ref,
-      render: child ?? render,
-      state: {isActive, size},
-      props: {
-        "data-active": isActive,
-        "data-sidebar": "menu-sub-button",
-        "data-size": size,
-        ...mergeProps<"a">(
-          {className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className)},
-          props,
-          {children: child ? undefined : children},
-        ),
-      },
-    });
-  },
-);
+    render,
+    state: {isActive, size},
+    props: {
+      "data-active": isActive,
+      "data-sidebar": "menu-sub-button",
+      "data-size": size,
+      ...mergeProps<"a">(
+        {className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className)},
+        props,
+        {children},
+      ),
+    },
+  });
+};
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 // eslint-disable-next-line no-redeclare -- public component namespace typing API

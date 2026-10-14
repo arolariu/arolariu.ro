@@ -19,18 +19,18 @@ export type MessageHeaderProps = Readonly<React.ComponentPropsWithRef<"div">>;
 export type MessageFooterProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /** Groups native message rows without creating application state or live announcements. */
-const MessageGroup = React.forwardRef<HTMLDivElement, MessageGroup.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MessageGroup = ({ref, className, ...props}: Readonly<MessageGroup.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='message-group'
     className={cn(styles.group, className)}
   />
-));
+);
 MessageGroup.displayName = "MessageGroup";
 
 /** Arranges caller-owned avatar and message content at a logical start or end side. */
-const Message = React.forwardRef<HTMLDivElement, Message.Props>(({className, align = "start", ...props}, ref): React.JSX.Element => (
+const Message = ({ref, className, align = "start", ...props}: Readonly<Message.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
@@ -38,51 +38,51 @@ const Message = React.forwardRef<HTMLDivElement, Message.Props>(({className, ali
     data-align={align}
     className={cn(styles.message, className)}
   />
-));
+);
 Message.displayName = "Message";
 
 /** Hosts caller-provided Avatar composition without owning image loading or fallback state. */
-const MessageAvatar = React.forwardRef<HTMLDivElement, MessageAvatar.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MessageAvatar = ({ref, className, ...props}: Readonly<MessageAvatar.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='message-avatar'
     className={cn(styles.avatar, className)}
   />
-));
+);
 MessageAvatar.displayName = "MessageAvatar";
 
 /** Holds the shrinking header, bubble/content and footer column. */
-const MessageContent = React.forwardRef<HTMLDivElement, MessageContent.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MessageContent = ({ref, className, ...props}: Readonly<MessageContent.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='message-content'
     className={cn(styles.content, className)}
   />
-));
+);
 MessageContent.displayName = "MessageContent";
 
 /** Displays caller-owned author/header metadata without generating text. */
-const MessageHeader = React.forwardRef<HTMLDivElement, MessageHeader.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MessageHeader = ({ref, className, ...props}: Readonly<MessageHeader.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='message-header'
     className={cn(styles.header, className)}
   />
-));
+);
 MessageHeader.displayName = "MessageHeader";
 
 /** Displays caller-owned timestamp, status or action content at the row's logical side. */
-const MessageFooter = React.forwardRef<HTMLDivElement, MessageFooter.Props>(({className, ...props}, ref): React.JSX.Element => (
+const MessageFooter = ({ref, className, ...props}: Readonly<MessageFooter.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='message-footer'
     className={cn(styles.footer, className)}
   />
-));
+);
 MessageFooter.displayName = "MessageFooter";
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace

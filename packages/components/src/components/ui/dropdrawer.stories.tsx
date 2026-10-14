@@ -63,9 +63,7 @@ function ActionExample({nested = false, controlled = false}: Readonly<{nested?: 
         open={controlled ? open : undefined}
         onOpenChange={(nextOpen) => setOpen(nextOpen)}
         mobileTitle='Document actions'>
-        <DropDrawerTrigger asChild>
-          <Button variant='outline'>Document actions</Button>
-        </DropDrawerTrigger>
+        <DropDrawerTrigger render={<Button variant='outline'>Document actions</Button>} />
         <DropDrawerContent aria-label='Document actions'>
           <DropDrawerGroup>
             <DropDrawerLabel>Document</DropDrawerLabel>

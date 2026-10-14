@@ -234,7 +234,7 @@ export const WithIcons: Story = {
   render: (): React.JSX.Element => <BreadcrumbWithIcons />,
 };
 
-/** Modern element composition and legacy child composition preserve their own link content. */
+/** Render elements preserve their own content or accept wrapper-provided children. */
 export const ComposedLinks: Story = {
   render: (): React.JSX.Element => (
     <Breadcrumb>
@@ -244,9 +244,7 @@ export const ComposedLinks: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <a href='#legacy-components'>Legacy components</a>
-          </BreadcrumbLink>
+          <BreadcrumbLink render={<a href='#render-components'>Rendered components</a>} />
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -280,7 +278,7 @@ export const RightToLeft: Story = {
   ),
 };
 
-/** Custom separator content belongs to the separator part, not the deprecated inert root prop. */
+/** Custom separator content belongs to the separator part. */
 export const CustomSeparator: Story = {
   render: (): React.JSX.Element => (
     <Breadcrumb>

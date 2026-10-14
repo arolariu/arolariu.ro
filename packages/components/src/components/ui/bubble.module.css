@@ -28,7 +28,6 @@
   inline-size: fit-content;
   max-inline-size: 100%;
   min-inline-size: 0;
-  overflow: hidden;
   overflow-wrap: anywhere;
   border: 1px solid transparent;
   border-radius: var(--ac-radius-lg);
@@ -40,6 +39,8 @@
 
 button.content,
 a.content {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   text-align: start;
   text-decoration: none;
   transition: background-color var(--ac-transition-fast);

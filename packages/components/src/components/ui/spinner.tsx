@@ -6,7 +6,7 @@ import styles from "./spinner.module.css";
 /**
  * Props for the {@link Spinner} component.
  */
-export interface SpinnerProps extends Readonly<React.ComponentPropsWithoutRef<"svg">> {
+export interface SpinnerProps extends Readonly<React.ComponentPropsWithRef<"svg">> {
   /** Enables rotation unless reduced motion is requested. `false` retains a static indicator. @default true */
   readonly animated?: boolean;
 }
@@ -27,35 +27,33 @@ export interface SpinnerProps extends Readonly<React.ComponentPropsWithoutRef<"s
  *
  * @see {@link SpinnerProps} for available props
  */
-const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
-  ({children, className, animated = true, ...props}: Readonly<SpinnerProps>, ref): React.JSX.Element => (
-    <svg
-      ref={ref}
-      data-slot='spinner'
-      data-animated={animated}
-      role='status'
-      aria-label={props["aria-label"] ?? "Loading"}
-      viewBox='0 0 24 24'
-      fill='none'
-      className={cn(styles.spinner, className)}
-      {...props}>
-      {children}
-      <circle
-        className={styles.track}
-        cx='12'
-        cy='12'
-        r='9'
-        stroke='currentColor'
-        strokeWidth='3'
-      />
-      <path
-        className={styles.indicator}
-        d='M21 12a9 9 0 0 0-9-9'
-        stroke='currentColor'
-        strokeWidth='3'
-      />
-    </svg>
-  ),
+const Spinner = ({ref, children, className, animated = true, ...props}: Readonly<SpinnerProps>): React.JSX.Element => (
+  <svg
+    ref={ref}
+    data-slot='spinner'
+    data-animated={animated}
+    role='status'
+    aria-label={props["aria-label"] ?? "Loading"}
+    viewBox='0 0 24 24'
+    fill='none'
+    className={cn(styles.spinner, className)}
+    {...props}>
+    {children}
+    <circle
+      className={styles.track}
+      cx='12'
+      cy='12'
+      r='9'
+      stroke='currentColor'
+      strokeWidth='3'
+    />
+    <path
+      className={styles.indicator}
+      d='M21 12a9 9 0 0 0-9-9'
+      stroke='currentColor'
+      strokeWidth='3'
+    />
+  </svg>
 );
 
 Spinner.displayName = "Spinner";

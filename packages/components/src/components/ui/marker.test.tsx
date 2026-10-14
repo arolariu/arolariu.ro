@@ -22,6 +22,22 @@ function declarations(selector: string): Record<string, string> {
 }
 
 describe("Marker", () => {
+  it("React 19 refresh: authors a minimum target for standalone rendered controls", () => {
+    expect(declarations(":is(a, button).marker")).toMatchObject({"min-inline-size": "24px", "min-block-size": "24px"});
+  });
+
+  it("React 19 refresh: allows a meaningful localized icon instead of forcing it hidden", () => {
+    render(
+      <MarkerIcon
+        role='img'
+        aria-label='Livré'
+        aria-hidden={false}>
+        ✓
+      </MarkerIcon>,
+    );
+    expect(screen.getByRole("img", {name: "Livré"})).toHaveAttribute("aria-hidden", "false");
+  });
+
   it("publishes precise native span refs and an actual rendered root element ref", () => {
     expectTypeOf<React.ComponentRef<typeof Marker>>().toEqualTypeOf<HTMLElement>();
     expectTypeOf<React.ComponentRef<typeof MarkerIcon>>().toEqualTypeOf<HTMLSpanElement>();
@@ -69,7 +85,7 @@ describe("Marker", () => {
     for (const ref of [root, icon, content]) expect(ref.current).toBeNull();
   });
 
-  it("keeps decorative icons hidden even when a caller passes a contradictory flag", () => {
+  it("honors caller ownership of icon exposure", () => {
     render(
       <MarkerIcon
         aria-hidden='false'
@@ -77,7 +93,7 @@ describe("Marker", () => {
         ★
       </MarkerIcon>,
     );
-    expect(screen.getByTestId("icon")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByTestId("icon")).toHaveAttribute("aria-hidden", "false");
   });
 
   it("exposes the typed helper without requiring a rendered Marker", () => {

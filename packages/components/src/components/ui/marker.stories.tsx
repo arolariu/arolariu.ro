@@ -102,7 +102,7 @@ export const EmptyErrorLongContentAndRTL: Story = {
       dir='rtl'>
       <Marker
         variant='separator'
-        aria-label='Empty decorative boundary'>
+        aria-hidden='true'>
         <MarkerContent />
       </Marker>
       <Marker>

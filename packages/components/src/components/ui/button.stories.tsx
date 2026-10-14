@@ -172,10 +172,10 @@ export const FocusableDisabled = {
   } satisfies Button.Props,
 } satisfies Story;
 
-export const LegacyChild: Story = {
+export const RenderedNavigation: Story = {
   args: {
-    asChild: true,
-    children: <a href='#legacy'>Legacy navigation</a>,
+    nativeButton: false,
+    render: <a href='#navigation'>Open navigation</a>,
     variant: "outline",
   },
 };

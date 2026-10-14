@@ -1,11 +1,27 @@
-import {act, render, screen} from "@testing-library/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./toolbar";
+import * as stories from "./toolbar.stories";
 
 describe("Toolbar", () => {
+  it("uses a named primitive popup in the More options story and restores keyboard focus on Escape", async () => {
+    const user = userEvent.setup();
+    const {WithDropdown} = composeStories(stories);
+    render(<WithDropdown />);
+    const trigger = screen.getByRole("button", {name: "More options"});
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger);
+    const popup = await screen.findByRole("dialog", {name: "More editor actions"});
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(popup).toContainElement(screen.getByRole("button", {name: "Clear formatting"}));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
   it("supplies primitive disabled state to ToolbarButton render", () => {
     render(
       <Toolbar aria-label='Editor'>

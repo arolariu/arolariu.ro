@@ -137,6 +137,8 @@
 .item[data-highlighted] {
   background-color: var(--ac-accent);
   color: var(--ac-accent-foreground);
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
 }
 
 .item[data-disabled] {
@@ -174,5 +176,28 @@
   .trigger,
   .popup {
     transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .trigger,
+  .popup {
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .trigger:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .item[data-highlighted] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .trigger[data-disabled],
+  .item[data-disabled] {
+    color: GrayText;
+    opacity: 1;
   }
 }

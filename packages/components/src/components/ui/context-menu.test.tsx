@@ -31,6 +31,31 @@ function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): Reac
 }
 
 describe("ContextMenu", () => {
+  it("does not normalize a closed pending popup render slot", () => {
+    const normalize = vi.fn(() => {
+      throw new Promise<void>(() => undefined);
+    });
+    const pending: React.ReactElement & Readonly<{$$typeof: symbol; _payload: null; _init: () => never}> = {
+      ...(<div />),
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: null,
+      _init: normalize,
+    };
+    render(
+      <React.Suspense fallback={<p>Pending context menu</p>}>
+        <ContextMenu>
+          <ContextMenuTrigger>Context target</ContextMenuTrigger>
+          <ContextMenuContent render={pending}>
+            <ContextMenuItem>Action</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </React.Suspense>,
+    );
+    expect(screen.getByText("Context target")).toBeVisible();
+    expect(screen.queryByText("Pending context menu")).not.toBeInTheDocument();
+    expect(normalize).not.toHaveBeenCalled();
+  });
+
   it("retains explicit native-button mode and safe form semantics on the shared custom Item", async () => {
     const user = userEvent.setup();
     const errors = vi.spyOn(console, "error");
@@ -49,19 +74,20 @@ describe("ContextMenu", () => {
                 submissions += 1;
               }}>
               <ContextMenuItem
-                asChild
                 nativeButton
                 ref={wrapperRef}
                 onClick={(event) => {
                   calls.push("wrapper");
                   event.preventBaseUIHandler();
-                }}>
-                <LegacyControl
-                  ref={childRef}
-                  onClick={() => calls.push("child")}>
-                  Cancel close
-                </LegacyControl>
-              </ContextMenuItem>
+                }}
+                render={
+                  <LegacyControl
+                    ref={childRef}
+                    onClick={() => calls.push("child")}>
+                    Cancel close
+                  </LegacyControl>
+                }
+              />
             </form>
           </ContextMenuContent>
         </ContextMenu>,
@@ -91,10 +117,9 @@ describe("ContextMenu", () => {
           <ContextMenuTrigger>Target</ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem
-              asChild
-              nativeButton={false}>
-              <LegacyRegion>Rename</LegacyRegion>
-            </ContextMenuItem>
+              nativeButton={false}
+              render={<LegacyRegion>Rename</LegacyRegion>}
+            />
           </ContextMenuContent>
         </ContextMenu>,
       );
@@ -564,18 +589,12 @@ describe("ContextMenu", () => {
     // Arrange
     render(
       <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <button type='button'>Open context menu</button>
-        </ContextMenuTrigger>
+        <ContextMenuTrigger render={<button type='button'>Open context menu</button>} />
         <ContextMenuContent>
-          <ContextMenuItem asChild>
-            <span data-testid='child-item'>Child action</span>
-          </ContextMenuItem>
+          <ContextMenuItem render={<span data-testid='child-item'>Child action</span>} />
           <ContextMenuItem>
             Copy
-            <ContextMenuShortcut asChild>
-              <span data-testid='shortcut-child'>⌘K</span>
-            </ContextMenuShortcut>
+            <ContextMenuShortcut render={<span data-testid='shortcut-child'>⌘K</span>} />
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>,

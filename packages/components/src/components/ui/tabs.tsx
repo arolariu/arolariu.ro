@@ -86,22 +86,20 @@ function tabsListVariants({variant = "default", className}: Readonly<TabsListVar
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const Tabs = React.forwardRef<React.ComponentRef<typeof BaseTabs.Root>, Tabs.Props>(
-  (props: Readonly<Tabs.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const Tabs = (props: Readonly<Tabs.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseTabs.Root
-        {...otherProps}
-        ref={ref}
-        data-slot='tabs'
-        className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
-        render={render}>
-        {children}
-      </BaseTabs.Root>
-    );
-  },
-);
+  return (
+    <BaseTabs.Root
+      {...otherProps}
+      ref={ref}
+      data-slot='tabs'
+      className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
+      render={render}>
+      {children}
+    </BaseTabs.Root>
+  );
+};
 Tabs.displayName = "Tabs";
 
 /**
@@ -124,31 +122,29 @@ Tabs.displayName = "Tabs";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const TabsList = React.forwardRef<React.ComponentRef<typeof BaseTabs.List>, TabsList.Props>(
-  (props: Readonly<TabsList.Props>, ref): React.ReactElement => {
-    const {className, children, render, variant = "default", ...otherProps} = props;
+const TabsList = (props: Readonly<TabsList.Props>): React.ReactElement => {
+  const {ref, className, children, render, variant = "default", ...otherProps} = props;
 
-    return (
-      <BaseTabs.List
-        {...otherProps}
-        ref={ref}
-        data-slot='tabs-list'
-        data-variant={variant}
-        className={
-          typeof className === "function"
-            ? (state) => tabsListVariants({variant, className: className({...state, variant})})
-            : tabsListVariants({variant, className})
-        }
-        render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant}) : render}>
-        {children}
-        <BaseTabs.Indicator
-          data-slot='tabs-indicator'
-          className={styles.indicator}
-        />
-      </BaseTabs.List>
-    );
-  },
-);
+  return (
+    <BaseTabs.List
+      {...otherProps}
+      ref={ref}
+      data-slot='tabs-list'
+      data-variant={variant}
+      className={
+        typeof className === "function"
+          ? (state) => tabsListVariants({variant, className: className({...state, variant})})
+          : tabsListVariants({variant, className})
+      }
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant}) : render}>
+      {children}
+      <BaseTabs.Indicator
+        data-slot='tabs-indicator'
+        className={styles.indicator}
+      />
+    </BaseTabs.List>
+  );
+};
 TabsList.displayName = "TabsList";
 
 /**
@@ -167,22 +163,20 @@ TabsList.displayName = "TabsList";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const TabsTrigger = React.forwardRef<React.ComponentRef<typeof BaseTabs.Tab>, TabsTrigger.Props>(
-  (props: Readonly<TabsTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const TabsTrigger = (props: Readonly<TabsTrigger.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseTabs.Tab
-        ref={ref}
-        {...otherProps}
-        data-slot='tabs-trigger'
-        className={typeof className === "function" ? (state) => cn(styles.tab, className(state)) : cn(styles.tab, className)}
-        render={render}>
-        {children}
-      </BaseTabs.Tab>
-    );
-  },
-);
+  return (
+    <BaseTabs.Tab
+      ref={ref}
+      {...otherProps}
+      data-slot='tabs-trigger'
+      className={typeof className === "function" ? (state) => cn(styles.tab, className(state)) : cn(styles.tab, className)}
+      render={render}>
+      {children}
+    </BaseTabs.Tab>
+  );
+};
 TabsTrigger.displayName = "TabsTrigger";
 
 /**
@@ -201,22 +195,20 @@ TabsTrigger.displayName = "TabsTrigger";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const TabsContent = React.forwardRef<React.ComponentRef<typeof BaseTabs.Panel>, TabsContent.Props>(
-  (props: Readonly<TabsContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const TabsContent = (props: Readonly<TabsContent.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseTabs.Panel
-        ref={ref}
-        {...otherProps}
-        data-slot='tabs-content'
-        className={typeof className === "function" ? (state) => cn(styles.panel, className(state)) : cn(styles.panel, className)}
-        render={render}>
-        {children}
-      </BaseTabs.Panel>
-    );
-  },
-);
+  return (
+    <BaseTabs.Panel
+      ref={ref}
+      {...otherProps}
+      data-slot='tabs-content'
+      className={typeof className === "function" ? (state) => cn(styles.panel, className(state)) : cn(styles.panel, className)}
+      render={render}>
+      {children}
+    </BaseTabs.Panel>
+  );
+};
 TabsContent.displayName = "TabsContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

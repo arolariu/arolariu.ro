@@ -26,12 +26,12 @@ const storyStyles = `
 }
 
 .ac-story-meter-dangerIndicator {
-  background: #ef4444;
+  background: var(--ac-destructive);
 }
 
 .ac-story-meter-dangerStatus {
   font-size: 0.875rem;
-  color: #ef4444;
+  color: var(--ac-destructive);
   font-weight: 500;
 }
 
@@ -41,7 +41,13 @@ const storyStyles = `
 
 .ac-story-meter-status {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--ac-muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-story-meter-animatedIndicator {
+    transition: none;
+  }
 }
 `;
 
@@ -199,12 +205,12 @@ function AnimatedMeterContent(): React.JSX.Element {
         value={value}
         min={0}
         max={100}>
-        <MeterLabel>Loading progress</MeterLabel>
+        <MeterLabel>Storage used</MeterLabel>
         <MeterTrack>
           <MeterIndicator className={storyClasses.animatedIndicator} />
         </MeterTrack>
       </Meter>
-      <p className={storyClasses.status}>{value}% complete</p>
+      <p className={storyClasses.status}>{value}% used</p>
     </div>
   );
 }

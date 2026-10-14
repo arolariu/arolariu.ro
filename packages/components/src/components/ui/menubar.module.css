@@ -41,6 +41,11 @@
   opacity: 0.5;
 }
 
+.trigger:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
+}
+
 .positioner {
   z-index: 50;
 }

@@ -76,6 +76,8 @@
 
   &[data-active] {
     color: var(--ac-foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
   }
 
   @media (hover: hover) {

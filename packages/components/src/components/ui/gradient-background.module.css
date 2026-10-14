@@ -6,6 +6,12 @@
   background-position: 0% 50%;
 }
 
+.content {
+  position: relative;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
 @media (forced-colors: active) {
   .root {
     background-image: none;

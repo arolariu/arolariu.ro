@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
-import {act, render} from "@testing-library/react";
+import {act, render, screen} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {DotBackground} from "./dot-background";
@@ -11,7 +11,7 @@ let media: MediaQueryList;
 let observers: ResizeBoundary[] = [];
 let views: ViewBoundary[] = [];
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -80,6 +80,14 @@ afterEach(() => {
 });
 
 describe("DotBackground", () => {
+  it("does not hide explicitly supplied meaningful SVG text with its decorative dots", () => {
+    render(
+      <DotBackground>
+        <text>Named overlay</text>
+      </DotBackground>,
+    );
+    expect(screen.getByText("Named overlay").closest('[aria-hidden="true"]')).toBeNull();
+  });
   it("observes the element and regenerates the actual grid on element-only resizing", () => {
     const ref = React.createRef<SVGSVGElement>();
     const {unmount} = render(

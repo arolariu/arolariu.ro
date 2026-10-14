@@ -23,7 +23,8 @@ const storyStyles = `
 .ac-story-combobox-story {
   display: grid;
   gap: var(--ac-space-3);
-  width: 20rem;
+  /* Reserve the centered canvas and theme decorator's horizontal gutters. */
+  width: min(20rem, calc(100vw - 4rem));
   max-width: 100%;
 }
 

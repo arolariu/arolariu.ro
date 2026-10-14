@@ -78,6 +78,12 @@
   inset-inline-end: calc(var(--ac-sidebar-width) * -1);
 }
 
+/* Offscreen content must not remain in native Tab order or the accessibility tree.
+   The rail explicitly stays visible/reachable as the expansion affordance. */
+.desktopRoot[data-collapsible="offcanvas"] .panelWrap {
+  visibility: hidden;
+}
+
 /* Side names remain physical viewport edges when reading direction changes. */
 .desktopRoot:dir(rtl)[data-side="left"] .panelWrap {
   inset-inline-start: auto;
@@ -181,7 +187,8 @@
   inset-block: 0;
   z-index: 30;
   display: none;
-  width: 1rem;
+  width: 1.5rem;
+  visibility: visible;
   border: 0;
   background: transparent;
   transform: translateX(-50%);
@@ -210,7 +217,7 @@
 }
 
 .desktopRoot[data-side="left"] .rail {
-  inset-inline-end: -1rem;
+  inset-inline-end: -1.5rem;
 }
 
 .desktopRoot[data-side="right"] .rail {
@@ -218,17 +225,17 @@
 }
 
 .desktopRoot[data-collapsible="offcanvas"][data-side="left"] .rail {
-  inset-inline-end: -0.5rem;
+  inset-inline-end: -1.5rem;
   transform: none;
 }
 
 .desktopRoot[data-collapsible="offcanvas"][data-side="right"] .rail {
-  inset-inline-start: -0.5rem;
+  inset-inline-start: -1.5rem;
   transform: none;
 }
 
 .desktopRoot:dir(rtl)[data-side="left"] .rail {
-  inset-inline-start: -1rem;
+  inset-inline-start: -1.5rem;
   inset-inline-end: auto;
 }
 
@@ -238,11 +245,11 @@
 }
 
 .desktopRoot:dir(rtl)[data-side="left"][data-collapsible="offcanvas"] .rail {
-  inset-inline-start: -0.5rem;
+  inset-inline-start: -1.5rem;
 }
 
 .desktopRoot:dir(rtl)[data-side="right"][data-collapsible="offcanvas"] .rail {
-  inset-inline-end: -0.5rem;
+  inset-inline-end: -1.5rem;
 }
 
 .inset {
@@ -352,7 +359,8 @@
   top: 0.875rem;
   inset-inline-end: 0.75rem;
   display: flex;
-  width: 1.25rem;
+  width: 1.5rem;
+  min-height: 1.5rem;
   aspect-ratio: 1;
   align-items: center;
   justify-content: center;
@@ -502,7 +510,8 @@
   top: 50%;
   inset-inline-end: 0.25rem;
   display: flex;
-  width: 1.25rem;
+  width: 1.5rem;
+  min-height: 1.5rem;
   aspect-ratio: 1;
   align-items: center;
   justify-content: center;
@@ -651,6 +660,24 @@
   .menuAction,
   .menuSubButton {
     transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .trigger:focus-visible,
+  .rail:focus-visible,
+  .groupAction:focus-visible,
+  .menuButton:focus-visible,
+  .menuAction:focus-visible,
+  .menuSubButton:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .groupAction[aria-disabled="true"],
+  .menuAction[aria-disabled="true"],
+  .menuButton[aria-disabled="true"] {
+    color: GrayText;
+    opacity: 1;
   }
 }
 

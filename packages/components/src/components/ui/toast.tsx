@@ -12,8 +12,10 @@ import {
 import {CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert, X} from "lucide-react";
 import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import {Button} from "./button";
+import buttonStyles from "./button.module.css";
 import styles from "./toast.module.css";
 
 type DefaultToastMetadata = Readonly<Record<string, unknown>>;
@@ -59,13 +61,22 @@ const toast = createToastManager();
 
 /** Provider props preserving typed custom data and the primitive's timeout/limit contract. */
 export type ToastProviderProps<Data extends object = DefaultToastMetadata> = Readonly<
-  Omit<ToastPrimitive.Provider.Props, "toastManager"> & {toastManager?: ToastManager<Data>}
+  Omit<ToastPrimitive.Provider.Props, "toastManager"> & {
+    toastManager?: ToastManager<Data>;
+    /** Auto-dismiss is off by default. Timed consumers must offer reading/extension access. @default 0 */
+    timeout?: number;
+  }
 >;
 /** Primitive-owned provider state. */
 export type ToastProviderState = ToastPrimitive.Provider.State;
 /** Provides independent toast state; no implicit global manager is attached. */
-function ToastProvider<Data extends object = DefaultToastMetadata>(props: ToastProviderProps<Data>): React.JSX.Element {
-  return <ToastPrimitive.Provider {...props} />;
+function ToastProvider<Data extends object = DefaultToastMetadata>({timeout = 0, ...props}: ToastProviderProps<Data>): React.JSX.Element {
+  return (
+    <ToastPrimitive.Provider
+      {...props}
+      timeout={timeout}
+    />
+  );
 }
 
 /** Primitive portal props, including its optional container. */
@@ -73,13 +84,13 @@ export type ToastPortalProps = Readonly<React.ComponentPropsWithRef<typeof Toast
 /** Primitive portal state. */
 export type ToastPortalState = ToastPrimitive.Portal.State;
 /** Portals notifications without creating another provider or manager. */
-const ToastPortal = React.forwardRef<HTMLDivElement, ToastPortalProps>((props, ref) => (
+const ToastPortal = ({ref, ...props}: Readonly<ToastPortalProps>): React.JSX.Element => (
   <ToastPrimitive.Portal
     data-slot='toast-portal'
     {...props}
     ref={ref}
   />
-));
+);
 ToastPortal.displayName = "ToastPortal";
 
 /** Viewport props with primitive-owned className/render callbacks and placement. */
@@ -87,7 +98,7 @@ export type ToastViewportProps = Readonly<React.ComponentPropsWithRef<typeof Toa
 /** Primitive-owned viewport expansion state. */
 export type ToastViewportState = ToastPrimitive.Viewport.State;
 /** Positioned, keyboard-accessible viewport. The primitive owns expansion and focus. */
-const ToastViewport = React.forwardRef<HTMLDivElement, ToastViewportProps>(({className, position = "bottom-right", ...props}, ref) => (
+const ToastViewport = ({ref, className, position = "bottom-right", ...props}: Readonly<ToastViewportProps>): React.JSX.Element => (
   <ToastPrimitive.Viewport
     data-slot='toast-viewport'
     data-position={position}
@@ -96,7 +107,7 @@ const ToastViewport = React.forwardRef<HTMLDivElement, ToastViewportProps>(({cla
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.viewport, className(state)) : cn(styles.viewport, className)}
   />
-));
+);
 ToastViewport.displayName = "ToastViewport";
 
 /** Root props retaining typed toast data and every primitive rendering/state option. */
@@ -106,34 +117,33 @@ export type ToastProps<Data extends object = DefaultToastMetadata> = Readonly<
 /** Primitive-owned root transition, expansion, limitation, type, and swipe state. */
 export type ToastState = ToastPrimitive.Root.State;
 /** Generic root component signature with the primitive's DOM-ref and custom-data contract. */
-export interface ToastComponent {
-  <Data extends object = DefaultToastMetadata>(props: ToastProps<Data>): React.ReactNode;
-}
-const ForwardedToast = React.forwardRef<HTMLDivElement, ToastProps<object>>(({className, ...props}, ref) => (
-  <ToastPrimitive.Root
-    data-slot='toast'
-    {...props}
-    ref={ref}
-    className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
-  />
-));
-ForwardedToast.displayName = "Toast";
+export type ToastComponent = typeof Toast;
 /** Groups one typed notification. Base UI exclusively owns render callback evaluation. */
-const Toast: ToastComponent = ForwardedToast;
+function Toast<Data extends object = DefaultToastMetadata>({ref, className, ...props}: ToastProps<Data>): React.JSX.Element {
+  return (
+    <ToastPrimitive.Root
+      data-slot='toast'
+      {...props}
+      ref={ref}
+      className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
+    />
+  );
+}
+Toast.displayName = "Toast";
 
 /** Primitive content props. */
 export type ToastContentProps = Readonly<React.ComponentPropsWithRef<typeof ToastPrimitive.Content>>;
 /** Primitive content state, including behind and expanded. */
 export type ToastContentState = ToastPrimitive.Content.State;
 /** Toast content with collapsed-stack visibility managed by primitive data attributes. */
-const ToastContent = React.forwardRef<HTMLDivElement, ToastContentProps>(({className, ...props}, ref) => (
+const ToastContent = ({ref, className, ...props}: Readonly<ToastContentProps>): React.JSX.Element => (
   <ToastPrimitive.Content
     data-slot='toast-content'
     {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.content, className(state)) : cn(styles.content, className)}
   />
-));
+);
 ToastContent.displayName = "ToastContent";
 
 /** Primitive title props. */
@@ -141,14 +151,14 @@ export type ToastTitleProps = Readonly<React.ComponentPropsWithRef<typeof ToastP
 /** Primitive title state. */
 export type ToastTitleState = ToastPrimitive.Title.State;
 /** Labels the toast using children or the manager's title, including numeric zero. */
-const ToastTitle = React.forwardRef<HTMLHeadingElement, ToastTitleProps>(({className, ...props}, ref) => (
+const ToastTitle = ({ref, className, ...props}: Readonly<ToastTitleProps>): React.JSX.Element => (
   <ToastPrimitive.Title
     data-slot='toast-title'
     {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.title, className(state)) : cn(styles.title, className)}
   />
-));
+);
 ToastTitle.displayName = "ToastTitle";
 
 /** Primitive description props. */
@@ -156,81 +166,66 @@ export type ToastDescriptionProps = Readonly<React.ComponentPropsWithRef<typeof 
 /** Primitive description state. */
 export type ToastDescriptionState = ToastPrimitive.Description.State;
 /** Describes a toast without truthiness filtering valid content. */
-const ToastDescription = React.forwardRef<HTMLParagraphElement, ToastDescriptionProps>(({className, ...props}, ref) => (
+const ToastDescription = ({ref, className, ...props}: Readonly<ToastDescriptionProps>): React.JSX.Element => (
   <ToastPrimitive.Description
     data-slot='toast-description'
     {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.description, className(state)) : cn(styles.description, className)}
   />
-));
+);
 ToastDescription.displayName = "ToastDescription";
 
 /** Primitive action props, preserving manager actionProps and nativeButton semantics. */
 export type ToastActionProps = Readonly<React.ComponentPropsWithRef<typeof ToastPrimitive.Action>>;
 /** Primitive action state. */
 export type ToastActionState = ToastPrimitive.Action.State;
+/** Stable immutable markup template; Base UI supplies each action's own props, state and refs. */
+const DEFAULT_TOAST_ACTION_RENDER = (
+  <Button
+    variant='outline'
+    size='sm'
+  />
+);
 /** Optional action composed with the reviewed Button; Base UI owns its render callback. */
-const ToastAction = React.forwardRef<HTMLButtonElement, ToastActionProps>(
-  (
-    {
-      className,
-      render = (
-        <Button
-          variant='outline'
-          size='sm'
-        />
-      ),
-      ...props
-    },
-    ref,
-  ) => (
-    <ToastPrimitive.Action
-      data-slot='toast-action'
-      {...props}
-      ref={ref}
-      render={render}
-      className={typeof className === "function" ? (state) => cn(styles.action, className(state)) : cn(styles.action, className)}
-    />
-  ),
+const ToastAction = ({ref, className, render = DEFAULT_TOAST_ACTION_RENDER, ...props}: Readonly<ToastActionProps>): React.JSX.Element => (
+  <ToastPrimitive.Action
+    data-slot='toast-action'
+    {...props}
+    ref={ref}
+    render={render}
+    className={typeof className === "function" ? (state) => cn(styles.action, className(state)) : cn(styles.action, className)}
+  />
 );
 ToastAction.displayName = "ToastAction";
 
-/** Primitive close props. Consumers can override the default accessible label and children. */
+/** Primitive close props. Custom render targets own their name; icon-only custom targets require an accessible label. */
 export type ToastCloseProps = Readonly<React.ComponentPropsWithRef<typeof ToastPrimitive.Close>>;
 /** Primitive close state. */
 export type ToastCloseState = ToastPrimitive.Close.State;
 /** Closes the notification through its own provider's manager. */
-const ToastClose = React.forwardRef<HTMLButtonElement, ToastCloseProps>(
-  (
-    {
-      className,
-      children,
-      render = (
-        <Button
-          variant='ghost'
-          size='icon-sm'
+const ToastClose = ({ref, className, children, render, ...props}: Readonly<ToastCloseProps>): React.JSX.Element => (
+  <ToastPrimitive.Close
+    data-slot='toast-close'
+    aria-label={render === undefined && (children === null || children === undefined) ? "Close toast" : undefined}
+    {...props}
+    ref={ref}
+    render={
+      render ?? (
+        <button
+          type='button'
+          className={cn(buttonStyles.button, buttonStyles.ghost, buttonStyles.sizeIconSm)}
         />
-      ),
-      ...props
-    },
-    ref,
-  ) => (
-    <ToastPrimitive.Close
-      data-slot='toast-close'
-      aria-label='Close toast'
-      {...props}
-      ref={ref}
-      render={render}
-      className={typeof className === "function" ? (state) => cn(styles.close, className(state)) : cn(styles.close, className)}>
-      {children ?? (
-        <X
-          aria-hidden='true'
-          className={styles.icon}
-        />
-      )}
-    </ToastPrimitive.Close>
-  ),
+      )
+    }
+    className={typeof className === "function" ? (state) => cn(styles.close, className(state)) : cn(styles.close, className)}>
+    {children ?? (
+      <X
+        aria-hidden='true'
+        className={styles.icon}
+      />
+    )}
+  </ToastPrimitive.Close>
 );
 ToastClose.displayName = "ToastClose";
 
@@ -277,7 +272,10 @@ function ToastIcon({type}: Readonly<{type: string | undefined}>): React.JSX.Elem
   ) : null;
 }
 
-function ToastList<Data extends object>({position}: Readonly<{position: ToastPosition}>): React.JSX.Element {
+function ToastList<Data extends object>({
+  position,
+  closeLabel,
+}: Readonly<{position: ToastPosition; closeLabel: string}>): React.JSX.Element {
   const {toasts} = useToastManager<Data>();
   return (
     <>
@@ -293,7 +291,7 @@ function ToastList<Data extends object>({position}: Readonly<{position: ToastPos
               <ToastDescription />
             </div>
             <ToastAction />
-            <ToastClose />
+            <ToastClose aria-label={closeLabel} />
           </ToastContent>
         </Toast>
       ))}
@@ -305,37 +303,57 @@ function ToastList<Data extends object>({position}: Readonly<{position: ToastPos
 export type ToasterProps<Data extends object = DefaultToastMetadata> = ToastProviderProps<Data>
   & Readonly<{
     position?: ToastPosition;
+    /** Localized accessible name for the default icon-only close controls. @default "Close toast" */
+    closeLabel?: string;
     /** Configuration only; use compound primitives for custom notification-list children. */
     viewportProps?: Omit<ToastViewportProps, "children">;
     ref?: React.Ref<HTMLDivElement>;
   }>;
 /** Generic composition signature preserving manager metadata and viewport refs. */
-export interface ToasterComponent {
-  <Data extends object = DefaultToastMetadata>(props: ToasterProps<Data>): React.ReactNode;
-}
-const ForwardedToaster = React.forwardRef<HTMLDivElement, ToasterProps<object>>(
-  ({children, toastManager, position = "bottom-right", viewportProps, ...props}, ref) => {
-    const viewportPosition = viewportProps?.position ?? position;
-    return (
-      <ToastProvider
-        {...props}
-        toastManager={toastManager ?? toast}>
-        {children}
-        <ToastPortal>
-          <ToastViewport
-            {...viewportProps}
-            position={viewportPosition}
-            ref={ref ?? viewportProps?.ref}>
-            <ToastList<object> position={viewportPosition} />
-          </ToastViewport>
-        </ToastPortal>
-      </ToastProvider>
-    );
-  },
-);
-ForwardedToaster.displayName = "Toaster";
+export type ToasterComponent = typeof Toaster;
 /** Ready-made typed composition; children share only this provider's manager. */
-const Toaster: ToasterComponent = ForwardedToaster;
+function Toaster<Data extends object = DefaultToastMetadata>({
+  ref,
+  children,
+  toastManager,
+  position = "bottom-right",
+  closeLabel = "Close toast",
+  viewportProps,
+  ...props
+}: ToasterProps<Data>): React.JSX.Element {
+  const mergedRef = useMergedRefs(ref, viewportProps?.ref);
+  const viewportPosition = viewportProps?.position ?? position;
+  const content = (
+    <>
+      {children}
+      <ToastPortal>
+        <ToastViewport
+          {...viewportProps}
+          position={viewportPosition}
+          ref={mergedRef}>
+          <ToastList<Data>
+            position={viewportPosition}
+            closeLabel={closeLabel}
+          />
+        </ToastViewport>
+      </ToastPortal>
+    </>
+  );
+  return toastManager ? (
+    <ToastProvider<Data>
+      {...props}
+      toastManager={toastManager}>
+      {content}
+    </ToastProvider>
+  ) : (
+    <ToastProvider
+      {...props}
+      toastManager={toast}>
+      {content}
+    </ToastProvider>
+  );
+}
+Toaster.displayName = "Toaster";
 
 export {
   Toaster,

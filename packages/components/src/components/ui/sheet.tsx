@@ -15,7 +15,7 @@ export type SheetSide = "top" | "right" | "bottom" | "left";
 /** Base UI owns modal state, dismissal, focus and trigger payloads. */
 export type SheetProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payload>>;
 /** Trigger props with the existing single-element slot compatibility. */
-export type SheetTriggerProps = Readonly<Omit<BaseDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>; asChild?: boolean}>;
+export type SheetTriggerProps = Readonly<Omit<BaseDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 /** Unstyled primitive dismissal control. */
 export type SheetCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDialog.Close>>;
 /** Primitive backdrop props with presentation classes. */
@@ -28,14 +28,14 @@ export type SheetContentProps = Readonly<
     side?: SheetSide;
     /** Append the automatic icon close after content. @default true */
     showCloseButton?: boolean;
+    /** Caller-localizable accessible name for the automatic close. @default "Close" */
+    closeLabel?: string;
   }
 >;
 /** Layout props use the actual Base UI polymorphic render contract. */
 export type SheetHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
     ref?: React.Ref<HTMLElement>;
-    /** Legacy single-element slot. Prefer `render`. @default false */
-    asChild?: boolean;
   }
 >;
 /** Footer layout positioned after sheet content. */
@@ -46,14 +46,6 @@ export type SheetTitleProps = Readonly<Omit<React.ComponentPropsWithRef<typeof B
 export type SheetDescriptionProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
 >;
-
-function legacyChild(children: React.ReactNode, asChild: boolean): React.ReactElement | undefined {
-  if (!asChild) return undefined;
-  if (!React.isValidElement(children) || children.type === React.Fragment) {
-    throw new TypeError("Sheet asChild requires a single non-Fragment React element.");
-  }
-  return children;
-}
 
 type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
 
@@ -95,40 +87,39 @@ Sheet.displayName = "Sheet";
 const SheetPortal = BaseDialog.Portal;
 
 /** Closes a sheet without imposing the automatic close icon's styling. */
-function SheetClose(props: Readonly<SheetClose.Props>): React.ReactElement {
+function SheetClose({className, ...props}: Readonly<SheetClose.Props>): React.ReactElement {
   return (
     <BaseDialog.Close
       data-slot='sheet-close'
       {...props}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
     />
   );
 }
 SheetClose.displayName = "SheetClose";
 
 /** Opens a sheet; render callbacks receive the primitive's live open/disabled state. */
-const SheetTrigger = React.forwardRef<HTMLElement, SheetTrigger.Props>(
-  ({asChild = false, children, render, nativeButton, ...props}: Readonly<SheetTrigger.Props>, ref): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
-      (element) => {
-        if (typeof ref === "function") return ref(element);
-        if (ref) ref.current = element;
-        return undefined;
-      },
-      [ref],
-    );
-    return (
-      <BaseDialog.Trigger
-        data-slot='sheet-trigger'
-        {...props}
-        ref={primitiveRef}
-        nativeButton={nativeButton ?? (child && typeof child.type === "string" ? child.type === "button" : true)}
-        render={child ?? render}>
-        {child ? undefined : children}
-      </BaseDialog.Trigger>
-    );
-  },
-);
+const SheetTrigger = ({ref, children, render, nativeButton, className, ...props}: Readonly<SheetTrigger.Props>): React.ReactElement => {
+  const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
+  return (
+    <BaseDialog.Trigger
+      data-slot='sheet-trigger'
+      {...props}
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={render}>
+      {children}
+    </BaseDialog.Trigger>
+  );
+};
 SheetTrigger.displayName = "SheetTrigger";
 
 /** Renders the backdrop below the sheet, forwarding primitive-owned composition unchanged. */
@@ -147,105 +138,98 @@ SheetOverlay.displayName = "SheetOverlay";
  * Portals a sheet from one of four edges. Base UI owns focus and modal behavior.
  * The automatic close is last in DOM order and can be disabled.
  */
-const SheetContent = React.forwardRef<HTMLDivElement, SheetContent.Props>(
-  (
-    {className, children, render, side = "right", showCloseButton = true, ...props}: Readonly<React.PropsWithoutRef<SheetContent.Props>>,
-    ref,
-  ): React.ReactElement => {
-    const closeControl = showCloseButton ? (
-      <SheetClose
-        aria-label='Close'
-        render={
-          <Button
-            variant='ghost'
-            size='icon-sm'
-            className={cn(styles.close)}
-          />
-        }>
-        <X
-          aria-hidden='true'
-          className={styles.closeIcon}
+const SheetContent = ({
+  ref,
+  className,
+  children,
+  render,
+  side = "right",
+  showCloseButton = true,
+  closeLabel = "Close",
+  ...props
+}: Readonly<SheetContent.Props>): React.ReactElement => {
+  const closeControl = showCloseButton ? (
+    <SheetClose
+      aria-label={closeLabel}
+      render={
+        <Button
+          aria-label={closeLabel}
+          variant='ghost'
+          size='icon-sm'
+          className={cn(styles.close)}
         />
-      </SheetClose>
-    ) : null;
-    const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
-    return (
-      <SheetPortal>
-        <SheetOverlay />
-        <BaseDialog.Popup
-          data-slot='sheet-content'
-          data-side={side}
-          {...props}
-          ref={ref}
-          render={
-            decorateElement
-              ? (elementProps) => (
-                  <DecoratedSheetElement
-                    render={render}
-                    elementProps={elementProps}
-                    closeControl={closeControl}
-                  />
-                )
-              : render
-          }
-          className={cn(styles.popup, styles[side], className)}>
-          {decorateElement ? (
-            children
-          ) : (
-            <>
-              {children}
-              {closeControl}
-            </>
-          )}
-        </BaseDialog.Popup>
-      </SheetPortal>
-    );
-  },
-);
+      }>
+      <X
+        aria-hidden='true'
+        className={styles.closeIcon}
+      />
+    </SheetClose>
+  ) : null;
+  const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <BaseDialog.Popup
+        data-slot='sheet-content'
+        data-side={side}
+        {...props}
+        ref={ref}
+        render={
+          decorateElement
+            ? (elementProps) => (
+                <DecoratedSheetElement
+                  render={render}
+                  elementProps={elementProps}
+                  closeControl={closeControl}
+                />
+              )
+            : render
+        }
+        className={cn(styles.popup, styles[side], className)}>
+        {decorateElement ? (
+          children
+        ) : (
+          <>
+            {children}
+            {closeControl}
+          </>
+        )}
+      </BaseDialog.Popup>
+    </SheetPortal>
+  );
+};
 SheetContent.displayName = "SheetContent";
 
 /** Composes the sheet heading layout while preserving child content, events and refs. */
-const SheetHeader = React.forwardRef<HTMLElement, SheetHeader.Props>(
-  (
-    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<SheetHeader.Props>>,
+const SheetHeader = ({ref, children, className, render, ...props}: Readonly<SheetHeader.Props>): React.ReactElement => {
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      props: {
-        "data-slot": "sheet-header",
-        ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+    render,
+    props: {
+      "data-slot": "sheet-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 SheetHeader.displayName = "SheetHeader";
 
 /** Composes actions at the end of the sheet without creating a nested wrapper. */
-const SheetFooter = React.forwardRef<HTMLElement, SheetFooter.Props>(
-  (
-    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<SheetFooter.Props>>,
+const SheetFooter = ({ref, children, className, render, ...props}: Readonly<SheetFooter.Props>): React.ReactElement => {
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      props: {
-        "data-slot": "sheet-footer",
-        ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+    render,
+    props: {
+      "data-slot": "sheet-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 SheetFooter.displayName = "SheetFooter";
 
 /** Renders the accessible sheet heading using primitive-owned composition. */

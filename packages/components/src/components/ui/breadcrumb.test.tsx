@@ -14,25 +14,39 @@ import {
 } from "./breadcrumb";
 import styles from "./breadcrumb.module.css";
 
+describe("React 19 refresh", () => {
+  it("exposes current page text without inventing a disabled link", () => {
+    render(<BreadcrumbPage>Current page</BreadcrumbPage>);
+    const page = screen.getByText("Current page");
+    expect(page).toHaveAttribute("aria-current", "page");
+    expect(page).not.toHaveAttribute("role");
+    expect(page).not.toHaveAttribute("aria-disabled");
+    expect(typeof BreadcrumbLink).toBe("function");
+    expectTypeOf<React.ComponentProps<typeof Breadcrumb>>().not.toHaveProperty("separator");
+    expectTypeOf<React.ComponentProps<typeof BreadcrumbLink>>().not.toHaveProperty("asChild");
+  });
+});
+
 function ConsumerLink(props: Readonly<React.ComponentPropsWithRef<"a">>): React.ReactElement {
   return <a {...props} />;
 }
 
 describe("Breadcrumb", () => {
-  it("preserves child and wrapper handlers under BreadcrumbLink asChild", async () => {
+  it("preserves child and wrapper handlers under BreadcrumbLink render", async () => {
     const user = userEvent.setup();
     const childClick = vi.fn();
     const wrapperClick = vi.fn();
     render(
       <BreadcrumbLink
-        asChild
-        onClick={wrapperClick}>
-        <a
-          href='#details'
-          onClick={childClick}>
-          Details
-        </a>
-      </BreadcrumbLink>,
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#details'
+            onClick={childClick}>
+            Details
+          </a>
+        }
+      />,
     );
 
     await user.click(screen.getByRole("link", {name: "Details"}));
@@ -42,19 +56,20 @@ describe("Breadcrumb", () => {
     expect(screen.getAllByRole("link", {name: "Details"})).toHaveLength(1);
   });
 
-  it("preserves both DOM refs and detaches them under BreadcrumbLink asChild", () => {
+  it("preserves both DOM refs and detaches them under BreadcrumbLink render", () => {
     const childRef = React.createRef<HTMLAnchorElement>();
     const wrapperRef = React.createRef<HTMLAnchorElement>();
     const {unmount} = render(
       <BreadcrumbLink
-        asChild
-        ref={wrapperRef}>
-        <a
-          href='#details'
-          ref={childRef}>
-          Details
-        </a>
-      </BreadcrumbLink>,
+        ref={wrapperRef}
+        render={
+          <a
+            href='#details'
+            ref={childRef}>
+            Details
+          </a>
+        }
+      />,
     );
     const link = screen.getByRole("link", {name: "Details"});
 
@@ -184,7 +199,7 @@ describe("Breadcrumb", () => {
     expect(screen.getByRole("checkbox", {name: "Select location"})).toBeChecked();
   });
 
-  it.each(["asChild", "render"] as const)("preserves native cancellation and child-first precedence with %s", (composition) => {
+  it("preserves native cancellation and child-first precedence with render", () => {
     const calls: string[] = [];
     const child = (
       <a
@@ -198,18 +213,10 @@ describe("Breadcrumb", () => {
     );
     const onClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => calls.push(`wrapper:${event.defaultPrevented}`);
     render(
-      composition === "asChild" ? (
-        <BreadcrumbLink
-          asChild
-          onClick={onClick}>
-          {child}
-        </BreadcrumbLink>
-      ) : (
-        <BreadcrumbLink
-          render={child}
-          onClick={onClick}
-        />
-      ),
+      <BreadcrumbLink
+        render={child}
+        onClick={onClick}
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Cancel breadcrumb navigation"}))).toBe(false);
@@ -220,19 +227,20 @@ describe("Breadcrumb", () => {
     const wrapperClick = vi.fn();
     render(
       <BreadcrumbLink
-        asChild
-        onClick={wrapperClick}>
-        <a
-          href='#prevented'
-          onClick={(event) => {
-            event.preventDefault();
-            if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-              event.preventBaseUIHandler();
-            }
-          }}>
-          Prevent breadcrumb wrapper
-        </a>
-      </BreadcrumbLink>,
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#prevented'
+            onClick={(event) => {
+              event.preventDefault();
+              if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                event.preventBaseUIHandler();
+              }
+            }}>
+            Prevent breadcrumb wrapper
+          </a>
+        }
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Prevent breadcrumb wrapper"}))).toBe(false);
@@ -243,17 +251,18 @@ describe("Breadcrumb", () => {
     const calls: string[] = [];
     render(
       <BreadcrumbLink
-        asChild
         onClick={(event) => {
           calls.push("wrapper");
           event.preventDefault();
-        }}>
-        <a
-          href='#cancelled-by-wrapper'
-          onClick={() => calls.push("child")}>
-          Wrapper cancellation
-        </a>
-      </BreadcrumbLink>,
+        }}
+        render={
+          <a
+            href='#cancelled-by-wrapper'
+            onClick={() => calls.push("child")}>
+            Wrapper cancellation
+          </a>
+        }
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Wrapper cancellation"}))).toBe(false);
@@ -329,7 +338,7 @@ describe("Breadcrumb", () => {
     expect(itemRef.current?.tagName).toBe("LI");
     expect(pageRef.current?.tagName).toBe("SPAN");
     expect(pageRef.current).toHaveAttribute("aria-current", "page");
-    expect(pageRef.current).toHaveAttribute("aria-disabled", "true");
+    expect(pageRef.current).not.toHaveAttribute("aria-disabled");
     expect(pageRef.current).not.toHaveAttribute("tabindex");
     expect(separatorRef.current?.tagName).toBe("LI");
     expect(separatorRef.current).toHaveAttribute("role", "presentation");
@@ -353,15 +362,13 @@ describe("Breadcrumb", () => {
     expect(pageRef.current).not.toHaveFocus();
   });
 
-  it("keeps the deprecated root separator inert and only marks the default decorative chevron for RTL", () => {
+  it("only marks the default decorative chevron for RTL", () => {
     const chevronClass = styles.chevron;
     if (chevronClass === undefined) {
       throw new Error("Missing default chevron CSS class");
     }
     render(
-      <Breadcrumb
-        dir='rtl'
-        separator={<span>Ignored root separator</span>}>
+      <Breadcrumb dir='rtl'>
         <BreadcrumbList>
           <BreadcrumbSeparator data-testid='default-chevron' />
           <BreadcrumbSeparator data-testid='custom-chevron'>
@@ -371,34 +378,31 @@ describe("Breadcrumb", () => {
       </Breadcrumb>,
     );
 
-    expect(screen.queryByText("Ignored root separator")).not.toBeInTheDocument();
     expect(screen.getByRole("navigation")).not.toHaveAttribute("separator");
     expect(screen.getByTestId("default-chevron").querySelector("svg")?.classList.contains(chevronClass)).toBe(true);
     expect(screen.getByTestId("custom-chevron").querySelector("svg")?.classList.contains(chevronClass)).toBe(false);
   });
 
-  it("does not slot fragments or nest an empty legacy anchor, and prefers legacy children over render", () => {
+  it("supports fragment content and empty render targets without nested anchors", () => {
     render(
       <>
-        <BreadcrumbLink
-          asChild
-          href='#fragment'>
+        <BreadcrumbLink href='#fragment'>
           <>Fragment breadcrumb</>
         </BreadcrumbLink>
         <BreadcrumbLink
-          asChild
-          render={<a href='#unused'>Unused breadcrumb</a>}>
-          <a
-            href='#empty'
-            aria-label='Empty breadcrumb'
-          />
-        </BreadcrumbLink>
+          render={
+            <a
+              href='#empty'
+              aria-label='Empty breadcrumb'
+            />
+          }
+        />
       </>,
     );
 
     expect(screen.getByRole("link", {name: "Fragment breadcrumb"}).tagName).toBe("A");
     expect(screen.getByRole("link", {name: "Empty breadcrumb"})).toBeEmptyDOMElement();
-    expect(screen.queryByRole("link", {name: "Unused breadcrumb"})).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 
   it("renders the breadcrumb structure, merges class names, renders children, and exposes accessibility attributes", () => {
@@ -446,7 +450,7 @@ describe("Breadcrumb", () => {
     expect(screen.getByTestId("breadcrumb-page")).toHaveClass("custom-page");
     expect(screen.getByRole("link", {name: "Dashboard"})).toHaveAttribute("href", "/dashboard");
     expect(screen.getByText("Settings")).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("Settings")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Settings")).not.toHaveAttribute("aria-disabled");
     expect(screen.getByTestId("breadcrumb-ellipsis")).toHaveAttribute("aria-hidden", "true");
   });
 
@@ -483,9 +487,9 @@ describe("Breadcrumb", () => {
     // Assert
     const page = screen.getByText("Current Page");
     expect(page).toBeInTheDocument();
-    expect(page).toHaveAttribute("role", "link");
+    expect(page).not.toHaveAttribute("role");
     expect(page).toHaveAttribute("aria-current", "page");
-    expect(page).toHaveAttribute("aria-disabled", "true");
+    expect(page).not.toHaveAttribute("aria-disabled");
   });
 
   it("renders BreadcrumbEllipsis with default icon", () => {
@@ -505,7 +509,7 @@ describe("Breadcrumb", () => {
     expect(ellipsis).toBeInTheDocument();
     expect(ellipsis).toHaveAttribute("role", "presentation");
     expect(ellipsis).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByText("More")).toBeInTheDocument();
+    expect(ellipsis.querySelector("svg")).toHaveAttribute("focusable", "false");
   });
 
   it("renders BreadcrumbSeparator with custom separator", () => {
@@ -554,21 +558,22 @@ describe("Breadcrumb", () => {
     expect(separator).toHaveAttribute("role", "presentation");
   });
 
-  it("renders BreadcrumbLink with asChild prop and custom element", () => {
+  it("renders BreadcrumbLink with a custom render target", () => {
     // Arrange & Act
     render(
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink
-              asChild
-              href='/dashboard'>
-              <a
-                className='custom-child-link'
-                data-testid='child-link'>
-                Dashboard
-              </a>
-            </BreadcrumbLink>
+              href='/dashboard'
+              render={
+                <a
+                  className='custom-child-link'
+                  data-testid='child-link'>
+                  Dashboard
+                </a>
+              }
+            />
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>,
@@ -581,7 +586,7 @@ describe("Breadcrumb", () => {
     expect(link).toHaveAttribute("href", "/dashboard");
   });
 
-  it("renders BreadcrumbLink without asChild uses anchor tag", () => {
+  it("renders BreadcrumbLink with a default anchor tag", () => {
     // Arrange & Act
     render(
       <Breadcrumb>
@@ -604,21 +609,22 @@ describe("Breadcrumb", () => {
     expect(link).toHaveAttribute("href", "/about");
   });
 
-  it("merges className from child element when using asChild", () => {
+  it("merges className from the render target", () => {
     // Arrange & Act
     render(
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink
-              asChild
-              className='parent-class'>
-              <a
-                className='child-class'
-                href='/link'>
-                Link
-              </a>
-            </BreadcrumbLink>
+              className='parent-class'
+              render={
+                <a
+                  className='child-class'
+                  href='/link'>
+                  Link
+                </a>
+              }
+            />
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>,

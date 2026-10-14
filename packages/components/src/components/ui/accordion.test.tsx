@@ -11,7 +11,6 @@ function renderAccordion(): {
 } {
   render(
     <Accordion
-      type='single'
       className='custom-root'
       data-testid='accordion-root'>
       <AccordionItem
@@ -38,17 +37,16 @@ function renderAccordion(): {
 }
 
 describe("Accordion", () => {
-  it("reflects every discriminated public prop contract without weakening JSX inference", () => {
+  it("exposes arrays only without weakening JSX inference", () => {
     expectTypeOf<React.ComponentProps<typeof Accordion>>().toEqualTypeOf<Readonly<Accordion.Props>>();
-    const reflectedSingle: React.ComponentProps<typeof Accordion> = {type: "single", value: "one"};
+    const reflectedSingle: React.ComponentProps<typeof Accordion> = {value: ["one"]};
     const reflectedArray: React.ComponentProps<typeof Accordion> = {value: ["one"]};
-    expect(reflectedSingle.value).toBe("one");
+    expect(reflectedSingle.value).toEqual(["one"]);
     expect(reflectedArray.value).toEqual(["one"]);
     const single = (
       <Accordion
-        type='single'
         onValueChange={(value) => {
-          expectTypeOf(value).toEqualTypeOf<string | undefined>();
+          expectTypeOf(value).toEqualTypeOf<string[]>();
         }}
       />
     );
@@ -61,11 +59,17 @@ describe("Accordion", () => {
     );
     expect(React.isValidElement(single)).toBe(true);
     expect(React.isValidElement(array)).toBe(true);
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("type");
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("orientation");
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("loopFocus");
+    // @ts-expect-error String selection adapters are intentionally removed.
+    const rejectedString: Accordion.Props = {value: "one"};
+    expect(rejectedString).toBeDefined();
   });
 
-  it("keeps legacy empty selection controlled and clears it on external rerenders", async () => {
+  it("keeps empty array selection controlled and clears it on external rerenders", async () => {
     const user = userEvent.setup();
-    const changes: (string | undefined)[] = [];
+    const changes: string[][] = [];
     const items = (
       <AccordionItem value='item-1'>
         <AccordionTrigger>Section one</AccordionTrigger>
@@ -74,9 +78,8 @@ describe("Accordion", () => {
     );
     const {rerender} = render(
       <Accordion
-        type='single'
-        value=''
-        defaultValue='item-1'
+        value={[]}
+        defaultValue={["item-1"]}
         onValueChange={(value) => changes.push(value)}>
         {items}
       </Accordion>,
@@ -85,36 +88,23 @@ describe("Accordion", () => {
     const trigger = screen.getByRole("button", {name: "Section one"});
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     await user.click(trigger);
-    expect(changes).toEqual(["item-1"]);
+    expect(changes).toEqual([["item-1"]]);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
 
-    rerender(
-      <Accordion
-        type='single'
-        value='item-1'>
-        {items}
-      </Accordion>,
-    );
+    rerender(<Accordion value={["item-1"]}>{items}</Accordion>);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-    rerender(
-      <Accordion
-        type='single'
-        value=''>
-        {items}
-      </Accordion>,
-    );
+    rerender(<Accordion value={[]}>{items}</Accordion>);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("forbids legacy last-panel collapse without preventing switching items", async () => {
+  it("forbids last-panel collapse without preventing switching items", async () => {
     const user = userEvent.setup();
-    const changes: (string | undefined)[] = [];
+    const changes: string[][] = [];
     render(
       <Accordion
-        type='single'
         collapsible={false}
-        defaultValue='item-1'
+        defaultValue={["item-1"]}
         onValueChange={(value) => changes.push(value)}>
         <AccordionItem value='item-1'>
           <AccordionTrigger>Section one</AccordionTrigger>
@@ -136,11 +126,11 @@ describe("Accordion", () => {
     await user.click(secondTrigger);
     expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
-    expect(changes).toEqual(["item-2"]);
+    expect(changes).toEqual([["item-2"]]);
 
     await user.keyboard("{Enter} ");
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
-    expect(changes).toEqual(["item-2"]);
+    expect(changes).toEqual([["item-2"]]);
   });
 
   it("allows multiple panels to close until the non-collapsible array contract reaches its last panel", async () => {
@@ -148,7 +138,7 @@ describe("Accordion", () => {
     const changes: string[][] = [];
     render(
       <Accordion
-        type='multiple'
+        multiple
         collapsible={false}
         defaultValue={["item-1", "item-2"]}
         onValueChange={(value) => changes.push(value)}>
@@ -189,7 +179,7 @@ describe("Accordion", () => {
     expect(screen.getByText("Body")).toBeVisible();
   });
 
-  it("treats legacy empty default and controlled values as no selection even with an empty-string item", () => {
+  it("treats empty arrays as no selection even with an empty-string item", () => {
     const item = (
       <AccordionItem value=''>
         <AccordionTrigger>Empty identifier</AccordionTrigger>
@@ -198,21 +188,14 @@ describe("Accordion", () => {
     );
     const {rerender} = render(
       <Accordion
-        type='single'
-        value=''
-        defaultValue=''>
+        value={[]}
+        defaultValue={[]}>
         {item}
       </Accordion>,
     );
 
     expect(screen.getByRole("button", {name: "Empty identifier"})).toHaveAttribute("aria-expanded", "false");
-    rerender(
-      <Accordion
-        type='single'
-        value=''>
-        {item}
-      </Accordion>,
-    );
+    rerender(<Accordion value={[]}>{item}</Accordion>);
     expect(screen.getByRole("button", {name: "Empty identifier"})).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -275,8 +258,7 @@ describe("Accordion", () => {
     const user = userEvent.setup();
     render(
       <Accordion
-        type='single'
-        defaultValue='item-1'
+        defaultValue={["item-1"]}
         render={(props, state) => (
           <section
             {...props}
@@ -336,10 +318,10 @@ describe("Accordion", () => {
     await waitFor(() => expect(panel).toHaveAttribute("hidden"));
   });
 
-  it("forwards cancellable change details for canonical array and legacy string contracts", async () => {
+  it("forwards cancellable change details for single and multiple array contracts", async () => {
     const user = userEvent.setup();
     const canonicalChanges: {value: string[]; details: Accordion.ChangeEventDetails}[] = [];
-    const legacyChanges: {value: string | undefined; details: Accordion.ChangeEventDetails}[] = [];
+    const multipleChanges: {value: string[]; details: Accordion.ChangeEventDetails}[] = [];
     render(
       <>
         <Accordion
@@ -353,13 +335,13 @@ describe("Accordion", () => {
           </AccordionItem>
         </Accordion>
         <Accordion
-          type='single'
+          multiple
           onValueChange={(value, details) => {
-            legacyChanges.push({value, details});
+            multipleChanges.push({value, details});
             details.cancel();
           }}>
           <AccordionItem value='item-1'>
-            <AccordionTrigger>Legacy</AccordionTrigger>
+            <AccordionTrigger>Multiple</AccordionTrigger>
             <AccordionContent>Body two</AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -367,20 +349,20 @@ describe("Accordion", () => {
     );
 
     const canonical = screen.getByRole("button", {name: "Canonical"});
-    const legacy = screen.getByRole("button", {name: "Legacy"});
+    const multiple = screen.getByRole("button", {name: "Multiple"});
     await user.click(canonical);
-    await user.click(legacy);
+    await user.click(multiple);
 
     expect(canonicalChanges[0]?.value).toEqual(["item-1"]);
-    expect(legacyChanges[0]?.value).toBe("item-1");
-    for (const changes of [canonicalChanges, legacyChanges]) {
+    expect(multipleChanges[0]?.value).toEqual(["item-1"]);
+    for (const changes of [canonicalChanges, multipleChanges]) {
       expect(changes).toHaveLength(1);
       expect(changes[0]?.details.reason).toBe("trigger-press");
       expect(changes[0]?.details.event.type).toBe("click");
       expect(changes[0]?.details.isCanceled).toBe(true);
     }
     expect(canonical).toHaveAttribute("aria-expanded", "false");
-    expect(legacy).toHaveAttribute("aria-expanded", "false");
+    expect(multiple).toHaveAttribute("aria-expanded", "false");
   });
 
   it("infers the canonical callback contract from reusable props and defaults to one open panel", async () => {
@@ -393,7 +375,7 @@ describe("Accordion", () => {
         expectTypeOf(details).toEqualTypeOf<Accordion.ChangeEventDetails>();
         changes.push(value);
       },
-    } satisfies Accordion.ArrayProps;
+    } satisfies Accordion.Props;
     const rootProps: Accordion.Props = props;
     render(
       <Accordion {...rootProps}>
@@ -418,15 +400,14 @@ describe("Accordion", () => {
     expect(changes).toEqual([["item-2"], []]);
   });
 
-  it("allows opening from legacy empty defaults while retaining the string callback type", async () => {
+  it("allows opening from empty defaults while retaining the array callback type", async () => {
     const user = userEvent.setup();
-    const changes: (string | undefined)[] = [];
+    const changes: string[][] = [];
     render(
       <Accordion
-        type='single'
-        defaultValue=''
+        defaultValue={[]}
         onValueChange={(value, details) => {
-          expectTypeOf(value).toEqualTypeOf<string | undefined>();
+          expectTypeOf(value).toEqualTypeOf<string[]>();
           expectTypeOf(details).toEqualTypeOf<Accordion.ChangeEventDetails>();
           changes.push(value);
         }}>
@@ -442,7 +423,7 @@ describe("Accordion", () => {
     await user.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     await user.click(trigger);
-    expect(changes).toEqual(["item-1", undefined]);
+    expect(changes).toEqual([["item-1"], []]);
   });
 
   it.each(["root", "item"] as const)("preserves native disabled behavior from the %s when rendering a custom button", async (owner) => {
@@ -621,12 +602,10 @@ describe("Accordion", () => {
   it("calls onValueChange with the toggled item value", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleValueChange = vi.fn<(value: string | undefined, eventDetails: unknown) => void>();
+    const handleValueChange = vi.fn<(value: string[], eventDetails: unknown) => void>();
 
     render(
-      <Accordion
-        type='single'
-        onValueChange={handleValueChange}>
+      <Accordion onValueChange={handleValueChange}>
         <AccordionItem value='item-1'>
           <AccordionTrigger>Section one</AccordionTrigger>
           <AccordionContent>Panel one content</AccordionContent>
@@ -640,13 +619,13 @@ describe("Accordion", () => {
     await user.click(trigger);
 
     // Assert
-    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBe("item-1");
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toEqual(["item-1"]);
 
     // Act
     await user.click(trigger);
 
     // Assert
-    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBeUndefined();
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toEqual([]);
   });
 
   it("supports keyboard toggling with enter and space keys", async () => {
@@ -706,7 +685,7 @@ describe("Accordion", () => {
 
     render(
       <Accordion
-        type='multiple'
+        multiple
         data-testid='accordion-multiple'>
         <AccordionItem value='item-1'>
           <AccordionTrigger data-testid='trigger-1'>Section one</AccordionTrigger>
@@ -737,7 +716,7 @@ describe("Accordion", () => {
     // Arrange
     render(
       <Accordion
-        type='multiple'
+        multiple
         defaultValue={["item-1", "item-2"]}
         data-testid='accordion-controlled'>
         <AccordionItem value='item-1'>
@@ -762,17 +741,16 @@ describe("Accordion", () => {
   it("works in controlled single mode", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleValueChange = vi.fn<(value: string | undefined) => void>();
+    const handleValueChange = vi.fn<(value: string[]) => void>();
 
     function ControlledAccordion(): React.JSX.Element {
-      const [value, setValue] = React.useState("item-1");
+      const [value, setValue] = React.useState<string[]>(["item-1"]);
 
       return (
         <Accordion
-          type='single'
           value={value}
           onValueChange={(nextValue) => {
-            setValue(nextValue ?? "");
+            setValue(nextValue);
             handleValueChange(nextValue);
           }}>
           <AccordionItem value='item-1'>
@@ -799,7 +777,7 @@ describe("Accordion", () => {
     await user.click(secondTrigger);
 
     // Assert
-    expect(handleValueChange).toHaveBeenCalledWith("item-2");
+    expect(handleValueChange).toHaveBeenCalledWith(["item-2"]);
     expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Panel two content")).toBeVisible();
@@ -815,7 +793,7 @@ describe("Accordion", () => {
 
       return (
         <Accordion
-          type='multiple'
+          multiple
           value={value}
           onValueChange={(nextValue) => {
             setValue(nextValue);

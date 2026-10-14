@@ -1,10 +1,80 @@
 import {render, screen} from "@testing-library/react";
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
 import {describe, expect, it} from "vitest";
 
 import {Stepper} from "./stepper";
+import styles from "./stepper.module.css";
+
+type Theme = "light" | "dark";
+const stepperCss = parse(readFileSync(join(import.meta.dirname, "stepper.module.css"), "utf8"));
+const themeTokens: Record<Theme, Map<string, string>> = {light: new Map(), dark: new Map()};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  if (rule.selector !== ":root" && !rule.selector.includes('[data-theme="dark"]')) return;
+  const tokens = rule.selector === ":root" ? themeTokens.light : themeTokens.dark;
+  rule.walkDecls((declaration) => {
+    tokens.set(declaration.prop, declaration.value);
+  });
+});
+
+// Default opaque OKLCH token model, using clipped linear sRGB like the token gate.
+// This is not painted-pixel or custom-theme proof.
+function tokenLuminance(theme: Theme, token: string): number {
+  const value = themeTokens[theme].get(token);
+  const match = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/u.exec(value ?? "");
+  if (!match) throw new Error(`Missing opaque ${theme} token ${token}: ${value}`);
+  const lightness = Number(match[1]);
+  const chroma = Number(match[2]);
+  const hue = (Number(match[3]) * Math.PI) / 180;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const clip = (channel: number): number => Math.max(0, Math.min(1, channel));
+  return (
+    0.2126 * clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s)
+    + 0.7152 * clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s)
+    + 0.0722 * clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)
+  );
+}
 
 describe("Stepper", () => {
+  it.each(["light", "dark"] as const)("review correction: current-step outline contrasts with the default %s surface", (theme) => {
+    render(
+      <Stepper
+        steps={["Start", "Review"]}
+        activeStep={1}
+      />,
+    );
+    const indicator = screen.getAllByRole("listitem")[1]?.querySelector('[aria-hidden="true"]');
+    if (!(indicator instanceof HTMLElement)) throw new Error("Missing active-step indicator");
+    const active: Record<string, string> = {};
+    stepperCss.walkRules('.step[data-state="active"] .indicator', (rule) => {
+      const selector = rule.selector.replaceAll(".step", `.${styles.step}`).replaceAll(".indicator", `.${styles.indicator}`);
+      if (rule.parent?.type === "root" && indicator.matches(selector))
+        rule.walkDecls((decl) => {
+          active[decl.prop] = decl.value;
+        });
+    });
+    const outline = /^2px solid var\((--ac-[\w-]+)\)$/u.exec(active["outline"] ?? "");
+    if (!outline?.[1]) throw new Error(`Missing token-backed active outline: ${active["outline"]}`);
+    expect(active["outline-offset"]).toBe("2px");
+    const foreground = tokenLuminance(theme, outline[1]);
+    const background = tokenLuminance(theme, "--ac-background");
+    expect((Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("React 19 refresh: authors reduced-motion, forced-colors and wrapping progress styles", () => {
+    const css = readFileSync(join(import.meta.dirname, "stepper.module.css"), "utf8");
+    expect(css).toContain("prefers-reduced-motion: reduce");
+    expect(css).toContain("forced-colors: active");
+    expect(css).toContain("overflow-wrap: anywhere");
+    expect(css).toContain("flex-wrap: wrap");
+  });
+
   it("renders caller-localized completion text while retaining native attributes and refs", () => {
     const ref = React.createRef<HTMLDivElement>();
     const {unmount} = render(

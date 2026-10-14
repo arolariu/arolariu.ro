@@ -29,9 +29,9 @@ export type ComboboxInputProps = Readonly<
     showClear?: boolean;
     /** Classes for the input group shell; `className` belongs to the primitive input. */
     groupClassName?: string;
-    /** Primitive trigger customization, including accessible name, children, render and ref. */
+    /** Trigger customization. Custom icon-only render callbacks must supply an accessible name. */
     triggerProps?: ComboboxTriggerProps;
-    /** Primitive clear customization, including accessible name, children, render and ref. */
+    /** Clear customization. Custom icon-only render callbacks must supply an accessible name. */
     clearProps?: ComboboxClearProps;
   }
 >;
@@ -72,7 +72,7 @@ export type ComboboxChipProps = Readonly<
   React.ComponentPropsWithRef<typeof ComboboxPrimitive.Chip> & {
     /** Show a remove button for this chip. @default true */
     showRemove?: boolean;
-    /** Customize the remove control, including its accessible label, render callback and ref. */
+    /** Customize removal. Custom icon-only render callbacks must supply an accessible name. */
     removeProps?: Readonly<React.ComponentPropsWithRef<typeof ComboboxPrimitive.ChipRemove>>;
   }
 >;
@@ -92,6 +92,15 @@ function getChildren<State>(children: React.ReactNode, render: ComboboxRender<St
   return children === undefined ? getRenderElement(render)?.props.children : children;
 }
 
+function hasCustomContent(children: React.ReactNode): boolean {
+  return (
+    children !== null
+    && children !== undefined
+    && typeof children !== "boolean"
+    && (typeof children !== "string" || children.trim().length > 0)
+  );
+}
+
 function withChildren<State>(render: ComboboxRender<State>, children: React.ReactNode): ComboboxRender<State> {
   const element = getRenderElement(render);
   // eslint-disable-next-line react-x/no-clone-element -- Only compound children are normalized; Base UI owns state, handlers, ARIA and refs.
@@ -108,122 +117,134 @@ const Combobox = ComboboxPrimitive.Root;
 /** Displays the selected value from Root metadata without rendering an extra DOM node. */
 const ComboboxValue = ComboboxPrimitive.Value;
 
-/** Opens suggestions; caller content is retained alongside the decorative chevron. */
-const ComboboxTrigger = React.forwardRef<HTMLButtonElement, ComboboxTriggerProps>(
-  ({className, children, render, ...props}: ComboboxTriggerProps, ref): React.JSX.Element => {
-    const content = (
-      <>
-        {getChildren(children, render)}
-        <ChevronDown
-          aria-hidden='true'
-          data-slot='combobox-trigger-icon'
-          className={styles.icon}
-        />
-      </>
-    );
-    return (
-      <ComboboxPrimitive.Trigger
-        data-slot='combobox-trigger'
-        {...props}
-        ref={ref}
-        className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
-        render={withChildren(render, content)}>
-        {content}
-      </ComboboxPrimitive.Trigger>
-    );
-  },
-);
+/**
+ * Opens suggestions; caller content is retained alongside the decorative chevron.
+ * The built-in icon has a localizable "Show suggestions" name. Custom icon-only
+ * content/render callbacks must supply their own aria-label or aria-labelledby.
+ */
+const ComboboxTrigger = ({ref, className, children, render, ...props}: Readonly<ComboboxTriggerProps>): React.JSX.Element => {
+  const content = (
+    <>
+      {getChildren(children, render)}
+      <ChevronDown
+        aria-hidden='true'
+        data-slot='combobox-trigger-icon'
+        className={styles.icon}
+      />
+    </>
+  );
+  return (
+    <ComboboxPrimitive.Trigger
+      data-slot='combobox-trigger'
+      aria-label={typeof render !== "function" && !hasCustomContent(getChildren(children, render)) ? "Show suggestions" : undefined}
+      {...props}
+      ref={ref}
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+      render={withChildren(render, content)}>
+      {content}
+    </ComboboxPrimitive.Trigger>
+  );
+};
 
-const ComboboxClear = React.forwardRef<HTMLButtonElement, ComboboxClearProps>(
-  ({className, children, render, ...props}: ComboboxClearProps, ref): React.JSX.Element => {
-    const resolvedChildren = getChildren(children, render);
-    const content =
-      resolvedChildren === undefined ? (
-        <X
-          aria-hidden='true'
-          className={styles.icon}
-        />
-      ) : (
-        resolvedChildren
-      );
-    return (
-      <ComboboxPrimitive.Clear
-        data-slot='combobox-clear'
-        aria-label='Clear selection'
-        {...props}
-        ref={ref}
-        className={(state) => cn(styles.clear, typeof className === "function" ? className(state) : className)}
-        render={withChildren(
-          render ?? (
+const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<ComboboxClearProps>): React.JSX.Element => {
+  const resolvedChildren = getChildren(children, render);
+  const defaultLabel = typeof render !== "function" && !hasCustomContent(resolvedChildren) ? "Clear selection" : undefined;
+  const content =
+    resolvedChildren === undefined ? (
+      <X
+        aria-hidden='true'
+        className={styles.icon}
+      />
+    ) : (
+      resolvedChildren
+    );
+  return (
+    <ComboboxPrimitive.Clear
+      data-slot='combobox-clear'
+      aria-label={defaultLabel}
+      {...props}
+      ref={ref}
+      className={(state) => cn(styles.clear, typeof className === "function" ? className(state) : className)}
+      render={withChildren(
+        render
+          ?? (!hasCustomContent(resolvedChildren) ? (
             <InputGroupButton
               variant='ghost'
               size='icon-xs'
+              aria-label={props["aria-label"] ?? "Clear selection"}
             />
-          ),
-          content,
-        )}>
-        {content}
-      </ComboboxPrimitive.Clear>
-    );
-  },
-);
+          ) : (
+            <InputGroupButton
+              variant='ghost'
+              size='xs'
+            />
+          )),
+        content,
+      )}>
+      {content}
+    </ComboboxPrimitive.Clear>
+  );
+};
 
 /**
  * Renders an editable primitive input inside the shared InputGroup chrome.
  * Input render/class callbacks receive Combobox.Input state, not InputGroup/Input state.
  * Children are optional group adornments; trigger/clear content belongs in their own props.
  */
-const ComboboxInput = React.forwardRef<HTMLInputElement, ComboboxInputProps>(
-  (
-    {
-      className,
-      children,
-      groupClassName,
-      showTrigger = true,
-      showClear = false,
-      triggerProps,
-      clearProps,
-      disabled,
-      render,
-      ...props
-    }: ComboboxInputProps,
-    ref,
-  ): React.JSX.Element => (
-    <InputGroup className={cn(styles.inputGroup, groupClassName)}>
-      <ComboboxPrimitive.Input
-        data-slot='combobox-input'
-        {...props}
-        ref={ref}
-        disabled={disabled}
-        render={render ?? <InputGroupInput />}
-        className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
-      />
-      {showTrigger || showClear ? (
-        <InputGroupAddon align='inline-end'>
-          {showTrigger ? (
-            <ComboboxTrigger
-              aria-label='Show suggestions'
-              render={
+const ComboboxInput = ({
+  ref,
+  className,
+  children,
+  groupClassName,
+  showTrigger = true,
+  showClear = false,
+  triggerProps,
+  clearProps,
+  disabled,
+  render,
+  ...props
+}: Readonly<ComboboxInputProps>): React.JSX.Element => (
+  <InputGroup className={cn(styles.inputGroup, groupClassName)}>
+    <ComboboxPrimitive.Input
+      data-slot='combobox-input'
+      {...props}
+      ref={ref}
+      disabled={disabled}
+      render={render ?? <InputGroupInput />}
+      className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
+    />
+    {showTrigger || showClear ? (
+      <InputGroupAddon align='inline-end'>
+        {showTrigger ? (
+          <ComboboxTrigger
+            render={
+              !hasCustomContent(getChildren(triggerProps?.children, triggerProps?.render)) ? (
                 <InputGroupButton
                   variant='ghost'
                   size='icon-xs'
+                  aria-label={triggerProps?.["aria-label"] ?? "Show suggestions"}
                 />
-              }
-              disabled={disabled}
-              {...triggerProps}
-            />
-          ) : null}
-          {showClear ? (
-            <ComboboxClear
-              disabled={disabled}
-              {...clearProps}
-            />
-          ) : null}
-        </InputGroupAddon>
-      ) : null}
-      {children}
-    </InputGroup>
-  ),
+              ) : (
+                <InputGroupButton
+                  variant='ghost'
+                  size='xs'
+                />
+              )
+            }
+            disabled={disabled}
+            {...triggerProps}
+          />
+        ) : null}
+        {showClear ? (
+          <ComboboxClear
+            disabled={disabled}
+            {...clearProps}
+          />
+        ) : null}
+      </InputGroupAddon>
+    ) : null}
+    {children}
+  </InputGroup>
 );
 
 /**
@@ -231,124 +252,112 @@ const ComboboxInput = React.forwardRef<HTMLInputElement, ComboboxInputProps>(
  * The forwarded ref targets Popup; `positionerProps.ref` targets the measured positioner.
  * `anchor` accepts elements, refs, virtual DOMRect providers and callbacks.
  */
-const ComboboxContent = React.forwardRef<HTMLDivElement, ComboboxContentProps>(
-  (
-    {
-      className,
-      side = "bottom",
-      sideOffset = 6,
-      align = "start",
-      alignOffset = 0,
-      anchor,
-      positionMethod,
-      collisionBoundary,
-      collisionPadding,
-      sticky,
-      arrowPadding,
-      disableAnchorTracking,
-      collisionAvoidance,
-      positionerProps,
-      portalProps,
-      ...props
-    }: ComboboxContentProps,
-    ref,
-  ): React.JSX.Element => (
-    <ComboboxPrimitive.Portal {...portalProps}>
-      <ComboboxPrimitive.Positioner
-        {...positionerProps}
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        anchor={anchor}
-        positionMethod={positionMethod}
-        collisionBoundary={collisionBoundary}
-        collisionPadding={collisionPadding}
-        sticky={sticky}
-        arrowPadding={arrowPadding}
-        disableAnchorTracking={disableAnchorTracking}
-        collisionAvoidance={collisionAvoidance}
-        className={(state) =>
-          cn(
-            styles.positioner,
-            typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
-          )
-        }>
-        <ComboboxPrimitive.Popup
-          data-slot='combobox-content'
-          data-chips={Boolean(anchor)}
-          {...props}
-          ref={ref}
-          className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
-        />
-      </ComboboxPrimitive.Positioner>
-    </ComboboxPrimitive.Portal>
-  ),
+const ComboboxContent = ({
+  ref,
+  className,
+  side = "bottom",
+  sideOffset = 6,
+  align = "start",
+  alignOffset = 0,
+  anchor,
+  positionMethod,
+  collisionBoundary,
+  collisionPadding,
+  sticky,
+  arrowPadding,
+  disableAnchorTracking,
+  collisionAvoidance,
+  positionerProps,
+  portalProps,
+  ...props
+}: Readonly<ComboboxContentProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Portal {...portalProps}>
+    <ComboboxPrimitive.Positioner
+      {...positionerProps}
+      side={side}
+      sideOffset={sideOffset}
+      align={align}
+      alignOffset={alignOffset}
+      anchor={anchor}
+      positionMethod={positionMethod}
+      collisionBoundary={collisionBoundary}
+      collisionPadding={collisionPadding}
+      sticky={sticky}
+      arrowPadding={arrowPadding}
+      disableAnchorTracking={disableAnchorTracking}
+      collisionAvoidance={collisionAvoidance}
+      className={(state) =>
+        cn(
+          styles.positioner,
+          typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
+        )
+      }>
+      <ComboboxPrimitive.Popup
+        data-slot='combobox-content'
+        data-chips={Boolean(anchor)}
+        {...props}
+        ref={ref}
+        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      />
+    </ComboboxPrimitive.Positioner>
+  </ComboboxPrimitive.Portal>
 );
 
 /** Renders the real listbox; function children consume Base UI's filtered items. */
-const ComboboxList = React.forwardRef<HTMLDivElement, ComboboxListProps>(
-  ({className, ...props}: ComboboxListProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.List
-      data-slot='combobox-list'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.list, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ComboboxList = ({ref, className, ...props}: Readonly<ComboboxListProps>): React.JSX.Element => (
+  <ComboboxPrimitive.List
+    data-slot='combobox-list'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.list, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Renders an option with a persistent primitive-owned selected state and check indicator. */
-const ComboboxItem = React.forwardRef<HTMLDivElement, ComboboxItemProps>(
-  ({className, children, render, ...props}: ComboboxItemProps, ref): React.JSX.Element => {
-    const content = (
-      <>
-        {getChildren(children, render)}
-        <ComboboxPrimitive.ItemIndicator
-          data-slot='combobox-item-indicator'
-          className={styles.indicator}>
-          <Check
-            aria-hidden='true'
-            className={styles.icon}
-          />
-        </ComboboxPrimitive.ItemIndicator>
-      </>
-    );
-    return (
-      <ComboboxPrimitive.Item
-        data-slot='combobox-item'
-        {...props}
-        ref={ref}
-        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
-        render={withChildren(render, content)}>
-        {content}
-      </ComboboxPrimitive.Item>
-    );
-  },
-);
-
-/** Groups options and associates them with a ComboboxLabel. */
-const ComboboxGroup = React.forwardRef<HTMLDivElement, ComboboxGroupProps>(
-  ({className, ...props}: ComboboxGroupProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.Group
-      data-slot='combobox-group'
+const ComboboxItem = ({ref, className, children, render, ...props}: Readonly<ComboboxItemProps>): React.JSX.Element => {
+  const content = (
+    <>
+      {getChildren(children, render)}
+      <ComboboxPrimitive.ItemIndicator
+        data-slot='combobox-item-indicator'
+        className={styles.indicator}>
+        <Check
+          aria-hidden='true'
+          className={styles.icon}
+        />
+      </ComboboxPrimitive.ItemIndicator>
+    </>
+  );
+  return (
+    <ComboboxPrimitive.Item
+      data-slot='combobox-item'
       {...props}
       ref={ref}
-      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      render={withChildren(render, content)}>
+      {content}
+    </ComboboxPrimitive.Item>
+  );
+};
+
+/** Groups options and associates them with a ComboboxLabel. */
+const ComboboxGroup = ({ref, className, ...props}: Readonly<ComboboxGroupProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Group
+    data-slot='combobox-group'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Provides the accessible label for a ComboboxGroup. */
-const ComboboxLabel = React.forwardRef<HTMLDivElement, ComboboxLabelProps>(
-  ({className, ...props}: ComboboxLabelProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.GroupLabel
-      data-slot='combobox-label'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ComboboxLabel = ({ref, className, ...props}: Readonly<ComboboxLabelProps>): React.JSX.Element => (
+  <ComboboxPrimitive.GroupLabel
+    data-slot='combobox-label'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Renders the filtered collection inside a grouped list; adds no DOM wrapper. */
@@ -357,101 +366,108 @@ function ComboboxCollection(props: ComboboxCollectionProps): React.JSX.Element {
 }
 
 /** Renders one caller-composed empty block only when the primitive list is empty. */
-const ComboboxEmpty = React.forwardRef<HTMLDivElement, ComboboxEmptyProps>(
-  ({className, ...props}: ComboboxEmptyProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.Empty
-      data-slot='combobox-empty'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.empty, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ComboboxEmpty = ({ref, className, ...props}: Readonly<ComboboxEmptyProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Empty
+    data-slot='combobox-empty'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.empty, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Separates related groups visually and semantically. */
-const ComboboxSeparator = React.forwardRef<HTMLDivElement, ComboboxSeparatorProps>(
-  ({className, ...props}: ComboboxSeparatorProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.Separator
-      data-slot='combobox-separator'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ComboboxSeparator = ({ref, className, ...props}: Readonly<ComboboxSeparatorProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Separator
+    data-slot='combobox-separator'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Contains selected chips and the editable input; can serve as an explicit popup anchor. */
-const ComboboxChips = React.forwardRef<HTMLDivElement, ComboboxChipsProps>(
-  ({className, ...props}: ComboboxChipsProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.Chips
-      data-slot='combobox-chips'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.chips, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ComboboxChips = ({ref, className, ...props}: Readonly<ComboboxChipsProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Chips
+    data-slot='combobox-chips'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.chips, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Displays a selected chip and delegates cancellable removal/focus management to Base UI. */
-const ComboboxChip = React.forwardRef<HTMLDivElement, ComboboxChipProps>(
-  ({className, children, render, showRemove = true, removeProps, ...props}: ComboboxChipProps, ref): React.JSX.Element => {
-    const {className: removeClassName, children: removeChildren, render: removeRender, ...removeOtherProps} = removeProps ?? {};
-    const resolvedRemoveChildren = getChildren(removeChildren, removeRender);
-    const removeContent =
-      resolvedRemoveChildren === undefined ? (
-        <X
-          aria-hidden='true'
-          className={styles.icon}
-        />
-      ) : (
-        resolvedRemoveChildren
-      );
-    const content = (
-      <>
-        {getChildren(children, render)}
-        {showRemove ? (
-          <ComboboxPrimitive.ChipRemove
-            data-slot='combobox-chip-remove'
-            aria-label='Remove selection'
-            {...removeOtherProps}
-            className={(state) => cn(styles.chipRemove, typeof removeClassName === "function" ? removeClassName(state) : removeClassName)}
-            render={withChildren(
-              removeRender ?? (
+const ComboboxChip = ({
+  ref,
+  className,
+  children,
+  render,
+  showRemove = true,
+  removeProps,
+  ...props
+}: Readonly<ComboboxChipProps>): React.JSX.Element => {
+  const {className: removeClassName, children: removeChildren, render: removeRender, ...removeOtherProps} = removeProps ?? {};
+  const resolvedRemoveChildren = getChildren(removeChildren, removeRender);
+  const defaultRemoveLabel =
+    typeof removeRender !== "function" && !hasCustomContent(resolvedRemoveChildren) ? "Remove selection" : undefined;
+  const removeContent =
+    resolvedRemoveChildren === undefined ? (
+      <X
+        aria-hidden='true'
+        className={styles.icon}
+      />
+    ) : (
+      resolvedRemoveChildren
+    );
+  const content = (
+    <>
+      {getChildren(children, render)}
+      {showRemove ? (
+        <ComboboxPrimitive.ChipRemove
+          data-slot='combobox-chip-remove'
+          aria-label={defaultRemoveLabel}
+          {...removeOtherProps}
+          className={(state) => cn(styles.chipRemove, typeof removeClassName === "function" ? removeClassName(state) : removeClassName)}
+          render={withChildren(
+            removeRender
+              ?? (!hasCustomContent(resolvedRemoveChildren) ? (
                 <Button
                   variant='ghost'
                   size='icon-xs'
+                  aria-label={removeOtherProps["aria-label"] ?? "Remove selection"}
                 />
-              ),
-              removeContent,
-            )}>
-            {removeContent}
-          </ComboboxPrimitive.ChipRemove>
-        ) : null}
-      </>
-    );
-    return (
-      <ComboboxPrimitive.Chip
-        data-slot='combobox-chip'
-        {...props}
-        ref={ref}
-        className={(state) => cn(styles.chip, typeof className === "function" ? className(state) : className)}
-        render={withChildren(render, content)}>
-        {content}
-      </ComboboxPrimitive.Chip>
-    );
-  },
-);
-
-/** Renders the flexible editable primitive input inside a multiple-selection chip container. */
-const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInputProps>(
-  ({className, ...props}: ComboboxChipsInputProps, ref): React.JSX.Element => (
-    <ComboboxPrimitive.Input
-      data-slot='combobox-chip-input'
+              ) : (
+                <Button
+                  variant='ghost'
+                  size='xs'
+                />
+              )),
+            removeContent,
+          )}>
+          {removeContent}
+        </ComboboxPrimitive.ChipRemove>
+      ) : null}
+    </>
+  );
+  return (
+    <ComboboxPrimitive.Chip
+      data-slot='combobox-chip'
       {...props}
       ref={ref}
-      className={(state) => cn(styles.chipsInput, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+      className={(state) => cn(styles.chip, typeof className === "function" ? className(state) : className)}
+      render={withChildren(render, content)}>
+      {content}
+    </ComboboxPrimitive.Chip>
+  );
+};
+
+/** Renders the flexible editable primitive input inside a multiple-selection chip container. */
+const ComboboxChipsInput = ({ref, className, ...props}: Readonly<ComboboxChipsInputProps>): React.JSX.Element => (
+  <ComboboxPrimitive.Input
+    data-slot='combobox-chip-input'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.chipsInput, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Returns a stable div ref to share between ComboboxChips and ComboboxContent.anchor. */

@@ -52,9 +52,7 @@ function Navigation(): React.JSX.Element {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <h2>Navigation</h2>
-          </SidebarGroupLabel>
+          <SidebarGroupLabel render={<h2>Navigation</h2>} />
           <SidebarGroupAction aria-label='Create a project'>
             <Plus aria-hidden='true' />
           </SidebarGroupAction>
@@ -64,12 +62,13 @@ function Navigation(): React.JSX.Element {
                 <SidebarMenuButton
                   isActive
                   tooltip='Home'
-                  asChild>
-                  <a href='#home'>
-                    <Home aria-hidden='true' />
-                    <span>Home</span>
-                  </a>
-                </SidebarMenuButton>
+                  render={
+                    <a href='#home'>
+                      <Home aria-hidden='true' />
+                      <span>Home</span>
+                    </a>
+                  }
+                />
                 <SidebarMenuBadge>3</SidebarMenuBadge>
               </SidebarMenuItem>
               <SidebarMenuItem>

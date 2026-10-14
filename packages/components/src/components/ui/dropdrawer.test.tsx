@@ -119,6 +119,34 @@ function Fixture(props: Readonly<React.ComponentProps<typeof DropDrawer> & {vers
   );
 }
 
+function OutsideFocusHandoff(): React.ReactElement {
+  const [open, setOpen] = React.useState(false);
+  const destination = React.useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <button ref={destination}>Next workflow</button>
+      <DropDrawer
+        modal={false}
+        open={open}
+        onOpenChange={setOpen}>
+        <DropDrawerTrigger>Open handoff actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            closeOnClick={false}
+            onSelect={(event) => {
+              // The workflow owns activation/closing and cancels subsequent SDK item focus.
+              event.preventDefault();
+              destination.current?.focus();
+              setOpen(false);
+            }}>
+            Continue workflow
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>
+    </>
+  );
+}
+
 let media: ReturnType<typeof installMediaQuery>;
 const bodyStyles = document.body.style.cssText;
 const htmlStyles = document.documentElement.style.cssText;
@@ -135,6 +163,126 @@ afterEach(async () => {
   });
   media.restore();
   vi.restoreAllMocks();
+});
+
+describe("DropDrawer SDK restoration review 03fdddba", () => {
+  it.each([false, true].flatMap((mobile) => ([undefined, true] as const).map((finalFocus) => ({mobile, finalFocus}))))(
+    "restores the invoking detached SDK trigger with an internal wrapper present: mobile=$mobile, finalFocus=$finalFocus",
+    async ({mobile, finalFocus}) => {
+      media.change(mobile);
+      const menuHandle = BaseMenu.createHandle();
+      const drawerHandle = BaseDrawer.createHandle();
+      const user = userEvent.setup();
+      render(
+        <>
+          {mobile ? (
+            <BaseDrawer.Trigger handle={drawerHandle}>Detached invoker</BaseDrawer.Trigger>
+          ) : (
+            <BaseMenu.Trigger handle={menuHandle}>Detached invoker</BaseMenu.Trigger>
+          )}
+          <DropDrawer
+            menuProps={{handle: menuHandle}}
+            drawerProps={{handle: drawerHandle}}>
+            <DropDrawerTrigger>Internal non-invoker</DropDrawerTrigger>
+            <DropDrawerContent finalFocus={finalFocus}>
+              <DropDrawerItem>Mixed action</DropDrawerItem>
+            </DropDrawerContent>
+          </DropDrawer>
+        </>,
+      );
+      const invoker = screen.getByRole("button", {name: "Detached invoker"});
+      await user.click(invoker);
+      expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument());
+      await waitFor(() => expect(invoker).toHaveFocus());
+      expect(screen.getByRole("button", {name: "Internal non-invoker"})).not.toHaveFocus();
+    },
+  );
+
+  it.each([false, true])("restores each of multiple wrapper triggers rather than the last attached ref on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    render(
+      <DropDrawer>
+        <DropDrawerTrigger>First invoker</DropDrawerTrigger>
+        <DropDrawerTrigger>Second invoker</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Shared action</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    for (const name of ["First invoker", "Second invoker"]) {
+      const invoker = screen.getByRole("button", {name});
+      await user.click(invoker);
+      expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument());
+      await waitFor(() => expect(invoker).toHaveFocus());
+    }
+  });
+
+  it.each([false, true])("preserves an intentional outside focus handoff when finalFocus is omitted on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    render(<OutsideFocusHandoff />);
+    const invoker = screen.getByRole("button", {name: "Open handoff actions"});
+    await user.click(invoker);
+    await user.click(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Continue workflow"}));
+    await waitFor(() => expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", {name: "Next workflow"})).toHaveFocus());
+    expect(invoker).not.toHaveFocus();
+  });
+
+  it.each([false, true])("forwards explicit finalFocus callbacks and the mobile override unchanged on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    const destination = React.createRef<HTMLButtonElement>();
+    const shared = vi.fn(() => destination.current);
+    const drawer = vi.fn(() => destination.current);
+    render(
+      <>
+        <button ref={destination}>Explicit callback destination</button>
+        <DropDrawer>
+          <DropDrawerTrigger>Open callback actions</DropDrawerTrigger>
+          <DropDrawerContent
+            finalFocus={shared}
+            drawerProps={{finalFocus: drawer}}>
+            <DropDrawerItem>Action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </>,
+    );
+    await user.click(screen.getByRole("button", {name: "Open callback actions"}));
+    expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    expect(shared).not.toHaveBeenCalled();
+    expect(drawer).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.getByRole("button", {name: "Explicit callback destination"})).toHaveFocus());
+    expect(mobile ? drawer : shared).toHaveBeenCalledWith("keyboard");
+    expect(mobile ? shared : drawer).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("preserves an explicit finalFocus object ref on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const user = userEvent.setup();
+    const destination = React.createRef<HTMLButtonElement>();
+    render(
+      <>
+        <button ref={destination}>Explicit ref destination</button>
+        <DropDrawer>
+          <DropDrawerTrigger>Open ref actions</DropDrawerTrigger>
+          <DropDrawerContent finalFocus={destination}>
+            <DropDrawerItem>Action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </>,
+    );
+    await user.click(screen.getByRole("button", {name: "Open ref actions"}));
+    expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(destination.current).toHaveFocus());
+  });
 });
 
 describe("DropDrawer real responsive owners", () => {
@@ -226,13 +374,49 @@ describe("DropDrawer real responsive owners", () => {
     expect(requests).toHaveLength(before);
   });
 
-  it.each([false, true])("retains legacy matching engine handles without leaking them to the other owner on mobile=%s", async (mobile) => {
+  it.each([false, true])("preserves genuinely detached SDK handle triggers and focus return on mobile=%s", async (mobile) => {
     media.change(mobile);
-    const handle = mobile ? BaseDrawer.createHandle() : BaseMenu.createHandle();
+    const menuHandle = BaseMenu.createHandle();
+    const drawerHandle = BaseDrawer.createHandle();
     const user = userEvent.setup();
     render(
-      <DropDrawer handle={handle}>
-        <DropDrawerTrigger handle={handle}>Handled actions</DropDrawerTrigger>
+      <>
+        {mobile ? (
+          <BaseDrawer.Trigger handle={drawerHandle}>Detached actions</BaseDrawer.Trigger>
+        ) : (
+          <BaseMenu.Trigger handle={menuHandle}>Detached actions</BaseMenu.Trigger>
+        )}
+        <DropDrawer
+          menuProps={{handle: menuHandle}}
+          drawerProps={{handle: drawerHandle}}>
+          <DropDrawerContent>
+            <DropDrawerItem>Detached action</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </>,
+    );
+    const trigger = screen.getByRole("button", {name: "Detached actions"});
+    await user.click(trigger);
+    expect(await screen.findByRole(mobile ? "dialog" : "menu")).toBeVisible();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole(mobile ? "dialog" : "menu")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it.each([false, true])("retains explicit branch handles on their SDK owners on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const menuHandle = BaseMenu.createHandle();
+    const drawerHandle = BaseDrawer.createHandle();
+    const user = userEvent.setup();
+    render(
+      <DropDrawer
+        menuProps={{handle: menuHandle}}
+        drawerProps={{handle: drawerHandle}}>
+        <DropDrawerTrigger
+          menuProps={{handle: menuHandle}}
+          drawerProps={{handle: drawerHandle}}>
+          Handled actions
+        </DropDrawerTrigger>
         <DropDrawerContent>
           <DropDrawerItem>Handled action</DropDrawerItem>
         </DropDrawerContent>
@@ -667,7 +851,7 @@ describe("DropDrawer real responsive owners", () => {
     expect(screen.getByRole("button", {name: "Controlled panel"})).toHaveFocus();
   });
 
-  it.each([false, true])("preserves custom native asChild trigger content, handlers, refs and form safety on mobile=%s", async (mobile) => {
+  it.each([false, true])("preserves custom native trigger composition, handlers, refs and form safety on mobile=%s", async (mobile) => {
     media.change(mobile);
     const user = userEvent.setup();
     const childRef = React.createRef<HTMLButtonElement>();
@@ -685,16 +869,17 @@ describe("DropDrawer real responsive owners", () => {
         }}>
         <DropDrawer>
           <DropDrawerTrigger
-            asChild
             ref={rootRef}
             onClick={() => calls.push("wrapper")}
-            className={(state) => (state.open ? "open-trigger" : "closed-trigger")}>
-            <NativeControl
-              ref={childRef}
-              onClick={() => calls.push("child")}>
-              Custom actions
-            </NativeControl>
-          </DropDrawerTrigger>
+            className={(state) => (state.open ? "open-trigger" : "closed-trigger")}
+            render={
+              <NativeControl
+                ref={childRef}
+                onClick={() => calls.push("child")}>
+                Custom actions
+              </NativeControl>
+            }
+          />
           <DropDrawerContent>
             <DropDrawerItem>Action</DropDrawerItem>
           </DropDrawerContent>
@@ -1011,10 +1196,56 @@ describe("DropDrawer real Drawer gestures under restored platform boundaries", (
 });
 
 describe("DropDrawer review fix round 1", () => {
+  it.each(["ordinary", "opaque"] as const)("retains mobile popup structure with %s element-owned actions", async (kind) => {
+    media.change(true);
+    const element = (
+      <section>
+        <DropDrawerItem>Element-owned action</DropDrawerItem>
+      </section>
+    );
+    const slot = kind === "ordinary" ? element : {...element, $$typeof: Symbol.for("react.lazy"), _payload: element, _init: () => element};
+    render(
+      <DropDrawer
+        defaultOpen
+        mobileTitle='Actions mobiles'>
+        <DropDrawerTrigger>Actions</DropDrawerTrigger>
+        <DropDrawerContent render={slot} />
+      </DropDrawer>,
+    );
+    const popup = await screen.findByRole("dialog", {name: "Actions mobiles"});
+    expect(popup).toContainElement(screen.getByRole("button", {name: "Element-owned action"}));
+    expect(popup.querySelector("[data-drawer-content]")).toContainElement(screen.getByRole("button", {name: "Element-owned action"}));
+  });
+
+  it.each([false, true])("retains an opaque rendered action's label and generated icon on mobile=%s", async (mobile) => {
+    media.change(mobile);
+    const element = <button>Opaque action</button>;
+    const slot = {...element, $$typeof: Symbol.for("react.lazy"), _payload: element, _init: () => element};
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            nativeButton
+            render={slot}
+            icon={
+              <span
+                data-testid='action-icon'
+                aria-hidden='true'>
+                Icon
+              </span>
+            }
+          />
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    expect(await screen.findByRole(mobile ? "button" : "menuitem", {name: "Opaque action"})).toContainElement(
+      screen.getByTestId("action-icon"),
+    );
+  });
+
   const itemCases = [false, true].flatMap((mobile) =>
-    [false, true].flatMap((closeOnClick) =>
-      (["render", "asChild", "function"] as const).map((composition) => ({mobile, closeOnClick, composition})),
-    ),
+    [false, true].flatMap((closeOnClick) => (["render", "function"] as const).map((composition) => ({mobile, closeOnClick, composition}))),
   );
 
   it.each(itemCases)(
@@ -1060,55 +1291,47 @@ describe("DropDrawer review fix round 1", () => {
         <DropDrawer defaultOpen>
           <DropDrawerTrigger>Open</DropDrawerTrigger>
           <DropDrawerContent>
-            {composition === "asChild" ? (
-              <DropDrawerItem
-                {...actionProps}
-                asChild>
-                {child}
-              </DropDrawerItem>
-            ) : (
-              <DropDrawerItem
-                {...actionProps}
-                render={
-                  composition === "render"
-                    ? child
-                    : (props, state) => {
-                        states.push(state);
-                        return (
-                          <a
-                            {...props}
-                            href='#disabled-target'
-                            onClick={(event) => {
-                              childHandlers.onClick?.(event);
-                              props.onClick?.(event);
-                            }}
-                            onClickCapture={(event) => {
-                              childHandlers.onClickCapture?.(event);
-                              props.onClickCapture?.(event);
-                            }}
-                            onKeyDown={(event) => {
-                              childHandlers.onKeyDown?.(event);
-                              props.onKeyDown?.(event);
-                            }}
-                            onKeyDownCapture={(event) => {
-                              childHandlers.onKeyDownCapture?.(event);
-                              props.onKeyDownCapture?.(event);
-                            }}
-                            onKeyUp={(event) => {
-                              childHandlers.onKeyUp?.(event);
-                              props.onKeyUp?.(event);
-                            }}
-                            onKeyUpCapture={(event) => {
-                              childHandlers.onKeyUpCapture?.(event);
-                              props.onKeyUpCapture?.(event);
-                            }}>
-                            Disabled composed action
-                          </a>
-                        );
-                      }
-                }
-              />
-            )}
+            <DropDrawerItem
+              {...actionProps}
+              render={
+                composition === "render"
+                  ? child
+                  : (props, state) => {
+                      states.push(state);
+                      return (
+                        <a
+                          {...props}
+                          href='#disabled-target'
+                          onClick={(event) => {
+                            childHandlers.onClick?.(event);
+                            props.onClick?.(event);
+                          }}
+                          onClickCapture={(event) => {
+                            childHandlers.onClickCapture?.(event);
+                            props.onClickCapture?.(event);
+                          }}
+                          onKeyDown={(event) => {
+                            childHandlers.onKeyDown?.(event);
+                            props.onKeyDown?.(event);
+                          }}
+                          onKeyDownCapture={(event) => {
+                            childHandlers.onKeyDownCapture?.(event);
+                            props.onKeyDownCapture?.(event);
+                          }}
+                          onKeyUp={(event) => {
+                            childHandlers.onKeyUp?.(event);
+                            props.onKeyUp?.(event);
+                          }}
+                          onKeyUpCapture={(event) => {
+                            childHandlers.onKeyUpCapture?.(event);
+                            props.onKeyUpCapture?.(event);
+                          }}>
+                          Disabled composed action
+                        </a>
+                      );
+                    }
+              }
+            />
           </DropDrawerContent>
         </DropDrawer>,
       );
@@ -1360,21 +1583,22 @@ describe("DropDrawer review fix round 1 native and ancestry invariants", () => {
     render(
       <DropDrawer>
         <DropDrawerTrigger
-          asChild
           disabled
           nativeButton={false}
           ref={wrapperRef}
           onClick={() => calls.push("wrapper-click")}
-          onClickCapture={() => calls.push("wrapper-capture")}>
-          <a
-            href='#disabled-root'
-            ref={childRef}
-            onClick={() => calls.push("child-click")}
-            onClickCapture={() => calls.push("child-capture")}
-            onKeyDown={() => calls.push("child-key")}>
-            Disabled root trigger
-          </a>
-        </DropDrawerTrigger>
+          onClickCapture={() => calls.push("wrapper-capture")}
+          render={
+            <a
+              href='#disabled-root'
+              ref={childRef}
+              onClick={() => calls.push("child-click")}
+              onClickCapture={() => calls.push("child-capture")}
+              onKeyDown={() => calls.push("child-key")}>
+              Disabled root trigger
+            </a>
+          }
+        />
         <DropDrawerContent>
           <DropDrawerItem>Root action</DropDrawerItem>
         </DropDrawerContent>
@@ -1641,23 +1865,24 @@ describe("DropDrawer review fix round 2", () => {
           Links:
           <DropDrawer>
             <DropDrawerTrigger
-              asChild
               disabled={disabled}
               nativeButton={false}
               ref={ref}
               onClickCapture={() => calls.push("wrapper-capture")}
-              onClick={() => calls.push("wrapper-click")}>
-              <a
-                href='#inline-target'
-                ref={childRef}
-                onClickCapture={() => calls.push("child-capture")}
-                onClick={(event) => {
-                  calls.push("child-click");
-                  event.preventDefault();
-                }}>
-                Inline link
-              </a>
-            </DropDrawerTrigger>
+              onClick={() => calls.push("wrapper-click")}
+              render={
+                <a
+                  href='#inline-target'
+                  ref={childRef}
+                  onClickCapture={() => calls.push("child-capture")}
+                  onClick={(event) => {
+                    calls.push("child-click");
+                    event.preventDefault();
+                  }}>
+                  Inline link
+                </a>
+              }
+            />
             <DropDrawerContent>
               <DropDrawerItem>Link action</DropDrawerItem>
             </DropDrawerContent>

@@ -85,7 +85,7 @@ function useChart(): ChartContextProps {
 /** Native chart root props plus the actual Recharts responsive sizing contract. */
 export interface ChartContainerProps
   extends
-    Omit<React.ComponentPropsWithoutRef<"div">, "children" | "onResize">,
+    Omit<React.ComponentPropsWithRef<"div">, "children" | "onResize">,
     Pick<
       ResponsiveContainerProps,
       "initialDimension" | "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
@@ -94,6 +94,12 @@ export interface ChartContainerProps
    * Series configuration used to resolve labels, icons, and colors.
    */
   readonly config: ChartConfig;
+  /**
+   * Persistent equivalent text/table for the chart's information, not a tooltip.
+   * Supply this for meaningful charts; caller owns the localized caption and data.
+   * Rendered outside ResponsiveContainer so it remains available without SVG/hover.
+   */
+  readonly accessibleData?: React.ReactNode;
   /**
    * Inline styles applied to the inner `ResponsiveContainer`.
    * @default undefined
@@ -126,61 +132,60 @@ export interface ChartContainerProps
  *
  * @see {@link https://recharts.org/en-US/api/ResponsiveContainer | Recharts ResponsiveContainer Docs}
  */
-const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
-  (
-    {
-      id,
-      config,
-      initialDimension = INITIAL_DIMENSION,
-      className,
-      children,
-      innerResponsiveContainerStyle,
-      aspect,
-      debounce,
-      height,
-      maxHeight,
-      minHeight,
-      minWidth,
-      onResize,
-      width,
-      ...props
-    }: Readonly<ChartContainerProps>,
-    ref,
-  ): React.JSX.Element => {
-    const uniqueId = React.useId();
-    const chartId = `chart-${encodeChartScope(uniqueId)}`;
+function ChartContainer({
+  ref,
+  accessibleData,
+  id,
+  config,
+  initialDimension = INITIAL_DIMENSION,
+  className,
+  children,
+  innerResponsiveContainerStyle,
+  aspect,
+  debounce,
+  height,
+  maxHeight,
+  minHeight,
+  minWidth,
+  onResize,
+  width,
+  ...props
+}: Readonly<ChartContainerProps>): React.JSX.Element {
+  const uniqueId = React.useId();
+  const chartId = `chart-${encodeChartScope(uniqueId)}`;
 
-    return (
-      <ChartContext.Provider value={{config}}>
-        <div
-          {...props}
-          ref={ref}
-          id={id}
-          data-slot='chart'
-          data-chart={chartId}
-          className={cn(styles.container, className)}>
-          <ChartStyle
-            id={chartId}
-            config={config}
-          />
-          <RechartsPrimitive.ResponsiveContainer
-            initialDimension={initialDimension}
-            aspect={aspect}
-            debounce={debounce}
-            height={height}
-            maxHeight={maxHeight}
-            minHeight={minHeight}
-            minWidth={minWidth}
-            onResize={onResize}
-            style={innerResponsiveContainerStyle}
-            width={width}>
-            {children}
-          </RechartsPrimitive.ResponsiveContainer>
-        </div>
-      </ChartContext.Provider>
-    );
-  },
-);
+  return (
+    <ChartContext.Provider value={{config}}>
+      <div
+        {...props}
+        ref={ref}
+        id={id}
+        role='group'
+        data-slot='chart'
+        data-chart={chartId}
+        className={cn(styles.container, className)}>
+        <ChartStyle
+          id={chartId}
+          config={config}
+        />
+        <RechartsPrimitive.ResponsiveContainer
+          initialDimension={initialDimension}
+          aspect={aspect}
+          debounce={debounce}
+          height={height}
+          maxHeight={maxHeight}
+          minHeight={minHeight}
+          minWidth={minWidth}
+          onResize={onResize}
+          style={innerResponsiveContainerStyle}
+          width={width}>
+          {children}
+        </RechartsPrimitive.ResponsiveContainer>
+        {accessibleData}
+      </div>
+    </ChartContext.Provider>
+  );
+}
 
 /** Scope and palette inputs for the generated chart stylesheet. */
 export interface ChartStyleProps {
@@ -294,6 +299,8 @@ export type ChartTooltipContentProps = Omit<
   & Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, keyof DefaultTooltipContentProps>
   & Omit<DefaultTooltipContentProps, "accessibilityLayer">
   & Partial<Pick<RechartsPrimitive.TooltipContentProps, "coordinate" | "activeIndex" | "accessibilityLayer">> & {
+    /** React 19 ref to the tooltip div. */
+    readonly ref?: React.Ref<HTMLDivElement>;
     /** Hides the heading, including a nested single-series heading. */
     readonly hideLabel?: boolean;
     /** Hides color swatches; explicit config icons remain available. */
@@ -320,9 +327,8 @@ export type ChartTooltipContentProps = Omit<
  *   payload array, and can return a row node, a value/name tuple or null to hide
  *   a row. Config formatters/units apply when no row formatter supplies a value.
  * - Native DOM attributes and the ref target the tooltip div.
- * - Ref-capable content helpers must be instantiated: migrate the former
- *   `content={ChartTooltipContent}` pattern to `content={<ChartTooltipContent />}`
- *   or `content={(props) => <ChartTooltipContent {...props} />}`.
+ * - Instantiate configured content as `content={<ChartTooltipContent />}` or
+ *   `content={(props) => <ChartTooltipContent {...props} />}`.
  * - Ignores `wrapperClassName`, `contentStyle`, `itemStyle`, `labelStyle`, and
  *   primitive positioning/animation/sorting props because this helper renders
  *   its own DOM structure. Accessibility-layer content uses a live status.
@@ -334,183 +340,178 @@ export type ChartTooltipContentProps = Omit<
  *
  * @see {@link https://recharts.org/en-US/api/Tooltip | Recharts Tooltip Docs}
  */
-const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
-  (
-    {
-      active,
-      payload,
-      className,
-      indicator = "dot",
-      hideLabel = false,
-      hideIndicator = false,
-      label,
-      labelFormatter,
-      labelClassName,
-      formatter,
-      color,
-      nameKey,
-      labelKey,
-      separator,
-      accessibilityLayer,
-      children: _children,
-      wrapperClassName: _wrapperClassName,
-      contentStyle: _contentStyle,
-      itemStyle: _itemStyle,
-      labelStyle: _labelStyle,
-      itemSorter: _itemSorter,
-      allowEscapeViewBox: _allowEscapeViewBox,
-      animationDuration: _animationDuration,
-      animationEasing: _animationEasing,
-      axisId: _axisId,
-      content: _content,
-      cursor: _cursor,
-      defaultIndex: _defaultIndex,
-      filterNull: _filterNull,
-      includeHidden: _includeHidden,
-      isAnimationActive: _isAnimationActive,
-      offset: _offset,
-      payloadUniqBy: _payloadUniqBy,
-      portal: _portal,
-      position: _position,
-      reverseDirection: _reverseDirection,
-      shared: _shared,
-      trigger: _trigger,
-      useTranslate3d: _useTranslate3d,
-      wrapperStyle: _wrapperStyle,
-      coordinate: _coordinate,
-      activeIndex: _activeIndex,
-      ...props
-    }: Readonly<ChartTooltipContentProps>,
-    ref,
-  ): React.JSX.Element | null => {
-    const {config} = useChart();
+function ChartTooltipContent({
+  ref,
+  active,
+  payload,
+  className,
+  indicator = "dot",
+  hideLabel = false,
+  hideIndicator = false,
+  label,
+  labelFormatter,
+  labelClassName,
+  formatter,
+  color,
+  nameKey,
+  labelKey,
+  separator,
+  accessibilityLayer,
+  children: _children,
+  wrapperClassName: _wrapperClassName,
+  contentStyle: _contentStyle,
+  itemStyle: _itemStyle,
+  labelStyle: _labelStyle,
+  itemSorter: _itemSorter,
+  allowEscapeViewBox: _allowEscapeViewBox,
+  animationDuration: _animationDuration,
+  animationEasing: _animationEasing,
+  axisId: _axisId,
+  content: _content,
+  cursor: _cursor,
+  defaultIndex: _defaultIndex,
+  filterNull: _filterNull,
+  includeHidden: _includeHidden,
+  isAnimationActive: _isAnimationActive,
+  offset: _offset,
+  payloadUniqBy: _payloadUniqBy,
+  portal: _portal,
+  position: _position,
+  reverseDirection: _reverseDirection,
+  shared: _shared,
+  trigger: _trigger,
+  useTranslate3d: _useTranslate3d,
+  wrapperStyle: _wrapperStyle,
+  coordinate: _coordinate,
+  activeIndex: _activeIndex,
+  ...props
+}: Readonly<ChartTooltipContentProps>): React.JSX.Element | null {
+  const {config} = useChart();
 
-    const tooltipLabel = React.useMemo(() => {
-      if (hideLabel || !payload?.length) {
-        return null;
-      }
-
-      const item = payload.find((entry) => entry.type !== "none");
-      if (!item) return null;
-      const key = `${labelKey ?? item?.dataKey ?? item?.name ?? "value"}`;
-      const itemConfig = getPayloadConfigFromPayload(config, item, key);
-      const value =
-        !labelKey && (typeof label === "string" || typeof label === "number")
-          ? typeof label === "string"
-            ? (getConfigItem(config, label)?.label ?? label)
-            : label
-          : itemConfig?.label;
-
-      if (labelFormatter) {
-        return <div className={cn(styles.tooltipLabel, labelClassName)}>{labelFormatter(value, payload)}</div>;
-      }
-
-      if (value === null || value === undefined) {
-        return null;
-      }
-
-      return <div className={cn(styles.tooltipLabel, labelClassName)}>{value}</div>;
-    }, [config, hideLabel, label, labelClassName, labelFormatter, labelKey, payload]);
-
-    const visiblePayload = payload?.filter((item) => item.type !== "none");
-    if (!active || !payload?.length || !visiblePayload?.length) {
+  const tooltipLabel = React.useMemo(() => {
+    if (hideLabel || !payload?.length) {
       return null;
     }
 
-    const nestLabel = visiblePayload.length === 1 && indicator !== "dot";
+    const item = payload.find((entry) => entry.type !== "none");
+    if (!item) return null;
+    const key = `${labelKey ?? item?.dataKey ?? item?.name ?? "value"}`;
+    const itemConfig = getPayloadConfigFromPayload(config, item, key);
+    const value =
+      !labelKey && (typeof label === "string" || typeof label === "number")
+        ? typeof label === "string"
+          ? (getConfigItem(config, label)?.label ?? label)
+          : label
+        : itemConfig?.label;
 
-    return (
-      <div
-        {...props}
-        ref={ref}
-        data-slot='chart-tooltip'
-        role={props.role ?? (accessibilityLayer ? "status" : undefined)}
-        aria-live={props["aria-live"] ?? (accessibilityLayer ? "polite" : undefined)}
-        className={cn(styles.tooltip, className)}>
-        {!nestLabel ? tooltipLabel : null}
-        <div className={styles.tooltipBody}>
-          {visiblePayload.map((item, index) => {
-            const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
-            const itemConfig =
-              getPayloadConfigFromPayload(config, item, key)
-              ?? (!nameKey ? getPayloadConfigFromPayload(config, item, `${item.dataKey ?? "value"}`) : undefined);
-            const indicatorColor =
-              getSafeChartColor(color)
-              ?? getSafeChartColor(getRecordValue(item.payload, "fill"))
-              ?? getSafeChartColor(item.color)
-              ?? "transparent";
-            // D4: runtime palette only; all indicator presentation lives in CSS.
-            const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string> =
-              {
-                "--ac-chart-indicator-background": indicatorColor,
-                "--ac-chart-indicator-border": indicatorColor,
-              };
+    if (labelFormatter) {
+      return <div className={cn(styles.tooltipLabel, labelClassName)}>{labelFormatter(value, payload)}</div>;
+    }
 
-            const itemFormatter = formatter ?? item.formatter;
-            const hasFormatter = typeof itemFormatter === "function" && item.value !== undefined && item.name !== undefined;
-            const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
-            if (hasFormatter && (formatterResult === null || formatterResult === undefined)) return null;
-            const formattedEntry = isFormatterTuple(formatterResult) ? formatterResult : undefined;
-            const resolvedName = formattedEntry ? formattedEntry[1] : (itemConfig?.label ?? item.name);
-            const resolvedUnit = item.unit ?? itemConfig?.unit;
-            const resolvedValue = formattedEntry
-              ? formattedEntry[0]
-              : item.value !== null && item.value !== undefined
-                ? formatChartValue(item.value, itemConfig)
-                : null;
+    if (value === null || value === undefined) {
+      return null;
+    }
 
-            return (
-              <div
-                key={`${key}-${index}`}
-                data-slot='chart-tooltip-item'
-                className={cn(styles.tooltipItem, indicator === "dot" && styles.tooltipItemCenter)}>
-                {formatterResult !== null && formatterResult !== undefined && !formattedEntry ? (
-                  formatterResult
-                ) : (
-                  <>
-                    {itemConfig?.icon ? (
-                      <itemConfig.icon />
-                    ) : (
-                      !hideIndicator && (
-                        <div
-                          data-slot='chart-tooltip-indicator'
-                          data-indicator={indicator}
-                          className={cn(
-                            styles.tooltipIndicator,
-                            indicator === "dot" && styles.tooltipIndicatorDot,
-                            indicator === "line" && styles.tooltipIndicatorLine,
-                            indicator === "dashed" && styles.tooltipIndicatorDashed,
-                            nestLabel && indicator === "dashed" && styles.tooltipIndicatorDashedNested,
-                          )}
-                          style={indicatorStyle}
-                        />
-                      )
-                    )}
-                    <div className={cn(styles.tooltipValueRow, nestLabel && styles.tooltipValueRowNested)}>
-                      <div className={styles.tooltipNameWrapper}>
-                        {nestLabel ? tooltipLabel : null}
-                        {resolvedName !== null && resolvedName !== undefined && <span className={styles.tooltipName}>{resolvedName}</span>}
-                      </div>
-                      {resolvedValue !== null && resolvedValue !== undefined && (
-                        <span className={styles.tooltipValue}>
-                          {resolvedName !== null && resolvedName !== undefined && separator ? (
-                            <span aria-hidden='true'>{separator}</span>
-                          ) : null}
-                          {resolvedValue}
-                          {resolvedUnit !== null && resolvedUnit !== undefined ? <span> {resolvedUnit}</span> : null}
-                        </span>
-                      )}
+    return <div className={cn(styles.tooltipLabel, labelClassName)}>{value}</div>;
+  }, [config, hideLabel, label, labelClassName, labelFormatter, labelKey, payload]);
+
+  const visiblePayload = payload?.filter((item) => item.type !== "none");
+  if (!active || !payload?.length || !visiblePayload?.length) {
+    return null;
+  }
+
+  const nestLabel = visiblePayload.length === 1 && indicator !== "dot";
+
+  return (
+    <div
+      {...props}
+      ref={ref}
+      data-slot='chart-tooltip'
+      role={props.role ?? (accessibilityLayer ? "status" : undefined)}
+      aria-live={props["aria-live"] ?? (accessibilityLayer ? "polite" : undefined)}
+      className={cn(styles.tooltip, className)}>
+      {!nestLabel ? tooltipLabel : null}
+      <div className={styles.tooltipBody}>
+        {visiblePayload.map((item, index) => {
+          const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
+          const itemConfig =
+            getPayloadConfigFromPayload(config, item, key)
+            ?? (!nameKey ? getPayloadConfigFromPayload(config, item, `${item.dataKey ?? "value"}`) : undefined);
+          const indicatorColor =
+            getSafeChartColor(color)
+            ?? getSafeChartColor(getRecordValue(item.payload, "fill"))
+            ?? getSafeChartColor(item.color)
+            ?? "transparent";
+          // D4: runtime palette only; all indicator presentation lives in CSS.
+          const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string> = {
+            "--ac-chart-indicator-background": indicatorColor,
+            "--ac-chart-indicator-border": indicatorColor,
+          };
+
+          const itemFormatter = formatter ?? item.formatter;
+          const hasFormatter = typeof itemFormatter === "function" && item.value !== undefined && item.name !== undefined;
+          const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
+          if (hasFormatter && (formatterResult === null || formatterResult === undefined)) return null;
+          const formattedEntry = isFormatterTuple(formatterResult) ? formatterResult : undefined;
+          const resolvedName = formattedEntry ? formattedEntry[1] : (itemConfig?.label ?? item.name);
+          const resolvedUnit = item.unit ?? itemConfig?.unit;
+          const resolvedValue = formattedEntry
+            ? formattedEntry[0]
+            : item.value !== null && item.value !== undefined
+              ? formatChartValue(item.value, itemConfig)
+              : null;
+
+          return (
+            <div
+              key={`${key}-${index}`}
+              data-slot='chart-tooltip-item'
+              className={cn(styles.tooltipItem, indicator === "dot" && styles.tooltipItemCenter)}>
+              {formatterResult !== null && formatterResult !== undefined && !formattedEntry ? (
+                formatterResult
+              ) : (
+                <>
+                  {itemConfig?.icon ? (
+                    <itemConfig.icon />
+                  ) : (
+                    !hideIndicator && (
+                      <div
+                        data-slot='chart-tooltip-indicator'
+                        data-indicator={indicator}
+                        className={cn(
+                          styles.tooltipIndicator,
+                          indicator === "dot" && styles.tooltipIndicatorDot,
+                          indicator === "line" && styles.tooltipIndicatorLine,
+                          indicator === "dashed" && styles.tooltipIndicatorDashed,
+                          nestLabel && indicator === "dashed" && styles.tooltipIndicatorDashedNested,
+                        )}
+                        style={indicatorStyle}
+                      />
+                    )
+                  )}
+                  <div className={cn(styles.tooltipValueRow, nestLabel && styles.tooltipValueRowNested)}>
+                    <div className={styles.tooltipNameWrapper}>
+                      {nestLabel ? tooltipLabel : null}
+                      {resolvedName !== null && resolvedName !== undefined && <span className={styles.tooltipName}>{resolvedName}</span>}
                     </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    {resolvedValue !== null && resolvedValue !== undefined && (
+                      <span className={styles.tooltipValue}>
+                        {resolvedName !== null && resolvedName !== undefined && separator ? (
+                          <span aria-hidden='true'>{separator}</span>
+                        ) : null}
+                        {resolvedValue}
+                        {resolvedUnit !== null && resolvedUnit !== undefined ? <span> {resolvedUnit}</span> : null}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
-    );
-  },
-);
+    </div>
+  );
+}
 
 /**
  * Re-exports the Recharts legend primitive for use with shared chart helpers.
@@ -529,12 +530,12 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
 const ChartLegend = RechartsPrimitive.Legend;
 
 type LegendItemEventKey = Extract<keyof DefaultLegendContentProps, `on${string}`>;
-type LegendRootAttributes = Omit<React.ComponentPropsWithoutRef<"div">, `on${string}`>;
+type LegendRootAttributes = Omit<React.ComponentPropsWithRef<"div">, `on${string}`>;
 
 /** Recharts item-event signatures, native non-event div attributes and config lookup options. */
 export type ChartLegendContentProps = LegendRootAttributes
-  & Omit<DefaultLegendContentProps, keyof React.ComponentPropsWithoutRef<"div"> | "layout" | "align" | "verticalAlign">
-  & Pick<DefaultLegendContentProps, LegendItemEventKey>
+  & Omit<DefaultLegendContentProps, keyof React.ComponentPropsWithoutRef<"div"> | "layout" | "align" | "verticalAlign" | LegendItemEventKey>
+  & Pick<DefaultLegendContentProps, "onClick" | "onMouseEnter" | "onMouseLeave">
   & Pick<
     RechartsPrimitive.LegendProps,
     | "layout"
@@ -555,16 +556,32 @@ export type ChartLegendContentProps = LegendRootAttributes
     readonly nameKey?: string;
     /** Content spacing only; outer legend positioning remains primitive-owned. @default "bottom" */
     readonly verticalAlign?: "top" | "bottom" | "middle";
-    /** Accepted legacy container alignment; unused by the custom content layout. */
-    readonly align?: "left" | "center" | "right";
   };
 
-// Recharts also injects these internal dimensions into cloned legend content.
-type InjectedLegendDimensions = {
-  readonly chartWidth?: number;
-  readonly chartHeight?: number;
-  readonly margin?: unknown;
-};
+// Recharts clones content with engine-owned fields beyond its declared public
+// props. Strip their keys without depending on deprecated SDK field declarations.
+const legendEngineFields: ReadonlySet<string> = new Set([
+  "align",
+  "layout",
+  "iconSize",
+  "iconType",
+  "inactiveColor",
+  "labelStyle",
+  "children",
+  "content",
+  "wrapperStyle",
+  "width",
+  "height",
+  "payloadUniqBy",
+  "onBBoxUpdate",
+  "portal",
+  "itemSorter",
+  "position",
+  "offset",
+  "chartWidth",
+  "chartHeight",
+  "margin",
+]);
 
 /**
  * Renders shared legend content for charts configured with {@link ChartContainer}.
@@ -575,15 +592,13 @@ type InjectedLegendDimensions = {
  * - Honors `payload`, `verticalAlign`, `className`, and the custom `hideIcon`
  *   and `nameKey` props, formatters, native non-event attributes and DOM refs.
  * - Only `onClick`, `onMouseEnter` and `onMouseLeave` are invoked per item with
- *   Recharts' entry/index/event arguments. All other primitive item-event props
- *   are accepted for content compatibility but consumed without invocation;
- *   they are never native root handlers. Attach native handlers to a parent
+ *   Recharts' entry/index/event arguments. Engine-injected legacy fields
+ *   are consumed without leaking to the DOM. Attach native handlers to a parent
  *   element or ChartContainer instead.
  * - Items with an onClick handler use native, non-submit buttons for keyboard
  *   activation. Other items remain display-only divs.
  * - Migrate `content={ChartLegendContent}` to `content={<ChartLegendContent />}`
- *   or `content={(props) => <ChartLegendContent {...props} />}`; a forwardRef
- *   component object is not a Recharts content function or instantiated element.
+ *   or `content={(props) => <ChartLegendContent {...props} />}`.
  * - Text falls back from config label to payload value to a string/number dataKey.
  * - `middle` uses the same content spacing as `bottom`; positioning remains
  *   owned by the Recharts Legend primitive.
@@ -599,118 +614,92 @@ type InjectedLegendDimensions = {
  *
  * @see {@link https://recharts.org/en-US/api/Legend | Recharts Legend Docs}
  */
-const ChartLegendContent: React.ForwardRefExoticComponent<ChartLegendContentProps & React.RefAttributes<HTMLDivElement>> = React.forwardRef<
-  HTMLDivElement,
-  ChartLegendContentProps
->(
-  (
-    {
-      className,
-      hideIcon = false,
-      nameKey,
-      payload,
-      verticalAlign = "bottom",
-      formatter,
-      onClick,
-      onMouseEnter,
-      onMouseLeave,
-      align: _align,
-      layout: _layout,
-      iconSize: _iconSize,
-      iconType: _iconType,
-      inactiveColor: _inactiveColor,
-      labelStyle: _labelStyle,
-      children: _children,
-      content: _content,
-      wrapperStyle: _wrapperStyle,
-      width: _width,
-      height: _height,
-      payloadUniqBy: _payloadUniqBy,
-      onBBoxUpdate: _onBBoxUpdate,
-      portal: _portal,
-      itemSorter: _itemSorter,
-      position: _position,
-      offset: _offset,
-      chartWidth: _chartWidth,
-      chartHeight: _chartHeight,
-      margin: _margin,
-      ...props
-    }: Readonly<ChartLegendContentProps & InjectedLegendDimensions>,
+function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): React.JSX.Element | null {
+  const {
     ref,
-  ): React.JSX.Element | null => {
-    const {config} = useChart();
+    className,
+    hideIcon = false,
+    nameKey,
+    payload,
+    verticalAlign = "bottom",
+    formatter,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    ...props
+  } = publicProps;
+  const {config} = useChart();
 
-    const visiblePayload = payload?.filter((item) => item.type !== "none");
-    if (!visiblePayload?.length) {
-      return null;
-    }
+  const visiblePayload = payload?.filter((item) => item.type !== "none");
+  if (!visiblePayload?.length) {
+    return null;
+  }
 
-    return (
-      <div
-        {...getLegendRootAttributes(props)}
-        ref={ref}
-        data-slot='chart-legend'
-        className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}>
-        {visiblePayload.map((item, index) => {
-          const key = `${nameKey ?? item.dataKey ?? "value"}`;
-          const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          const value = itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey);
-          const itemFormatter = item.formatter ?? formatter;
-          // D4: series color only, not inline authored presentation.
-          const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background", string> = {
-            "--ac-chart-indicator-background": getSafeChartColor(item.color) ?? "transparent",
-          };
+  return (
+    <div
+      {...getLegendRootAttributes(props)}
+      ref={ref}
+      data-slot='chart-legend'
+      className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}>
+      {visiblePayload.map((item, index) => {
+        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const itemConfig = getPayloadConfigFromPayload(config, item, key);
+        const value = itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey);
+        const itemFormatter = item.formatter ?? formatter;
+        // D4: series color only, not inline authored presentation.
+        const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background", string> = {
+          "--ac-chart-indicator-background": getSafeChartColor(item.color) ?? "transparent",
+        };
 
-          const mouseHandlers: Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> = {
-            onMouseEnter: onMouseEnter ? (event) => onMouseEnter(item, index, event) : undefined,
-            onMouseLeave: onMouseLeave ? (event) => onMouseLeave(item, index, event) : undefined,
-          };
-          const content = (
-            <>
-              {itemConfig?.icon && !hideIcon ? (
-                <itemConfig.icon />
-              ) : (
-                <div
-                  data-slot='chart-legend-indicator'
-                  className={styles.legendColor}
-                  style={indicatorStyle}
-                />
-              )}
-              {itemFormatter ? itemFormatter(value, item, index) : value}
-            </>
-          );
+        const mouseHandlers: Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> = {
+          onMouseEnter: onMouseEnter ? (event) => onMouseEnter(item, index, event) : undefined,
+          onMouseLeave: onMouseLeave ? (event) => onMouseLeave(item, index, event) : undefined,
+        };
+        const content = (
+          <>
+            {itemConfig?.icon && !hideIcon ? (
+              <itemConfig.icon />
+            ) : (
+              <div
+                data-slot='chart-legend-indicator'
+                className={styles.legendColor}
+                style={indicatorStyle}
+              />
+            )}
+            {itemFormatter ? itemFormatter(value, item, index) : value}
+          </>
+        );
 
-          return onClick ? (
-            <button
-              key={`${key}-${index}`}
-              type='button'
-              data-slot='chart-legend-item'
-              {...mouseHandlers}
-              onClick={(event) => onClick(item, index, event)}
-              className={cn(styles.legendItem, styles.legendButton)}>
-              {content}
-            </button>
-          ) : (
-            <div
-              key={`${key}-${index}`}
-              data-slot='chart-legend-item'
-              {...mouseHandlers}
-              className={styles.legendItem}>
-              {content}
-            </div>
-          );
-        })}
-      </div>
-    );
-  },
-);
+        return onClick ? (
+          <button
+            key={`${key}-${index}`}
+            type='button'
+            data-slot='chart-legend-item'
+            {...mouseHandlers}
+            onClick={(event) => onClick(item, index, event)}
+            className={cn(styles.legendItem, styles.legendButton)}>
+            {content}
+          </button>
+        ) : (
+          <div
+            key={`${key}-${index}`}
+            data-slot='chart-legend-item'
+            {...mouseHandlers}
+            className={styles.legendItem}>
+            {content}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function getLegendRootAttributes(
   props: Readonly<LegendRootAttributes & Pick<DefaultLegendContentProps, LegendItemEventKey>>,
 ): LegendRootAttributes {
   const attributes = {...props};
   for (const key of Object.keys(attributes)) {
-    if (key.startsWith("on")) {
+    if (key.startsWith("on") || legendEngineFields.has(key)) {
       Reflect.deleteProperty(attributes, key);
     }
   }
@@ -863,12 +852,6 @@ export const {ResponsiveContainer} = RechartsPrimitive;
 export const {Customized} = RechartsPrimitive;
 
 // -- Shapes -----------------------------------------------------------------
-/**
- * @deprecated Since recharts 3.7. Use the `shape` prop on chart series elements instead.
- * @see {@link https://recharts.github.io/en-US/api/Cell | Cell API}
- */
-// eslint-disable-next-line sonarjs/deprecation
-export const {Cell} = RechartsPrimitive;
 export const {Cross} = RechartsPrimitive;
 export const {Curve} = RechartsPrimitive;
 export const {Dot} = RechartsPrimitive;

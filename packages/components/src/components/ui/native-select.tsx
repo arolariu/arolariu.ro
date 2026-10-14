@@ -7,16 +7,16 @@ import styles from "./native-select.module.css";
 export type NativeSelectSize = "sm" | "default";
 
 /** Native select attributes with a logical visual size instead of a row count. */
-export interface NativeSelectProps extends Omit<React.ComponentPropsWithoutRef<"select">, "size"> {
+export interface NativeSelectProps extends Omit<React.ComponentPropsWithRef<"select">, "size"> {
   /** Visual size applied to the wrapper and control. @default "default" */
   readonly size?: NativeSelectSize;
 }
 
 /** Native option attributes, including its value, label and disabled state. */
-export type NativeSelectOptionProps = React.ComponentPropsWithoutRef<"option">;
+export type NativeSelectOptionProps = React.ComponentPropsWithRef<"option">;
 
 /** Native optgroup attributes, including its required accessible label. */
-export type NativeSelectOptGroupProps = React.ComponentPropsWithoutRef<"optgroup">;
+export type NativeSelectOptGroupProps = React.ComponentPropsWithRef<"optgroup">;
 
 /**
  * Renders a styled native select with a decorative chevron.
@@ -28,7 +28,7 @@ export type NativeSelectOptGroupProps = React.ComponentPropsWithoutRef<"optgroup
  * No client context or hooks are required, so static usage is server-compatible.
  *
  * @param props - Native select attributes and optional logical size.
- * @param ref - Ref to the native HTML select, not the decorative wrapper.
+ * @param props.ref - React 19 ref to the native select, not the decorative wrapper.
  * @returns A native select and noninteractive chevron inside a sized wrapper.
  *
  * @example
@@ -39,34 +39,32 @@ export type NativeSelectOptGroupProps = React.ComponentPropsWithoutRef<"optgroup
  * </NativeSelect>
  * ```
  */
-const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
-  ({className, size = "default", ...props}: Readonly<NativeSelectProps>, ref): React.JSX.Element => (
-    <div
-      data-slot='native-select-wrapper'
+const NativeSelect = ({ref, className, size = "default", ...props}: Readonly<NativeSelectProps>): React.JSX.Element => (
+  <div
+    data-slot='native-select-wrapper'
+    data-size={size}
+    className={cn(styles.wrapper, className)}>
+    <select
+      {...props}
+      ref={ref}
+      data-slot='native-select'
       data-size={size}
-      className={cn(styles.wrapper, className)}>
-      <select
-        {...props}
-        ref={ref}
-        data-slot='native-select'
-        data-size={size}
-        className={styles.select}
-      />
-      <svg
-        data-slot='native-select-icon'
-        className={styles.icon}
-        aria-hidden='true'
-        focusable='false'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-        strokeLinejoin='round'>
-        <path d='m6 9 6 6 6-6' />
-      </svg>
-    </div>
-  ),
+      className={styles.select}
+    />
+    <svg
+      data-slot='native-select-icon'
+      className={styles.icon}
+      aria-hidden='true'
+      focusable='false'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'>
+      <path d='m6 9 6 6 6-6' />
+    </svg>
+  </div>
 );
 NativeSelect.displayName = "NativeSelect";
 
@@ -74,18 +72,16 @@ NativeSelect.displayName = "NativeSelect";
  * Renders an option using the platform's native selection and form semantics.
  *
  * @param props - Native option attributes and optional additional CSS classes.
- * @param ref - Ref to the underlying HTML option.
+ * @param props.ref - React 19 ref to the underlying HTML option.
  * @returns A native option styled with the system Canvas colors.
  */
-const NativeSelectOption = React.forwardRef<HTMLOptionElement, NativeSelectOptionProps>(
-  ({className, ...props}: Readonly<NativeSelectOptionProps>, ref): React.JSX.Element => (
-    <option
-      {...props}
-      ref={ref}
-      data-slot='native-select-option'
-      className={cn(styles.option, className)}
-    />
-  ),
+const NativeSelectOption = ({ref, className, ...props}: Readonly<NativeSelectOptionProps>): React.JSX.Element => (
+  <option
+    {...props}
+    ref={ref}
+    data-slot='native-select-option'
+    className={cn(styles.option, className)}
+  />
 );
 NativeSelectOption.displayName = "NativeSelectOption";
 
@@ -93,37 +89,37 @@ NativeSelectOption.displayName = "NativeSelectOption";
  * Groups native options under the caller's label.
  *
  * @param props - Native optgroup attributes, including label and disabled state.
- * @param ref - Ref to the underlying HTML optgroup.
+ * @param props.ref - React 19 ref to the underlying HTML optgroup.
  * @returns A native optgroup styled with the system Canvas colors.
  */
-const NativeSelectOptGroup = React.forwardRef<HTMLOptGroupElement, NativeSelectOptGroupProps>(
-  ({className, ...props}: Readonly<NativeSelectOptGroupProps>, ref): React.JSX.Element => (
-    <optgroup
-      {...props}
-      ref={ref}
-      data-slot='native-select-optgroup'
-      className={cn(styles.optGroup, className)}
-    />
-  ),
+const NativeSelectOptGroup = ({ref, className, ...props}: Readonly<NativeSelectOptGroupProps>): React.JSX.Element => (
+  <optgroup
+    {...props}
+    ref={ref}
+    data-slot='native-select-optgroup'
+    className={cn(styles.optGroup, className)}
+  />
 );
 NativeSelectOptGroup.displayName = "NativeSelectOptGroup";
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NativeSelect {
-  /** Native select props, excluding the forwarded ref. */
+  /** Native select props, including its React 19 ref. */
   export type Props = NativeSelectProps;
 }
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NativeSelectOption {
-  /** Native option props, excluding the forwarded ref. */
-  export type Props = React.ComponentPropsWithoutRef<"option">;
+  /** Native option props, including its React 19 ref. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserves the public NativeSelectOption.Props namespace alongside the named props export
+  export type Props = NativeSelectOptionProps;
 }
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NativeSelectOptGroup {
-  /** Native optgroup props, excluding the forwarded ref. */
-  export type Props = React.ComponentPropsWithoutRef<"optgroup">;
+  /** Native optgroup props, including its React 19 ref. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserves the public NativeSelectOptGroup.Props namespace alongside the named props export
+  export type Props = NativeSelectOptGroupProps;
 }
 
 export {NativeSelect, NativeSelectOptGroup, NativeSelectOption};

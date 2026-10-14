@@ -258,3 +258,11 @@ describe("ScrollArea", () => {
     expect(viewport.scrollTop).toBe(100);
   });
 });
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+it("refresh accessibility: authors 24px custom scroll targets and a contrasting thumb", () => {
+  const css = readFileSync(join(import.meta.dirname, "scroll-area.module.css"), "utf8");
+  expect(css).toMatch(/\.vertical\s*\{[^}]*width:\s*1\.5rem/u);
+  expect(css).toMatch(/\.horizontal\s*\{[^}]*height:\s*1\.5rem/u);
+  expect(css).toMatch(/\.thumb::before\s*\{[^}]*background-color:\s*var\(--ac-input\)/u);
+});

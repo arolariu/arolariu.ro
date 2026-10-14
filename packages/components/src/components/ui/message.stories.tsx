@@ -61,6 +61,7 @@ export const Default: Story = {
 export const CompleteConversation: Story = {
   render: (): React.JSX.Element => (
     <MessageGroup
+      role='group'
       className={storyClasses.storyStack}
       aria-label='Example conversation'>
       <Marker variant='separator'>
@@ -140,7 +141,7 @@ export const CallerOwnedEmptyAndError: Story = {
           </MessageFooter>
         </MessageContent>
       </Message>
-      <Message aria-label='Empty message shell'>
+      <Message>
         <MessageContent />
       </Message>
     </MessageGroup>

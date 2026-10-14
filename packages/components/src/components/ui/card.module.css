@@ -4,7 +4,6 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  overflow: hidden;
   border-radius: var(--ac-radius-lg);
   border: 1px solid var(--ac-border);
   background-color: var(--ac-card);
@@ -67,6 +66,7 @@
 
 .footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   min-width: 0;
   gap: var(--ac-space-2);

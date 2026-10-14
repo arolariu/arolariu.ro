@@ -4,6 +4,25 @@ import {describe, expect, it} from "vitest";
 import {Collapse} from "./Collapse";
 
 describe("Collapse", () => {
+  it("keeps collapsed content mounted without exposing its controls to assistive navigation", () => {
+    const {container, rerender} = render(
+      <Collapse open={false}>
+        <button type='button'>Panel action</button>
+      </Collapse>,
+    );
+
+    expect(screen.getByText("Panel action")).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Panel action"})).not.toBeInTheDocument();
+    expect(container.firstChild).toHaveAttribute("inert");
+    rerender(
+      <Collapse open>
+        <button type='button'>Panel action</button>
+      </Collapse>,
+    );
+    expect(screen.getByRole("button", {name: "Panel action"})).toBeInTheDocument();
+    expect(container.firstChild).not.toHaveAttribute("inert");
+  });
+
   it("renders children and forwards refs", () => {
     const ref = {current: null as HTMLDivElement | null};
 

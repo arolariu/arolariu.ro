@@ -93,7 +93,6 @@ export {
   // Recharts axis & grid
   CartesianGrid,
   // Recharts shapes
-  Cell,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
@@ -398,13 +397,11 @@ export {
 export {
   NavigationMenu,
   NavigationMenuContent,
-  NavigationMenuIndicator,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuPositioner,
   NavigationMenuTrigger,
-  NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "./components/ui/navigation-menu";
 
@@ -427,15 +424,7 @@ export {
   PaginationPrevious,
 } from "./components/ui/pagination";
 
-export {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "./components/ui/popover";
+export {Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./components/ui/popover";
 
 export {Progress, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue} from "./components/ui/progress";
 
@@ -598,15 +587,9 @@ export {useWindowSize} from "./hooks/useWindowSize";
 
 export {
   adjustHexColorLightness,
-  adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
   convertHslToHexString,
-  getComplementaryColor,
-  hexToHsl,
-  hslToHex,
-  isValidHexColor,
-  parseHslString,
   parseHslStringToComponents,
   validateHexColorFormat,
 } from "./lib/color-conversion-utilities";
@@ -646,17 +629,6 @@ export {
   DropDrawerSubTrigger,
   DropDrawerTrigger,
 } from "./components/ui/dropdrawer";
-
-// Explicit compatibility APIs; never silently substituted for canonical names.
-export {LegacyAlertDialogAction} from "./components/ui/legacy-alert-dialog-action";
-export type {LegacyAlertDialogActionProps} from "./components/ui/legacy-alert-dialog-action";
-export {LegacyCommandDialog} from "./components/ui/legacy-command-dialog";
-export type {LegacyCommandDialogProps} from "./components/ui/legacy-command-dialog";
-export {LegacyToaster, legacyToast} from "./components/ui/legacy-toast";
-export type {LegacyToastPosition, LegacyToastVariant, LegacyToastIdentifier, LegacyToastRenderable} from "./components/ui/legacy-toast";
-export type {LegacyToastPromise, LegacyToastAction, LegacyToastActionRenderable, LegacyToastSnapshot} from "./components/ui/legacy-toast";
-export type {LegacyToastOptions, LegacyToastPromiseResolvedOptions, LegacyToastPromiseState} from "./components/ui/legacy-toast";
-export type {LegacyToastPromiseOptions, LegacyToastUpdateOptions, LegacyToasterProps, LegacyToastApi} from "./components/ui/legacy-toast";
 
 export {NativeSelect, NativeSelectOptGroup, NativeSelectOption} from "./components/ui/native-select";
 export type {NativeSelectSize, NativeSelectProps, NativeSelectOptionProps, NativeSelectOptGroupProps} from "./components/ui/native-select";
@@ -712,15 +684,7 @@ export type {
 } from "./components/ui/message";
 
 // Namespace-free public types accompany the preserved Component.Props/State APIs.
-export type {
-  AccordionArrayProps,
-  AccordionSingleProps,
-  AccordionMultipleProps,
-  AccordionProps,
-  AccordionItemProps,
-  AccordionTriggerProps,
-  AccordionContentProps,
-} from "./components/ui/accordion";
+export type {AccordionProps, AccordionItemProps, AccordionTriggerProps, AccordionContentProps} from "./components/ui/accordion";
 export type {
   AlertDialogProps,
   AlertDialogTriggerProps,
@@ -813,7 +777,6 @@ export type {
 export type {FieldOrientation, FieldLegendVariant, FieldErrorItem, FieldSetProps, FieldLegendProps} from "./components/ui/field";
 export type {FieldGroupProps, FieldProps, FieldContentProps, FieldLabelProps, FieldTitleProps} from "./components/ui/field";
 export type {FieldDescriptionProps, FieldSeparatorProps, FieldErrorProps} from "./components/ui/field";
-export type {DeprecatedFlipDirection} from "./components/ui/flip-button";
 export type {
   FormProps,
   FormFieldProps,
@@ -862,8 +825,6 @@ export type {
   NavigationMenuContentProps,
   NavigationMenuLinkProps,
   NavigationMenuPositionerProps,
-  NavigationMenuViewportProps,
-  NavigationMenuIndicatorProps,
 } from "./components/ui/navigation-menu";
 export type {NumberFieldProps, NumberFieldState, NumberFieldGroupProps, NumberFieldGroupState} from "./components/ui/number-field";
 export type {NumberFieldInputProps, NumberFieldInputState, NumberFieldIncrementProps} from "./components/ui/number-field";
@@ -881,7 +842,6 @@ export type {
 export type {
   PopoverProps,
   PopoverTriggerProps,
-  PopoverAnchorProps,
   PopoverContentProps,
   PopoverHeaderProps,
   PopoverTitleProps,

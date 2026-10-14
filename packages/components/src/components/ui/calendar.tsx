@@ -34,6 +34,7 @@ interface CalendarContextValue {
 
 const CalendarContext = React.createContext<CalendarContextValue | null>(null);
 const defaultClassNames = getDefaultClassNames();
+const emptyClassNames: NonNullable<DayPickerProps["classNames"]> = {};
 
 function CalendarRoot({className, rootRef, ...props}: Readonly<CalendarRootProps>): React.JSX.Element {
   const context = React.useContext(CalendarContext);
@@ -141,98 +142,94 @@ function CalendarDayButtonAdapter(props: Readonly<DayButtonProps>): React.JSX.El
  *
  * @see {@link https://daypicker.dev | React Day Picker Docs}
  */
-const Calendar = React.forwardRef<HTMLDivElement, Calendar.Props>(
-  (
-    {
-      className,
-      classNames = {},
-      showOutsideDays = true,
-      captionLayout = "label",
-      buttonVariant = "ghost",
-      locale,
-      formatters,
-      components,
-      ...props
-    }: Readonly<Calendar.Props>,
-    forwardedRef,
-  ): React.JSX.Element => {
-    const RootComponent = components?.Root ?? Root;
-    const DayButtonComponent = components?.DayButton ?? CalendarDayButton;
-    // DayPicker's Nav uses physical chevrons; the "around" layout already handles RTL.
-    const flipNavigationChevron = props.dir === "rtl" && props.navLayout !== "around";
-    const context = React.useMemo(
-      () => ({forwardedRef, locale, RootComponent, flipNavigationChevron, DayButtonComponent}),
-      [forwardedRef, locale, RootComponent, flipNavigationChevron, DayButtonComponent],
-    );
-    return (
-      <CalendarContext.Provider value={context}>
-        <DayPicker
-          showOutsideDays={showOutsideDays}
-          className={cn(styles.container, className)}
-          captionLayout={captionLayout}
-          locale={locale}
-          formatters={{
-            formatMonthDropdown: (date) => date.toLocaleString(locale?.code, {month: "short"}),
-            ...formatters,
-          }}
-          classNames={{
-            ...defaultClassNames,
-            ...classNames,
-            root: cn(defaultClassNames.root, styles.root, classNames.root),
-            months: cn(defaultClassNames.months, styles.months, classNames.months),
-            month: cn(defaultClassNames.month, styles.month, classNames.month),
-            nav: cn(defaultClassNames.nav, styles.nav, classNames.nav),
-            button_previous: cn(
-              defaultClassNames.button_previous,
-              buttonVariants({variant: buttonVariant, size: "icon"}),
-              styles.navButton,
-              classNames.button_previous,
-            ),
-            button_next: cn(
-              defaultClassNames.button_next,
-              buttonVariants({variant: buttonVariant, size: "icon"}),
-              styles.navButton,
-              classNames.button_next,
-            ),
-            month_caption: cn(defaultClassNames.month_caption, styles.monthCaption, classNames.month_caption),
-            dropdowns: cn(defaultClassNames.dropdowns, styles.dropdowns, classNames.dropdowns),
-            dropdown_root: cn(defaultClassNames.dropdown_root, styles.dropdownRoot, classNames.dropdown_root),
-            dropdown: cn(defaultClassNames.dropdown, styles.dropdown, classNames.dropdown),
-            caption_label: cn(
-              defaultClassNames.caption_label,
-              styles.captionLabel,
-              captionLayout !== "label" && styles.captionLabelDropdown,
-              classNames.caption_label,
-            ),
-            month_grid: cn(defaultClassNames.month_grid, styles.monthGrid, classNames.month_grid),
-            weekdays: cn(defaultClassNames.weekdays, styles.weekdays, classNames.weekdays),
-            weekday: cn(defaultClassNames.weekday, styles.weekday, classNames.weekday),
-            week: cn(defaultClassNames.week, styles.week, classNames.week),
-            week_number_header: cn(defaultClassNames.week_number_header, styles.weekNumberHeader, classNames.week_number_header),
-            week_number: cn(defaultClassNames.week_number, styles.weekNumber, classNames.week_number),
-            day: cn(defaultClassNames.day, styles.day, classNames.day),
-            day_button: cn(defaultClassNames.day_button, classNames.day_button),
-            range_start: cn(defaultClassNames.range_start, styles.rangeStart, classNames.range_start),
-            range_middle: cn(defaultClassNames.range_middle, styles.rangeMiddle, classNames.range_middle),
-            range_end: cn(defaultClassNames.range_end, styles.rangeEnd, classNames.range_end),
-            today: cn(defaultClassNames.today, styles.today, classNames.today),
-            outside: cn(defaultClassNames.outside, styles.outside, classNames.outside),
-            disabled: cn(defaultClassNames.disabled, classNames.disabled),
-            hidden: cn(defaultClassNames.hidden, styles.hidden, classNames.hidden),
-          }}
-          components={{
-            Chevron: CalendarChevron,
-            WeekNumber: CalendarWeekNumber,
-            ...components,
-            Root: CalendarRoot,
-            DayButton: CalendarDayButtonAdapter,
-          }}
-          {...props}
-        />
-      </CalendarContext.Provider>
-    );
-  },
-);
+function Calendar({
+  ref: forwardedRef,
+  className,
+  classNames = emptyClassNames,
+  showOutsideDays = true,
+  captionLayout = "label",
+  buttonVariant = "ghost",
+  locale,
+  formatters,
+  components,
+  ...props
+}: Readonly<Calendar.Props>): React.JSX.Element {
+  const RootComponent = components?.Root ?? Root;
+  const DayButtonComponent = components?.DayButton ?? CalendarDayButton;
+  // DayPicker's Nav uses physical chevrons; the "around" layout already handles RTL.
+  const flipNavigationChevron = props.dir === "rtl" && props.navLayout !== "around";
+  const context = React.useMemo(
+    () => ({forwardedRef, locale, RootComponent, flipNavigationChevron, DayButtonComponent}),
+    [forwardedRef, locale, RootComponent, flipNavigationChevron, DayButtonComponent],
+  );
+  return (
+    <CalendarContext.Provider value={context}>
+      <DayPicker
+        showOutsideDays={showOutsideDays}
+        className={cn(styles.container, className)}
+        captionLayout={captionLayout}
+        locale={locale}
+        formatters={{
+          formatMonthDropdown: (date) => date.toLocaleString(locale?.code, {month: "short"}),
+          ...formatters,
+        }}
+        classNames={{
+          ...defaultClassNames,
+          ...classNames,
+          root: cn(defaultClassNames.root, styles.root, classNames.root),
+          months: cn(defaultClassNames.months, styles.months, classNames.months),
+          month: cn(defaultClassNames.month, styles.month, classNames.month),
+          nav: cn(defaultClassNames.nav, styles.nav, classNames.nav),
+          button_previous: cn(
+            defaultClassNames.button_previous,
+            buttonVariants({variant: buttonVariant, size: "icon"}),
+            styles.navButton,
+            classNames.button_previous,
+          ),
+          button_next: cn(
+            defaultClassNames.button_next,
+            buttonVariants({variant: buttonVariant, size: "icon"}),
+            styles.navButton,
+            classNames.button_next,
+          ),
+          month_caption: cn(defaultClassNames.month_caption, styles.monthCaption, classNames.month_caption),
+          dropdowns: cn(defaultClassNames.dropdowns, styles.dropdowns, classNames.dropdowns),
+          dropdown_root: cn(defaultClassNames.dropdown_root, styles.dropdownRoot, classNames.dropdown_root),
+          dropdown: cn(defaultClassNames.dropdown, styles.dropdown, classNames.dropdown),
+          caption_label: cn(
+            defaultClassNames.caption_label,
+            styles.captionLabel,
+            captionLayout !== "label" && styles.captionLabelDropdown,
+            classNames.caption_label,
+          ),
+          month_grid: cn(defaultClassNames.month_grid, styles.monthGrid, classNames.month_grid),
+          weekdays: cn(defaultClassNames.weekdays, styles.weekdays, classNames.weekdays),
+          weekday: cn(defaultClassNames.weekday, styles.weekday, classNames.weekday),
+          week: cn(defaultClassNames.week, styles.week, classNames.week),
+          week_number_header: cn(defaultClassNames.week_number_header, styles.weekNumberHeader, classNames.week_number_header),
+          week_number: cn(defaultClassNames.week_number, styles.weekNumber, classNames.week_number),
+          day: cn(defaultClassNames.day, styles.day, classNames.day),
+          day_button: cn(defaultClassNames.day_button, classNames.day_button),
+          range_start: cn(defaultClassNames.range_start, styles.rangeStart, classNames.range_start),
+          range_middle: cn(defaultClassNames.range_middle, styles.rangeMiddle, classNames.range_middle),
+          range_end: cn(defaultClassNames.range_end, styles.rangeEnd, classNames.range_end),
+          today: cn(defaultClassNames.today, styles.today, classNames.today),
+          outside: cn(defaultClassNames.outside, styles.outside, classNames.outside),
+          disabled: cn(defaultClassNames.disabled, classNames.disabled),
+          hidden: cn(defaultClassNames.hidden, styles.hidden, classNames.hidden),
+        }}
+        components={{
+          Chevron: CalendarChevron,
+          WeekNumber: CalendarWeekNumber,
+          ...components,
+          Root: CalendarRoot,
+          DayButton: CalendarDayButtonAdapter,
+        }}
+        {...props}
+      />
+    </CalendarContext.Provider>
+  );
+}
 
 function CalendarWeekNumber({week, children, ...tdProps}: Readonly<CalendarWeekNumberProps>): React.JSX.Element {
   return (
@@ -252,41 +249,49 @@ function CalendarWeekNumber({week, children, ...tdProps}: Readonly<CalendarWeekN
  * attributes expose day state without leaking `day`, `modifiers` or `locale`
  * to the DOM. Defaults to `type="button"` to avoid accidental form submission.
  */
-const CalendarDayButton = React.forwardRef<HTMLButtonElement, CalendarDayButton.Props>(
-  ({className, day, modifiers, locale, type = "button", ...props}: Readonly<CalendarDayButton.Props>, forwardedRef): React.JSX.Element => {
-    const context = React.useContext(CalendarContext);
-    const ref = React.useRef<HTMLButtonElement>(null);
-    const mergedRef = useMergedRefs(ref, forwardedRef);
-    const focused = Boolean(modifiers["focused"]);
+function CalendarDayButton({
+  ref: forwardedRef,
+  className,
+  day,
+  modifiers,
+  locale,
+  "aria-label": ariaLabel,
+  type = "button",
+  ...props
+}: Readonly<CalendarDayButton.Props>): React.JSX.Element {
+  const context = React.useContext(CalendarContext);
+  const ref = React.useRef<HTMLButtonElement>(null);
+  const mergedRef = useMergedRefs(ref, forwardedRef);
+  const focused = Boolean(modifiers["focused"]);
 
-    React.useEffect(() => {
-      if (focused) ref.current?.focus();
-    }, [focused]);
+  React.useEffect(() => {
+    if (focused) ref.current?.focus();
+  }, [focused]);
 
-    return (
-      <Button
-        ref={mergedRef}
-        variant='ghost'
-        size='icon'
-        type={type}
-        data-slot='calendar-day-button'
-        data-day={day.date.toLocaleDateString((locale ?? context?.locale)?.code)}
-        data-selected={Boolean(modifiers["selected"])}
-        data-selected-single={Boolean(
-          modifiers["selected"] && !modifiers["range_start"] && !modifiers["range_end"] && !modifiers["range_middle"],
-        )}
-        data-range-start={Boolean(modifiers["range_start"])}
-        data-range-end={Boolean(modifiers["range_end"])}
-        data-range-middle={Boolean(modifiers["range_middle"])}
-        data-focused={focused}
-        data-outside={Boolean(modifiers["outside"])}
-        data-today={Boolean(modifiers["today"])}
-        className={cn(defaultClassNames.day_button, styles.dayButton, className)}
-        {...props}
-      />
-    );
-  },
-);
+  return (
+    <Button
+      ref={mergedRef}
+      variant='ghost'
+      size='icon'
+      aria-label={ariaLabel ?? day.date.toLocaleDateString((locale ?? context?.locale)?.code, {dateStyle: "full"})}
+      type={type}
+      data-slot='calendar-day-button'
+      data-day={day.date.toLocaleDateString((locale ?? context?.locale)?.code)}
+      data-selected={Boolean(modifiers["selected"])}
+      data-selected-single={Boolean(
+        modifiers["selected"] && !modifiers["range_start"] && !modifiers["range_end"] && !modifiers["range_middle"],
+      )}
+      data-range-start={Boolean(modifiers["range_start"])}
+      data-range-end={Boolean(modifiers["range_end"])}
+      data-range-middle={Boolean(modifiers["range_middle"])}
+      data-focused={focused}
+      data-outside={Boolean(modifiers["outside"])}
+      data-today={Boolean(modifiers["today"])}
+      className={cn(defaultClassNames.day_button, styles.dayButton, className)}
+      {...props}
+    />
+  );
+}
 
 Calendar.displayName = "Calendar";
 CalendarDayButton.displayName = "CalendarDayButton";

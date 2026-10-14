@@ -1,16 +1,95 @@
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {Features, transform} from "lightningcss";
+import postcss from "postcss";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {CopyButton} from "./copy-button";
+import styles from "./copy-button.module.css";
+
+/** Compile actual CSS Modules/nesting, then bind emitted class identities to this test renderer's module map. */
+function emittedCopyStyles(): postcss.Root {
+  const output = transform({
+    filename: "copy-button.module.css",
+    code: Buffer.from(readFileSync(join(import.meta.dirname, "copy-button.module.css"), "utf8")),
+    cssModules: true,
+    include: Features.Nesting,
+  });
+  let css = output.code.toString();
+  if (!output.exports) throw new Error("Expected compiled CSS Module exports");
+  for (const [local, exported] of Object.entries(output.exports)) {
+    if (styles[local]) css = css.replaceAll(`.${exported.name}`, `.${styles[local]}`);
+  }
+  return postcss.parse(css);
+}
+
+function copyDeclarations(css: postcss.Root, element: Element, condition?: string): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  css.walkRules((rule) => {
+    const media = rule.parent?.type === "atrule" && rule.parent.name === "media" ? rule.parent.params : undefined;
+    if (media?.replaceAll(/\s/gu, "") !== condition?.replaceAll(/\s/gu, "")) return;
+    if (!rule.selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => {
+      declarations[declaration.prop] = declaration.value;
+    });
+  });
+  return declarations;
+}
 
 describe("CopyButton", () => {
+  it("emits status selectors that match the real sibling live region", () => {
+    const {container} = render(<CopyButton value='Text' />);
+    const button = screen.getByRole("button");
+    const status = screen.getByRole("status");
+    expect(container.children).toHaveLength(2);
+    expect(button.nextElementSibling).toBe(status);
+    const declarations = copyDeclarations(emittedCopyStyles(), status);
+    expect(declarations["position"]).toBe("absolute");
+    expect(declarations["width"]).toBe("1px");
+    expect(declarations["height"]).toBe("1px");
+    expect(declarations["overflow"]).toBe("hidden");
+    expect(declarations["clip-path"]).toBe("inset(50%)");
+  });
+
+  it("emits reduced-motion and forced-color selectors that match the actual button", () => {
+    render(<CopyButton value='Text' />);
+    const button = screen.getByRole("button");
+    const css = emittedCopyStyles();
+    expect(copyDeclarations(css, button, "(prefers-reduced-motion: reduce)")["transition"]).toBe("none");
+    const forced = copyDeclarations(css, button, "(forced-colors: active)");
+    expect(forced["color"]?.toLowerCase()).toBe("buttontext");
+    expect(forced["border-color"]?.toLowerCase()).toBe("buttontext");
+    expect(forced["background"]?.toLowerCase() ?? forced["background-color"]?.toLowerCase()).toBe("buttonface");
+    act(() => button.focus());
+    expect(copyDeclarations(css, button, "(forced-colors: active)")["outline-color"]?.toLowerCase()).toBe("highlight");
+  });
+
+  it("announces localized async success and failure without relying on a changing button name", async () => {
+    const user = userEvent.setup();
+    const write = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    render(
+      <CopyButton
+        value='value'
+        copiedLabel='Copié'
+        errorLabel='Échec'
+      />,
+    );
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    await user.click(screen.getByRole("button"));
+    expect(screen.getByRole("status")).toHaveTextContent("Copié");
+    write.mockRejectedValueOnce(new Error("Denied"));
+    await user.click(screen.getByRole("button"));
+    expect(screen.getByRole("status")).toHaveTextContent("Échec");
+  });
+
   const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
   beforeEach(() => {
     Object.defineProperty(navigator, "clipboard", {
       value: {
-        writeText: async () => undefined,
+        writeText: async (): Promise<void> => undefined,
       },
       writable: true,
       configurable: true,

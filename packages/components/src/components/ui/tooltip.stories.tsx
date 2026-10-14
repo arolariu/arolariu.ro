@@ -100,7 +100,7 @@ export const Right: Story = {
 export const WithDelay: Story = {
   render: (): React.JSX.Element => (
     <TooltipProvider
-      delayDuration={1000}
+      delay={1000}
       timeout={400}>
       <div className={storyClasses.storyGroup}>
         <Tooltip>
@@ -135,12 +135,16 @@ export const WithRichContent: Story = {
   ),
 };
 
-/** A root-local legacy delay is supplied to Trigger, not unsupported Root.delay. */
-export const LegacyRootDelay: Story = {
+/** A native Trigger delay overrides the Provider's delay. */
+export const TriggerDelay: Story = {
   render: (): React.JSX.Element => (
     <TooltipProvider delay={1000}>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger render={<Button />}>Immediate legacy root override</TooltipTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          delay={0}
+          render={<Button />}>
+          Immediate trigger override
+        </TooltipTrigger>
         <TooltipContent showArrow={false}>No default arrow; zero-delay trigger contract.</TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -152,8 +156,9 @@ export const AccessibleDescription: Story = {
   render: (): React.JSX.Element => (
     <div className={storyClasses.storyGroup}>
       <span id='tooltip-existing-hint'>An existing description remains associated.</span>
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger
+          delay={0}
           aria-describedby='tooltip-existing-hint'
           render={<Button variant='outline' />}>
           Hover or focus for an additional description

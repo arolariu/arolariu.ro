@@ -56,6 +56,57 @@ let mobileQuery: MediaQueryList;
 const stylesheetFixtures: HTMLStyleElement[] = [];
 
 describe("Sidebar primitive-owned class callbacks", () => {
+  it("refresh accessibility: exposes toggle state and a keyboard-reachable Rail", async () => {
+    const user = userEvent.setup();
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRail />
+      </SidebarProvider>,
+    );
+    const [trigger, rail] = screen.getAllByRole("button", {name: "Toggle Sidebar"});
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(rail).toHaveAttribute("aria-expanded", "true");
+    expect(rail?.tabIndex).toBe(0);
+    await user.click(trigger!);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(rail).toHaveAttribute("aria-expanded", "false");
+    await user.tab();
+    expect(rail).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("refresh accessibility: localizes the mobile panel title and description", async () => {
+    changeMobile(true);
+    render(
+      <SidebarProvider>
+        <Sidebar
+          mobileTitle='Navigation principale'
+          mobileDescription='Choisissez une destination.'>
+          <SidebarMenuButton>Accueil</SidebarMenuButton>
+        </Sidebar>
+        <SidebarTrigger aria-label='Ouvrir la navigation' />
+      </SidebarProvider>,
+    );
+    await userEvent.setup().click(screen.getByRole("button", {name: "Ouvrir la navigation"}));
+    expect(await screen.findByRole("dialog", {name: "Navigation principale"})).toHaveAccessibleDescription("Choisissez une destination.");
+  });
+
+  it("refresh accessibility: authors minimum control targets and hides offcanvas content without hiding the Rail", () => {
+    expect(stylesheet).toMatch(/\.groupAction\s*\{[^}]*width:\s*1\.5rem/u);
+    expect(stylesheet).toMatch(/\.menuAction\s*\{[^}]*width:\s*1\.5rem/u);
+    expect(stylesheet).toMatch(/\.rail\s*\{[^}]*width:\s*1\.5rem/u);
+    expect(stylesheet).toMatch(/\.desktopRoot\[data-collapsible="offcanvas"\]\s+\.panelWrap\s*\{[^}]*visibility:\s*hidden/u);
+    expect(stylesheet).toMatch(/\.rail\s*\{[^}]*visibility:\s*visible/u);
+    expect(stylesheet).toMatch(
+      /\.desktopRoot\[data-collapsible="offcanvas"\]\[data-side="left"\]\s+\.rail\s*\{[^}]*inset-inline-end:\s*-1\.5rem/u,
+    );
+    expect(stylesheet).toMatch(
+      /\.desktopRoot\[data-collapsible="offcanvas"\]\[data-side="right"\]\s+\.rail\s*\{[^}]*inset-inline-start:\s*-1\.5rem/u,
+    );
+  });
+
   it("resolves Input classes using the actual focused and invalid Field state", async () => {
     const user = userEvent.setup();
     const states: Array<{focused: boolean; disabled: boolean}> = [];
@@ -149,40 +200,37 @@ function DirectionProbe(): React.JSX.Element {
   return <output data-testid='direction'>{useDirection()}</output>;
 }
 
-const ReviewAnchor = React.forwardRef<
-  HTMLAnchorElement,
-  Readonly<React.ComponentPropsWithoutRef<"a"> & {childRef?: React.Ref<HTMLAnchorElement>}>
->(({childRef, ...props}, ref): React.JSX.Element => {
+const ReviewAnchor = ({
+  ref,
+  childRef,
+  ...props
+}: Readonly<React.ComponentPropsWithRef<"a"> & {childRef?: React.Ref<HTMLAnchorElement>}>): React.JSX.Element => {
   const id = React.useId();
   return useRender<Record<string, never>, HTMLAnchorElement>({
     defaultTagName: "a",
     ref: childRef ? [ref, childRef] : ref,
     props: {...props, id: props.id ?? id},
   });
-});
+};
 ReviewAnchor.displayName = "ReviewAnchor";
 
-const ReviewNonAnchor = React.forwardRef<HTMLDivElement, Readonly<React.ComponentPropsWithoutRef<"div">>>(
-  (props, ref): React.JSX.Element => {
-    const id = React.useId();
-    return (
-      <div
-        {...props}
-        id={props.id ?? id}
-        ref={ref}
-      />
-    );
-  },
-);
-ReviewNonAnchor.displayName = "ReviewNonAnchor";
-
-const ReviewNativeButton = React.forwardRef<HTMLButtonElement, Readonly<React.ComponentPropsWithoutRef<"button">>>(
-  (props, ref): React.JSX.Element => (
-    <button
+const ReviewNonAnchor = ({ref, ...props}: Readonly<React.ComponentPropsWithRef<"div">>): React.JSX.Element => {
+  const id = React.useId();
+  return (
+    <div
       {...props}
+      id={props.id ?? id}
       ref={ref}
     />
-  ),
+  );
+};
+ReviewNonAnchor.displayName = "ReviewNonAnchor";
+
+const ReviewNativeButton = ({ref, ...props}: Readonly<React.ComponentPropsWithRef<"button">>): React.JSX.Element => (
+  <button
+    {...props}
+    ref={ref}
+  />
 );
 ReviewNativeButton.displayName = "ReviewNativeButton";
 
@@ -201,10 +249,9 @@ function renderNavigation(props: Readonly<React.ComponentProps<typeof SidebarPro
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                asChild
-                tooltip='Home details'>
-                <a href='#home'>Home</a>
-              </SidebarMenuButton>
+                tooltip='Home details'
+                render={<a href='#home'>Home</a>}
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
@@ -227,9 +274,7 @@ describe("Sidebar original-child composition", () => {
       <SidebarProvider>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href='#home'>Home</a>
-            </SidebarMenuButton>
+            <SidebarMenuButton render={<a href='#home'>Home</a>} />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarProvider>,
@@ -253,19 +298,20 @@ describe("Sidebar original-child composition", () => {
     render(
       <SidebarProvider>
         <Part
-          asChild
           ref={outerRef}
           className='outer-class'
-          onClick={() => events.push("outer")}>
-          <a
-            ref={childRef}
-            href='#original'
-            className='child-class'
-            aria-label='Original anchor'
-            onClick={() => events.push("child")}>
-            <span>Original content</span>
-          </a>
-        </Part>
+          onClick={() => events.push("outer")}
+          render={
+            <a
+              ref={childRef}
+              href='#original'
+              className='child-class'
+              aria-label='Original anchor'
+              onClick={() => events.push("child")}>
+              <span>Original content</span>
+            </a>
+          }
+        />
       </SidebarProvider>,
     );
     const link = screen.getByRole("link", {name: "Original anchor"});
@@ -323,13 +369,14 @@ describe("Sidebar original-child composition", () => {
       <SidebarProvider>
         <Part
           ref={wrapperRef}
-          asChild>
-          <a
-            ref={childRef}
-            href='#cleanup'>
-            Ref cleanup
-          </a>
-        </Part>
+          render={
+            <a
+              ref={childRef}
+              href='#cleanup'>
+              Ref cleanup
+            </a>
+          }
+        />
       </SidebarProvider>,
     );
     const link = screen.getByRole("link", {name: "Ref cleanup"});
@@ -346,10 +393,9 @@ describe("Sidebar original-child composition", () => {
     render(
       <SidebarProvider>
         <Part
-          asChild
-          onClick={wrapper}>
-          <SidebarMenuButton onClick={(event) => event.preventBaseUIHandler()}>Cancel composition</SidebarMenuButton>
-        </Part>
+          onClick={wrapper}
+          render={<SidebarMenuButton onClick={(event) => event.preventBaseUIHandler()}>Cancel composition</SidebarMenuButton>}
+        />
       </SidebarProvider>,
     );
     await user.click(screen.getByRole("button", {name: "Cancel composition"}));
@@ -366,7 +412,6 @@ describe("Sidebar original-child composition", () => {
         <SidebarProvider>
           <Part
             ref={ref}
-            asChild
             onClick={onClick}
             data-testid='fallback'>
             Text content
@@ -382,7 +427,6 @@ describe("Sidebar original-child composition", () => {
         <SidebarProvider>
           <Part
             ref={ref}
-            asChild
             onClick={onClick}
             data-testid='fallback'>
             <>Fragment content</>
@@ -468,17 +512,18 @@ describe("Sidebar original-child composition", () => {
         <SidebarProvider>
           <Part
             disabled
-            asChild>
-            <a
-              href='#blocked'
-              onClick={click}
-              onPointerDown={press}
-              onMouseDown={press}
-              onKeyDown={press}
-              onKeyUp={press}>
-              Blocked navigation
-            </a>
-          </Part>
+            render={
+              <a
+                href='#blocked'
+                onClick={click}
+                onPointerDown={press}
+                onMouseDown={press}
+                onKeyDown={press}
+                onKeyUp={press}>
+                Blocked navigation
+              </a>
+            }
+          />
         </SidebarProvider>,
       );
       const link = screen.getByRole("link", {name: "Blocked navigation"});
@@ -501,10 +546,9 @@ describe("Sidebar original-child composition", () => {
       render(
         <SidebarProvider>
           <Part
-            asChild
-            onClick={click}>
-            <div>Generic action</div>
-          </Part>
+            onClick={click}
+            render={<div>Generic action</div>}
+          />
         </SidebarProvider>,
       );
       const control = screen.getByRole("button", {name: "Generic action"});
@@ -523,11 +567,10 @@ describe("Sidebar original-child composition", () => {
       render(
         <SidebarProvider>
           <Part
-            asChild
             onClick={click}
-            onKeyDown={(event) => event.preventDefault()}>
-            <div>Cancel keyboard action</div>
-          </Part>
+            onKeyDown={(event) => event.preventDefault()}
+            render={<div>Cancel keyboard action</div>}
+          />
         </SidebarProvider>,
       );
       await user.tab();
@@ -543,13 +586,15 @@ describe("Sidebar original-child composition", () => {
       const click = vi.fn();
       render(
         <SidebarProvider>
-          <Part asChild>
-            <a
-              href='#navigation'
-              onClick={click}>
-              Native navigation
-            </a>
-          </Part>
+          <Part
+            render={
+              <a
+                href='#navigation'
+                onClick={click}>
+                Native navigation
+              </a>
+            }
+          />
         </SidebarProvider>,
       );
       await user.tab();
@@ -653,11 +698,10 @@ describe("Sidebar review: resolved navigation and action targets", () => {
             <Part
               ref={wrapperRef}
               disabled={disabled}
-              asChild
               nativeButton={kind === "opaque child" ? false : undefined}
-              onClick={wrapperClick}>
-              {kind === "empty intrinsic" ? intrinsic : opaque}
-            </Part>
+              onClick={wrapperClick}
+              render={kind === "empty intrinsic" ? intrinsic : opaque}
+            />
           ) : kind === "opaque render" ? (
             <Part
               ref={wrapperRef}
@@ -1392,9 +1436,8 @@ describe("Sidebar real Tooltip and portaled action composition", () => {
         <Sidebar collapsible='icon'>
           <SidebarMenuButton
             tooltip={{children: "Home details"}}
-            asChild>
-            <a href='#tooltip'>Home</a>
-          </SidebarMenuButton>
+            render={<a href='#tooltip'>Home</a>}
+          />
         </Sidebar>
       </SidebarProvider>,
     );

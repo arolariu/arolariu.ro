@@ -84,8 +84,153 @@ describe("canonical Toast", () => {
         promise: expect.any(Function),
       }),
     );
-    expect(Toast).toHaveProperty("$$typeof", Symbol.for("react.forward_ref"));
-    expect(Toaster).toHaveProperty("$$typeof", Symbol.for("react.forward_ref"));
+    expect(typeof Toast).toBe("function");
+    expect(typeof Toaster).toBe("function");
+  });
+
+  it("React 19 refresh: keeps notifications available until dismissed by default", () => {
+    vi.useFakeTimers();
+    const manager = createToastManager<{source: string}>();
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <Toaster
+        ref={ref}
+        toastManager={manager}
+        closeLabel='Fermer la notification'
+      />,
+    );
+    act(() => {
+      manager.add({title: "Read at your own pace", data: {source: "test"}});
+    });
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByText("Read at your own pace")).toBeInTheDocument();
+    expect(screen.getByText("Read at your own pace").closest("[data-slot=toast]")).not.toHaveAttribute("data-ending-style");
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Fermer la notification"})).toBeInTheDocument();
+    expect(ref.current).toBe(screen.getByLabelText("Notifications"));
+    expect(typeof Toast).toBe("function");
+    expect(typeof Toaster).toBe("function");
+  });
+
+  it("React 19 refresh: lets visible close content own its accessible name", () => {
+    const manager = createToastManager();
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}>
+              <ToastTitle />
+              <ToastClose>Dismiss notice</ToastClose>
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Saved"});
+    });
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Dismiss notice"})).toBeInTheDocument();
+  });
+
+  it("React 19 refresh: preserves the visible name of a custom close render target", () => {
+    const manager = createToastManager();
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}>
+              <ToastTitle />
+              <ToastClose render={<button type='button'>Fermer</button>} />
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider toastManager={manager}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Saved"});
+    });
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Fermer"})).toBeInTheDocument();
+  });
+
+  it.each(["hover", "focus"] as const)("preserves SDK timer pause and remaining time on %s", (interaction) => {
+    vi.useFakeTimers();
+    const manager = createToastManager();
+    const onClose = vi.fn();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={1000}
+      />,
+    );
+    act(() => {
+      manager.add({title: "Timed notification", onClose});
+    });
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+    const viewport = screen.getByLabelText("Notifications");
+    if (interaction === "hover") fireEvent.mouseEnter(viewport);
+    else fireEvent.focusIn(viewport);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    if (interaction === "hover") fireEvent.mouseLeave(viewport);
+    else fireEvent.focusOut(viewport, {relatedTarget: document.body});
+    act(() => {
+      vi.advanceTimersByTime(749);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("merges Toaster and viewport React 19 refs and disposes both without null callbacks", () => {
+    const disposed = [vi.fn(), vi.fn()];
+    const attached: HTMLDivElement[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node) attached.push(node);
+      else throw new Error("React 19 disposer must own detach");
+      return disposed[0];
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node) attached.push(node);
+      else throw new Error("React 19 disposer must own detach");
+      return disposed[1];
+    };
+    const {unmount} = render(
+      <Toaster
+        ref={first}
+        viewportProps={{ref: second}}
+      />,
+    );
+    expect(attached).toEqual([screen.getByLabelText("Notifications"), screen.getByLabelText("Notifications")]);
+    unmount();
+    for (const dispose of disposed) expect(dispose).toHaveBeenCalledOnce();
   });
 
   it("renders compound parts, valid zero content, manager action props and default close", async () => {
@@ -140,6 +285,67 @@ describe("canonical Toast", () => {
       first.close();
     });
     expect(within(screen.getByLabelText("Second")).getByText("Two")).toBeInTheDocument();
+  });
+
+  it("keeps default action render-template props and handlers isolated across typed providers and updates", async () => {
+    const user = userEvent.setup();
+    const first = createToastManager<{owner: "first"}>();
+    const second = createToastManager<{owner: "second"}>();
+    const firstAction = vi.fn();
+    const secondAction = vi.fn();
+    const updatedFirstAction = vi.fn();
+    render(
+      <>
+        <Toaster
+          toastManager={first}
+          viewportProps={{"aria-label": "First actions"}}
+        />
+        <Toaster
+          toastManager={second}
+          viewportProps={{"aria-label": "Second actions"}}
+        />
+      </>,
+    );
+    act(() => {
+      first.add({
+        id: "first-action",
+        title: "First notice",
+        data: {owner: "first"},
+        actionProps: {children: "Undo first", onClick: firstAction},
+      });
+      second.add({
+        id: "second-action",
+        title: "Second notice",
+        data: {owner: "second"},
+        actionProps: {children: "Undo second", onClick: secondAction},
+      });
+    });
+    const firstViewport = screen.getByLabelText("First actions");
+    const secondViewport = screen.getByLabelText("Second actions");
+    fireEvent.focusIn(firstViewport);
+    fireEvent.focusIn(secondViewport);
+    const firstButton = within(firstViewport).getByRole("button", {name: "Undo first"});
+    const secondButton = within(secondViewport).getByRole("button", {name: "Undo second"});
+    expect(firstButton).not.toBe(secondButton);
+    for (const button of [firstButton, secondButton]) {
+      expect(button).toHaveAttribute("type", "button");
+      expect(button).toHaveAttribute("data-variant", "outline");
+      expect(button).toHaveAttribute("data-size", "sm");
+    }
+    await user.click(firstButton);
+    expect(firstAction).toHaveBeenCalledOnce();
+    expect(secondAction).not.toHaveBeenCalled();
+    act(() => {
+      first.update("first-action", {actionProps: {children: "Restore first", onClick: updatedFirstAction}});
+    });
+    fireEvent.focusIn(firstViewport);
+    await user.click(within(firstViewport).getByRole("button", {name: "Restore first"}));
+    expect(updatedFirstAction).toHaveBeenCalledOnce();
+    expect(firstAction).toHaveBeenCalledOnce();
+    fireEvent.focusIn(secondViewport);
+    await user.click(within(secondViewport).getByRole("button", {name: "Undo second"}));
+    expect(secondAction).toHaveBeenCalledOnce();
+    expect(within(secondViewport).queryByText("Restore first")).not.toBeInTheDocument();
   });
 
   it("emits actual limited/behind/expanded data attributes and uses matching CSS contracts", () => {

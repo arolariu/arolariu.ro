@@ -50,16 +50,16 @@ export type FormFieldProps<
 > = Readonly<ControllerProps<TFieldValues, TName, TTransformedValues>>;
 
 /** Native item props; an explicit ID is also the item metadata's base ID. */
-export type FormItemProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type FormItemProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /** Native label props from the reviewed shared Label contract. */
 export type FormLabelProps = Label.Props;
 
 /** Native helper-text props; explicit IDs are registered only while mounted. */
-export type FormDescriptionProps = Readonly<React.ComponentPropsWithoutRef<"p">>;
+export type FormDescriptionProps = Readonly<React.ComponentPropsWithRef<"p">>;
 
 /** Native inline-message props; no automatic alert/live region is introduced. */
-export type FormMessageProps = Readonly<React.ComponentPropsWithoutRef<"p">>;
+export type FormMessageProps = Readonly<React.ComponentPropsWithRef<"p">>;
 
 /**
  * Provides the `react-hook-form` context to nested form primitives.
@@ -93,6 +93,8 @@ type FormControlElementProps = Omit<React.HTMLAttributes<HTMLElement>, "classNam
  */
 export type FormControlProps<TElement extends HTMLElement = HTMLInputElement> = Readonly<
   Omit<React.HTMLAttributes<TElement>, "children"> & {
+    /** React 19 ref to the actual composed control. */
+    ref?: React.Ref<TElement>;
     /**
      * Single form control element or fallback content to receive field accessibility attributes.
      * @default undefined
@@ -101,22 +103,8 @@ export type FormControlProps<TElement extends HTMLElement = HTMLInputElement> = 
   }
 >;
 
-function isControlRef(value: unknown): value is React.Ref<HTMLElement> {
-  return value === null || typeof value === "function" || (typeof value === "object" && "current" in value);
-}
-
 function controlRef(child: React.ReactElement<FormControlElementProps> | null): React.Ref<HTMLElement> | undefined {
-  if (!child) return undefined;
-  // React18 stores ref on the element; React19 stores it in props. Neither
-  // version's development warning getter is a data property we should invoke.
-  for (const source of [child.props, child]) {
-    const descriptor = Object.getOwnPropertyDescriptor(source, "ref");
-    if (descriptor && "value" in descriptor) {
-      const {value}: Readonly<{value?: unknown}> = descriptor;
-      return isControlRef(value) ? value : undefined;
-    }
-  }
-  return undefined;
+  return child?.props.ref;
 }
 
 function unlessCancelled<TEvent extends React.SyntheticEvent>(
@@ -478,7 +466,7 @@ const useFormField = (): UseFormFieldReturn => {
  *
  * @see {@link https://react-hook-form.com/docs/useformcontext | React Hook Form Docs}
  */
-const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(({className, id: providedId, ...props}: FormItemProps, ref) => {
+const FormItem = ({ref, className, id: providedId, ...props}: Readonly<FormItemProps>): React.JSX.Element => {
   const generatedId = React.useId();
   const id = providedId?.trim() || generatedId;
   const [metadata, setMetadata] = React.useState<ReadonlyMap<string, MountedMetadata>>(() => new Map());
@@ -507,7 +495,7 @@ const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(({className, id
       />
     </FormItemContext.Provider>
   );
-});
+};
 FormItem.displayName = "FormItem";
 
 /**
@@ -524,7 +512,7 @@ FormItem.displayName = "FormItem";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/label | HTML label element}
  */
-const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(({className, htmlFor, ...props}: FormLabelProps, ref) => {
+const FormLabel = ({ref, className, htmlFor, ...props}: Readonly<FormLabelProps>): React.JSX.Element => {
   const {error, formItemId} = useFormField();
   useMountedMetadata("label", htmlFor?.trim() || undefined);
 
@@ -537,15 +525,10 @@ const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(({className
       htmlFor={formItemId}
     />
   );
-});
+};
 FormLabel.displayName = "FormLabel";
 
-type FormControlComponent = {
-  <TElement extends HTMLElement = HTMLInputElement>(props: FormControlProps<TElement> & React.RefAttributes<TElement>): React.ReactNode;
-  displayName?: string;
-};
-
-type FormControlTarget = React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLElement> & React.RefAttributes<HTMLElement>>;
+type FormControlTarget = React.ComponentType<React.HTMLAttributes<HTMLElement> & {ref?: React.Ref<HTMLElement>}>;
 
 /**
  * Provides react-hook-form field metadata to a single control element.
@@ -558,7 +541,7 @@ type FormControlTarget = React.ForwardRefExoticComponent<React.HTMLAttributes<HT
  * field.onChange in the child's own handler. Base UI cancellation is also honored.
  *
  * Classes, native props, child content, and callback/object refs (including React
- * cleanup returns) are preserved on React18/19; the merged ref itself returns void.
+ * cleanup returns) are preserved using React 19 ref props and the shared ref hook.
  * Input render/class callbacks stay primitive-owned.
  * Wrapper ID overrides child ID; either retargets FormLabel. A label-only htmlFor
  * becomes the control ID. Generated description/message IDs are linked only while
@@ -566,44 +549,49 @@ type FormControlTarget = React.ForwardRefExoticComponent<React.HTMLAttributes<HT
  * Blank explicit IDs fall back to generated IDs. Non-element/fragment content
  * retains the legacy div fallback; use `FormControl<HTMLDivElement>` for that target.
  */
-const FormControl: FormControlComponent = React.forwardRef<HTMLElement, FormControlProps<HTMLElement>>(
-  ({children, className, id, ...props}: FormControlProps<HTMLElement>, ref): React.JSX.Element => {
-    const {invalid, descriptionIds, messageIds, formItemId} = useFormField();
-    const child = React.isValidElement<FormControlElementProps>(children) && children.type !== React.Fragment ? children : null;
-    const explicitId = id?.trim() || child?.props.id?.trim() || undefined;
-    useMountedMetadata("control", explicitId);
-    const mergedRef = useMergedRefs(ref, controlRef(child));
-    const describedBy = mergeAriaDescribedBy(child?.props["aria-describedby"], props["aria-describedby"], ...descriptionIds, ...messageIds);
-    const ariaInvalid = invalid ? true : (props["aria-invalid"] ?? child?.props["aria-invalid"] ?? false);
+const FormControl = <TElement extends HTMLElement = HTMLInputElement>({
+  ref,
+  children,
+  className,
+  id,
+  ...props
+}: Readonly<FormControlProps<TElement>>): React.JSX.Element => {
+  const {invalid, descriptionIds, messageIds, formItemId} = useFormField();
+  const child = React.isValidElement<FormControlElementProps>(children) && children.type !== React.Fragment ? children : null;
+  const explicitId = id?.trim() || child?.props.id?.trim() || undefined;
+  useMountedMetadata("control", explicitId);
+  const mergedRef = useMergedRefs<HTMLElement>(ref, controlRef(child));
+  const describedBy = mergeAriaDescribedBy(child?.props["aria-describedby"], props["aria-describedby"], ...descriptionIds, ...messageIds);
+  const ariaInvalid = invalid ? true : (props["aria-invalid"] ?? child?.props["aria-invalid"] ?? false);
+  const nativeProps: React.HTMLAttributes<HTMLElement> = props;
 
-    if (child) {
-      const {className: childClassName, ...childProps} = child.props;
-      const mergedProps = mergeProps<FormControlTarget>(cancellableObservers(props), childProps);
-      // eslint-disable-next-line react-x/no-clone-element -- legacy direct-child control API; explicit typed prop/event/ref composition
-      return React.cloneElement(child, {
-        ...mergedProps,
-        className: typeof childClassName === "function" ? (state) => cn(childClassName(state), className) : cn(childClassName, className),
-        ref: mergedRef,
-        id: explicitId ?? formItemId,
-        "aria-describedby": describedBy,
-        "aria-labelledby": mergeAriaDescribedBy(child.props["aria-labelledby"], props["aria-labelledby"]),
-        "aria-invalid": ariaInvalid,
-      });
-    }
+  if (child) {
+    const {className: childClassName, ...childProps} = child.props;
+    const mergedProps = mergeProps<FormControlTarget>(cancellableObservers(props), childProps);
+    // eslint-disable-next-line react-x/no-clone-element -- legacy direct-child control API; explicit typed prop/event/ref composition
+    return React.cloneElement(child, {
+      ...mergedProps,
+      className: typeof childClassName === "function" ? (state) => cn(childClassName(state), className) : cn(childClassName, className),
+      ref: mergedRef,
+      id: explicitId ?? formItemId,
+      "aria-describedby": describedBy,
+      "aria-labelledby": mergeAriaDescribedBy(child.props["aria-labelledby"], props["aria-labelledby"]),
+      "aria-invalid": ariaInvalid,
+    });
+  }
 
-    return (
-      <div
-        {...props}
-        ref={mergedRef}
-        className={className}
-        id={explicitId ?? formItemId}
-        aria-describedby={describedBy}
-        aria-invalid={ariaInvalid}>
-        {children}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      {...nativeProps}
+      ref={mergedRef}
+      className={className}
+      id={explicitId ?? formItemId}
+      aria-describedby={describedBy}
+      aria-invalid={ariaInvalid}>
+      {children}
+    </div>
+  );
+};
 FormControl.displayName = "FormControl";
 
 /**
@@ -624,33 +612,31 @@ FormControl.displayName = "FormControl";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/p | HTML paragraph element}
  */
-const FormDescription = React.forwardRef<HTMLParagraphElement, FormDescriptionProps>(
-  ({className, id, children, ...props}: FormDescriptionProps, ref) => {
-    const field = useFormField();
-    const uniqueId = React.useId();
-    const paragraphRef = React.useRef<HTMLParagraphElement>(null);
-    const mergedRef = useMergedRefs(ref, paragraphRef);
-    const {dangerouslySetInnerHTML} = props;
-    const descriptionId = id?.trim() || `${field.id}-${uniqueId}-form-item-description`;
-    useMountedMetadata(
-      "description",
-      hasMeaningfulChildren(children) || dangerouslySetInnerHTML ? descriptionId : undefined,
-      dangerouslySetInnerHTML ? paragraphRef : undefined,
-      dangerouslySetInnerHTML,
-    );
+const FormDescription = ({ref, className, id, children, ...props}: Readonly<FormDescriptionProps>): React.JSX.Element => {
+  const field = useFormField();
+  const uniqueId = React.useId();
+  const paragraphRef = React.useRef<HTMLParagraphElement>(null);
+  const mergedRef = useMergedRefs(ref, paragraphRef);
+  const {dangerouslySetInnerHTML} = props;
+  const descriptionId = id?.trim() || `${field.id}-${uniqueId}-form-item-description`;
+  useMountedMetadata(
+    "description",
+    hasMeaningfulChildren(children) || dangerouslySetInnerHTML ? descriptionId : undefined,
+    dangerouslySetInnerHTML ? paragraphRef : undefined,
+    dangerouslySetInnerHTML,
+  );
 
-    return (
-      <p
-        {...props}
-        ref={mergedRef}
-        data-slot='form-description'
-        id={descriptionId}
-        className={cn(styles.description, className)}>
-        {children}
-      </p>
-    );
-  },
-);
+  return (
+    <p
+      {...props}
+      ref={mergedRef}
+      data-slot='form-description'
+      id={descriptionId}
+      className={cn(styles.description, className)}>
+      {children}
+    </p>
+  );
+};
 FormDescription.displayName = "FormDescription";
 
 /**
@@ -669,31 +655,29 @@ FormDescription.displayName = "FormDescription";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-invalid | ARIA invalid state}
  */
-const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
-  ({className, children, id, ...props}: FormMessageProps, ref) => {
-    const field = useFormField();
-    const uniqueId = React.useId();
-    const messageId = id?.trim() || `${field.id}-${uniqueId}-form-item-message`;
-    const body = field.error?.message?.trim() || children;
-    const hasContent = hasMeaningfulChildren(body);
-    useMountedMetadata("message", hasContent ? messageId : undefined);
+const FormMessage = ({ref, className, children, id, ...props}: Readonly<FormMessageProps>): React.JSX.Element | null => {
+  const field = useFormField();
+  const uniqueId = React.useId();
+  const messageId = id?.trim() || `${field.id}-${uniqueId}-form-item-message`;
+  const body = field.error?.message?.trim() || children;
+  const hasContent = hasMeaningfulChildren(body);
+  useMountedMetadata("message", hasContent ? messageId : undefined);
 
-    if (!hasContent) {
-      return null;
-    }
+  if (!hasContent) {
+    return null;
+  }
 
-    return (
-      <p
-        {...props}
-        ref={ref}
-        data-slot='form-message'
-        id={messageId}
-        className={cn(styles.message, className)}>
-        {body}
-      </p>
-    );
-  },
-);
+  return (
+    <p
+      {...props}
+      ref={ref}
+      data-slot='form-message'
+      id={messageId}
+      className={cn(styles.message, className)}>
+      {body}
+    </p>
+  );
+};
 FormMessage.displayName = "FormMessage";
 FormField.displayName = "FormField";
 

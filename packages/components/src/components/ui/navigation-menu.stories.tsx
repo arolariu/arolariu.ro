@@ -6,13 +6,11 @@ import {cn} from "@/lib/utilities";
 import {
   NavigationMenu,
   NavigationMenuContent,
-  NavigationMenuIndicator,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuPositioner,
   NavigationMenuTrigger,
-  NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "./navigation-menu";
 import styles from "./navigation-menu.module.css";
@@ -220,18 +218,17 @@ export const ExplicitPositioner: Story = {
   ),
 };
 
-/** Backward-compatible decorative Indicator and Viewport; neither pretends to own popup state. */
-export const LegacyViewport: Story = {
+/** Explicit native positioning with caller-owned viewport options. */
+export const ExplicitViewport: Story = {
   render: (args) => (
     <div className={storyClasses.storyStack}>
-      <p className={storyClasses.storyHint}>Deprecated Viewport props/ref still target the clipping viewport.</p>
+      <p className={storyClasses.storyHint}>Positioner viewportProps target the clipping viewport.</p>
       <NavigationMenu
         {...args}
         positionerProps={false}>
         <DemoItems />
-        <NavigationMenuViewport positionerProps={{align: args.align}} />
+        <NavigationMenuPositioner align={args.align} />
       </NavigationMenu>
-      <NavigationMenuIndicator />
     </div>
   ),
 };

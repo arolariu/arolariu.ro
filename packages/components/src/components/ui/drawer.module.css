@@ -256,7 +256,8 @@
   flex: 1;
   flex-direction: column;
   gap: var(--ac-space-4);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-radius: inherit;
   overscroll-behavior: contain;
   transition: opacity 300ms cubic-bezier(0.45, 1.005, 0, 1.005);
@@ -342,4 +343,10 @@
   .backdrop {
     background-color: CanvasText;
   }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

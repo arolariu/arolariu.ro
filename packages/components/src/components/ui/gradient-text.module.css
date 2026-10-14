@@ -7,11 +7,16 @@
 .neon {
   margin: 0;
   color: transparent;
-  background-image: var(--ac-gradient-text-background);
+  background-image: var(--ac-gradient-text-background, linear-gradient(90deg, #1d4ed8, #7e22ce, #be185d, #1d4ed8));
   background-position: 0% 0%;
   background-size: 700% 100%;
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+:global(.dark) .root,
+:global([data-theme="dark"]) .root {
+  --ac-gradient-text-background: linear-gradient(90deg, #93c5fd, #d8b4fe, #f9a8d4, #93c5fd);
 }
 
 @media (forced-colors: active) {

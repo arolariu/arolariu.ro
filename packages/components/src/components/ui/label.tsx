@@ -10,7 +10,7 @@ import styles from "./label.module.css";
  * Extends native `<label>` attributes so the component can participate in accessible
  * form relationships while exposing a documented class override.
  */
-export type LabelProps = Readonly<React.ComponentPropsWithoutRef<"label">>;
+export type LabelProps = Readonly<React.ComponentPropsWithRef<"label">>;
 
 /**
  * An accessible text label for form controls and field groups.
@@ -31,17 +31,15 @@ export type LabelProps = Readonly<React.ComponentPropsWithoutRef<"label">>;
  *
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label | Native label}
  */
-const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
-  ({children, className, htmlFor, ...props}: Readonly<LabelProps>, ref): React.JSX.Element => (
-    <label
-      data-slot='label'
-      ref={ref}
-      className={cn(styles.label, className)}
-      htmlFor={htmlFor}
-      {...props}>
-      {children}
-    </label>
-  ),
+const Label = ({ref, children, className, htmlFor, ...props}: Readonly<LabelProps>): React.JSX.Element => (
+  <label
+    data-slot='label'
+    ref={ref}
+    className={cn(styles.label, className)}
+    htmlFor={htmlFor}
+    {...props}>
+    {children}
+  </label>
 );
 Label.displayName = "Label";
 

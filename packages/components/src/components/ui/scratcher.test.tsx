@@ -12,7 +12,7 @@ let media: MediaQueryList;
 let observers: ResizeBoundary[] = [];
 let views: ViewBoundary[] = [];
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -425,7 +425,10 @@ describe("Scratcher", () => {
         </Scratcher>,
       ),
     ).toThrow(/percentage/u);
-    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => null});
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value: (): CanvasRenderingContext2D | null => null,
+    });
     expect(() =>
       render(
         <Scratcher

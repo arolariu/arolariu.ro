@@ -1,7 +1,7 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Popover, PopoverAnchor, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
+import {Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
 const storyStyles = `
 .ac-story-popover-storyForm {
   display: grid;
@@ -148,17 +148,17 @@ function ExplicitAnchorExample(): React.JSX.Element {
   const anchor = React.useRef<HTMLDivElement>(null);
   return (
     <Popover>
-      <PopoverAnchor>
+      <div>
         <div ref={anchor}>Measured anchor element</div>
         <PopoverTrigger render={<Button variant='outline' />}>Open at the measured anchor</PopoverTrigger>
-      </PopoverAnchor>
+      </div>
       <PopoverContent
         anchor={anchor}
         side='bottom'
         align='start'>
         <PopoverHeader>
           <PopoverTitle>Explicit Anchor</PopoverTitle>
-          <PopoverDescription>PopoverAnchor is structural; the Content.anchor ref opts into positioning.</PopoverDescription>
+          <PopoverDescription>The Content.anchor ref selects the measured positioning element.</PopoverDescription>
         </PopoverHeader>
       </PopoverContent>
     </Popover>

@@ -9,22 +9,22 @@ import styles from "./pagination.module.css";
 /**
  * Props for the {@link Pagination} component.
  */
-export type PaginationProps = Readonly<React.ComponentPropsWithoutRef<"nav">>;
+export type PaginationProps = Readonly<React.ComponentPropsWithRef<"nav">>;
 
 /**
  * Props for the {@link PaginationContent} component.
  */
-export type PaginationContentProps = Readonly<React.ComponentPropsWithoutRef<"ul">>;
+export type PaginationContentProps = Readonly<React.ComponentPropsWithRef<"ul">>;
 
 /**
  * Props for the {@link PaginationItem} component.
  */
-export type PaginationItemProps = Readonly<React.ComponentPropsWithoutRef<"li">>;
+export type PaginationItemProps = Readonly<React.ComponentPropsWithRef<"li">>;
 
 /**
  * Props for the {@link PaginationLink} component.
  */
-export interface PaginationLinkProps extends Readonly<Pick<ButtonProps, "size">>, Readonly<React.ComponentPropsWithoutRef<"a">> {
+export interface PaginationLinkProps extends Readonly<Pick<ButtonProps, "size">>, Readonly<React.ComponentPropsWithRef<"a">> {
   /** Marks the link as the current active page. @default false */
   readonly isActive?: boolean;
 }
@@ -32,23 +32,23 @@ export interface PaginationLinkProps extends Readonly<Pick<ButtonProps, "size">>
 /**
  * Props for the {@link PaginationPrevious} component.
  */
-export interface PaginationPreviousProps extends PaginationLinkProps {
-  /** Visible navigation copy. Override `aria-label` separately to localize the accessible name. @default "Previous" */
+export interface PaginationPreviousProps extends Omit<PaginationLinkProps, "children"> {
+  /** Visible navigation copy and default accessible name. @default "Previous" */
   readonly text?: string;
 }
 
 /**
  * Props for the {@link PaginationNext} component.
  */
-export interface PaginationNextProps extends PaginationLinkProps {
-  /** Visible navigation copy. Override `aria-label` separately to localize the accessible name. @default "Next" */
+export interface PaginationNextProps extends Omit<PaginationLinkProps, "children"> {
+  /** Visible navigation copy and default accessible name. @default "Next" */
   readonly text?: string;
 }
 
 /**
  * Props for the {@link PaginationEllipsis} component.
  */
-export type PaginationEllipsisProps = Readonly<React.ComponentPropsWithoutRef<"span">>;
+export type PaginationEllipsisProps = Readonly<Omit<React.ComponentPropsWithRef<"span">, "children">>;
 
 const buttonSizeStyles: Readonly<Record<NonNullable<ButtonProps["size"]>, string | undefined>> = {
   default: buttonStyles.sizeDefault,
@@ -78,17 +78,15 @@ const buttonSizeStyles: Readonly<Record<NonNullable<ButtonProps["size"]>, string
  *
  * @see {@link PaginationProps} for available props
  */
-const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
-  ({className, ...props}: Readonly<PaginationProps>, ref): React.JSX.Element => (
-    <nav
-      ref={ref}
-      role='navigation'
-      aria-label='pagination'
-      data-slot='pagination'
-      className={cn(styles.root, className)}
-      {...props}
-    />
-  ),
+const Pagination = ({ref, className, ...props}: Readonly<PaginationProps>): React.JSX.Element => (
+  <nav
+    ref={ref}
+    role='navigation'
+    aria-label='pagination'
+    data-slot='pagination'
+    className={cn(styles.root, className)}
+    {...props}
+  />
 );
 
 /**
@@ -108,15 +106,13 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
  *
  * @see {@link PaginationContentProps} for available props
  */
-const PaginationContent = React.forwardRef<HTMLUListElement, PaginationContentProps>(
-  ({className, ...props}: Readonly<PaginationContentProps>, ref): React.JSX.Element => (
-    <ul
-      ref={ref}
-      data-slot='pagination-content'
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
+const PaginationContent = ({ref, className, ...props}: Readonly<PaginationContentProps>): React.JSX.Element => (
+  <ul
+    ref={ref}
+    data-slot='pagination-content'
+    className={cn(styles.content, className)}
+    {...props}
+  />
 );
 
 /**
@@ -136,15 +132,13 @@ const PaginationContent = React.forwardRef<HTMLUListElement, PaginationContentPr
  *
  * @see {@link PaginationItemProps} for available props
  */
-const PaginationItem = React.forwardRef<HTMLLIElement, PaginationItemProps>(
-  ({className, ...props}: Readonly<PaginationItemProps>, ref): React.JSX.Element => (
-    <li
-      ref={ref}
-      data-slot='pagination-item'
-      className={cn(styles.item, className)}
-      {...props}
-    />
-  ),
+const PaginationItem = ({ref, className, ...props}: Readonly<PaginationItemProps>): React.JSX.Element => (
+  <li
+    ref={ref}
+    data-slot='pagination-item'
+    className={cn(styles.item, className)}
+    {...props}
+  />
 );
 
 /**
@@ -164,27 +158,32 @@ const PaginationItem = React.forwardRef<HTMLLIElement, PaginationItemProps>(
  *
  * @see {@link PaginationLinkProps} for available props
  */
-const PaginationLink = React.forwardRef<HTMLAnchorElement, PaginationLinkProps>(
-  ({className, children, isActive = false, size = "icon", ...props}: Readonly<PaginationLinkProps>, ref): React.JSX.Element => {
-    return (
-      <a
-        ref={ref}
-        data-slot='pagination-link'
-        data-active={isActive}
-        aria-current={isActive ? "page" : undefined}
-        className={cn(
-          buttonStyles.button,
-          isActive ? buttonStyles.outline : buttonStyles.ghost,
-          buttonSizeStyles[size],
-          styles.link,
-          className,
-        )}
-        {...props}>
-        {children}
-      </a>
-    );
-  },
-);
+const PaginationLink = ({
+  ref,
+  className,
+  children,
+  isActive = false,
+  size = "icon",
+  ...props
+}: Readonly<PaginationLinkProps>): React.JSX.Element => {
+  return (
+    <a
+      ref={ref}
+      data-slot='pagination-link'
+      data-active={isActive}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        buttonStyles.button,
+        isActive ? buttonStyles.outline : buttonStyles.ghost,
+        buttonSizeStyles[size],
+        styles.link,
+        className,
+      )}
+      {...props}>
+      {children}
+    </a>
+  );
+};
 
 /**
  * Renders the pagination control for navigating to the previous page.
@@ -201,22 +200,20 @@ const PaginationLink = React.forwardRef<HTMLAnchorElement, PaginationLinkProps>(
  *
  * @see {@link PaginationPreviousProps} for available props
  */
-const PaginationPrevious = React.forwardRef<HTMLAnchorElement, PaginationPreviousProps>(
-  ({className, text = "Previous", ...props}: Readonly<PaginationPreviousProps>, ref): React.JSX.Element => (
-    <PaginationLink
-      ref={ref}
-      aria-label='Go to previous page'
-      size='default'
-      className={cn(styles.previous, className)}
-      {...props}>
-      <ChevronLeft
-        aria-hidden='true'
-        focusable='false'
-        data-icon='inline-start'
-      />
-      <span className={styles.navigationText}>{text}</span>
-    </PaginationLink>
-  ),
+const PaginationPrevious = ({ref, className, text = "Previous", ...props}: Readonly<PaginationPreviousProps>): React.JSX.Element => (
+  <PaginationLink
+    ref={ref}
+    aria-label={text}
+    size='default'
+    className={cn(styles.previous, className)}
+    {...props}>
+    <ChevronLeft
+      aria-hidden='true'
+      focusable='false'
+      data-icon='inline-start'
+    />
+    <span className={styles.navigationText}>{text}</span>
+  </PaginationLink>
 );
 
 /**
@@ -234,22 +231,20 @@ const PaginationPrevious = React.forwardRef<HTMLAnchorElement, PaginationPreviou
  *
  * @see {@link PaginationNextProps} for available props
  */
-const PaginationNext = React.forwardRef<HTMLAnchorElement, PaginationNextProps>(
-  ({className, text = "Next", ...props}: Readonly<PaginationNextProps>, ref): React.JSX.Element => (
-    <PaginationLink
-      ref={ref}
-      aria-label='Go to next page'
-      size='default'
-      className={cn(styles.next, className)}
-      {...props}>
-      <span className={styles.navigationText}>{text}</span>
-      <ChevronRight
-        aria-hidden='true'
-        focusable='false'
-        data-icon='inline-end'
-      />
-    </PaginationLink>
-  ),
+const PaginationNext = ({ref, className, text = "Next", ...props}: Readonly<PaginationNextProps>): React.JSX.Element => (
+  <PaginationLink
+    ref={ref}
+    aria-label={text}
+    size='default'
+    className={cn(styles.next, className)}
+    {...props}>
+    <span className={styles.navigationText}>{text}</span>
+    <ChevronRight
+      aria-hidden='true'
+      focusable='false'
+      data-icon='inline-end'
+    />
+  </PaginationLink>
 );
 
 /**
@@ -267,18 +262,15 @@ const PaginationNext = React.forwardRef<HTMLAnchorElement, PaginationNextProps>(
  *
  * @see {@link PaginationEllipsisProps} for available props
  */
-const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEllipsisProps>(
-  ({className, ...props}: Readonly<PaginationEllipsisProps>, ref): React.JSX.Element => (
-    <span
-      ref={ref}
-      data-slot='pagination-ellipsis'
-      aria-hidden='true'
-      className={cn(styles.ellipsis, className)}
-      {...props}>
-      <Ellipsis />
-      <span className={styles.srOnly}>More pages</span>
-    </span>
-  ),
+const PaginationEllipsis = ({ref, className, ...props}: Readonly<PaginationEllipsisProps>): React.JSX.Element => (
+  <span
+    ref={ref}
+    data-slot='pagination-ellipsis'
+    aria-hidden='true'
+    className={cn(styles.ellipsis, className)}
+    {...props}>
+    <Ellipsis focusable='false' />
+  </span>
 );
 
 Pagination.displayName = "Pagination";

@@ -12,7 +12,7 @@ export type SwitchSize = "sm" | "default";
 export type SwitchState = BaseSwitch.Root.State;
 /** Readonly primitive switch props with CSS Module size presets. */
 export type SwitchProps = Readonly<
-  React.ComponentPropsWithRef<typeof BaseSwitch.Root>
+  Omit<React.ComponentPropsWithRef<typeof BaseSwitch.Root>, "children">
     & Partial<{
       /** Track/thumb size preset. @default "default" */
       size: SwitchSize | undefined;
@@ -32,30 +32,29 @@ export type SwitchProps = Readonly<
  *
  * @example Basic usage
  * ```tsx
- * <Switch defaultChecked />
+ * <Switch aria-label="Email alerts" defaultChecked />
  * ```
  *
  * @see {@link https://base-ui.com/react/components/switch | Base UI Documentation}
  */
-const Switch = React.forwardRef<React.ComponentRef<typeof BaseSwitch.Root>, Switch.Props>(
-  (props: Readonly<Switch.Props>, ref): React.ReactElement => {
-    const {className, size = "default", ...otherProps} = props;
+const Switch = (props: Readonly<Switch.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, size = "default", ...otherProps} = props;
 
-    return (
-      <BaseSwitch.Root
-        ref={ref}
-        {...otherProps}
-        data-slot='switch'
-        data-size={size}
-        className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
-        <BaseSwitch.Thumb
-          data-slot='switch-thumb'
-          className={styles.thumb}
-        />
-      </BaseSwitch.Root>
-    );
-  },
-);
+  return (
+    <BaseSwitch.Root
+      ref={ref}
+      {...otherProps}
+      data-slot='switch'
+      data-size={size}
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      <BaseSwitch.Thumb
+        data-slot='switch-thumb'
+        className={styles.thumb}
+      />
+    </BaseSwitch.Root>
+  );
+};
 Switch.displayName = "Switch";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

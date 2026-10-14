@@ -2,6 +2,8 @@ import {Dialog as BaseDialog} from "@base-ui/react/dialog";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -54,7 +56,9 @@ function renderDialog({
     <Dialog
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}>
-      <DialogTrigger asChild={triggerAsChild}>{triggerAsChild ? <button type='button'>Open dialog</button> : "Open dialog"}</DialogTrigger>
+      <DialogTrigger render={triggerAsChild ? <button type='button'>Open dialog</button> : undefined}>
+        {triggerAsChild ? undefined : "Open dialog"}
+      </DialogTrigger>
       <DialogContent
         className={className}
         data-testid='dialog-content'>
@@ -67,6 +71,45 @@ function renderDialog({
 }
 
 describe("Dialog", () => {
+  it.each([
+    ["alert-dialog", "control"],
+    ["dialog", "control"],
+    ["sheet", "control"],
+    ["drawer", "control"],
+    ["popover", "control"],
+    ["hover-card", "control"],
+    ["context-menu", "control"],
+    ["dropdown-menu", "trigger"],
+    ["tooltip", "trigger"],
+    ["command", "item"],
+  ])("refresh accessibility: %s authors minimum standalone control targets", (family, part) => {
+    const css = readFileSync(join(import.meta.dirname, `${family}.module.css`), "utf8");
+    expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*display:\\s*(?:inline-flex|flex|block)`, "u"));
+    expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*min-width:\\s*1\\.5rem`, "u"));
+    expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*min-height:\\s*1\\.5rem`, "u"));
+  });
+
+  it("refresh accessibility: does not disable popup touch scrolling or pinch zoom", () => {
+    const css = readFileSync(join(import.meta.dirname, "dialog.module.css"), "utf8");
+    expect(css).toMatch(/\.popup\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/u);
+  });
+
+  it("refresh accessibility: localizes both automatic dismissal controls", () => {
+    render(
+      <Dialog defaultOpen>
+        <DialogContent closeLabel='Fermer la fenêtre'>
+          <DialogTitle>Préférences</DialogTitle>
+          <DialogFooter
+            showCloseButton
+            closeLabel='Terminer'
+          />
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole("button", {name: "Fermer la fenêtre"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Terminer"})).toBeInTheDocument();
+  });
+
   it.each([
     ["element", true],
     ["element", false],
@@ -163,14 +206,13 @@ describe("Dialog", () => {
         <DialogContent showCloseButton={false}>
           <DialogTitle>Lazy footer slot</DialogTitle>
           <DialogFooter
-            asChild
-            showCloseButton>
-            {resolvedLazySlot(
+            showCloseButton
+            render={resolvedLazySlot(
               <footer>
                 <Button>Slot action</Button>
               </footer>,
             )}
-          </DialogFooter>
+          />
         </DialogContent>
       </Dialog>,
     );
@@ -394,9 +436,8 @@ describe("Dialog", () => {
       <Dialog>
         <DialogTrigger
           ref={ref}
-          asChild>
-          <Button>Composed trigger</Button>
-        </DialogTrigger>
+          render={<Button>Composed trigger</Button>}
+        />
       </Dialog>,
     );
     expect(screen.getByRole("button", {name: "Composed trigger"}).querySelector("button")).toBeNull();
@@ -422,16 +463,6 @@ describe("Dialog", () => {
     );
     expect(ref.current?.tagName).toBe("FOOTER");
     expect(ref.current).toHaveTextContent("SaveClose");
-  });
-
-  it("rejects invalid trigger slot input without faking a Root", () => {
-    expect(() =>
-      render(
-        <Dialog>
-          <DialogTrigger asChild>Invalid trigger</DialogTrigger>
-        </Dialog>,
-      ),
-    ).toThrow(TypeError);
   });
 
   it("keeps embedded render-element content when appending the automatic close", () => {
@@ -569,7 +600,7 @@ describe("Dialog", () => {
     expect(headerRef.current?.tagName).toBe("LABEL");
   });
 
-  it("merges child and wrapper refs, click handlers and native link behavior for asChild", async () => {
+  it("merges child and wrapper refs, click handlers and native link behavior for render composition", async () => {
     const user = userEvent.setup();
     const childRef = React.createRef<HTMLAnchorElement>();
     const wrapperRef = React.createRef<HTMLElement>();
@@ -577,16 +608,18 @@ describe("Dialog", () => {
     render(
       <Dialog>
         <DialogTrigger
-          asChild
           ref={wrapperRef}
-          onClick={() => calls.push("wrapper")}>
-          <a
-            href='#legacy-dialog'
-            ref={childRef}
-            onClick={() => calls.push("child")}>
-            Legacy link
-          </a>
-        </DialogTrigger>
+          onClick={() => calls.push("wrapper")}
+          nativeButton={false}
+          render={
+            <a
+              href='#legacy-dialog'
+              ref={childRef}
+              onClick={() => calls.push("child")}>
+              Legacy link
+            </a>
+          }
+        />
         <DialogContent>
           <DialogTitle>Legacy modal</DialogTitle>
           <DialogDescription>Preserved child content</DialogDescription>
@@ -644,12 +677,13 @@ describe("Dialog", () => {
         <DialogContent showCloseButton={false}>
           <DialogTitle>Footer slots</DialogTitle>
           <DialogFooter
-            asChild
-            showCloseButton>
-            <footer data-testid='footer'>
-              <Button>Save</Button>
-            </footer>
-          </DialogFooter>
+            showCloseButton
+            render={
+              <footer data-testid='footer'>
+                <Button>Save</Button>
+              </footer>
+            }
+          />
         </DialogContent>
       </Dialog>,
     );
@@ -661,15 +695,7 @@ describe("Dialog", () => {
     ).toEqual(["Save", "Close"]);
   });
 
-  it("surfaces invalid slot input and consumer render errors", () => {
-    expect(() => render(<DialogHeader asChild>Not an element</DialogHeader>)).toThrow(TypeError);
-    expect(() =>
-      render(
-        <DialogFooter asChild>
-          <>Fragment</>
-        </DialogFooter>,
-      ),
-    ).toThrow(TypeError);
+  it("surfaces consumer render errors", () => {
     expect(() =>
       render(
         <Dialog>
@@ -870,17 +896,21 @@ describe("Dialog", () => {
       <Dialog defaultOpen>
         <DialogTrigger>Open dialog</DialogTrigger>
         <DialogContent>
-          <DialogHeader asChild>
-            <header data-testid='dialog-header'>
-              <DialogTitle>Dialog title</DialogTitle>
-              <DialogDescription>Dialog description</DialogDescription>
-            </header>
-          </DialogHeader>
-          <DialogFooter asChild>
-            <footer data-testid='dialog-footer'>
-              <DialogClose>Close dialog</DialogClose>
-            </footer>
-          </DialogFooter>
+          <DialogHeader
+            render={
+              <header data-testid='dialog-header'>
+                <DialogTitle>Dialog title</DialogTitle>
+                <DialogDescription>Dialog description</DialogDescription>
+              </header>
+            }
+          />
+          <DialogFooter
+            render={
+              <footer data-testid='dialog-footer'>
+                <DialogClose>Close dialog</DialogClose>
+              </footer>
+            }
+          />
         </DialogContent>
       </Dialog>,
     );

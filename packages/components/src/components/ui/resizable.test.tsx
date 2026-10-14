@@ -22,6 +22,7 @@ interface ResizableFixtureProps {
   readonly group?: ResizablePanelGroupProps;
   readonly panel?: ResizablePanelProps;
   readonly handle?: ResizableHandleProps;
+  readonly secondPanel?: ResizablePanelProps;
 }
 
 function panelPercentage(element: HTMLElement): number {
@@ -29,7 +30,7 @@ function panelPercentage(element: HTMLElement): number {
   return Number.isFinite(percentage) ? percentage : 50;
 }
 
-function renderResizable({group, panel, handle}: Readonly<ResizableFixtureProps> = {}): ReturnType<typeof render> {
+function renderResizable({group, panel, handle, secondPanel}: Readonly<ResizableFixtureProps> = {}): ReturnType<typeof render> {
   return render(
     <ResizablePanelGroup
       id='group'
@@ -47,7 +48,8 @@ function renderResizable({group, panel, handle}: Readonly<ResizableFixtureProps>
       />
       <ResizablePanel
         id='second'
-        defaultSize='50%'>
+        defaultSize='50%'
+        {...secondPanel}>
         Second panel
       </ResizablePanel>
     </ResizablePanelGroup>,
@@ -55,8 +57,9 @@ function renderResizable({group, panel, handle}: Readonly<ResizableFixtureProps>
 }
 
 // Supply available panel geometry only; Happy DOM does not perform flex layout.
+let fixtureWidth = 1000;
 function fixtureRect(element: HTMLElement): DOMRect {
-  const width = 1000;
+  const width = fixtureWidth;
   const height = 600;
   if (element.hasAttribute("data-group")) return new DOMRect(0, 0, width, height);
   const group = element.parentElement?.closest<HTMLElement>("[data-group]");
@@ -149,10 +152,159 @@ function matchedMediaDeclarations(element: Element, stylesheet: HTMLStyleElement
 }
 
 describe("Resizable v4 contracts", () => {
+  it.each(["first", "second"] as const)(
+    "crosses %s panel collapse and expansion boundaries when the minimum exceeds the click step",
+    (side) => {
+      const groupRef = createRef<GroupImperativeHandle>();
+      const panelRef = createRef<PanelImperativeHandle>();
+      const constraints = {panelRef, collapsible: true, minSize: "30%", collapsedSize: "0%"};
+      renderResizable({
+        group: {groupRef},
+        ...(side === "first" ? {panel: constraints} : {secondPanel: constraints}),
+        handle: {resizeStep: 10},
+      });
+      notifyResize();
+      const shrink = screen.getByRole("button", {name: side === "first" ? "Decrease previous panel" : "Increase previous panel"});
+      const grow = screen.getByRole("button", {name: side === "first" ? "Increase previous panel" : "Decrease previous panel"});
+      fireEvent.click(shrink);
+      expect(groupRef.current?.getLayout()[side]).toBe(40);
+      fireEvent.click(shrink);
+      expect(groupRef.current?.getLayout()[side]).toBe(30);
+      fireEvent.click(shrink);
+      expect(groupRef.current?.getLayout()[side]).toBe(0);
+      expect(panelRef.current?.isCollapsed()).toBe(true);
+      fireEvent.click(grow);
+      expect(groupRef.current?.getLayout()[side]).toBe(30);
+      expect(panelRef.current?.isCollapsed()).toBe(false);
+    },
+  );
+
+  it.each([
+    {side: "first", name: "Increase previous panel"},
+    {side: "first", name: "Decrease previous panel"},
+    {side: "second", name: "Increase previous panel"},
+    {side: "second", name: "Decrease previous panel"},
+  ] as const)("does not resize a locked $side panel with $name", ({side, name}) => {
+    const groupRef = createRef<GroupImperativeHandle>();
+    renderResizable({
+      group: {groupRef},
+      ...(side === "first" ? {panel: {disabled: true}} : {secondPanel: {disabled: true}}),
+    });
+    notifyResize();
+    const control = screen.getByRole("button", {name});
+    fireEvent.click(control);
+    expect(groupRef.current?.getLayout()).toEqual({first: 50, second: 50});
+    expect(control).toBeDisabled();
+  });
+
+  it.each(["300px", 300, "30"] as const)(
+    "crosses native collapse constraints expressed as %s without treating numeric pixels as percentages",
+    (minSize) => {
+      const panelRef = createRef<PanelImperativeHandle>();
+      renderResizable({panel: {panelRef, collapsible: true, minSize}, handle: {resizeStep: 10}});
+      notifyResize();
+      for (let index = 0; index < 3; index++) fireEvent.click(screen.getByRole("button", {name: "Decrease previous panel"}));
+      expect(panelRef.current?.isCollapsed()).toBe(true);
+      fireEvent.click(screen.getByRole("button", {name: "Increase previous panel"}));
+      expect(panelRef.current?.getSize().asPercentage).toBe(30);
+    },
+  );
+
+  it("does not let an adjacent-pair operation redistribute a distant locked panel", () => {
+    const groupRef = createRef<GroupImperativeHandle>();
+    render(
+      <ResizablePanelGroup
+        id='group'
+        groupRef={groupRef}>
+        <ResizablePanel
+          id='first'
+          defaultSize='30%'
+          disabled>
+          Locked
+        </ResizablePanel>
+        <ResizablePanel
+          id='second'
+          defaultSize='35%'>
+          Editable
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel
+          id='third'
+          defaultSize='35%'
+          maxSize='40%'>
+          Limited
+        </ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+    notifyResize();
+    const decrease = screen.getByRole("button", {name: "Decrease previous panel"});
+    fireEvent.click(decrease);
+    expect(groupRef.current?.getLayout()).toEqual({first: 30, second: 30, third: 40});
+    expect(decrease).toBeDisabled();
+    fireEvent.click(decrease);
+    expect(groupRef.current?.getLayout()).toEqual({first: 30, second: 30, third: 40});
+    fireEvent.click(screen.getByRole("button", {name: "Increase previous panel"}));
+    expect(groupRef.current?.getLayout()).toEqual({first: 30, second: 40, third: 30});
+  });
+
+  it("disables only the impossible direction at the actual adjacent constraints", () => {
+    renderResizable({panel: {minSize: "40%", maxSize: "60%"}});
+    notifyResize();
+    const increase = screen.getByRole("button", {name: "Increase previous panel"});
+    const decrease = screen.getByRole("button", {name: "Decrease previous panel"});
+    fireEvent.click(increase);
+    expect(increase).toBeDisabled();
+    expect(decrease).toBeEnabled();
+    fireEvent.click(decrease);
+    fireEvent.click(decrease);
+    expect(decrease).toBeDisabled();
+    expect(increase).toBeEnabled();
+  });
+
+  it("refreshes pixel-based click limits when available native geometry changes without a percentage-layout change", () => {
+    renderResizable({panel: {maxSize: 600}});
+    notifyResize();
+    const increase = screen.getByRole("button", {name: "Increase previous panel"});
+    fireEvent.click(increase);
+    expect(increase).toBeDisabled();
+    fixtureWidth = 500;
+    notifyResize();
+    expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "60");
+    expect(increase).toBeEnabled();
+    fireEvent.click(increase);
+    expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "70");
+  });
+
+  it("disables click alternatives with the group and accepts localized names", () => {
+    renderResizable({
+      group: {disabled: true},
+      handle: {decreaseLabel: "Réduire", increaseLabel: "Agrandir"},
+    });
+    notifyResize();
+    expect(screen.getByRole("button", {name: "Réduire"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Agrandir"})).toBeDisabled();
+  });
+
+  it.each([0, -1, 101, Number.NaN])("rejects an invalid single-click resize step %s", (resizeStep) => {
+    expect(() => renderResizable({handle: {resizeStep}})).toThrow(/resizeStep/u);
+  });
+
+  it("offers native single-click resizing without requiring a dragging gesture", () => {
+    renderResizable();
+    notifyResize();
+    const separator = screen.getByRole("separator");
+    const before = Number(separator.getAttribute("aria-valuenow"));
+    fireEvent.click(screen.getByRole("button", {name: "Increase previous panel"}));
+    expect(Number(separator.getAttribute("aria-valuenow"))).toBeGreaterThan(before);
+    fireEvent.click(screen.getByRole("button", {name: "Decrease previous panel"}));
+    expect(Number(separator.getAttribute("aria-valuenow"))).toBeCloseTo(before);
+  });
+
   let stylesheet: HTMLStyleElement;
   let ariaDisabledDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
+    fixtureWidth = 1000;
     // v4 reads ARIAMixin reflection; Happy DOM lacks ariaDisabled on Element.
     ariaDisabledDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "ariaDisabled");
     Object.defineProperty(Element.prototype, "ariaDisabled", {
@@ -231,8 +383,8 @@ describe("Resizable v4 contracts", () => {
     const sheet = stylesheet.sheet;
     if (!sheet) throw new Error("Missing test stylesheet");
     const hitArea = matchedDeclarations(separator, sheet.cssRules, "::after");
-    expect(hitArea.width).toBe(fixture.orientation === "vertical" ? "100%" : "0.25rem");
-    expect(hitArea.height).toBe(fixture.orientation === "vertical" ? "0.25rem" : "");
+    expect(hitArea.width).toBe(fixture.orientation === "vertical" ? "100%" : "1.5rem");
+    expect(hitArea.height).toBe(fixture.orientation === "vertical" ? "1.5rem" : "");
     expect(hitArea.left).toBe(fixture.orientation === "vertical" ? "0px" : "50%");
     expect(hitArea.transform).toBe(fixture.orientation === "vertical" ? "translateY(-50%)" : "translateX(-50%)");
   });

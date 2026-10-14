@@ -51,7 +51,9 @@ function renderSheet({
 }>) {
   return render(
     <Sheet defaultOpen={defaultOpen}>
-      <SheetTrigger asChild={triggerAsChild}>{triggerAsChild ? <button type='button'>Open sheet</button> : "Open sheet"}</SheetTrigger>
+      <SheetTrigger render={triggerAsChild ? <button type='button'>Open sheet</button> : undefined}>
+        {triggerAsChild ? undefined : "Open sheet"}
+      </SheetTrigger>
       <SheetContent
         className={className}
         side={side}
@@ -64,6 +66,53 @@ function renderSheet({
 }
 
 describe("Sheet", () => {
+  it("refresh accessibility: localizes the automatic dismissal control", () => {
+    render(
+      <Sheet defaultOpen>
+        <SheetContent closeLabel='Închide'>
+          <SheetTitle>Preferințe</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(screen.getByRole("button", {name: "Închide"})).toBeInTheDocument();
+  });
+
+  it("keeps React 19 Close ref disposers current across replacement and unmount", () => {
+    const firstCleanup = vi.fn();
+    const nextCleanup = vi.fn();
+    const childCleanup = vi.fn();
+    const firstRef = vi.fn((_node: HTMLButtonElement) => firstCleanup);
+    const nextRef = vi.fn((_node: HTMLButtonElement) => nextCleanup);
+    const childRef = vi.fn((_node: HTMLButtonElement) => childCleanup);
+    const tree = (ref: React.Ref<HTMLButtonElement>): React.ReactElement => (
+      <Sheet defaultOpen>
+        <SheetContent showCloseButton={false}>
+          <SheetTitle>Ref lifecycle</SheetTitle>
+          <SheetClose
+            ref={ref}
+            render={<button ref={childRef} />}>
+            Dismiss
+          </SheetClose>
+        </SheetContent>
+      </Sheet>
+    );
+    const view = render(tree(firstRef));
+    const close = screen.getByRole("button", {name: "Dismiss"});
+    expect(firstRef).toHaveBeenCalledExactlyOnceWith(close);
+    expect(childRef).toHaveBeenCalledExactlyOnceWith(close);
+    view.rerender(tree(nextRef));
+    expect(firstCleanup).toHaveBeenCalledOnce();
+    expect(nextRef).toHaveBeenCalledExactlyOnceWith(close);
+    expect(close).toBe(screen.getByRole("button", {name: "Dismiss"}));
+    view.unmount();
+    expect(firstCleanup).toHaveBeenCalledOnce();
+    expect(nextCleanup).toHaveBeenCalledOnce();
+    // The primitive may recompose its child ref on replacement; every attachment must be disposed.
+    expect(childCleanup).toHaveBeenCalledTimes(childRef.mock.calls.length);
+    expect(firstRef.mock.calls.every(([node]) => node === close)).toBe(true);
+    expect(nextRef.mock.calls.every(([node]) => node === close)).toBe(true);
+  });
+
   it.each([
     ["element", true],
     ["element", false],
@@ -284,25 +333,14 @@ describe("Sheet", () => {
       <Sheet>
         <SheetTrigger
           ref={ref}
-          asChild>
-          <Button>Composed trigger</Button>
-        </SheetTrigger>
+          render={<Button>Composed trigger</Button>}
+        />
       </Sheet>,
     );
     expect(screen.getByRole("button", {name: "Composed trigger"}).querySelector("button")).toBeNull();
     expect(events).toEqual(["BUTTON"]);
     unmount();
     expect(events).toEqual(["BUTTON", "cleanup"]);
-  });
-
-  it("rejects invalid trigger slot input without faking a Root", () => {
-    expect(() =>
-      render(
-        <Sheet>
-          <SheetTrigger asChild>Invalid trigger</SheetTrigger>
-        </Sheet>,
-      ),
-    ).toThrow(TypeError);
   });
 
   it("keeps embedded render-element children alongside the automatic close", () => {
@@ -438,14 +476,16 @@ describe("Sheet", () => {
     render(
       <Sheet>
         <SheetTrigger
-          asChild
-          ref={triggerRef}>
-          <a
-            ref={childRef}
-            href='#preferences'>
-            Open preferences
-          </a>
-        </SheetTrigger>
+          ref={triggerRef}
+          nativeButton={false}
+          render={
+            <a
+              ref={childRef}
+              href='#preferences'>
+              Open preferences
+            </a>
+          }
+        />
         <SheetContent>
           <SheetTitle>Linked preferences</SheetTitle>
         </SheetContent>
@@ -508,15 +548,7 @@ describe("Sheet", () => {
     expect(screen.getByRole("dialog")).toBeVisible();
   });
 
-  it("surfaces invalid slot props and render failures", () => {
-    expect(() => render(<SheetHeader asChild>Invalid slot</SheetHeader>)).toThrow(TypeError);
-    expect(() =>
-      render(
-        <SheetFooter asChild>
-          <>Invalid fragment</>
-        </SheetFooter>,
-      ),
-    ).toThrow(TypeError);
+  it("surfaces consumer render failures", () => {
     expect(() =>
       render(
         <Sheet>
@@ -847,17 +879,19 @@ describe("Sheet", () => {
     expect(dialog).toBeVisible();
   });
 
-  it("renders SheetHeader with asChild prop", async () => {
+  it("renders SheetHeader with a composed element", async () => {
     // Arrange
     render(
       <Sheet defaultOpen>
         <SheetTrigger>Open sheet</SheetTrigger>
         <SheetContent>
-          <SheetHeader asChild>
-            <header data-testid='custom-header-element'>
-              <SheetTitle>Title</SheetTitle>
-            </header>
-          </SheetHeader>
+          <SheetHeader
+            render={
+              <header data-testid='custom-header-element'>
+                <SheetTitle>Title</SheetTitle>
+              </header>
+            }
+          />
         </SheetContent>
       </Sheet>,
     );
@@ -867,18 +901,20 @@ describe("Sheet", () => {
     expect(screen.getByText("Title")).toBeInTheDocument();
   });
 
-  it("renders SheetFooter with asChild prop", async () => {
+  it("renders SheetFooter with a composed element", async () => {
     // Arrange
     render(
       <Sheet defaultOpen>
         <SheetTrigger>Open sheet</SheetTrigger>
         <SheetContent>
           <SheetTitle>Title</SheetTitle>
-          <SheetFooter asChild>
-            <footer data-testid='custom-footer-element'>
-              <button type='button'>Action</button>
-            </footer>
-          </SheetFooter>
+          <SheetFooter
+            render={
+              <footer data-testid='custom-footer-element'>
+                <button type='button'>Action</button>
+              </footer>
+            }
+          />
         </SheetContent>
       </Sheet>,
     );

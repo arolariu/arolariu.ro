@@ -1,9 +1,26 @@
 import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {VisuallyHidden} from "./visually-hidden";
 
 describe("VisuallyHidden", () => {
+  it("React 19 refresh: stops clipping its own focusable content on keyboard focus", () => {
+    render(
+      <VisuallyHidden data-testid='hidden'>
+        <a href='#main'>Skip to content</a>
+      </VisuallyHidden>,
+    );
+    const wrapper = screen.getByTestId("hidden");
+    const hideSelector = ":not(:focus):not(:focus-within)";
+    expect(wrapper).not.toHaveAttribute("aria-hidden");
+    screen.getByRole("link", {name: "Skip to content"}).focus();
+    expect(screen.getByRole("link", {name: "Skip to content"})).toHaveFocus();
+    const css = readFileSync(join(import.meta.dirname, "visually-hidden.module.css"), "utf8");
+    expect(css).toContain(`.visuallyHidden${hideSelector}`);
+  });
+
   it("supplies a button name without removing the hidden text from the accessibility tree", () => {
     render(
       <button type='button'>

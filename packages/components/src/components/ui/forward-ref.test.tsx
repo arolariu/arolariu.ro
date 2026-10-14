@@ -39,10 +39,7 @@ import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
 afterEach(() => vi.restoreAllMocks());
 
 const typewriterWords = [{text: "Hello"}];
-const legacyAccordionProps: readonly AccordionProps[] = [
-  {type: "single", defaultValue: "item-1"},
-  {type: "multiple", defaultValue: ["item-1"]},
-];
+const accordionModes: readonly AccordionProps[] = [{defaultValue: ["item-1"]}, {multiple: true, defaultValue: ["item-1"]}];
 
 describe("DOM wrapper ref forwarding", () => {
   it("forwards refs for span, div, and svg wrappers", () => {
@@ -238,7 +235,7 @@ describe("DOM wrapper ref forwarding", () => {
     expect(accordionContentRef.current).toHaveTextContent("Accordion content");
   });
 
-  it.each(legacyAccordionProps)("forwards actual DOM refs through the explicit legacy $type Accordion union", async (props) => {
+  it.each(accordionModes)("preserves real DOM refs and native array selection for Accordion mode %#", async (props) => {
     const rootRef = createRef<HTMLDivElement>();
     const triggerRef = createRef<HTMLButtonElement>();
     const contentRef = createRef<HTMLDivElement>();
@@ -246,13 +243,13 @@ describe("DOM wrapper ref forwarding", () => {
       <Accordion
         {...props}
         ref={rootRef}
-        data-testid='legacy-accordion'>
+        data-testid='array-accordion'>
         <AccordionItem value='item-1'>
-          <AccordionTrigger ref={triggerRef}>Legacy section</AccordionTrigger>
+          <AccordionTrigger ref={triggerRef}>Expanded section</AccordionTrigger>
           <AccordionContent
             ref={contentRef}
-            data-testid='legacy-accordion-content'>
-            Legacy content
+            data-testid='array-accordion-content'>
+            Expanded content
           </AccordionContent>
         </AccordionItem>
       </Accordion>,
@@ -261,14 +258,14 @@ describe("DOM wrapper ref forwarding", () => {
       await Promise.resolve();
     });
 
-    expect(rootRef.current).toBe(screen.getByTestId("legacy-accordion"));
+    expect(rootRef.current).toBe(screen.getByTestId("array-accordion"));
     expect(rootRef.current?.tagName).toBe("DIV");
-    expect(triggerRef.current).toBe(screen.getByRole("button", {name: "Legacy section"}));
+    expect(triggerRef.current).toBe(screen.getByRole("button", {name: "Expanded section"}));
     expect(triggerRef.current?.tagName).toBe("BUTTON");
     expect(triggerRef.current).toHaveAttribute("aria-expanded", "true");
-    expect(contentRef.current).toBe(screen.getByTestId("legacy-accordion-content"));
+    expect(contentRef.current).toBe(screen.getByTestId("array-accordion-content"));
     expect(contentRef.current?.tagName).toBe("DIV");
-    expect(contentRef.current).toHaveTextContent("Legacy content");
+    expect(contentRef.current).toHaveTextContent("Expanded content");
     unmount();
     expect(rootRef.current).toBeNull();
     expect(triggerRef.current).toBeNull();

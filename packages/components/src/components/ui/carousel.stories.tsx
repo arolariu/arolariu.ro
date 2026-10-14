@@ -370,10 +370,8 @@ export const ComposedControls: Story = {
           )}
         />
         <CarouselNext
-          asChild
-          size='sm'>
-          <button type='button'>Next</button>
-        </CarouselNext>
+          render={<button type='button'>Next</button>}
+          size='sm'></CarouselNext>
       </Carousel>
     </div>
   ),

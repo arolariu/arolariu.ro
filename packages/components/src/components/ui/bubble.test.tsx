@@ -234,11 +234,11 @@ describe("Bubble", () => {
     );
     expect(screen.getByText("UnbrokenContent")).toHaveClass(cssClass("content"));
     expect(declarations(".content")).toMatchObject({
-      overflow: "hidden",
       "overflow-wrap": "anywhere",
       "max-inline-size": "100%",
       "min-inline-size": "0",
     });
+    expect(declarations(".content").overflow).not.toBe("hidden");
     expect(declarations(".bubble")).toHaveProperty("max-inline-size", "80%");
     expect(declarations('.bubble[data-align="end"]')).toHaveProperty("align-self", "flex-end");
     expect(declarations('.reactions[data-align="start"]')).toHaveProperty("inset-inline-start", "var(--ac-space-3)");

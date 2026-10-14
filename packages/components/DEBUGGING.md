@@ -260,11 +260,11 @@ Base UI button-like primitives assume a native `<button>` unless told otherwise.
 
 **Solution**
 
-When rendering a non-button element, ensure `nativeButton={false}` is set on the underlying primitive. The package already handles this for
-some compatibility shims such as `Button asChild`.
+When rendering a non-button element, set `nativeButton={false}` on the underlying primitive. The removed `asChild` shim no longer infers
+this for you.
 
 ```tsx
-import {BaseButton} from "@base-ui/react/button";
+import {Button as BaseButton} from "@base-ui/react/button";
 
 export function DocsLink() {
   return (
@@ -279,20 +279,20 @@ export function DocsLink() {
 
 If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the rendered element is not a real `<button>`.
 
-### Issue: `asChild` Compatibility
+### Issue: Removed `asChild` API
 
 **Symptoms**
 
-- Legacy Radix-style examples still work, but new composition patterns feel inconsistent
-- Some wrappers behave differently than old Radix implementations
+- TypeScript rejects an old `asChild` prop
+- An old child-slot example no longer composes the intended element
 
 **Cause**
 
-`asChild` is maintained as a compatibility shim, but Base UI uses `render` as the native composition API.
+The React 19-only major removes the compatibility shim. Base UI uses `render` as the composition API.
 
 **Solution**
 
-Prefer `render` for new code:
+Replace the removed prop with `render`:
 
 ```tsx
 import {Dialog, DialogContent, DialogTrigger} from "@arolariu/components/dialog";
@@ -307,7 +307,7 @@ export function Example() {
 }
 ```
 
-Use `asChild` only when maintaining older consumers.
+Do not restore `asChild` or bypass the declaration error with a cast. See [MIGRATION.md](./MIGRATION.md).
 
 ### Issue: TypeScript Errors
 

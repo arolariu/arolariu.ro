@@ -12,7 +12,7 @@ import {Skeleton, type SkeletonProps} from "./skeleton";
  * Extends native `<div>` attributes so form-shaped placeholders can be composed into
  * dialogs, cards, and pages while still supporting accessibility annotations.
  */
-interface FormSkeletonProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+interface FormSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Number of labeled field placeholders: a nonnegative finite integer at most 10,000.
    * Zero preserves the submit placeholder without fields.
@@ -46,42 +46,40 @@ interface FormSkeletonProps extends Readonly<React.ComponentPropsWithoutRef<"div
  *
  * @see {@link FormSkeletonProps} for available props
  */
-const FormSkeleton = React.forwardRef<HTMLDivElement, FormSkeletonProps>(
-  ({fields = 4, animated = true, className, ...props}: Readonly<FormSkeletonProps>, ref): React.JSX.Element => {
-    if (!Number.isSafeInteger(fields) || fields < 0 || fields > 10_000) {
-      throw new RangeError("FormSkeleton fields must be a nonnegative finite integer no greater than 10,000.");
-    }
+const FormSkeleton = ({ref, fields = 4, animated = true, className, ...props}: Readonly<FormSkeletonProps>): React.JSX.Element => {
+  if (!Number.isSafeInteger(fields) || fields < 0 || fields > 10_000) {
+    throw new RangeError("FormSkeleton fields must be a nonnegative finite integer no greater than 10,000.");
+  }
 
-    return (
-      <div
-        ref={ref}
-        className={cn(styles.form, className)}
-        {...props}>
-        {Array.from({length: fields}, (_, index) => (
-          <div
-            key={index}
-            className={styles.field}>
-            <Skeleton
-              aria-hidden
-              animated={animated}
-              className={styles.label}
-            />
-            <Skeleton
-              aria-hidden
-              animated={animated}
-              className={styles.input}
-            />
-          </div>
-        ))}
-        <Skeleton
-          aria-hidden
-          animated={animated}
-          className={styles.submit}
-        />
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      ref={ref}
+      className={cn(styles.form, className)}
+      {...props}>
+      {Array.from({length: fields}, (_, index) => (
+        <div
+          key={index}
+          className={styles.field}>
+          <Skeleton
+            aria-hidden
+            animated={animated}
+            className={styles.label}
+          />
+          <Skeleton
+            aria-hidden
+            animated={animated}
+            className={styles.input}
+          />
+        </div>
+      ))}
+      <Skeleton
+        aria-hidden
+        animated={animated}
+        className={styles.submit}
+      />
+    </div>
+  );
+};
 
 FormSkeleton.displayName = "FormSkeleton";
 

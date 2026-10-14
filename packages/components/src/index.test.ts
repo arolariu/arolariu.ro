@@ -80,9 +80,6 @@ const supportedComponentModules = [
   "item",
   "kbd",
   "label",
-  "legacy-alert-dialog-action",
-  "legacy-command-dialog",
-  "legacy-toast",
   "list-skeleton",
   "loading-overlay",
   "marker",
@@ -188,7 +185,6 @@ const retainedChartAliases = [
   "ReferenceLine",
   "ResponsiveContainer",
   "Customized",
-  "Cell",
   "Cross",
   "Curve",
   "Dot",
@@ -230,7 +226,80 @@ const retainedFormTypes = [
   "UseFormReturn",
 ] as const;
 
+function assertCanonicalDeclarations(checker: ts.TypeChecker, symbols: ReadonlyMap<string, ts.Symbol>): void {
+  const getType = (name: string): ts.Type => {
+    const symbol = symbols.get(name);
+    if (!symbol) throw new Error(`Missing canonical declaration: ${name}`);
+    return checker.getDeclaredTypeOfSymbol(symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol);
+  };
+  for (const [name, removed] of [
+    ["ButtonProps", ["asChild"]],
+    ["BreadcrumbProps", ["separator"]],
+    ["BreadcrumbLinkProps", ["asChild"]],
+    ["ItemProps", ["asChild"]],
+    ["AccordionProps", ["type", "orientation", "loopFocus"]],
+    ["TooltipProps", ["delayDuration"]],
+    ["TooltipProviderProps", ["delayDuration"]],
+    ["TooltipTriggerProps", ["asChild"]],
+    ["ContextMenuContentProps", ["positionMethod"]],
+    ["DropdownMenuTriggerProps", ["asChild"]],
+    ["DropDrawerProps", ["handle"]],
+    ["DropDrawerTriggerProps", ["handle"]],
+    ["DialogTriggerProps", ["asChild"]],
+    ["AlertDialogTriggerProps", ["asChild"]],
+    ["DrawerHeaderProps", ["asChild"]],
+    ["SheetHeaderProps", ["asChild"]],
+    ["PopoverTriggerProps", ["asChild"]],
+    ["SidebarMenuButtonProps", ["asChild"]],
+    ["SeparatorProps", ["decorative"]],
+    ["ChartLegendContentProps", ["align", "onMouseOver"]],
+  ] as const) {
+    for (const member of removed) expect(checker.getPropertyOfType(getType(name), member), `${name}.${member}`).toBeUndefined();
+  }
+  const direction = getType("FlipDirection");
+  expect(direction.isUnion()).toBe(true);
+  if (direction.isUnion()) {
+    expect(direction.types.some((type) => type.isStringLiteral() && type.value === "righ")).toBe(false);
+  }
+  for (const removed of [
+    "AccordionSingleProps",
+    "AccordionMultipleProps",
+    "AccordionArrayProps",
+    "DeprecatedFlipDirection",
+    "LegacyToastApi",
+    "LegacyToasterProps",
+    "LegacyCommandDialogProps",
+    "LegacyAlertDialogActionProps",
+    "NavigationMenuViewportProps",
+    "NavigationMenuIndicatorProps",
+    "PopoverAnchorProps",
+  ]) {
+    expect(symbols.has(removed), removed).toBe(false);
+  }
+}
+
 describe("complete supported public surface", () => {
+  it("does not expose removed compatibility components or deprecated utilities", () => {
+    for (const name of [
+      "LegacyAlertDialogAction",
+      "LegacyCommandDialog",
+      "LegacyToaster",
+      "legacyToast",
+      "Cell",
+      "NavigationMenuViewport",
+      "NavigationMenuIndicator",
+      "PopoverAnchor",
+      "hexToHsl",
+      "hslToHex",
+      "isValidHexColor",
+      "getComplementaryColor",
+      "adjustLightness",
+      "parseHslString",
+    ]) {
+      expect(rootRuntime, name).not.toHaveProperty(name);
+    }
+  });
+
   it("reconciles the 3.0 workspace while preserving the website's separate published 2.4 artifact", () => {
     const repositoryDirectory = path.resolve(import.meta.dirname, "../../..");
     const readManifest = (relativePath: string) => JSON.parse(fs.readFileSync(path.join(repositoryDirectory, relativePath), "utf8"));
@@ -301,6 +370,7 @@ describe("complete supported public surface", () => {
     const rootSymbol = checker.getSymbolAtLocation(rootFile);
     if (!rootSymbol) throw new Error("The real package root has no module symbol.");
     const rootExports = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    assertCanonicalDeclarations(checker, rootExports);
     for (const name of retainedFormTypes) expect(rootExports.has(name), name).toBe(true);
     const missing: string[] = [];
     for (const file of files.slice(0, -1)) {
@@ -323,9 +393,8 @@ describe("complete supported public surface", () => {
     expect(missing).toEqual([]);
   }, 30000);
 
-  it("retains all 59 Recharts aliases without colliding with the native Label", () => {
+  it("retains non-deprecated Recharts identities without colliding with the native Label", () => {
     const dependency: Readonly<Record<string, unknown>> = Recharts;
-    expect(retainedChartAliases).toHaveLength(59);
     for (const name of retainedChartAliases) {
       expect(rootRuntime[name], name).toBe(dependency[name === "RechartsLabel" ? "Label" : name]);
     }
@@ -352,12 +421,17 @@ describe("complete supported public surface", () => {
   it("ships the migration guide and preserves the approved runtime peer contract", () => {
     const manifest = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
     expect(manifest.version).toBe("3.0.0");
+    expect(manifest.peerDependencies.react).toBe("^19");
+    expect(manifest.peerDependencies["react-dom"]).toBe("^19");
+    for (const name of ["legacy-alert-dialog-action", "legacy-command-dialog", "legacy-toast"]) {
+      expect(manifest.exports).not.toHaveProperty(`./${name}`);
+    }
     expect(manifest.files).toContain("MIGRATION.md");
     expect(manifest.peerDependencies).toEqual({
       "@base-ui/react": "^1.9",
       motion: "^13 || ^14",
-      react: "^18.2 || ^19",
-      "react-dom": "^18.2 || ^19",
+      react: "^19",
+      "react-dom": "^19",
       "react-hook-form": "^7",
       recharts: "^3.8",
     });
@@ -397,6 +471,13 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
     const manifest = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"));
     expect(manifest.name).toBe("@arolariu/components");
     expect(manifest.version).toBe("3.0.0");
+    expect(manifest.peerDependencies.react).toBe("^19");
+    expect(manifest.peerDependencies["react-dom"]).toBe("^19");
+    for (const name of ["legacy-alert-dialog-action", "legacy-command-dialog", "legacy-toast"]) {
+      expect(manifest.exports).not.toHaveProperty(`./${name}`);
+      expect(fs.existsSync(path.join(directory, "src", "components", "ui", `${name}.tsx`))).toBe(false);
+      expect(fs.existsSync(path.join(directory, "dist", "components", "ui", `${name}.js`))).toBe(false);
+    }
     for (const required of ["MIGRATION.md", "src/index.ts", "dist/index.js", "dist/index.d.ts", "dist/index.css", "dist/styles.d.ts"]) {
       expect(fs.existsSync(path.join(directory, required)), required).toBe(true);
     }
@@ -466,6 +547,7 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
     const rootSymbol = checker.getSymbolAtLocation(source);
     if (!rootSymbol) throw new Error("Packed root declarations have no module symbol.");
     const rootTypes = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    assertCanonicalDeclarations(checker, rootTypes);
     for (const name of retainedFormTypes) expect(rootTypes.has(name), name).toBe(true);
     for (const file of files) {
       const moduleFile = program.getSourceFile(file);
@@ -929,13 +1011,13 @@ describe("index.ts exports", () => {
   describe("NavigationMenu", () => {
     it("should export NavigationMenu", () => expect(exports).toHaveProperty("NavigationMenu"));
     it("should export NavigationMenuContent", () => expect(exports).toHaveProperty("NavigationMenuContent"));
-    it("should export NavigationMenuIndicator", () => expect(exports).toHaveProperty("NavigationMenuIndicator"));
+    it("does not export the removed navigation indicator", () => expect(exports).not.toHaveProperty("NavigationMenuIndicator"));
     it("should export NavigationMenuItem", () => expect(exports).toHaveProperty("NavigationMenuItem"));
     it("should export NavigationMenuLink", () => expect(exports).toHaveProperty("NavigationMenuLink"));
     it("should export NavigationMenuList", () => expect(exports).toHaveProperty("NavigationMenuList"));
     it("should export NavigationMenuTrigger", () => expect(exports).toHaveProperty("NavigationMenuTrigger"));
     it("should export navigationMenuTriggerStyle", () => expect(exports).toHaveProperty("navigationMenuTriggerStyle"));
-    it("should export NavigationMenuViewport", () => expect(exports).toHaveProperty("NavigationMenuViewport"));
+    it("does not export the removed viewport adapter", () => expect(exports).not.toHaveProperty("NavigationMenuViewport"));
   });
 
   describe("NumberField", () => {
@@ -959,7 +1041,7 @@ describe("index.ts exports", () => {
 
   describe("Popover", () => {
     it("should export Popover", () => expect(exports).toHaveProperty("Popover"));
-    it("should export PopoverAnchor", () => expect(exports).toHaveProperty("PopoverAnchor"));
+    it("does not export the removed structural anchor", () => expect(exports).not.toHaveProperty("PopoverAnchor"));
     it("should export PopoverContent", () => expect(exports).toHaveProperty("PopoverContent"));
     it("should export PopoverTrigger", () => expect(exports).toHaveProperty("PopoverTrigger"));
   });

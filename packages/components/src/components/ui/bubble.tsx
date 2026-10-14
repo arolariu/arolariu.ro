@@ -41,28 +41,26 @@ const variantStyles: Record<BubbleVariant, string | undefined> = {
 };
 
 /** Groups caller-provided bubbles in a shrinking native column. */
-const BubbleGroup = React.forwardRef<HTMLDivElement, BubbleGroup.Props>(({className, ...props}, ref): React.JSX.Element => (
+const BubbleGroup = ({ref, className, ...props}: Readonly<BubbleGroup.Props>): React.JSX.Element => (
   <div
     {...props}
     ref={ref}
     data-slot='bubble-group'
     className={cn(styles.group, className)}
   />
-));
+);
 BubbleGroup.displayName = "BubbleGroup";
 
 /** Defines a bubble surface and logical alignment without owning message or reaction state. */
-const Bubble = React.forwardRef<HTMLDivElement, Bubble.Props>(
-  ({className, variant = "default", align = "start", ...props}, ref): React.JSX.Element => (
-    <div
-      {...props}
-      ref={ref}
-      data-slot='bubble'
-      data-variant={variant}
-      data-align={align}
-      className={cn(styles.bubble, variantStyles[variant], className)}
-    />
-  ),
+const Bubble = ({ref, className, variant = "default", align = "start", ...props}: Readonly<Bubble.Props>): React.JSX.Element => (
+  <div
+    {...props}
+    ref={ref}
+    data-slot='bubble'
+    data-variant={variant}
+    data-align={align}
+    className={cn(styles.bubble, variantStyles[variant], className)}
+  />
 );
 Bubble.displayName = "Bubble";
 
@@ -71,30 +69,32 @@ Bubble.displayName = "Bubble";
  * Composed targets own native button type/disabled/keyboard semantics. Base UI
  * merges child content, both refs, classes and child-first cancellable handlers.
  */
-const BubbleContent = React.forwardRef<HTMLElement, BubbleContent.Props>(
-  ({className, render, ...props}: Readonly<React.PropsWithoutRef<BubbleContent.Props>>, ref): React.ReactElement =>
-    useRender<BubbleContent.State, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render,
-      state: {slot: "bubble-content"},
-      props: mergeProps<"div">({className: cn(styles.content, className)}, props),
-    }),
-);
+const BubbleContent = ({ref, className, render, ...props}: Readonly<BubbleContent.Props>): React.ReactElement =>
+  useRender<BubbleContent.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "bubble-content"},
+    props: mergeProps<"div">({className: cn(styles.content, className)}, props),
+  });
 BubbleContent.displayName = "BubbleContent";
 
 /** Positions caller-provided reactions at a logical corner of the parent bubble. */
-const BubbleReactions = React.forwardRef<HTMLDivElement, BubbleReactions.Props>(
-  ({className, side = "bottom", align = "end", ...props}, ref): React.JSX.Element => (
-    <div
-      {...props}
-      ref={ref}
-      data-slot='bubble-reactions'
-      data-side={side}
-      data-align={align}
-      className={cn(styles.reactions, className)}
-    />
-  ),
+const BubbleReactions = ({
+  ref,
+  className,
+  side = "bottom",
+  align = "end",
+  ...props
+}: Readonly<BubbleReactions.Props>): React.JSX.Element => (
+  <div
+    {...props}
+    ref={ref}
+    data-slot='bubble-reactions'
+    data-side={side}
+    data-align={align}
+    className={cn(styles.reactions, className)}
+  />
 );
 BubbleReactions.displayName = "BubbleReactions";
 

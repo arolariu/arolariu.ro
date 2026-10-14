@@ -3,19 +3,19 @@ import {NavigationMenu as BaseNavigationMenu} from "@base-ui/react/navigation-me
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import * as NavigationMenuParts from "./navigation-menu";
 import {
   NavigationMenu,
   NavigationMenuContent,
-  NavigationMenuIndicator,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuPositioner,
   NavigationMenuTrigger,
-  NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "./navigation-menu";
 
@@ -110,6 +110,13 @@ function installMeasurements(): MeasurementFixture {
 }
 
 let measurements: MeasurementFixture | undefined;
+
+// Characterizes an opaque slot's React normalization contract, not a genuine Flight decoder.
+function opaqueSlot(element: React.ReactElement): React.ReactElement {
+  const slot = {...element, $$typeof: Symbol.for("react.lazy"), _payload: element, _init: () => element};
+  return slot;
+}
+
 afterEach(() => {
   cleanup();
   measurements?.restore();
@@ -147,9 +154,78 @@ function MenuItems(): React.ReactElement {
 }
 
 describe("NavigationMenu", () => {
-  it("exposes a genuine React forwardRef Root instead of relying on React 19 ref-as-prop behavior", () => {
-    expect(NavigationMenu).toHaveProperty("$$typeof", Symbol.for("react.forward_ref"));
-    expect(NavigationMenu).toHaveProperty("render", expect.any(Function));
+  it("refresh accessibility: authors minimum link targets and scrollable bounded viewport content", () => {
+    const css = readFileSync(join(import.meta.dirname, "navigation-menu.module.css"), "utf8");
+    expect(css).toMatch(/\.link\s*\{[^}]*min-height:\s*1\.5rem/u);
+    expect(css).toMatch(/\.link\s*\{[^}]*min-width:\s*1\.5rem/u);
+    expect(css).toMatch(/\.viewport\s*\{[^}]*overflow-y:\s*auto/u);
+    expect(css).toMatch(/\.viewport\s*\{[^}]*min-height:\s*0/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*display:\s*flex/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*max-height:\s*var\(--available-height/u);
+  });
+
+  it.each(["ordinary", "opaque"] as const)("retains generated owners with %s element-owned children", async (kind) => {
+    const slot = (element: React.ReactElement): React.ReactElement => (kind === "ordinary" ? element : opaqueSlot(element));
+    render(
+      <NavigationMenu
+        defaultValue='products'
+        render={slot(
+          <nav aria-label='Composed navigation'>
+            <MenuItems />
+          </nav>,
+        )}
+        positionerProps={{
+          render: slot(
+            <div>
+              <span>Positioner decoration</span>
+            </div>,
+          ),
+          popupProps: {
+            render: slot(
+              <nav aria-label='Composed popup'>
+                <span>Popup decoration</span>
+              </nav>,
+            ),
+          },
+        }}
+      />,
+    );
+    expect(await screen.findByRole("link", {name: "Analytics"})).toBeVisible();
+    expect(screen.getByRole("navigation", {name: "Composed navigation"})).toContainElement(screen.getByRole("button", {name: "Products"}));
+    expect(screen.getByRole("navigation", {name: "Composed popup"})).toContainElement(screen.getByText("Popup decoration"));
+    expect(screen.getAllByText("Positioner decoration")).toHaveLength(1);
+    for (const owner of ["positioner", "popup", "viewport"]) {
+      expect(document.querySelectorAll(`[data-slot="navigation-menu-${owner}"]`)).toHaveLength(1);
+    }
+  });
+
+  it("does not resolve pending popup slots or call render callbacks while closed", async () => {
+    const normalize = vi.fn(() => {
+      throw new Promise<void>(() => undefined);
+    });
+    const pending: React.ReactElement & Readonly<{$$typeof: symbol; _payload: null; _init: () => never}> = {
+      ...(<nav />),
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: null,
+      _init: normalize,
+    };
+    const popupRender = vi.fn((props: React.ComponentPropsWithRef<"nav">) => <nav {...props} />);
+    const view = render(
+      <React.Suspense fallback={<p>Suspended</p>}>
+        <NavigationMenu positionerProps={{render: pending, popupProps: {render: popupRender}}}>
+          <MenuItems />
+        </NavigationMenu>
+      </React.Suspense>,
+    );
+    expect(screen.getByRole("button", {name: "Products"})).toBeVisible();
+    expect(screen.queryByText("Suspended")).not.toBeInTheDocument();
+    expect(normalize).not.toHaveBeenCalled();
+    expect(popupRender).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it("exposes a React 19 generic function Root", () => {
+    expect(typeof NavigationMenu).toBe("function");
   });
 
   it("merges the consumer Root callback ref with a static rendered native ref and cleans both on unmount", () => {
@@ -226,9 +302,10 @@ describe("NavigationMenu", () => {
     expect(ref.current).toBe(screen.getByRole("navigation", {name: "Inferred object menu"}));
   });
 
-  it("publicly exports Positioner without removing the legacy Viewport adapter", () => {
+  it("publicly exports Positioner without compatibility Viewport or Indicator adapters", () => {
     expect(NavigationMenuParts).toHaveProperty("NavigationMenuPositioner");
-    expect(NavigationMenuParts.NavigationMenuViewport).toBeDefined();
+    expect(NavigationMenuParts).not.toHaveProperty("NavigationMenuViewport");
+    expect(NavigationMenuParts).not.toHaveProperty("NavigationMenuIndicator");
   });
 
   it("keeps render and class callbacks on Root, List, Trigger, Content and Link with real primitive state", async () => {
@@ -385,35 +462,6 @@ describe("NavigationMenu", () => {
     await waitFor(() => expect(positioner).not.toHaveAttribute("data-instant"));
   });
 
-  it("retains the documented standalone decorative Indicator and composes child content and refs", () => {
-    const childRef = React.createRef<HTMLSpanElement>();
-    const wrapperRef = React.createRef<HTMLElement>();
-    const childClick = vi.fn();
-    const wrapperClick = vi.fn();
-    render(
-      <NavigationMenuIndicator
-        asChild
-        ref={wrapperRef}
-        onClick={wrapperClick}
-        data-testid='nav-indicator'>
-        <span
-          ref={childRef}
-          onClick={childClick}>
-          Indicator
-        </span>
-      </NavigationMenuIndicator>,
-    );
-    const indicator = screen.getByTestId("nav-indicator");
-    expect(indicator).toHaveAttribute("aria-hidden", "true");
-    expect(indicator).toHaveTextContent("Indicator");
-    expect(indicator.tagName).toBe("SPAN");
-    expect(wrapperRef.current).toBe(indicator);
-    expect(childRef.current).toBe(indicator);
-    fireEvent.click(indicator);
-    expect(childClick).toHaveBeenCalledOnce();
-    expect(wrapperClick).toHaveBeenCalledOnce();
-  });
-
   it("preserves native link attributes, active state and render-element text and refs", () => {
     const ref = React.createRef<HTMLAnchorElement>();
     const childRef = React.createRef<HTMLAnchorElement>();
@@ -448,28 +496,30 @@ describe("NavigationMenu", () => {
     expect(childRef.current).toBe(link);
   });
 
-  it("retains the Viewport adapter with callbacks and ref on the actual viewport", async () => {
+  it("routes viewport callbacks and ref through explicit Positioner viewportProps", async () => {
     const ref = React.createRef<HTMLDivElement>();
     render(
       <NavigationMenu positionerProps={false}>
         <MenuItems />
-        <NavigationMenuViewport
-          ref={ref}
-          data-testid='legacy-viewport'
-          className={() => "legacy-class"}
-          render={(props) => (
-            <div
-              {...props}
-              data-legacy='true'
-            />
-          )}
+        <NavigationMenuPositioner
+          viewportProps={{
+            ref,
+            "data-testid": "explicit-viewport",
+            className: () => "viewport-class",
+            render: (props) => (
+              <div
+                {...props}
+                data-explicit='true'
+              />
+            ),
+          }}
         />
       </NavigationMenu>,
     );
     fireEvent.click(screen.getByRole("button", {name: "Products"}));
-    const viewport = await screen.findByTestId("legacy-viewport");
-    expect(viewport).toHaveClass("legacy-class");
-    expect(viewport).toHaveAttribute("data-legacy", "true");
+    const viewport = await screen.findByTestId("explicit-viewport");
+    expect(viewport).toHaveClass("viewport-class");
+    expect(viewport).toHaveAttribute("data-explicit", "true");
     expect(ref.current).toBe(viewport);
     expect(viewport).toContainElement(screen.getByRole("link", {name: "Analytics"}));
     expect(document.querySelectorAll('[data-slot="navigation-menu-popup"]')).toHaveLength(1);
@@ -965,45 +1015,5 @@ describe("NavigationMenu", () => {
       unmount();
       frameSpy.mockRestore();
     }
-  });
-
-  it("keeps Indicator default decoration and implicit/explicit render content without fabricating menu state", () => {
-    const ref = React.createRef<HTMLElement>();
-    render(
-      <>
-        <NavigationMenuIndicator data-testid='default-indicator' />
-        <NavigationMenuIndicator
-          data-testid='implicit-indicator'
-          render={<span>Implicit decoration</span>}
-        />
-        <NavigationMenuIndicator
-          data-testid='explicit-indicator'
-          render={<span>Replaced content</span>}>
-          Explicit decoration
-        </NavigationMenuIndicator>
-        <NavigationMenuIndicator
-          ref={ref}
-          render={(props, state) => (
-            <div
-              {...props}
-              data-testid='callback-indicator'
-              data-state-keys={Object.keys(state).join(",")}
-            />
-          )}
-        />
-        <NavigationMenuIndicator
-          asChild
-          data-testid='fallback-indicator'>
-          Plain decoration
-        </NavigationMenuIndicator>
-      </>,
-    );
-    expect(screen.getByTestId("default-indicator")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByTestId("default-indicator").firstElementChild).toBeInTheDocument();
-    expect(screen.getByTestId("implicit-indicator")).toHaveTextContent("Implicit decoration");
-    expect(screen.getByTestId("explicit-indicator")).toHaveTextContent("Explicit decoration");
-    expect(screen.getByTestId("callback-indicator")).toHaveAttribute("data-state-keys", "");
-    expect(ref.current).toBe(screen.getByTestId("callback-indicator"));
-    expect(screen.getByTestId("fallback-indicator")).toHaveTextContent("Plain decoration");
   });
 });

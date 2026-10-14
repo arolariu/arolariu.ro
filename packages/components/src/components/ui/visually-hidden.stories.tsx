@@ -33,9 +33,11 @@ type Story = StoryObj<typeof meta>;
 
 export const IconButton: Story = {
   render: () => (
-    <Button size='icon'>
+    <Button
+      size='icon'
+      aria-labelledby='vh-delete-item'>
       <Trash2 aria-hidden='true' />
-      <VisuallyHidden>Delete item</VisuallyHidden>
+      <VisuallyHidden id='vh-delete-item'>Delete item</VisuallyHidden>
     </Button>
   ),
 };
@@ -44,21 +46,24 @@ export const IconGroup: Story = {
     <div className={storyClasses.storyRow}>
       <Button
         size='icon-sm'
+        aria-labelledby='vh-edit'
         variant='secondary'>
         <Pencil aria-hidden='true' />
-        <VisuallyHidden>Edit</VisuallyHidden>
+        <VisuallyHidden id='vh-edit'>Edit</VisuallyHidden>
       </Button>
       <Button
         size='icon-sm'
+        aria-labelledby='vh-view'
         variant='secondary'>
         <Eye aria-hidden='true' />
-        <VisuallyHidden>View</VisuallyHidden>
+        <VisuallyHidden id='vh-view'>View</VisuallyHidden>
       </Button>
       <Button
         size='icon-sm'
+        aria-labelledby='vh-delete'
         variant='destructive'>
         <Trash2 aria-hidden='true' />
-        <VisuallyHidden>Delete</VisuallyHidden>
+        <VisuallyHidden id='vh-delete'>Delete</VisuallyHidden>
       </Button>
     </div>
   ),

@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {GradientBackground} from "./gradient-background";
 const storyStyles = `
 .ac-story-gradient-background-demo {
@@ -53,6 +55,24 @@ const meta = {
 } satisfies Meta<typeof GradientBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** An intentional loop, unlike the finite default, includes a persistent native control. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume gradient" : "Pause gradient"}</Button>
+        <div className={storyClasses.demo}>
+          <GradientBackground
+            {...args}
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 export const Default: Story = {};
 export const FastAnimation: Story = {args: {transition: {duration: 5, ease: "easeInOut", repeat: Infinity}}};
 export const WithContent: Story = {

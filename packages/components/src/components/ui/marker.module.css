@@ -31,6 +31,11 @@ a.marker,
   outline-offset: 2px;
 }
 
+:is(a, button).marker {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+}
+
 .separator::before {
   content: "";
   min-inline-size: 0;

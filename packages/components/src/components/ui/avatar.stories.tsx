@@ -141,14 +141,24 @@ export const AvatarStack = {
       <Avatar>
         <AvatarFallback>AB</AvatarFallback>
       </Avatar>
-      <AvatarGroupCount aria-label='5 more team members'>+5</AvatarGroupCount>
+      <AvatarGroupCount
+        role='img'
+        aria-label='5 more team members'>
+        +5
+      </AvatarGroupCount>
     </AvatarGroup>
   ),
 } satisfies Story;
 
 /** The count also works independently using the default 40px size. */
 export const GroupCount = {
-  render: (): ReactElement => <AvatarGroupCount aria-label='5 more contributors'>+5</AvatarGroupCount>,
+  render: (): ReactElement => (
+    <AvatarGroupCount
+      role='img'
+      aria-label='5 more contributors'>
+      +5
+    </AvatarGroupCount>
+  ),
 } satisfies Story;
 
 /** Small 24px, backward-compatible default 40px, and large 48px avatars. */
@@ -222,7 +232,11 @@ export const GroupSizes = {
           <Avatar size={size}>
             <AvatarFallback>JD</AvatarFallback>
           </Avatar>
-          <AvatarGroupCount aria-label='3 more contributors'>+3</AvatarGroupCount>
+          <AvatarGroupCount
+            role='img'
+            aria-label='3 more contributors'>
+            +3
+          </AvatarGroupCount>
         </AvatarGroup>
       ))}
     </div>
@@ -279,7 +293,11 @@ export const DarkTheme = {
         <Avatar>
           <AvatarFallback>JD</AvatarFallback>
         </Avatar>
-        <AvatarGroupCount aria-label='3 more contributors'>+3</AvatarGroupCount>
+        <AvatarGroupCount
+          role='img'
+          aria-label='3 more contributors'>
+          +3
+        </AvatarGroupCount>
       </AvatarGroup>
     </div>
   ),
@@ -302,7 +320,11 @@ export const RightToLeft = {
       <Avatar>
         <AvatarFallback>JD</AvatarFallback>
       </Avatar>
-      <AvatarGroupCount aria-label='3 more contributors'>+3</AvatarGroupCount>
+      <AvatarGroupCount
+        role='img'
+        aria-label='3 more contributors'>
+        +3
+      </AvatarGroupCount>
     </AvatarGroup>
   ),
 } satisfies Story;

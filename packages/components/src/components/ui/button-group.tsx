@@ -24,7 +24,7 @@ export interface ButtonGroupVariantOptions {
  * Props for the {@link ButtonGroup} component.
  */
 export type ButtonGroupProps = Readonly<
-  React.ComponentPropsWithoutRef<"div"> & {
+  React.ComponentPropsWithRef<"div"> & {
     /** Arrangement of grouped controls. @default "horizontal" */
     orientation?: ButtonGroupOrientation;
   }
@@ -47,15 +47,13 @@ export type ButtonGroupTextProps = Readonly<
   Omit<useRender.ComponentProps<"div", ButtonGroupTextState, ButtonGroupTextRenderProps>, "ref"> & {
     /** Ref to the actual rendered element; the default target is a div. */
     ref?: React.Ref<HTMLElement>;
-    /** Enables rendering an existing div-compatible child element. @default false */
-    asChild?: boolean;
   }
 >;
 
 /**
  * Props for the {@link ButtonGroupSeparator} component.
  */
-export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithoutRef<typeof Separator>>;
+export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
 
 /**
  * Returns the CSS class list for a button group root.
@@ -90,17 +88,15 @@ function buttonGroupVariants({orientation = "horizontal", className}: Readonly<B
  *
  * @see {@link ButtonGroupProps} for available props
  */
-const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
-  ({className, orientation = "horizontal", ...props}: Readonly<ButtonGroupProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      role='group'
-      data-slot='button-group'
-      data-orientation={orientation}
-      className={buttonGroupVariants({orientation, className})}
-      {...props}
-    />
-  ),
+const ButtonGroup = ({ref, className, orientation = "horizontal", ...props}: Readonly<ButtonGroupProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    role='group'
+    data-slot='button-group'
+    data-orientation={orientation}
+    className={buttonGroupVariants({orientation, className})}
+    {...props}
+  />
 );
 
 /**
@@ -110,7 +106,6 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  * - Base UI owns render composition, merging both refs and event handlers.
  * - Renders a `<div>` by default; prefer `render` for labels or other markup.
  * - The common `HTMLElement` ref boundary supports refs to the chosen target.
- * - Legacy `asChild` remains a compatible alias for a single child element.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -120,22 +115,15 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  *
  * @see {@link ButtonGroupTextProps} for available props
  */
-const ButtonGroupText = React.forwardRef<HTMLElement, ButtonGroupTextProps>(
-  (
-    {className, render, asChild = false, children, ...props}: Readonly<React.PropsWithoutRef<ButtonGroupTextProps>>,
+const ButtonGroupText = ({ref, className, render, children, ...props}: Readonly<ButtonGroupTextProps>): React.ReactElement => {
+  return useRender<ButtonGroupTextState, HTMLElement>({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-
-    return useRender<ButtonGroupTextState, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render: legacyChild ?? render,
-      state: {slot: "button-group-text"},
-      props: mergeProps<"div">({className: cn(styles.text, className)}, props, {children: legacyChild ? undefined : children}),
-    });
-  },
-);
+    render,
+    state: {slot: "button-group-text"},
+    props: mergeProps<"div">({className: cn(styles.text, className)}, props, {children}),
+  });
+};
 
 /**
  * Inserts a separator between grouped controls.
@@ -152,16 +140,19 @@ const ButtonGroupText = React.forwardRef<HTMLElement, ButtonGroupTextProps>(
  *
  * @see {@link ButtonGroupSeparatorProps} for available props
  */
-const ButtonGroupSeparator = React.forwardRef<HTMLDivElement, ButtonGroupSeparatorProps>(
-  ({className, orientation = "vertical", ...props}: Readonly<ButtonGroupSeparatorProps>, ref): React.JSX.Element => (
-    <Separator
-      ref={ref}
-      data-slot='button-group-separator'
-      orientation={orientation}
-      className={cn(styles.separator, className)}
-      {...props}
-    />
-  ),
+const ButtonGroupSeparator = ({
+  ref,
+  className,
+  orientation = "vertical",
+  ...props
+}: Readonly<ButtonGroupSeparatorProps>): React.JSX.Element => (
+  <Separator
+    ref={ref}
+    data-slot='button-group-separator'
+    orientation={orientation}
+    className={cn(styles.separator, className)}
+    {...props}
+  />
 );
 
 ButtonGroup.displayName = "ButtonGroup";

@@ -3,6 +3,8 @@ import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Button} from "./button";
@@ -48,8 +50,38 @@ function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
 }
 
 describe("DropdownMenu", () => {
+  it("refresh accessibility: authors keyboard focus independently of a low-contrast hover fill", () => {
+    const css = readFileSync(join(import.meta.dirname, "dropdown-menu.module.css"), "utf8");
+    expect(css).toMatch(/\.item:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ac-ring\)/u);
+  });
+
+  it("does not normalize a closed pending popup render slot", () => {
+    const normalize = vi.fn(() => {
+      throw new Promise<void>(() => undefined);
+    });
+    const pending: React.ReactElement & Readonly<{$$typeof: symbol; _payload: null; _init: () => never}> = {
+      ...(<div />),
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: null,
+      _init: normalize,
+    };
+    render(
+      <React.Suspense fallback={<p>Pending menu</p>}>
+        <DropdownMenu>
+          <DropdownMenuTrigger>Open pending menu</DropdownMenuTrigger>
+          <DropdownMenuContent render={pending}>
+            <DropdownMenuItem>Action</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </React.Suspense>,
+    );
+    expect(screen.getByRole("button", {name: "Open pending menu"})).toBeVisible();
+    expect(screen.queryByText("Pending menu")).not.toBeInTheDocument();
+    expect(normalize).not.toHaveBeenCalled();
+  });
+
   it.each(["custom", "library"] as const)(
-    "preserves native type, form safety, state callbacks and refs for %s button asChild",
+    "preserves native type, form safety, state callbacks and refs for %s button composition",
     async (kind) => {
       const user = userEvent.setup();
       const errors = vi.spyOn(console, "error");
@@ -66,24 +98,25 @@ describe("DropdownMenu", () => {
             }}>
             <DropdownMenu>
               <DropdownMenuTrigger
-                asChild
                 ref={wrapperRef}
                 className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
-                onClick={() => calls.push("wrapper")}>
-                {kind === "custom" ? (
-                  <LegacyControl
-                    ref={childRef}
-                    onClick={() => calls.push("child")}>
-                    Actions
-                  </LegacyControl>
-                ) : (
-                  <Button
-                    ref={childRef}
-                    onClick={() => calls.push("child")}>
-                    Actions
-                  </Button>
-                )}
-              </DropdownMenuTrigger>
+                onClick={() => calls.push("wrapper")}
+                render={
+                  kind === "custom" ? (
+                    <LegacyControl
+                      ref={childRef}
+                      onClick={() => calls.push("child")}>
+                      Actions
+                    </LegacyControl>
+                  ) : (
+                    <Button
+                      ref={childRef}
+                      onClick={() => calls.push("child")}>
+                      Actions
+                    </Button>
+                  )
+                }
+              />
               <DropdownMenuContent aria-label='Custom actions'>
                 <DropdownMenuItem>Rename</DropdownMenuItem>
               </DropdownMenuContent>
@@ -110,7 +143,7 @@ describe("DropdownMenu", () => {
     },
   );
 
-  it("retains custom native-button asChild cancellation without submitting its form", async () => {
+  it("retains custom native-button composition cancellation without submitting its form", async () => {
     const user = userEvent.setup();
     const errors = vi.spyOn(console, "error");
     const calls: string[] = [];
@@ -125,16 +158,17 @@ describe("DropdownMenu", () => {
           }}>
           <DropdownMenu onOpenChange={(open) => openChanges.push(open)}>
             <DropdownMenuTrigger
-              asChild
-              onClick={() => calls.push("wrapper")}>
-              <LegacyControl
-                onMouseDown={(event) => {
-                  if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
-                }}
-                onClick={() => calls.push("child")}>
-                Cancel open
-              </LegacyControl>
-            </DropdownMenuTrigger>
+              onClick={() => calls.push("wrapper")}
+              render={
+                <LegacyControl
+                  onMouseDown={(event) => {
+                    if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
+                  }}
+                  onClick={() => calls.push("child")}>
+                  Cancel open
+                </LegacyControl>
+              }
+            />
             <DropdownMenuContent>
               <DropdownMenuItem>Rename</DropdownMenuItem>
             </DropdownMenuContent>
@@ -162,11 +196,10 @@ describe("DropdownMenu", () => {
       render(
         <DropdownMenu>
           <DropdownMenuTrigger
-            asChild
             ref={ref}
-            nativeButton={false}>
-            {kind === "anchor" ? <LegacyLink href='#actions'>Custom target</LegacyLink> : <LegacyRegion>Custom target</LegacyRegion>}
-          </DropdownMenuTrigger>
+            nativeButton={false}
+            render={kind === "anchor" ? <LegacyLink href='#actions'>Custom target</LegacyLink> : <LegacyRegion>Custom target</LegacyRegion>}
+          />
           <DropdownMenuContent aria-label='Custom target actions'>
             <DropdownMenuItem>Rename</DropdownMenuItem>
           </DropdownMenuContent>
@@ -193,9 +226,10 @@ describe("DropdownMenu", () => {
     try {
       render(
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            {kind === "anchor" ? <a href='#actions'>Intrinsic target</a> : <div>Intrinsic target</div>}
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            nativeButton={false}
+            render={kind === "anchor" ? <a href='#actions'>Intrinsic target</a> : <div>Intrinsic target</div>}
+          />
           <DropdownMenuContent>
             <DropdownMenuItem>Rename</DropdownMenuItem>
           </DropdownMenuContent>
@@ -478,22 +512,23 @@ describe("DropdownMenu", () => {
     render(
       <DropdownMenu>
         <DropdownMenuTrigger
-          asChild
           ref={wrapperRef}
-          onClick={() => calls.push("wrapper")}>
-          <button
-            type='button'
-            ref={childRef}
-            onMouseDown={(event) => {
-              if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
-            }}
-            onClick={(event) => {
-              calls.push("child");
-              event.preventDefault();
-            }}>
-            Cancel open
-          </button>
-        </DropdownMenuTrigger>
+          onClick={() => calls.push("wrapper")}
+          render={
+            <button
+              type='button'
+              ref={childRef}
+              onMouseDown={(event) => {
+                if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
+              }}
+              onClick={(event) => {
+                calls.push("child");
+                event.preventDefault();
+              }}>
+              Cancel open
+            </button>
+          }
+        />
         <DropdownMenuContent>
           <DropdownMenuItem>Rename</DropdownMenuItem>
         </DropdownMenuContent>
@@ -1099,18 +1134,12 @@ describe("DropdownMenu", () => {
     // Arrange
     render(
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type='button'>Open menu</button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger render={<button type='button'>Open menu</button>} />
         <DropdownMenuContent>
-          <DropdownMenuItem asChild>
-            <span data-testid='child-item'>Child action</span>
-          </DropdownMenuItem>
+          <DropdownMenuItem render={<span data-testid='child-item'>Child action</span>} />
           <DropdownMenuItem>
             Copy
-            <DropdownMenuShortcut asChild>
-              <span data-testid='shortcut-child'>⌘K</span>
-            </DropdownMenuShortcut>
+            <DropdownMenuShortcut render={<span data-testid='shortcut-child'>⌘K</span>} />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>,

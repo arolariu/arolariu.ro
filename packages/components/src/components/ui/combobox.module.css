@@ -7,6 +7,8 @@
 }
 
 .trigger {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -86,6 +88,8 @@
 .item[data-highlighted] {
   background: var(--ac-accent);
   color: var(--ac-accent-foreground);
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
 }
 
 .item[data-disabled] {
@@ -189,6 +193,18 @@
 
 @media (forced-colors: active) {
   .item[data-highlighted] {
-    outline: 1px solid Highlight;
+    outline: 2px solid Highlight;
+  }
+
+  .content,
+  .chips {
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .chipRemove:focus-visible,
+  .clear:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
   }
 }

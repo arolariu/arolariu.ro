@@ -6,7 +6,7 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./bubble-background.module.css";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useVisualEffectPolicy, type VisualEffectOptions} from "./_visual-effects";
 
 /** Configurable bubble color channels consumed by the CSS module. */
 export interface BubbleBackgroundColors {
@@ -25,7 +25,7 @@ export interface BubbleBackgroundColors {
 }
 
 /** Props accepted by {@link BubbleBackground}. */
-export interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface BubbleBackgroundProps extends React.ComponentPropsWithRef<"div">, VisualEffectOptions {
   /** Ordinary caller styles are merged with normalized palette overrides. */
   readonly style?: React.CSSProperties
     & Partial<{
@@ -124,150 +124,148 @@ function createBubbleStyle(
  *
  * @see {@link BubbleBackgroundProps} for available props
  */
-const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>(
-  (
-    {
-      className,
-      children,
-      style: callerStyle,
-      interactive = false,
-      transition = defaultTransition,
-      colors = defaultColors,
-      ...props
-    }: Readonly<BubbleBackgroundProps>,
-    ref,
-  ): React.JSX.Element => {
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const id = React.useId();
-    const {paused} = useVisualEffectPolicy(containerRef);
-    const setRefs = useMergedRefs(containerRef, ref);
+function BubbleBackground({
+  ref,
+  loop,
+  motionPaused,
+  className,
+  children,
+  style: callerStyle,
+  interactive = false,
+  transition = defaultTransition,
+  colors = defaultColors,
+  ...props
+}: Readonly<BubbleBackgroundProps>): React.JSX.Element {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const id = React.useId();
+  const {paused} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
+  const setRefs = useMergedRefs(containerRef, ref);
 
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
-    const springX = useSpring(mouseX, transition);
-    const springY = useSpring(mouseY, transition);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, transition);
+  const springY = useSpring(mouseY, transition);
 
-    React.useEffect(() => {
-      if (!interactive || paused) {
-        mouseX.jump(0);
-        mouseY.jump(0);
-        springX.jump(0);
-        springY.jump(0);
-        return;
+  React.useEffect(() => {
+    if (!interactive || paused) {
+      mouseX.jump(0);
+      mouseY.jump(0);
+      springX.jump(0);
+      springY.jump(0);
+      return;
+    }
+
+    const currentContainer = containerRef.current;
+    if (!currentContainer) {
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent): void => {
+      const rect = currentContainer.getBoundingClientRect();
+      if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) {
+        throw new RangeError("BubbleBackground interactive geometry must be finite and non-empty.");
       }
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      mouseX.set(event.clientX - centerX);
+      mouseY.set(event.clientY - centerY);
+    };
 
-      const currentContainer = containerRef.current;
-      if (!currentContainer) {
-        return;
-      }
+    currentContainer.addEventListener("mousemove", handleMouseMove);
 
-      const handleMouseMove = (event: MouseEvent): void => {
-        const rect = currentContainer.getBoundingClientRect();
-        if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) {
-          throw new RangeError("BubbleBackground interactive geometry must be finite and non-empty.");
-        }
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        mouseX.set(event.clientX - centerX);
-        mouseY.set(event.clientY - centerY);
-      };
+    return () => {
+      currentContainer.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [interactive, mouseX, mouseY, paused, springX, springY]);
 
-      currentContainer.addEventListener("mousemove", handleMouseMove);
+  const style = createBubbleStyle(colors, callerStyle, id);
 
-      return () => {
-        currentContainer.removeEventListener("mousemove", handleMouseMove);
-      };
-    }, [interactive, mouseX, mouseY, paused, springX, springY]);
-
-    const style = createBubbleStyle(colors, callerStyle, id);
-
-    return (
-      <div
-        ref={setRefs}
-        className={cn(styles.root, className)}
-        style={style}
-        {...props}
-        data-motion={paused ? "paused" : "running"}>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          className={styles.hiddenSvg}
-          aria-hidden='true'>
-          <defs>
-            <filter id={`${id}-goo`}>
-              <feGaussianBlur
-                in='SourceGraphic'
-                stdDeviation='10'
-                result='blur'
-              />
-              <feColorMatrix
-                in='blur'
-                mode='matrix'
-                values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8'
-                result='goo'
-              />
-              <feBlend
-                in='SourceGraphic'
-                in2='goo'
-              />
-            </filter>
-          </defs>
-        </svg>
-
-        <div
-          className={styles.filterLayer}
-          aria-hidden='true'>
-          <motion.div
-            className={cn(styles.bubble, styles.bubbleFirst)}
-            initial={false}
-            animate={paused ? {y: 0} : {y: [-50, 50, -50]}}
-            transition={bubbleTransition(paused, 30, "easeInOut")}
-          />
-
-          <motion.div
-            className={cn(styles.rotator, styles.rotatorSecond)}
-            initial={false}
-            animate={{rotate: paused ? 0 : 360}}
-            transition={bubbleTransition(paused, 20, "linear", "reverse")}>
-            <div className={cn(styles.bubble, styles.bubbleSecond)} />
-          </motion.div>
-
-          <motion.div
-            className={cn(styles.rotator, styles.rotatorThird)}
-            initial={false}
-            animate={{rotate: paused ? 0 : 360}}
-            transition={bubbleTransition(paused, 40, "linear")}>
-            <div className={cn(styles.bubble, styles.bubbleThird)} />
-          </motion.div>
-
-          <motion.div
-            className={cn(styles.bubble, styles.bubbleFourth)}
-            initial={false}
-            animate={paused ? {x: 0} : {x: [-50, 50, -50]}}
-            transition={bubbleTransition(paused, 40, "easeInOut")}
-          />
-
-          <motion.div
-            className={cn(styles.rotator, styles.rotatorFifth)}
-            initial={false}
-            animate={{rotate: paused ? 0 : 360}}
-            transition={bubbleTransition(paused, 20, "linear")}>
-            <div className={cn(styles.bubble, styles.bubbleFifth)} />
-          </motion.div>
-
-          {interactive ? (
-            <motion.div
-              className={cn(styles.bubble, styles.bubbleInteractive)}
-              data-bubble='interactive'
-              style={{x: paused ? 0 : springX, y: paused ? 0 : springY}}
+  return (
+    <div
+      ref={setRefs}
+      className={cn(styles.root, className)}
+      style={style}
+      {...props}
+      data-motion={paused ? "paused" : "running"}>
+      <svg
+        xmlns='http://www.w3.org/2000/svg'
+        className={styles.hiddenSvg}
+        aria-hidden='true'>
+        <defs>
+          <filter id={`${id}-goo`}>
+            <feGaussianBlur
+              in='SourceGraphic'
+              stdDeviation='10'
+              result='blur'
             />
-          ) : null}
-        </div>
+            <feColorMatrix
+              in='blur'
+              mode='matrix'
+              values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8'
+              result='goo'
+            />
+            <feBlend
+              in='SourceGraphic'
+              in2='goo'
+            />
+          </filter>
+        </defs>
+      </svg>
 
-        {children}
+      <div
+        className={styles.filterLayer}
+        aria-hidden='true'>
+        <motion.div
+          className={cn(styles.bubble, styles.bubbleFirst)}
+          initial={false}
+          animate={paused ? {y: 0} : {y: [-50, 50, -50]}}
+          transition={bubbleTransition(paused, 30, "easeInOut")}
+        />
+
+        <motion.div
+          className={cn(styles.rotator, styles.rotatorSecond)}
+          initial={false}
+          animate={{rotate: paused ? 0 : 360}}
+          transition={bubbleTransition(paused, 20, "linear", "reverse")}>
+          <div className={cn(styles.bubble, styles.bubbleSecond)} />
+        </motion.div>
+
+        <motion.div
+          className={cn(styles.rotator, styles.rotatorThird)}
+          initial={false}
+          animate={{rotate: paused ? 0 : 360}}
+          transition={bubbleTransition(paused, 40, "linear")}>
+          <div className={cn(styles.bubble, styles.bubbleThird)} />
+        </motion.div>
+
+        <motion.div
+          className={cn(styles.bubble, styles.bubbleFourth)}
+          initial={false}
+          animate={paused ? {x: 0} : {x: [-50, 50, -50]}}
+          transition={bubbleTransition(paused, 40, "easeInOut")}
+        />
+
+        <motion.div
+          className={cn(styles.rotator, styles.rotatorFifth)}
+          initial={false}
+          animate={{rotate: paused ? 0 : 360}}
+          transition={bubbleTransition(paused, 20, "linear")}>
+          <div className={cn(styles.bubble, styles.bubbleFifth)} />
+        </motion.div>
+
+        {interactive ? (
+          <motion.div
+            className={cn(styles.bubble, styles.bubbleInteractive)}
+            data-bubble='interactive'
+            style={{x: paused ? 0 : springX, y: paused ? 0 : springY}}
+          />
+        ) : null}
       </div>
-    );
-  },
-);
+
+      {children === null || children === undefined ? null : <div className={styles.content}>{children}</div>}
+    </div>
+  );
+}
 
 BubbleBackground.displayName = "BubbleBackground";
 

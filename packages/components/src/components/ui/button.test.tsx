@@ -1,12 +1,15 @@
 import {mergeProps} from "@base-ui/react/merge-props";
 import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {createRef, forwardRef} from "react";
-import {describe, expect, it, vi} from "vitest";
+import {createRef} from "react";
+import {composeStories} from "storybook-react-rsbuild";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Button, buttonVariants} from "./button";
 import styles from "./button.module.css";
-import {FocusableDisabled, IconExtraSmall, Navigation, NonNative} from "./button.stories";
+import * as buttonStories from "./button.stories";
+
+const {FocusableDisabled, IconExtraSmall, Navigation, NonNative} = buttonStories;
 
 function requiredClass(name: string): string {
   const className = styles[name];
@@ -16,13 +19,12 @@ function requiredClass(name: string): string {
   return className;
 }
 
-const LegacyNativeTarget = forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button">>((props, ref) => (
+const NativeTarget = ({ref, ...props}: Readonly<React.ComponentPropsWithRef<"button">>): React.JSX.Element => (
   <button
     {...props}
     ref={ref}
   />
-));
-LegacyNativeTarget.displayName = "LegacyNativeTarget";
+);
 
 const variants = [
   ["default", requiredClass("default")],
@@ -45,6 +47,34 @@ const sizes = [
 ] as const;
 
 describe("Button", () => {
+  it.each(["light", "dark"] as const)("preserves the %s Destructive story's action name and variant classes", (theme) => {
+    const {Destructive} = composeStories(buttonStories);
+    render(
+      <div data-theme={theme}>
+        <Destructive />
+      </div>,
+    );
+    const button = screen.getByRole("button", {name: "Delete"});
+    expect(button).toHaveClass(requiredClass("button"), requiredClass("destructive"), requiredClass("sizeDefault"));
+    expect(button).toHaveAttribute("data-variant", "destructive");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button.parentElement).toHaveAttribute("data-theme", theme);
+  });
+
+  it("requires caller-owned icon names and removes the child-slot API", () => {
+    expectTypeOf<Button.Props>().not.toHaveProperty("asChild");
+    // @ts-expect-error Icon presets need a caller-localized accessible name.
+    const unnamed = <Button size='icon' />;
+    expect(unnamed).toBeDefined();
+    render(
+      <Button
+        size='icon'
+        aria-label='Ajouter'>
+        ＋
+      </Button>,
+    );
+    expect(screen.getByRole("button", {name: "Ajouter"})).toBeInTheDocument();
+  });
   it("activates a non-native rendered button with the keyboard", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
@@ -96,6 +126,7 @@ describe("Button", () => {
       const {unmount} = render(
         <Button
           variant={variant}
+          aria-label='Action'
           size={size}>
           Action
         </Button>,
@@ -400,30 +431,32 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("safely adapts legacy asChild links with both refs and handlers", async () => {
+  it("composes render links with both refs and handlers", async () => {
     const user = userEvent.setup();
     const ref = createRef<HTMLElement>();
     const childRef = createRef<HTMLAnchorElement>();
     const calls: string[] = [];
     render(
       <Button
-        asChild
+        nativeButton={false}
         ref={ref}
         className='wrapper'
-        onClick={() => calls.push("wrapper")}>
-        <a
-          ref={childRef}
-          href='#destination'
-          className='child'
-          onClick={(event) => {
-            event.preventDefault();
-            calls.push("child");
-          }}>
-          Legacy navigation
-        </a>
-      </Button>,
+        onClick={() => calls.push("wrapper")}
+        render={
+          <a
+            ref={childRef}
+            href='#destination'
+            className='child'
+            onClick={(event) => {
+              event.preventDefault();
+              calls.push("child");
+            }}>
+            Navigation
+          </a>
+        }
+      />,
     );
-    const anchor = screen.getByRole("button", {name: "Legacy navigation"});
+    const anchor = screen.getByRole("button", {name: "Navigation"});
     expect(anchor).not.toHaveAttribute("type");
     expect(anchor).toHaveAttribute("href", "#destination");
     expect(anchor).toHaveClass("child", "wrapper");
@@ -433,28 +466,27 @@ describe("Button", () => {
     expect(calls).toEqual(["child", "wrapper"]);
   });
 
-  it("keeps native semantics for legacy asChild button elements", () => {
+  it("keeps native semantics for render button elements", () => {
     render(
       <Button
-        asChild
-        disabled>
-        <button>Legacy native</button>
-      </Button>,
+        disabled
+        render={<button>Native</button>}
+      />,
     );
-    const button = screen.getByRole("button", {name: "Legacy native"});
+    const button = screen.getByRole("button", {name: "Native"});
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("type", "button");
     expect(button).not.toHaveAttribute("role");
   });
 
-  it("keeps invalid legacy slot content as native button content", () => {
-    render(<Button asChild>Plain text</Button>);
+  it("keeps plain text as native button content", () => {
+    render(<Button>Plain text</Button>);
     expect(screen.getByRole("button", {name: "Plain text"})).toHaveAttribute("type", "button");
   });
 
-  it("keeps fragment legacy children inside a safe native button", () => {
+  it("keeps fragment children inside a native button", () => {
     render(
-      <Button asChild>
+      <Button>
         <>
           <span>Fragment</span> content
         </>
@@ -463,16 +495,15 @@ describe("Button", () => {
     expect(screen.getByRole("button", {name: "Fragment content"})).toHaveAttribute("type", "button");
   });
 
-  it("honors an explicit nativeButton override for legacy custom components", () => {
+  it("honors nativeButton for React 19 custom render components", () => {
     const ref = createRef<HTMLButtonElement>();
     render(
       <Button
-        asChild
         nativeButton
         disabled
-        ref={ref}>
-        <LegacyNativeTarget>Custom native</LegacyNativeTarget>
-      </Button>,
+        ref={ref}
+        render={<NativeTarget>Custom native</NativeTarget>}
+      />,
     );
     const button = screen.getByRole("button", {name: "Custom native"});
     expect(ref.current).toBe(button);

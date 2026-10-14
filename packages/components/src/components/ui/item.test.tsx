@@ -25,20 +25,70 @@ function ConsumerLink(props: Readonly<React.ComponentPropsWithRef<"a">>): React.
 }
 
 describe("Item", () => {
-  it("preserves child and wrapper handlers under Item asChild", async () => {
+  it("React 19 refresh: lets the real Separator own class and render callback state", () => {
+    const className = vi.fn((state: {orientation: "horizontal" | "vertical"}) => `axis-${state.orientation}`);
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <ItemSeparator
+        ref={ref}
+        orientation='vertical'
+        className={className}
+        render={(props, state) => (
+          <div
+            {...props}
+            data-axis={state.orientation}
+          />
+        )}
+      />,
+    );
+    const separator = screen.getByRole("separator");
+    expect(separator).toHaveClass("axis-vertical");
+    expect(separator).toHaveAttribute("data-axis", "vertical");
+    expect(className).toHaveBeenCalledWith(expect.objectContaining({orientation: "vertical"}));
+    expect(ref.current).toBe(separator);
+  });
+
+  it("React 19 refresh: keeps full title/description content and descendant focus outlines unclipped", () => {
+    const css = parse(readFileSync(resolve(import.meta.dirname, "item.module.css"), "utf8"));
+    for (const selector of [".title", ".description"]) {
+      const values: Record<string, string> = {};
+      css.walkRules(selector, (rule) =>
+        rule.walkDecls((decl) => {
+          values[decl.prop] = decl.value;
+        }),
+      );
+      expect(values["display"]).toBe("block");
+      expect(values).not.toHaveProperty("-webkit-line-clamp");
+      expect(values["overflow"]).not.toBe("hidden");
+    }
+  });
+
+  it("React 19 refresh: keeps a generic item group free of an incomplete list role", () => {
+    render(
+      <ItemGroup data-testid='group'>
+        <Item>Plain content</Item>
+      </ItemGroup>,
+    );
+    expect(screen.getByTestId("group")).not.toHaveAttribute("role");
+    expectTypeOf<React.ComponentProps<typeof Item>>().not.toHaveProperty("asChild");
+    expect(typeof Item).toBe("function");
+  });
+
+  it("preserves child and wrapper handlers under Item render", async () => {
     const user = userEvent.setup();
     const childClick = vi.fn();
     const wrapperClick = vi.fn();
     render(
       <Item
-        asChild
-        onClick={wrapperClick}>
-        <a
-          href='#details'
-          onClick={childClick}>
-          Details
-        </a>
-      </Item>,
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#details'
+            onClick={childClick}>
+            Details
+          </a>
+        }
+      />,
     );
 
     await user.click(screen.getByRole("link", {name: "Details"}));
@@ -48,19 +98,20 @@ describe("Item", () => {
     expect(screen.getAllByRole("link", {name: "Details"})).toHaveLength(1);
   });
 
-  it("preserves both DOM refs and detaches them under Item asChild", () => {
+  it("preserves both DOM refs and detaches them under Item render", () => {
     const childRef = React.createRef<HTMLAnchorElement>();
     const wrapperRef = React.createRef<HTMLElement>();
     const {unmount} = render(
       <Item
-        asChild
-        ref={wrapperRef}>
-        <a
-          href='#details'
-          ref={childRef}>
-          Details
-        </a>
-      </Item>,
+        ref={wrapperRef}
+        render={
+          <a
+            href='#details'
+            ref={childRef}>
+            Details
+          </a>
+        }
+      />,
     );
     const link = screen.getByRole("link", {name: "Details"});
 
@@ -194,7 +245,7 @@ describe("Item", () => {
     expect(screen.getByRole("checkbox", {name: "Select document"})).toBeChecked();
   });
 
-  it.each(["asChild", "render"] as const)("preserves native cancellation and child-first order with %s", (composition) => {
+  it("preserves native cancellation and child-first order with render", () => {
     const calls: string[] = [];
     const child = (
       <a
@@ -208,18 +259,10 @@ describe("Item", () => {
     );
     const onClick: React.MouseEventHandler<HTMLDivElement> = (event) => calls.push(`wrapper:${event.defaultPrevented}`);
     render(
-      composition === "asChild" ? (
-        <Item
-          asChild
-          onClick={onClick}>
-          {child}
-        </Item>
-      ) : (
-        <Item
-          render={child}
-          onClick={onClick}
-        />
-      ),
+      <Item
+        render={child}
+        onClick={onClick}
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Cancel navigation"}))).toBe(false);
@@ -230,19 +273,20 @@ describe("Item", () => {
     const wrapperClick = vi.fn();
     render(
       <Item
-        asChild
-        onClick={wrapperClick}>
-        <a
-          href='#prevented'
-          onClick={(event) => {
-            event.preventDefault();
-            if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-              event.preventBaseUIHandler();
-            }
-          }}>
-          Prevent wrapper
-        </a>
-      </Item>,
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#prevented'
+            onClick={(event) => {
+              event.preventDefault();
+              if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                event.preventBaseUIHandler();
+              }
+            }}>
+            Prevent wrapper
+          </a>
+        }
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Prevent wrapper"}))).toBe(false);
@@ -253,17 +297,18 @@ describe("Item", () => {
     const calls: string[] = [];
     render(
       <Item
-        asChild
         onClick={(event) => {
           calls.push("wrapper");
           event.preventDefault();
-        }}>
-        <a
-          href='#cancelled-by-wrapper'
-          onClick={() => calls.push("child")}>
-          Wrapper cancellation
-        </a>
-      </Item>,
+        }}
+        render={
+          <a
+            href='#cancelled-by-wrapper'
+            onClick={() => calls.push("child")}>
+            Wrapper cancellation
+          </a>
+        }
+      />,
     );
 
     expect(fireEvent.click(screen.getByRole("link", {name: "Wrapper cancellation"}))).toBe(false);
@@ -381,11 +426,11 @@ describe("Item", () => {
     expect(target.matches(scopedSelector(focusRule))).toBe(false);
   });
 
-  it("retains ordinary content when legacy asChild receives text or a fragment", () => {
+  it("retains ordinary text and fragment content", () => {
     render(
       <>
-        <Item asChild>Text item</Item>
-        <Item asChild>
+        <Item>Text item</Item>
+        <Item>
           <>Fragment item</>
         </Item>
       </>,
@@ -395,14 +440,8 @@ describe("Item", () => {
     expect(screen.getByText("Fragment item").tagName).toBe("DIV");
   });
 
-  it("prefers a valid legacy child over render and preserves empty child content", () => {
-    render(
-      <Item
-        asChild
-        render={<a href='#unused'>Unused render target</a>}>
-        <article aria-label='Empty details' />
-      </Item>,
-    );
+  it("preserves empty composed render content", () => {
+    render(<Item render={<article aria-label='Empty details' />} />);
 
     expect(screen.getByRole("article", {name: "Empty details"})).toBeEmptyDOMElement();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
@@ -462,6 +501,7 @@ describe("Item", () => {
     const separatorRef = React.createRef<HTMLDivElement>();
     render(
       <ItemGroup
+        role='list'
         ref={groupRef}
         className='custom-group'>
         <Item role='listitem'>
@@ -564,17 +604,18 @@ describe("Item", () => {
     expect(itemRef.current).toBe(item);
   });
 
-  it("renders Item with asChild prop, cloning child element with merged props", () => {
+  it("renders Item with a render target and merged props", () => {
     // Arrange & Act
     render(
       <Item
-        asChild
         className='custom-item'
-        data-testid='item-wrapper'>
-        <article className='child-class'>
-          <span>Child content</span>
-        </article>
-      </Item>,
+        data-testid='item-wrapper'
+        render={
+          <article className='child-class'>
+            <span>Child content</span>
+          </article>
+        }
+      />,
     );
 
     // Assert

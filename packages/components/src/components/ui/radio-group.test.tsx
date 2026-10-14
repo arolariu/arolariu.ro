@@ -28,9 +28,9 @@ describe("RadioGroup", () => {
     expectTypeOf<NonNullable<RadioGroupProps<number>["onValueChange"]>>().parameter(0).toEqualTypeOf<number>();
   });
 
-  it("keeps React 18-compatible forwarded ref component identities", () => {
-    expect(RadioGroup).toMatchObject({$$typeof: Symbol.for("react.forward_ref")});
-    expect(RadioGroupItem).toMatchObject({$$typeof: Symbol.for("react.forward_ref")});
+  it("uses React 19 functions without exotic ref boundaries", () => {
+    expect(typeof RadioGroup).toBe("function");
+    expect(typeof RadioGroupItem).toBe("function");
   });
 
   it("passes actual group Field state and checked item state to render and class callbacks", async () => {

@@ -16,6 +16,23 @@ declare global {
 }
 
 describe("Skeleton", () => {
+  it("React 19 refresh: stops nonessential placeholder motion within five seconds", () => {
+    expect(stylesheet).toContain("animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 2;");
+    expect(stylesheet).not.toContain("infinite");
+    const {rerender} = render(<Skeleton data-testid='placeholder' />);
+    expect(screen.getByTestId("placeholder")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("placeholder")).not.toHaveAttribute("aria-busy");
+    rerender(
+      <Skeleton
+        data-testid='placeholder'
+        animated={false}
+        role='status'
+        aria-label='Préparation'
+      />,
+    );
+    expect(screen.getByRole("status", {name: "Préparation"})).toHaveAttribute("data-animated", "false");
+  });
+
   it("keeps an observable caller-named loading placeholder when animation is explicitly disabled", () => {
     render(
       <Skeleton
@@ -58,7 +75,10 @@ describe("Skeleton", () => {
       const placeholder = screen.getByRole("status", {name: "Preparing content"});
       const animation = getComputedStyle(placeholder).animation;
       if (preference === "reduce") expect(animation).toBe("none");
-      else expect(animation).toContain("infinite");
+      else {
+        expect(animation).toContain("pulse");
+        expect(animation).not.toContain("infinite");
+      }
     });
 
     it("applies the explicit static state outside the animation keyframes", () => {

@@ -12,7 +12,7 @@ import {Skeleton, type SkeletonProps} from "./skeleton";
  * Extends native `<div>` attributes so list-shaped placeholders can be embedded in
  * semantic containers and customized with layout or accessibility attributes.
  */
-interface ListSkeletonProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+interface ListSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Number of list item placeholders: a nonnegative finite integer at most 10,000.
    * Zero renders an empty layout.
@@ -52,46 +52,51 @@ interface ListSkeletonProps extends Readonly<React.ComponentPropsWithoutRef<"div
  *
  * @see {@link ListSkeletonProps} for available props
  */
-const ListSkeleton = React.forwardRef<HTMLDivElement, ListSkeletonProps>(
-  ({items = 5, showAvatar = true, animated = true, className, ...props}: Readonly<ListSkeletonProps>, ref): React.JSX.Element => {
-    if (!Number.isSafeInteger(items) || items < 0 || items > 10_000) {
-      throw new RangeError("ListSkeleton items must be a nonnegative finite integer no greater than 10,000.");
-    }
+const ListSkeleton = ({
+  ref,
+  items = 5,
+  showAvatar = true,
+  animated = true,
+  className,
+  ...props
+}: Readonly<ListSkeletonProps>): React.JSX.Element => {
+  if (!Number.isSafeInteger(items) || items < 0 || items > 10_000) {
+    throw new RangeError("ListSkeleton items must be a nonnegative finite integer no greater than 10,000.");
+  }
 
-    return (
-      <div
-        ref={ref}
-        className={cn(styles.list, className)}
-        {...props}>
-        {Array.from({length: items}, (_, index) => (
-          <div
-            key={index}
-            className={styles.item}>
-            {showAvatar ? (
-              <Skeleton
-                aria-hidden
-                animated={animated}
-                className={styles.avatar}
-              />
-            ) : null}
-            <div className={styles.text}>
-              <Skeleton
-                aria-hidden
-                animated={animated}
-                className={styles.primary}
-              />
-              <Skeleton
-                aria-hidden
-                animated={animated}
-                className={styles.secondary}
-              />
-            </div>
+  return (
+    <div
+      ref={ref}
+      className={cn(styles.list, className)}
+      {...props}>
+      {Array.from({length: items}, (_, index) => (
+        <div
+          key={index}
+          className={styles.item}>
+          {showAvatar ? (
+            <Skeleton
+              aria-hidden
+              animated={animated}
+              className={styles.avatar}
+            />
+          ) : null}
+          <div className={styles.text}>
+            <Skeleton
+              aria-hidden
+              animated={animated}
+              className={styles.primary}
+            />
+            <Skeleton
+              aria-hidden
+              animated={animated}
+              className={styles.secondary}
+            />
           </div>
-        ))}
-      </div>
-    );
-  },
-);
+        </div>
+      ))}
+    </div>
+  );
+};
 
 ListSkeleton.displayName = "ListSkeleton";
 

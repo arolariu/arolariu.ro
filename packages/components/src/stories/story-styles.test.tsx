@@ -77,7 +77,6 @@ const migratedClasses: Readonly<Record<string, readonly string[]>> = {
   "hover-card": ["storyContent", "storyTitle", "storyDescription", "storyLink", "storyWide"],
   item: ["storyStack", "storyCheckbox"],
   label: ["storyStack", "storyInline"],
-  "legacy-toast": ["storyControls", "customBody"],
   "list-skeleton": ["storyPreview", "storyPanel", "storyHeading"],
   "loading-overlay": ["owner", "demo", "progress", "button"],
   marker: ["storyStack"],
@@ -239,7 +238,7 @@ describe("story-owned style lifecycle", () => {
     const preview = container.querySelector(".ac-story-card-skeleton-storyPreview");
     expect(preview).not.toBeNull();
     expect(preview?.parentElement).toBe(container);
-    expect(screen.getByRole("status", {name: "Loading summary"})).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("status", {name: "Loading summary"})).not.toHaveAttribute("aria-busy");
     expect(getComputedStyle(preview as HTMLElement).width).toBe("768px");
     expect([...container.children].map((child) => child.tagName)).toEqual(["STYLE", "DIV"]);
   });
@@ -331,7 +330,8 @@ describe("story-owned style lifecycle", () => {
     const menu = screen.getByRole("button", {name: "Clear formatting"}).parentElement;
     expect(menu).toHaveClass("ac-story-toolbar-dropdownMenu");
     expect(menu).not.toHaveAttribute("style");
-    expect(getComputedStyle(menu as HTMLElement).position).toBe("absolute");
+    expect(screen.getByRole("dialog")).toContainElement(menu);
+    expect(screen.getByRole("button", {name: "More options"})).toHaveAttribute("aria-expanded", "true");
     await userEvent.setup().click(screen.getByRole("button", {name: "Clear formatting"}));
     expect(screen.queryByRole("button", {name: "Insert link"})).not.toBeInTheDocument();
     expect(container.querySelector("style")?.textContent).toContain(".ac-story-toolbar-dropdownOption");
@@ -342,7 +342,9 @@ describe("story-owned style lifecycle", () => {
     const {container} = render(<DangerThreshold />);
     const indicator = container.querySelector(`.${meterStyles.indicator}`);
     expect(indicator).toHaveClass("ac-story-meter-dangerIndicator");
-    expect(getComputedStyle(indicator as HTMLElement).backgroundColor).toBe("#ef4444");
+    expect(ruleFor(mountedStyles(container), ".ac-story-meter-dangerIndicator").nodes).toEqual(
+      expect.arrayContaining([expect.objectContaining({prop: "background", value: "var(--ac-destructive)"})]),
+    );
     expect(indicator?.getAttribute("style")).not.toContain("background");
     expect(screen.getByText("⚠️ 85% - Approaching capacity")).not.toHaveAttribute("style");
   });

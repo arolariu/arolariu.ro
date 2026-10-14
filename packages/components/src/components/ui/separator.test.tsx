@@ -1,6 +1,6 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {createRef} from "react";
-import {describe, expect, it} from "vitest";
+import {describe, expect, expectTypeOf, it} from "vitest";
 
 import {Separator} from "./separator";
 import styles from "./separator.module.css";
@@ -58,14 +58,17 @@ describe("Separator", () => {
     expect(ref.current).toBe(renderRef.current);
   });
 
-  it("consumes the legacy decorative flag without leaking an invalid DOM attribute", () => {
+  it("exposes explicit native decorative semantics without an inert compatibility flag", () => {
     render(
       <Separator
-        decorative
+        role='presentation'
+        aria-hidden='true'
         data-testid='rule'
       />,
     );
     expect(screen.getByTestId("rule")).not.toHaveAttribute("decorative");
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    expectTypeOf<Separator.Props>().not.toHaveProperty("decorative");
   });
   it("renders without crashing", () => {
     render(<Separator />);
@@ -107,12 +110,7 @@ describe("Separator", () => {
   });
 
   it("exposes separator accessibility semantics", () => {
-    render(
-      <Separator
-        aria-label='Content separator'
-        decorative={false}
-      />,
-    );
+    render(<Separator aria-label='Content separator' />);
 
     expect(screen.getByRole("separator", {name: "Content separator"})).toBeInTheDocument();
   });

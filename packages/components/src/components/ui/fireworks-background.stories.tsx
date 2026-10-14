@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {FireworksBackground} from "./fireworks-background";
 const storyStyles = `
 .ac-story-fireworks-background-demo,
@@ -59,13 +61,31 @@ const meta = {
   render: (args) => (
     <div className={storyClasses.demo}>
       <FireworksBackground {...args}>
-        <h2 className={storyClasses.demoContent}>Click to launch</h2>
+        <h2 className={storyClasses.demoContent}>Use the launch button</h2>
       </FireworksBackground>
     </div>
   ),
 } satisfies Meta<typeof FireworksBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Continued launches have a keyboard-operable pause control; defaults stop within five seconds. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume fireworks" : "Pause fireworks"}</Button>
+        <div className={storyClasses.demo}>
+          <FireworksBackground
+            {...args}
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 export const Default: Story = {};
 export const HighFrequency: Story = {args: {population: 3}};
 export const CustomColors: Story = {args: {color: ["#ff0080", "#00ff80", "#0080ff"], population: 1.5}};

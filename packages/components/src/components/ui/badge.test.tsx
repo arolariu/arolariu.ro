@@ -2,6 +2,10 @@ import {mergeProps} from "@base-ui/react/merge-props";
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {createRef} from "react";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse, type ChildNode, type Node as CssNode} from "postcss";
 import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
@@ -10,6 +14,99 @@ import styles from "./badge.module.css";
 import * as stories from "./badge.stories";
 
 const {CallbackRender, Ghost, Large, Link, WithDot} = composeStories(stories);
+
+// Lower real native CSS nesting before matching against emitted CSS Module roots.
+// A nested selector's raw text is not its effective selector or media ancestry.
+const compiledBadgeCss = parse(
+  transform({
+    filename: "badge.module.css",
+    code: readFileSync(join(import.meta.dirname, "badge.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+  }).code.toString(),
+);
+const badgeVariantsUnderReview = ["default", "secondary", "destructive", "outline", "ghost", "link"] as const;
+
+function mediaApplies(node: ChildNode, hover: boolean, forcedColors: boolean): boolean {
+  for (let ancestor: CssNode | undefined = node.parent; ancestor; ancestor = ancestor.parent) {
+    if (!(ancestor instanceof AtRule)) continue;
+    if (ancestor.name !== "media") throw new Error(`Unexpected compiled conditional: ${ancestor.name}`);
+    const condition = ancestor.params.replace(/\s/gu, "");
+    if (condition === "(hover:hover)" && !hover) return false;
+    if (condition === "(forced-colors:active)" && !forcedColors) return false;
+    if (condition === "(prefers-reduced-motion:reduce)") return false;
+    if (!["(hover:hover)", "(forced-colors:active)", "(prefers-reduced-motion:reduce)"].includes(condition)) {
+      throw new Error(`Unhandled compiled media condition: ${ancestor.params}`);
+    }
+  }
+  return true;
+}
+
+function compiledDeclarations(target: HTMLElement, hover: boolean, forcedColors: boolean): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  compiledBadgeCss.walkRules((rule) => {
+    if (rule.parent?.type === "rule") throw new Error("Nesting compiler left a nested selector");
+    const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => `.${CSS.escape(requiredClass(name))}`);
+    if (!mediaApplies(rule, hover, forcedColors) || !target.matches(selector)) return;
+    rule.walkDecls((decl) => {
+      declarations[decl.prop] = decl.value;
+      if (decl.prop !== "border" && decl.prop !== "outline") return;
+      // Model these authored shorthands as well as longhands: a later variant
+      // border must not leave an earlier forced-color declaration falsely active.
+      // Happy DOM's CSSStyleDeclaration rejects CanvasText/Highlight, so assert
+      // the real compiler's values rather than claiming emulated system paint.
+      const color = /var\(--ac-[\w-]+\)|#[\da-f]{3,8}\b|canvastext\b|highlight\b/iu.exec(decl.value);
+      if (!color && decl.value !== "none") throw new Error(`Unhandled compiled ${decl.prop} shorthand: ${decl.value}`);
+      declarations[`${decl.prop}-color`] = color?.[0] ?? "currentcolor";
+    });
+  });
+  return declarations;
+}
+
+describe.each([
+  ["button", false],
+  ["button", true],
+  ["link", false],
+  ["link", true],
+] as const)("review correction: compiled Badge %s root with hover=%s", (role, hover) => {
+  function fixture(): React.ReactElement {
+    return (
+      <>
+        {badgeVariantsUnderReview.map((variant) => (
+          <Badge
+            key={variant}
+            variant={variant}
+            render={role === "link" ? <a href='#details' /> : <button type='button' />}>
+            {variant}
+          </Badge>
+        ))}
+      </>
+    );
+  }
+
+  it("applies the minimum control target to every variant without a destructive ancestor", () => {
+    render(fixture());
+    for (const variant of badgeVariantsUnderReview) {
+      const root = screen.getByRole(role, {name: variant});
+      expect(root.parentElement).not.toHaveClass(requiredClass("destructive"));
+      expect(compiledDeclarations(root, hover, false)).toMatchObject({"min-inline-size": "24px", "min-block-size": "24px"});
+    }
+  });
+
+  it("applies independent forced-color boundary and focus rules to every variant", () => {
+    render(fixture());
+    for (const variant of badgeVariantsUnderReview) {
+      const root = screen.getByRole(role, {name: variant});
+      root.focus();
+      expect(root).toHaveFocus();
+      const normal = compiledDeclarations(root, hover, false);
+      const forced = compiledDeclarations(root, hover, true);
+      expect(normal["border-color"]?.toLowerCase()).not.toBe("canvastext");
+      expect(forced["border-color"]?.toLowerCase()).toBe("canvastext");
+      expect(forced["outline-color"]?.toLowerCase()).toBe("highlight");
+    }
+  });
+});
 
 function requiredClass(name: string): string {
   const className = styles[name];

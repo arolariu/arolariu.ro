@@ -96,6 +96,19 @@
   height: var(--ac-space-2);
 }
 
+:is(a, button).badge {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+}
+
+.root:focus-visible,
+.badge:focus-visible,
+.group:focus-visible,
+.groupCount:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
 .sm > .badge > svg {
   display: none;
 }
@@ -159,6 +172,13 @@
 }
 
 @media (forced-colors: active) {
+  .root:focus-visible,
+  .badge:focus-visible,
+  .group:focus-visible,
+  .groupCount:focus-visible {
+    outline-color: Highlight;
+  }
+
   .root::after {
     border-color: CanvasText;
   }

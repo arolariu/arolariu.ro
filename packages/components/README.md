@@ -35,7 +35,7 @@ for modern applications that demand both beauty and performance._
 - **⚡ Performance Optimized** - Tree-shakeable exports, minimal bundle impact, and source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools
 - **🌙 Flexible Theming** - Light and dark mode via `.dark` or `[data-theme="dark"]`
-- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible, built with RSLib
+- **🚀 Modern Stack** - React 19 only, ESM, SSR compatible, built with RSLib
 
 The current package version is owned by [`package.json`](./package.json).
 
@@ -46,19 +46,22 @@ This workspace prepares **3.0.0**; passing validation does not mean v3 is availa
 retained extensions and historical v0 → v1 guide. Website adoption remains a separate task: the repository website must keep its official
 published **2.4 tarball and runtime calls** until a new artifact is published and its adoption authorized.
 
-The approved upcoming Base UI minimum is **`^1.9`**: public 1.0 lacks the drawer export, whereas tested 1.9 supplies it and supports React
-17/18/19. Older Base UI consumers must upgrade; this is a verified policy minimum, not an earliest-version claim. React/ReactDOM remain
-**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **28 isolated
-React/ReactDOM 18.2 fixtures against the actual extracted npm artifact** now pass. Packed React 18 evidence is not inferred from React 19
-and is limited to the exercised contracts, not every possible consumer composition.
+The upcoming Base UI minimum remains **`^1.9`**. React and ReactDOM peers are now **`^19`**. Package-owned components receive DOM refs as
+ordinary React 19 props. React 18, `asChild`, deprecated aliases and explicit legacy facades are no longer supported. Existing consumers
+must migrate rather than select a compatibility entrypoint.
 
-The library build, Storybook documentation build and **four actual npm-packed ESM/declaration/subpath/style/client-boundary contracts** are
-verified. Private helpers are present transitively but reject public imports. This is artifact preparation, not npm publication, website
-adoption or physical-browser validation. The parent's latest review-followup component workspace coverage, scoped review, configured ESLint
-and 177-changed-file Prettier checks passed. The historical source hook/story strict-typing baseline, publication, website adoption and
-physical acceptance remain separate.
+The accessibility target is applicable **WCAG 2.2 A/AA**, with the component/application ownership and manual verification requirements
+documented in [ACCESSIBILITY.md](./ACCESSIBILITY.md). An emulated test pass is not full-page conformance.
 
-### Latest review-followup validation checkpoint — 2026-10-14
+The final React 19-only build, complete workspace coverage, genuine packed contracts, minimum-runtime lanes, configured source lint and
+story graph checks are recorded in [the current verification checkpoint](./MIGRATION.md#react-19-only-verification). The older checkpoints
+below describe earlier preparation artifacts. Private helpers remain blocked public imports; publication, website adoption and complete
+native/assistive acceptance remain separate.
+
+### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
+
+This checkpoint predates the React 19-only API removal and accessibility changes. Its React 18 results describe the old preparation artifact
+and are not a current support promise.
 
 With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
 
@@ -116,7 +119,7 @@ hook/story strong-type diagnostics, website unit-fixture/build-environment block
 Motion reduced-motion notices and npm configuration warnings are not suppressed; earlier fixture-only corrections resolved React Tabs act
 warnings.
 
-### Canonical APIs and explicit compatibility
+### Canonical APIs only
 
 Storybook-only layout and demo styling is owned and mounted by the corresponding `.stories.tsx` file. Production CSS Modules contain only
 component styling; demo styles are not part of the built or packed library. Story mounting preserves scoped class names without adding
@@ -124,18 +127,15 @@ application style objects or a styling dependency.
 
 - Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
   `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
-- Facade status helpers/custom/history/duration remain explicit: `legacyToast` + `LegacyToaster` from `/legacy-toast` or the root. No Sonner
-  export/dependency is introduced.
-- Canonical `CommandDialog` is a modal shell containing exactly one explicit `Command`. `LegacyCommandDialog` supplies the old automatic
-  root and must not contain another Command. Command is native substring/custom-score matching, not cmdk.
-- `AlertDialogAction` no longer closes automatically. Close explicitly after success; `LegacyAlertDialogAction` immediately closes without
-  awaiting work and is only a deliberate synchronous adapter.
+- The callable toast facade and all `Legacy*` components/subpaths are removed. No Sonner export/dependency is introduced.
+- `CommandDialog` is a modal shell containing exactly one explicit `Command`. Command is native substring/custom-score matching, not cmdk.
+- `AlertDialogAction` does not close automatically. Close explicitly after success and retain pending/rejection behavior.
 - Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
-  `Toaster` versus `LegacyToaster`; original `DirectionProvider`/`useDirection` with `TextDirection`.
+  `Toast` versus `ToastData`; original `DirectionProvider`/`useDirection` with `TextDirection`.
 
 All supported runtime values, public named types and defined component namespaces are explicitly exposed at the root, with short
-component/hook/utility subpaths. All 59 chart aliases and existing RHF pass-throughs are retained. Private underscore modules may be packed
-transitively but are blocked as public entrypoints, including through the retained nested dist wildcard.
+component/hook/utility subpaths. Supported non-deprecated chart aliases and existing RHF pass-throughs are retained. Private underscore
+modules may be packed transitively but are blocked as public entrypoints, including through the retained nested dist wildcard.
 
 ## 🚀 Quick Start
 
@@ -147,7 +147,7 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react@^1.9 motion react-hook-form recharts
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
 
 Install an **actually published** package version. The upcoming v3 examples below are migration preparation, not authorization to install an
@@ -318,7 +318,7 @@ allocation, without coercion/clamping. `animated={false}` is explicit static pre
 
 - `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
 - `tailwindcss` is no longer a peer dependency.
-- `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
+- `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
 - If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
 - CSS custom properties now use the `--ac-*` prefix.
@@ -331,7 +331,7 @@ allocation, without coercion/clamping. `animated={false}` is explicit static pre
 
 - **Base layer**: [`@base-ui/react`](https://base-ui.com/) provides the primitive building blocks
 - **Composition**: Base UI's `render` prop is the preferred composition API
-- **Backward compatibility**: `asChild` is still supported where available as a shim for Radix-era usage
+- **React 19 contract**: refs are props; deprecated compatibility adapters are not shipped
 
 ### Styling
 
@@ -365,7 +365,7 @@ allocation, without coercion/clamping. `animated={false}` is explicit static pre
 import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
-import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
+import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ---

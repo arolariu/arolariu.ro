@@ -10,12 +10,12 @@ import styles from "./skeleton.module.css";
  * Extends native `<div>` attributes so loading placeholders can be sized, annotated,
  * and composed freely while exposing a documented class override.
  */
-export interface SkeletonProps extends Readonly<React.HTMLAttributes<HTMLDivElement>> {
+export interface SkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Additional CSS classes merged with the default skeleton shimmer styles.
    */
   readonly className?: string;
-  /** Enables the pulse unless reduced motion is requested. `false` keeps a static placeholder. @default true */
+  /** Enables two decorative pulses (four seconds); reduced motion and `false` disable them. @default true */
   readonly animated?: boolean;
 }
 
@@ -32,21 +32,19 @@ export interface SkeletonProps extends Readonly<React.HTMLAttributes<HTMLDivElem
  *
  * @example
  * ```tsx
- * <Skeleton className="account-name-placeholder" aria-label="Loading account name" />
+ * <Skeleton className="account-name-placeholder" aria-hidden="true" />
  * ```
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({className, animated = true, ...props}: Readonly<SkeletonProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='skeleton'
-      data-animated={animated}
-      className={cn(styles.skeleton, className)}
-      {...props}
-    />
-  ),
+const Skeleton = ({ref, className, animated = true, ...props}: Readonly<SkeletonProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='skeleton'
+    data-animated={animated}
+    className={cn(styles.skeleton, className)}
+    {...props}
+  />
 );
 Skeleton.displayName = "Skeleton";
 

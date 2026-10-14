@@ -291,7 +291,7 @@ export const LocalizedRightToLeft: Story = {
           <PaginationPrevious
             href='?page=1'
             text='Précédent'
-            aria-label='Page précédente'
+            aria-label='Précédent, page précédente'
           />
         </PaginationItem>
         <PaginationItem>
@@ -305,7 +305,7 @@ export const LocalizedRightToLeft: Story = {
           <PaginationNext
             href='?page=3'
             text='Suivant'
-            aria-label='Page suivante'
+            aria-label='Suivant, page suivante'
           />
         </PaginationItem>
       </PaginationContent>

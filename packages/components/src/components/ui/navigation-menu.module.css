@@ -113,6 +113,8 @@
 
 .link {
   display: inline-flex;
+  min-height: 1.5rem;
+  min-width: 1.5rem;
   align-items: center;
   border-radius: var(--ac-radius-sm);
   color: inherit;
@@ -150,10 +152,13 @@
 
 .popup {
   position: relative;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   width: var(--popup-width);
   height: var(--popup-height);
   max-width: var(--available-width);
+  max-height: var(--available-height, 85dvh);
   overflow: hidden;
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-md);
@@ -176,24 +181,12 @@
 
 .viewport {
   position: relative;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-}
-
-.indicator {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  height: 0.5rem;
-}
-
-.indicatorInner {
-  width: 0.625rem;
-  height: 0.625rem;
-  border-top-left-radius: var(--ac-radius-xs);
-  background-color: var(--ac-border);
-  transform: translateY(0.125rem) rotate(45deg);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

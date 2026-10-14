@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -14,7 +12,7 @@ import {Spinner} from "./spinner";
  * Extends native `<div>` attributes so overlays can be positioned inside relatively
  * positioned containers, annotated for accessibility, and visually customized.
  */
-interface LoadingOverlayProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+interface LoadingOverlayProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Whether the overlay should be rendered.
    *
@@ -33,7 +31,7 @@ interface LoadingOverlayProps extends Readonly<React.ComponentPropsWithoutRef<"d
  * Renders a centered loading overlay for pending asynchronous operations.
  *
  * @remarks
- * **Rendering Context**: Client component.
+ * **Rendering Context**: Server- and client-compatible presentational component.
  *
  * This is visual status feedback, not an interaction blocker or modal. The overlay
  * ignores pointer input and leaves keyboard interaction underneath unchanged. Its
@@ -61,33 +59,38 @@ interface LoadingOverlayProps extends Readonly<React.ComponentPropsWithoutRef<"d
  *
  * @see {@link LoadingOverlayProps} for available props
  */
-const LoadingOverlay = React.forwardRef<HTMLDivElement, LoadingOverlayProps>(
-  ({visible = true, blur = false, className, children, ...props}: Readonly<LoadingOverlayProps>, ref): React.JSX.Element | null => {
-    if (!visible) {
-      return null;
-    }
+const LoadingOverlay = ({
+  ref,
+  visible = true,
+  blur = false,
+  className,
+  children,
+  ...props
+}: Readonly<LoadingOverlayProps>): React.JSX.Element | null => {
+  if (!visible) {
+    return null;
+  }
 
-    return (
-      <div
-        ref={ref}
-        className={cn(styles.overlay, blur && styles.blur, className)}
-        role='status'
-        aria-live='polite'
-        aria-atomic='true'
-        aria-label={children === null || children === undefined ? "Loading" : undefined}
-        {...props}>
-        {children ?? (
-          <Spinner
-            className={styles.spinner}
-            role='presentation'
-            aria-hidden='true'
-            aria-label={undefined}
-          />
-        )}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      ref={ref}
+      className={cn(styles.overlay, blur && styles.blur, className)}
+      role='status'
+      aria-live='polite'
+      aria-atomic='true'
+      aria-label={children === null || children === undefined ? "Loading" : undefined}
+      {...props}>
+      {children ?? (
+        <Spinner
+          className={styles.spinner}
+          role='presentation'
+          aria-hidden='true'
+          aria-label={undefined}
+        />
+      )}
+    </div>
+  );
+};
 
 LoadingOverlay.displayName = "LoadingOverlay";
 

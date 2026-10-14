@@ -12,25 +12,17 @@ import styles from "./breadcrumb.module.css";
 /**
  * Props for the {@link Breadcrumb} component.
  */
-export type BreadcrumbProps = Readonly<
-  React.ComponentPropsWithoutRef<"nav"> & {
-    /**
-     * Retained for compatibility only; this prop is inert and never renders content.
-     * @deprecated Pass custom content to each `BreadcrumbSeparator` instead.
-     */
-    separator?: React.ReactNode;
-  }
->;
+export type BreadcrumbProps = Readonly<React.ComponentPropsWithRef<"nav">>;
 
 /**
  * Props for the {@link BreadcrumbList} component.
  */
-export type BreadcrumbListProps = Readonly<React.ComponentPropsWithoutRef<"ol">>;
+export type BreadcrumbListProps = Readonly<React.ComponentPropsWithRef<"ol">>;
 
 /**
  * Props for the {@link BreadcrumbItem} component.
  */
-export type BreadcrumbItemProps = Readonly<React.ComponentPropsWithoutRef<"li">>;
+export type BreadcrumbItemProps = Readonly<React.ComponentPropsWithRef<"li">>;
 
 /** Link-owned state supplied to render callbacks and mapped to data attributes. */
 export type BreadcrumbLinkState = Readonly<{slot: "breadcrumb-link"}>;
@@ -50,30 +42,23 @@ export type BreadcrumbLinkProps = Readonly<
   Omit<useRender.ComponentProps<"a", BreadcrumbLinkState, BreadcrumbLinkRenderProps>, "ref"> & {
     /** Ref to the actual rendered element; the default target is an anchor. */
     ref?: React.Ref<HTMLElement>;
-    /**
-     * Composes a single non-fragment child, preserving its content, handlers and refs.
-     * A valid child takes precedence over `render`; other content uses normal rendering.
-     * @default false
-     * @deprecated Prefer `render` for element composition.
-     */
-    asChild?: boolean;
   }
 >;
 
 /**
  * Props for the {@link BreadcrumbPage} component.
  */
-export type BreadcrumbPageProps = Readonly<React.ComponentPropsWithoutRef<"span">>;
+export type BreadcrumbPageProps = Readonly<React.ComponentPropsWithRef<"span">>;
 
 /**
  * Props for the {@link BreadcrumbSeparator} component.
  */
-export type BreadcrumbSeparatorProps = Readonly<React.ComponentPropsWithoutRef<"li">>;
+export type BreadcrumbSeparatorProps = Readonly<React.ComponentPropsWithRef<"li">>;
 
 /**
  * Props for the {@link BreadcrumbEllipsis} component.
  */
-export type BreadcrumbEllipsisProps = Readonly<React.ComponentPropsWithoutRef<"span">>;
+export type BreadcrumbEllipsisProps = Readonly<Omit<React.ComponentPropsWithRef<"span">, "children">>;
 
 /**
  * Provides semantic breadcrumb navigation for hierarchical page structures.
@@ -81,7 +66,7 @@ export type BreadcrumbEllipsisProps = Readonly<React.ComponentPropsWithoutRef<"s
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<nav>` element
- * - The legacy root `separator` prop is inert; customize `BreadcrumbSeparator` children.
+ * - Customize separators through `BreadcrumbSeparator` children.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -97,17 +82,14 @@ export type BreadcrumbEllipsisProps = Readonly<React.ComponentPropsWithoutRef<"s
  *
  * @see {@link BreadcrumbProps} for available props
  */
-const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
-  // eslint-disable-next-line sonarjs/deprecation -- strip the inert legacy prop rather than forwarding it to the DOM
-  ({className, separator: _separator, ...props}: Readonly<BreadcrumbProps>, ref): React.JSX.Element => (
-    <nav
-      ref={ref}
-      aria-label='breadcrumb'
-      data-slot='breadcrumb'
-      className={cn(styles.root, className)}
-      {...props}
-    />
-  ),
+const Breadcrumb = ({ref, className, ...props}: Readonly<BreadcrumbProps>): React.JSX.Element => (
+  <nav
+    ref={ref}
+    aria-label='breadcrumb'
+    data-slot='breadcrumb'
+    className={cn(styles.root, className)}
+    {...props}
+  />
 );
 
 /**
@@ -127,15 +109,13 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
  *
  * @see {@link BreadcrumbListProps} for available props
  */
-const BreadcrumbList = React.forwardRef<HTMLOListElement, BreadcrumbListProps>(
-  ({className, ...props}: Readonly<BreadcrumbListProps>, ref): React.JSX.Element => (
-    <ol
-      ref={ref}
-      data-slot='breadcrumb-list'
-      className={cn(styles.list, className)}
-      {...props}
-    />
-  ),
+const BreadcrumbList = ({ref, className, ...props}: Readonly<BreadcrumbListProps>): React.JSX.Element => (
+  <ol
+    ref={ref}
+    data-slot='breadcrumb-list'
+    className={cn(styles.list, className)}
+    {...props}
+  />
 );
 
 /**
@@ -155,15 +135,13 @@ const BreadcrumbList = React.forwardRef<HTMLOListElement, BreadcrumbListProps>(
  *
  * @see {@link BreadcrumbItemProps} for available props
  */
-const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
-  ({className, ...props}: Readonly<BreadcrumbItemProps>, ref): React.JSX.Element => (
-    <li
-      ref={ref}
-      data-slot='breadcrumb-item'
-      className={cn(styles.item, className)}
-      {...props}
-    />
-  ),
+const BreadcrumbItem = ({ref, className, ...props}: Readonly<BreadcrumbItemProps>): React.JSX.Element => (
+  <li
+    ref={ref}
+    data-slot='breadcrumb-item'
+    className={cn(styles.item, className)}
+    {...props}
+  />
 );
 
 /**
@@ -186,26 +164,17 @@ const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
  *
  * @see {@link BreadcrumbLinkProps} for available props
  */
-const BreadcrumbLink = React.forwardRef<HTMLElement, BreadcrumbLink.Props>(
-  (
-    // eslint-disable-next-line sonarjs/deprecation -- retain the supported legacy composition API
-    {asChild = false, className, children, render, ...props}: Readonly<React.PropsWithoutRef<BreadcrumbLink.Props>>,
+const BreadcrumbLink = ({ref, className, children, render, ...props}: Readonly<BreadcrumbLink.Props>): React.ReactElement => {
+  const mergedClassName = cn(styles.link, className);
+
+  return useRender<BreadcrumbLink.State, HTMLElement>({
+    defaultTagName: "a",
     ref,
-  ): React.ReactElement => {
-    const mergedClassName = cn(styles.link, className);
-
-    const legacyChild =
-      asChild && React.isValidElement<{children?: React.ReactNode}>(children) && children.type !== React.Fragment ? children : undefined;
-
-    return useRender<BreadcrumbLink.State, HTMLElement>({
-      defaultTagName: "a",
-      ref,
-      render: legacyChild ?? render,
-      state: {slot: "breadcrumb-link"},
-      props: mergeProps<"a">({className: mergedClassName}, props, {children: legacyChild ? legacyChild.props.children : children}),
-    });
-  },
-);
+    render,
+    state: {slot: "breadcrumb-link"},
+    props: mergeProps<"a">({className: mergedClassName}, props, {children}),
+  });
+};
 
 /**
  * Marks the current page within the breadcrumb trail.
@@ -222,18 +191,14 @@ const BreadcrumbLink = React.forwardRef<HTMLElement, BreadcrumbLink.Props>(
  *
  * @see {@link BreadcrumbPageProps} for available props
  */
-const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPageProps>(
-  ({className, ...props}: Readonly<BreadcrumbPageProps>, ref): React.JSX.Element => (
-    <span
-      ref={ref}
-      data-slot='breadcrumb-page'
-      role='link'
-      aria-current='page'
-      aria-disabled='true'
-      className={cn(styles.page, className)}
-      {...props}
-    />
-  ),
+const BreadcrumbPage = ({ref, className, ...props}: Readonly<BreadcrumbPageProps>): React.JSX.Element => (
+  <span
+    ref={ref}
+    data-slot='breadcrumb-page'
+    aria-current='page'
+    className={cn(styles.page, className)}
+    {...props}
+  />
 );
 
 /**
@@ -259,18 +224,16 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPageProps>(
  *
  * @see {@link BreadcrumbSeparatorProps} for available props
  */
-const BreadcrumbSeparator = React.forwardRef<HTMLLIElement, BreadcrumbSeparatorProps>(
-  ({children, className, ...props}: Readonly<BreadcrumbSeparatorProps>, ref): React.JSX.Element => (
-    <li
-      ref={ref}
-      data-slot='breadcrumb-separator'
-      role='presentation'
-      aria-hidden='true'
-      className={cn(styles.separator, className)}
-      {...props}>
-      {children ?? <ChevronRight className={styles.chevron} />}
-    </li>
-  ),
+const BreadcrumbSeparator = ({ref, children, className, ...props}: Readonly<BreadcrumbSeparatorProps>): React.JSX.Element => (
+  <li
+    ref={ref}
+    data-slot='breadcrumb-separator'
+    role='presentation'
+    aria-hidden='true'
+    className={cn(styles.separator, className)}
+    {...props}>
+    {children ?? <ChevronRight className={styles.chevron} />}
+  </li>
 );
 
 /**
@@ -288,19 +251,16 @@ const BreadcrumbSeparator = React.forwardRef<HTMLLIElement, BreadcrumbSeparatorP
  *
  * @see {@link BreadcrumbEllipsisProps} for available props
  */
-const BreadcrumbEllipsis = React.forwardRef<HTMLSpanElement, BreadcrumbEllipsisProps>(
-  ({className, ...props}: Readonly<BreadcrumbEllipsisProps>, ref): React.JSX.Element => (
-    <span
-      ref={ref}
-      data-slot='breadcrumb-ellipsis'
-      role='presentation'
-      aria-hidden='true'
-      className={cn(styles.ellipsis, className)}
-      {...props}>
-      <Ellipsis />
-      <span className={styles.srOnly}>More</span>
-    </span>
-  ),
+const BreadcrumbEllipsis = ({ref, className, ...props}: Readonly<BreadcrumbEllipsisProps>): React.JSX.Element => (
+  <span
+    ref={ref}
+    data-slot='breadcrumb-ellipsis'
+    role='presentation'
+    aria-hidden='true'
+    className={cn(styles.ellipsis, className)}
+    {...props}>
+    <Ellipsis focusable='false' />
+  </span>
 );
 
 Breadcrumb.displayName = "Breadcrumb";

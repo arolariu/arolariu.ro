@@ -15,6 +15,10 @@ describe("Checkbox", () => {
     expectTypeOf<Checkbox.State>().toEqualTypeOf<CheckboxState>();
     expectTypeOf<React.ComponentRef<typeof Checkbox>>().toEqualTypeOf<HTMLElement>();
     expectTypeOf<NonNullable<CheckboxProps["onCheckedChange"]>>().toEqualTypeOf<NonNullable<BaseCheckbox.Root.Props["onCheckedChange"]>>();
+    expectTypeOf<CheckboxProps>().not.toHaveProperty("children");
+    // @ts-expect-error Mixed state is a separate boolean, not a checked value.
+    const shorthand: CheckboxProps = {checked: "indeterminate"};
+    expect(shorthand).toBeDefined();
   });
 
   it("renders with the actual Checkbox checked state", () => {
@@ -84,19 +88,20 @@ describe("Checkbox", () => {
     expect(control).not.toHaveAttribute("data-indeterminate");
   });
 
-  it("sends boolean changes and cancellable primitive details through the legacy mixed mapping", async () => {
+  it("sends boolean changes and cancellable primitive details for mixed state", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn<NonNullable<Checkbox.Props["onCheckedChange"]>>((_checked, details) => details.cancel());
     render(
       <Checkbox
-        checked='indeterminate'
-        aria-label='Legacy mixed'
+        checked
+        indeterminate
+        aria-label='Mixed selection'
         onCheckedChange={handleChange}
       />,
     );
-    await user.click(screen.getByRole("checkbox", {name: "Legacy mixed"}));
+    await user.click(screen.getByRole("checkbox", {name: "Mixed selection"}));
     expect(handleChange).toHaveBeenCalledWith(false, expect.objectContaining({reason: "none", isCanceled: true}));
-    expect(screen.getByRole("checkbox", {name: "Legacy mixed"})).toHaveAttribute("aria-checked", "mixed");
+    expect(screen.getByRole("checkbox", {name: "Mixed selection"})).toHaveAttribute("aria-checked", "mixed");
   });
 
   it("submits named form values, unchecked fallback values, and excludes disabled fields", async () => {
@@ -303,7 +308,7 @@ describe("Checkbox", () => {
   it("updates checked state when clicked", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleCheckedChange = vi.fn<(checked: boolean | "indeterminate") => void>();
+    const handleCheckedChange = vi.fn<(checked: boolean) => void>();
 
     render(
       <Checkbox
@@ -348,7 +353,7 @@ describe("Checkbox", () => {
   it("does not call onCheckedChange when disabled", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleCheckedChange = vi.fn<(checked: boolean | "indeterminate") => void>();
+    const handleCheckedChange = vi.fn<(checked: boolean) => void>();
 
     render(
       <Checkbox
@@ -388,7 +393,8 @@ describe("Checkbox", () => {
     render(
       <Checkbox
         aria-label='Select all rows'
-        checked='indeterminate'
+        checked
+        indeterminate
       />,
     );
 
@@ -399,7 +405,7 @@ describe("Checkbox", () => {
   it("works in controlled mode", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleCheckedChange = vi.fn<(checked: boolean | "indeterminate") => void>();
+    const handleCheckedChange = vi.fn<(checked: boolean) => void>();
 
     function ControlledCheckbox(): React.JSX.Element {
       const [checked, setChecked] = React.useState(false);

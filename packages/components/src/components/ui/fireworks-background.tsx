@@ -5,7 +5,7 @@ import * as React from "react";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./fireworks-background.module.css";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useVisualEffectPolicy, type VisualEffectOptions} from "./_visual-effects";
 
 const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min) + min);
@@ -223,7 +223,9 @@ const getColor = (color: string | ReadonlyArray<string> | undefined): string => 
 };
 
 /** Props accepted by {@link FireworksBackground}. */
-export interface FireworksBackgroundProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "color"> {
+export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithRef<"div">, "color">, VisualEffectOptions {
+  /** Localizable native launch control. Hidden when paused. @default "Launch fireworks" */
+  readonly launchLabel?: string;
   /** HTML attributes forwarded to the internal `<canvas>` element. @default undefined */
   readonly canvasProps?: React.HTMLAttributes<HTMLCanvasElement>;
   /** Nonnegative finite launch frequency; zero enables click-only launches. Timers are bounded to at least 100ms. @default 1 */
@@ -259,196 +261,213 @@ export interface FireworksBackgroundProps extends Omit<React.HTMLAttributes<HTML
  * @throws {RangeError} If population, speed/size ranges, palette or measured geometry is invalid.
  * @throws {Error} If a 2D canvas context is unavailable.
  */
-const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackgroundProps>(
-  (
-    {
-      className,
-      children,
-      canvasProps,
-      population = 1,
-      color,
-      fireworkSpeed = defaultFireworkSpeed,
-      fireworkSize = defaultFireworkSize,
-      particleSpeed = defaultParticleSpeed,
-      particleSize = defaultParticleSize,
-      ...props
-    }: Readonly<FireworksBackgroundProps>,
-    ref,
-  ): React.JSX.Element => {
-    if (!Number.isFinite(population) || population < 0)
-      throw new RangeError("FireworksBackground population must be finite and nonnegative.");
-    for (const range of [fireworkSpeed, fireworkSize, particleSpeed, particleSize]) validateRange(range);
-    validatePalette(color);
-    const canvasRef = React.useRef<HTMLCanvasElement>(null);
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const {paused} = useVisualEffectPolicy(containerRef);
-    const setRefs = useMergedRefs(containerRef, ref);
+function FireworksBackground({
+  ref,
+  loop,
+  motionPaused,
+  launchLabel = "Launch fireworks",
+  className,
+  children,
+  canvasProps,
+  population = 1,
+  color,
+  fireworkSpeed = defaultFireworkSpeed,
+  fireworkSize = defaultFireworkSize,
+  particleSpeed = defaultParticleSpeed,
+  particleSize = defaultParticleSize,
+  ...props
+}: Readonly<FireworksBackgroundProps>): React.JSX.Element {
+  if (!Number.isFinite(population) || population < 0)
+    throw new RangeError("FireworksBackground population must be finite and nonnegative.");
+  for (const range of [fireworkSpeed, fireworkSize, particleSpeed, particleSize]) validateRange(range);
+  validatePalette(color);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const {paused} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
+  const setRefs = useMergedRefs(containerRef, ref);
 
-    React.useEffect(() => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) {
-        return;
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("FireworksBackground requires a 2D canvas rendering context.");
+    }
+
+    let active = true;
+    let maxX = 0;
+    let maxY = 0;
+    let launchTimeoutId: number | null = null;
+    let animationFrameId: number | null = null;
+    let lastLaunch = -Infinity;
+
+    const setCanvasSize = (): void => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio;
+      if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
+        throw new RangeError("FireworksBackground geometry and DPR must be finite and positive.");
+      }
+      const scale = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
+      maxX = Math.max(1, Math.round(rect.width * scale));
+      maxY = Math.max(1, Math.round(rect.height * scale));
+      canvas.width = maxX;
+      canvas.height = maxY;
+    };
+
+    const explosions: Array<ParticleType> = [];
+    const fireworks: Array<FireworkType> = [];
+
+    const handleExplosion = (particles: ReadonlyArray<ParticleType>): void => {
+      if (active) explosions.push(...particles.slice(0, Math.max(0, 2048 - explosions.length)));
+    };
+
+    const launchFirework = (): void => {
+      if (!active || paused || population === 0) return;
+      if (fireworks.length < 16) {
+        fireworks.push(
+          createFirework(
+            rand(maxX * 0.1, maxX * 0.9),
+            maxY,
+            rand(maxY * 0.1, maxY * 0.4),
+            getColor(color),
+            getValueByRange(fireworkSpeed),
+            getValueByRange(fireworkSize),
+            particleSpeed,
+            particleSize,
+            handleExplosion,
+          ),
+        );
+      }
+      // At most one launch per second, regardless of population. Do not create
+      // rapid repeated bright bursts at user-selected launch frequencies.
+      const timeout = Math.min(60_000, Math.max(1000, rand(1000, 1800) / population));
+      launchTimeoutId = globalThis.window.setTimeout(launchFirework, timeout);
+    };
+
+    const animate = (): void => {
+      if (!active || paused) return;
+      context.clearRect(0, 0, maxX, maxY);
+
+      for (let index = fireworks.length - 1; index >= 0; index -= 1) {
+        const firework = fireworks[index]!;
+        if (firework.update()) {
+          firework.draw(context);
+        } else {
+          fireworks.splice(index, 1);
+        }
       }
 
-      const context = canvas.getContext("2d");
-      if (!context) {
-        throw new Error("FireworksBackground requires a 2D canvas rendering context.");
-      }
-
-      let active = true;
-      let maxX = 0;
-      let maxY = 0;
-      let launchTimeoutId: number | null = null;
-      let animationFrameId: number | null = null;
-
-      const setCanvasSize = (): void => {
-        const rect = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio;
-        if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
-          throw new RangeError("FireworksBackground geometry and DPR must be finite and positive.");
-        }
-        const scale = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
-        maxX = Math.max(1, Math.round(rect.width * scale));
-        maxY = Math.max(1, Math.round(rect.height * scale));
-        canvas.width = maxX;
-        canvas.height = maxY;
-      };
-
-      const explosions: Array<ParticleType> = [];
-      const fireworks: Array<FireworkType> = [];
-
-      const handleExplosion = (particles: ReadonlyArray<ParticleType>): void => {
-        if (active) explosions.push(...particles.slice(0, Math.max(0, 2048 - explosions.length)));
-      };
-
-      const launchFirework = (): void => {
-        if (!active || paused || population === 0) return;
-        if (fireworks.length < 16) {
-          fireworks.push(
-            createFirework(
-              rand(maxX * 0.1, maxX * 0.9),
-              maxY,
-              rand(maxY * 0.1, maxY * 0.4),
-              getColor(color),
-              getValueByRange(fireworkSpeed),
-              getValueByRange(fireworkSize),
-              particleSpeed,
-              particleSize,
-              handleExplosion,
-            ),
-          );
-        }
-        const timeout = Math.min(60_000, Math.max(100, rand(300, 800) / population));
-        launchTimeoutId = globalThis.window.setTimeout(launchFirework, timeout);
-      };
-
-      const animate = (): void => {
-        if (!active || paused) return;
-        context.clearRect(0, 0, maxX, maxY);
-
-        for (let index = fireworks.length - 1; index >= 0; index -= 1) {
-          const firework = fireworks[index]!;
-          if (firework.update()) {
-            firework.draw(context);
-          } else {
-            fireworks.splice(index, 1);
-          }
-        }
-
-        for (let index = explosions.length - 1; index >= 0; index -= 1) {
-          const particle = explosions[index]!;
-          particle.update();
-          if (particle.isAlive()) {
-            particle.draw(context);
-          } else {
-            explosions.splice(index, 1);
-          }
-        }
-
-        animationFrameId = globalThis.requestAnimationFrame(animate);
-      };
-
-      const drawStatic = (): void => {
-        context.clearRect(0, 0, maxX, maxY);
-        const staticColor = getColor(color ?? "#a855f7");
-        for (let index = 0; index < 24; index += 1) {
-          const angle = (index / 24) * Math.PI * 2;
-          const radius = Math.min(maxX, maxY) * 0.25;
-          const particle = createParticle(
-            maxX * 0.5 + Math.cos(angle) * radius,
-            maxY * 0.4 + Math.sin(angle) * radius,
-            staticColor,
-            0,
-            angle,
-            0,
-            1,
-            getValueByRange(particleSize),
-          );
+      for (let index = explosions.length - 1; index >= 0; index -= 1) {
+        const particle = explosions[index]!;
+        particle.update();
+        if (particle.isAlive()) {
           particle.draw(context);
+        } else {
+          explosions.splice(index, 1);
         }
-      };
-      const resize = (): void => {
-        if (!active) return;
-        setCanvasSize();
-        fireworks.length = 0;
-        explosions.length = 0;
-        if (paused) drawStatic();
-      };
-      resize();
-      const observer = new ResizeObserver(resize);
-      observer.observe(canvas);
-      globalThis.window.addEventListener("resize", resize);
-      if (!paused) {
-        launchFirework();
-        animate();
       }
 
-      const handleClick = (event: MouseEvent): void => {
-        if (!active || paused || event.defaultPrevented || fireworks.length >= 16) return;
-        const rect = canvas.getBoundingClientRect();
-        if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) {
-          throw new RangeError("FireworksBackground click geometry must be finite and non-empty.");
-        }
-        const x = (event.clientX - rect.left) * (canvas.width / rect.width);
-        const y = (event.clientY - rect.top) * (canvas.height / rect.height);
-        const fireworkColor = getColor(color);
-        const speed = getValueByRange(fireworkSpeed);
-        const size = getValueByRange(fireworkSize);
-        fireworks.push(createFirework(x, maxY, y, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
-      };
+      animationFrameId = globalThis.requestAnimationFrame(animate);
+    };
 
-      container.addEventListener("click", handleClick);
+    const drawStatic = (): void => {
+      context.clearRect(0, 0, maxX, maxY);
+      const staticColor = getColor(color ?? "#a855f7");
+      for (let index = 0; index < 24; index += 1) {
+        const angle = (index / 24) * Math.PI * 2;
+        const radius = Math.min(maxX, maxY) * 0.25;
+        const particle = createParticle(
+          maxX * 0.5 + Math.cos(angle) * radius,
+          maxY * 0.4 + Math.sin(angle) * radius,
+          staticColor,
+          0,
+          angle,
+          0,
+          1,
+          getValueByRange(particleSize),
+        );
+        particle.draw(context);
+      }
+    };
+    const resize = (): void => {
+      if (!active) return;
+      setCanvasSize();
+      fireworks.length = 0;
+      explosions.length = 0;
+      if (paused) drawStatic();
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    globalThis.window.addEventListener("resize", resize);
+    if (!paused) {
+      launchFirework();
+      animate();
+    }
 
-      return () => {
-        active = false;
-        observer.disconnect();
-        globalThis.window.removeEventListener("resize", resize);
-        container.removeEventListener("click", handleClick);
-        if (launchTimeoutId !== null) globalThis.window.clearTimeout(launchTimeoutId);
-        if (animationFrameId !== null) globalThis.cancelAnimationFrame(animationFrameId);
-        fireworks.length = 0;
-        explosions.length = 0;
-      };
-    }, [color, fireworkSize, fireworkSpeed, particleSize, particleSpeed, population, paused]);
+    const handleClick = (event: MouseEvent): void => {
+      if (!active || paused || event.defaultPrevented || fireworks.length >= 16 || performance.now() - lastLaunch < 1000) return;
+      lastLaunch = performance.now();
+      const rect = canvas.getBoundingClientRect();
+      if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) {
+        throw new RangeError("FireworksBackground click geometry must be finite and non-empty.");
+      }
+      const x = event.detail === 0 ? maxX / 2 : (event.clientX - rect.left) * (canvas.width / rect.width);
+      const y = event.detail === 0 ? maxY * 0.3 : (event.clientY - rect.top) * (canvas.height / rect.height);
+      const fireworkColor = getColor(color);
+      const speed = getValueByRange(fireworkSpeed);
+      const size = getValueByRange(fireworkSize);
+      fireworks.push(createFirework(x, maxY, y, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
+    };
 
-    return (
-      <div
-        ref={setRefs}
-        className={cn(styles.root, className)}
-        {...props}
-        data-motion={paused ? "paused" : "running"}>
-        <canvas
-          aria-hidden='true'
-          {...canvasProps}
-          ref={canvasRef}
-          className={cn(styles.canvas, canvasProps?.className)}
-        />
-        {children}
-      </div>
-    );
-  },
-);
+    // Decorative canvas: no implicit clickable div. Native descendant buttons
+    // activate with keyboard and pointer alike; background clicks do nothing.
+    const handleActivation = (event: MouseEvent): void => {
+      if (!(event.target instanceof Element) || !event.target.closest("[data-fireworks-launch]")) return;
+      handleClick(event);
+    };
+    container.addEventListener("click", handleActivation);
+
+    return () => {
+      active = false;
+      observer.disconnect();
+      globalThis.window.removeEventListener("resize", resize);
+      container.removeEventListener("click", handleActivation);
+      if (launchTimeoutId !== null) globalThis.window.clearTimeout(launchTimeoutId);
+      if (animationFrameId !== null) globalThis.cancelAnimationFrame(animationFrameId);
+      fireworks.length = 0;
+      explosions.length = 0;
+    };
+  }, [color, fireworkSize, fireworkSpeed, particleSize, particleSpeed, population, paused]);
+
+  return (
+    <div
+      ref={setRefs}
+      className={cn(styles.root, className)}
+      {...props}
+      data-motion={paused ? "paused" : "running"}>
+      <canvas
+        {...canvasProps}
+        aria-hidden='true'
+        tabIndex={-1}
+        ref={canvasRef}
+        className={cn(styles.canvas, canvasProps?.className)}
+      />
+      {children === null || children === undefined ? null : <div className={styles.content}>{children}</div>}
+      <button
+        type='button'
+        data-fireworks-launch=''
+        disabled={paused}
+        className={styles.launch}>
+        {launchLabel}
+      </button>
+    </div>
+  );
+}
 
 FireworksBackground.displayName = "FireworksBackground";
 

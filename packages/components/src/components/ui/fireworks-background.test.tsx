@@ -30,7 +30,7 @@ const context = {
   lineCap: "round",
 } satisfies Partial<CanvasRenderingContext2D>;
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -130,12 +130,39 @@ afterEach(() => {
 });
 
 describe("FireworksBackground", () => {
+  it("uses an equivalent native keyboard launch and ignores decorative container clicks", () => {
+    const {container} = render(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    context.moveTo.mockClear();
+    const root = container.firstElementChild;
+    if (!root) throw new Error("Missing fireworks root");
+    fireEvent.click(root);
+    frame();
+    expect(context.moveTo).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {detail: 0});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledWith(200, 196);
+  });
+
   it("rejects sparse palettes rather than painting a success-shaped random/default color", () => {
     expect(() => render(<FireworksBackground color={Array<string>(2)} />)).toThrow(/palette/u);
   });
   it("stops offscreen/document-hidden work and resumes when visible", () => {
     const ref = React.createRef<HTMLDivElement>();
-    render(<FireworksBackground ref={ref} />);
+    render(
+      <FireworksBackground
+        ref={ref}
+        loop
+        motionPaused={false}
+      />,
+    );
     act(() => {
       views[0]?.visibility(true);
       views[0]?.visibility(false);
@@ -176,7 +203,7 @@ describe("FireworksBackground", () => {
     expect(canvas).toHaveAttribute("height", "200");
     if (!ref.current) throw new Error("Missing fireworks root");
     context.moveTo.mockClear();
-    fireEvent.click(ref.current, {clientX: 150, clientY: 70});
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
     frame();
     expect(context.moveTo).toHaveBeenCalledWith(100, 196);
     expect(context.strokeStyle).toBe("#123456");
@@ -196,7 +223,7 @@ describe("FireworksBackground", () => {
     });
     if (!ref.current) throw new Error("Missing root");
     context.arc.mockClear();
-    fireEvent.click(ref.current, {clientX: 150, clientY: 70});
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
     frame();
     expect(context.arc).not.toHaveBeenCalled();
     expect(context.moveTo.mock.calls[0]?.[0]).toBeCloseTo(100);
@@ -262,7 +289,8 @@ describe("FireworksBackground", () => {
       views[0]?.visibility(true);
     });
     if (!ref.current) throw new Error("Missing root");
-    for (let i = 0; i < 100; i += 1) fireEvent.click(ref.current, {clientX: 150, clientY: 70});
+    for (let i = 0; i < 100; i += 1)
+      fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
     context.stroke.mockClear();
     frame();
     expect(context.stroke.mock.calls.length).toBeLessThanOrEqual(16);
@@ -275,7 +303,7 @@ describe("FireworksBackground", () => {
         color='#abcdef'
       />,
     );
-    fireEvent.click(ref.current, {clientX: 150, clientY: 70});
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
     context.arc.mockClear();
     frame();
     expect(context.arc.mock.calls.length).toBeGreaterThanOrEqual(50);
@@ -286,7 +314,13 @@ describe("FireworksBackground", () => {
 
   it("pauses timers/RAF on a live preference change and guards stale work after cleanup", () => {
     const ref = React.createRef<HTMLDivElement>();
-    const {unmount} = render(<FireworksBackground ref={ref} />);
+    const {unmount} = render(
+      <FireworksBackground
+        ref={ref}
+        loop
+        motionPaused={false}
+      />,
+    );
     act(() => {
       views[0]?.visibility(true);
     });
@@ -327,7 +361,10 @@ describe("FireworksBackground", () => {
     box = new DOMRect(0, 0, 0, 0);
     expect(() => render(<FireworksBackground />)).toThrow(/geometry/u);
     box = new DOMRect(0, 0, 200, 100);
-    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => null});
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value: (): CanvasRenderingContext2D | null => null,
+    });
     expect(() => render(<FireworksBackground />)).toThrow(/2D/u);
   });
 });

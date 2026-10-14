@@ -64,6 +64,7 @@ export type ToggleProps = Readonly<
  * - Render/class callbacks receive only actual Base UI pressed/disabled state
  * - Set nativeButton=false for non-button render targets; refs target HTMLElement
  * - Cancel changes via details.cancel(), or handlers via event.preventBaseUIHandler()
+ * - Icon-only content requires an action-specific aria-label or aria-labelledby
  *
  * @example
  * ```tsx
@@ -72,8 +73,8 @@ export type ToggleProps = Readonly<
  *
  * @see {@link https://base-ui.com/react/components/toggle | Base UI Documentation}
  */
-const Toggle = React.forwardRef<HTMLElement, Toggle.Props>((props: Readonly<Toggle.Props>, ref): React.ReactElement => {
-  const {className, size = "default", variant = "default", ...otherProps} = props;
+const Toggle = (props: Readonly<Toggle.Props>): React.ReactElement => {
+  const {ref, className, size = "default", variant = "default", ...otherProps} = props;
   // The SDK declares a button ref, but useButton/render forwards the actual HTMLElement.
   const handleRef = React.useCallback(
     (element: HTMLElement | null): ReturnType<React.RefCallback<HTMLElement>> => {
@@ -93,7 +94,7 @@ const Toggle = React.forwardRef<HTMLElement, Toggle.Props>((props: Readonly<Togg
       className={(state) => toggleVariants({variant, size, className: typeof className === "function" ? className(state) : className})}
     />
   );
-});
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toggle {

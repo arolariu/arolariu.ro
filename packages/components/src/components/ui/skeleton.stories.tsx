@@ -67,18 +67,21 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args): React.JSX.Element => (
-    <div
-      className={storyClasses.storyStack}
-      aria-busy='true'
-      aria-label='Loading content'>
-      <Skeleton
-        {...args}
-        className={storyClasses.storyLine}
-      />
-      <Skeleton
-        {...args}
-        className={storyClasses.storyShortLine}
-      />
+    <div className={storyClasses.storyStack}>
+      <div
+        className={storyClasses.storyStack}
+        aria-busy='true'>
+        <Skeleton
+          {...args}
+          aria-hidden='true'
+          className={storyClasses.storyLine}
+        />
+        <Skeleton
+          {...args}
+          aria-hidden='true'
+          className={storyClasses.storyShortLine}
+        />
+      </div>
       <span role='status'>Preparing content…</span>
     </div>
   ),

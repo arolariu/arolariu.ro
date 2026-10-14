@@ -5,6 +5,7 @@ import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import {parse} from "postcss";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
@@ -14,6 +15,30 @@ import * as stories from "./avatar.stories";
 
 const {AvatarStack, BadgeSizes, DarkTheme, Group, GroupCount, GroupSizes, RenderState, RightToLeft, Sizes, WithDelay, WithStatus} =
   composeStories(stories);
+
+describe("React 19 refresh", () => {
+  it("authors an adequate interactive badge target and a distinguishable forced-color focus indicator", () => {
+    const css = parse(readFileSync(resolve(import.meta.dirname, "avatar.module.css"), "utf8"));
+    const target: Record<string, string> = {};
+    css.walkRules(":is(a, button).badge", (rule) =>
+      rule.walkDecls((decl) => {
+        target[decl.prop] = decl.value;
+      }),
+    );
+    expect(target).toMatchObject({"min-inline-size": "24px", "min-block-size": "24px"});
+    const focus: string[] = [];
+    css.walkAtRules("media", (media) => {
+      if (media.params === "(forced-colors: active)")
+        media.walkRules((rule) => {
+          if (rule.selector.includes(".badge:focus-visible"))
+            rule.walkDecls("outline-color", (decl) => {
+              focus.push(decl.value);
+            });
+        });
+    });
+    expect(focus).toContain("Highlight");
+  });
+});
 
 afterEach(() => {
   cleanup();

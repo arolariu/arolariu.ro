@@ -7,7 +7,7 @@ import {CountingNumber} from "./counting-number";
 
 let observed: ViewBoundary[] = [];
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -57,6 +57,23 @@ afterEach(() => {
 });
 
 describe("CountingNumber with real Motion", () => {
+  it("preserves a real default count instead of jumping to the target before its first visible frame", async () => {
+    render(
+      <CountingNumber
+        number={100}
+        fromNumber={37}
+        transition={{duration: 0}}
+        data-testid='count'
+      />,
+    );
+    const visual = screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]');
+    expect(visual).toHaveTextContent(/^37$/);
+    act(() => {
+      observed.forEach((observer) => observer.enter());
+    });
+    await waitFor(() => expect(visual).toHaveTextContent(/^100$/));
+  });
+
   it("renders nonzero fromNumber as the stable initial text while awaiting viewport entry", () => {
     render(
       <CountingNumber
@@ -66,7 +83,7 @@ describe("CountingNumber with real Motion", () => {
         data-testid='count'
       />,
     );
-    expect(screen.getByTestId("count")).toHaveTextContent(/^37$/);
+    expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^37$/);
   });
 
   it("pads the magnitude without moving a negative sign into the digits", () => {
@@ -81,7 +98,7 @@ describe("CountingNumber with real Motion", () => {
         data-testid='count'
       />,
     );
-    expect(screen.getByTestId("count")).toHaveTextContent(/^-005,25$/);
+    expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^-005,25$/);
   });
 
   it("preserves the actual span ref and caller accessibility attributes", () => {
@@ -113,7 +130,12 @@ describe("CountingNumber with real Motion", () => {
         data-testid='count'
       />,
     );
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^-123,45$/));
+    act(() => {
+      observed.forEach((observer) => observer.enter());
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^-123,45$/),
+    );
   });
 
   it("preserves callback-ref cleanup when the actual span unmounts", () => {
@@ -149,12 +171,14 @@ describe("CountingNumber with real Motion", () => {
         data-testid='count'
       />,
     );
-    expect(screen.getByTestId("count")).toHaveTextContent(/^37$/);
+    expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^37$/);
     expect(observed.some((observer) => observer.options?.rootMargin === "100px")).toBe(true);
     act(() => {
       observed.forEach((observer) => observer.enter());
     });
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^50$/));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^50$/),
+    );
     rerender(
       <CountingNumber
         number={75}
@@ -165,7 +189,9 @@ describe("CountingNumber with real Motion", () => {
         data-testid='count'
       />,
     );
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent(/^75$/));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^75$/),
+    );
     unmount();
     expect(observed.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
   });

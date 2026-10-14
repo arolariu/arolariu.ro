@@ -9,6 +9,33 @@ function ThrowingComponent(): never {
 }
 
 describe("ErrorBoundary", () => {
+  it("React 19 refresh: localizes built-in error and retry copy, including updates while failed", () => {
+    function Failure(): never {
+      throw new Error("Network unavailable");
+    }
+    const {rerender} = render(
+      <ErrorBoundary
+        errorTitle='Une erreur est survenue'
+        errorDescription='Vérifiez votre connexion'
+        retryLabel='Réessayer'>
+        <Failure />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Une erreur est survenue");
+    expect(screen.getByRole("alert")).toHaveTextContent("Vérifiez votre connexion");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Network unavailable");
+    expect(screen.getByRole("button", {name: "Réessayer"})).toHaveAttribute("type", "button");
+    rerender(
+      <ErrorBoundary
+        errorTitle='A apărut o eroare'
+        retryLabel='Reîncearcă'>
+        <Failure />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("A apărut o eroare");
+    expect(screen.getByRole("button", {name: "Reîncearcă"})).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     // React's expected error reporting is the only mocked platform boundary.
     vi.spyOn(console, "error").mockImplementation(() => {});

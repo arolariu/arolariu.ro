@@ -88,3 +88,25 @@ function ChangingWords(): React.JSX.Element {
   );
 }
 export const DynamicWords: Story = {render: () => <ChangingWords />};
+
+/** Both intentionally continued cursors share a caller-owned keyboard-operable control. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = React.useState(false);
+    return (
+      <div className={storyClasses.storyStack}>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume cursor" : "Pause cursor"}</Button>
+        <TypewriterText
+          {...args}
+          loop
+          motionPaused={paused}
+        />
+        <TypewriterTextSmooth
+          {...args}
+          loop
+          motionPaused={paused}
+        />
+      </div>
+    );
+  },
+};

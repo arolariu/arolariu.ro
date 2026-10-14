@@ -24,8 +24,8 @@
   height: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-block: 1px solid var(--ac-border);
-  border-inline-end: 1px solid var(--ac-border);
+  border-block: 1px solid var(--ac-input);
+  border-inline-end: 1px solid var(--ac-input);
   background-color: var(--ac-background);
   color: var(--ac-foreground);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
@@ -36,7 +36,7 @@
 }
 
 .slot:first-child {
-  border-inline-start: 1px solid var(--ac-border);
+  border-inline-start: 1px solid var(--ac-input);
   border-start-start-radius: var(--ac-radius-md);
   border-end-start-radius: var(--ac-radius-md);
 }

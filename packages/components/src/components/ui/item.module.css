@@ -143,10 +143,7 @@ a.item {
 }
 
 .title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
+  display: block;
   overflow-wrap: anywhere;
   width: fit-content;
   max-width: 100%;
@@ -163,10 +160,7 @@ a.item {
 }
 
 .description {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  display: block;
   overflow-wrap: anywhere;
   margin: 0;
   color: var(--ac-muted-foreground);
@@ -189,6 +183,8 @@ a.item {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
+  max-inline-size: 100%;
   align-items: center;
   gap: var(--ac-space-2);
   flex-shrink: 0;
@@ -203,6 +199,7 @@ a.item {
 .header,
 .footer {
   display: flex;
+  flex-wrap: wrap;
   flex-basis: 100%;
   align-items: center;
   justify-content: space-between;

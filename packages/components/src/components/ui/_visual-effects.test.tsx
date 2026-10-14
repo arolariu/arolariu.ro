@@ -2,7 +2,10 @@ import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {renderToString} from "react-dom/server";
 import postcss from "postcss";
-import {act, render} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {transpileDeclaration} from "typescript";
+import {act, fireEvent, render, screen} from "@testing-library/react";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -15,6 +18,8 @@ import {GradientText} from "./gradient-text";
 import {HighlightText} from "./highlight-text";
 import {HoleBackground} from "./hole-background";
 import {Scratcher} from "./scratcher";
+import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
+import {CountingNumber} from "./counting-number";
 import * as bubbleStories from "./bubble-background.stories";
 import * as gradientStories from "./gradient-text.stories";
 import * as beamsStories from "./background-beams.stories";
@@ -26,9 +31,24 @@ import * as holeStories from "./hole-background.stories";
 import * as scratcherStories from "./scratcher.stories";
 import {useVisualEffectPolicy} from "./_visual-effects";
 
+describe("motion option declaration contract", () => {
+  it("retains the type required by public motion props when internal declarations are stripped", () => {
+    const source = readFileSync(join(import.meta.dirname, "_visual-effects.tsx"), "utf8");
+    const emitted = transpileDeclaration(source, {
+      fileName: "_visual-effects.tsx",
+      compilerOptions: {stripInternal: true, removeComments: true},
+    });
+    expect(emitted.diagnostics).toEqual([]);
+    expect(emitted.outputText).toContain("export interface VisualEffectOptions");
+    expect(emitted.outputText).toContain("readonly loop?: boolean");
+    expect(emitted.outputText).toContain("readonly motionPaused?: boolean");
+  });
+});
+
 let observers: ViewBoundary[] = [];
 let frames: FrameRequestCallback[] = [];
 let timers: TimerHandler[] = [];
+let timerDelays: number[] = [];
 let nextId = 0;
 let reduced = false;
 let media: MediaQueryList;
@@ -232,6 +252,7 @@ beforeEach(() => {
   observers = [];
   frames = [];
   timers = [];
+  timerDelays = [];
   nextId = 0;
   reduced = false;
   media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -250,8 +271,9 @@ beforeEach(() => {
     return ++nextId;
   });
   vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => undefined);
-  vi.stubGlobal("setTimeout", (callback: TimerHandler): number => {
+  vi.stubGlobal("setTimeout", (callback: TimerHandler, delay?: number): number => {
     timers.push(callback);
+    timerDelays.push(delay ?? 0);
     return ++nextId;
   });
   vi.spyOn(window, "clearTimeout").mockImplementation(() => undefined);
@@ -261,6 +283,94 @@ afterEach(() => {
 });
 
 describe("visual effect policy consumer contracts", () => {
+  it.each(families.filter(({name}) => name !== "scratcher"))(
+    "$name settles automatic motion within five seconds, not just when offscreen",
+    ({render: renderFamily}) => {
+      const {container} = render(renderFamily());
+      act(() => {
+        for (const observer of observers) if (observer.target) observer.notify(true);
+      });
+      expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "running");
+      const settle = timers.find((callback) => typeof callback === "function" && callback.name === "settleMotion");
+      expect(settle).toBeTypeOf("function");
+      expect(timerDelays[timers.findIndex((callback) => callback === settle)]).toBe(5000);
+      act(() => {
+        if (typeof settle === "function") settle();
+      });
+      expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "paused");
+    },
+  );
+
+  it.each(families.filter(({name}) => name !== "scratcher"))(
+    "$name honors controlled pause/resume during intentional loops",
+    ({render: renderFamily}) => {
+      const {container, rerender} = render(React.cloneElement(renderFamily(), {loop: true, motionPaused: false}));
+      act(() => {
+        for (const observer of observers) if (observer.target) observer.notify(true);
+      });
+      expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "running");
+      expect(timers.filter((callback) => typeof callback === "function" && callback.name === "settleMotion")).toHaveLength(0);
+      rerender(React.cloneElement(renderFamily(), {loop: true, motionPaused: true}));
+      expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "paused");
+      rerender(React.cloneElement(renderFamily(), {loop: true, motionPaused: false}));
+      expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "running");
+    },
+  );
+
+  it.each([TypewriterText, TypewriterTextSmooth])("settles the entire typewriter phrase and cursor, including long text", (Component) => {
+    const {container} = render(<Component words={[{text: "A".repeat(100)}]} />);
+    act(() => {
+      for (const observer of observers) if (observer.target) observer.notify(true);
+    });
+    expect(container.querySelector('[data-slot="typewriter-cursor"]')).not.toBeNull();
+    const settle = timers.find((callback) => typeof callback === "function" && callback.name === "settleMotion");
+    act(() => {
+      if (typeof settle === "function") settle();
+    });
+    expect(container.firstElementChild).toHaveAttribute("data-motion", "completed");
+    expect(container.querySelector('[data-slot="typewriter-cursor"]')).toBeNull();
+    expect(container.querySelector('[data-slot="typewriter-visual"]')).toHaveTextContent("A".repeat(100));
+  });
+
+  it("keeps the final number accessible immediately while the visual count is decorative", () => {
+    render(
+      <CountingNumber
+        number={100}
+        fromNumber={0}
+        inView
+      />,
+    );
+    expect(screen.getByText("100").closest('[aria-hidden="true"]')).toBeNull();
+    expect(screen.getByText("0")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("settles a slow real numeric spring at its final value and keeps later targets readable", () => {
+    const {container, rerender} = render(
+      <CountingNumber
+        number={100}
+        fromNumber={0}
+        transition={{stiffness: 1, damping: 1}}
+      />,
+    );
+    act(() => {
+      for (const observer of observers) if (observer.target) observer.notify(true);
+    });
+    const settle = timers.find((callback) => typeof callback === "function" && callback.name === "settleMotion");
+    expect(settle).toBeTypeOf("function");
+    act(() => {
+      if (typeof settle === "function") settle();
+    });
+    expect(container.querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^100$/);
+    rerender(
+      <CountingNumber
+        number={200}
+        fromNumber={0}
+        transition={{stiffness: 1, damping: 1}}
+      />,
+    );
+    expect(container.querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^200$/);
+  });
+
   it.each(families)("$name pauses on the first non-intersecting observation without first entering", ({render: renderFamily}) => {
     const {container} = render(renderFamily());
     expect(observers.some((observer) => observer.target !== null)).toBe(true);
@@ -382,5 +492,27 @@ describe("normal-mode visual effect stories", () => {
     expect(gradientStories.CustomGradient.args?.style).toBeUndefined();
     expect(bubbleStories.CustomColors.args?.className).toBeTruthy();
     expect(gradientStories.CustomGradient.args?.className).toBeTruthy();
+  });
+
+  it.each([
+    {Story: composeStories(beamsStories).ControlledLoop, label: /Pause beams/u},
+    {Story: composeStories(bubbleStories).ControlledLoop, label: /Pause bubbles/u},
+    {Story: composeStories(dotStories).ControlledLoop, label: /Pause glow/u},
+    {Story: composeStories(fireworksStories).ControlledLoop, label: /Pause fireworks/u},
+    {Story: composeStories(gradientBackgroundStories).ControlledLoop, label: /Pause gradient/u},
+    {Story: composeStories(gradientStories).ControlledLoop, label: /Pause text motion/u},
+    {Story: composeStories(highlightStories).ControlledLoop, label: /Pause highlight/u},
+    {Story: composeStories(holeStories).ControlledLoop, label: /Pause tunnel/u},
+  ])("runs an actual controlled-loop story with an operable pause button", ({Story, label}) => {
+    const {container} = render(<Story />);
+    act(() => {
+      for (const observer of observers) if (observer.target) observer.notify(true);
+    });
+    expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "running");
+    const control = screen.getByRole("button", {name: label});
+    expect(control.tagName).toBe("BUTTON");
+    fireEvent.click(control);
+    expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "paused");
+    expect(screen.getByRole("button", {name: /Resume/u})).toBeInTheDocument();
   });
 });

@@ -108,13 +108,11 @@ export const CallbackText = {
   ),
 } satisfies Story;
 
-/** Legacy child composition keeps the rendered child's content and attributes. */
-export const LegacyText = {
+/** Render composition retains the element's content and attributes. */
+export const RenderedText = {
   render: () => (
     <ButtonGroup aria-label='Display options'>
-      <ButtonGroupText asChild>
-        <span>Display</span>
-      </ButtonGroupText>
+      <ButtonGroupText render={<span>Display</span>} />
       <Button
         size='xs'
         variant='outline'>

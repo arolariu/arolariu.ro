@@ -35,7 +35,7 @@ const context = {
   lineWidth: 1,
 } satisfies Partial<CanvasRenderingContext2D>;
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -299,7 +299,10 @@ describe("HoleBackground", () => {
     box = new DOMRect(0, 0, 0, 0);
     expect(() => render(<HoleBackground />)).toThrow(/geometry/u);
     box = new DOMRect(0, 0, 200, 100);
-    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: () => null});
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value: (): CanvasRenderingContext2D | null => null,
+    });
     expect(() => render(<HoleBackground />)).toThrow(/2D/u);
   });
 });

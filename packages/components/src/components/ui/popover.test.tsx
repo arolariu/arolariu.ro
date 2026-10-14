@@ -1,17 +1,18 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 
 import {act, cleanup, render, screen, waitFor} from "@testing-library/react";
 import {DirectionProvider} from "@base-ui/react/direction-provider";
 import userEvent from "@testing-library/user-event";
 import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
-import {Popover, PopoverAnchor, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
+import {Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
 
 interface PopoverTestHarnessProps {
   className?: string;
   defaultOpen?: boolean;
   triggerAsChild?: boolean;
-  withAnchor?: boolean;
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;
@@ -22,7 +23,6 @@ function PopoverTestHarness({
   className,
   defaultOpen = false,
   triggerAsChild = false,
-  withAnchor = false,
   side,
   align,
   sideOffset,
@@ -37,9 +37,8 @@ function PopoverTestHarness({
         setOpen(nextOpen);
         onOpenChange?.(nextOpen);
       }}>
-      {withAnchor && <PopoverAnchor data-testid='popover-anchor'>Anchor element</PopoverAnchor>}
-      <PopoverTrigger asChild={triggerAsChild}>
-        {triggerAsChild ? <button type='button'>Open popover</button> : "Open popover"}
+      <PopoverTrigger render={triggerAsChild ? <button type='button'>Open popover</button> : undefined}>
+        {triggerAsChild ? undefined : "Open popover"}
       </PopoverTrigger>
       <PopoverContent
         className={className}
@@ -59,6 +58,13 @@ function PopoverTestHarness({
 }
 
 describe("Popover", () => {
+  it("refresh accessibility: constrains popup width/height and wraps unbroken content", () => {
+    const css = readFileSync(join(import.meta.dirname, "popover.module.css"), "utf8");
+    expect(css).toMatch(/\.popup\s*\{[^}]*max-width:\s*min\(var\(--available-width/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*max-height:\s*var\(--available-height/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*overflow-wrap:\s*anywhere/u);
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -128,7 +134,6 @@ describe("Popover", () => {
     render(
       <DirectionProvider direction='rtl'>
         <Popover defaultOpen>
-          <PopoverAnchor>Legacy structural anchor</PopoverAnchor>
           <PopoverTrigger>Open</PopoverTrigger>
           <PopoverContent
             aria-label='Measured'
@@ -179,15 +184,16 @@ describe("Popover", () => {
         <PopoverTrigger
           ref={ref}
           className='outer-trigger'
-          asChild
-          onClick={(event) => event.preventBaseUIHandler()}>
-          <button
-            ref={childRef}
-            className='child-trigger'
-            onClick={onChildClick}>
-            Cancelled
-          </button>
-        </PopoverTrigger>
+          onClick={(event) => event.preventBaseUIHandler()}
+          render={
+            <button
+              ref={childRef}
+              className='child-trigger'
+              onClick={onChildClick}>
+              Cancelled
+            </button>
+          }
+        />
         <PopoverContent>Must stay closed</PopoverContent>
       </Popover>,
     );
@@ -316,40 +322,16 @@ describe("Popover", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("preserves structural Anchor render props and its ref without registering an anchor", () => {
-    const ref = React.createRef<HTMLDivElement>();
+  it("retains multiple ordinary trigger children", () => {
     render(
       <Popover>
-        <PopoverAnchor
-          ref={ref}
-          className='anchor-class'
-          render={<div data-testid='structural-anchor' />}>
-          Structural content
-        </PopoverAnchor>
-      </Popover>,
-    );
-    expect(ref.current).toBe(screen.getByTestId("structural-anchor"));
-    expect(ref.current).toHaveClass("anchor-class");
-    expect(ref.current).toHaveTextContent("Structural content");
-  });
-
-  it("retains all children when legacy asChild is given multiple children rather than a single slot", () => {
-    render(
-      <Popover>
-        <PopoverTrigger asChild>
+        <PopoverTrigger>
           <span>First</span>
           <span>Second</span>
         </PopoverTrigger>
-        <PopoverAnchor
-          asChild
-          data-testid='structural-fallback'>
-          <span>Anchor first</span>
-          <span>Anchor second</span>
-        </PopoverAnchor>
       </Popover>,
     );
     expect(screen.getByRole("button", {name: "First Second"})).toBeInTheDocument();
-    expect(screen.getByTestId("structural-fallback")).toHaveTextContent("Anchor firstAnchor second");
   });
 
   it("passes live primitive state to trigger and popup render callbacks", async () => {
@@ -489,15 +471,6 @@ describe("Popover", () => {
     });
   });
 
-  it("renders PopoverAnchor when provided", () => {
-    // Arrange & Act
-    render(<PopoverTestHarness withAnchor />);
-
-    // Assert
-    expect(screen.getByTestId("popover-anchor")).toBeInTheDocument();
-    expect(screen.getByText("Anchor element")).toBeInTheDocument();
-  });
-
   it("renders PopoverContent with different side prop", async () => {
     // Arrange
     const user = userEvent.setup();
@@ -526,54 +499,6 @@ describe("Popover", () => {
     // Arrange
     const user = userEvent.setup();
     render(<PopoverTestHarness sideOffset={10} />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("renders PopoverAnchor with custom className", () => {
-    // Arrange & Act
-    render(
-      <Popover>
-        <PopoverAnchor
-          className='custom-anchor-class'
-          data-testid='custom-anchor'>
-          Anchor
-        </PopoverAnchor>
-        <PopoverTrigger>Open</PopoverTrigger>
-        <PopoverContent>Content</PopoverContent>
-      </Popover>,
-    );
-
-    // Assert
-    const anchor = screen.getByTestId("custom-anchor");
-    expect(anchor).toHaveClass("custom-anchor-class");
-  });
-
-  it("renders PopoverAnchor with asChild prop", async () => {
-    // Arrange
-    const user = userEvent.setup();
-
-    render(
-      <Popover>
-        <PopoverAnchor asChild>
-          <button
-            type='button'
-            data-testid='anchor-button'>
-            Anchor Button
-          </button>
-        </PopoverAnchor>
-        <PopoverTrigger>Open popover</PopoverTrigger>
-        <PopoverContent>Popover content</PopoverContent>
-      </Popover>,
-    );
-
-    // Assert
-    expect(screen.getByTestId("anchor-button")).toBeInTheDocument();
-    expect(screen.getByText("Anchor Button")).toBeInTheDocument();
 
     // Act
     await user.click(screen.getByRole("button", {name: "Open popover"}));

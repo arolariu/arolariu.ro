@@ -1,13 +1,18 @@
 "use client";
 
-import {useInView, useMotionValue, useSpring, type SpringOptions, type UseInViewOptions} from "motion/react";
+import {useInView, useSpring, type SpringOptions, type UseInViewOptions} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./counting-number.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
+import {VisuallyHidden} from "./visually-hidden";
+
+const defaultTransition: SpringOptions = {stiffness: 90, damping: 50};
 
 /** Props accepted by {@link CountingNumber}. */
-export interface CountingNumberProps extends Readonly<React.ComponentPropsWithoutRef<"span">> {
+export interface CountingNumberProps extends Readonly<React.ComponentPropsWithRef<"span">> {
   /** Final numeric value to animate toward. @default undefined */
   readonly number: number;
   /** Initial numeric value used before the spring animation starts. @default 0 */
@@ -44,76 +49,66 @@ export interface CountingNumberProps extends Readonly<React.ComponentPropsWithou
  *
  * @see {@link CountingNumberProps} for available props
  */
-const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
-  (
-    {
-      number,
-      fromNumber = 0,
-      padStart = false,
-      inView = false,
-      inViewMargin = "0px",
-      inViewOnce = true,
-      decimalSeparator = ".",
-      transition = {stiffness: 90, damping: 50},
-      decimalPlaces = 0,
-      className,
-      ...props
-    }: Readonly<CountingNumberProps>,
-    ref,
-  ) => {
-    const localRef = React.useRef<HTMLSpanElement>(null);
+function CountingNumber({
+  ref,
+  number,
+  fromNumber = 0,
+  padStart = false,
+  inView = false,
+  inViewMargin = "0px",
+  inViewOnce = true,
+  decimalSeparator = ".",
+  transition = defaultTransition,
+  decimalPlaces = 0,
+  className,
+  ...props
+}: Readonly<CountingNumberProps>): React.JSX.Element {
+  const localRef = React.useRef<HTMLSpanElement>(null);
 
-    const setRefs = React.useCallback(
-      (node: HTMLSpanElement | null): void | (() => void) => {
-        localRef.current = node;
-        if (typeof ref === "function") {
-          const callback: React.RefCallback<HTMLSpanElement> = ref;
-          const cleanup = callback(node);
-          if (typeof cleanup === "function")
-            return () => {
-              localRef.current = null;
-              cleanup();
-            };
-        } else if (ref) ref.current = node;
-      },
-      [ref],
-    );
-    const [displayedNumber, setDisplayedNumber] = React.useState(fromNumber);
+  const setRefs = useMergedRefs(localRef, ref);
+  const {paused, reducedMotion, settled} = useVisualEffectPolicy(localRef);
+  const [displayedNumber, setDisplayedNumber] = React.useState(fromNumber);
 
-    const motionValue = useMotionValue(fromNumber);
-    const springValue = useSpring(motionValue, transition);
-    const inViewResult = useInView(localRef, {
-      once: inViewOnce,
-      margin: inViewMargin,
-    });
-    const isInView = !inView || inViewResult;
+  const springValue = useSpring(fromNumber, transition);
+  const inViewResult = useInView(localRef, {
+    once: inViewOnce,
+    margin: inViewMargin,
+  });
+  const isInView = !inView || inViewResult;
 
-    React.useEffect(() => {
-      if (isInView) {
-        motionValue.set(number);
-      }
-    }, [isInView, motionValue, number]);
+  React.useEffect(() => {
+    if (reducedMotion || settled) springValue.jump(number);
+    else if (paused) springValue.stop();
+    else if (isInView) springValue.set(number);
+  }, [isInView, number, paused, reducedMotion, settled, springValue]);
 
-    React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
-    const formatted = decimalPlaces > 0 ? displayedNumber.toFixed(decimalPlaces) : Math.round(displayedNumber).toString();
-    const negative = formatted.startsWith("-");
-    const unsigned = negative ? formatted.slice(1) : formatted;
-    const [integerPart = "0", fractionPart] = unsigned.split(".");
-    const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
-    const integer = padStart ? integerPart.padStart(finalIntegerLength, "0") : integerPart;
-    const fraction = fractionPart === undefined ? "" : decimalSeparator + fractionPart;
-    const text = `${negative ? "-" : ""}${integer}${fraction}`;
+  React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
+  const visualValue = reducedMotion || settled ? number : displayedNumber;
+  const formatted = decimalPlaces > 0 ? visualValue.toFixed(decimalPlaces) : Math.round(visualValue).toString();
+  const negative = formatted.startsWith("-");
+  const unsigned = negative ? formatted.slice(1) : formatted;
+  const [integerPart = "0", fractionPart] = unsigned.split(".");
+  const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
+  const integer = padStart ? integerPart.padStart(finalIntegerLength, "0") : integerPart;
+  const fraction = fractionPart === undefined ? "" : decimalSeparator + fractionPart;
+  const text = `${negative ? "-" : ""}${integer}${fraction}`;
 
-    return (
+  return (
+    <span
+      ref={setRefs}
+      className={cn(styles.countingNumber, className)}
+      {...props}>
       <span
-        ref={setRefs}
-        className={cn(styles.countingNumber, className)}
-        {...props}>
+        aria-hidden='true'
+        data-slot='counting-number-visual'>
         {text}
       </span>
-    );
-  },
-);
+      <VisuallyHidden>
+        {(decimalPlaces > 0 ? number.toFixed(decimalPlaces) : Math.round(number).toString()).replace(".", decimalSeparator)}
+      </VisuallyHidden>
+    </span>
+  );
+}
 
 CountingNumber.displayName = "CountingNumber";
 

@@ -1,4 +1,8 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {Features, transform} from "lightningcss";
+import {AtRule, parse, type Node} from "postcss";
 
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,8 +19,58 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./command";
+import styles from "./command.module.css";
+
+/** Resolve real compiled selector/media applicability; no native paint or focus-visible heuristic claim. */
+function compiledCommandDeclarations(element: HTMLElement, forcedColors: boolean): Map<string, string> {
+  const compiled = transform({
+    filename: "command.module.css",
+    code: Buffer.from(readFileSync(join(import.meta.dirname, "command.module.css"), "utf8")),
+    include: Features.Nesting,
+    // Public compiler polyfill supplies a deterministic stand-in for the browser's focus-visible state.
+    pseudoClasses: {focusVisible: "review-focus-visible"},
+  }).code.toString();
+  const declarations = new Map<string, string>();
+  parse(compiled).walkRules((rule) => {
+    for (let parent: Node["parent"] = rule.parent; parent; parent = parent.parent) {
+      if (!(parent instanceof AtRule) || parent.name !== "media") continue;
+      if (parent.params.includes("forced-colors") && !forcedColors) return;
+      if (parent.params.includes("prefers-reduced-motion")) return;
+    }
+    const selectors = rule.selectors.map((selector) =>
+      selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+        if (name === "review-focus-visible") return match;
+        const localClass = styles[name];
+        return localClass ? `.${localClass}` : match;
+      }),
+    );
+    if (!selectors.some((selector) => !selector.includes("::") && element.matches(selector))) return;
+    rule.walkDecls((declaration) => {
+      declarations.set(declaration.prop, declaration.value);
+    });
+  });
+  return declarations;
+}
 
 describe("Command", () => {
+  it("refresh accessibility: localizes the optional command-dialog close control", () => {
+    render(
+      <CommandDialog
+        open
+        showCloseButton
+        title='Commandes'
+        closeLabel='Fermer les commandes'>
+        <Command>
+          <CommandInput aria-label='Rechercher' />
+          <CommandList>
+            <CommandItem>Ouvrir</CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>,
+    );
+    expect(screen.getByRole("button", {name: "Fermer les commandes"})).toBeInTheDocument();
+  });
+
   it("keeps an Item callback ref attached across registry and search rerenders", async () => {
     const user = userEvent.setup();
     const events: Array<HTMLDivElement | null> = [];
@@ -2502,3 +2556,31 @@ describe("Command", () => {
     expect(callbackRef).toHaveBeenCalledWith(screen.getByText("First"));
   });
 });
+it.each([false, true])(
+  "review 03fdddba: compiled focus selectors apply to the actual CommandInput with forced colors=%s",
+  async (forcedColors) => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Compiled focus input' />
+        <CommandList>
+          <CommandItem>Action</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Compiled focus input"});
+    expect(compiledCommandDeclarations(input, forcedColors).get("outline")).toBe("none");
+    await user.tab();
+    expect(input).toHaveFocus();
+    input.classList.add("review-focus-visible");
+    const focused = compiledCommandDeclarations(input, forcedColors);
+    expect(focused.get("outline")).toBe(forcedColors ? "2px solid highlight" : "2px solid var(--ac-ring)");
+    expect(focused.get("outline-offset")).toBe("-2px");
+    const wrapper = input.closest<HTMLElement>('[data-slot="command-input-wrapper"]');
+    expect(wrapper).not.toBeNull();
+    if (!wrapper) throw new Error("CommandInput must retain its input wrapper.");
+    expect(compiledCommandDeclarations(wrapper, forcedColors).get("border-bottom")).toBe("1px solid var(--ac-input)");
+    input.classList.remove("review-focus-visible");
+    expect(compiledCommandDeclarations(input, forcedColors).get("outline")).toBe("none");
+  },
+);

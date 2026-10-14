@@ -16,28 +16,27 @@ import styles from "./checkbox-group.module.css";
  *
  * @example
  * ```tsx
- * <CheckboxGroup defaultValue={["news"]}>
- *   <Checkbox value='news'>Newsletter</Checkbox>
- *   <Checkbox value='events'>Events</Checkbox>
+ * <CheckboxGroup aria-label='Notifications' defaultValue={["news"]}>
+ *   <label><Checkbox value='news' /> Newsletter</label>
+ *   <label><Checkbox value='events' /> Events</label>
  * </CheckboxGroup>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/checkbox-group | Base UI Checkbox Group Docs}
  */
-const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>(
-  (props: Readonly<CheckboxGroup.Props>, forwardedRef): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
+const CheckboxGroup = (props: Readonly<CheckboxGroup.Props>): React.ReactElement => {
+  const {ref: forwardedRef} = props;
+  const {className, render, ...otherProps} = props;
 
-    return (
-      <BaseCheckboxGroup
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseCheckboxGroup
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace CheckboxGroup {

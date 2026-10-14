@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {HighlightText} from "./highlight-text";
 const storyStyles = `
 .ac-story-highlight-text-demo {
@@ -50,6 +52,24 @@ const meta = {
 } satisfies Meta<typeof HighlightText>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Custom repeated sweeps must offer pause, not merely pause when offscreen. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <div className={storyClasses.demo}>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume highlight" : "Pause highlight"}</Button>
+        <HighlightText
+          {...args}
+          loop
+          motionPaused={paused}
+          animate={{backgroundSize: ["0% 100%", "100% 100%"]}}
+          transition={{duration: 2, repeat: Infinity}}
+        />
+      </div>
+    );
+  },
+};
 export const Default: Story = {};
 export const OnScroll: Story = {
   args: {text: "important information", inView: true, inViewOnce: false},

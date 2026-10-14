@@ -17,3 +17,38 @@
     visibility: hidden;
   }
 }
+.launch {
+  position: relative;
+  z-index: 1;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0.5rem;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  border: 1px solid var(--ac-input);
+  border-radius: var(--ac-radius-sm);
+  cursor: pointer;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.launch:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .launch {
+    background: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+  .launch:focus-visible {
+    outline-color: Highlight;
+  }
+}

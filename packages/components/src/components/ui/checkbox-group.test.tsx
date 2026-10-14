@@ -1,12 +1,24 @@
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {Checkbox} from "./checkbox";
 import {CheckboxGroup} from "./checkbox-group";
+import * as stories from "./checkbox-group.stories";
 
 describe("CheckboxGroup", () => {
+  it("uses actual label associations rather than discarded checkbox children in its stories", async () => {
+    const user = userEvent.setup();
+    const {Default} = composeStories(stories);
+    render(<Default />);
+    expect(screen.getByRole("group", {name: "Notifications"})).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", {name: "Newsletter"})).toHaveAttribute("aria-checked", "true");
+    const events = screen.getByRole("checkbox", {name: "Events"});
+    await user.click(screen.getByText("Events"));
+    expect(events).toHaveAttribute("aria-checked", "true");
+  });
   it("supplies inherited disabled state to render and className callbacks", () => {
     render(
       <CheckboxGroup

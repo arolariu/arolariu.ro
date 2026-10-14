@@ -50,6 +50,7 @@
     "LICENSE.md",
     "README.md",
     "MIGRATION.md",
+    "ACCESSIBILITY.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "DEBUGGING.md",
@@ -58,9 +59,7 @@
   "keywords": [
     "react",
     "reactjs",
-    "react-18",
     "react-19",
-    "React 18",
     "React 19",
     "react-components",
     "ui-components",
@@ -109,8 +108,8 @@
   "peerDependencies": {
     "@base-ui/react": "^1.9",
     "motion": "^13 || ^14",
-    "react": "^18.2 || ^19",
-    "react-dom": "^18.2 || ^19",
+    "react": "^19",
+    "react-dom": "^19",
     "react-hook-form": "^7",
     "recharts": "^3.8"
   },
@@ -130,7 +129,6 @@
     "@vitest/coverage-v8": "*",
     "@vitest/ui": "*",
     "motion": "*",
-    "playwright": "*",
     "postcss": "*",
     "react": "*",
     "react-dom": "*",
@@ -429,21 +427,6 @@
       "types": "./dist/components/ui/label.d.ts",
       "import": "./dist/components/ui/label.js",
       "default": "./dist/components/ui/label.js"
-    },
-    "./legacy-alert-dialog-action": {
-      "types": "./dist/components/ui/legacy-alert-dialog-action.d.ts",
-      "import": "./dist/components/ui/legacy-alert-dialog-action.js",
-      "default": "./dist/components/ui/legacy-alert-dialog-action.js"
-    },
-    "./legacy-command-dialog": {
-      "types": "./dist/components/ui/legacy-command-dialog.d.ts",
-      "import": "./dist/components/ui/legacy-command-dialog.js",
-      "default": "./dist/components/ui/legacy-command-dialog.js"
-    },
-    "./legacy-toast": {
-      "types": "./dist/components/ui/legacy-toast.d.ts",
-      "import": "./dist/components/ui/legacy-toast.js",
-      "default": "./dist/components/ui/legacy-toast.js"
     },
     "./list-skeleton": {
       "types": "./dist/components/ui/list-skeleton.d.ts",

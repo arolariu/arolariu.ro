@@ -24,25 +24,25 @@ export type InputProps = Readonly<React.ComponentPropsWithRef<typeof BaseInput>>
  *
  * @example Basic usage
  * ```tsx
- * <Input type="email" placeholder="name@example.com" />
+ * <label htmlFor="email">Email</label>
+ * <Input id="email" type="email" placeholder="name@example.com" />
  * ```
  *
  * @see {@link https://base-ui.com/react/components/input | Base UI Documentation}
  */
-const Input = React.forwardRef<React.ComponentRef<typeof BaseInput>, Input.Props>(
-  (props: Readonly<Input.Props>, ref): React.ReactElement => {
-    const {className, ...otherProps} = props;
+const Input = (props: Readonly<Input.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, ...otherProps} = props;
 
-    return (
-      <BaseInput
-        data-slot='input'
-        {...otherProps}
-        ref={ref}
-        className={typeof className === "function" ? (state) => cn(styles.input, className(state)) : cn(styles.input, className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseInput
+      data-slot='input'
+      {...otherProps}
+      ref={ref}
+      className={typeof className === "function" ? (state) => cn(styles.input, className(state)) : cn(styles.input, className)}
+    />
+  );
+};
 Input.displayName = "Input";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

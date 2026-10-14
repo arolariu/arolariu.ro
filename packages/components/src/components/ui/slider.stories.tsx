@@ -101,6 +101,8 @@ export const CustomRange: Story = {
       <div className={storyClasses.storyHeader}>Price range: $0 – $1000</div>
       <Slider
         aria-label='Price range'
+        getAriaLabel={(index) => (index === 0 ? "Minimum price" : "Maximum price")}
+        getAriaValueText={(_formatted, value) => `${value} dollars`}
         defaultValue={[250, 750]}
         min={0}
         max={1000}
@@ -145,6 +147,7 @@ export const Disabled: Story = {
     <div className={storyClasses.story}>
       <Slider
         aria-label='Unavailable range'
+        getAriaLabel={(index) => (index === 0 ? "Unavailable minimum" : "Unavailable maximum")}
         defaultValue={[25, 75]}
         min={0}
         max={100}
@@ -170,6 +173,8 @@ function RangeSliderDemo(): React.JSX.Element {
       </div>
       <Slider
         aria-label='Price range'
+        getAriaLabel={(index) => (index === 0 ? "Minimum price" : "Maximum price")}
+        getAriaValueText={(_formatted, value) => `${value} dollars`}
         value={range}
         onValueChange={setRange}
         min={0}
@@ -229,6 +234,7 @@ export const EdgeAligned: Story = {
     <div className={storyClasses.story}>
       <Slider
         aria-label='Full range'
+        getAriaLabel={(index) => (index === 0 ? "Start value" : "End value")}
         defaultValue={[0, 100]}
       />
       <div className={storyClasses.storyLabels}>
@@ -273,6 +279,7 @@ function VerticalRangeDemo(): React.JSX.Element {
       <div className={storyClasses.storyVertical}>
         <Slider
           aria-label='Vertical range'
+          getAriaLabel={(index) => (index === 0 ? "Lower value" : "Upper value")}
           orientation='vertical'
           value={range}
           onValueChange={setRange}
@@ -280,6 +287,7 @@ function VerticalRangeDemo(): React.JSX.Element {
         />
         <Slider
           aria-label='Vertical endpoint alignment'
+          getAriaLabel={(index) => (index === 0 ? "Minimum endpoint" : "Maximum endpoint")}
           orientation='vertical'
           defaultValue={[0, 100]}
         />

@@ -13,14 +13,9 @@ export type RadioGroupProps<Value = string> = Readonly<BaseRadioGroup.Props<Valu
 /** Primitive-owned group Field state; selection belongs to the items, not this state. */
 export type RadioGroupState = BaseRadioGroup.State;
 /** Readonly radio-item props preserving the inferred value and polymorphic span ref. */
-export type RadioGroupItemProps<Value = string> = Readonly<Radio.Root.Props<Value>>;
+export type RadioGroupItemProps<Value = string> = Readonly<Omit<Radio.Root.Props<Value>, "children">>;
 /** Primitive-owned checked and Field state for each radio. */
 export type RadioGroupItemState = Radio.Root.State;
-
-// A callable view preserves generic value inference without a cast or a React 19-only ref prop.
-const withRef: <Element, Props>(
-  render: (props: React.PropsWithoutRef<Props>, ref: React.ForwardedRef<Element>) => React.ReactNode,
-) => (props: React.PropsWithoutRef<Props> & React.RefAttributes<Element>) => React.ReactNode = React.forwardRef;
 
 /**
  * Coordinates radio group state and selection behavior.
@@ -40,23 +35,18 @@ const withRef: <Element, Props>(
  * @see {@link https://base-ui.com/react/components/radio-group | Base UI Documentation}
  */
 const RadioGroup = Object.assign(
-  withRef(
-    <Value = string,>(
-      props: Readonly<Omit<RadioGroup.Props<Value>, "ref">>,
-      ref: React.ForwardedRef<HTMLDivElement>,
-    ): React.JSX.Element => {
-      const {className, ...otherProps} = props;
+  <Value = string,>(props: Readonly<RadioGroup.Props<Value>>): React.JSX.Element => {
+    const {ref, className, ...otherProps} = props;
 
-      return (
-        <BaseRadioGroup
-          {...otherProps}
-          ref={ref}
-          data-slot='radio-group'
-          className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
-        />
-      );
-    },
-  ),
+    return (
+      <BaseRadioGroup
+        {...otherProps}
+        ref={ref}
+        data-slot='radio-group'
+        className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+      />
+    );
+  },
   {displayName: "RadioGroup"},
 );
 
@@ -68,7 +58,7 @@ const RadioGroup = Object.assign(
  * - Built on {@link https://base-ui.com/react/components/radio-group | Base UI Radio Group}
  * - Supports render/class callbacks with checked and Field state
  * - Use nativeButton=true with render={<button />} for a native button target
- * - Forwarded refs work on React 18/19 while preserving generic value inference
+ * - React 19 ref props preserve generic value inference
  *
  * @example
  * ```tsx
@@ -78,31 +68,26 @@ const RadioGroup = Object.assign(
  * @see {@link https://base-ui.com/react/components/radio-group | Base UI Documentation}
  */
 const RadioGroupItem = Object.assign(
-  withRef(
-    <Value = string,>(
-      props: Readonly<Omit<RadioGroupItem.Props<Value>, "ref">>,
-      ref: React.ForwardedRef<React.ComponentRef<typeof Radio.Root>>,
-    ): React.JSX.Element => {
-      const {className, ...otherProps} = props;
+  <Value = string,>(props: Readonly<RadioGroupItem.Props<Value>>): React.JSX.Element => {
+    const {ref, className, ...otherProps} = props;
 
-      return (
-        <Radio.Root
-          {...otherProps}
-          ref={ref}
-          data-slot='radio-group-item'
-          className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
-          <Radio.Indicator
-            data-slot='radio-group-indicator'
-            className={styles.indicator}>
-            <Circle
-              aria-hidden='true'
-              className={styles.icon}
-            />
-          </Radio.Indicator>
-        </Radio.Root>
-      );
-    },
-  ),
+    return (
+      <Radio.Root
+        {...otherProps}
+        ref={ref}
+        data-slot='radio-group-item'
+        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
+        <Radio.Indicator
+          data-slot='radio-group-indicator'
+          className={styles.indicator}>
+          <Circle
+            aria-hidden='true'
+            className={styles.icon}
+          />
+        </Radio.Indicator>
+      </Radio.Root>
+    );
+  },
   {displayName: "RadioGroupItem"},
 );
 

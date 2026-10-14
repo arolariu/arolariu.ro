@@ -70,6 +70,12 @@ function authoredStyles(element: HTMLElement, reducedMotion = false, forcedColor
 }
 
 describe("Drawer authored gesture presentation (no layout/paint assertion)", () => {
+  it("refresh accessibility: keeps tall drawer content scrollable within its bounded popup", () => {
+    const content = document.createElement("div");
+    content.className = "content";
+    expect(authoredStyles(content).get("overflow-y")).toBe("auto");
+  });
+
   it("does not apply declarations nested inside unsupported conditional at-rules", () => {
     const backdrop = document.createElement("div");
     backdrop.className = "backdrop";
@@ -186,6 +192,57 @@ function renderDrawer({
 }
 
 describe("Drawer", () => {
+  it.each(["ordinary", "opaque"] as const)(
+    "retains the content gesture boundary and handle for %s element-owned children",
+    async (kind) => {
+      const element = (
+        <section>
+          <DrawerTitle>Composed drawer</DrawerTitle>
+          <DrawerClose>Dismiss composed drawer</DrawerClose>
+        </section>
+      );
+      // Synthetic opaque-slot characterization; genuine Flight decoding is an integration obligation.
+      const slot =
+        kind === "ordinary" ? element : {...element, $$typeof: Symbol.for("react.lazy"), _payload: element, _init: () => element};
+      render(
+        <Drawer
+          defaultOpen
+          showSwipeHandle>
+          <DrawerContent render={slot} />
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Composed drawer"});
+      const content = popup.querySelector('[data-slot="drawer-content"]');
+      expect(content).toContainElement(screen.getByRole("button", {name: "Dismiss composed drawer"}));
+      expect(popup.querySelectorAll('[data-slot="drawer-content"]')).toHaveLength(1);
+      expect(popup.querySelectorAll('[data-slot="drawer-swipe-handle"]')).toHaveLength(1);
+      expect(popup.querySelector('[data-slot="drawer-swipe-handle"]')).toHaveAttribute("aria-hidden", "true");
+    },
+  );
+
+  it("leaves an unopened pending popup slot unresolved", () => {
+    const normalize = vi.fn(() => {
+      throw new Promise<void>(() => undefined);
+    });
+    const pending: React.ReactElement & Readonly<{$$typeof: symbol; _payload: null; _init: () => never}> = {
+      ...(<section />),
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: null,
+      _init: normalize,
+    };
+    render(
+      <React.Suspense fallback={<p>Suspended drawer</p>}>
+        <Drawer>
+          <DrawerTrigger>Open pending drawer</DrawerTrigger>
+          <DrawerContent render={pending} />
+        </Drawer>
+      </React.Suspense>,
+    );
+    expect(screen.getByRole("button", {name: "Open pending drawer"})).toBeVisible();
+    expect(screen.queryByText("Suspended drawer")).not.toBeInTheDocument();
+    expect(normalize).not.toHaveBeenCalled();
+  });
+
   it("keeps the full primitive Root and render contracts while accurately typing composed refs", () => {
     expectTypeOf<Exclude<keyof BaseDrawer.Root.Props, keyof Drawer.Props>>().toEqualTypeOf<never>();
     expectTypeOf<Drawer.Props<{title: string}>["children"]>().toEqualTypeOf<BaseDrawer.Root.Props<{title: string}>["children"]>();
@@ -813,7 +870,7 @@ describe("Drawer", () => {
     expect(screen.getByRole("button", {name: "Action"})).toBeInTheDocument();
   });
 
-  it("renders DrawerHeader with asChild prop and valid element", async () => {
+  it("renders DrawerHeader with a composed element", async () => {
     // Arrange
     const {DrawerHeader} = await import("./drawer");
 
@@ -821,10 +878,9 @@ describe("Drawer", () => {
       <Drawer defaultOpen>
         <DrawerContent>
           <DrawerHeader
-            asChild
-            data-testid='drawer-header'>
-            <header>Custom Header</header>
-          </DrawerHeader>
+            data-testid='drawer-header'
+            render={<header>Custom Header</header>}
+          />
         </DrawerContent>
       </Drawer>,
     );
@@ -836,7 +892,7 @@ describe("Drawer", () => {
     expect(screen.getByText("Custom Header")).toBeInTheDocument();
   });
 
-  it("renders DrawerFooter with asChild prop and valid element", async () => {
+  it("renders DrawerFooter with a composed element", async () => {
     // Arrange
     const {DrawerFooter} = await import("./drawer");
 
@@ -845,10 +901,9 @@ describe("Drawer", () => {
         <DrawerContent>
           <DrawerTitle>Title</DrawerTitle>
           <DrawerFooter
-            asChild
-            data-testid='drawer-footer'>
-            <footer>Custom Footer</footer>
-          </DrawerFooter>
+            data-testid='drawer-footer'
+            render={<footer>Custom Footer</footer>}
+          />
         </DrawerContent>
       </Drawer>,
     );

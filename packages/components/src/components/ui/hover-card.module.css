@@ -3,7 +3,12 @@
 }
 
 .popup {
+  box-sizing: border-box;
   width: 16rem;
+  max-width: min(var(--available-width, calc(100vw - 2rem)), calc(100vw - 2rem));
+  max-height: var(--available-height, 85dvh);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   padding: var(--ac-space-4);
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-md);
@@ -36,4 +41,10 @@
     color: CanvasText;
     box-shadow: none;
   }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

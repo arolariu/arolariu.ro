@@ -9,17 +9,17 @@ export type EmptyMediaVariant = "default" | "icon";
 /**
  * Props for the {@link Empty} component.
  */
-export type EmptyProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type EmptyProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link EmptyHeader} component.
  */
-export type EmptyHeaderProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type EmptyHeaderProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link EmptyMedia} component.
  */
-export interface EmptyMediaProps extends Readonly<React.ComponentPropsWithoutRef<"div">> {
+export interface EmptyMediaProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /** Visual presentation applied to the media container. @default "default" */
   readonly variant?: EmptyMediaVariant;
 }
@@ -27,19 +27,22 @@ export interface EmptyMediaProps extends Readonly<React.ComponentPropsWithoutRef
 /**
  * Props for the {@link EmptyTitle} component.
  */
-export type EmptyTitleProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type EmptyTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link EmptyDescription} component.
  */
 export type EmptyDescriptionProps =
-  | (Readonly<React.ComponentPropsWithoutRef<"p">> & {readonly as?: "p"})
-  | (Readonly<React.ComponentPropsWithoutRef<"div">> & {readonly as: "div"});
+  | (Readonly<React.ComponentPropsWithoutRef<"p">> & {readonly as?: "p"; readonly ref?: React.Ref<HTMLParagraphElement | HTMLDivElement>})
+  | (Readonly<React.ComponentPropsWithoutRef<"div">> & {
+      readonly as: "div";
+      readonly ref?: React.Ref<HTMLParagraphElement | HTMLDivElement>;
+    });
 
 /**
  * Props for the {@link EmptyContent} component.
  */
-export type EmptyContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type EmptyContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Creates a structured empty-state container.
@@ -58,14 +61,14 @@ export type EmptyContentProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
  *
  * @see {@link EmptyProps} for available props
  */
-const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(({className, ...props}: Readonly<EmptyProps>, ref): React.JSX.Element => (
+const Empty = ({ref, className, ...props}: Readonly<EmptyProps>): React.JSX.Element => (
   <div
     ref={ref}
     data-slot='empty'
     className={cn(styles.empty, className)}
     {...props}
   />
-));
+);
 
 /**
  * Groups the leading header content for an empty state.
@@ -82,15 +85,13 @@ const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(({className, ...props
  *
  * @see {@link EmptyHeaderProps} for available props
  */
-const EmptyHeader = React.forwardRef<HTMLDivElement, EmptyHeaderProps>(
-  ({className, ...props}: Readonly<EmptyHeaderProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty-header'
-      className={cn(styles.header, className)}
-      {...props}
-    />
-  ),
+const EmptyHeader = ({ref, className, ...props}: Readonly<EmptyHeaderProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty-header'
+    className={cn(styles.header, className)}
+    {...props}
+  />
 );
 
 /**
@@ -108,16 +109,14 @@ const EmptyHeader = React.forwardRef<HTMLDivElement, EmptyHeaderProps>(
  *
  * @see {@link EmptyMediaProps} for available props
  */
-const EmptyMedia = React.forwardRef<HTMLDivElement, EmptyMediaProps>(
-  ({className, variant = "default", ...props}: Readonly<EmptyMediaProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty-icon'
-      data-variant={variant}
-      className={cn(styles.media, variant === "icon" && styles.mediaIcon, className)}
-      {...props}
-    />
-  ),
+const EmptyMedia = ({ref, className, variant = "default", ...props}: Readonly<EmptyMediaProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty-icon'
+    data-variant={variant}
+    className={cn(styles.media, variant === "icon" && styles.mediaIcon, className)}
+    {...props}
+  />
 );
 
 /**
@@ -135,15 +134,13 @@ const EmptyMedia = React.forwardRef<HTMLDivElement, EmptyMediaProps>(
  *
  * @see {@link EmptyTitleProps} for available props
  */
-const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
-  ({className, ...props}: Readonly<EmptyTitleProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty-title'
-      className={cn(styles.title, className)}
-      {...props}
-    />
-  ),
+const EmptyTitle = ({ref, className, ...props}: Readonly<EmptyTitleProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty-title'
+    className={cn(styles.title, className)}
+    {...props}
+  />
 );
 
 /**
@@ -162,15 +159,13 @@ const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
  *
  * @see {@link EmptyDescriptionProps} for available props
  */
-const EmptyDescription = React.forwardRef<HTMLParagraphElement | HTMLDivElement, EmptyDescriptionProps>(
-  ({className, as: tagName = "p", ...props}: Readonly<EmptyDescriptionProps>, ref): React.JSX.Element =>
-    React.createElement(tagName, {
-      ...props,
-      ref,
-      "data-slot": "empty-description",
-      className: cn(styles.description, className),
-    }),
-);
+const EmptyDescription = ({ref, className, as: tagName = "p", ...props}: Readonly<EmptyDescriptionProps>): React.JSX.Element =>
+  React.createElement(tagName, {
+    ...props,
+    ref,
+    "data-slot": "empty-description",
+    className: cn(styles.description, className),
+  });
 
 /**
  * Hosts trailing actions or supplemental content for an empty state.
@@ -189,15 +184,13 @@ const EmptyDescription = React.forwardRef<HTMLParagraphElement | HTMLDivElement,
  *
  * @see {@link EmptyContentProps} for available props
  */
-const EmptyContent = React.forwardRef<HTMLDivElement, EmptyContentProps>(
-  ({className, ...props}: Readonly<EmptyContentProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty-content'
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
+const EmptyContent = ({ref, className, ...props}: Readonly<EmptyContentProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty-content'
+    className={cn(styles.content, className)}
+    {...props}
+  />
 );
 
 Empty.displayName = "Empty";

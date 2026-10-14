@@ -1,5 +1,7 @@
 .fallback {
   display: flex;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -22,8 +24,10 @@
 }
 
 .retry {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   cursor: pointer;
-  border: 1px solid var(--ac-border);
+  border: 1px solid var(--ac-input);
   border-radius: var(--ac-radius-md);
   background-color: var(--ac-background);
   padding: var(--ac-space-2) var(--ac-space-4);
@@ -44,5 +48,17 @@
 @media (prefers-reduced-motion: reduce) {
   .retry {
     transition: none;
+  }
+
+  @media (forced-colors: active) {
+    .retry {
+      border-color: ButtonText;
+      background-color: ButtonFace;
+      color: ButtonText;
+    }
+
+    .retry:focus-visible {
+      outline-color: Highlight;
+    }
   }
 }

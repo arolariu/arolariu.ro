@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
@@ -30,6 +30,172 @@ function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
 }
 
 describe("Select", () => {
+  it.each([
+    ["popup", false],
+    ["popup", true],
+    ["list", false],
+    ["list", true],
+    ["positioner", true],
+  ] as const)("does not resolve a pending %s render while closed (explicit children: %s)", async (part, explicitChildren) => {
+    const request = Promise.withResolvers<React.ReactElement<React.ComponentPropsWithRef<"div">>>();
+    let resolved: React.ReactElement<React.ComponentPropsWithRef<"div">> | undefined;
+    let reads = 0;
+    void request.promise.then((element) => {
+      resolved = element;
+    });
+    // A suspending transport boundary around public element props. No React
+    // private lazy fields or replacement repository/primitive implementations.
+    const seed = <div />;
+    const pendingRender: React.ReactElement<React.ComponentPropsWithRef<"div">> = {
+      ...seed,
+      get props(): React.ComponentPropsWithRef<"div"> {
+        reads += 1;
+        if (!resolved) throw request.promise;
+        return resolved.props;
+      },
+    };
+    const popupRef = React.createRef<HTMLDivElement>();
+    const listRef = React.createRef<HTMLDivElement>();
+    const positionerRef = React.createRef<HTMLDivElement>();
+    const elementRef = React.createRef<HTMLDivElement>();
+    const options = (
+      <>
+        <SelectItem value='a'>Alpha</SelectItem>
+        <SelectItem value='b'>Beta</SelectItem>
+      </>
+    );
+    function PendingSelect({open}: Readonly<{open: boolean}>): React.JSX.Element {
+      return (
+        <React.Suspense fallback={<p role='status'>Loading select surface</p>}>
+          <Select
+            open={open}
+            items={{a: "Alpha", b: "Beta"}}>
+            <SelectTrigger aria-label='Deferred choices'>
+              <SelectValue placeholder='Choose' />
+            </SelectTrigger>
+            <SelectContent
+              ref={popupRef}
+              alignItemWithTrigger={false}
+              render={part === "popup" ? pendingRender : undefined}
+              listProps={{
+                ref: listRef,
+                "aria-label": "Available choices",
+                render: part === "list" ? pendingRender : undefined,
+              }}
+              positionerProps={{
+                ref: positionerRef,
+                render: part === "positioner" ? pendingRender : undefined,
+              }}>
+              {explicitChildren ? options : undefined}
+            </SelectContent>
+          </Select>
+        </React.Suspense>
+      );
+    }
+
+    const {rerender, unmount} = render(<PendingSelect open={false} />);
+    expect(reads).toBe(0);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", {name: "Deferred choices"})).toHaveAttribute("aria-expanded", "false");
+    expect(popupRef.current).toBeNull();
+    expect(listRef.current).toBeNull();
+    expect(positionerRef.current).toBeNull();
+
+    rerender(<PendingSelect open />);
+    expect(reads).toBeGreaterThan(0);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading select surface");
+    await act(async () => {
+      request.resolve(<div ref={elementRef}>{explicitChildren ? <p>Ignored render children</p> : options}</div>);
+      await request.promise;
+    });
+
+    const list = screen.getByRole("listbox", {name: "Available choices"});
+    const popup = list.parentElement;
+    expect(popup).toHaveAttribute("data-slot", "select-content");
+    expect(popupRef.current).toBe(popup);
+    expect(listRef.current).toBe(list);
+    expect(positionerRef.current).toContainElement(popup);
+    const surface = part === "popup" ? popup : part === "list" ? list : positionerRef.current;
+    expect(elementRef.current).toBe(surface);
+    expect(
+      within(list)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Alpha", "Beta"]);
+    expect(screen.queryByText("Ignored render children")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", {name: "Deferred choices"})).toHaveAttribute("aria-expanded", "true");
+    unmount();
+    expect(popupRef.current).toBeNull();
+    expect(listRef.current).toBeNull();
+    expect(positionerRef.current).toBeNull();
+    expect(elementRef.current).toBeNull();
+  });
+
+  it("lets mounted Popup, List and Positioner own callback invocation and live state", () => {
+    const popupStates: SelectContent.State[] = [];
+    const listStates: BaseSelect.List.State[] = [];
+    const positionerStates: BaseSelect.Positioner.State[] = [];
+    const popupRender: Exclude<SelectContent.Props["render"], React.ReactElement | undefined> = (props, state) => {
+      popupStates.push(state);
+      return (
+        <section
+          {...props}
+          data-popup-open={String(state.open)}
+        />
+      );
+    };
+    const listRender: Exclude<SelectContent.ListProps["render"], React.ReactElement | undefined> = (props, state) => {
+      listStates.push(state);
+      return (
+        <div
+          {...props}
+          data-list-keys={Object.keys(state).join(",")}
+        />
+      );
+    };
+    const positionerRender: Exclude<SelectContent.PositionerProps["render"], React.ReactElement | undefined> = (props, state) => {
+      positionerStates.push(state);
+      return (
+        <div
+          {...props}
+          data-positioner-open={String(state.open)}
+        />
+      );
+    };
+    function CallbackSelect({open}: Readonly<{open: boolean}>): React.JSX.Element {
+      return (
+        <Select open={open}>
+          <SelectTrigger aria-label='Callback choices'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent
+            render={popupRender}
+            alignItemWithTrigger={false}
+            listProps={{render: listRender, "aria-label": "Callback options"}}
+            positionerProps={{render: positionerRender}}>
+            <SelectItem value='a'>Alpha</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    const {rerender} = render(<CallbackSelect open={false} />);
+    expect(popupStates).toEqual([]);
+    expect(listStates).toEqual([]);
+    expect(positionerStates).toEqual([]);
+    rerender(<CallbackSelect open />);
+    const list = screen.getByRole("listbox", {name: "Callback options"});
+    expect(list).toHaveAttribute("data-list-keys", "");
+    expect(list.parentElement).toHaveAttribute("data-popup-open", "true");
+    expect(list.closest("[data-positioner-open]")).toHaveAttribute("data-positioner-open", "true");
+    expect(popupStates.length).toBeGreaterThan(0);
+    expect(listStates.length).toBeGreaterThan(0);
+    expect(positionerStates.length).toBeGreaterThan(0);
+    expect(popupStates.every((state) => state.open)).toBe(true);
+    expect(positionerStates.every((state) => state.open)).toBe(true);
+    expect(listStates.every((state) => Object.keys(state).length === 0)).toBe(true);
+  });
+
   it("retains lazy render-element Trigger children, its icon, refs and native handlers", async () => {
     const user = userEvent.setup();
     const childRef = React.createRef<HTMLButtonElement>();

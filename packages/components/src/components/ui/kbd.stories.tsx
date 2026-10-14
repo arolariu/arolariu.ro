@@ -17,7 +17,9 @@ export const KeyboardShortcut: Story = {
   render: (): React.JSX.Element => (
     <p>
       Save:{" "}
-      <KbdGroup aria-label='Command S'>
+      <KbdGroup
+        role='img'
+        aria-label='Command S'>
         <Kbd>⌘</Kbd>
         <Kbd>S</Kbd>
       </KbdGroup>
@@ -29,21 +31,27 @@ export const ShortcutsList: Story = {
     <dl>
       <dt>Search</dt>
       <dd>
-        <KbdGroup aria-label='Control K'>
+        <KbdGroup
+          role='img'
+          aria-label='Control K'>
           <Kbd>Ctrl</Kbd>
           <Kbd>K</Kbd>
         </KbdGroup>
       </dd>
       <dt>New file</dt>
       <dd>
-        <KbdGroup aria-label='Control N'>
+        <KbdGroup
+          role='img'
+          aria-label='Control N'>
           <Kbd>Ctrl</Kbd>
           <Kbd>N</Kbd>
         </KbdGroup>
       </dd>
       <dt>Undo</dt>
       <dd>
-        <KbdGroup aria-label='Control Z'>
+        <KbdGroup
+          role='img'
+          aria-label='Control Z'>
           <Kbd>Ctrl</Kbd>
           <Kbd>Z</Kbd>
         </KbdGroup>
@@ -55,7 +63,9 @@ export const Combination: Story = {
   render: (): React.JSX.Element => (
     <p>
       Command palette:{" "}
-      <KbdGroup aria-label='Control Shift P'>
+      <KbdGroup
+        role='img'
+        aria-label='Control Shift P'>
         <Kbd>Ctrl</Kbd>
         <Kbd>Shift</Kbd>
         <Kbd>P</Kbd>
@@ -68,7 +78,9 @@ export const InContext: Story = {
   render: (): React.JSX.Element => (
     <p>
       Save with{" "}
-      <KbdGroup aria-label='Control S'>
+      <KbdGroup
+        role='img'
+        aria-label='Control S'>
         <Kbd>Ctrl</Kbd>
         <Kbd>S</Kbd>
       </KbdGroup>

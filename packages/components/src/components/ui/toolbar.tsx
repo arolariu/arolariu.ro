@@ -24,8 +24,8 @@ import styles from "./toolbar.module.css";
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>((props: Readonly<Toolbar.Props>, forwardedRef): React.ReactElement => {
-  const {className, children, render, ...otherProps} = props;
+const Toolbar = (props: Readonly<Toolbar.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Root
@@ -36,7 +36,7 @@ const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>((props: Readonly
       {children}
     </BaseToolbar.Root>
   );
-});
+};
 
 /**
  * Renders an interactive button within a toolbar.
@@ -45,6 +45,7 @@ const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>((props: Readonly
  * - Renders a `<button>` element by default
  * - Built on Base UI Toolbar button behavior
  * - Applies shared toolbar item spacing and focus styling
+ * - Icon-only content requires an action-specific aria-label or aria-labelledby
  *
  * @example
  * ```tsx
@@ -53,21 +54,19 @@ const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>((props: Readonly
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>(
-  (props: Readonly<ToolbarButton.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const ToolbarButton = (props: Readonly<ToolbarButton.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseToolbar.Button
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.item, styles.button, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseToolbar.Button>
-    );
-  },
-);
+  return (
+    <BaseToolbar.Button
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.item, styles.button, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseToolbar.Button>
+  );
+};
 
 /**
  * Groups related toolbar controls into a single visual cluster.
@@ -86,21 +85,19 @@ const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>(
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>(
-  (props: Readonly<ToolbarGroup.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const ToolbarGroup = (props: Readonly<ToolbarGroup.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseToolbar.Group
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseToolbar.Group>
-    );
-  },
-);
+  return (
+    <BaseToolbar.Group
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseToolbar.Group>
+  );
+};
 
 /**
  * Renders a visual separator between toolbar items or groups.
@@ -116,20 +113,18 @@ const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>(
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props>(
-  (props: Readonly<ToolbarSeparator.Props>, forwardedRef): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
+const ToolbarSeparator = (props: Readonly<ToolbarSeparator.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, render, ...otherProps} = props;
 
-    return (
-      <BaseToolbar.Separator
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseToolbar.Separator
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 
 /**
  * Renders a link that visually matches toolbar buttons.
@@ -145,21 +140,19 @@ const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLink.Props>(
-  (props: Readonly<ToolbarLink.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const ToolbarLink = (props: Readonly<ToolbarLink.Props>): React.ReactElement => {
+  const {ref: forwardedRef, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseToolbar.Link
-        {...otherProps}
-        ref={forwardedRef}
-        render={render}
-        className={(state) => cn(styles.item, styles.link, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseToolbar.Link>
-    );
-  },
-);
+  return (
+    <BaseToolbar.Link
+      {...otherProps}
+      ref={forwardedRef}
+      render={render}
+      className={(state) => cn(styles.item, styles.link, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseToolbar.Link>
+  );
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toolbar {

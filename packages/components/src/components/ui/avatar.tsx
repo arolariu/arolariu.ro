@@ -102,7 +102,7 @@ export type AvatarGroupCountProps = Readonly<
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>((props: Readonly<Avatar.Props>, forwardedRef): React.ReactElement => {
+const Avatar = ({ref: forwardedRef, ...props}: Readonly<Avatar.Props>): React.ReactElement => {
   const {className, children, render, size = "default", ...otherProps} = props;
 
   return (
@@ -120,7 +120,7 @@ const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>((props: Readonly<
       {children}
     </BaseAvatar.Root>
   );
-});
+};
 Avatar.displayName = "Avatar";
 
 /**
@@ -139,21 +139,19 @@ Avatar.displayName = "Avatar";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImage.Props>(
-  (props: Readonly<AvatarImage.Props>, forwardedRef): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
+const AvatarImage = ({ref: forwardedRef, ...props}: Readonly<AvatarImage.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
 
-    return (
-      <BaseAvatar.Image
-        {...otherProps}
-        data-slot='avatar-image'
-        ref={forwardedRef}
-        className={typeof className === "function" ? (state) => cn(styles.image, className(state)) : cn(styles.image, className)}
-        render={render}
-      />
-    );
-  },
-);
+  return (
+    <BaseAvatar.Image
+      {...otherProps}
+      data-slot='avatar-image'
+      ref={forwardedRef}
+      className={typeof className === "function" ? (state) => cn(styles.image, className(state)) : cn(styles.image, className)}
+      render={render}
+    />
+  );
+};
 AvatarImage.displayName = "AvatarImage";
 
 /**
@@ -172,22 +170,20 @@ AvatarImage.displayName = "AvatarImage";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallback.Props>(
-  (props: Readonly<AvatarFallback.Props>, forwardedRef): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AvatarFallback = ({ref: forwardedRef, ...props}: Readonly<AvatarFallback.Props>): React.ReactElement => {
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAvatar.Fallback
-        {...otherProps}
-        data-slot='avatar-fallback'
-        ref={forwardedRef}
-        className={typeof className === "function" ? (state) => cn(styles.fallback, className(state)) : cn(styles.fallback, className)}
-        render={render}>
-        {children}
-      </BaseAvatar.Fallback>
-    );
-  },
-);
+  return (
+    <BaseAvatar.Fallback
+      {...otherProps}
+      data-slot='avatar-fallback'
+      ref={forwardedRef}
+      className={typeof className === "function" ? (state) => cn(styles.fallback, className(state)) : cn(styles.fallback, className)}
+      render={render}>
+      {children}
+    </BaseAvatar.Fallback>
+  );
+};
 AvatarFallback.displayName = "AvatarFallback";
 
 /**
@@ -200,18 +196,16 @@ AvatarFallback.displayName = "AvatarFallback";
  * Composed targets accept their corresponding DOM refs; callback props carry
  * Base UI's merged callback ref rather than a default-span object ref.
  */
-const AvatarBadge = React.forwardRef<HTMLElement, AvatarBadge.Props>(
-  (props: Readonly<React.PropsWithoutRef<AvatarBadge.Props>>, ref): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
-    return useRender<AvatarBadge.State, HTMLElement>({
-      defaultTagName: "span",
-      ref,
-      render,
-      state: {slot: "avatar-badge"},
-      props: mergeProps<"span">({className: cn(styles.badge, className)}, otherProps),
-    });
-  },
-);
+const AvatarBadge = ({ref, ...props}: Readonly<AvatarBadge.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarBadge.State, HTMLElement>({
+    defaultTagName: "span",
+    ref,
+    render,
+    state: {slot: "avatar-badge"},
+    props: mergeProps<"span">({className: cn(styles.badge, className)}, otherProps),
+  });
+};
 AvatarBadge.displayName = "AvatarBadge";
 
 /**
@@ -223,18 +217,16 @@ AvatarBadge.displayName = "AvatarBadge";
  * needs a group name; the default native div adds no redundant ARIA.
  * The common `HTMLElement` ref boundary supports the actual composed target.
  */
-const AvatarGroup = React.forwardRef<HTMLElement, AvatarGroup.Props>(
-  (props: Readonly<React.PropsWithoutRef<AvatarGroup.Props>>, ref): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
-    return useRender<AvatarGroup.State, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render,
-      state: {slot: "avatar-group"},
-      props: mergeProps<"div">({className: cn(styles.group, className)}, otherProps),
-    });
-  },
-);
+const AvatarGroup = ({ref, ...props}: Readonly<AvatarGroup.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarGroup.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "avatar-group"},
+    props: mergeProps<"div">({className: cn(styles.group, className)}, otherProps),
+  });
+};
 AvatarGroup.displayName = "AvatarGroup";
 
 /**
@@ -247,18 +239,16 @@ AvatarGroup.displayName = "AvatarGroup";
  * label when a number alone does not explain the remaining items.
  * Composed targets accept their corresponding DOM refs through `HTMLElement`.
  */
-const AvatarGroupCount = React.forwardRef<HTMLElement, AvatarGroupCount.Props>(
-  (props: Readonly<React.PropsWithoutRef<AvatarGroupCount.Props>>, ref): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
-    return useRender<AvatarGroupCount.State, HTMLElement>({
-      defaultTagName: "div",
-      ref,
-      render,
-      state: {slot: "avatar-group-count"},
-      props: mergeProps<"div">({className: cn(styles.groupCount, className)}, otherProps),
-    });
-  },
-);
+const AvatarGroupCount = ({ref, ...props}: Readonly<AvatarGroupCount.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarGroupCount.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "avatar-group-count"},
+    props: mergeProps<"div">({className: cn(styles.groupCount, className)}, otherProps),
+  });
+};
 AvatarGroupCount.displayName = "AvatarGroupCount";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

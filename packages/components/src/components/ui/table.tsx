@@ -6,42 +6,47 @@ import styles from "./table.module.css";
 /**
  * Props for the {@link Table} component.
  */
-export type TableProps = Readonly<React.ComponentPropsWithoutRef<"table">>;
+export type TableProps = Readonly<
+  React.ComponentPropsWithRef<"table"> & {
+    /** Native scroll-viewport attributes/ref. Name it when supplying a region role. */
+    containerProps?: Omit<React.ComponentPropsWithRef<"div">, "children" | "dangerouslySetInnerHTML">;
+  }
+>;
 
 /**
  * Props for the {@link TableHeader} component.
  */
-export type TableHeaderProps = Readonly<React.ComponentPropsWithoutRef<"thead">>;
+export type TableHeaderProps = Readonly<React.ComponentPropsWithRef<"thead">>;
 
 /**
  * Props for the {@link TableBody} component.
  */
-export type TableBodyProps = Readonly<React.ComponentPropsWithoutRef<"tbody">>;
+export type TableBodyProps = Readonly<React.ComponentPropsWithRef<"tbody">>;
 
 /**
  * Props for the {@link TableFooter} component.
  */
-export type TableFooterProps = Readonly<React.ComponentPropsWithoutRef<"tfoot">>;
+export type TableFooterProps = Readonly<React.ComponentPropsWithRef<"tfoot">>;
 
 /**
  * Props for the {@link TableRow} component.
  */
-export type TableRowProps = Readonly<React.ComponentPropsWithoutRef<"tr">>;
+export type TableRowProps = Readonly<React.ComponentPropsWithRef<"tr">>;
 
 /**
  * Props for the {@link TableHead} component.
  */
-export type TableHeadProps = Readonly<React.ComponentPropsWithoutRef<"th">>;
+export type TableHeadProps = Readonly<React.ComponentPropsWithRef<"th">>;
 
 /**
  * Props for the {@link TableCell} component.
  */
-export type TableCellProps = Readonly<React.ComponentPropsWithoutRef<"td">>;
+export type TableCellProps = Readonly<React.ComponentPropsWithRef<"td">>;
 
 /**
  * Props for the {@link TableCaption} component.
  */
-export type TableCaptionProps = Readonly<React.ComponentPropsWithoutRef<"caption">>;
+export type TableCaptionProps = Readonly<React.ComponentPropsWithRef<"caption">>;
 
 /**
  * Wraps a table in a horizontally scrollable container.
@@ -60,10 +65,13 @@ export type TableCaptionProps = Readonly<React.ComponentPropsWithoutRef<"caption
  *
  * @see {@link TableProps} for available props
  */
-const Table = React.forwardRef<HTMLTableElement, TableProps>(({className, ...props}: Readonly<TableProps>, ref): React.JSX.Element => (
+const Table = ({ref, className, containerProps, ...props}: Readonly<TableProps>): React.JSX.Element => (
   <div
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- This native overflow viewport needs keyboard-scroll focus, not an invented ARIA widget; caller attributes below retain their overrides.
+    tabIndex={0}
+    {...containerProps}
     data-slot='table-container'
-    className={styles.container}>
+    className={cn(styles.container, containerProps?.className)}>
     <table
       ref={ref}
       data-slot='table'
@@ -71,7 +79,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(({className, ...pro
       {...props}
     />
   </div>
-));
+);
 
 /**
  * Renders the table header section.
@@ -90,15 +98,13 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(({className, ...pro
  *
  * @see {@link TableHeaderProps} for available props
  */
-const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
-  ({className, ...props}: Readonly<TableHeaderProps>, ref): React.JSX.Element => (
-    <thead
-      ref={ref}
-      data-slot='table-header'
-      className={cn(styles.header, className)}
-      {...props}
-    />
-  ),
+const TableHeader = ({ref, className, ...props}: Readonly<TableHeaderProps>): React.JSX.Element => (
+  <thead
+    ref={ref}
+    data-slot='table-header'
+    className={cn(styles.header, className)}
+    {...props}
+  />
 );
 
 /**
@@ -118,15 +124,13 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
  *
  * @see {@link TableBodyProps} for available props
  */
-const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
-  ({className, ...props}: Readonly<TableBodyProps>, ref): React.JSX.Element => (
-    <tbody
-      ref={ref}
-      data-slot='table-body'
-      className={cn(styles.body, className)}
-      {...props}
-    />
-  ),
+const TableBody = ({ref, className, ...props}: Readonly<TableBodyProps>): React.JSX.Element => (
+  <tbody
+    ref={ref}
+    data-slot='table-body'
+    className={cn(styles.body, className)}
+    {...props}
+  />
 );
 
 /**
@@ -146,15 +150,13 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
  *
  * @see {@link TableFooterProps} for available props
  */
-const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(
-  ({className, ...props}: Readonly<TableFooterProps>, ref): React.JSX.Element => (
-    <tfoot
-      ref={ref}
-      data-slot='table-footer'
-      className={cn(styles.footer, className)}
-      {...props}
-    />
-  ),
+const TableFooter = ({ref, className, ...props}: Readonly<TableFooterProps>): React.JSX.Element => (
+  <tfoot
+    ref={ref}
+    data-slot='table-footer'
+    className={cn(styles.footer, className)}
+    {...props}
+  />
 );
 
 /**
@@ -174,15 +176,13 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(
  *
  * @see {@link TableRowProps} for available props
  */
-const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
-  ({className, ...props}: Readonly<TableRowProps>, ref): React.JSX.Element => (
-    <tr
-      ref={ref}
-      data-slot='table-row'
-      className={cn(styles.row, className)}
-      {...props}
-    />
-  ),
+const TableRow = ({ref, className, ...props}: Readonly<TableRowProps>): React.JSX.Element => (
+  <tr
+    ref={ref}
+    data-slot='table-row'
+    className={cn(styles.row, className)}
+    {...props}
+  />
 );
 
 /**
@@ -200,15 +200,13 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
  *
  * @see {@link TableHeadProps} for available props
  */
-const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
-  ({className, ...props}: Readonly<TableHeadProps>, ref): React.JSX.Element => (
-    <th
-      ref={ref}
-      data-slot='table-head'
-      className={cn(styles.head, className)}
-      {...props}
-    />
-  ),
+const TableHead = ({ref, className, ...props}: Readonly<TableHeadProps>): React.JSX.Element => (
+  <th
+    ref={ref}
+    data-slot='table-head'
+    className={cn(styles.head, className)}
+    {...props}
+  />
 );
 
 /**
@@ -226,15 +224,13 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
  *
  * @see {@link TableCellProps} for available props
  */
-const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
-  ({className, ...props}: Readonly<TableCellProps>, ref): React.JSX.Element => (
-    <td
-      ref={ref}
-      data-slot='table-cell'
-      className={cn(styles.cell, className)}
-      {...props}
-    />
-  ),
+const TableCell = ({ref, className, ...props}: Readonly<TableCellProps>): React.JSX.Element => (
+  <td
+    ref={ref}
+    data-slot='table-cell'
+    className={cn(styles.cell, className)}
+    {...props}
+  />
 );
 
 /**
@@ -252,15 +248,13 @@ const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
  *
  * @see {@link TableCaptionProps} for available props
  */
-const TableCaption = React.forwardRef<HTMLTableCaptionElement, TableCaptionProps>(
-  ({className, ...props}: Readonly<TableCaptionProps>, ref): React.JSX.Element => (
-    <caption
-      ref={ref}
-      data-slot='table-caption'
-      className={cn(styles.caption, className)}
-      {...props}
-    />
-  ),
+const TableCaption = ({ref, className, ...props}: Readonly<TableCaptionProps>): React.JSX.Element => (
+  <caption
+    ref={ref}
+    data-slot='table-caption'
+    className={cn(styles.caption, className)}
+    {...props}
+  />
 );
 
 Table.displayName = "Table";

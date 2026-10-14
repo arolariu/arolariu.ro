@@ -83,9 +83,7 @@ export const Multiple: Story = {
 
 export const DisabledItems: Story = {
   render: () => (
-    <Accordion
-      type='single'
-      collapsible>
+    <Accordion collapsible>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Active Item 1</AccordionTrigger>
         <AccordionContent>This item can be toggled normally.</AccordionContent>
@@ -106,9 +104,7 @@ export const DisabledItems: Story = {
 
 export const WithIcon: Story = {
   render: () => (
-    <Accordion
-      type='single'
-      collapsible>
+    <Accordion collapsible>
       <AccordionItem value='item-1'>
         <AccordionTrigger>
           <span className={storyClasses.label}>
@@ -143,9 +139,8 @@ export const WithIcon: Story = {
 export const DefaultOpen: Story = {
   render: () => (
     <Accordion
-      type='single'
       collapsible
-      defaultValue='item-1'>
+      defaultValue={["item-1"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Pre-expanded Section</AccordionTrigger>
         <AccordionContent>This section is open by default when the component mounts.</AccordionContent>
@@ -162,15 +157,14 @@ export const DefaultOpen: Story = {
   ),
 };
 
-export const LegacyNonCollapsible: Story = {
+export const NonCollapsible: Story = {
   render: () => (
     <Accordion
-      type='single'
       collapsible={false}
-      defaultValue='item-1'>
+      defaultValue={["item-1"]}>
       <AccordionItem value='item-1'>
         <AccordionTrigger>Always keep a section open</AccordionTrigger>
-        <AccordionContent>This legacy string adapter prevents closing the last open panel.</AccordionContent>
+        <AccordionContent>Cancellation prevents closing the last open panel.</AccordionContent>
       </AccordionItem>
       <AccordionItem value='item-2'>
         <AccordionTrigger>Switch to this section</AccordionTrigger>

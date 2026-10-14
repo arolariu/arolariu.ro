@@ -4,8 +4,35 @@ import {createRef} from "react";
 import {describe, expect, it, vi as vitest} from "vitest";
 
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea} from "./input-group";
+import {Switch} from "./switch";
 
 describe("InputGroup", () => {
+  it("does not steal focus from a non-button interactive addon after pointer activation", async () => {
+    const user = userEvent.setup();
+    render(
+      <InputGroup>
+        <InputGroupInput aria-label='Search terms' />
+        <InputGroupAddon>
+          <Switch aria-label='Case sensitive' />
+        </InputGroupAddon>
+      </InputGroup>,
+    );
+    const toggle = screen.getByRole("switch", {name: "Case sensitive"});
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(toggle).toHaveFocus();
+    expect(screen.getByRole("textbox")).not.toHaveFocus();
+  });
+  it("does not create an unnamed group around static addon text", () => {
+    render(
+      <InputGroup>
+        <InputGroupInput aria-label='Website' />
+        <InputGroupAddon>.com</InputGroupAddon>
+      </InputGroup>,
+    );
+    expect(screen.getAllByRole("group")).toHaveLength(1);
+    expect(screen.getByText(".com")).not.toHaveAttribute("role");
+  });
   it("passes compact size to the real Button state and composes anchor refs", async () => {
     const user = userEvent.setup();
     const ref = createRef<HTMLElement>();
@@ -42,6 +69,7 @@ describe("InputGroup", () => {
       let renderedSize: string | undefined;
       render(
         <InputGroupButton
+          aria-label='Action'
           size={size}
           render={(props, state) => {
             renderedSize = state.size;

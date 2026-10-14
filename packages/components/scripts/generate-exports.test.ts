@@ -117,17 +117,7 @@ describe("generate-exports helpers", () => {
       .map((name) => name.slice(0, -4))
       .sort((left, right) => left.localeCompare(right));
     expect(Object.keys(componentExports).sort((left, right) => left.localeCompare(right))).toEqual(publicNames.map((name) => `./${name}`));
-    for (const name of [
-      "attachment",
-      "bubble",
-      "marker",
-      "message",
-      "native-select",
-      "direction",
-      "legacy-toast",
-      "legacy-command-dialog",
-      "legacy-alert-dialog-action",
-    ]) {
+    for (const name of ["attachment", "bubble", "marker", "message", "native-select", "direction"]) {
       expect(componentExports[`./${name}`]).toEqual({
         types: `./dist/components/ui/${name}.d.ts`,
         import: `./dist/components/ui/${name}.js`,
@@ -136,6 +126,9 @@ describe("generate-exports helpers", () => {
     }
     expect(componentExports).not.toHaveProperty("./_visual-effects");
     expect(componentExports).not.toHaveProperty("./sonner");
+    for (const name of ["legacy-toast", "legacy-command-dialog", "legacy-alert-dialog-action"]) {
+      expect(componentExports).not.toHaveProperty(`./${name}`);
+    }
   });
 
   it("prepares the manifest's short component, hook and utility entrypoints before the deferred build", () => {

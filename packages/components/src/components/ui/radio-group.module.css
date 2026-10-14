@@ -4,11 +4,14 @@
 }
 
 .item {
+  box-sizing: border-box;
+  min-inline-size: 24px;
+  min-block-size: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 1rem;
-  block-size: 1rem;
+  inline-size: 24px;
+  block-size: 24px;
   flex-shrink: 0;
   border: 1px solid var(--ac-primary);
   border-radius: 999px;

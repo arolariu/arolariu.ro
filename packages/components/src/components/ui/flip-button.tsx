@@ -4,13 +4,14 @@ import {type HTMLMotionProps, motion, type Transition, type Variant} from "motio
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
+import {useVisualEffectPolicy} from "./_visual-effects";
 import styles from "./flip-button.module.css";
 
-/** Supported flip origins for the button animation. */
-export type FlipDirection = "top" | "bottom" | "left" | "right" | "righ";
+const defaultTransition: Transition = {type: "spring", stiffness: 280, damping: 20};
 
-/** @deprecated Use the correctly spelled `"right"` direction instead. */
-export type DeprecatedFlipDirection = "righ";
+/** Supported flip origins for the button animation. */
+export type FlipDirection = "top" | "bottom" | "left" | "right";
 
 /** Props accepted by {@link FlipButton}. */
 export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
@@ -24,7 +25,7 @@ export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
   readonly frontClassName?: string;
   /** Additional CSS classes merged with the back face. @default undefined */
   readonly backClassName?: string;
-  /** Direction from which the back face flips into view. The `"righ"` spelling is deprecated. @default "top" */
+  /** Direction from which the back face flips into view. @default "top" */
   readonly from?: FlipDirection;
 }
 
@@ -44,87 +45,87 @@ export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
  *
  * @see {@link FlipButtonProps} for available props
  */
-const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
-  (
-    {
-      frontText,
-      backText,
-      transition = {type: "spring", stiffness: 280, damping: 20},
-      className,
-      frontClassName,
-      backClassName,
-      from = "top",
-      ...props
-    }: Readonly<FlipButtonProps>,
-    ref,
-  ) => {
-    // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
-    const {key: _ignoredKey, ...restProps} = props;
-    const isVertical = from === "top" || from === "bottom";
-    const rotateAxis = isVertical ? "rotateX" : "rotateY";
+function FlipButton({
+  ref,
+  frontText,
+  backText,
+  transition = defaultTransition,
+  className,
+  frontClassName,
+  backClassName,
+  from = "top",
+  ...props
+}: Readonly<FlipButtonProps>): React.JSX.Element {
+  const localRef = React.useRef<HTMLButtonElement>(null);
+  const setRefs = useMergedRefs(localRef, ref);
+  const {reducedMotion} = useVisualEffectPolicy(localRef, {loop: true});
+  // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
+  const {key: _ignoredKey, ...restProps} = props;
+  const isVertical = from === "top" || from === "bottom";
+  const rotateAxis = isVertical ? "rotateX" : "rotateY";
 
-    const frontOffset = from === "top" || from === "left" ? "50%" : "-50%";
-    const backOffset = from === "top" || from === "left" ? "-50%" : "50%";
+  const frontOffset = from === "top" || from === "left" ? "50%" : "-50%";
+  const backOffset = from === "top" || from === "left" ? "-50%" : "50%";
 
-    const buildVariant = React.useCallback(
-      (opacity: number, rotation: number, offset: string | null = null): Variant => ({
-        opacity,
-        [rotateAxis]: rotation,
-        ...(isVertical && offset !== null ? {y: offset} : {}),
-        ...(!isVertical && offset !== null ? {x: offset} : {}),
-      }),
-      [isVertical, rotateAxis],
-    );
+  const buildVariant = React.useCallback(
+    (opacity: number, rotation: number, offset: string | null = null): Variant => ({
+      opacity,
+      [rotateAxis]: rotation,
+      ...(isVertical && offset !== null ? {y: offset} : {}),
+      ...(!isVertical && offset !== null ? {x: offset} : {}),
+    }),
+    [isVertical, rotateAxis],
+  );
 
-    const frontVariants = React.useMemo(
-      () => ({
-        initial: buildVariant(1, 0, "0%"),
-        hover: buildVariant(0, 90, frontOffset),
-      }),
-      [buildVariant, frontOffset],
-    );
+  const frontVariants = React.useMemo(
+    () => ({
+      initial: buildVariant(1, 0, "0%"),
+      hover: buildVariant(0, 90, frontOffset),
+    }),
+    [buildVariant, frontOffset],
+  );
 
-    const backVariants = React.useMemo(
-      () => ({
-        initial: buildVariant(0, 90, backOffset),
-        hover: buildVariant(1, 0, "0%"),
-      }),
-      [backOffset, buildVariant],
-    );
+  const backVariants = React.useMemo(
+    () => ({
+      initial: buildVariant(0, 90, backOffset),
+      hover: buildVariant(1, 0, "0%"),
+    }),
+    [backOffset, buildVariant],
+  );
 
-    return (
-      <motion.button
-        ref={ref}
-        type='button'
-        aria-label={frontText}
-        initial='initial'
-        whileHover='hover'
-        whileTap={{scale: 0.95}}
-        className={cn(styles.button, className)}
-        {...restProps}>
-        <motion.span
-          aria-hidden='true'
-          variants={frontVariants}
-          transition={transition}
-          className={cn(styles.face, styles.front, frontClassName)}>
-          {frontText}
-        </motion.span>
-        <motion.span
-          aria-hidden='true'
-          variants={backVariants}
-          transition={transition}
-          className={cn(styles.face, styles.back, backClassName)}>
-          {backText}
-        </motion.span>
-        <span
-          aria-hidden='true'
-          className={styles.measure}>
-          {frontText}
-        </span>
-      </motion.button>
-    );
-  },
-);
+  return (
+    <motion.button
+      ref={setRefs}
+      type='button'
+      aria-label={frontText}
+      initial='initial'
+      whileHover='hover'
+      whileFocus='hover'
+      whileTap={reducedMotion ? undefined : {scale: 0.95}}
+      className={cn(styles.button, className)}
+      {...restProps}>
+      <motion.span
+        aria-hidden='true'
+        variants={frontVariants}
+        transition={reducedMotion ? {duration: 0} : transition}
+        className={cn(styles.face, styles.front, frontClassName)}>
+        {frontText}
+      </motion.span>
+      <motion.span
+        aria-hidden='true'
+        variants={backVariants}
+        transition={reducedMotion ? {duration: 0} : transition}
+        className={cn(styles.face, styles.back, backClassName)}>
+        {backText}
+      </motion.span>
+      <span
+        aria-hidden='true'
+        className={styles.measure}>
+        {frontText}
+      </span>
+    </motion.button>
+  );
+}
 
 FlipButton.displayName = "FlipButton";
 

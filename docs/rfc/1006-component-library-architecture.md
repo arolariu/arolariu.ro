@@ -76,8 +76,8 @@ Interactive wrappers prefer Base UI's `useRender` and `mergeProps` pattern. Pres
 - forwarded DOM refs where the public contract requires them;
 - current `render` composition.
 
-`asChild` remains only for compatible existing APIs. New APIs should use the preferred Base UI composition surface rather than expanding the
-compatibility shim.
+The upcoming major supports React 19 only. Public DOM refs are ordinary typed props, including cleanup-returning callbacks. `render` is the
+composition API; `asChild`, deprecated aliases, no-op props and explicitly named legacy adapters are removed.
 
 When a component can use a native element directly, preserve its native keyboard, focus, form, and disabled semantics. A composed non-native
 control must provide the equivalent role, keyboard behavior, `aria-disabled`, and activation suppression.
@@ -93,8 +93,9 @@ control must provide the equivalent role, keyboard behavior, `aria-disabled`, an
 
 Root exports are explicit, not wildcard aggregations across component families. Preserve actual runtime/type/namespace identity. Resolve
 collisions deliberately: the field component is `FieldError`, RHF's type is `RHFFieldError`, the native label is `Label`, and the chart
-label is `RechartsLabel`. Canonical Toast is a component; its notification data is `ToastData`/`ToastObject`. Canonical Toaster and explicit
-LegacyToaster are not aliases for one another. DirectionProvider and useDirection retain the original Base UI context with TextDirection.
+label is `RechartsLabel`. Toast is a component; its notification data is `ToastData`/`ToastObject`. Toaster uses the Base UI
+manager/compound surface rather than a callable facade. DirectionProvider and useDirection retain the original Base UI context with
+TextDirection.
 
 Underscore-prefixed modules/directories are private. Build output may retain them as transitive implementation modules, but the export
 generator must not advertise them. Retained nested wildcard routes must also block private helper imports. Root/public-subpath tests use
@@ -131,6 +132,10 @@ Accessibility is observable behavior:
 - keep disabled composed controls non-activatable.
 
 Base UI provides primitives, not proof. Tests and stories must exercise the wrapper's actual public behavior.
+
+The target is applicable WCAG 2.2 Level A and AA. `packages/components/ACCESSIBILITY.md` owns the criterion/evidence matrix and the consumer
+responsibilities. Automated emulated semantics and opaque-token calculations do not prove native focus/inert, composited contrast, assistive
+announcements or complete-page conformance.
 
 ## Client and server compatibility
 
@@ -188,7 +193,9 @@ Colocated Vitest and Testing Library tests should cover the public interaction:
 Do not replace the component or Base UI behavior being asserted with a repository mock. Storybook stories provide interactive documentation
 and visual/a11y scenarios but do not replace focused tests.
 
-### Latest review-followup validation checkpoint — 2026-10-14
+### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
+
+These results predate the React 19-only API removal and accessibility changes. They are not current React 18 support or new-artifact proof.
 
 With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
 
@@ -239,17 +246,13 @@ fixture/build-environment blocks, physical-browser limits or publication/adoptio
 The current architecture uses Base UI rather than Radix packages and CSS Modules rather than Tailwind-based component implementation. The
 former `sonner` wrapper is not a current public component; use the live toast surface.
 
-Historical compatibility such as `asChild` must not be propagated to new APIs without a demonstrated consumer requirement.
-
-Canonical and compatibility behavior must be separately named and documented. Canonical toast is the Base UI manager/compound surface;
-facade behavior is legacyToast/LegacyToaster. Canonical CommandDialog is a modal shell requiring one explicit native Command root;
-LegacyCommandDialog supplies the former automatic root and must not receive a nested root. Canonical AlertDialogAction does not close;
-LegacyAlertDialogAction immediately dismisses without awaiting asynchronous work. Do not silently expose these adapters under canonical
-names.
+Removed compatibility such as `asChild`, `Legacy*` adapters and deprecated aliases must not be reintroduced. Toast is the Base UI
+manager/compound surface. CommandDialog is a modal shell requiring one explicit native Command root. AlertDialogAction does not close
+automatically; the caller owns asynchronous success, failure and pending behavior.
 
 Ship MIGRATION alongside README/EXAMPLES/CHANGELOG. Preserve historical guides and add version-scoped sections for newly breaking defaults,
 DOM refs/tags, values/nullability, render ownership, primitive callback details and explicit error policies. Document retained local
-extensions, deliberate no-ops and unselected optional families. Keep native focus/inert, physical gesture/paint, scroll-anchoring and
+extensions, removed compatibility and unselected optional families. Keep native focus/inert, physical gesture/paint, scroll-anchoring and
 screen-reader limits separate from emulated passing tests. Source React-floor evidence and actual packed React-floor evidence are distinct.
 
 ## Trade-offs

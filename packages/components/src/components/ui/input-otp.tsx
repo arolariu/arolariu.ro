@@ -24,17 +24,17 @@ export type {OTPInputProps, SlotProps};
 /**
  * Props for the {@link InputOTP} component.
  */
-export type InputOTPProps = Readonly<React.ComponentPropsWithoutRef<typeof OTPInput>>;
+export type InputOTPProps = Readonly<React.ComponentPropsWithRef<typeof OTPInput>>;
 
 /**
  * Props for the {@link InputOTPGroup} component.
  */
-export type InputOTPGroupProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type InputOTPGroupProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link InputOTPSlot} component.
  */
-export interface InputOTPSlotProps extends React.ComponentPropsWithoutRef<"div"> {
+export interface InputOTPSlotProps extends Omit<React.ComponentPropsWithRef<"div">, "children"> {
   /** Zero-based slot index resolved from the shared OTP input context. */
   readonly index: number;
 }
@@ -42,7 +42,7 @@ export interface InputOTPSlotProps extends React.ComponentPropsWithoutRef<"div">
 /**
  * Props for the {@link InputOTPSeparator} component.
  */
-export type InputOTPSeparatorProps = Readonly<React.ComponentPropsWithoutRef<"div">>;
+export type InputOTPSeparatorProps = Readonly<Omit<React.ComponentPropsWithRef<"div">, "children">>;
 
 /**
  * Wraps the `input-otp` root component with shared library styling.
@@ -90,16 +90,14 @@ export type InputOTPSeparatorProps = Readonly<React.ComponentPropsWithoutRef<"di
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp API reference}
  */
-const InputOTP = React.forwardRef<React.ComponentRef<typeof OTPInput>, InputOTPProps>(
-  ({className, containerClassName, ...props}: Readonly<InputOTPProps>, ref): React.JSX.Element => (
-    <OTPInput
-      data-slot='input-otp'
-      ref={ref}
-      containerClassName={cn(styles.container, containerClassName)}
-      className={cn(styles.input, className)}
-      {...props}
-    />
-  ),
+const InputOTP = ({ref, className, containerClassName, ...props}: Readonly<InputOTPProps>): React.JSX.Element => (
+  <OTPInput
+    data-slot='input-otp'
+    ref={ref}
+    containerClassName={cn(styles.container, containerClassName)}
+    className={cn(styles.input, className)}
+    {...props}
+  />
 );
 
 /**
@@ -120,15 +118,13 @@ const InputOTP = React.forwardRef<React.ComponentRef<typeof OTPInput>, InputOTPP
  * @see {@link InputOTPGroupProps} for available props
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}
  */
-const InputOTPGroup = React.forwardRef<React.ComponentRef<"div">, InputOTPGroupProps>(
-  ({className, ...props}: Readonly<InputOTPGroupProps>, ref): React.JSX.Element => (
-    <div
-      data-slot='input-otp-group'
-      ref={ref}
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
+const InputOTPGroup = ({ref, className, ...props}: Readonly<InputOTPGroupProps>): React.JSX.Element => (
+  <div
+    data-slot='input-otp-group'
+    ref={ref}
+    className={cn(styles.group, className)}
+    {...props}
+  />
 );
 
 /**
@@ -150,39 +146,38 @@ const InputOTPGroup = React.forwardRef<React.ComponentRef<"div">, InputOTPGroupP
  * @see {@link InputOTPSlotProps} for available props
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}
  */
-const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotProps>(
-  ({index, className, ...props}: Readonly<InputOTPSlotProps>, ref): React.JSX.Element => {
-    const inputOTPContext = React.useContext(OTPInputContext);
-    const slot = Number.isSafeInteger(index) && index >= 0 ? inputOTPContext.slots?.[index] : undefined;
+const InputOTPSlot = ({ref, index, className, ...props}: Readonly<InputOTPSlotProps>): React.JSX.Element => {
+  const inputOTPContext = React.useContext(OTPInputContext);
+  const slot = Number.isSafeInteger(index) && index >= 0 ? inputOTPContext.slots?.[index] : undefined;
 
-    if (!slot) {
-      throw new Error(`InputOTPSlot could not find slot at index ${index}.`);
-    }
+  if (!slot) {
+    throw new Error(`InputOTPSlot could not find slot at index ${index}.`);
+  }
 
-    const {char, hasFakeCaret, isActive, placeholderChar} = slot;
-    const shouldRenderPlaceholderCharacter = char === null && hasFakeCaret === false;
-    const displayCharacter = shouldRenderPlaceholderCharacter ? (placeholderChar ?? DEFAULT_SLOT_PLACEHOLDER_CHARACTER) : char;
+  const {char, hasFakeCaret, isActive, placeholderChar} = slot;
+  const shouldRenderPlaceholderCharacter = char === null && hasFakeCaret === false;
+  const displayCharacter = shouldRenderPlaceholderCharacter ? (placeholderChar ?? DEFAULT_SLOT_PLACEHOLDER_CHARACTER) : char;
 
-    return (
-      <div
-        data-slot='input-otp-slot'
-        data-active={isActive}
-        ref={ref}
-        className={cn(styles.slot, isActive && styles.slotActive, className)}
-        {...props}>
-        {displayCharacter}
-        {Boolean(hasFakeCaret) && (
-          <div
-            data-slot='input-otp-caret'
-            aria-hidden='true'
-            className={styles.fakeCaretContainer}>
-            <div className={styles.fakeCaret} />
-          </div>
-        )}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      data-slot='input-otp-slot'
+      data-active={isActive}
+      ref={ref}
+      className={cn(styles.slot, isActive && styles.slotActive, className)}
+      {...props}
+      aria-hidden='true'>
+      {displayCharacter}
+      {Boolean(hasFakeCaret) && (
+        <div
+          data-slot='input-otp-caret'
+          aria-hidden='true'
+          className={styles.fakeCaretContainer}>
+          <div className={styles.fakeCaret} />
+        </div>
+      )}
+    </div>
+  );
+};
 
 /**
  * Displays a visual separator between OTP groups.
@@ -200,20 +195,18 @@ const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotPro
  * @see {@link InputOTPSeparatorProps} for available props
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}
  */
-const InputOTPSeparator = React.forwardRef<React.ComponentRef<"div">, InputOTPSeparatorProps>(
-  ({className, ...props}: Readonly<InputOTPSeparatorProps>, ref): React.JSX.Element => (
-    <div
-      data-slot='input-otp-separator'
-      ref={ref}
-      role='separator'
-      className={cn(styles.separator, className)}
-      {...props}>
-      <Minus
-        aria-hidden='true'
-        className={styles.separatorIcon}
-      />
-    </div>
-  ),
+const InputOTPSeparator = ({ref, className, ...props}: Readonly<InputOTPSeparatorProps>): React.JSX.Element => (
+  <div
+    data-slot='input-otp-separator'
+    ref={ref}
+    className={cn(styles.separator, className)}
+    {...props}
+    aria-hidden='true'>
+    <Minus
+      aria-hidden='true'
+      className={styles.separatorIcon}
+    />
+  </div>
 );
 
 InputOTP.displayName = "InputOTP";

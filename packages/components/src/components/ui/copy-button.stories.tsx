@@ -78,6 +78,11 @@ export const LongValue: Story = {
     </div>
   ),
 };
+
+/** Status messages are localizable independently of a caller's fixed button name. */
+export const LocalizedStatus: Story = {
+  args: {value: "Bonjour", copyLabel: "Copier", copiedLabel: "Copié", errorLabel: "Échec de la copie"},
+};
 export const InCodeBlock: Story = {
   render: () => (
     <div className={storyClasses.storyPanel}>

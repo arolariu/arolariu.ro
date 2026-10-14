@@ -76,8 +76,8 @@ function hasProgressTrack(children: React.ReactNode): boolean {
  *
  * @see {@link https://base-ui.com/react/components/progress | Base UI Documentation}
  */
-const Progress = React.forwardRef<HTMLDivElement, Readonly<Progress.Props>>((props, forwardedRef): React.JSX.Element => {
-  const {className, children, value = null, ...otherProps} = props;
+const Progress = (props: Readonly<Progress.Props>): React.JSX.Element => {
+  const {ref: forwardedRef, className, children, value = null, ...otherProps} = props;
 
   return (
     <BaseProgress.Root
@@ -94,7 +94,7 @@ const Progress = React.forwardRef<HTMLDivElement, Readonly<Progress.Props>>((pro
       )}
     </BaseProgress.Root>
   );
-});
+};
 
 /**
  * Contains a progress indicator and replaces the turnkey track when composed
@@ -103,8 +103,8 @@ const Progress = React.forwardRef<HTMLDivElement, Readonly<Progress.Props>>((pro
  * @remarks Renders a `<div>` and forwards its ref to the primitive-owned node.
  * @example `<ProgressTrack><ProgressIndicator /></ProgressTrack>`
  */
-const ProgressTrack = React.forwardRef<HTMLDivElement, Readonly<ProgressTrack.Props>>((props, forwardedRef): React.JSX.Element => {
-  const {className, ...otherProps} = props;
+const ProgressTrack = (props: Readonly<ProgressTrack.Props>): React.JSX.Element => {
+  const {ref: forwardedRef, className, ...otherProps} = props;
 
   return (
     <BaseProgress.Track
@@ -114,7 +114,7 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, Readonly<ProgressTrack.Pr
       className={mergeProgressClassName(styles.track, className)}
     />
   );
-});
+};
 
 /**
  * Visualizes Root's normalized progress or indeterminate status.
@@ -122,8 +122,8 @@ const ProgressTrack = React.forwardRef<HTMLDivElement, Readonly<ProgressTrack.Pr
  * @remarks Base UI owns the fill width and render state. Renders a `<div>`.
  * @example `<ProgressIndicator className='custom-fill' />`
  */
-const ProgressIndicator = React.forwardRef<HTMLDivElement, Readonly<ProgressIndicator.Props>>((props, forwardedRef): React.JSX.Element => {
-  const {className, ...otherProps} = props;
+const ProgressIndicator = (props: Readonly<ProgressIndicator.Props>): React.JSX.Element => {
+  const {ref: forwardedRef, className, ...otherProps} = props;
 
   return (
     <BaseProgress.Indicator
@@ -133,7 +133,7 @@ const ProgressIndicator = React.forwardRef<HTMLDivElement, Readonly<ProgressIndi
       className={mergeProgressClassName(styles.indicator, className)}
     />
   );
-});
+};
 
 /**
  * Associates an accessible label with its containing Progress.
@@ -141,8 +141,8 @@ const ProgressIndicator = React.forwardRef<HTMLDivElement, Readonly<ProgressIndi
  * @remarks Renders a `<span>`; Base UI registers its ID with Root.
  * @example `<ProgressLabel>Upload progress</ProgressLabel>`
  */
-const ProgressLabel = React.forwardRef<HTMLSpanElement, Readonly<ProgressLabel.Props>>((props, forwardedRef): React.JSX.Element => {
-  const {className, ...otherProps} = props;
+const ProgressLabel = (props: Readonly<ProgressLabel.Props>): React.JSX.Element => {
+  const {ref: forwardedRef, className, ...otherProps} = props;
 
   return (
     <BaseProgress.Label
@@ -152,7 +152,7 @@ const ProgressLabel = React.forwardRef<HTMLSpanElement, Readonly<ProgressLabel.P
       className={mergeProgressClassName(styles.label, className)}
     />
   );
-});
+};
 
 /**
  * Displays Root's formatted progress value without duplicating its ARIA value.
@@ -162,8 +162,8 @@ const ProgressLabel = React.forwardRef<HTMLSpanElement, Readonly<ProgressLabel.P
  * receiving the formatted and raw nullable values for custom display text.
  * @example `<ProgressValue>{(formatted) => formatted}</ProgressValue>`
  */
-const ProgressValue = React.forwardRef<HTMLSpanElement, Readonly<ProgressValue.Props>>((props, forwardedRef): React.JSX.Element => {
-  const {className, ...otherProps} = props;
+const ProgressValue = (props: Readonly<ProgressValue.Props>): React.JSX.Element => {
+  const {ref: forwardedRef, className, ...otherProps} = props;
 
   return (
     <BaseProgress.Value
@@ -173,7 +173,7 @@ const ProgressValue = React.forwardRef<HTMLSpanElement, Readonly<ProgressValue.P
       className={mergeProgressClassName(styles.value, className)}
     />
   );
-});
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Progress {

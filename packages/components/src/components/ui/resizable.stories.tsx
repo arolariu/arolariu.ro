@@ -75,6 +75,24 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Native click controls are a dragging alternative; separator arrow/Home/End keys remain SDK-owned. */
+export const LocalizedClickControls: Story = {
+  render: () => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup orientation='horizontal'>
+        <ResizablePanel defaultSize='50%'>First panel</ResizablePanel>
+        <ResizableHandle
+          aria-label='Resize panels'
+          decreaseLabel='Réduire le panneau précédent'
+          increaseLabel='Agrandir le panneau précédent'
+          resizeStep={5}
+          withHandle
+        />
+        <ResizablePanel defaultSize='50%'>Second panel</ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  ),
+};
 
 /** Side-by-side panels with a vertical separator and an optional visual grip. */
 export const Horizontal: Story = {

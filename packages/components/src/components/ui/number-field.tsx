@@ -18,7 +18,7 @@ import styles from "./number-field.module.css";
  * <NumberField defaultValue={2}>
  *   <NumberFieldGroup>
  *     <NumberFieldDecrement />
- *     <NumberFieldInput />
+ *     <NumberFieldInput aria-label='Quantity' />
  *     <NumberFieldIncrement />
  *   </NumberFieldGroup>
  * </NumberField>
@@ -26,7 +26,8 @@ import styles from "./number-field.module.css";
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberField = React.forwardRef<HTMLDivElement, NumberField.Props>((props: Readonly<NumberField.Props>, ref): React.ReactElement => {
+const NumberField = (props: Readonly<NumberField.Props>): React.ReactElement => {
+  const {ref} = props;
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -38,7 +39,7 @@ const NumberField = React.forwardRef<HTMLDivElement, NumberField.Props>((props: 
       {children}
     </BaseNumberField.Root>
   );
-});
+};
 
 /**
  * Wraps the interactive number-field controls in a shared container.
@@ -56,21 +57,20 @@ const NumberField = React.forwardRef<HTMLDivElement, NumberField.Props>((props: 
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberFieldGroup = React.forwardRef<React.ComponentRef<typeof BaseNumberField.Group>, NumberFieldGroup.Props>(
-  (props: Readonly<NumberFieldGroup.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const NumberFieldGroup = (props: Readonly<NumberFieldGroup.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNumberField.Group
-        ref={ref}
-        {...otherProps}
-        render={render}
-        className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseNumberField.Group>
-    );
-  },
-);
+  return (
+    <BaseNumberField.Group
+      ref={ref}
+      {...otherProps}
+      render={render}
+      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseNumberField.Group>
+  );
+};
 
 /**
  * Renders the text input used for numeric entry.
@@ -86,20 +86,19 @@ const NumberFieldGroup = React.forwardRef<React.ComponentRef<typeof BaseNumberFi
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberFieldInput = React.forwardRef<React.ComponentRef<typeof BaseNumberField.Input>, NumberFieldInput.Props>(
-  (props: Readonly<NumberFieldInput.Props>, ref): React.ReactElement => {
-    const {className, render, ...otherProps} = props;
+const NumberFieldInput = (props: Readonly<NumberFieldInput.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, render, ...otherProps} = props;
 
-    return (
-      <BaseNumberField.Input
-        ref={ref}
-        {...otherProps}
-        render={render}
-        className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
-      />
-    );
-  },
-);
+  return (
+    <BaseNumberField.Input
+      ref={ref}
+      {...otherProps}
+      render={render}
+      className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
+    />
+  );
+};
 
 /**
  * Renders the increment control for a number field.
@@ -107,6 +106,7 @@ const NumberFieldInput = React.forwardRef<React.ComponentRef<typeof BaseNumberFi
  * @remarks
  * - Renders a `<button>` element by default
  * - Built on Base UI Number Field increment primitives
+ * - Defaults to "Increase"; localize with aria-label or aria-labelledby
  *
  * @example
  * ```tsx
@@ -115,21 +115,26 @@ const NumberFieldInput = React.forwardRef<React.ComponentRef<typeof BaseNumberFi
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberFieldIncrement = React.forwardRef<HTMLButtonElement, NumberFieldIncrement.Props>(
-  (props: Readonly<NumberFieldIncrement.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const NumberFieldIncrement = (props: Readonly<NumberFieldIncrement.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNumberField.Increment
-        {...otherProps}
-        ref={ref}
-        render={render}
-        className={(state) => cn(styles.stepper, styles.increment, typeof className === "function" ? className(state) : className)}>
-        {children ?? <span className={styles.stepperSymbol}>+</span>}
-      </BaseNumberField.Increment>
-    );
-  },
-);
+  return (
+    <BaseNumberField.Increment
+      {...otherProps}
+      ref={ref}
+      render={render}
+      className={(state) => cn(styles.stepper, styles.increment, typeof className === "function" ? className(state) : className)}>
+      {children ?? (
+        <span
+          aria-hidden='true'
+          className={styles.stepperSymbol}>
+          +
+        </span>
+      )}
+    </BaseNumberField.Increment>
+  );
+};
 
 /**
  * Renders the decrement control for a number field.
@@ -137,6 +142,7 @@ const NumberFieldIncrement = React.forwardRef<HTMLButtonElement, NumberFieldIncr
  * @remarks
  * - Renders a `<button>` element by default
  * - Built on Base UI Number Field decrement primitives
+ * - Defaults to "Decrease"; localize with aria-label or aria-labelledby
  *
  * @example
  * ```tsx
@@ -145,21 +151,26 @@ const NumberFieldIncrement = React.forwardRef<HTMLButtonElement, NumberFieldIncr
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberFieldDecrement = React.forwardRef<HTMLButtonElement, NumberFieldDecrement.Props>(
-  (props: Readonly<NumberFieldDecrement.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const NumberFieldDecrement = (props: Readonly<NumberFieldDecrement.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNumberField.Decrement
-        {...otherProps}
-        ref={ref}
-        render={render}
-        className={(state) => cn(styles.stepper, styles.decrement, typeof className === "function" ? className(state) : className)}>
-        {children ?? <span className={styles.stepperSymbol}>−</span>}
-      </BaseNumberField.Decrement>
-    );
-  },
-);
+  return (
+    <BaseNumberField.Decrement
+      {...otherProps}
+      ref={ref}
+      render={render}
+      className={(state) => cn(styles.stepper, styles.decrement, typeof className === "function" ? className(state) : className)}>
+      {children ?? (
+        <span
+          aria-hidden='true'
+          className={styles.stepperSymbol}>
+          −
+        </span>
+      )}
+    </BaseNumberField.Decrement>
+  );
+};
 
 /**
  * Renders the scrub handle used for drag-to-adjust interactions.
@@ -175,21 +186,26 @@ const NumberFieldDecrement = React.forwardRef<HTMLButtonElement, NumberFieldDecr
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-const NumberFieldScrubArea = React.forwardRef<HTMLSpanElement, NumberFieldScrubArea.Props>(
-  (props: Readonly<NumberFieldScrubArea.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const NumberFieldScrubArea = (props: Readonly<NumberFieldScrubArea.Props>): React.ReactElement => {
+  const {ref} = props;
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNumberField.ScrubArea
-        {...otherProps}
-        ref={ref}
-        render={render}
-        className={(state) => cn(styles.scrubArea, typeof className === "function" ? className(state) : className)}>
-        {children ?? <span className={styles.scrubHandle}>⋮⋮</span>}
-      </BaseNumberField.ScrubArea>
-    );
-  },
-);
+  return (
+    <BaseNumberField.ScrubArea
+      {...otherProps}
+      ref={ref}
+      render={render}
+      className={(state) => cn(styles.scrubArea, typeof className === "function" ? className(state) : className)}>
+      {children ?? (
+        <span
+          aria-hidden='true'
+          className={styles.scrubHandle}>
+          ⋮⋮
+        </span>
+      )}
+    </BaseNumberField.ScrubArea>
+  );
+};
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberField {

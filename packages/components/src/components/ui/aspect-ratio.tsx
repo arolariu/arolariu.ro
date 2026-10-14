@@ -6,7 +6,7 @@ import styles from "./aspect-ratio.module.css";
 /**
  * Props for the {@link AspectRatio} component.
  */
-export interface AspectRatioProps extends Readonly<React.HTMLAttributes<HTMLDivElement>> {
+export interface AspectRatioProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /** Aspect ratio applied to the wrapper element. @default 1 */
   readonly ratio?: number | string;
   /** Native caller styles. `ratio` wins over `aspectRatio` and `--ac-aspect-ratio`. */
@@ -34,20 +34,18 @@ export type AspectRatioStyle = React.CSSProperties & {readonly "--ac-aspect-rati
  *
  * @see {@link AspectRatioProps} for available props
  */
-const AspectRatio = React.forwardRef<HTMLDivElement, AspectRatioProps>(
-  ({className, ratio = 1, style, ...props}: Readonly<AspectRatioProps>, ref): React.JSX.Element => {
-    const ratioStyle: AspectRatioStyle = {...style, aspectRatio: undefined, "--ac-aspect-ratio": String(ratio)};
-    return (
-      <div
-        ref={ref}
-        data-slot='aspect-ratio'
-        className={cn(styles.root, className)}
-        style={ratioStyle}
-        {...props}
-      />
-    );
-  },
-);
+const AspectRatio = ({ref, className, ratio = 1, style, ...props}: Readonly<AspectRatioProps>): React.JSX.Element => {
+  const ratioStyle: AspectRatioStyle = {...style, aspectRatio: undefined, "--ac-aspect-ratio": String(ratio)};
+  return (
+    <div
+      ref={ref}
+      data-slot='aspect-ratio'
+      className={cn(styles.root, className)}
+      style={ratioStyle}
+      {...props}
+    />
+  );
+};
 
 AspectRatio.displayName = "AspectRatio";
 

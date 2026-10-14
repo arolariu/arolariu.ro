@@ -1,5 +1,7 @@
 .trigger {
   display: inline-flex;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   max-width: max-content;
 }
 
@@ -12,6 +14,9 @@
 }
 
 .popup {
+  box-sizing: border-box;
+  max-width: min(var(--available-width, calc(100vw - 2rem)), 24rem, calc(100vw - 2rem));
+  overflow-wrap: anywhere;
   position: relative;
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-foreground);

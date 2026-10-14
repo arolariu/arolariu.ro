@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {HoleBackground} from "./hole-background";
 const storyStyles = `
 .ac-story-hole-background-demo,
@@ -64,6 +66,24 @@ const meta = {
 } satisfies Meta<typeof HoleBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** A persistent control pauses a deliberately continued tunnel animation. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume tunnel" : "Pause tunnel"}</Button>
+        <div className={storyClasses.demo}>
+          <HoleBackground
+            {...args}
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 export const Default: Story = {};
 export const Colored: Story = {args: {strokeColor: "#3b82f6", particleRGBColor: [59, 130, 246]}};
 export const Dense: Story = {args: {numberOfLines: 80, numberOfDiscs: 80, particleRGBColor: [139, 92, 246]}};

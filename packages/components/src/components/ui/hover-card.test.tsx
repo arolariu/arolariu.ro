@@ -1,4 +1,6 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
@@ -33,6 +35,12 @@ function renderHoverCard({
 }
 
 describe("HoverCard", () => {
+  it("refresh accessibility: constrains supplemental content to available space", () => {
+    const css = readFileSync(join(import.meta.dirname, "hover-card.module.css"), "utf8");
+    expect(css).toMatch(/\.popup\s*\{[^}]*max-width:\s*min\(var\(--available-width/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*overflow-wrap:\s*anywhere/u);
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();

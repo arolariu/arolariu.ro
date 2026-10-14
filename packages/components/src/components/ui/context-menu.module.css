@@ -48,3 +48,8 @@
     box-shadow: none;
   }
 }
+.control {
+  display: block;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+}

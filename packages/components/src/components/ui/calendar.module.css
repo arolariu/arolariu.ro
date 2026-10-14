@@ -79,14 +79,14 @@
 
 .dropdownRoot {
   position: relative;
-  border: 1px solid var(--ac-border);
+  border: 1px solid var(--ac-input);
   border-radius: var(--ac-radius-md);
   background-color: var(--ac-background);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
 
   &:focus-within {
-    outline: 3px solid color-mix(in oklch, var(--ac-ring), transparent 65%);
-    outline-offset: 0;
+    outline: 2px solid var(--ac-ring);
+    outline-offset: 2px;
     border-color: var(--ac-ring);
   }
 }
@@ -224,8 +224,8 @@
   &:focus-visible,
   .day[data-focused="true"] & {
     z-index: 1;
-    outline: 3px solid color-mix(in oklch, var(--ac-ring), transparent 65%);
-    outline-offset: -1px;
+    outline: 2px solid var(--ac-ring);
+    outline-offset: 2px;
   }
 
   &[data-selected-single="true"],
@@ -258,7 +258,6 @@
 
   & > span {
     font-size: var(--ac-text-xs);
-    opacity: 0.7;
   }
 }
 

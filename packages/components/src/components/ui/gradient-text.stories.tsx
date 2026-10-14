@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {GradientText} from "./gradient-text";
 const storyStyles = `
 .ac-story-gradient-text-demo {
@@ -15,7 +17,7 @@ const storyStyles = `
 }
 
 .ac-story-gradient-text-customGradientDemo {
-  opacity: 0.9;
+  background: #fff;
 }
 `;
 
@@ -56,12 +58,28 @@ const meta = {
 } satisfies Meta<typeof GradientText>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Looping text keeps a keyboard-operable pause control alongside it. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <div className={storyClasses.demo}>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume text motion" : "Pause text motion"}</Button>
+        <GradientText
+          {...args}
+          loop
+          motionPaused={paused}
+        />
+      </div>
+    );
+  },
+};
 export const Default: Story = {};
 export const WithNeon: Story = {args: {text: "Neon glow", neon: true}};
 export const CustomGradient: Story = {
   args: {
     text: "Custom colors",
-    gradient: "linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #ff0080)",
+    gradient: "linear-gradient(90deg, #9d174d, #92400e, #115e59, #9d174d)",
     className: storyClasses.customGradientDemo,
   },
 };

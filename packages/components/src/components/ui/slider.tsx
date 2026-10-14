@@ -10,16 +10,17 @@ import styles from "./slider.module.css";
  * Primitive-derived slider props, preserving scalar and readonly range callback inference.
  * @typeParam Value - A scalar value or an array containing one value per thumb.
  */
-export type SliderProps<Value extends number | readonly number[] = number | readonly number[]> = BaseSlider.Root.Props<Value>;
+export type SliderProps<Value extends number | readonly number[] = number | readonly number[]> = BaseSlider.Root.Props<Value> & {
+  /** Ref to the slider root, supplied as an ordinary React 19 prop. */
+  readonly ref?: React.Ref<HTMLDivElement>;
+  /** Localized name for each focusable thumb; use distinct names for range endpoints. */
+  readonly getAriaLabel?: BaseSlider.Thumb.Props["getAriaLabel"];
+  /** Localized value text for each thumb, for example currency or units. */
+  readonly getAriaValueText?: BaseSlider.Thumb.Props["getAriaValueText"];
+};
 
 /** Live state supplied by the slider primitive to render and class callbacks. */
 export type SliderState = BaseSlider.Root.State;
-
-interface SliderComponent {
-  <Value extends number | readonly number[]>(props: Readonly<SliderProps<Value>>): React.JSX.Element;
-  readonly $$typeof: symbol;
-  displayName?: string;
-}
 
 /**
  * Renders a scalar or range slider with one focusable thumb per supplied value.
@@ -33,7 +34,6 @@ interface SliderComponent {
  *
  * @typeParam Value - A scalar value or an array containing one value per thumb.
  * @param props - Primitive slider props.
- * @param ref - Forwarded ref to the slider root.
  * @returns The styled slider root, control, track, indicator, and thumbs.
  * @example
  * ```tsx
@@ -42,11 +42,14 @@ interface SliderComponent {
  *
  * @see {@link https://base-ui.com/react/components/slider | Base UI Documentation}
  */
-function renderSlider<Value extends number | readonly number[]>(
-  props: Readonly<SliderProps<Value>>,
-  ref: React.ForwardedRef<HTMLDivElement>,
-): React.JSX.Element {
-  const {children, className, defaultValue, thumbAlignment = "edge", value, ...otherProps} = props;
+function Slider<Value extends number | readonly number[]>(props: Readonly<SliderProps<Value>>): React.JSX.Element {
+  const {ref, children, className, defaultValue, thumbAlignment = "edge", value, getAriaLabel, getAriaValueText, ...otherProps} = props;
+  const {
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledBy,
+    "aria-describedby": ariaDescribedBy,
+    "aria-invalid": ariaInvalid,
+  } = props;
   const suppliedValue = value ?? defaultValue;
   const thumbCount = Array.isArray(suppliedValue) ? suppliedValue.length : 1;
 
@@ -75,6 +78,12 @@ function renderSlider<Value extends number | readonly number[]>(
           <BaseSlider.Thumb
             key={index}
             index={index}
+            aria-label={ariaLabel}
+            aria-labelledby={getAriaLabel ? undefined : ariaLabelledBy}
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
+            getAriaLabel={getAriaLabel}
+            getAriaValueText={getAriaValueText}
             data-slot='slider-thumb'
             className={styles.thumb}
           />
@@ -83,21 +92,6 @@ function renderSlider<Value extends number | readonly number[]>(
     </BaseSlider.Root>
   );
 }
-
-// Preserve the generic primitive contract and React 18 ref compatibility without type assertions.
-function forwardSliderRef(render: typeof renderSlider): SliderComponent;
-// eslint-disable-next-line no-redeclare -- TypeScript overload retains generic scalar/range callbacks and React 18 ref support without assertions.
-function forwardSliderRef(
-  render: typeof renderSlider,
-): React.ForwardRefExoticComponent<React.PropsWithoutRef<Readonly<SliderProps>> & React.RefAttributes<HTMLDivElement>> {
-  return React.forwardRef(render);
-}
-
-/**
- * A styled, edge-aligned scalar or range slider preserving Base UI's state, events, and root ref.
- * @see {@link https://base-ui.com/react/components/slider | Base UI Slider}
- */
-const Slider = forwardSliderRef(renderSlider);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Slider {

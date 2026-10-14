@@ -40,7 +40,7 @@
   transition:
     opacity var(--ac-transition-normal),
     transform var(--ac-transition-normal);
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
 
   &[data-starting-style],
   &[data-ending-style] {
@@ -119,4 +119,10 @@
     border-color: CanvasText;
     box-shadow: none;
   }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

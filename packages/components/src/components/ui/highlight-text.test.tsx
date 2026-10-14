@@ -1,16 +1,49 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {motionValue} from "motion/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {Features, transform} from "lightningcss";
+import postcss from "postcss";
 import {act, render, screen, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {HighlightText} from "./highlight-text";
+import styles from "./highlight-text.module.css";
+
+function emittedHighlightStyles(): string {
+  const output = transform({
+    filename: "highlight-text.module.css",
+    code: Buffer.from(readFileSync(join(import.meta.dirname, "highlight-text.module.css"), "utf8")),
+    cssModules: true,
+    include: Features.Nesting,
+  });
+  let css = output.code.toString();
+  if (!output.exports) throw new Error("Expected compiled CSS Module exports");
+  for (const [local, exported] of Object.entries(output.exports)) {
+    if (styles[local]) css = css.replaceAll(`.${exported.name}`, `.${styles[local]}`);
+  }
+  return css;
+}
+
+function highlightDeclarations(css: string, element: Element, condition?: string): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  postcss.parse(css).walkRules((rule) => {
+    const media = rule.parent?.type === "atrule" && rule.parent.name === "media" ? rule.parent.params : undefined;
+    if (media?.replaceAll(/\s/gu, "") !== condition?.replaceAll(/\s/gu, "")) return;
+    if (!rule.selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => {
+      declarations[declaration.prop] = declaration.value;
+    });
+  });
+  return declarations;
+}
 
 let reduced = true;
 let media: MediaQueryList;
 let observed: ViewBoundary[] = [];
 class ViewBoundary implements IntersectionObserver {
-  readonly root = null;
+  readonly root: IntersectionObserver["root"] = null;
   readonly rootMargin = "0px";
   readonly scrollMargin = "0px";
   readonly thresholds = [0];
@@ -63,6 +96,48 @@ afterEach(() => {
 });
 
 describe("HighlightText", () => {
+  it.each(["0% 100%", "50% 100%", "100% 100%", "0% 100%"])(
+    "keeps an opaque light backing for dark text throughout a repeated dark-theme sweep at %s",
+    async (backgroundSize) => {
+      reduced = false;
+      const {container} = render(
+        <div className='dark'>
+          <HighlightText
+            text='Readable throughout'
+            loop
+            animate={{backgroundSize}}
+            transition={{duration: 0}}
+          />
+        </div>,
+      );
+      act(() => {
+        for (const observer of observed) if (observer.target) observer.enter(true);
+      });
+      const text = screen.getByText("Readable throughout");
+      await waitFor(() => expect(text).toHaveStyle({backgroundSize}));
+      const css = emittedHighlightStyles();
+      const sheet = document.createElement("style");
+      sheet.textContent = css;
+      document.head.append(sheet);
+      try {
+        expect(container.firstElementChild).toHaveClass("dark");
+        const declarations = highlightDeclarations(css, text);
+        expect(declarations["color"]).toBe("#111827");
+        expect(declarations["background-color"]).toBe("#dbeafe");
+        expect(getComputedStyle(text).backgroundColor).toBe("#dbeafe");
+      } finally {
+        sheet.remove();
+      }
+    },
+  );
+
+  it("uses an opaque system-color backing for its forced-colors text", () => {
+    render(<HighlightText text='System contrast' />);
+    const declarations = highlightDeclarations(emittedHighlightStyles(), screen.getByText("System contrast"), "(forced-colors: active)");
+    expect(declarations["color"]?.toLowerCase()).toBe("canvastext");
+    expect(declarations["background-color"]?.toLowerCase()).toBe("canvas");
+  });
+
   it("replays a real highlight sweep after leaving and re-entering with inViewOnce=false", async () => {
     reduced = false;
     const ref = React.createRef<HTMLSpanElement>();

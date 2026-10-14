@@ -70,6 +70,11 @@
   pointer-events: none;
 }
 
+.item:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
+}
+
 .subTrigger {
   padding-inline-end: var(--ac-space-3);
 }
@@ -168,4 +173,10 @@
     color: GrayText;
     opacity: 1;
   }
+}
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

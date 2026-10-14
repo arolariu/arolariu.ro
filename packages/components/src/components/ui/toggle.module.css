@@ -1,4 +1,7 @@
 .root {
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -30,6 +33,7 @@
 .root[data-pressed] {
   background-color: var(--ac-accent);
   color: var(--ac-accent-foreground);
+  border-color: var(--ac-primary);
 }
 
 .default {
@@ -37,27 +41,27 @@
 }
 
 .outline {
-  border-color: var(--ac-border);
+  border-color: var(--ac-input);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 
 .sizeDefault {
   min-inline-size: var(--ac-size-default);
-  block-size: var(--ac-size-default);
+  min-block-size: max(24px, var(--ac-size-default));
   padding-inline: var(--ac-space-2);
   padding-block: 0;
 }
 
 .sizeSm {
   min-inline-size: var(--ac-size-md);
-  block-size: var(--ac-size-md);
+  min-block-size: max(24px, var(--ac-size-md));
   padding-inline: var(--ac-space-2);
   padding-block: 0;
 }
 
 .sizeLg {
   min-inline-size: var(--ac-size-lg);
-  block-size: var(--ac-size-lg);
+  min-block-size: max(24px, var(--ac-size-lg));
   padding-inline: var(--ac-space-3);
   padding-block: 0;
 }

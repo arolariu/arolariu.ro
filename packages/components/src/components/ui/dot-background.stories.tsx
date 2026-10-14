@@ -1,4 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {DotBackground} from "./dot-background";
 const storyStyles = `
 .ac-story-dot-background-demo,
@@ -64,6 +66,25 @@ const meta = {
 } satisfies Meta<typeof DotBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+/** Pause remains available to keyboard and pointer users throughout a continued glow. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume glow" : "Pause glow"}</Button>
+        <div className={storyClasses.demo}>
+          <DotBackground
+            {...args}
+            glow
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
+  },
+};
 export const Default: Story = {};
 export const Glowing: Story = {args: {glow: true}};
 export const Dense: Story = {args: {width: 4, height: 4, glow: true}};

@@ -101,7 +101,6 @@ export const Decorative: Story = {
     <div className={storyClasses.storyStack}>
       <p>Introduction</p>
       <Separator
-        decorative
         aria-hidden='true'
         role='presentation'
       />

@@ -1,4 +1,6 @@
 .root {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   --switch-inline-size: 2rem;
   --switch-block-size: 1.125rem;
   --switch-thumb-size: calc(var(--switch-block-size) - 0.25rem - 2px);
@@ -13,7 +15,7 @@
   block-size: var(--switch-block-size);
   flex-shrink: 0;
   padding: 0.125rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--ac-input);
   border-radius: 999px;
   background-color: color-mix(in oklch, var(--ac-foreground), transparent 84%);
   cursor: pointer;

@@ -6,10 +6,10 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./highlight-text.module.css";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useVisualEffectPolicy, type VisualEffectOptions} from "./_visual-effects";
 
 /** Props accepted by {@link HighlightText}. */
-export interface HighlightTextProps extends HTMLMotionProps<"span"> {
+export interface HighlightTextProps extends HTMLMotionProps<"span">, VisualEffectOptions {
   /** Inline text content that receives the animated highlight sweep. @default undefined */
   readonly text: string;
   /** Delays the highlight animation until the text enters the viewport. @default false */
@@ -45,48 +45,46 @@ function isHighlightMotionChild(value: HighlightTextProps["children"]): value is
  *
  * @see {@link HighlightTextProps} for available props
  */
-const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
-  (
-    {
-      text,
-      children,
-      className,
-      inView = false,
-      inViewMargin = "0px",
-      inViewOnce = true,
-      transition = defaultTransition,
-      animate,
-      initial,
-      ...props
-    }: Readonly<HighlightTextProps>,
-    ref,
-  ): React.JSX.Element => {
-    const localRef = React.useRef<HTMLSpanElement>(null);
-    const {paused, reducedMotion, visible} = useVisualEffectPolicy(localRef);
-    const setRefs = useMergedRefs(localRef, ref);
+function HighlightText({
+  ref,
+  loop,
+  motionPaused,
+  text,
+  children,
+  className,
+  inView = false,
+  inViewMargin = "0px",
+  inViewOnce = true,
+  transition = defaultTransition,
+  animate,
+  initial,
+  ...props
+}: Readonly<HighlightTextProps>): React.JSX.Element {
+  const localRef = React.useRef<HTMLSpanElement>(null);
+  const {paused, reducedMotion, visible} = useVisualEffectPolicy(localRef, {loop, motionPaused});
+  const setRefs = useMergedRefs(localRef, ref);
 
-    const inViewResult = useInView(localRef, {
-      once: inViewOnce,
-      margin: inViewMargin,
-    });
-    const revealed = inView ? inViewResult : visible || inViewResult;
-    const staticTarget = reducedMotion || revealed ? animation : {backgroundSize: "0% 100%"};
+  const inViewResult = useInView(localRef, {
+    once: inViewOnce,
+    margin: inViewMargin,
+  });
+  const revealed = inView ? inViewResult : visible || inViewResult;
+  const staticTarget = reducedMotion || revealed ? animation : {backgroundSize: "0% 100%"};
 
-    return (
-      <motion.span
-        {...props}
-        ref={setRefs}
-        data-motion={paused ? "paused" : "running"}
-        initial={paused ? false : (initial ?? {backgroundSize: "0% 100%"})}
-        animate={paused ? staticTarget : (animate ?? staticTarget)}
-        transition={paused ? {duration: 0} : transition}
-        className={cn(styles.highlight, className)}>
-        {text}
-        {isHighlightMotionChild(children) ? <motion.span>{children}</motion.span> : children}
-      </motion.span>
-    );
-  },
-);
+  return (
+    <motion.span
+      {...props}
+      ref={setRefs}
+      data-motion={paused ? "paused" : "running"}
+      initial={paused ? false : (initial ?? {backgroundSize: "0% 100%"})}
+      animate={paused ? staticTarget : (animate ?? staticTarget)}
+      transition={paused ? {duration: 0} : transition}
+      className={cn(styles.highlight, className)}>
+      {text}
+      {isHighlightMotionChild(children) ? <motion.span>{children}</motion.span> : children}
+    </motion.span>
+  );
+}
 
 HighlightText.displayName = "HighlightText";
 

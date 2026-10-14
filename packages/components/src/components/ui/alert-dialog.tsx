@@ -12,9 +12,7 @@ import styles from "./alert-dialog.module.css";
 /** Real modal primitive state, dismissal and imperative actions. */
 export type AlertDialogProps<Payload = unknown> = Readonly<BaseAlertDialog.Root.Props<Payload>>;
 /** Trigger composition retains primitive render state and slot compatibility. */
-export type AlertDialogTriggerProps = Readonly<
-  Omit<BaseAlertDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>; asChild?: boolean}
->;
+export type AlertDialogTriggerProps = Readonly<Omit<BaseAlertDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 /** Backdrop presentation with primitive composition. */
 export type AlertDialogOverlayProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Backdrop>, "className"> & {className?: string}
@@ -33,8 +31,6 @@ export type AlertDialogContentProps = Readonly<
 export type AlertDialogHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
     ref?: React.Ref<HTMLElement>;
-    /** Legacy single-element slot. Prefer `render`. @default false */
-    asChild?: boolean;
   }
 >;
 /** Confirmation action layout. */
@@ -64,14 +60,6 @@ export type AlertDialogCancelProps = Readonly<
   }
 >;
 
-function legacyChild(children: React.ReactNode, asChild: boolean): React.ReactElement | undefined {
-  if (!asChild) return undefined;
-  if (!React.isValidElement(children) || children.type === React.Fragment) {
-    throw new TypeError("AlertDialog asChild requires a single non-Fragment React element.");
-  }
-  return children;
-}
-
 /** Coordinates a confirmation modal. Base UI owns focus and dismissal; callers own work policy. */
 function AlertDialog<Payload = unknown>(props: Readonly<AlertDialog.Props<Payload>>): React.ReactElement {
   return <BaseAlertDialog.Root {...props} />;
@@ -79,29 +67,34 @@ function AlertDialog<Payload = unknown>(props: Readonly<AlertDialog.Props<Payloa
 AlertDialog.displayName = "AlertDialog";
 
 /** Opens a confirmation modal with primitive-owned state and ref merging. */
-const AlertDialogTrigger = React.forwardRef<HTMLElement, AlertDialogTrigger.Props>(
-  ({asChild = false, children, render, nativeButton, ...props}: Readonly<AlertDialogTrigger.Props>, ref): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
-      (element) => {
-        if (typeof ref === "function") return ref(element);
-        if (ref) ref.current = element;
-        return undefined;
-      },
-      [ref],
-    );
-    return (
-      <BaseAlertDialog.Trigger
-        data-slot='alert-dialog-trigger'
-        {...props}
-        ref={primitiveRef}
-        nativeButton={nativeButton ?? (child && typeof child.type === "string" ? child.type === "button" : true)}
-        render={child ?? render}>
-        {child ? undefined : children}
-      </BaseAlertDialog.Trigger>
-    );
-  },
-);
+const AlertDialogTrigger = ({
+  ref,
+  children,
+  render,
+  nativeButton,
+  className,
+  ...props
+}: Readonly<AlertDialogTrigger.Props>): React.ReactElement => {
+  const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
+  return (
+    <BaseAlertDialog.Trigger
+      data-slot='alert-dialog-trigger'
+      {...props}
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={render}>
+      {children}
+    </BaseAlertDialog.Trigger>
+  );
+};
 AlertDialogTrigger.displayName = "AlertDialogTrigger";
 
 /** Portals confirmation parts; retains Base UI's `keepMounted` contract. */
@@ -120,77 +113,67 @@ function AlertDialogOverlay({className, ...props}: Readonly<AlertDialogOverlay.P
 AlertDialogOverlay.displayName = "AlertDialogOverlay";
 
 /** Portals the confirmation popup with a standard or compact media/action layout. */
-const AlertDialogContent = React.forwardRef<HTMLDivElement, AlertDialogContent.Props>(
-  ({className, children, size = "default", ...props}: Readonly<AlertDialogContent.Props>, ref): React.ReactElement => (
-    <AlertDialogPortal>
-      <AlertDialogOverlay />
-      <BaseAlertDialog.Popup
-        data-slot='alert-dialog-content'
-        data-size={size}
-        {...props}
-        ref={ref}
-        className={cn(styles.popup, className)}>
-        {children}
-      </BaseAlertDialog.Popup>
-    </AlertDialogPortal>
-  ),
+const AlertDialogContent = ({
+  ref,
+  className,
+  children,
+  size = "default",
+  ...props
+}: Readonly<AlertDialogContent.Props>): React.ReactElement => (
+  <AlertDialogPortal>
+    <AlertDialogOverlay />
+    <BaseAlertDialog.Popup
+      data-slot='alert-dialog-content'
+      data-size={size}
+      {...props}
+      ref={ref}
+      className={cn(styles.popup, className)}>
+      {children}
+    </BaseAlertDialog.Popup>
+  </AlertDialogPortal>
 );
 AlertDialogContent.displayName = "AlertDialogContent";
 
 /** Composes the title, description and optional media without discarding refs or children. */
-const AlertDialogHeader = React.forwardRef<HTMLElement, AlertDialogHeader.Props>(
-  (
-    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<AlertDialogHeader.Props>>,
+const AlertDialogHeader = ({ref, children, className, render, ...props}: Readonly<AlertDialogHeader.Props>): React.ReactElement => {
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      props: {
-        "data-slot": "alert-dialog-header",
-        ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+    render,
+    props: {
+      "data-slot": "alert-dialog-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
 /** Lays out confirmation and explicit cancellation actions. */
-const AlertDialogFooter = React.forwardRef<HTMLElement, AlertDialogFooter.Props>(
-  (
-    {asChild = false, children, className, render, ...props}: Readonly<React.PropsWithoutRef<AlertDialogFooter.Props>>,
+const AlertDialogFooter = ({ref, children, className, render, ...props}: Readonly<AlertDialogFooter.Props>): React.ReactElement => {
+  return useRender({
+    defaultTagName: "div",
     ref,
-  ): React.ReactElement => {
-    const child = legacyChild(children, asChild);
-    return useRender({
-      defaultTagName: "div",
-      ref,
-      render: child ?? render,
-      props: {
-        "data-slot": "alert-dialog-footer",
-        ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
-          children: child ? undefined : children,
-        }),
-      },
-    });
-  },
-);
+    render,
+    props: {
+      "data-slot": "alert-dialog-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+        children,
+      }),
+    },
+  });
+};
 AlertDialogFooter.displayName = "AlertDialogFooter";
 
 /** Renders optional visual media in either popup size; no dismissal or business behavior. */
-const AlertDialogMedia = React.forwardRef<HTMLElement, AlertDialogMedia.Props>(
-  ({className, render, ...props}: Readonly<React.PropsWithoutRef<AlertDialogMedia.Props>>, ref): React.ReactElement =>
-    useRender({
-      defaultTagName: "div",
-      ref,
-      render,
-      props: {"data-slot": "alert-dialog-media", ...mergeProps<"div">({className: cn(styles.media, className)}, props)},
-    }),
-);
+const AlertDialogMedia = ({ref, className, render, ...props}: Readonly<AlertDialogMedia.Props>): React.ReactElement =>
+  useRender({
+    defaultTagName: "div",
+    ref,
+    render,
+    props: {"data-slot": "alert-dialog-media", ...mergeProps<"div">({className: cn(styles.media, className)}, props)},
+  });
 AlertDialogMedia.displayName = "AlertDialogMedia";
 
 /** Renders the accessible confirmation heading with primitive-owned composition. */
@@ -221,32 +204,31 @@ AlertDialogDescription.displayName = "AlertDialogDescription";
  * An ordinary Button, not a Close primitive. Pending and rejected work do not close the modal.
  * Close explicitly on success using controlled `open` or the root's `actionsRef`.
  */
-const AlertDialogAction = React.forwardRef<HTMLElement, AlertDialogAction.Props>(
-  (props: Readonly<AlertDialogAction.Props>, ref): React.ReactElement => (
-    <Button
-      data-slot='alert-dialog-action'
-      {...props}
-      ref={ref}
-    />
-  ),
+const AlertDialogAction = ({ref, ...props}: Readonly<AlertDialogAction.Props>): React.ReactElement => (
+  <Button
+    data-slot='alert-dialog-action'
+    {...props}
+    ref={ref}
+  />
 );
 AlertDialogAction.displayName = "AlertDialogAction";
 
 /** An explicit Close-backed cancel control, using the shared Button's size/variant vocabulary. */
-const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>(
-  (
-    {className, variant = "outline", size = "default", ...props}: Readonly<React.PropsWithoutRef<AlertDialogCancel.Props>>,
-    ref,
-  ): React.ReactElement => (
-    <BaseAlertDialog.Close
-      data-slot='alert-dialog-cancel'
-      data-variant={variant}
-      data-size={size}
-      {...props}
-      ref={ref}
-      className={cn(buttonVariants({variant, size}), className)}
-    />
-  ),
+const AlertDialogCancel = ({
+  ref,
+  className,
+  variant = "outline",
+  size = "default",
+  ...props
+}: Readonly<AlertDialogCancel.Props>): React.ReactElement => (
+  <BaseAlertDialog.Close
+    data-slot='alert-dialog-cancel'
+    data-variant={variant}
+    data-size={size}
+    {...props}
+    ref={ref}
+    className={cn(buttonVariants({variant, size}), className)}
+  />
 );
 AlertDialogCancel.displayName = "AlertDialogCancel";
 

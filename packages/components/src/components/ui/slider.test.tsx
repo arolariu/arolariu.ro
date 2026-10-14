@@ -19,6 +19,37 @@ function getPart(container: HTMLElement, slot: string): HTMLElement {
 }
 
 describe("Slider", () => {
+  it("names and describes the actual focusable inputs, including distinct range endpoints", async () => {
+    await render(
+      <>
+        <p id='price-help'>Amounts in euros</p>
+        <Slider
+          defaultValue={[10, 90]}
+          aria-label='Price'
+          aria-describedby='price-help'
+          getAriaLabel={(index) => (index === 0 ? "Minimum price" : "Maximum price")}
+          getAriaValueText={(_formatted, value) => `${value} euros`}
+        />
+      </>,
+    );
+    const minimum = screen.getByRole("slider", {name: "Minimum price"});
+    const maximum = screen.getByRole("slider", {name: "Maximum price"});
+    expect(minimum).toHaveAccessibleDescription("Amounts in euros");
+    expect(maximum).toHaveAccessibleDescription("Amounts in euros");
+    expect(minimum).toHaveAttribute("aria-valuetext", "10 euros");
+    expect(maximum).toHaveAttribute("aria-valuetext", "90 euros");
+  });
+
+  it("uses the caller's accessible name on the scalar input rather than only the group", async () => {
+    await render(
+      <Slider
+        aria-label='Volume'
+        defaultValue={40}
+      />,
+    );
+    expect(screen.getByRole("slider", {name: "Volume"})).toHaveAttribute("aria-valuenow", "40");
+  });
+
   it("applies playground controls to the real Slider and supplies vertical story geometry", async () => {
     const {Default} = composeStories(stories);
     const {container} = await render(

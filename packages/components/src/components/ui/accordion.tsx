@@ -11,64 +11,12 @@ import styles from "./accordion.module.css";
  * Canonical array-valued accordion props, including single-panel mode.
  *
  * An empty array is no selection; `[""]` selects the item whose identifier is
- * the empty string. Without `type`, callbacks always receive `string[]`.
+ * the empty string. Callbacks always receive `string[]`.
  */
-export interface AccordionArrayProps extends BaseAccordion.Root.Props<string> {
-  /** Omit the legacy discriminator when using the native array contract. */
-  type?: undefined;
+export interface AccordionProps extends Omit<BaseAccordion.Root.Props<string>, "loopFocus" | "orientation"> {
   /** Whether the last expanded panel can be collapsed. @default true */
   // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   collapsible?: boolean | undefined;
-}
-
-/**
- * Explicit legacy single-string adapter.
- *
- * `value=""` is controlled with no selection and `defaultValue=""` starts
- * empty. Use canonical arrays to select an empty-string item. Callbacks
- * receive a string when opening and `undefined` when clearing selection.
- */
-export interface AccordionSingleProps extends Omit<AccordionArrayProps, "type" | "multiple" | "defaultValue" | "onValueChange" | "value"> {
-  /** Explicitly opts into the legacy single-string contract. */
-  type: "single";
-  /** Use the legacy discriminator, not the native multiple flag, in this adapter. */
-  multiple?: never;
-  /** The initially expanded item identifier, or an empty string for no selection. */
-  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
-  defaultValue?: string | undefined;
-  /** Called with the legacy selection and the original cancellable Base UI details. */
-  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
-  onValueChange?: ((value: string | undefined, eventDetails: BaseAccordion.Root.ChangeEventDetails) => void) | undefined;
-  /** The controlled item identifier, or an empty string for controlled no selection. */
-  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
-  value?: string | undefined;
-}
-
-/**
- * Legacy multiple-mode alias for the canonical array contract.
- */
-export interface AccordionMultipleProps extends Omit<AccordionArrayProps, "type" | "multiple"> {
-  /** Equivalent to using the native `multiple` flag without a legacy type. */
-  type: "multiple";
-  /** Use the legacy discriminator, not the native multiple flag, in this adapter. */
-  multiple?: never;
-}
-
-/** Canonical array props or an explicitly discriminated legacy adapter. */
-export type AccordionProps = AccordionArrayProps | AccordionSingleProps | AccordionMultipleProps;
-
-/** Keeps JSX callback inference specific to the selected value contract. */
-interface AccordionComponent {
-  (props: Readonly<AccordionSingleProps>): React.ReactNode;
-  (props: Readonly<AccordionMultipleProps>): React.ReactNode;
-  (props: Readonly<AccordionArrayProps>): React.ReactNode;
-  (props: Readonly<AccordionProps>): React.ReactNode;
-  // eslint-disable-next-line sonarjs/no-redundant-optional -- React displayName metadata permits explicit undefined under exactOptionalPropertyTypes
-  displayName?: string | undefined;
-}
-
-function isLegacySingleAccordion(props: Readonly<AccordionProps>): props is Readonly<AccordionSingleProps> {
-  return props.type === "single";
 }
 
 /**
@@ -108,10 +56,9 @@ export interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
  * - Supports the `render` prop for element composition
- * - Uses Base UI array values by default; `type="single"` explicitly adapts legacy strings
+ * - Uses Base UI array values and the native `multiple` flag
  * - `collapsible={false}` cancels last-panel closing without replacing primitive state
- * - Callback values are `string[]` canonically, or `string | undefined` for legacy single mode;
- *   both contracts receive the original `Accordion.ChangeEventDetails`
+ * - Callbacks receive `string[]` and the original `Accordion.ChangeEventDetails`
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage
@@ -126,49 +73,24 @@ export interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const Accordion: AccordionComponent = React.forwardRef<HTMLDivElement, Accordion.Props>(
-  (props: Readonly<Accordion.Props>, ref): React.ReactElement => {
-    if (isLegacySingleAccordion(props)) {
-      const {type, collapsible = true, defaultValue, onValueChange, value, ...otherProps} = props;
+const Accordion = (props: Readonly<Accordion.Props>): React.ReactElement => {
+  const {ref, collapsible = true, onValueChange, ...otherProps} = props;
 
-      return (
-        <BaseAccordion.Root<string>
-          data-slot='accordion'
-          {...otherProps}
-          ref={ref}
-          multiple={false}
-          defaultValue={defaultValue !== undefined ? (defaultValue === "" ? [] : [defaultValue]) : undefined}
-          value={value !== undefined ? (value === "" ? [] : [value]) : undefined}
-          onValueChange={(nextValue, eventDetails) => {
-            if (!collapsible && nextValue.length === 0) {
-              eventDetails.cancel();
-              return;
-            }
-            onValueChange?.(nextValue[0], eventDetails);
-          }}
-        />
-      );
-    }
-
-    const {type, multiple, collapsible = true, onValueChange, ...otherProps} = props;
-
-    return (
-      <BaseAccordion.Root<string>
-        data-slot='accordion'
-        {...otherProps}
-        ref={ref}
-        multiple={type === "multiple" || multiple}
-        onValueChange={(nextValue, eventDetails) => {
-          if (!collapsible && nextValue.length === 0) {
-            eventDetails.cancel();
-            return;
-          }
-          onValueChange?.(nextValue, eventDetails);
-        }}
-      />
-    );
-  },
-);
+  return (
+    <BaseAccordion.Root<string>
+      data-slot='accordion'
+      {...otherProps}
+      ref={ref}
+      onValueChange={(nextValue, eventDetails) => {
+        if (!collapsible && nextValue.length === 0) {
+          eventDetails.cancel();
+          return;
+        }
+        onValueChange?.(nextValue, eventDetails);
+      }}
+    />
+  );
+};
 Accordion.displayName = "Accordion";
 
 /**
@@ -190,22 +112,20 @@ Accordion.displayName = "Accordion";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const AccordionItem = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Item>, AccordionItem.Props>(
-  (props: Readonly<AccordionItem.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AccordionItem = (props: Readonly<AccordionItem.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAccordion.Item
-        data-slot='accordion-item'
-        {...otherProps}
-        ref={ref}
-        className={cn(styles.item, className)}
-        render={render}>
-        {children}
-      </BaseAccordion.Item>
-    );
-  },
-);
+  return (
+    <BaseAccordion.Item
+      data-slot='accordion-item'
+      {...otherProps}
+      ref={ref}
+      className={cn(styles.item, className)}
+      render={render}>
+      {children}
+    </BaseAccordion.Item>
+  );
+};
 AccordionItem.displayName = "AccordionItem";
 
 /**
@@ -226,28 +146,26 @@ AccordionItem.displayName = "AccordionItem";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const AccordionTrigger = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Trigger>, AccordionTrigger.Props>(
-  (props: Readonly<AccordionTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AccordionTrigger = (props: Readonly<AccordionTrigger.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAccordion.Header className={styles.header}>
-        <BaseAccordion.Trigger
-          data-slot='accordion-trigger'
-          ref={ref}
-          {...otherProps}
-          className={cn(styles.trigger, className)}
-          render={render}>
-          <span>{children}</span>
-          <ChevronDown
-            aria-hidden
-            className={styles.icon}
-          />
-        </BaseAccordion.Trigger>
-      </BaseAccordion.Header>
-    );
-  },
-);
+  return (
+    <BaseAccordion.Header className={styles.header}>
+      <BaseAccordion.Trigger
+        data-slot='accordion-trigger'
+        ref={ref}
+        {...otherProps}
+        className={cn(styles.trigger, className)}
+        render={render}>
+        <span>{children}</span>
+        <ChevronDown
+          aria-hidden
+          className={styles.icon}
+        />
+      </BaseAccordion.Trigger>
+    </BaseAccordion.Header>
+  );
+};
 AccordionTrigger.displayName = "AccordionTrigger";
 
 /**
@@ -266,35 +184,30 @@ AccordionTrigger.displayName = "AccordionTrigger";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const AccordionContent = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Panel>, AccordionContent.Props>(
-  (props: Readonly<AccordionContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AccordionContent = (props: Readonly<AccordionContent.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAccordion.Panel
-        data-slot='accordion-content'
-        ref={ref}
-        {...otherProps}
-        className={styles.panel}
-        render={render}>
-        <div
-          data-slot='accordion-content-inner'
-          className={cn(styles.panelInner, className)}>
-          {children}
-        </div>
-      </BaseAccordion.Panel>
-    );
-  },
-);
+  return (
+    <BaseAccordion.Panel
+      data-slot='accordion-content'
+      ref={ref}
+      {...otherProps}
+      className={styles.panel}
+      render={render}>
+      <div
+        data-slot='accordion-content-inner'
+        className={cn(styles.panelInner, className)}>
+        {children}
+      </div>
+    </BaseAccordion.Panel>
+  );
+};
 AccordionContent.displayName = "AccordionContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Accordion {
   // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserve the mandated Accordion.Props public namespace contract
   export type Props = AccordionProps;
-  export type ArrayProps = AccordionArrayProps;
-  export type SingleProps = AccordionSingleProps;
-  export type MultipleProps = AccordionMultipleProps;
   export type State = BaseAccordion.Root.State<string>;
   export type ChangeEventDetails = BaseAccordion.Root.ChangeEventDetails;
 }

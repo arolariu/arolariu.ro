@@ -7,7 +7,7 @@ import {describe, expect, it, vi} from "vitest";
 import {Button} from "./button";
 import {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./button-group";
 import styles from "./button-group.module.css";
-import {CallbackText, LegacyText, RenderedLabel} from "./button-group.stories";
+import {CallbackText, RenderedText, RenderedLabel} from "./button-group.stories";
 
 function requiredClass(name: string): string {
   const className = styles[name];
@@ -112,15 +112,14 @@ describe("ButtonGroup", () => {
     expect(screen.getByRole("button", {name: "Bottom"})).toBeInTheDocument();
   });
 
-  it("renders ButtonGroupText with asChild prop", () => {
+  it("renders ButtonGroupText with a render element", () => {
     // Arrange & Act
     render(
       <ButtonGroup>
         <ButtonGroupText
-          asChild
-          data-testid='button-group-text-child'>
-          <div className='custom-div'>Custom Text</div>
-        </ButtonGroupText>
+          data-testid='button-group-text-child'
+          render={<div className='custom-div'>Custom Text</div>}
+        />
       </ButtonGroup>,
     );
 
@@ -183,24 +182,25 @@ describe("ButtonGroup", () => {
     expect(screen.getByRole("button", {name: "Unavailable"})).not.toHaveFocus();
   });
 
-  it("merges legacy child refs, events, classes, and preserves child content", async () => {
+  it("merges render refs, events, classes, and preserves element content", async () => {
     const user = userEvent.setup();
     const wrapperRef = createRef<HTMLSpanElement>();
     const childRef = createRef<HTMLSpanElement>();
     const calls: string[] = [];
     const {unmount} = render(
       <ButtonGroupText
-        asChild
         ref={wrapperRef}
         className='wrapper'
-        onClick={() => calls.push("wrapper")}>
-        <span
-          ref={childRef}
-          className='child'
-          onClick={() => calls.push("child")}>
-          Quantity
-        </span>
-      </ButtonGroupText>,
+        onClick={() => calls.push("wrapper")}
+        render={
+          <span
+            ref={childRef}
+            className='child'
+            onClick={() => calls.push("child")}>
+            Quantity
+          </span>
+        }
+      />,
     );
     const text = screen.getByText("Quantity");
     expect(wrapperRef.current).toBe(text);
@@ -283,7 +283,7 @@ describe("ButtonGroup", () => {
     expect(ref.current).toBe(text);
   });
 
-  it.each([true, false])("honors child event cancellation for legacy=%s composition", async (asChild) => {
+  it("honors render element event cancellation", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     const child = (
@@ -299,26 +299,24 @@ describe("ButtonGroup", () => {
     );
     render(
       <ButtonGroupText
-        asChild={asChild}
-        render={asChild ? undefined : child}
-        onClick={onClick}>
-        {asChild ? child : undefined}
-      </ButtonGroupText>,
+        render={child}
+        onClick={onClick}
+      />,
     );
     await user.click(screen.getByText("Cancelled"));
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("keeps plain-text legacy children in the default div", () => {
-    render(<ButtonGroupText asChild>Fallback</ButtonGroupText>);
+  it("keeps plain-text children in the default div", () => {
+    render(<ButtonGroupText>Fallback</ButtonGroupText>);
     const text = screen.getByText("Fallback");
     expect(text.tagName).toBe("DIV");
     expect(text).toHaveAttribute("data-slot", "button-group-text");
   });
 
-  it("keeps fragment legacy children inside the default text div", () => {
+  it("keeps fragment children inside the default text div", () => {
     render(
-      <ButtonGroupText asChild>
+      <ButtonGroupText>
         <>
           <span>Fragment content</span>
         </>
@@ -355,7 +353,7 @@ describe("ButtonGroup", () => {
       <>
         <RenderedLabel.render />
         <CallbackText.render />
-        <LegacyText.render />
+        <RenderedText.render />
       </>,
     );
     const input = screen.getByRole("spinbutton", {name: "Quantity"});

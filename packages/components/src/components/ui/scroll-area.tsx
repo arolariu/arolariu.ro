@@ -27,63 +27,53 @@ export interface ScrollAreaProps extends ScrollAreaRootProps {
 }
 
 /** Groups explicitly composed scroll area parts without adding a viewport or scrollbar. */
-const ScrollAreaRoot = React.forwardRef<HTMLDivElement, ScrollAreaRootProps>(
-  ({className, ...props}: Readonly<ScrollAreaRootProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Root
-      data-slot='scroll-area'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ScrollAreaRoot = ({ref, className, ...props}: Readonly<ScrollAreaRootProps>): React.JSX.Element => (
+  <BaseScrollArea.Root
+    data-slot='scroll-area'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** The actual scrollable, keyboard-focusable viewport; Base UI owns overflow/focus state. */
-const ScrollAreaViewport = React.forwardRef<HTMLDivElement, ScrollAreaViewportProps>(
-  ({className, ...props}: Readonly<ScrollAreaViewportProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Viewport
-      data-slot='scroll-area-viewport'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.viewport, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ScrollAreaViewport = ({ref, className, ...props}: Readonly<ScrollAreaViewportProps>): React.JSX.Element => (
+  <BaseScrollArea.Viewport
+    data-slot='scroll-area-viewport'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.viewport, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Preserves Base UI content measurement and state within the scrolling viewport. */
-const ScrollAreaContent = React.forwardRef<HTMLDivElement, ScrollAreaContentProps>(
-  ({className, ...props}: Readonly<ScrollAreaContentProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Content
-      data-slot='scroll-area-content'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ScrollAreaContent = ({ref, className, ...props}: Readonly<ScrollAreaContentProps>): React.JSX.Element => (
+  <BaseScrollArea.Content
+    data-slot='scroll-area-content'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Draggable scrollbar thumb with primitive-owned pointer handling and measurement. */
-const ScrollAreaThumb = React.forwardRef<HTMLDivElement, ScrollAreaThumbProps>(
-  ({className, ...props}: Readonly<ScrollAreaThumbProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Thumb
-      data-slot='scroll-area-thumb'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.thumb, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ScrollAreaThumb = ({ref, className, ...props}: Readonly<ScrollAreaThumbProps>): React.JSX.Element => (
+  <BaseScrollArea.Thumb
+    data-slot='scroll-area-thumb'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.thumb, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /** Fills the intersection when both native scroll axes overflow. */
-const ScrollAreaCorner = React.forwardRef<HTMLDivElement, ScrollAreaCornerProps>(
-  ({className, ...props}: Readonly<ScrollAreaCornerProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Corner
-      data-slot='scroll-area-corner'
-      {...props}
-      ref={ref}
-      className={(state) => cn(styles.corner, typeof className === "function" ? className(state) : className)}
-    />
-  ),
+const ScrollAreaCorner = ({ref, className, ...props}: Readonly<ScrollAreaCornerProps>): React.JSX.Element => (
+  <BaseScrollArea.Corner
+    data-slot='scroll-area-corner'
+    {...props}
+    ref={ref}
+    className={(state) => cn(styles.corner, typeof className === "function" ? className(state) : className)}
+  />
 );
 
 /**
@@ -101,23 +91,21 @@ const ScrollAreaCorner = React.forwardRef<HTMLDivElement, ScrollAreaCornerProps>
  *
  * @see {@link https://base-ui.com/react/components/scroll-area | Base UI Documentation}
  */
-const ScrollArea = React.forwardRef<React.ComponentRef<typeof BaseScrollArea.Root>, ScrollArea.Props>(
-  (props: Readonly<ScrollArea.Props>, ref): React.ReactElement => {
-    const {children, viewportProps, contentProps, ...otherProps} = props;
+const ScrollArea = ({ref, ...props}: Readonly<ScrollArea.Props>): React.ReactElement => {
+  const {children, viewportProps, contentProps, ...otherProps} = props;
 
-    return (
-      <ScrollAreaRoot
-        {...otherProps}
-        ref={ref}>
-        <ScrollAreaViewport {...viewportProps}>
-          <ScrollAreaContent {...contentProps}>{children}</ScrollAreaContent>
-        </ScrollAreaViewport>
-        <ScrollBar />
-        <ScrollAreaCorner />
-      </ScrollAreaRoot>
-    );
-  },
-);
+  return (
+    <ScrollAreaRoot
+      {...otherProps}
+      ref={ref}>
+      <ScrollAreaViewport {...viewportProps}>
+        <ScrollAreaContent {...contentProps}>{children}</ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollBar />
+      <ScrollAreaCorner />
+    </ScrollAreaRoot>
+  );
+};
 
 /**
  * Renders the scroll bar.
@@ -134,23 +122,21 @@ const ScrollArea = React.forwardRef<React.ComponentRef<typeof BaseScrollArea.Roo
  *
  * @see {@link https://base-ui.com/react/components/scroll-area | Base UI Documentation}
  */
-const ScrollBar = React.forwardRef<HTMLDivElement, ScrollBarProps>(
-  ({className, children = <ScrollAreaThumb />, orientation = "vertical", ...props}: Readonly<ScrollBarProps>, ref): React.JSX.Element => (
-    <BaseScrollArea.Scrollbar
-      data-slot='scroll-area-scrollbar'
-      orientation={orientation}
-      {...props}
-      ref={ref}
-      className={(state) =>
-        cn(
-          styles.scrollbar,
-          state.orientation === "vertical" ? styles.vertical : styles.horizontal,
-          typeof className === "function" ? className(state) : className,
-        )
-      }>
-      {children}
-    </BaseScrollArea.Scrollbar>
-  ),
+const ScrollBar = ({ref, className, children, orientation = "vertical", ...props}: Readonly<ScrollBarProps>): React.JSX.Element => (
+  <BaseScrollArea.Scrollbar
+    data-slot='scroll-area-scrollbar'
+    orientation={orientation}
+    {...props}
+    ref={ref}
+    className={(state) =>
+      cn(
+        styles.scrollbar,
+        state.orientation === "vertical" ? styles.vertical : styles.horizontal,
+        typeof className === "function" ? className(state) : className,
+      )
+    }>
+    {children === undefined ? <ScrollAreaThumb /> : children}
+  </BaseScrollArea.Scrollbar>
 );
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

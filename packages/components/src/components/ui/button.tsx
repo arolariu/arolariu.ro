@@ -47,40 +47,39 @@ export interface ButtonVariantOptions {
 }
 
 type PrimitiveRenderCallback = Exclude<ButtonPrimitive.Props["render"], React.ReactElement | undefined>;
+type IconButtonSize = Extract<ButtonSize, `icon${string}`>;
+type ButtonNamingProps =
+  | {readonly size?: Exclude<ButtonSize, IconButtonSize>}
+  | {readonly size?: ButtonSize; readonly "aria-label": string}
+  | {readonly size?: ButtonSize; readonly "aria-labelledby": string};
 
 /**
- * Readonly Base UI button props with visual presets and legacy slot compatibility.
+ * Readonly Base UI button props with visual presets and render composition.
  */
 export type ButtonProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof ButtonPrimitive>, "render" | "className"> & {
-    /**
-     * Visual style variant.
-     * @default "default"
-     */
-    variant?: ButtonVariant;
-    /**
-     * Size preset.
-     * @default "default"
-     */
-    size?: ButtonSize;
-    /**
-     * Additional CSS classes merged with the button styles.
-     * @default undefined
-     */
-    className?: string;
-    /**
-     * Custom element or render callback used to replace the default `<button>`.
-     * @default undefined
-     */
-    render?: React.ReactElement | ((props: Parameters<PrimitiveRenderCallback>[0], state: ButtonState) => React.ReactElement);
-    /**
-     * Backward-compatible child-slot API.
-     * Converts a single child element to `render`, inferring native behavior for
-     * intrinsic elements only. Custom components can specify `nativeButton`.
-     * @default false
-     */
-    asChild?: boolean;
-  }
+  Omit<React.ComponentPropsWithRef<typeof ButtonPrimitive>, "render" | "className">
+    & ButtonNamingProps & {
+      /**
+       * Visual style variant.
+       * @default "default"
+       */
+      variant?: ButtonVariant;
+      /**
+       * Size preset.
+       * @default "default"
+       */
+      size?: ButtonSize;
+      /**
+       * Additional CSS classes merged with the button styles.
+       * @default undefined
+       */
+      className?: string;
+      /**
+       * Custom element or render callback used to replace the default `<button>`.
+       * @default undefined
+       */
+      render?: React.ReactElement | ((props: Parameters<PrimitiveRenderCallback>[0], state: ButtonState) => React.ReactElement);
+    }
 >;
 
 /**
@@ -96,8 +95,9 @@ function buttonVariants({variant = "default", size = "default", className}: Read
  *
  * @remarks
  * Renders a native `<button>` by default. Use the `render` prop to compose the
- * button styles and shared behavior with other elements or components. The
- * deprecated `asChild` prop is still supported for backward compatibility.
+ * button styles and shared behavior with other elements or components.
+ * Icon-only content must have an action-specific accessible name supplied
+ * through `aria-label` or `aria-labelledby`.
  * Set `nativeButton={false}` when canonical `render` replaces the button with
  * a non-button element, including links. The public ref targets `HTMLElement`
  * so non-native render targets are represented accurately.
@@ -110,10 +110,8 @@ function buttonVariants({variant = "default", size = "default", className}: Read
  *
  * @see {@link https://base-ui.com/react/components/button | Base UI Button}
  */
-const Button = React.forwardRef<HTMLElement, Button.Props>((props: Readonly<Button.Props>, ref): React.ReactElement => {
-  const {render, asChild = false, variant = "default", size = "default", nativeButton, className, children, ...otherProps} = props;
-  const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-  const renderProp = legacyChild ?? render;
+const Button = (props: Readonly<Button.Props>): React.ReactElement => {
+  const {ref, render, variant = "default", size = "default", nativeButton, className, children, ...otherProps} = props;
 
   return (
     <ButtonPrimitive
@@ -122,13 +120,13 @@ const Button = React.forwardRef<HTMLElement, Button.Props>((props: Readonly<Butt
       data-size={size}
       {...otherProps}
       ref={ref}
-      nativeButton={nativeButton ?? (legacyChild ? legacyChild.type === "button" : true)}
+      nativeButton={nativeButton}
       className={buttonVariants({variant, size, className})}
-      render={typeof renderProp === "function" ? (elementProps, state) => renderProp(elementProps, {...state, variant, size}) : renderProp}>
-      {legacyChild ? undefined : children}
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant, size}) : render}>
+      {children}
     </ButtonPrimitive>
   );
-});
+};
 Button.displayName = "Button";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

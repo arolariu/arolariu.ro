@@ -113,6 +113,27 @@ const originalDescriptors = platformGetters.map(
 );
 
 describe("Carousel with the installed Embla engine", () => {
+  it("does not steal arrow keys from editable descendants or nested widgets", () => {
+    const {api} = renderCarousel({
+      children: (
+        <>
+          <input aria-label='Caption' />
+          <div
+            role='slider'
+            tabIndex={0}
+            aria-label='Volume'
+          />
+        </>
+      ),
+    });
+    for (const target of [screen.getByRole("textbox"), screen.getByRole("slider")]) {
+      const key = new KeyboardEvent("keydown", {key: "ArrowRight", bubbles: true, cancelable: true});
+      fireEvent(target, key);
+      expect(key.defaultPrevented).toBe(false);
+      expect(api().selectedScrollSnap()).toBe(0);
+    }
+  });
+
   beforeEach(() => {
     for (const property of platformGetters) {
       const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, property)?.get;
@@ -623,26 +644,26 @@ describe("Carousel with the installed Embla engine", () => {
     expect(api().selectedScrollSnap()).toBe(1);
   });
 
-  it.each(["previous", "next"] as const)("preserves a legacy %s child target, content and ref", (control) => {
+  it.each(["previous", "next"] as const)("preserves a canonical %s render target, content and ref", (control) => {
     const wrapperRef = React.createRef<HTMLElement>();
     const childRef = React.createRef<HTMLAnchorElement>();
     const {api} = renderCarousel(
       {opts: {startIndex: 1}},
       {
         [control]: {
-          asChild: true,
+          nativeButton: false,
           ref: wrapperRef,
-          children: (
+          render: (
             <a
               ref={childRef}
               href='#destination'>
-              Legacy navigation
+              Custom navigation
             </a>
           ),
         },
       },
     );
-    const target = screen.getByRole("button", {name: "Legacy navigation"});
+    const target = screen.getByRole("button", {name: "Custom navigation"});
     expect(target.tagName).toBe("A");
     expect(wrapperRef.current).toBe(target);
     expect(childRef.current).toBe(target);

@@ -14,11 +14,6 @@ interface ToggleGroupContextValue extends Pick<ToggleVariantOptions, "size" | "v
 
 const ToggleGroupContext = React.createContext<ToggleGroupContextValue>({spacing: 2, orientation: "horizontal"});
 
-// A callable view preserves generic value inference without a cast or a React 19-only ref prop.
-const withRef: <Element, Props>(
-  render: (props: React.PropsWithoutRef<Props>, ref: React.ForwardedRef<Element>) => React.ReactNode,
-) => (props: React.PropsWithoutRef<Props> & React.RefAttributes<Element>) => React.ReactNode = React.forwardRef;
-
 /** Readonly primitive selection/renderer props with group visual defaults. */
 export type ToggleGroupProps<Value extends string = string> = Readonly<
   BaseToggleGroup.Props<Value>
@@ -69,7 +64,7 @@ export type ToggleGroupItemState = Toggle.State;
  * - Spacing defaults to two token units, zero joins items; orientation also reaches Base UI
  * - Visual context scopes rendered descendants, including a render element's own children
  * - Nested groups own their defaults independently of the surrounding group
- * - Forwarded refs work on React 18/19 while preserving selection value inference
+ * - React 19 ref props preserve selection value inference
  *
  * @example
  * ```tsx
@@ -84,30 +79,25 @@ export type ToggleGroupItemState = Toggle.State;
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
 const ToggleGroup = Object.assign(
-  withRef(
-    <Value extends string = string>(
-      props: Readonly<Omit<ToggleGroup.Props<Value>, "ref">>,
-      ref: React.ForwardedRef<HTMLDivElement>,
-    ): React.JSX.Element => {
-      const {className, children, size, variant, spacing = 2, orientation = "horizontal", ...otherProps} = props;
+  <Value extends string = string>(props: Readonly<ToggleGroup.Props<Value>>): React.JSX.Element => {
+    const {ref, className, children, size, variant, spacing = 2, orientation = "horizontal", ...otherProps} = props;
 
-      return (
-        <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>
-          <BaseToggleGroup
-            {...otherProps}
-            ref={ref}
-            data-slot='toggle-group'
-            data-variant={variant}
-            data-size={size}
-            data-spacing={spacing}
-            orientation={orientation}
-            className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
-            {children}
-          </BaseToggleGroup>
-        </ToggleGroupContext.Provider>
-      );
-    },
-  ),
+    return (
+      <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>
+        <BaseToggleGroup
+          {...otherProps}
+          ref={ref}
+          data-slot='toggle-group'
+          data-variant={variant}
+          data-size={size}
+          data-spacing={spacing}
+          orientation={orientation}
+          className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+          {children}
+        </BaseToggleGroup>
+      </ToggleGroupContext.Provider>
+    );
+  },
   {displayName: "ToggleGroup"},
 );
 
@@ -129,28 +119,23 @@ const ToggleGroup = Object.assign(
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
 const ToggleGroupItem = Object.assign(
-  withRef(
-    <Value extends string = string>(
-      props: Readonly<Omit<ToggleGroupItem.Props<Value>, "ref">>,
-      ref: React.ForwardedRef<HTMLElement>,
-    ): React.JSX.Element => {
-      const {className, size, variant, ...otherProps} = props;
-      const context = React.useContext(ToggleGroupContext);
+  <Value extends string = string>(props: Readonly<ToggleGroupItem.Props<Value>>): React.JSX.Element => {
+    const {ref, className, size, variant, ...otherProps} = props;
+    const context = React.useContext(ToggleGroupContext);
 
-      return (
-        <Toggle
-          {...otherProps}
-          ref={ref}
-          data-slot='toggle-group-item'
-          data-spacing={context.spacing}
-          data-orientation={context.orientation}
-          className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
-          size={size ?? context.size}
-          variant={variant ?? context.variant}
-        />
-      );
-    },
-  ),
+    return (
+      <Toggle
+        {...otherProps}
+        ref={ref}
+        data-slot='toggle-group-item'
+        data-spacing={context.spacing}
+        data-orientation={context.orientation}
+        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+        size={size ?? context.size}
+        variant={variant ?? context.variant}
+      />
+    );
+  },
   {displayName: "ToggleGroupItem"},
 );
 

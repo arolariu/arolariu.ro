@@ -148,7 +148,7 @@ describe("Collapsible", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it("retains asChild content and cancellation through the real primitive handler", async () => {
+  it("retains render content and cancellation through the real primitive handler", async () => {
     const user = userEvent.setup();
     const triggerRef = React.createRef<HTMLButtonElement>();
     const childRef = React.createRef<HTMLButtonElement>();
@@ -156,22 +156,23 @@ describe("Collapsible", () => {
     render(
       <Collapsible>
         <CollapsibleTrigger
-          asChild
           ref={triggerRef}
           className='wrapper-trigger'
-          onClick={() => clicks.push("wrapper")}>
-          <button
-            ref={childRef}
-            className='child-trigger'
-            onClick={(event) => {
-              clicks.push("child");
-              if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-                event.preventBaseUIHandler();
-              }
-            }}>
-            Details
-          </button>
-        </CollapsibleTrigger>
+          onClick={() => clicks.push("wrapper")}
+          render={
+            <button
+              ref={childRef}
+              className='child-trigger'
+              onClick={(event) => {
+                clicks.push("child");
+                if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                  event.preventBaseUIHandler();
+                }
+              }}>
+              Details
+            </button>
+          }
+        />
         <CollapsibleContent>Body</CollapsibleContent>
       </Collapsible>,
     );
@@ -248,7 +249,7 @@ describe("Collapsible", () => {
     expect(changes).toEqual([true, true]);
   });
 
-  it("preserves content supplied by a render element and falls back for non-element asChild content", () => {
+  it("preserves render element and plain-text content", () => {
     render(
       <>
         <Collapsible>
@@ -256,7 +257,7 @@ describe("Collapsible", () => {
           <CollapsibleContent>First body</CollapsibleContent>
         </Collapsible>
         <Collapsible>
-          <CollapsibleTrigger asChild>Fallback label</CollapsibleTrigger>
+          <CollapsibleTrigger>Fallback label</CollapsibleTrigger>
           <CollapsibleContent>Second body</CollapsibleContent>
         </Collapsible>
       </>,
@@ -411,18 +412,20 @@ describe("Collapsible", () => {
     expect(screen.getByText("Controlled details content")).toBeVisible();
   });
 
-  it("supports rendering the trigger as a child element while preserving the non-asChild trigger path", async () => {
+  it("supports a custom render trigger without nested buttons", async () => {
     // Arrange
     const user = userEvent.setup();
     render(
       <Collapsible>
-        <CollapsibleTrigger asChild>
-          <button
-            type='button'
-            data-testid='trigger-child'>
-            Toggle details
-          </button>
-        </CollapsibleTrigger>
+        <CollapsibleTrigger
+          render={
+            <button
+              type='button'
+              data-testid='trigger-child'>
+              Toggle details
+            </button>
+          }
+        />
         <CollapsibleContent data-testid='collapsible-panel'>Hidden details content</CollapsibleContent>
       </Collapsible>,
     );

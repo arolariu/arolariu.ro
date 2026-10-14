@@ -3,6 +3,7 @@
 import {ContextMenu as BaseContextMenu} from "@base-ui/react/context-menu";
 import {useDirection} from "@base-ui/react/direction-provider";
 import type {ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -27,14 +28,9 @@ export type ContextMenuPortalProps = Readonly<React.ComponentPropsWithRef<typeof
 export type ContextMenuRadioGroupProps = Readonly<React.ComponentPropsWithRef<typeof BaseContextMenu.RadioGroup>>;
 /** Native ContextMenu submenu-root props. */
 export type ContextMenuSubProps = Readonly<BaseContextMenu.SubmenuRoot.Props>;
-/** Primitive trigger props with compatible single-child composition. */
-export type ContextMenuTriggerProps = Readonly<
-  React.ComponentPropsWithRef<typeof BaseContextMenu.Trigger> & {
-    /** Legacy single-child composition. Prefer `render`. @default false */
-    asChild?: boolean;
-  }
->;
-type ContextMenuPositioningProps = Omit<BaseContextMenu.Positioner.Props, keyof BaseContextMenu.Popup.Props>;
+/** Primitive trigger props and render composition. */
+export type ContextMenuTriggerProps = Readonly<React.ComponentPropsWithRef<typeof BaseContextMenu.Trigger>>;
+type ContextMenuPositioningProps = Omit<BaseContextMenu.Positioner.Props, keyof BaseContextMenu.Popup.Props | "positionMethod">;
 type MenuDataAttributes = {readonly [key: `data-${string}`]: string | number | boolean | undefined};
 /** Popup DOM/state props and separate primitive-derived placement options. */
 export type ContextMenuContentProps = Readonly<
@@ -42,7 +38,10 @@ export type ContextMenuContentProps = Readonly<
     & ContextMenuPositioningProps & {
       /** Positioner DOM, ref, render and state-class props; placement stays at the top level. */
       positionerProps?: Readonly<
-        Omit<React.ComponentPropsWithRef<typeof BaseContextMenu.Positioner>, keyof ContextMenuPositioningProps | "children">
+        Omit<
+          React.ComponentPropsWithRef<typeof BaseContextMenu.Positioner>,
+          keyof ContextMenuPositioningProps | "children" | "positionMethod"
+        >
           & MenuDataAttributes
       >;
       /** Portal options. Nested modal menus should target the enclosing primitive Portal, not an external sibling. */
@@ -68,11 +67,28 @@ function withContextChildren<State>(
   render: React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined,
   children: React.ReactNode,
 ): React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined {
-  if (typeof render === "function" || children === undefined) return render;
+  if (render === undefined || typeof render === "function" || children === undefined) return render;
+  return function renderContextElement(elementProps): React.ReactElement {
+    return (
+      <ContextElement
+        render={render}
+        elementProps={elementProps}>
+        {children}
+      </ContextElement>
+    );
+  };
+}
+
+function ContextElement({
+  render,
+  elementProps,
+  children,
+}: Readonly<{render: React.ReactElement; elementProps: HTMLProps; children: React.ReactNode}>): React.ReactElement {
   // eslint-disable-next-line react-x/no-children-to-array -- Resolve Flight-lazy elements through React's public children boundary.
   const [element] = React.Children.toArray(render);
   // eslint-disable-next-line react-x/no-clone-element -- Replace only compound children; ContextMenu owns state, ref and event merging.
-  return React.isValidElement<{children?: React.ReactNode}>(element) ? React.cloneElement(element, {children}) : render;
+  const decorated = React.isValidElement<{children?: React.ReactNode}>(element) ? React.cloneElement(element, {children}) : render;
+  return useRender({render: decorated, props: {...elementProps}});
 }
 
 /** Coordinates the real pointer/long-press context menu without adding a DOM wrapper. */
@@ -89,97 +105,88 @@ const ContextMenuRadioGroup = BaseContextMenu.RadioGroup;
 const ContextMenuSub = BaseContextMenu.SubmenuRoot;
 
 /** Opens the context menu at the pointer; render callbacks run only inside the primitive. */
-const ContextMenuTrigger = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Trigger>, ContextMenuTrigger.Props>(
-  (props: Readonly<ContextMenuTrigger.Props>, ref): React.ReactElement => {
-    const {asChild = false, children, render, ...otherProps} = props;
-    const legacyChild = asChild && React.isValidElement(children) && children.type !== React.Fragment ? children : undefined;
-    return (
-      <BaseContextMenu.Trigger
-        data-slot='context-menu-trigger'
-        {...otherProps}
-        ref={ref}
-        render={legacyChild ?? withContextChildren(render, children)}>
-        {legacyChild ? undefined : children}
-      </BaseContextMenu.Trigger>
-    );
-  },
-);
+const ContextMenuTrigger = ({ref, ...props}: Readonly<ContextMenuTrigger.Props>): React.ReactElement => {
+  const {children, render, className, ...otherProps} = props;
+  return (
+    <BaseContextMenu.Trigger
+      data-slot='context-menu-trigger'
+      {...otherProps}
+      ref={ref}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      render={withContextChildren(render, children)}>
+      {children}
+    </BaseContextMenu.Trigger>
+  );
+};
 ContextMenuTrigger.displayName = "ContextMenuTrigger";
 
 /**
  * Portals the role-bearing Popup with canonical right/start placement and offsets 0/4.
  * Popup names, events, ref, finalFocus and render/class callbacks remain on Popup.
- * Context Menu's deprecated positionMethod is retained unchanged (the primitive ignores it).
  */
-const ContextMenuContent = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Popup>, ContextMenuContent.Props>(
-  (props: Readonly<ContextMenuContent.Props>, ref): React.ReactElement => {
-    const direction = useDirection();
-    const {
-      align = "start",
-      alignOffset = 4,
-      side = "right",
-      sideOffset = 0,
-      anchor,
-      // eslint-disable-next-line sonarjs/deprecation -- preserve installed ContextMenu.Positioner's legacy no-op prop
-      positionMethod,
-      collisionBoundary,
-      collisionPadding,
-      sticky,
-      arrowPadding,
-      disableAnchorTracking,
-      collisionAvoidance,
-      positionerProps,
-      portalProps,
-      className,
-      dir = direction,
-      children,
-      render,
-      ...popupProps
-    } = props;
-    const positionerClassName = positionerProps?.className;
-    const popup = (
-      <BaseContextMenu.Popup
-        data-slot='context-menu-content'
-        {...popupProps}
-        ref={ref}
-        dir={dir}
-        render={withContextChildren(render, children)}
-        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}>
-        {children}
-      </BaseContextMenu.Popup>
-    );
-    const positioner = (
-      <BaseContextMenu.Positioner
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-        anchor={anchor}
-        // eslint-disable-next-line sonarjs/deprecation -- preserve installed ContextMenu.Positioner's legacy no-op prop
-        positionMethod={positionMethod}
-        collisionBoundary={collisionBoundary}
-        collisionPadding={collisionPadding}
-        sticky={sticky}
-        arrowPadding={arrowPadding}
-        disableAnchorTracking={disableAnchorTracking}
-        collisionAvoidance={collisionAvoidance}
-        {...positionerProps}
-        render={withContextChildren(positionerProps?.render, popup)}
-        className={(state) =>
-          cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
-        }>
-        {popup}
-      </BaseContextMenu.Positioner>
-    );
-    return (
-      <ContextMenuPortal
-        {...portalProps}
-        render={withContextChildren(portalProps?.render, null)}>
-        {positioner}
-      </ContextMenuPortal>
-    );
-  },
-);
+const ContextMenuContent = ({ref, ...props}: Readonly<ContextMenuContent.Props>): React.ReactElement => {
+  const direction = useDirection();
+  const {
+    align = "start",
+    alignOffset = 4,
+    side = "right",
+    sideOffset = 0,
+    anchor,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    collisionAvoidance,
+    positionerProps,
+    portalProps,
+    className,
+    dir = direction,
+    children,
+    render,
+    ...popupProps
+  } = props;
+  const positionerClassName = positionerProps?.className;
+  const popup = (
+    <BaseContextMenu.Popup
+      data-slot='context-menu-content'
+      {...popupProps}
+      ref={ref}
+      dir={dir}
+      render={withContextChildren(render, children)}
+      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}>
+      {children}
+    </BaseContextMenu.Popup>
+  );
+  const positioner = (
+    <BaseContextMenu.Positioner
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      anchor={anchor}
+      collisionBoundary={collisionBoundary}
+      collisionPadding={collisionPadding}
+      sticky={sticky}
+      arrowPadding={arrowPadding}
+      disableAnchorTracking={disableAnchorTracking}
+      collisionAvoidance={collisionAvoidance}
+      {...positionerProps}
+      render={withContextChildren(positionerProps?.render, popup)}
+      className={(state) =>
+        cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
+      }>
+      {popup}
+    </BaseContextMenu.Positioner>
+  );
+  return (
+    <ContextMenuPortal
+      {...portalProps}
+      render={withContextChildren(portalProps?.render, null)}>
+      {positioner}
+    </ContextMenuPortal>
+  );
+};
 ContextMenuContent.displayName = "ContextMenuContent";
 
 /** Portaled submenu using inline-end (right in LTR), start alignment and offsets 0/4. */

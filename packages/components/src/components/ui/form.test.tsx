@@ -744,7 +744,7 @@ function WithoutProvider(): React.JSX.Element {
 describe("Form real RHF contracts", () => {
   it("preserves absent observer keys and cleans replaced wrapper refs without detaching the child", () => {
     let received: React.ComponentPropsWithoutRef<"input"> | undefined;
-    const Probe = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<"input">>((props, ref) => {
+    const Probe = ({ref, ...props}: Readonly<React.ComponentPropsWithRef<"input">>): React.JSX.Element => {
       received = props;
       return (
         <input
@@ -752,7 +752,7 @@ describe("Form real RHF contracts", () => {
           ref={ref}
         />
       );
-    });
+    };
     Probe.displayName = "ObserverKeyProbe";
     const childRef = React.createRef<HTMLInputElement>();
     const firstCleanup = vi.fn();
@@ -1173,8 +1173,9 @@ function PrimitiveFixture({onClassState, onRenderState, controlRef, renderedRef}
                   ref={(node: HTMLElement | null) => {
                     field.ref(node);
                     if (node !== null && !(node instanceof HTMLInputElement)) throw new Error("Expected the fixture's native input target");
-                    if (typeof renderedRef === "function") return renderedRef(node);
-                    if (renderedRef) renderedRef.current = node;
+                    const nativeNode = node instanceof HTMLInputElement ? node : null;
+                    if (typeof renderedRef === "function") return renderedRef(nativeNode);
+                    if (renderedRef) renderedRef.current = nativeNode;
                     return undefined;
                   }}
                   className={(state) => {

@@ -25,7 +25,6 @@ const meta = {
   args: {
     role: "status",
     "aria-label": "Loading summary",
-    "aria-busy": true,
   },
   decorators: [
     (Story) => (
@@ -98,8 +97,7 @@ export const Grid: Story = {
     <section
       className={storyClasses.storyGrid}
       role='status'
-      aria-label='Loading summaries'
-      aria-busy>
+      aria-label='Loading summaries'>
       <CardSkeleton lines={3} />
       <CardSkeleton lines={4} />
       <CardSkeleton lines={2} />

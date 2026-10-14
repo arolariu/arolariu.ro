@@ -68,11 +68,11 @@ function renderTooltip({
   triggerAsChild?: boolean;
 }>) {
   return render(
-    <Tooltip
-      defaultOpen={defaultOpen}
-      delayDuration={0}>
-      <TooltipTrigger asChild={triggerAsChild}>
-        {triggerAsChild ? <button type='button'>Open tooltip</button> : "Open tooltip"}
+    <Tooltip defaultOpen={defaultOpen}>
+      <TooltipTrigger
+        delay={0}
+        render={triggerAsChild ? <button type='button'>Open tooltip</button> : undefined}>
+        {triggerAsChild ? undefined : "Open tooltip"}
       </TooltipTrigger>
       <TooltipContent
         className={className}
@@ -84,6 +84,41 @@ function renderTooltip({
 }
 
 describe("Tooltip", () => {
+  it("refresh accessibility: wraps long supplemental copy within available width", () => {
+    const css = readFileSync(join(import.meta.dirname, "tooltip.module.css"), "utf8");
+    expect(css).toMatch(/\.popup\s*\{[^}]*max-width:\s*min\(var\(--available-width/u);
+    expect(css).toMatch(/\.popup\s*\{[^}]*overflow-wrap:\s*anywhere/u);
+  });
+
+  it("keeps an emulated delayed hover crossing persistent and dismisses the tooltip on Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <TooltipProvider
+        delay={0}
+        closeDelay={0}>
+        <Tooltip>
+          <TooltipTrigger closeDelay={100}>Supplemental help</TooltipTrigger>
+          <TooltipContent>Hoverable help</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    const trigger = screen.getByRole("button", {name: "Supplemental help"});
+    vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 120, 24));
+    await user.pointer({target: trigger, coords: {x: 10, y: 10}});
+    const popup = await screen.findByRole("tooltip");
+    vi.spyOn(popup, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 28, 160, 48));
+    await user.pointer({target: popup, coords: {x: 10, y: 35}});
+    vi.useFakeTimers();
+    try {
+      await act(async () => vi.advanceTimersByTimeAsync(5000));
+      expect(popup).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  });
+
   afterEach(() => {
     cleanup();
     for (const stylesheet of stylesheetFixtures) stylesheet.remove();
@@ -286,12 +321,11 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     const handle = BaseTooltip.createHandle<string>();
     render(
-      <Tooltip<string>
-        handle={handle}
-        delayDuration={0}>
+      <Tooltip<string> handle={handle}>
         {({payload}) => (
           <>
             <TooltipTrigger
+              delay={0}
               handle={handle}
               payload='Payload help'>
               Payload trigger
@@ -314,9 +348,8 @@ describe("Tooltip", () => {
     render(
       <Tooltip
         open={false}
-        delayDuration={0}
         onOpenChange={requests}>
-        <TooltipTrigger>Refused</TooltipTrigger>
+        <TooltipTrigger delay={0}>Refused</TooltipTrigger>
         <TooltipContent
           keepMounted
           id='refused-help'>
@@ -415,16 +448,12 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     render(
       <>
-        <Tooltip
-          delayDuration={0}
-          disableHoverablePopup>
-          <TooltipTrigger>One</TooltipTrigger>
+        <Tooltip disableHoverablePopup>
+          <TooltipTrigger delay={0}>One</TooltipTrigger>
           <TooltipContent>One help</TooltipContent>
         </Tooltip>
-        <Tooltip
-          delayDuration={0}
-          disableHoverablePopup>
-          <TooltipTrigger>Two</TooltipTrigger>
+        <Tooltip disableHoverablePopup>
+          <TooltipTrigger delay={0}>Two</TooltipTrigger>
           <TooltipContent>Two help</TooltipContent>
         </Tooltip>
       </>,
@@ -451,10 +480,9 @@ describe("Tooltip", () => {
       <SidebarProvider defaultOpen={false}>
         <Sidebar collapsible='icon'>
           <SidebarMenuButton
-            asChild
-            tooltip='Home details'>
-            <a href='#home'>Home</a>
-          </SidebarMenuButton>
+            tooltip='Home details'
+            render={<a href='#home'>Home</a>}
+          />
         </Sidebar>
       </SidebarProvider>,
     );
@@ -533,8 +561,9 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     const ref = React.createRef<HTMLElement>();
     render(
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger
+          delay={0}
           ref={ref}
           className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
           render={(props, state) => <button {...props}>{state.open ? "Opened trigger" : "Closed trigger"}</button>}
@@ -568,17 +597,18 @@ describe("Tooltip", () => {
     render(
       <Tooltip>
         <TooltipTrigger
-          asChild
           ref={ref}
           className='outer-trigger'
-          onFocus={(event) => event.preventBaseUIHandler()}>
-          <button
-            ref={childRef}
-            className='child-trigger'
-            onFocus={childFocus}>
-            Cancelled focus
-          </button>
-        </TooltipTrigger>
+          onFocus={(event) => event.preventBaseUIHandler()}
+          render={
+            <button
+              ref={childRef}
+              className='child-trigger'
+              onFocus={childFocus}>
+              Cancelled focus
+            </button>
+          }
+        />
         <TooltipContent>Must remain closed</TooltipContent>
       </Tooltip>,
     );
@@ -623,12 +653,12 @@ describe("Tooltip", () => {
 
   it("supports lazy component render boundaries without losing element content or refs", async () => {
     const LazySurface = React.lazy(async () => ({
-      default: React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>((props, ref) => (
+      default: ({ref, ...props}: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement => (
         <div
           {...props}
           ref={ref}
         />
-      )),
+      ),
     }));
     const popupRef = React.createRef<HTMLDivElement>();
     const childRef = React.createRef<HTMLDivElement>();
@@ -652,7 +682,7 @@ describe("Tooltip", () => {
   it("retains every child of an invalid multi-child legacy slot rather than silently selecting the first", () => {
     render(
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <span>First</span>
           <span>Second</span>
         </TooltipTrigger>
@@ -745,7 +775,7 @@ describe("Tooltip", () => {
 
     it("uses the provider's 1000ms opening delay instead of the primitive default", async () => {
       render(
-        <TooltipProvider delayDuration={1000}>
+        <TooltipProvider delay={1000}>
           <Tooltip disableHoverablePopup>
             <TooltipTrigger>Hover</TooltipTrigger>
             <TooltipContent>Delayed content</TooltipContent>
@@ -763,12 +793,10 @@ describe("Tooltip", () => {
       expect(screen.getByText("Delayed content")).toBeInTheDocument();
     });
 
-    it("routes legacy root delayDuration=0 to the trigger timing contract", async () => {
+    it("uses the native trigger's zero-delay timing contract", async () => {
       render(
-        <Tooltip
-          delayDuration={0}
-          disableHoverablePopup>
-          <TooltipTrigger>Hover</TooltipTrigger>
+        <Tooltip disableHoverablePopup>
+          <TooltipTrigger delay={0}>Hover</TooltipTrigger>
           <TooltipContent>Immediate content</TooltipContent>
         </Tooltip>,
       );
@@ -781,11 +809,9 @@ describe("Tooltip", () => {
       expect(screen.getByText("Immediate content")).toBeInTheDocument();
     });
 
-    it("uses canonical Provider delay=0 ahead of the legacy delayDuration alias", async () => {
+    it("uses native Provider delay=0", async () => {
       render(
-        <TooltipProvider
-          delay={0}
-          delayDuration={1000}>
+        <TooltipProvider delay={0}>
           <Tooltip disableHoverablePopup>
             <TooltipTrigger>Hover</TooltipTrigger>
             <TooltipContent>Canonical delay</TooltipContent>
@@ -800,18 +826,14 @@ describe("Tooltip", () => {
       expect(screen.getByText("Canonical delay")).toBeInTheDocument();
     });
 
-    it("uses a root-local 1000ms delay over Provider zero, and explicit Trigger zero over that root", async () => {
+    it("uses explicit Trigger delays over Provider zero", async () => {
       render(
         <TooltipProvider delay={0}>
-          <Tooltip
-            delayDuration={1000}
-            disableHoverablePopup>
-            <TooltipTrigger>Slow root</TooltipTrigger>
+          <Tooltip disableHoverablePopup>
+            <TooltipTrigger delay={1000}>Slow root</TooltipTrigger>
             <TooltipContent>Root-delayed help</TooltipContent>
           </Tooltip>
-          <Tooltip
-            delayDuration={1000}
-            disableHoverablePopup>
+          <Tooltip disableHoverablePopup>
             <TooltipTrigger delay={0}>Fast trigger</TooltipTrigger>
             <TooltipContent>Trigger-immediate help</TooltipContent>
           </Tooltip>
