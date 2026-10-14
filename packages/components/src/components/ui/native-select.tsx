@@ -117,13 +117,13 @@ namespace NativeSelect {
 // eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NativeSelectOption {
   /** Native option props, excluding the forwarded ref. */
-  export type Props = NativeSelectOptionProps;
+  export type Props = React.ComponentPropsWithoutRef<"option">;
 }
 
 // eslint-disable-next-line no-redeclare -- canonical component namespace typing API
 namespace NativeSelectOptGroup {
   /** Native optgroup props, excluding the forwarded ref. */
-  export type Props = NativeSelectOptGroupProps;
+  export type Props = React.ComponentPropsWithoutRef<"optgroup">;
 }
 
 export {NativeSelect, NativeSelectOptGroup, NativeSelectOption};
