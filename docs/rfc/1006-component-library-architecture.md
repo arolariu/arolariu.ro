@@ -184,7 +184,7 @@ Colocated Vitest and Testing Library tests should cover the public interaction:
 Do not replace the component or Base UI behavior being asserted with a repository mock. Storybook stories provide interactive documentation
 and visual/a11y scenarios but do not replace focused tests.
 
-### Validation checkpoint — 2026-10-14
+### Final post-wave validation checkpoint — 2026-10-14
 
 The parent verified the component workspace with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the actual extracted npm artifact:
 
@@ -192,14 +192,16 @@ The parent verified the component workspace with `AROLARIU_COMPONENTS_PACKED_ROO
 npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
 ```
 
-Exit **0**: **126 files / 3,008 tests / no skips**, including all three actual packed ESM/type/subpath contracts. Coverage: statements
-**98.36% (3726/3788)**, branches **95.34% (2992/3138)**, functions **99.42% (1029/1035)**, lines **99.26% (3525/3551)**. Existing 80% branch
-/ 95% function-line-statement thresholds and exclusions were unchanged. Component/Storybook builds and the isolated 12-fixture React 18
-packed lane are separately verified.
+Exit **0**: **126 files / 3,043 tests / no skips**, including all three actual packed ESM/type/subpath contracts. Start **10:50:17 local**,
+duration **333.64 seconds**. Coverage: statements **98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)**,
+lines **99.25% (3573/3600)**. Existing 80% branch / 95% function-line-statement thresholds and exclusions were unchanged.
+Component/Storybook builds and the isolated 18-fixture React 18 packed lane are separately verified.
 
-Expected Motion reduced notices/npm configuration warnings remain visible; fixture-only corrections removed React Tabs act warnings without
-changing production/dist. This dated component checkpoint does not clear the known 15 hook/story strong-type baseline, website
-fixture/build-environment blocks, physical-browser limits or final branch review/lint/PR/publication gates.
+Final scoped review (`a3e8b0b6`) found I1/I2 and M1–M10 all addressed, zero remaining and zero new Important regressions. Parent-reported
+configured ESLint and Prettier for all **383 changed files** passed; the direct React18 source lane also passed **18 fixtures**. Expected
+Motion reduced notices/npm configuration warnings remain visible; fixture-only corrections removed React Tabs act warnings without changing
+production/dist. This dated component checkpoint does not clear the known 15 hook/story strong-type baseline, website
+fixture/build-environment blocks, physical-browser limits or publication/adoption gates.
 
 ## Migration boundary
 

@@ -19,13 +19,13 @@ adopting v3.
 - ESM, declarations, original source, CSS Modules, `styles`/`styles.css`, CSS side effects and client/server boundaries remain supported.
   MIGRATION is included in the package file list. Short public subpaths are explicit; underscore helpers are private even when emitted or
   packed as transitive modules.
-- An isolated React/ReactDOM 18.2 source lane verified 12 smoke fixtures independently of the React 19 source-root lane. Those same **12
-  fixtures now also pass against the actual npm-packed/extracted ESM artifact**, with isolated native-runtime/identity guards and zero
-  source proxies. This is focused compatibility evidence, not a universal render/composition guarantee.
+- An isolated React/ReactDOM 18.2 source lane verified 18 fixtures independently of the React 19 source-root lane. All **18 fixtures also
+  pass against the actual npm-packed/extracted ESM artifact**, with isolated native-runtime/identity guards and zero source proxies. This is
+  focused compatibility evidence, not a universal render/composition guarantee.
 - The actual component build, generated ESM/declarations/CSS/client directives, three extracted npm artifact contracts and Storybook
-  documentation build are verified. The parent's final component workspace coverage checkpoint also passed, as recorded below. Final branch
-  review/lint/PR, the known source hook/story strict baseline, physical-browser risk acceptance, publication and website adoption remain
-  distinct gates. No React 18 packed result is inferred from React 19.
+  documentation build are verified. The parent's final post-wave component workspace coverage, scoped review, configured ESLint and
+  383-changed-file Prettier checks passed, as recorded below. The known source hook/story strict baseline, physical-browser risk acceptance,
+  publication and website adoption remain distinct limits or gates. No React 18 packed result is inferred from React 19.
 
 ### Public names and collision rules
 
@@ -306,22 +306,25 @@ detachScanFromInvoice/createScan. These are adoption inventory, not authorizatio
 
 Focused Vitest contracts use real modules/primitives; no producer replacement mocks or alternate automated runner. Strong TypeScript
 source/test/story checks do not prove packed ESM/declaration/style availability; the upcoming major has separately passed its actual build,
-three extracted artifact contracts and 12 React 18 packed smoke fixtures. Release gates retain 80% branch / 95% function, line and statement
+three extracted artifact contracts and 18 React 18 packed fixtures. Release gates retain 80% branch / 95% function, line and statement
 thresholds; focused coverage-disabled runs make no aggregate coverage claim.
 
-The parent subsequently ran the final component workspace coverage checkpoint on **2026-10-14**, with `AROLARIU_COMPONENTS_PACKED_ROOT` set
-to the genuine extracted npm artifact:
+The parent ran the final post-wave component workspace coverage checkpoint on **2026-10-14**, with `AROLARIU_COMPONENTS_PACKED_ROOT` set to
+the genuine extracted npm artifact:
 
 ```bash
 npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
 ```
 
-**Exit 0: 126 files / 3,008 tests / no skips**, including three actual packed contracts. Statements **98.36% (3726/3788)**, branches
-**95.34% (2992/3138)**, functions **99.42% (1029/1035)**, lines **99.26% (3525/3551)**. The existing thresholds/exclusions were unchanged.
-Expected Motion reduced notices/npm configuration warnings stayed visible; no React Tabs act warnings after the fixture-only corrections.
+**Exit 0: 126 files / 3,043 tests / no skips**, including three actual packed contracts. Start **10:50:17 local**, duration **333.64
+seconds**. Statements **98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)**, lines **99.25%
+(3573/3600)**. The existing thresholds/exclusions were unchanged. Expected Motion reduced notices/npm configuration warnings stayed visible;
+no React Tabs act warnings after the fixture-only corrections.
 
-This is **not an all-monorepo validation claim**. The known 15 baseline hook/story strong-type diagnostics, website fixture/build-
-environment blocks and final branch review/lint/PR remain separate. Fixture corrections did not change production/dist bytes.
+Final scoped review (`a3e8b0b6`) found I1/I2 and M1–M10 all addressed, zero remaining and zero new Important regressions. Parent-reported
+configured ESLint and Prettier for all **383 changed files** passed; real React18 source and actual packed lanes each passed **18
+fixtures**. This is **not an all-monorepo validation claim**. The known 15 baseline hook/story strong-type diagnostics and website
+fixture/build-environment blocks remain separate.
 
 Physical painting, native browser focus/inert, pointer/touch gestures, animation, clipboard permissions, scrolling/anchoring and
 screen-reader speech need separately accepted review evidence. Happy DOM geometry fixtures and parsed CSS are not physical-engine proof.

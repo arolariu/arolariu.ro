@@ -41,23 +41,24 @@ The current package version is owned by [`package.json`](./package.json).
 
 ### Upcoming major: preparation, not publication
 
-This workspace prepares **3.0.0**; it is not a claim that v3 is available on npm or that all producer/release gates passed. Read
+This workspace prepares **3.0.0**; passing validation does not mean v3 is available on npm or authorize publication. Read
 [MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes, exact Toast and Command examples,
 retained extensions and historical v0 → v1 guide. Website adoption remains a separate task: the repository website must keep its official
 published **2.4 tarball and runtime calls** until a new artifact is published and its adoption authorized.
 
 The approved upcoming Base UI minimum is **`^1.9`**: public 1.0 lacks the drawer export, whereas tested 1.9 supplies it and supports React
 17/18/19. Older Base UI consumers must upgrade; this is a verified policy minimum, not an earliest-version claim. React/ReactDOM remain
-**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **12 isolated
+**`^18.2 || ^19`**, and all other runtime names/ranges remain unchanged. Independent React 18.2 source evidence and **18 isolated
 React/ReactDOM 18.2 fixtures against the actual extracted npm artifact** now pass. Packed React 18 evidence is not inferred from React 19
 and is limited to the exercised contracts, not every possible consumer composition.
 
 The library build, Storybook documentation build and **three actual npm-packed ESM/declaration/subpath/style/client-boundary contracts** are
 verified. Private helpers are present transitively but reject public imports. This is artifact preparation, not npm publication, website
-adoption or physical-browser validation. The parent's final component workspace coverage checkpoint below passed; final branch review/lint/
-PR and the known source hook/story strict-typing baseline remain separate gates.
+adoption or physical-browser validation. The parent's final post-wave component workspace coverage, scoped review, configured ESLint and
+383-changed-file Prettier checks passed. The known source hook/story strict-typing baseline, publication, website adoption and physical
+acceptance remain separate.
 
-### Validation checkpoint — 2026-10-14
+### Final post-wave validation checkpoint — 2026-10-14
 
 The parent ran the exact component workspace coverage command with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the real extracted npm artifact,
 not a source proxy:
@@ -66,19 +67,22 @@ not a source proxy:
 npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
 ```
 
-**Exit 0: 126 files / 3,008 tests / no skips**, including all three actual packed contracts. Thresholds and exclusions were unchanged:
+**Exit 0: 126 files / 3,043 tests / no skips**, including all three actual packed contracts. The run started at **10:50:17 local** and
+completed in **333.64 seconds**. Thresholds and exclusions were unchanged:
 
 | Metric     | Coverage | Covered / total | Unchanged threshold |
 | ---------- | -------- | --------------- | ------------------- |
-| Statements | 98.36%   | 3726 / 3788     | 95%                 |
-| Branches   | 95.34%   | 2992 / 3138     | 80%                 |
-| Functions  | 99.42%   | 1029 / 1035     | 95%                 |
-| Lines      | 99.26%   | 3525 / 3551     | 95%                 |
+| Statements | 98.35%   | 3769 / 3832     | 95%                 |
+| Branches   | 95.32%   | 2997 / 3144     | 80%                 |
+| Functions  | 99.41%   | 1025 / 1031     | 95%                 |
+| Lines      | 99.25%   | 3573 / 3600     | 95%                 |
 
-Expected Motion reduced-motion notices and npm configuration warnings remain visible; React Tabs act warnings were resolved by the
-fixture-only corrections. This is a component workspace checkpoint, **not an all-monorepo pass**: the known 15 baseline hook/story strong
-type diagnostics, website unit-fixture/build-environment blocks, final branch review/lint/PR and physical-browser acceptance remain
-separate.
+The final scoped review (`a3e8b0b6`) found both Important and all ten Minor findings addressed, zero remaining and zero new Important
+regressions. Parent-reported configured ESLint and Prettier for all **383 changed files** passed; the independent source and actual packed
+React18 lanes each passed **18 fixtures**. This is a component workspace checkpoint, **not an all-monorepo pass**: the known 15 baseline
+hook/story strong-type diagnostics, website unit-fixture/build-environment blocks and physical-browser acceptance remain separate. Expected
+Motion reduced-motion notices and npm configuration warnings are not suppressed; earlier fixture-only corrections resolved React Tabs act
+warnings.
 
 ### Canonical APIs and explicit compatibility
 
@@ -627,8 +631,8 @@ better performance.
 
 These browser targets are not fresh physical-engine validation for the upcoming major. Vitest/Happy DOM and CSS parsing do not prove native
 focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech. Packed ESM/types/CSS/client directive
-checks, Storybook/build results and the passing component coverage checkpoint are not physical-engine proof. Final branch review/lint/PR and
-risk acceptance remain separate release work.
+checks, Storybook/build results and the passing component coverage/review/lint checkpoints are not physical-engine proof. Physical-engine
+risk acceptance, publication and website adoption remain separate release work.
 
 ---
 

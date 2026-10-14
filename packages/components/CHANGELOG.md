@@ -11,10 +11,10 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### [3.0.0] - Unreleased (release preparation)
 
-**Status:** unreleased artifact preparation. Component and Storybook documentation builds, three actual npm-packed artifact contracts and 12
-isolated React 18.2 packed fixtures and the parent's final component workspace coverage checkpoint have passed. This is not publication,
-final branch review/lint/PR or physical-browser approval. The website retains its official published 2.4 tarball and runtime calls; adopting
-a new artifact is a separate authorized task.
+**Status:** unreleased artifact preparation. Component and Storybook documentation builds, three actual npm-packed artifact contracts, 18
+isolated React 18.2 packed fixtures and the parent's final post-wave component workspace coverage, scoped review, configured ESLint and
+383-changed-file Prettier checks have passed. This is not publication, PR or physical-browser approval. The website retains its official
+published 2.4 tarball and runtime calls; adopting a new artifact is a separate authorized task.
 
 **Added**
 
@@ -52,23 +52,25 @@ a new artifact is a separate authorized task.
 - Base UI peer minimum becomes **`^1.9`**, the actually tested drawer-capable version. Public 1.0 lacks `./drawer`; older Base UI consumers
   must upgrade. This is not a claim about the earliest possible supporting release.
 - React/ReactDOM **`^18.2 || ^19`** and all other runtime package names/ranges remain unchanged. Independent React 18.2 source smoke
-  evidence and the same 12 fixtures against actual packed ESM have passed, distinct from React 19 and without source proxies.
+  evidence and all 18 fixtures against actual packed ESM have passed, distinct from React 19 and without source proxies.
 - CSS Modules/tokens/side effects, ESM/types/source/styles, retained visual extensions, deprecated Flip `righ`, chart metadata/no-ops and
   explicit compatibility flags remain. No Sonner, Headless UI or cmdk engine/dependency is introduced; unselected families stay gated.
 - Physical paint/native focus/inert/touch/scroll anchoring/screen-reader behavior and aggregate coverage are not inferred from focused
   Vitest/Happy DOM/source typing. See MIGRATION for full defaults/ref/value/render/error changes and deferred release evidence.
 
-**Validation — parent checkpoint 2026-10-14**
+**Validation — final parent post-wave checkpoint 2026-10-14**
 
 - With `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to the real extracted artifact,
-  `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **126 files / 3,008 tests / no
-  skips**, including all three actual packed contracts.
-- Statements **98.36% (3726/3788)**; branches **95.34% (2992/3138)**; functions **99.42% (1029/1035)**; lines **99.26% (3525/3551)**.
+  `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **126 files / 3,043 tests / no
+  skips**, including all three actual packed contracts. Start **10:50:17 local**; duration **333.64 seconds**.
+- Statements **98.35% (3769/3832)**; branches **95.32% (2997/3144)**; functions **99.41% (1025/1031)**; lines **99.25% (3573/3600)**.
   Thresholds/exclusions are unchanged: 80% branches; 95% functions, lines and statements.
+- Final scoped review (`a3e8b0b6`): I1/I2 and M1–M10 all addressed; zero remaining and zero new Important regressions. Parent-reported
+  configured ESLint and Prettier for all **383 changed files** passed. Real React18 source and packed lanes each passed **18 fixtures**.
 - Expected Motion reduced notices/npm configuration warnings remain visible; no React Tabs act warnings after `c16112a1a`. Corrections
   `62e463118`, `d63c6bdc6`, `c16112a1a` were fixture-only, not production/dist changes.
-- Known 15 hook/story strong-type diagnostics and website fixture/build-environment blocks remain outside this component coverage pass.
-  Final branch review/lint/PR, physical-browser acceptance, publication and website adoption remain separately gated.
+- Known 15 hook/story strong-type diagnostics and website fixture/build-environment blocks remain outside this component coverage pass. This
+  is not an all-monorepo pass; physical-browser acceptance, publication and website adoption remain separately gated.
 
 ### [2.4.0](https://www.npmjs.com/package/@arolariu/components/v/2.4.0) - 2026-10-11
 

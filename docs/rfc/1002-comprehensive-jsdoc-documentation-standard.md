@@ -45,13 +45,17 @@ Release preparation is not publication or evidence that producer gates passed. S
 React-floor source evidence, React-floor packed evidence and physical-browser limits are different claims. Website migration examples remain
 follow-up instructions until an approved artifact is actually published and its adoption separately authorized.
 
-The parent-reported **2026-10-14 component validation checkpoint** is a distinct, scoped claim: `AROLARIU_COMPONENTS_PACKED_ROOT` identified
-the actual extracted artifact, and `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0** with
-**126 files / 3,008 tests / no skips**, including the three actual packed contracts. Coverage was statements **98.36% (3726/3788)**,
-branches **95.34% (2992/3138)**, functions **99.42% (1029/1035)** and lines **99.26% (3525/3551)**, with unchanged thresholds/exclusions.
+The parent-reported **2026-10-14 final post-wave component validation checkpoint** is a distinct, scoped claim:
+`AROLARIU_COMPONENTS_PACKED_ROOT` identified the actual extracted artifact, and
+`npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0** with **126 files / 3,043 tests / no
+skips**, including the three actual packed contracts. Start **10:50:17 local**, duration **333.64 seconds**. Coverage was statements
+**98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)** and lines **99.25% (3573/3600)**, with unchanged
+thresholds/exclusions. Actual isolated React18 source and packed lanes each passed **18 fixtures**.
 
+The parent also reported a clear final scoped review (`a3e8b0b6`): I1/I2 and M1–M10 all addressed, zero remaining and zero new Important
+regressions. Configured ESLint and Prettier for all **383 changed files** passed; those results must remain separately attributed.
 Documentation must preserve that attribution and scope: this is not an all-monorepo pass or publication approval. Known 15 baseline
-hook/story strong-type diagnostics, website fixture/build-environment blocks, physical-browser acceptance and final branch review/lint/PR
+hook/story strong-type diagnostics, website fixture/build-environment blocks, physical-browser acceptance and publication/adoption approval
 remain separate. Expected Motion/npm notices remain visible; fixture-only changes removed React Tabs act warnings without changing dist.
 
 ---
