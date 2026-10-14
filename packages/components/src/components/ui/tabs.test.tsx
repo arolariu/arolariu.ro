@@ -286,12 +286,12 @@ describe("Tabs", () => {
     const user = userEvent.setup();
     const {accountTab, passwordTab} = renderTabs();
 
-    accountTab.focus();
+    await act(async () => {
+      accountTab.focus();
+    });
 
     // Act
-    await act(async () => {
-      await user.keyboard("{ArrowRight}{Enter}");
-    });
+    await user.keyboard("{ArrowRight}{Enter}");
 
     // Assert
     expect(passwordTab).toHaveFocus();
@@ -348,12 +348,12 @@ describe("Tabs", () => {
     const {settingsTab} = renderThreeTabs();
 
     // Start focus on the last tab
-    settingsTab.focus();
+    await act(async () => {
+      settingsTab.focus();
+    });
 
     // Act — Home should jump directly to the first tab in the list
-    await act(async () => {
-      await user.keyboard("{Home}");
-    });
+    await user.keyboard("{Home}");
 
     // Assert
     expect(screen.getByRole("tab", {name: "Account"})).toHaveFocus();
@@ -365,12 +365,12 @@ describe("Tabs", () => {
     const {accountTab, settingsTab} = renderThreeTabs();
 
     // Start focus on the first tab
-    accountTab.focus();
+    await act(async () => {
+      accountTab.focus();
+    });
 
     // Act — End should jump directly to the last tab in the list
-    await act(async () => {
-      await user.keyboard("{End}");
-    });
+    await user.keyboard("{End}");
 
     // Assert
     expect(settingsTab).toHaveFocus();
@@ -379,7 +379,9 @@ describe("Tabs", () => {
   it("wraps keyboard focus from the last tab to the first tab", async () => {
     const user = userEvent.setup();
     const {accountTab, settingsTab} = renderThreeTabs();
-    act(() => settingsTab.focus());
+    await act(async () => {
+      settingsTab.focus();
+    });
 
     await user.keyboard("{ArrowRight}");
 
@@ -389,7 +391,9 @@ describe("Tabs", () => {
   it("keeps arrow focus separate from selection until Space activates the tab", async () => {
     const user = userEvent.setup();
     const {accountTab, passwordTab} = renderTabs();
-    act(() => accountTab.focus());
+    await act(async () => {
+      accountTab.focus();
+    });
 
     await user.keyboard("{ArrowRight}");
     expect(passwordTab).toHaveFocus();
@@ -422,7 +426,9 @@ describe("Tabs", () => {
     const three = screen.getByRole("tab", {name: "Three"});
     expect(screen.getByRole("tablist")).toHaveAttribute("aria-orientation", "vertical");
     expect(one).toHaveAttribute("data-orientation", "vertical");
-    act(() => one.focus());
+    await act(async () => {
+      one.focus();
+    });
 
     await user.keyboard("{ArrowRight}");
     expect(one).toHaveFocus();
@@ -451,7 +457,9 @@ describe("Tabs", () => {
       </Tabs>,
     );
     const two = screen.getByRole("tab", {name: "Two"});
-    act(() => two.focus());
+    await act(async () => {
+      two.focus();
+    });
     await user.keyboard("{ArrowRight}");
     expect(two).toHaveFocus();
     expect(two).toHaveAttribute("aria-selected", "false");
@@ -489,7 +497,9 @@ describe("Tabs", () => {
     expect(disabled).toHaveAttribute("data-contract-disabled", "true");
     await user.click(disabled);
     expect(one).toHaveAttribute("aria-selected", "true");
-    act(() => one.focus());
+    await act(async () => {
+      one.focus();
+    });
     await user.keyboard("{ArrowRight}");
     expect(disabled).toHaveFocus();
     expect(disabled).toHaveAttribute("aria-selected", "false");
@@ -522,7 +532,9 @@ describe("Tabs", () => {
     expect(disabled).toHaveAttribute("aria-disabled", "true");
     expect(disabled).not.toHaveAttribute("disabled");
     await user.click(disabled);
-    act(() => disabled.focus());
+    await act(async () => {
+      disabled.focus();
+    });
     await user.keyboard("{Enter} ");
     expect(disabled).toHaveAttribute("aria-selected", "false");
     expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel one");
