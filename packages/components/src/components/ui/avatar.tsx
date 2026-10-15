@@ -107,7 +107,6 @@ const Avatar = ({ref: forwardedRef, ...props}: Readonly<Avatar.Props>): React.Re
 
   return (
     <BaseAvatar.Root
-      {...otherProps}
       data-slot='avatar'
       data-size={size}
       ref={forwardedRef}
@@ -116,7 +115,8 @@ const Avatar = ({ref: forwardedRef, ...props}: Readonly<Avatar.Props>): React.Re
           ? (state) => cn(styles.root, styles[size], className({...state, size}))
           : cn(styles.root, styles[size], className)
       }
-      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, size}) : render}>
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, size}) : render}
+      {...otherProps}>
       {children}
     </BaseAvatar.Root>
   );
@@ -144,11 +144,11 @@ const AvatarImage = ({ref: forwardedRef, ...props}: Readonly<AvatarImage.Props>)
 
   return (
     <BaseAvatar.Image
-      {...otherProps}
       data-slot='avatar-image'
       ref={forwardedRef}
       className={typeof className === "function" ? (state) => cn(styles.image, className(state)) : cn(styles.image, className)}
       render={render}
+      {...otherProps}
     />
   );
 };
@@ -175,11 +175,11 @@ const AvatarFallback = ({ref: forwardedRef, ...props}: Readonly<AvatarFallback.P
 
   return (
     <BaseAvatar.Fallback
-      {...otherProps}
       data-slot='avatar-fallback'
       ref={forwardedRef}
       className={typeof className === "function" ? (state) => cn(styles.fallback, className(state)) : cn(styles.fallback, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseAvatar.Fallback>
   );

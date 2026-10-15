@@ -381,8 +381,6 @@ function CarouselPrevious({
 
   return (
     <Button
-      {...props}
-      {...clickProps}
       ref={ref}
       variant={variant}
       size={size}
@@ -390,7 +388,9 @@ function CarouselPrevious({
       disabled={disabled || !canScrollPrev}
       data-slot='carousel-previous'
       data-orientation={orientation}
-      className={cn(styles.navigationButton, styles.previousButton, className)}>
+      className={cn(styles.navigationButton, styles.previousButton, className)}
+      {...clickProps}
+      {...props}>
       {children ?? (React.isValidElement<{children?: React.ReactNode}>(props.render) ? props.render.props.children : undefined) ?? (
         <>
           {children ?? <ArrowLeft className={styles.navigationIcon} />}
@@ -448,8 +448,6 @@ function CarouselNext({
 
   return (
     <Button
-      {...props}
-      {...clickProps}
       ref={ref}
       variant={variant}
       size={size}
@@ -457,7 +455,9 @@ function CarouselNext({
       disabled={disabled || !canScrollNext}
       data-slot='carousel-next'
       data-orientation={orientation}
-      className={cn(styles.navigationButton, styles.nextButton, className)}>
+      className={cn(styles.navigationButton, styles.nextButton, className)}
+      {...clickProps}
+      {...props}>
       {children ?? (React.isValidElement<{children?: React.ReactNode}>(props.render) ? props.render.props.children : undefined) ?? (
         <>
           {children ?? <ArrowRight className={styles.navigationIcon} />}

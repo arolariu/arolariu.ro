@@ -157,11 +157,11 @@ const InputGroupButton = (props: Readonly<InputGroupButtonProps>): React.JSX.Ele
   const buttonProps: Button.Props = size === undefined ? {...props, size: "xs"} : props;
   return (
     <Button
-      {...buttonProps}
       type={type}
       data-slot='input-group-button'
       variant={variant}
       className={cn(styles.button, className)}
+      {...buttonProps}
     />
   );
 };

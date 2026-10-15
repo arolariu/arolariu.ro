@@ -47,8 +47,8 @@ export interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRe
 const Collapsible = ({ref, ...props}: Readonly<Collapsible.Props>): React.ReactElement => (
   <BaseCollapsible.Root
     data-slot='collapsible'
-    {...props}
     ref={ref}
+    {...props}
   />
 );
 
@@ -76,9 +76,9 @@ const CollapsibleTrigger = (props: Readonly<CollapsibleTrigger.Props>): React.Re
     <BaseCollapsible.Trigger
       data-slot='collapsible-trigger'
       ref={ref}
-      {...otherProps}
       className={cn(styles.trigger, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseCollapsible.Trigger>
   );
@@ -106,9 +106,9 @@ const CollapsibleContent = (props: Readonly<CollapsibleContent.Props>): React.Re
     <BaseCollapsible.Panel
       data-slot='collapsible-content'
       ref={ref}
-      {...otherProps}
       className={cn(styles.panel, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseCollapsible.Panel>
   );

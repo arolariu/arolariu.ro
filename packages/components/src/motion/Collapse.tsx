@@ -41,12 +41,12 @@ interface CollapseProps extends React.ComponentPropsWithRef<"div"> {
 function Collapse({open, children, className, ref, ...props}: Readonly<CollapseProps>): React.JSX.Element {
   return (
     <div
-      {...props}
       ref={ref}
       data-state={open ? "open" : "closed"}
       inert={!open || props.inert}
       aria-hidden={open ? props["aria-hidden"] : true}
-      className={cn(styles.collapse, className)}>
+      className={cn(styles.collapse, className)}
+      {...props}>
       <div className={styles.inner}>{children}</div>
     </div>
   );

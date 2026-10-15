@@ -110,11 +110,11 @@ const DialogTrigger = ({ref, children, render, nativeButton, className, ...props
   return (
     <BaseDialog.Trigger
       data-slot='dialog-trigger'
-      {...props}
       ref={primitiveRef}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
       nativeButton={nativeButton}
-      render={render}>
+      render={render}
+      {...props}>
       {children}
     </BaseDialog.Trigger>
   );
@@ -129,8 +129,8 @@ function DialogClose({className, ...props}: Readonly<DialogClose.Props>): React.
   return (
     <BaseDialog.Close
       data-slot='dialog-close'
-      {...props}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 }
@@ -141,8 +141,8 @@ function DialogOverlay({className, ...props}: Readonly<DialogOverlay.Props>): Re
   return (
     <BaseDialog.Backdrop
       data-slot='dialog-overlay'
-      {...props}
       className={cn(styles.backdrop, className)}
+      {...props}
     />
   );
 }
@@ -184,7 +184,6 @@ const DialogContent = ({
       <DialogOverlay />
       <BaseDialog.Popup
         data-slot='dialog-content'
-        {...props}
         ref={ref}
         render={
           decorateElement
@@ -197,7 +196,8 @@ const DialogContent = ({
               )
             : render
         }
-        className={cn(styles.popup, className)}>
+        className={cn(styles.popup, className)}
+        {...props}>
         {decorateElement ? (
           children
         ) : (
@@ -275,8 +275,8 @@ function DialogTitle({className, ...props}: Readonly<DialogTitle.Props>): React.
   return (
     <BaseDialog.Title
       data-slot='dialog-title'
-      {...props}
       className={cn(styles.title, className)}
+      {...props}
     />
   );
 }
@@ -287,8 +287,8 @@ function DialogDescription({className, ...props}: Readonly<DialogDescription.Pro
   return (
     <BaseDialog.Description
       data-slot='dialog-description'
-      {...props}
       className={cn(styles.description, className)}
+      {...props}
     />
   );
 }

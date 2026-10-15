@@ -32,10 +32,10 @@ const NumberField = (props: Readonly<NumberField.Props>): React.ReactElement => 
 
   return (
     <BaseNumberField.Root
-      {...otherProps}
       ref={ref}
       render={render}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseNumberField.Root>
   );
@@ -64,9 +64,9 @@ const NumberFieldGroup = (props: Readonly<NumberFieldGroup.Props>): React.ReactE
   return (
     <BaseNumberField.Group
       ref={ref}
-      {...otherProps}
       render={render}
-      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseNumberField.Group>
   );
@@ -93,9 +93,9 @@ const NumberFieldInput = (props: Readonly<NumberFieldInput.Props>): React.ReactE
   return (
     <BaseNumberField.Input
       ref={ref}
-      {...otherProps}
       render={render}
       className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -121,10 +121,10 @@ const NumberFieldIncrement = (props: Readonly<NumberFieldIncrement.Props>): Reac
 
   return (
     <BaseNumberField.Increment
-      {...otherProps}
       ref={ref}
       render={render}
-      className={(state) => cn(styles.stepper, styles.increment, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.stepper, styles.increment, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children ?? (
         <span
           aria-hidden='true'
@@ -157,10 +157,10 @@ const NumberFieldDecrement = (props: Readonly<NumberFieldDecrement.Props>): Reac
 
   return (
     <BaseNumberField.Decrement
-      {...otherProps}
       ref={ref}
       render={render}
-      className={(state) => cn(styles.stepper, styles.decrement, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.stepper, styles.decrement, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children ?? (
         <span
           aria-hidden='true'
@@ -192,10 +192,10 @@ const NumberFieldScrubArea = (props: Readonly<NumberFieldScrubArea.Props>): Reac
 
   return (
     <BaseNumberField.ScrubArea
-      {...otherProps}
       ref={ref}
       render={render}
-      className={(state) => cn(styles.scrubArea, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.scrubArea, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children ?? (
         <span
           aria-hidden='true'

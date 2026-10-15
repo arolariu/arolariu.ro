@@ -185,8 +185,8 @@ function BubbleBackground({
       ref={setRefs}
       className={cn(styles.root, className)}
       style={style}
-      {...props}
-      data-motion={paused ? "paused" : "running"}>
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
       <svg
         xmlns='http://www.w3.org/2000/svg'
         className={styles.hiddenSvg}

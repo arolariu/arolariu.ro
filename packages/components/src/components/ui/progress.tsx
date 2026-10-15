@@ -81,11 +81,11 @@ const Progress = (props: Readonly<Progress.Props>): React.JSX.Element => {
 
   return (
     <BaseProgress.Root
-      {...otherProps}
       value={value}
       data-slot='progress'
       ref={forwardedRef}
-      className={mergeProgressClassName(styles.root, className)}>
+      className={mergeProgressClassName(styles.root, className)}
+      {...otherProps}>
       {children}
       {!hasProgressTrack(children) && (
         <ProgressTrack>
@@ -108,10 +108,10 @@ const ProgressTrack = (props: Readonly<ProgressTrack.Props>): React.JSX.Element 
 
   return (
     <BaseProgress.Track
-      {...otherProps}
       data-slot='progress-track'
       ref={forwardedRef}
       className={mergeProgressClassName(styles.track, className)}
+      {...otherProps}
     />
   );
 };
@@ -127,10 +127,10 @@ const ProgressIndicator = (props: Readonly<ProgressIndicator.Props>): React.JSX.
 
   return (
     <BaseProgress.Indicator
-      {...otherProps}
       data-slot='progress-indicator'
       ref={forwardedRef}
       className={mergeProgressClassName(styles.indicator, className)}
+      {...otherProps}
     />
   );
 };
@@ -146,10 +146,10 @@ const ProgressLabel = (props: Readonly<ProgressLabel.Props>): React.JSX.Element 
 
   return (
     <BaseProgress.Label
-      {...otherProps}
       data-slot='progress-label'
       ref={forwardedRef}
       className={mergeProgressClassName(styles.label, className)}
+      {...otherProps}
     />
   );
 };
@@ -167,10 +167,10 @@ const ProgressValue = (props: Readonly<ProgressValue.Props>): React.JSX.Element 
 
   return (
     <BaseProgress.Value
-      {...otherProps}
       data-slot='progress-value'
       ref={forwardedRef}
       className={mergeProgressClassName(styles.value, className)}
+      {...otherProps}
     />
   );
 };

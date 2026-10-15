@@ -29,10 +29,10 @@ const Toolbar = (props: Readonly<Toolbar.Props>): React.ReactElement => {
 
   return (
     <BaseToolbar.Root
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseToolbar.Root>
   );
@@ -59,10 +59,10 @@ const ToolbarButton = (props: Readonly<ToolbarButton.Props>): React.ReactElement
 
   return (
     <BaseToolbar.Button
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.item, styles.button, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.item, styles.button, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseToolbar.Button>
   );
@@ -90,10 +90,10 @@ const ToolbarGroup = (props: Readonly<ToolbarGroup.Props>): React.ReactElement =
 
   return (
     <BaseToolbar.Group
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseToolbar.Group>
   );
@@ -118,10 +118,10 @@ const ToolbarSeparator = (props: Readonly<ToolbarSeparator.Props>): React.ReactE
 
   return (
     <BaseToolbar.Separator
-      {...otherProps}
       ref={forwardedRef}
       render={render}
       className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -145,10 +145,10 @@ const ToolbarLink = (props: Readonly<ToolbarLink.Props>): React.ReactElement => 
 
   return (
     <BaseToolbar.Link
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.item, styles.link, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.item, styles.link, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseToolbar.Link>
   );

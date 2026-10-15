@@ -86,11 +86,11 @@ const AlertDialogTrigger = ({
   return (
     <BaseAlertDialog.Trigger
       data-slot='alert-dialog-trigger'
-      {...props}
       ref={primitiveRef}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
       nativeButton={nativeButton}
-      render={render}>
+      render={render}
+      {...props}>
       {children}
     </BaseAlertDialog.Trigger>
   );
@@ -105,8 +105,8 @@ function AlertDialogOverlay({className, ...props}: Readonly<AlertDialogOverlay.P
   return (
     <BaseAlertDialog.Backdrop
       data-slot='alert-dialog-overlay'
-      {...props}
       className={cn(styles.backdrop, className)}
+      {...props}
     />
   );
 }
@@ -125,9 +125,9 @@ const AlertDialogContent = ({
     <BaseAlertDialog.Popup
       data-slot='alert-dialog-content'
       data-size={size}
-      {...props}
       ref={ref}
-      className={cn(styles.popup, className)}>
+      className={cn(styles.popup, className)}
+      {...props}>
       {children}
     </BaseAlertDialog.Popup>
   </AlertDialogPortal>
@@ -181,8 +181,8 @@ function AlertDialogTitle({className, ...props}: Readonly<AlertDialogTitle.Props
   return (
     <BaseAlertDialog.Title
       data-slot='alert-dialog-title'
-      {...props}
       className={cn(styles.title, className)}
+      {...props}
     />
   );
 }
@@ -193,8 +193,8 @@ function AlertDialogDescription({className, ...props}: Readonly<AlertDialogDescr
   return (
     <BaseAlertDialog.Description
       data-slot='alert-dialog-description'
-      {...props}
       className={cn(styles.description, className)}
+      {...props}
     />
   );
 }
@@ -207,8 +207,8 @@ AlertDialogDescription.displayName = "AlertDialogDescription";
 const AlertDialogAction = ({ref, ...props}: Readonly<AlertDialogAction.Props>): React.ReactElement => (
   <Button
     data-slot='alert-dialog-action'
-    {...props}
     ref={ref}
+    {...props}
   />
 );
 AlertDialogAction.displayName = "AlertDialogAction";
@@ -225,9 +225,9 @@ const AlertDialogCancel = ({
     data-slot='alert-dialog-cancel'
     data-variant={variant}
     data-size={size}
-    {...props}
     ref={ref}
     className={cn(buttonVariants({variant, size}), className)}
+    {...props}
   />
 );
 AlertDialogCancel.displayName = "AlertDialogCancel";

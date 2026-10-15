@@ -224,7 +224,6 @@ const FocusScope = ({
     defaultTagName: "div",
     ref: [containerRef, ref],
     props: {
-      ...props,
       className: cn(styles.scope, className),
       role: props.role ?? "group",
       tabIndex: props.tabIndex ?? -1,
@@ -238,6 +237,7 @@ const FocusScope = ({
           {children}
         </>
       ),
+      ...props,
     },
   });
 };

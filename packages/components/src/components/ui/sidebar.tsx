@@ -441,14 +441,14 @@ const Sidebar = ({
           open={openMobile}
           onOpenChange={setOpenMobile}>
           <SheetContent
-            {...props}
             ref={ref}
             dir={dir}
             side={side}
             data-sidebar='sidebar'
             data-mobile='true'
             showCloseButton={false}
-            className={cn(styles.mobilePanel, className)}>
+            className={cn(styles.mobilePanel, className)}
+            {...props}>
             <SheetTitle className={styles.srOnly}>{mobileTitle}</SheetTitle>
             <SheetDescription className={styles.srOnly}>{mobileDescription}</SheetDescription>
             <div className={styles.mobileContent}>{children}</div>
@@ -536,15 +536,6 @@ const SidebarTrigger = ({
       variant='ghost'
       size='icon'
       className={cn(styles.trigger, className)}
-      {...mergeProps<"button">(
-        {
-          onClick: (event) => {
-            if (!event.defaultPrevented) toggleSidebar();
-          },
-        },
-        {onClick},
-      )}
-      {...props}
       render={
         render === undefined
           ? undefined
@@ -556,7 +547,16 @@ const SidebarTrigger = ({
                 callerLabel={ariaLabel}
               />
             )
-      }>
+      }
+      {...mergeProps<"button">(
+        {
+          onClick: (event) => {
+            if (!event.defaultPrevented) toggleSidebar();
+          },
+        },
+        {onClick},
+      )}
+      {...props}>
       <PanelLeft
         aria-hidden='true'
         className={styles.triggerIcon}

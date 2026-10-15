@@ -93,8 +93,8 @@ function BackgroundBeams(props: Readonly<BackgroundBeamsProps>): React.JSX.Eleme
     <div
       ref={setRefs}
       className={cn(styles.root, className)}
-      {...restProps}
-      data-motion={paused ? "paused" : "running"}>
+      data-motion={paused ? "paused" : "running"}
+      {...restProps}>
       <svg
         aria-hidden='true'
         focusable='false'

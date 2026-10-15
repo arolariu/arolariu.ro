@@ -490,9 +490,9 @@ function HoleBackground({
       <canvas
         ref={setRefs}
         className={styles.canvas}
-        {...props}
         aria-hidden='true'
         tabIndex={-1}
+        {...props}
       />
       <motion.div
         aria-hidden='true'

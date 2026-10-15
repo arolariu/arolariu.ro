@@ -91,11 +91,11 @@ const Tabs = (props: Readonly<Tabs.Props>): React.ReactElement => {
 
   return (
     <BaseTabs.Root
-      {...otherProps}
       ref={ref}
       data-slot='tabs'
       className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseTabs.Root>
   );
@@ -127,7 +127,6 @@ const TabsList = (props: Readonly<TabsList.Props>): React.ReactElement => {
 
   return (
     <BaseTabs.List
-      {...otherProps}
       ref={ref}
       data-slot='tabs-list'
       data-variant={variant}
@@ -136,7 +135,8 @@ const TabsList = (props: Readonly<TabsList.Props>): React.ReactElement => {
           ? (state) => tabsListVariants({variant, className: className({...state, variant})})
           : tabsListVariants({variant, className})
       }
-      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant}) : render}>
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant}) : render}
+      {...otherProps}>
       {children}
       <BaseTabs.Indicator
         data-slot='tabs-indicator'
@@ -169,10 +169,10 @@ const TabsTrigger = (props: Readonly<TabsTrigger.Props>): React.ReactElement => 
   return (
     <BaseTabs.Tab
       ref={ref}
-      {...otherProps}
       data-slot='tabs-trigger'
       className={typeof className === "function" ? (state) => cn(styles.tab, className(state)) : cn(styles.tab, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseTabs.Tab>
   );
@@ -201,10 +201,10 @@ const TabsContent = (props: Readonly<TabsContent.Props>): React.ReactElement => 
   return (
     <BaseTabs.Panel
       ref={ref}
-      {...otherProps}
       data-slot='tabs-content'
       className={typeof className === "function" ? (state) => cn(styles.panel, className(state)) : cn(styles.panel, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseTabs.Panel>
   );

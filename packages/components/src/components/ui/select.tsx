@@ -95,8 +95,8 @@ Select.displayName = "Select";
 const SelectGroup = ({ref, ...props}: Readonly<SelectGroup.Props>): React.ReactElement => (
   <BaseSelect.Group
     data-slot='select-group'
-    {...props}
     ref={ref}
+    {...props}
   />
 );
 SelectGroup.displayName = "SelectGroup";
@@ -121,9 +121,9 @@ const SelectValue = (props: Readonly<SelectValue.Props>): React.ReactElement => 
   return (
     <BaseSelect.Value
       data-slot='select-value'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.value, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -166,9 +166,9 @@ const SelectTrigger = (props: Readonly<SelectTrigger.Props>): React.ReactElement
       data-slot='select-trigger'
       data-size={size}
       ref={ref}
-      {...otherProps}
       render={withSelectChildren(render, content)}
-      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {content}
     </BaseSelect.Trigger>
   );
@@ -200,10 +200,10 @@ const SelectScrollUpButton = (props: Readonly<SelectScrollUpButton.Props>): Reac
   return (
     <BaseSelect.ScrollUpArrow
       data-slot='select-scroll-up-button'
-      {...otherProps}
       ref={ref}
       render={withSelectChildren(render, content)}
-      className={(state) => cn(styles.scrollButton, styles.scrollUp, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.scrollButton, styles.scrollUp, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {content}
     </BaseSelect.ScrollUpArrow>
   );
@@ -235,10 +235,10 @@ const SelectScrollDownButton = (props: Readonly<SelectScrollDownButton.Props>): 
   return (
     <BaseSelect.ScrollDownArrow
       data-slot='select-scroll-down-button'
-      {...otherProps}
       ref={ref}
       render={withSelectChildren(render, content)}
-      className={(state) => cn(styles.scrollButton, styles.scrollDown, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.scrollButton, styles.scrollDown, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {content}
     </BaseSelect.ScrollDownArrow>
   );
@@ -296,17 +296,17 @@ function MountedSelectContent(props: Readonly<SelectContent.Props>): React.React
     listProps,
     ...popupProps
   } = props;
-  const listChildren = getSelectChildren(getSelectChildren(children, render), listProps?.render);
+  const {className: listClassName, render: listRender, ...listNativeProps} = listProps ?? {};
+  const {className: positionerClassName, render: positionerRender, ...positionerNativeProps} = positionerProps ?? {};
+  const listChildren = getSelectChildren(getSelectChildren(children, render), listRender);
   const content = (
     <>
       <SelectScrollUpButton />
       <BaseSelect.List
         data-slot='select-list'
-        {...listProps}
-        render={withSelectChildren(listProps?.render, listChildren)}
-        className={(state) =>
-          cn(styles.list, typeof listProps?.className === "function" ? listProps.className(state) : listProps?.className)
-        }>
+        render={withSelectChildren(listRender, listChildren)}
+        className={(state) => cn(styles.list, typeof listClassName === "function" ? listClassName(state) : listClassName)}
+        {...listNativeProps}>
         {listChildren}
       </BaseSelect.List>
       <SelectScrollDownButton />
@@ -316,10 +316,10 @@ function MountedSelectContent(props: Readonly<SelectContent.Props>): React.React
     <BaseSelect.Popup
       data-slot='select-content'
       data-align-trigger={alignItemWithTrigger}
-      {...popupProps}
       ref={ref}
       render={withSelectChildren(render, content)}
-      className={(state) => cn(styles.popup, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.popup, typeof className === "function" ? className(state) : className)}
+      {...popupProps}>
       {content}
     </BaseSelect.Popup>
   );
@@ -327,8 +327,7 @@ function MountedSelectContent(props: Readonly<SelectContent.Props>): React.React
   return (
     <BaseSelect.Positioner
       data-slot='select-positioner'
-      {...positionerProps}
-      render={withSelectChildren(positionerProps?.render, popup)}
+      render={withSelectChildren(positionerRender, popup)}
       side={side}
       sideOffset={sideOffset}
       align={align}
@@ -343,11 +342,9 @@ function MountedSelectContent(props: Readonly<SelectContent.Props>): React.React
       disableAnchorTracking={disableAnchorTracking}
       collisionAvoidance={collisionAvoidance}
       className={(state) =>
-        cn(
-          styles.positioner,
-          typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
-        )
-      }>
+        cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
+      }
+      {...positionerNativeProps}>
       {popup}
     </BaseSelect.Positioner>
   );
@@ -376,9 +373,9 @@ const SelectLabel = (props: Readonly<SelectLabel.Props>): React.ReactElement => 
   return (
     <BaseSelect.GroupLabel
       data-slot='select-label'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -420,10 +417,10 @@ const SelectItem = (props: Readonly<SelectItem.Props>): React.ReactElement => {
   return (
     <BaseSelect.Item
       data-slot='select-item'
-      {...otherProps}
       ref={ref}
       render={withSelectChildren(render, content)}
-      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {content}
     </BaseSelect.Item>
   );
@@ -452,9 +449,9 @@ const SelectSeparator = (props: Readonly<SelectSeparator.Props>): React.ReactEle
   return (
     <BaseSelect.Separator
       data-slot='select-separator'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };

@@ -518,11 +518,11 @@ const FormLabel = ({ref, className, htmlFor, ...props}: Readonly<FormLabelProps>
 
   return (
     <Label
-      {...props}
       ref={ref}
       data-slot='form-label'
       className={cn(error && styles.labelError, className)}
       htmlFor={formItemId}
+      {...props}
     />
   );
 };
@@ -582,12 +582,12 @@ const FormControl = <TElement extends HTMLElement = HTMLInputElement>({
 
   return (
     <div
-      {...nativeProps}
       ref={mergedRef}
       className={className}
       id={explicitId ?? formItemId}
       aria-describedby={describedBy}
-      aria-invalid={ariaInvalid}>
+      aria-invalid={ariaInvalid}
+      {...nativeProps}>
       {children}
     </div>
   );
@@ -628,11 +628,11 @@ const FormDescription = ({ref, className, id, children, ...props}: Readonly<Form
 
   return (
     <p
-      {...props}
       ref={mergedRef}
       data-slot='form-description'
       id={descriptionId}
-      className={cn(styles.description, className)}>
+      className={cn(styles.description, className)}
+      {...props}>
       {children}
     </p>
   );

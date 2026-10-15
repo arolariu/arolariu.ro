@@ -77,6 +77,16 @@ reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs c
 supplied; they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story
 TypeScript graph, including negative API assertions.
 
+### Caller attribute escape hatch
+
+Remaining native, `data-*`, and ARIA props are applied after component presets, including native `useRender` prop bags. For example,
+`<Alert role="status" aria-live="polite">Saved</Alert>` can replace the default announcement semantics. An explicitly supplied `undefined`
+can clear an optional preset attribute.
+
+Props consumed for composition still retain that contract: `className` is merged, refs keep their shared ownership and cleanup, and
+caller-first cancellable event handlers preserve primitive behavior unless cancelled. Use the documented `render` API for deeper element
+composition. Applications own the resulting accessibility and behavior when overriding native semantics or component state markers.
+
 ### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
 
 This checkpoint predates the React 19-only API removal and accessibility changes. Its React 18 results describe the old preparation artifact

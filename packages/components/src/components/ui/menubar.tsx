@@ -78,10 +78,10 @@ const Menubar = ({ref, ...props}: Readonly<Menubar.Props>): React.ReactElement =
   return (
     <BaseMenubar
       data-slot='menubar'
-      {...otherProps}
       ref={ref}
       render={renderProp}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMenubar>
   );
@@ -94,9 +94,9 @@ function MenubarTrigger<Payload = unknown>({ref, ...props}: Readonly<MenubarTrig
   return (
     <DropdownMenuTrigger
       data-slot='menubar-trigger'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }
@@ -111,9 +111,9 @@ const MenubarContent = ({ref, ...props}: Readonly<MenubarContent.Props>): React.
       align={align}
       alignOffset={alignOffset}
       sideOffset={sideOffset}
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -125,9 +125,9 @@ const MenubarSubContent = ({ref, ...props}: Readonly<MenubarSubContent.Props>): 
   return (
     <DropdownMenuSubContent
       data-slot='menubar-sub-content'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -138,8 +138,8 @@ const MenubarItem = ({ref, ...props}: Readonly<MenubarItem.Props>): React.ReactE
   return (
     <DropdownMenuItem
       data-slot='menubar-item'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -149,8 +149,8 @@ const MenubarCheckboxItem = ({ref, ...props}: Readonly<MenubarCheckboxItem.Props
   return (
     <DropdownMenuCheckboxItem
       data-slot='menubar-checkbox-item'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -160,8 +160,8 @@ const MenubarRadioItem = ({ref, ...props}: Readonly<MenubarRadioItem.Props>): Re
   return (
     <DropdownMenuRadioItem
       data-slot='menubar-radio-item'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -171,8 +171,8 @@ const MenubarSubTrigger = ({ref, ...props}: Readonly<MenubarSubTrigger.Props>): 
   return (
     <DropdownMenuSubTrigger
       data-slot='menubar-sub-trigger'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -182,8 +182,8 @@ const MenubarLabel = ({ref, ...props}: Readonly<MenubarLabel.Props>): React.Reac
   return (
     <DropdownMenuLabel
       data-slot='menubar-label'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -193,8 +193,8 @@ const MenubarSeparator = ({ref, ...props}: Readonly<MenubarSeparator.Props>): Re
   return (
     <DropdownMenuSeparator
       data-slot='menubar-separator'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -204,8 +204,8 @@ const MenubarShortcut = ({ref, ...props}: Readonly<MenubarShortcut.Props>): Reac
   return (
     <DropdownMenuShortcut
       data-slot='menubar-shortcut'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };

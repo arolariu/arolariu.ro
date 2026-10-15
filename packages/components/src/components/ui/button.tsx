@@ -118,11 +118,11 @@ const Button = (props: Readonly<Button.Props>): React.ReactElement => {
       data-slot='button'
       data-variant={variant}
       data-size={size}
-      {...otherProps}
       ref={ref}
       nativeButton={nativeButton}
       className={buttonVariants({variant, size, className})}
-      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant, size}) : render}>
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant, size}) : render}
+      {...otherProps}>
       {children}
     </ButtonPrimitive>
   );

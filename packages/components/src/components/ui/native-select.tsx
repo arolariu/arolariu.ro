@@ -45,11 +45,11 @@ const NativeSelect = ({ref, className, size = "default", ...props}: Readonly<Nat
     data-size={size}
     className={cn(styles.wrapper, className)}>
     <select
-      {...props}
       ref={ref}
       data-slot='native-select'
       data-size={size}
       className={styles.select}
+      {...props}
     />
     <svg
       data-slot='native-select-icon'
@@ -77,10 +77,10 @@ NativeSelect.displayName = "NativeSelect";
  */
 const NativeSelectOption = ({ref, className, ...props}: Readonly<NativeSelectOptionProps>): React.JSX.Element => (
   <option
-    {...props}
     ref={ref}
     data-slot='native-select-option'
     className={cn(styles.option, className)}
+    {...props}
   />
 );
 NativeSelectOption.displayName = "NativeSelectOption";
@@ -94,10 +94,10 @@ NativeSelectOption.displayName = "NativeSelectOption";
  */
 const NativeSelectOptGroup = ({ref, className, ...props}: Readonly<NativeSelectOptGroupProps>): React.JSX.Element => (
   <optgroup
-    {...props}
     ref={ref}
     data-slot='native-select-optgroup'
     className={cn(styles.optGroup, className)}
+    {...props}
   />
 );
 NativeSelectOptGroup.displayName = "NativeSelectOptGroup";

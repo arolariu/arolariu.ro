@@ -30,9 +30,9 @@ export interface ScrollAreaProps extends ScrollAreaRootProps {
 const ScrollAreaRoot = ({ref, className, ...props}: Readonly<ScrollAreaRootProps>): React.JSX.Element => (
   <BaseScrollArea.Root
     data-slot='scroll-area'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -40,9 +40,9 @@ const ScrollAreaRoot = ({ref, className, ...props}: Readonly<ScrollAreaRootProps
 const ScrollAreaViewport = ({ref, className, ...props}: Readonly<ScrollAreaViewportProps>): React.JSX.Element => (
   <BaseScrollArea.Viewport
     data-slot='scroll-area-viewport'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.viewport, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -50,9 +50,9 @@ const ScrollAreaViewport = ({ref, className, ...props}: Readonly<ScrollAreaViewp
 const ScrollAreaContent = ({ref, className, ...props}: Readonly<ScrollAreaContentProps>): React.JSX.Element => (
   <BaseScrollArea.Content
     data-slot='scroll-area-content'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -60,9 +60,9 @@ const ScrollAreaContent = ({ref, className, ...props}: Readonly<ScrollAreaConten
 const ScrollAreaThumb = ({ref, className, ...props}: Readonly<ScrollAreaThumbProps>): React.JSX.Element => (
   <BaseScrollArea.Thumb
     data-slot='scroll-area-thumb'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.thumb, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -70,9 +70,9 @@ const ScrollAreaThumb = ({ref, className, ...props}: Readonly<ScrollAreaThumbPro
 const ScrollAreaCorner = ({ref, className, ...props}: Readonly<ScrollAreaCornerProps>): React.JSX.Element => (
   <BaseScrollArea.Corner
     data-slot='scroll-area-corner'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.corner, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -96,8 +96,8 @@ const ScrollArea = ({ref, ...props}: Readonly<ScrollArea.Props>): React.ReactEle
 
   return (
     <ScrollAreaRoot
-      {...otherProps}
-      ref={ref}>
+      ref={ref}
+      {...otherProps}>
       <ScrollAreaViewport {...viewportProps}>
         <ScrollAreaContent {...contentProps}>{children}</ScrollAreaContent>
       </ScrollAreaViewport>
@@ -126,7 +126,6 @@ const ScrollBar = ({ref, className, children, orientation = "vertical", ...props
   <BaseScrollArea.Scrollbar
     data-slot='scroll-area-scrollbar'
     orientation={orientation}
-    {...props}
     ref={ref}
     className={(state) =>
       cn(
@@ -134,7 +133,8 @@ const ScrollBar = ({ref, className, children, orientation = "vertical", ...props
         state.orientation === "vertical" ? styles.vertical : styles.horizontal,
         typeof className === "function" ? className(state) : className,
       )
-    }>
+    }
+    {...props}>
     {children === undefined ? <ScrollAreaThumb /> : children}
   </BaseScrollArea.Scrollbar>
 );

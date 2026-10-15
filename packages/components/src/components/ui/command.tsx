@@ -548,7 +548,6 @@ const Command = ({
   return (
     <CommandContext.Provider value={context}>
       <div
-        {...props}
         ref={ref}
         data-slot='command'
         aria-label={props["aria-label"] ?? label}
@@ -576,7 +575,8 @@ const Command = ({
             event.preventDefault();
             navigateToItem(item, event.currentTarget.ownerDocument);
           }
-        }}>
+        }}
+        {...props}>
         {children}
       </div>
     </CommandContext.Provider>
@@ -634,7 +634,6 @@ const CommandInput = ({
       className={styles.inputWrapper}>
       <InputGroup className={styles.inputGroup}>
         <input
-          {...props}
           ref={ref}
           data-slot='command-input'
           aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : "Search commands")}
@@ -653,6 +652,7 @@ const CommandInput = ({
           role='combobox'
           type='text'
           value={inputValue}
+          {...props}
         />
         <InputGroupAddon>
           <Search
@@ -676,13 +676,13 @@ const CommandList = ({ref, className, label, id, ...props}: Readonly<CommandList
   }, [effectiveId, setListId]);
   return (
     <div
-      {...props}
       ref={ref}
       data-slot='command-list'
       aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : (label ?? rootLabel))}
       className={cn(styles.list, className)}
       id={listId}
       role='listbox'
+      {...props}
     />
   );
 };
@@ -694,12 +694,12 @@ const CommandEmpty = ({ref, className, ...props}: Readonly<CommandEmptyProps>): 
   if (visibleItemCount > 0) return null;
   return (
     <div
-      {...props}
       ref={ref}
       data-slot='command-empty'
       className={cn(styles.empty, className)}
       role='status'
       aria-live='polite'
+      {...props}
     />
   );
 };
@@ -775,11 +775,11 @@ const CommandSeparator = ({
   if (isFiltering && !alwaysRender) return null;
   return (
     <BaseSeparator
-      {...props}
       ref={ref}
       data-slot='command-separator'
       className={typeof className === "function" ? (state) => cn(styles.separator, className(state)) : cn(styles.separator, className)}
       orientation={orientation}
+      {...props}
     />
   );
 };
@@ -836,7 +836,6 @@ const CommandItem = ({
   const isSelected = activeItemId === itemId;
   return (
     <div
-      {...props}
       ref={mergedRef}
       data-slot='command-item'
       aria-disabled={disabled || undefined}
@@ -883,7 +882,8 @@ const CommandItem = ({
         if (!event.defaultPrevented && !disabled && isVisible && !disablePointerSelection) selectItem(itemId);
       }}
       role='option'
-      tabIndex={disabled ? -1 : (props.tabIndex ?? 0)}>
+      tabIndex={disabled ? -1 : (props.tabIndex ?? 0)}
+      {...props}>
       {children}
     </div>
   );
@@ -893,10 +893,10 @@ CommandItem.displayName = "CommandItem";
 /** Shortcut presentation with native span semantics and a React 19 ref prop. */
 const CommandShortcut = ({ref, className, ...props}: Readonly<CommandShortcutProps>): React.JSX.Element => (
   <span
-    {...props}
     ref={ref}
     data-slot='command-shortcut'
     className={cn(styles.shortcut, className)}
+    {...props}
   />
 );
 CommandShortcut.displayName = "CommandShortcut";

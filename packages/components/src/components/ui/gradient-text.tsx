@@ -70,8 +70,8 @@ function GradientText({
       ref={setRefs}
       className={cn(styles.root, className)}
       style={baseStyle}
-      {...props}
-      data-motion={paused ? "paused" : "running"}>
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
       <motion.span
         className={styles.text}
         initial={paused ? false : {backgroundPosition: "0% 0%"}}

@@ -65,21 +65,24 @@ export type TableCaptionProps = Readonly<React.ComponentPropsWithRef<"caption">>
  *
  * @see {@link TableProps} for available props
  */
-const Table = ({ref, className, containerProps, ...props}: Readonly<TableProps>): React.JSX.Element => (
-  <div
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- This native overflow viewport needs keyboard-scroll focus, not an invented ARIA widget; caller attributes below retain their overrides.
-    tabIndex={0}
-    {...containerProps}
-    data-slot='table-container'
-    className={cn(styles.container, containerProps?.className)}>
-    <table
-      ref={ref}
-      data-slot='table'
-      className={cn(styles.table, className)}
-      {...props}
-    />
-  </div>
-);
+const Table = ({ref, className, containerProps, ...props}: Readonly<TableProps>): React.JSX.Element => {
+  const {className: containerClassName, ...containerNativeProps} = containerProps ?? {};
+  return (
+    <div
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- This native overflow viewport needs keyboard-scroll focus, not an invented ARIA widget; caller attributes below retain their overrides.
+      tabIndex={0}
+      data-slot='table-container'
+      className={cn(styles.container, containerClassName)}
+      {...containerNativeProps}>
+      <table
+        ref={ref}
+        data-slot='table'
+        className={cn(styles.table, className)}
+        {...props}
+      />
+    </div>
+  );
+};
 
 /**
  * Renders the table header section.

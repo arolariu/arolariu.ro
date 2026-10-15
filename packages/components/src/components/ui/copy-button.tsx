@@ -127,8 +127,8 @@ function CopyButton({
         className={cn(styles.copyButton, className)}
         disabled={disabled}
         onClick={handleCopy}
-        {...props}
-        data-state={status}>
+        data-state={status}
+        {...props}>
         {status === "copied" ? (
           <Check
             aria-hidden='true'

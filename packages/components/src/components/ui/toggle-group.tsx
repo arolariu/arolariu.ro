@@ -85,14 +85,14 @@ const ToggleGroup = Object.assign(
     return (
       <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>
         <BaseToggleGroup
-          {...otherProps}
           ref={ref}
           data-slot='toggle-group'
           data-variant={variant}
           data-size={size}
           data-spacing={spacing}
           orientation={orientation}
-          className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+          className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+          {...otherProps}>
           {children}
         </BaseToggleGroup>
       </ToggleGroupContext.Provider>
@@ -125,7 +125,6 @@ const ToggleGroupItem = Object.assign(
 
     return (
       <Toggle
-        {...otherProps}
         ref={ref}
         data-slot='toggle-group-item'
         data-spacing={context.spacing}
@@ -133,6 +132,7 @@ const ToggleGroupItem = Object.assign(
         className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
         size={size ?? context.size}
         variant={variant ?? context.variant}
+        {...otherProps}
       />
     );
   },

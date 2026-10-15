@@ -339,7 +339,6 @@ function DropDrawer<Payload = unknown>({
     <RootContext.Provider value={context}>
       {isMobile ? (
         <Drawer
-          {...sharedProps}
           modal={modal}
           disablePointerDismissal={disablePointerDismissal}
           swipeDirection={swipeDirection}
@@ -349,14 +348,14 @@ function DropDrawer<Payload = unknown>({
           snapToSequentialPoints={snapToSequentialPoints}
           onSnapPointChange={onSnapPointChange}
           showSwipeHandle
-          {...drawerProps}
           open={open}
-          onOpenChange={handleOpenChange}>
+          onOpenChange={handleOpenChange}
+          {...sharedProps}
+          {...drawerProps}>
           {children}
         </Drawer>
       ) : (
         <DropdownMenu
-          {...sharedProps}
           modal={modal !== false}
           disabled={disabled}
           loopFocus={loopFocus}
@@ -364,9 +363,10 @@ function DropDrawer<Payload = unknown>({
           orientation={orientation}
           closeParentOnEsc={closeParentOnEsc}
           onItemHighlighted={onItemHighlighted}
-          {...menuProps}
           open={open}
-          onOpenChange={handleOpenChange}>
+          onOpenChange={handleOpenChange}
+          {...sharedProps}
+          {...menuProps}>
           {children}
         </DropdownMenu>
       )}
@@ -396,22 +396,22 @@ const DropDrawerTrigger = ({
   const trigger = root.isMobile ? (
     <DrawerTrigger
       data-slot='drop-drawer-trigger'
-      {...buttonProps}
-      {...drawerProps}
       ref={mergedRef}
       disabled={root.disabled || disabled}
       nativeButton={props.nativeButton}
-      render={children === undefined ? renderProp : withChildren(renderProp, children)}>
+      render={children === undefined ? renderProp : withChildren(renderProp, children)}
+      {...buttonProps}
+      {...drawerProps}>
       {children}
     </DrawerTrigger>
   ) : (
     <DropdownMenuTrigger
       data-slot='drop-drawer-trigger'
-      {...props}
-      {...menuProps}
       ref={mergedRef}
       render={render}
-      disabled={root.disabled || disabled}>
+      disabled={root.disabled || disabled}
+      {...props}
+      {...menuProps}>
       {children}
     </DropdownMenuTrigger>
   );
@@ -438,7 +438,7 @@ const MobileContent = ({
 }: Readonly<DropDrawerContentProps>): React.JSX.Element => {
   const root = useRoot();
   const popupRender = drawerProps?.render ?? render;
-  const drawerClassName = drawerProps?.className;
+  const {className: drawerClassName, ...drawerPopupProps} = drawerProps ?? {};
   const [path, setPath] = React.useState<readonly string[]>([]);
   const [previousOpen, setPreviousOpen] = React.useState(root.open);
   // Reset navigation on the state transition without remounting the SDK popup or delaying reset until an effect.
@@ -561,8 +561,6 @@ const MobileContent = ({
     <NavigationContext.Provider value={navigation}>
       <DrawerContent
         data-slot='drop-drawer-content'
-        {...popupProps}
-        {...drawerProps}
         ref={ref}
         initialFocus={drawerProps?.initialFocus ?? initialFocus}
         finalFocus={drawerProps?.finalFocus ?? finalFocus}
@@ -573,7 +571,9 @@ const MobileContent = ({
             typeof className === "function" ? className(state) : className,
             typeof drawerClassName === "function" ? drawerClassName(state) : drawerClassName,
           )
-        }>
+        }
+        {...popupProps}
+        {...drawerPopupProps}>
         <div className={cn(styles.mobileHeader, activeId === null && styles.screenReaderOnlyHeader)}>
           {activeId !== null && (
             <button
@@ -613,18 +613,18 @@ const DropDrawerContent = ({ref, ...props}: Readonly<DropDrawerContentProps>): R
   if (root.isMobile)
     return (
       <MobileContent
-        {...props}
         ref={mergedRef}
+        {...props}
       />
     );
   return (
     <DropdownMenuContent
       data-slot='drop-drawer-content'
       align='end'
-      {...menuProps}
       ref={mergedRef}
       finalFocus={finalFocus}
       className={(state) => cn(styles.desktopContent, typeof className === "function" ? className(state) : className)}
+      {...menuProps}
     />
   );
 };
@@ -676,7 +676,6 @@ const DropDrawerItem = ({
       data-slot='drop-drawer-item'
       data-inset={inset}
       data-variant={variant}
-      {...props}
       ref={mergedRef}
       disabled={isDisabled}
       nativeButton={
@@ -688,13 +687,13 @@ const DropDrawerItem = ({
       render={withChildren(renderProp, content)}
       className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}>
+      onKeyDown={handleKeyDown}
+      {...props}>
       {content}
     </Action>
   ) : (
     <DropdownMenuItem
       data-slot='drop-drawer-item'
-      {...props}
       ref={mergedRef}
       disabled={isDisabled}
       closeOnClick={closeOnClick}
@@ -705,7 +704,8 @@ const DropDrawerItem = ({
       render={withChildren(renderProp, content)}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={className}>
+      className={className}
+      {...props}>
       {content}
     </DropdownMenuItem>
   );
@@ -722,8 +722,8 @@ const DropDrawerSeparator = ({ref, ...props}: Readonly<DropDrawerSeparatorProps>
   return useRoot().isMobile ? null : (
     <DropdownMenuSeparator
       data-slot='drop-drawer-separator'
-      {...props}
       ref={ref}
+      {...props}
     />
   );
 };
@@ -733,9 +733,9 @@ const DropDrawerLabel = ({ref, className, ...props}: Readonly<DropDrawerLabelPro
   return (
     <DropdownMenuLabel
       data-slot='drop-drawer-label'
-      {...props}
       ref={ref}
       className={(state) => cn(root.isMobile && styles.mobileLabel, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 };
@@ -747,8 +747,8 @@ const DropDrawerFooter = ({ref, className, render, ...props}: Readonly<DropDrawe
     ref,
     props: {
       "data-slot": "drop-drawer-footer",
-      ...props,
       className: cn(root.isMobile ? styles.mobileFooter : styles.desktopFooter, className),
+      ...props,
     },
     render,
   });
@@ -759,9 +759,9 @@ const DropDrawerGroup = ({ref, className, ...props}: Readonly<DropDrawerGroupPro
   return (
     <DropdownMenuGroup
       data-slot='drop-drawer-group'
-      {...props}
       ref={ref}
       className={(state) => cn(root.isMobile && styles.mobileGroup, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 };
@@ -849,7 +849,6 @@ const DropDrawerSubTrigger = ({
   const trigger = root.isMobile ? (
     <BaseButton
       data-slot='drop-drawer-sub-trigger'
-      {...buttonProps}
       ref={mergedRef}
       disabled={isDisabled}
       aria-controls={entry.panelId}
@@ -857,20 +856,21 @@ const DropDrawerSubTrigger = ({
       render={withChildren(render, content)}
       className={(state) => cn(styles.mobileItem, inset && styles.inset, typeof className === "function" ? className(state) : className)}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}>
+      onKeyDown={handleKeyDown}
+      {...buttonProps}>
       {content}
     </BaseButton>
   ) : (
     <DropdownMenuSubTrigger
       data-slot='drop-drawer-sub-trigger'
-      {...props}
       ref={mergedRef}
       disabled={isDisabled}
       inset={inset}
       className={className}
       render={render}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}>
+      onKeyDown={handleKeyDown}
+      {...props}>
       {children}
     </DropdownMenuSubTrigger>
   );
@@ -929,7 +929,6 @@ const MobileSubContent = ({
     render: withChildren(render, contentOf(children, render)),
     state: {open},
     props: {
-      ...panelProps,
       "data-slot": "drop-drawer-sub-content",
       id: panelId,
       hidden: !open,
@@ -937,6 +936,7 @@ const MobileSubContent = ({
       className: cn(styles.mobilePanel, typeof className === "function" ? className({open}) : className),
       style: typeof style === "function" ? style({open}) : style,
       children: contentOf(children, render),
+      ...panelProps,
     },
   });
   return navigation.panelHost ? createPortal(panel, navigation.panelHost) : null;
@@ -950,15 +950,15 @@ const DropDrawerSubContent = ({ref, ...props}: Readonly<DropDrawerSubContentProp
   if (root.isMobile)
     return (
       <MobileSubContent
-        {...props}
         ref={mergedRef}
+        {...props}
       />
     );
   return (
     <DropdownMenuSubContent
       data-slot='drop-drawer-sub-content'
-      {...props}
       ref={mergedRef}
+      {...props}
     />
   );
 };

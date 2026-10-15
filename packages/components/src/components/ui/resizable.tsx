@@ -336,7 +336,6 @@ function ResizablePanel({
   }, [register, disabled, collapsible, collapsedSize, minSize, maxSize]);
   return (
     <ResizablePrimitive.Panel
-      {...props}
       elementRef={mergedElementRef}
       panelRef={mergedPanelRef}
       disabled={disabled}
@@ -344,6 +343,7 @@ function ResizablePanel({
       collapsedSize={collapsedSize}
       minSize={minSize}
       maxSize={maxSize}
+      {...props}
     />
   );
 }

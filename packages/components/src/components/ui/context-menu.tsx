@@ -110,10 +110,10 @@ const ContextMenuTrigger = ({ref, ...props}: Readonly<ContextMenuTrigger.Props>)
   return (
     <BaseContextMenu.Trigger
       data-slot='context-menu-trigger'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
-      render={withContextChildren(render, children)}>
+      render={withContextChildren(render, children)}
+      {...otherProps}>
       {children}
     </BaseContextMenu.Trigger>
   );
@@ -146,15 +146,16 @@ const ContextMenuContent = ({ref, ...props}: Readonly<ContextMenuContent.Props>)
     render,
     ...popupProps
   } = props;
-  const positionerClassName = positionerProps?.className;
+  const {className: positionerClassName, render: positionerRender, ...positionerNativeProps} = positionerProps ?? {};
+  const {render: portalRender, ...portalNativeProps} = portalProps ?? {};
   const popup = (
     <BaseContextMenu.Popup
       data-slot='context-menu-content'
-      {...popupProps}
       ref={ref}
       dir={dir}
       render={withContextChildren(render, children)}
-      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...popupProps}>
       {children}
     </BaseContextMenu.Popup>
   );
@@ -171,18 +172,18 @@ const ContextMenuContent = ({ref, ...props}: Readonly<ContextMenuContent.Props>)
       arrowPadding={arrowPadding}
       disableAnchorTracking={disableAnchorTracking}
       collisionAvoidance={collisionAvoidance}
-      {...positionerProps}
-      render={withContextChildren(positionerProps?.render, popup)}
+      render={withContextChildren(positionerRender, popup)}
       className={(state) =>
         cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
-      }>
+      }
+      {...positionerNativeProps}>
       {popup}
     </BaseContextMenu.Positioner>
   );
   return (
     <ContextMenuPortal
-      {...portalProps}
-      render={withContextChildren(portalProps?.render, null)}>
+      render={withContextChildren(portalRender, null)}
+      {...portalNativeProps}>
       {positioner}
     </ContextMenuPortal>
   );
@@ -207,8 +208,8 @@ function ContextMenuItem(props: Readonly<ContextMenuItem.Props>): React.ReactEle
   return (
     <DropdownMenuItem
       data-slot='context-menu-item'
-      {...otherProps}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }
@@ -219,8 +220,8 @@ function ContextMenuCheckboxItem(props: Readonly<ContextMenuCheckboxItem.Props>)
   return (
     <DropdownMenuCheckboxItem
       data-slot='context-menu-checkbox-item'
-      {...otherProps}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }
@@ -231,8 +232,8 @@ function ContextMenuRadioItem(props: Readonly<ContextMenuRadioItem.Props>): Reac
   return (
     <DropdownMenuRadioItem
       data-slot='context-menu-radio-item'
-      {...otherProps}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }
@@ -243,8 +244,8 @@ function ContextMenuSubTrigger(props: Readonly<ContextMenuSubTrigger.Props>): Re
   return (
     <DropdownMenuSubTrigger
       data-slot='context-menu-sub-trigger'
-      {...otherProps}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }
@@ -255,8 +256,8 @@ function ContextMenuLabel(props: Readonly<ContextMenuLabel.Props>): React.ReactE
   return (
     <DropdownMenuLabel
       data-slot='context-menu-label'
-      {...otherProps}
       className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 }

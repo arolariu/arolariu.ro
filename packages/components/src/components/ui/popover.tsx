@@ -89,10 +89,10 @@ const PopoverTrigger = ({ref, ...props}: Readonly<PopoverTrigger.Props>): React.
 
   return (
     <BasePopover.Trigger
-      {...otherProps}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
       render={render}
-      ref={primitiveRef}>
+      ref={primitiveRef}
+      {...otherProps}>
       {children}
     </BasePopover.Trigger>
   );

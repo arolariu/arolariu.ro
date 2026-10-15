@@ -87,11 +87,11 @@ const Toggle = (props: Readonly<Toggle.Props>): React.ReactElement => {
   return (
     <BaseToggle
       data-slot='toggle'
-      {...otherProps}
       ref={handleRef}
       data-variant={variant}
       data-size={size}
       className={(state) => toggleVariants({variant, size, className: typeof className === "function" ? className(state) : className})}
+      {...otherProps}
     />
   );
 };

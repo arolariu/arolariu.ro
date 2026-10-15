@@ -40,10 +40,10 @@ const RadioGroup = Object.assign(
 
     return (
       <BaseRadioGroup
-        {...otherProps}
         ref={ref}
         data-slot='radio-group'
         className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+        {...otherProps}
       />
     );
   },
@@ -73,10 +73,10 @@ const RadioGroupItem = Object.assign(
 
     return (
       <Radio.Root
-        {...otherProps}
         ref={ref}
         data-slot='radio-group-item'
-        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}>
+        className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+        {...otherProps}>
         <Radio.Indicator
           data-slot='radio-group-indicator'
           className={styles.indicator}>

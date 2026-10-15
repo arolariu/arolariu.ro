@@ -164,8 +164,8 @@ const InputOTPSlot = ({ref, index, className, ...props}: Readonly<InputOTPSlotPr
       data-active={isActive}
       ref={ref}
       className={cn(styles.slot, isActive && styles.slotActive, className)}
-      {...props}
-      aria-hidden='true'>
+      aria-hidden='true'
+      {...props}>
       {displayCharacter}
       {Boolean(hasFakeCaret) && (
         <div
@@ -200,8 +200,8 @@ const InputOTPSeparator = ({ref, className, ...props}: Readonly<InputOTPSeparato
     data-slot='input-otp-separator'
     ref={ref}
     className={cn(styles.separator, className)}
-    {...props}
-    aria-hidden='true'>
+    aria-hidden='true'
+    {...props}>
     <Minus
       aria-hidden='true'
       className={styles.separatorIcon}

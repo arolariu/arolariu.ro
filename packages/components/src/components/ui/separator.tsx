@@ -37,7 +37,6 @@ const Separator = ({ref: forwardedRef, ...props}: Readonly<Separator.Props>): Re
     <BaseSeparator
       orientation={orientation}
       data-slot='separator'
-      {...otherProps}
       ref={forwardedRef}
       render={render}
       className={(state) =>
@@ -47,6 +46,7 @@ const Separator = ({ref: forwardedRef, ...props}: Readonly<Separator.Props>): Re
           typeof className === "function" ? className(state) : className,
         )
       }
+      {...otherProps}
     />
   );
 };

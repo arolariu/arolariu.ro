@@ -84,13 +84,13 @@ const Attachment = ({
   ...props
 }: Readonly<Attachment.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='attachment'
     data-state={state}
     data-size={size}
     data-orientation={orientation}
     className={cn(styles.attachment, sizeStyles[size], orientationStyles[orientation], className)}
+    {...props}
   />
 );
 Attachment.displayName = "Attachment";
@@ -98,10 +98,10 @@ Attachment.displayName = "Attachment";
 /** Groups attachments in a wrapping native container without hiding filenames at narrow widths. */
 const AttachmentGroup = ({ref, className, ...props}: Readonly<AttachmentGroup.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='attachment-group'
     className={cn(styles.group, className)}
+    {...props}
   />
 );
 AttachmentGroup.displayName = "AttachmentGroup";
@@ -109,11 +109,11 @@ AttachmentGroup.displayName = "AttachmentGroup";
 /** Hosts caller-provided icons or images; image loading and accessible text are caller-owned. */
 const AttachmentMedia = ({ref, className, variant = "icon", ...props}: Readonly<AttachmentMedia.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='attachment-media'
     data-variant={variant}
     className={cn(styles.media, mediaStyles[variant], className)}
+    {...props}
   />
 );
 AttachmentMedia.displayName = "AttachmentMedia";
@@ -121,10 +121,10 @@ AttachmentMedia.displayName = "AttachmentMedia";
 /** Provides the shrinking text area beside or below attachment media. */
 const AttachmentContent = ({ref, className, ...props}: Readonly<AttachmentContent.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='attachment-content'
     className={cn(styles.content, className)}
+    {...props}
   />
 );
 AttachmentContent.displayName = "AttachmentContent";
@@ -132,10 +132,10 @@ AttachmentContent.displayName = "AttachmentContent";
 /** Displays the full attachment title, including at narrow widths and increased text spacing. */
 const AttachmentTitle = ({ref, className, ...props}: Readonly<AttachmentTitle.Props>): React.JSX.Element => (
   <span
-    {...props}
     ref={ref}
     data-slot='attachment-title'
     className={cn(styles.title, className)}
+    {...props}
   />
 );
 AttachmentTitle.displayName = "AttachmentTitle";
@@ -143,10 +143,10 @@ AttachmentTitle.displayName = "AttachmentTitle";
 /** Displays caller-provided supporting text, including explicit loading/error descriptions. */
 const AttachmentDescription = ({ref, className, ...props}: Readonly<AttachmentDescription.Props>): React.JSX.Element => (
   <span
-    {...props}
     ref={ref}
     data-slot='attachment-description'
     className={cn(styles.description, className)}
+    {...props}
   />
 );
 AttachmentDescription.displayName = "AttachmentDescription";
@@ -154,10 +154,10 @@ AttachmentDescription.displayName = "AttachmentDescription";
 /** Hosts independent action controls above the covering attachment trigger. */
 const AttachmentActions = ({ref, className, ...props}: Readonly<AttachmentActions.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='attachment-actions'
     className={cn(styles.actions, className)}
+    {...props}
   />
 );
 AttachmentActions.displayName = "AttachmentActions";
@@ -174,12 +174,12 @@ const AttachmentAction = ({
   ...props
 }: Readonly<AttachmentAction.Props>): React.JSX.Element => (
   <Button
-    {...props}
     ref={ref}
     data-slot='attachment-action'
     variant={variant}
     size={size}
     className={cn(styles.action, className)}
+    {...props}
   />
 );
 AttachmentAction.displayName = "AttachmentAction";

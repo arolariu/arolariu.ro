@@ -31,10 +31,10 @@ const Meter = (props: Readonly<Meter.Props>): React.ReactElement => {
 
   return (
     <BaseMeter.Root
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMeter.Root>
   );
@@ -59,10 +59,10 @@ const MeterTrack = (props: Readonly<MeterTrack.Props>): React.ReactElement => {
 
   return (
     <BaseMeter.Track
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.track, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.track, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMeter.Track>
   );
@@ -87,10 +87,10 @@ const MeterIndicator = (props: Readonly<MeterIndicator.Props>): React.ReactEleme
 
   return (
     <BaseMeter.Indicator
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.indicator, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.indicator, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMeter.Indicator>
   );
@@ -115,10 +115,10 @@ const MeterLabel = (props: Readonly<MeterLabel.Props>): React.ReactElement => {
 
   return (
     <BaseMeter.Label
-      {...otherProps}
       ref={forwardedRef}
       render={render}
-      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMeter.Label>
   );

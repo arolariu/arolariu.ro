@@ -50,13 +50,13 @@ function GradientBackground({
 
   return (
     <motion.div
-      {...props}
       ref={setRefs}
       className={cn(styles.root, className)}
       data-motion={paused ? "paused" : "running"}
       initial={paused ? false : initial}
       animate={paused ? {backgroundPosition: "0% 50%"} : animate}
-      transition={paused ? {duration: 0} : transition}>
+      transition={paused ? {duration: 0} : transition}
+      {...props}>
       {children === null || children === undefined ? null : <motion.div className={styles.content}>{children}</motion.div>}
     </motion.div>
   );

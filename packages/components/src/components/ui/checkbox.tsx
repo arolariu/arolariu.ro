@@ -35,9 +35,9 @@ const Checkbox = (props: Readonly<Checkbox.Props>): React.ReactElement => {
   return (
     <BaseCheckbox.Root
       ref={ref}
-      {...otherProps}
       data-slot='checkbox'
-      className={(state) => cn(styles.checkbox, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.checkbox, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       <BaseCheckbox.Indicator
         data-slot='checkbox-indicator'
         className={styles.indicator}>

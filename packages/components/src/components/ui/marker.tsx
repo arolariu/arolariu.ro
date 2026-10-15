@@ -63,10 +63,10 @@ Marker.displayName = "Marker";
 const MarkerIcon = ({ref, className, ...props}: Readonly<MarkerIcon.Props>): React.JSX.Element => (
   <span
     aria-hidden='true'
-    {...props}
     ref={ref}
     data-slot='marker-icon'
     className={cn(styles.icon, className)}
+    {...props}
   />
 );
 MarkerIcon.displayName = "MarkerIcon";
@@ -74,10 +74,10 @@ MarkerIcon.displayName = "MarkerIcon";
 /** Contains caller-provided wrapping text or phrasing links. */
 const MarkerContent = ({ref, className, ...props}: Readonly<MarkerContent.Props>): React.JSX.Element => (
   <span
-    {...props}
     ref={ref}
     data-slot='marker-content'
     className={cn(styles.content, className)}
+    {...props}
   />
 );
 MarkerContent.displayName = "MarkerContent";

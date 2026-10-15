@@ -101,10 +101,10 @@ function Drawer<Payload = unknown>({
   return (
     <DrawerPresentationContext.Provider value={presentation}>
       <BaseDrawer.Root
-        {...props}
         modal={modal}
         snapPoints={snapPoints}
         swipeDirection={swipeDirection}
+        {...props}
       />
     </DrawerPresentationContext.Provider>
   );
@@ -130,9 +130,9 @@ const DrawerTrigger = ({ref, className, ...props}: Readonly<DrawerTrigger.Props>
   return (
     <BaseDrawer.Trigger
       data-slot='drawer-trigger'
-      {...props}
       ref={primitiveRef}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 };
@@ -171,8 +171,8 @@ const DrawerPortal: typeof BaseDrawer.Portal & {displayName?: string} = BaseDraw
 function DrawerClose({className, ...props}: Readonly<DrawerClose.Props>): React.ReactElement {
   return (
     <BaseDrawer.Close
-      {...props}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 }
@@ -200,9 +200,9 @@ function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement
   return (
     <BaseDrawer.Backdrop
       data-slot='drawer-overlay'
-      {...otherProps}
       ref={primitiveRef}
       className={typeof className === "function" ? (state) => cn(styles.backdrop, className(state)) : cn(styles.backdrop, className)}
+      {...otherProps}
     />
   );
 }
@@ -310,10 +310,10 @@ const DrawerContent = ({ref, ...props}: Readonly<DrawerContent.Props>): React.Re
           data-slot='drawer-popup'
           data-swipe-axis={swipeDirection === "down" || swipeDirection === "up" ? "y" : "x"}
           data-snap-points={hasSnapPoints ? "" : undefined}
-          {...otherProps}
           ref={primitiveRef}
           render={popupRender}
-          className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}>
+          className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
+          {...otherProps}>
           <DrawerBody showSwipeHandle={showSwipeHandle}>{children}</DrawerBody>
         </BaseDrawer.Popup>
       </BaseDrawer.Viewport>
@@ -405,9 +405,9 @@ function DrawerTitle(props: Readonly<DrawerTitle.Props>): React.ReactElement {
   return (
     <BaseDrawer.Title
       data-slot='drawer-title'
-      {...otherProps}
       ref={primitiveRef}
       className={typeof className === "function" ? (state) => cn(styles.title, className(state)) : cn(styles.title, className)}
+      {...otherProps}
     />
   );
 }
@@ -434,9 +434,9 @@ function DrawerDescription(props: Readonly<DrawerDescription.Props>): React.Reac
   return (
     <BaseDrawer.Description
       data-slot='drawer-description'
-      {...otherProps}
       ref={primitiveRef}
       className={typeof className === "function" ? (state) => cn(styles.description, className(state)) : cn(styles.description, className)}
+      {...otherProps}
     />
   );
 }

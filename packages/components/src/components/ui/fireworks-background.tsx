@@ -277,6 +277,7 @@ function FireworksBackground({
   particleSize = defaultParticleSize,
   ...props
 }: Readonly<FireworksBackgroundProps>): React.JSX.Element {
+  const {className: canvasClassName, ...canvasNativeProps} = canvasProps ?? {};
   if (!Number.isFinite(population) || population < 0)
     throw new RangeError("FireworksBackground population must be finite and nonnegative.");
   for (const range of [fireworkSpeed, fireworkSize, particleSpeed, particleSize]) validateRange(range);
@@ -448,14 +449,14 @@ function FireworksBackground({
     <div
       ref={setRefs}
       className={cn(styles.root, className)}
-      {...props}
-      data-motion={paused ? "paused" : "running"}>
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
       <canvas
-        {...canvasProps}
         aria-hidden='true'
         tabIndex={-1}
         ref={canvasRef}
-        className={cn(styles.canvas, canvasProps?.className)}
+        className={cn(styles.canvas, canvasClassName)}
+        {...canvasNativeProps}
       />
       {children === null || children === undefined ? null : <div className={styles.content}>{children}</div>}
       <button

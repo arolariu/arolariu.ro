@@ -66,10 +66,10 @@ function TypewriterText({
 
   return (
     <div
-      {...props}
       ref={setRefs}
       className={cn(styles.root, className)}
-      data-motion={getMotionState(reduced, paused, words.length)}>
+      data-motion={getMotionState(reduced, paused, words.length)}
+      {...props}>
       {words.length > 0 ? (
         <>
           <VisuallyHidden data-slot='typewriter-text'>{fullText}</VisuallyHidden>
@@ -169,10 +169,10 @@ function TypewriterTextSmooth({
 
   return (
     <div
-      {...props}
       ref={setRefs}
       className={cn(styles.smoothRoot, className)}
-      data-motion={getMotionState(reduced, paused, words.length)}>
+      data-motion={getMotionState(reduced, paused, words.length)}
+      {...props}>
       {words.length > 0 ? (
         <>
           <VisuallyHidden data-slot='typewriter-text'>{fullText}</VisuallyHidden>

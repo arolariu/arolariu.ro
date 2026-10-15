@@ -137,10 +137,10 @@ const ComboboxTrigger = ({ref, className, children, render, ...props}: Readonly<
     <ComboboxPrimitive.Trigger
       data-slot='combobox-trigger'
       aria-label={typeof render !== "function" && !hasCustomContent(getChildren(children, render)) ? "Show suggestions" : undefined}
-      {...props}
       ref={ref}
       className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
-      render={withChildren(render, content)}>
+      render={withChildren(render, content)}
+      {...props}>
       {content}
     </ComboboxPrimitive.Trigger>
   );
@@ -162,7 +162,6 @@ const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<Co
     <ComboboxPrimitive.Clear
       data-slot='combobox-clear'
       aria-label={defaultLabel}
-      {...props}
       ref={ref}
       className={(state) => cn(styles.clear, typeof className === "function" ? className(state) : className)}
       render={withChildren(
@@ -180,7 +179,8 @@ const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<Co
             />
           )),
         content,
-      )}>
+      )}
+      {...props}>
       {content}
     </ComboboxPrimitive.Clear>
   );
@@ -207,11 +207,11 @@ const ComboboxInput = ({
   <InputGroup className={cn(styles.inputGroup, groupClassName)}>
     <ComboboxPrimitive.Input
       data-slot='combobox-input'
-      {...props}
       ref={ref}
       disabled={disabled}
       render={render ?? <InputGroupInput />}
       className={(state) => cn(styles.input, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
     {showTrigger || showClear ? (
       <InputGroupAddon align='inline-end'>
@@ -270,46 +270,46 @@ const ComboboxContent = ({
   positionerProps,
   portalProps,
   ...props
-}: Readonly<ComboboxContentProps>): React.JSX.Element => (
-  <ComboboxPrimitive.Portal {...portalProps}>
-    <ComboboxPrimitive.Positioner
-      {...positionerProps}
-      side={side}
-      sideOffset={sideOffset}
-      align={align}
-      alignOffset={alignOffset}
-      anchor={anchor}
-      positionMethod={positionMethod}
-      collisionBoundary={collisionBoundary}
-      collisionPadding={collisionPadding}
-      sticky={sticky}
-      arrowPadding={arrowPadding}
-      disableAnchorTracking={disableAnchorTracking}
-      collisionAvoidance={collisionAvoidance}
-      className={(state) =>
-        cn(
-          styles.positioner,
-          typeof positionerProps?.className === "function" ? positionerProps.className(state) : positionerProps?.className,
-        )
-      }>
-      <ComboboxPrimitive.Popup
-        data-slot='combobox-content'
-        data-chips={Boolean(anchor)}
-        {...props}
-        ref={ref}
-        className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
-      />
-    </ComboboxPrimitive.Positioner>
-  </ComboboxPrimitive.Portal>
-);
+}: Readonly<ComboboxContentProps>): React.JSX.Element => {
+  const {className: positionerClassName, ...positionerNativeProps} = positionerProps ?? {};
+  return (
+    <ComboboxPrimitive.Portal {...portalProps}>
+      <ComboboxPrimitive.Positioner
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+        anchor={anchor}
+        positionMethod={positionMethod}
+        collisionBoundary={collisionBoundary}
+        collisionPadding={collisionPadding}
+        sticky={sticky}
+        arrowPadding={arrowPadding}
+        disableAnchorTracking={disableAnchorTracking}
+        collisionAvoidance={collisionAvoidance}
+        className={(state) =>
+          cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
+        }
+        {...positionerNativeProps}>
+        <ComboboxPrimitive.Popup
+          data-slot='combobox-content'
+          data-chips={Boolean(anchor)}
+          ref={ref}
+          className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+          {...props}
+        />
+      </ComboboxPrimitive.Positioner>
+    </ComboboxPrimitive.Portal>
+  );
+};
 
 /** Renders the real listbox; function children consume Base UI's filtered items. */
 const ComboboxList = ({ref, className, ...props}: Readonly<ComboboxListProps>): React.JSX.Element => (
   <ComboboxPrimitive.List
     data-slot='combobox-list'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.list, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -331,10 +331,10 @@ const ComboboxItem = ({ref, className, children, render, ...props}: Readonly<Com
   return (
     <ComboboxPrimitive.Item
       data-slot='combobox-item'
-      {...props}
       ref={ref}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
-      render={withChildren(render, content)}>
+      render={withChildren(render, content)}
+      {...props}>
       {content}
     </ComboboxPrimitive.Item>
   );
@@ -344,9 +344,9 @@ const ComboboxItem = ({ref, className, children, render, ...props}: Readonly<Com
 const ComboboxGroup = ({ref, className, ...props}: Readonly<ComboboxGroupProps>): React.JSX.Element => (
   <ComboboxPrimitive.Group
     data-slot='combobox-group'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -354,9 +354,9 @@ const ComboboxGroup = ({ref, className, ...props}: Readonly<ComboboxGroupProps>)
 const ComboboxLabel = ({ref, className, ...props}: Readonly<ComboboxLabelProps>): React.JSX.Element => (
   <ComboboxPrimitive.GroupLabel
     data-slot='combobox-label'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.label, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -369,9 +369,9 @@ function ComboboxCollection(props: ComboboxCollectionProps): React.JSX.Element {
 const ComboboxEmpty = ({ref, className, ...props}: Readonly<ComboboxEmptyProps>): React.JSX.Element => (
   <ComboboxPrimitive.Empty
     data-slot='combobox-empty'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.empty, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -379,9 +379,9 @@ const ComboboxEmpty = ({ref, className, ...props}: Readonly<ComboboxEmptyProps>)
 const ComboboxSeparator = ({ref, className, ...props}: Readonly<ComboboxSeparatorProps>): React.JSX.Element => (
   <ComboboxPrimitive.Separator
     data-slot='combobox-separator'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -389,9 +389,9 @@ const ComboboxSeparator = ({ref, className, ...props}: Readonly<ComboboxSeparato
 const ComboboxChips = ({ref, className, ...props}: Readonly<ComboboxChipsProps>): React.JSX.Element => (
   <ComboboxPrimitive.Chips
     data-slot='combobox-chips'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.chips, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 
@@ -425,7 +425,6 @@ const ComboboxChip = ({
         <ComboboxPrimitive.ChipRemove
           data-slot='combobox-chip-remove'
           aria-label={defaultRemoveLabel}
-          {...removeOtherProps}
           className={(state) => cn(styles.chipRemove, typeof removeClassName === "function" ? removeClassName(state) : removeClassName)}
           render={withChildren(
             removeRender
@@ -442,7 +441,8 @@ const ComboboxChip = ({
                 />
               )),
             removeContent,
-          )}>
+          )}
+          {...removeOtherProps}>
           {removeContent}
         </ComboboxPrimitive.ChipRemove>
       ) : null}
@@ -451,10 +451,10 @@ const ComboboxChip = ({
   return (
     <ComboboxPrimitive.Chip
       data-slot='combobox-chip'
-      {...props}
       ref={ref}
       className={(state) => cn(styles.chip, typeof className === "function" ? className(state) : className)}
-      render={withChildren(render, content)}>
+      render={withChildren(render, content)}
+      {...props}>
       {content}
     </ComboboxPrimitive.Chip>
   );
@@ -464,9 +464,9 @@ const ComboboxChip = ({
 const ComboboxChipsInput = ({ref, className, ...props}: Readonly<ComboboxChipsInputProps>): React.JSX.Element => (
   <ComboboxPrimitive.Input
     data-slot='combobox-chip-input'
-    {...props}
     ref={ref}
     className={(state) => cn(styles.chipsInput, typeof className === "function" ? className(state) : className)}
+    {...props}
   />
 );
 

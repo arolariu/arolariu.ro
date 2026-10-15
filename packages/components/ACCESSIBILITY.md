@@ -14,6 +14,11 @@ Use visible labels when possible. Name icon-only actions with an action-specific
 supplied DOM props and `ref` in custom `render` targets. Do not replace a real button with a generic element unless its complete keyboard,
 focus and disabled contract is retained; set `nativeButton={false}` for non-button targets.
 
+Remaining native/ARIA/data props are applied after library presets as an intentional escape hatch; explicit `undefined` can remove an
+optional default attribute. Consumed classes, refs and cancellable handlers remain composed. Overriding roles, names, visibility, state
+markers or focus attributes transfers responsibility for the resulting semantics and interactions to the application; the default component
+evidence does not establish conformance for those overrides.
+
 Do not hide interactive or meaningful descendants with `aria-hidden`. Decorative icons, canvases and duplicate animated text can be hidden
 only when their meaning is otherwise available. Table headings, input errors and overlay descriptions must stay associated with the content
 they describe.

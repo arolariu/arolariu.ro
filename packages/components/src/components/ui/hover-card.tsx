@@ -78,9 +78,9 @@ const HoverCardTrigger = ({ref, className, ...props}: Readonly<HoverCardTrigger.
   );
   return (
     <BasePreviewCard.Trigger
-      {...props}
       ref={primitiveRef}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 };

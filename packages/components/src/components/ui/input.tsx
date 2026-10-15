@@ -37,9 +37,9 @@ const Input = (props: Readonly<Input.Props>): React.ReactElement => {
   return (
     <BaseInput
       data-slot='input'
-      {...otherProps}
       ref={ref}
       className={typeof className === "function" ? (state) => cn(styles.input, className(state)) : cn(styles.input, className)}
+      {...otherProps}
     />
   );
 };

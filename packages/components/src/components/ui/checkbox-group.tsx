@@ -30,10 +30,10 @@ const CheckboxGroup = (props: Readonly<CheckboxGroup.Props>): React.ReactElement
 
   return (
     <BaseCheckboxGroup
-      {...otherProps}
       ref={forwardedRef}
       render={render}
       className={(state) => cn(styles.group, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };

@@ -79,7 +79,6 @@ const Accordion = (props: Readonly<Accordion.Props>): React.ReactElement => {
   return (
     <BaseAccordion.Root<string>
       data-slot='accordion'
-      {...otherProps}
       ref={ref}
       onValueChange={(nextValue, eventDetails) => {
         if (!collapsible && nextValue.length === 0) {
@@ -88,6 +87,7 @@ const Accordion = (props: Readonly<Accordion.Props>): React.ReactElement => {
         }
         onValueChange?.(nextValue, eventDetails);
       }}
+      {...otherProps}
     />
   );
 };
@@ -118,10 +118,10 @@ const AccordionItem = (props: Readonly<AccordionItem.Props>): React.ReactElement
   return (
     <BaseAccordion.Item
       data-slot='accordion-item'
-      {...otherProps}
       ref={ref}
       className={cn(styles.item, className)}
-      render={render}>
+      render={render}
+      {...otherProps}>
       {children}
     </BaseAccordion.Item>
   );
@@ -154,9 +154,9 @@ const AccordionTrigger = (props: Readonly<AccordionTrigger.Props>): React.ReactE
       <BaseAccordion.Trigger
         data-slot='accordion-trigger'
         ref={ref}
-        {...otherProps}
         className={cn(styles.trigger, className)}
-        render={render}>
+        render={render}
+        {...otherProps}>
         <span>{children}</span>
         <ChevronDown
           aria-hidden
@@ -191,9 +191,9 @@ const AccordionContent = (props: Readonly<AccordionContent.Props>): React.ReactE
     <BaseAccordion.Panel
       data-slot='accordion-content'
       ref={ref}
-      {...otherProps}
       className={styles.panel}
-      render={render}>
+      render={render}
+      {...otherProps}>
       <div
         data-slot='accordion-content-inner'
         className={cn(styles.panelInner, className)}>

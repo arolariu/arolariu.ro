@@ -150,11 +150,11 @@ function DropdownMenuTrigger<Payload = unknown>(props: Readonly<DropdownMenuTrig
   return (
     <BaseMenu.Trigger
       data-slot='dropdown-menu-trigger'
-      {...otherProps}
       ref={primitiveRef}
       className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
       nativeButton={nativeButton}
-      render={children === undefined ? render : withMenuChildren(render, children)}>
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      {...otherProps}>
       {children}
     </BaseMenu.Trigger>
   );
@@ -179,12 +179,12 @@ const DropdownMenuSubTrigger = ({ref, ...props}: Readonly<DropdownMenuSubTrigger
     <BaseMenu.SubmenuTrigger
       data-slot='dropdown-menu-sub-trigger'
       data-inset={inset}
-      {...otherProps}
       ref={ref}
       className={(state) =>
         cn(styles.item, styles.subTrigger, inset && styles.inset, typeof className === "function" ? className(state) : className)
       }
-      render={withMenuChildren(render, content)}>
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
       {content}
     </BaseMenu.SubmenuTrigger>
   );
@@ -219,15 +219,16 @@ const DropdownMenuContent = ({ref, ...props}: Readonly<DropdownMenuContent.Props
     render,
     ...popupProps
   } = props;
-  const positionerClassName = positionerProps?.className;
+  const {className: positionerClassName, render: positionerRender, ...positionerNativeProps} = positionerProps ?? {};
+  const {render: portalRender, ...portalNativeProps} = portalProps ?? {};
   const popup = (
     <BaseMenu.Popup
       data-slot='dropdown-menu-content'
-      {...popupProps}
       ref={ref}
       dir={dir}
       render={children === undefined ? render : withMenuChildren(render, children)}
-      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...popupProps}>
       {children}
     </BaseMenu.Popup>
   );
@@ -245,18 +246,18 @@ const DropdownMenuContent = ({ref, ...props}: Readonly<DropdownMenuContent.Props
       arrowPadding={arrowPadding}
       disableAnchorTracking={disableAnchorTracking}
       collisionAvoidance={collisionAvoidance}
-      {...positionerProps}
-      render={withMenuChildren(positionerProps?.render, popup)}
+      render={withMenuChildren(positionerRender, popup)}
       className={(state) =>
         cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
-      }>
+      }
+      {...positionerNativeProps}>
       {popup}
     </BaseMenu.Positioner>
   );
   return (
     <DropdownMenuPortal
-      {...portalProps}
-      render={withMenuChildren(portalProps?.render, null)}>
+      render={withMenuChildren(portalRender, null)}
+      {...portalNativeProps}>
       {positioner}
     </DropdownMenuPortal>
   );
@@ -273,8 +274,8 @@ const DropdownMenuSubContent = ({ref, ...props}: Readonly<DropdownMenuSubContent
       alignOffset={alignOffset}
       side={side}
       sideOffset={sideOffset}
-      {...otherProps}
       ref={ref}
+      {...otherProps}
     />
   );
 };
@@ -288,11 +289,11 @@ const DropdownMenuItem = ({ref, ...props}: Readonly<DropdownMenuItem.Props>): Re
       data-slot='dropdown-menu-item'
       data-inset={inset}
       data-variant={variant}
-      {...otherProps}
       ref={ref}
       nativeButton={nativeButton}
       className={(state) => cn(styles.item, inset && styles.inset, typeof className === "function" ? className(state) : className)}
-      render={children === undefined ? render : withMenuChildren(render, children)}>
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      {...otherProps}>
       {children}
     </BaseMenu.Item>
   );
@@ -319,7 +320,6 @@ const DropdownMenuCheckboxItem = ({ref, ...props}: Readonly<DropdownMenuCheckbox
     <BaseMenu.CheckboxItem
       data-slot='dropdown-menu-checkbox-item'
       data-inset={inset}
-      {...otherProps}
       ref={ref}
       className={(state) =>
         cn(
@@ -329,7 +329,8 @@ const DropdownMenuCheckboxItem = ({ref, ...props}: Readonly<DropdownMenuCheckbox
           typeof className === "function" ? className(state) : className,
         )
       }
-      render={withMenuChildren(render, content)}>
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
       {content}
     </BaseMenu.CheckboxItem>
   );
@@ -356,7 +357,6 @@ const DropdownMenuRadioItem = ({ref, ...props}: Readonly<DropdownMenuRadioItem.P
     <BaseMenu.RadioItem
       data-slot='dropdown-menu-radio-item'
       data-inset={inset}
-      {...otherProps}
       ref={ref}
       className={(state) =>
         cn(
@@ -366,7 +366,8 @@ const DropdownMenuRadioItem = ({ref, ...props}: Readonly<DropdownMenuRadioItem.P
           typeof className === "function" ? className(state) : className,
         )
       }
-      render={withMenuChildren(render, content)}>
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
       {content}
     </BaseMenu.RadioItem>
   );
@@ -380,10 +381,10 @@ const DropdownMenuLabel = ({ref, ...props}: Readonly<DropdownMenuLabel.Props>): 
     <BaseMenu.GroupLabel
       data-slot='dropdown-menu-label'
       data-inset={inset}
-      {...otherProps}
       ref={ref}
       render={children === undefined ? render : withMenuChildren(render, children)}
-      className={(state) => cn(styles.label, inset && styles.inset, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.label, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMenu.GroupLabel>
   );
@@ -396,9 +397,9 @@ const DropdownMenuSeparator = ({ref, ...props}: Readonly<DropdownMenuSeparator.P
   return (
     <BaseMenu.Separator
       data-slot='dropdown-menu-separator'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -413,9 +414,9 @@ const DropdownMenuShortcut = ({ref, ...props}: Readonly<DropdownMenuShortcut.Pro
     render: children === undefined ? render : withMenuChildren(render, children),
     props: {
       "data-slot": "dropdown-menu-shortcut",
-      ...otherProps,
       className: cn(styles.shortcut, className),
       ...(children === undefined ? {} : {children}),
+      ...otherProps,
     },
   });
 };

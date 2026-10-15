@@ -44,10 +44,10 @@ const Switch = (props: Readonly<Switch.Props>): React.ReactElement => {
   return (
     <BaseSwitch.Root
       ref={ref}
-      {...otherProps}
       data-slot='switch'
       data-size={size}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       <BaseSwitch.Thumb
         data-slot='switch-thumb'
         className={styles.thumb}

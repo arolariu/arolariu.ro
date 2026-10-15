@@ -109,8 +109,8 @@ function DotBackground({
       aria-hidden={isDecorativeSvg(children) ? true : undefined}
       focusable='false'
       className={cn(styles.root, className)}
-      {...props}
-      data-motion={paused ? "paused" : "running"}>
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
       <defs>
         <radialGradient id={`${id}-gradient`}>
           <stop

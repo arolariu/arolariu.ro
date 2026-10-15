@@ -91,8 +91,8 @@ function SheetClose({className, ...props}: Readonly<SheetClose.Props>): React.Re
   return (
     <BaseDialog.Close
       data-slot='sheet-close'
-      {...props}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
     />
   );
 }
@@ -111,11 +111,11 @@ const SheetTrigger = ({ref, children, render, nativeButton, className, ...props}
   return (
     <BaseDialog.Trigger
       data-slot='sheet-trigger'
-      {...props}
       ref={primitiveRef}
       className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
       nativeButton={nativeButton}
-      render={render}>
+      render={render}
+      {...props}>
       {children}
     </BaseDialog.Trigger>
   );
@@ -127,8 +127,8 @@ function SheetOverlay({className, ...props}: Readonly<SheetOverlay.Props>): Reac
   return (
     <BaseDialog.Backdrop
       data-slot='sheet-overlay'
-      {...props}
       className={cn(styles.backdrop, className)}
+      {...props}
     />
   );
 }
@@ -172,7 +172,6 @@ const SheetContent = ({
       <BaseDialog.Popup
         data-slot='sheet-content'
         data-side={side}
-        {...props}
         ref={ref}
         render={
           decorateElement
@@ -185,7 +184,8 @@ const SheetContent = ({
               )
             : render
         }
-        className={cn(styles.popup, styles[side], className)}>
+        className={cn(styles.popup, styles[side], className)}
+        {...props}>
         {decorateElement ? (
           children
         ) : (
@@ -237,8 +237,8 @@ function SheetTitle({className, ...props}: Readonly<SheetTitle.Props>): React.Re
   return (
     <BaseDialog.Title
       data-slot='sheet-title'
-      {...props}
       className={cn(styles.title, className)}
+      {...props}
     />
   );
 }
@@ -249,8 +249,8 @@ function SheetDescription({className, ...props}: Readonly<SheetDescription.Props
   return (
     <BaseDialog.Description
       data-slot='sheet-description'
-      {...props}
       className={cn(styles.description, className)}
+      {...props}
     />
   );
 }

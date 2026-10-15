@@ -171,8 +171,8 @@ function TooltipTrigger<Payload = unknown>(props: Readonly<TooltipTrigger.Props<
           disabled={disabled ?? false}
         />
       )}
-      {...otherProps}
-      ref={primitiveRef}>
+      ref={primitiveRef}
+      {...otherProps}>
       {children}
     </BaseTooltip.Trigger>
   );

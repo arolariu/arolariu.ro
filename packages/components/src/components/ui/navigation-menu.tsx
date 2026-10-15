@@ -124,12 +124,12 @@ function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenuProps<Val
   return (
     <BaseNavigationMenu.Root<Value>
       data-slot='navigation-menu'
-      {...otherProps}
       ref={ref}
       data-orientation={orientation}
       orientation={orientation}
       render={withDecoration(render, children, positioner)}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {rootChildren}
     </BaseNavigationMenu.Root>
   );
@@ -141,9 +141,9 @@ const NavigationMenuList = ({ref, ...props}: Readonly<NavigationMenuList.Props>)
   return (
     <BaseNavigationMenu.List
       data-slot='navigation-menu-list'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.list, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -154,9 +154,9 @@ const NavigationMenuItem = ({ref, ...props}: Readonly<NavigationMenuItem.Props>)
   return (
     <BaseNavigationMenu.Item
       data-slot='navigation-menu-item'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.item, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -178,10 +178,10 @@ const NavigationMenuTrigger = ({ref, ...props}: Readonly<NavigationMenuTrigger.P
   return (
     <BaseNavigationMenu.Trigger
       data-slot='navigation-menu-trigger'
-      {...otherProps}
       ref={ref}
       render={withDecoration(render, children, icon)}
-      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {triggerChildren}
     </BaseNavigationMenu.Trigger>
   );
@@ -193,9 +193,9 @@ const NavigationMenuContent = ({ref, ...props}: Readonly<NavigationMenuContent.P
   return (
     <BaseNavigationMenu.Content
       data-slot='navigation-menu-content'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -206,9 +206,9 @@ const NavigationMenuLink = ({ref, ...props}: Readonly<NavigationMenuLink.Props>)
   return (
     <BaseNavigationMenu.Link
       data-slot='navigation-menu-link'
-      {...otherProps}
       ref={ref}
       className={(state) => cn(styles.link, typeof className === "function" ? className(state) : className)}
+      {...otherProps}
     />
   );
 };
@@ -236,29 +236,27 @@ const NavigationMenuPositioner = ({ref, ...props}: Readonly<NavigationMenuPositi
     viewportProps,
     ...otherProps
   } = props;
+  const {className: viewportClassName, ...viewportNativeProps} = viewportProps ?? {};
+  const {className: popupClassName, render: popupRender, children: popupExtraChildren, ...popupNativeProps} = popupProps ?? {};
   const viewport = (
     <BaseNavigationMenu.Viewport
       data-slot='navigation-menu-viewport'
-      {...viewportProps}
-      className={(state) =>
-        cn(styles.viewport, typeof viewportProps?.className === "function" ? viewportProps.className(state) : viewportProps?.className)
-      }
+      className={(state) => cn(styles.viewport, typeof viewportClassName === "function" ? viewportClassName(state) : viewportClassName)}
+      {...viewportNativeProps}
     />
   );
   const popupChildren = (
     <>
-      {popupProps?.children}
+      {popupExtraChildren}
       {viewport}
     </>
   );
   const popup = (
     <BaseNavigationMenu.Popup
       data-slot='navigation-menu-popup'
-      {...popupProps}
-      render={withDecoration(popupProps?.render, popupProps?.children, viewport)}
-      className={(state) =>
-        cn(styles.popup, typeof popupProps?.className === "function" ? popupProps.className(state) : popupProps?.className)
-      }>
+      render={withDecoration(popupRender, popupExtraChildren, viewport)}
+      className={(state) => cn(styles.popup, typeof popupClassName === "function" ? popupClassName(state) : popupClassName)}
+      {...popupNativeProps}>
       {popupChildren}
     </BaseNavigationMenu.Popup>
   );
@@ -274,14 +272,14 @@ const NavigationMenuPositioner = ({ref, ...props}: Readonly<NavigationMenuPositi
       {portalProps?.children}
       <BaseNavigationMenu.Positioner
         data-slot='navigation-menu-positioner'
-        {...otherProps}
         ref={ref}
         side={side}
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
         render={withDecoration(render, children, popup)}
-        className={(state) => cn(styles.positioner, typeof className === "function" ? className(state) : className)}>
+        className={(state) => cn(styles.positioner, typeof className === "function" ? className(state) : className)}
+        {...otherProps}>
         {positionerChildren}
       </BaseNavigationMenu.Positioner>
     </BaseNavigationMenu.Portal>
