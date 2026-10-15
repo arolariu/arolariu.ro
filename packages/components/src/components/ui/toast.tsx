@@ -73,8 +73,8 @@ export type ToastProviderState = ToastPrimitive.Provider.State;
 function ToastProvider<Data extends object = DefaultToastMetadata>({timeout = 0, ...props}: ToastProviderProps<Data>): React.JSX.Element {
   return (
     <ToastPrimitive.Provider
-      {...props}
       timeout={timeout}
+      {...props}
     />
   );
 }
@@ -87,8 +87,8 @@ export type ToastPortalState = ToastPrimitive.Portal.State;
 const ToastPortal = ({ref, ...props}: Readonly<ToastPortalProps>): React.JSX.Element => (
   <ToastPrimitive.Portal
     data-slot='toast-portal'
-    {...props}
     ref={ref}
+    {...props}
   />
 );
 ToastPortal.displayName = "ToastPortal";
@@ -103,9 +103,9 @@ const ToastViewport = ({ref, className, position = "bottom-right", ...props}: Re
     data-slot='toast-viewport'
     data-position={position}
     aria-label='Notifications'
-    {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.viewport, className(state)) : cn(styles.viewport, className)}
+    {...props}
   />
 );
 ToastViewport.displayName = "ToastViewport";
@@ -123,9 +123,9 @@ function Toast<Data extends object = DefaultToastMetadata>({ref, className, ...p
   return (
     <ToastPrimitive.Root
       data-slot='toast'
-      {...props}
       ref={ref}
       className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
+      {...props}
     />
   );
 }
@@ -139,9 +139,9 @@ export type ToastContentState = ToastPrimitive.Content.State;
 const ToastContent = ({ref, className, ...props}: Readonly<ToastContentProps>): React.JSX.Element => (
   <ToastPrimitive.Content
     data-slot='toast-content'
-    {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.content, className(state)) : cn(styles.content, className)}
+    {...props}
   />
 );
 ToastContent.displayName = "ToastContent";
@@ -154,9 +154,9 @@ export type ToastTitleState = ToastPrimitive.Title.State;
 const ToastTitle = ({ref, className, ...props}: Readonly<ToastTitleProps>): React.JSX.Element => (
   <ToastPrimitive.Title
     data-slot='toast-title'
-    {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.title, className(state)) : cn(styles.title, className)}
+    {...props}
   />
 );
 ToastTitle.displayName = "ToastTitle";
@@ -169,9 +169,9 @@ export type ToastDescriptionState = ToastPrimitive.Description.State;
 const ToastDescription = ({ref, className, ...props}: Readonly<ToastDescriptionProps>): React.JSX.Element => (
   <ToastPrimitive.Description
     data-slot='toast-description'
-    {...props}
     ref={ref}
     className={typeof className === "function" ? (state) => cn(styles.description, className(state)) : cn(styles.description, className)}
+    {...props}
   />
 );
 ToastDescription.displayName = "ToastDescription";
@@ -191,10 +191,10 @@ const DEFAULT_TOAST_ACTION_RENDER = (
 const ToastAction = ({ref, className, render = DEFAULT_TOAST_ACTION_RENDER, ...props}: Readonly<ToastActionProps>): React.JSX.Element => (
   <ToastPrimitive.Action
     data-slot='toast-action'
-    {...props}
     ref={ref}
     render={render}
     className={typeof className === "function" ? (state) => cn(styles.action, className(state)) : cn(styles.action, className)}
+    {...props}
   />
 );
 ToastAction.displayName = "ToastAction";
@@ -208,7 +208,6 @@ const ToastClose = ({ref, className, children, render, ...props}: Readonly<Toast
   <ToastPrimitive.Close
     data-slot='toast-close'
     aria-label={render === undefined && (children === null || children === undefined) ? "Close toast" : undefined}
-    {...props}
     ref={ref}
     render={
       render ?? (
@@ -218,7 +217,8 @@ const ToastClose = ({ref, className, children, render, ...props}: Readonly<Toast
         />
       )
     }
-    className={typeof className === "function" ? (state) => cn(styles.close, className(state)) : cn(styles.close, className)}>
+    className={typeof className === "function" ? (state) => cn(styles.close, className(state)) : cn(styles.close, className)}
+    {...props}>
     {children ?? (
       <X
         aria-hidden='true'
@@ -321,16 +321,17 @@ function Toaster<Data extends object = DefaultToastMetadata>({
   viewportProps,
   ...props
 }: ToasterProps<Data>): React.JSX.Element {
-  const mergedRef = useMergedRefs(ref, viewportProps?.ref);
+  const {ref: viewportRef, ...nativeViewportProps} = viewportProps ?? {};
+  const mergedRef = useMergedRefs(ref, viewportRef);
   const viewportPosition = viewportProps?.position ?? position;
   const content = (
     <>
       {children}
       <ToastPortal>
         <ToastViewport
-          {...viewportProps}
           position={viewportPosition}
-          ref={mergedRef}>
+          ref={mergedRef}
+          {...nativeViewportProps}>
           <ToastList<Data>
             position={viewportPosition}
             closeLabel={closeLabel}
@@ -341,14 +342,14 @@ function Toaster<Data extends object = DefaultToastMetadata>({
   );
   return toastManager ? (
     <ToastProvider<Data>
-      {...props}
-      toastManager={toastManager}>
+      toastManager={toastManager}
+      {...props}>
       {content}
     </ToastProvider>
   ) : (
     <ToastProvider
-      {...props}
-      toastManager={toast}>
+      toastManager={toast}
+      {...props}>
       {content}
     </ToastProvider>
   );

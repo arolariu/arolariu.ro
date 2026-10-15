@@ -55,7 +55,7 @@
   position: absolute;
   box-sizing: border-box;
   max-block-size: calc(100dvh - 2rem);
-  overflow-y: auto;
+  overflow: visible;
   right: 0;
   bottom: 0;
   z-index: calc(1000 - var(--toast-index));
@@ -144,6 +144,8 @@
   box-sizing: border-box;
   flex-wrap: wrap;
   height: 100%;
+  max-block-size: calc(100dvh - 2rem - 2px);
+  overflow-y: auto;
   align-items: center;
   gap: var(--ac-space-3);
   overflow-wrap: anywhere;

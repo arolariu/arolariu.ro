@@ -4,6 +4,7 @@ import * as React from "react";
 import {readFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
+import {parse} from "postcss";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
@@ -26,6 +27,7 @@ import {
   type ToastState,
   type ToasterProps,
 } from "./toast";
+import styles from "./toast.module.css";
 import * as ToastStories from "./toast.stories";
 
 function CompoundList(): React.JSX.Element {
@@ -58,6 +60,72 @@ describe("canonical Toast", () => {
     });
     vi.useRealTimers();
   });
+
+  it.each(["top-right", "bottom-right"] as const)(
+    "keeps the %s gap bridge unclipped, tall content scrollable and SDK hover timers paused",
+    (position) => {
+      vi.useFakeTimers();
+      const manager = createToastManager();
+      const onClose = vi.fn();
+      const source = readFileSync(join(import.meta.dirname, "toast.module.css"), "utf8");
+      render(
+        <>
+          <style>
+            {source.replace(/\.([a-zA-Z][\w-]*)/g, (selector: string, name: string): string =>
+              styles[name] ? `.${styles[name]}` : selector,
+            )}
+          </style>
+          <Toaster
+            toastManager={manager}
+            position={position}
+            timeout={1000}
+          />
+        </>,
+      );
+      act(() => {
+        manager.add({title: "Tall notice", description: "Long caller content. ".repeat(200), onClose});
+        manager.add({title: "Persistent notice", timeout: 0});
+        vi.advanceTimersByTime(250);
+      });
+      const timed = screen.getByText("Tall notice").closest("[data-slot=toast]");
+      const persistent = screen.getByText("Persistent notice").closest("[data-slot=toast]");
+      const content = timed?.querySelector("[data-slot=toast-content]");
+      if (!timed || !persistent || !content) throw new Error("Missing real toast composition");
+
+      // Happy DOM cannot hit-test a pseudo-element at native pointer coordinates.
+      // Prove the authored bridge is outside an unclipped pointer-active root,
+      // then exercise the SDK's real descendant-to-descendant hover lifecycle.
+      expect(getComputedStyle(timed).overflowY).not.toMatch(/auto|scroll|hidden|clip/);
+      expect(getComputedStyle(timed).overflow).toBe("visible");
+      expect(getComputedStyle(timed).pointerEvents).toBe("auto");
+      expect(getComputedStyle(content).overflowY).toBe("auto");
+      expect(getComputedStyle(content).maxBlockSize).toBe("calc(100dvh - 2rem - 2px)");
+      const bridge: Record<string, string> = {};
+      parse(source).walkRules(".root::after", (rule) => rule.walkDecls((decl) => void (bridge[decl.prop] = decl.value)));
+      expect(bridge).toMatchObject({position: "absolute", top: "100%", width: "100%", height: "calc(var(--toast-gap) + 1px)"});
+      const topBridge: Record<string, string> = {};
+      parse(source).walkRules('.viewport[data-position^="top"] .root::after', (rule) =>
+        rule.walkDecls((decl) => void (topBridge[decl.prop] = decl.value)),
+      );
+      expect(topBridge).toMatchObject({top: "auto", bottom: "100%"});
+
+      fireEvent.mouseOver(persistent, {relatedTarget: document.body});
+      expect(timed).toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(2000));
+      fireEvent.mouseOut(persistent, {relatedTarget: timed});
+      fireEvent.mouseOver(timed, {relatedTarget: persistent});
+      expect(timed).toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(2000));
+      expect(onClose).not.toHaveBeenCalled();
+      fireEvent.mouseOut(timed, {relatedTarget: document.body});
+      expect(timed).not.toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(749));
+      expect(onClose).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+      expect(onClose).toHaveBeenCalledOnce();
+      expect(persistent).not.toHaveAttribute("data-ending-style");
+    },
+  );
 
   it("exports all 13 pinned runtime values and a real non-callable manager", () => {
     expect([

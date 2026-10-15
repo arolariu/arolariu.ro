@@ -63,6 +63,40 @@ export const LimitedStack: Story = {render: () => <ScopedExample />};
 /** Top positions reverse stacking, entry, exit, and offset direction. */
 export const TopCenter: Story = {render: () => <ScopedExample position='top-center' />};
 
+function TallContentExample({position}: Readonly<{position?: ToastPosition}>): React.JSX.Element {
+  const [manager] = React.useState(() => createToastManager());
+  return (
+    <>
+      <style>{`.ac-story-toast-tallViewport [data-slot="toast-content"] { max-height: min(24rem, calc(100dvh - 10rem)); }`}</style>
+      <Toaster
+        toastManager={manager}
+        position={position}
+        limit={2}
+        viewportProps={{className: "ac-story-toast-tallViewport"}}>
+        <Button
+          onClick={() => {
+            manager.add({
+              title: "Tall scrollable notice",
+              description: "Long caller-owned notification content that remains available for reading. ".repeat(100),
+            });
+            manager.add({title: "Timed notice", description: "Move across the expanded gap to pause.", timeout: 15000});
+          }}>
+          Show tall content and timed stack
+        </Button>
+      </Toaster>
+    </>
+  );
+}
+
+/** Caller-owned height and limit keep both expanded notices readable while the long body scrolls.
+ * Native pointer/scroll inspection: hover across the expanded gap, then scroll the tall notice.
+ * Change position in controls to inspect both top and bottom bridges.
+ */
+export const TallContentStack: Story = {
+  args: {position: "bottom-right"},
+  render: ({position}) => <TallContentExample position={position} />,
+};
+
 function CompoundExample(): React.JSX.Element {
   const {add, close, toasts} = useToastManager<{origin: string}>();
   return (
