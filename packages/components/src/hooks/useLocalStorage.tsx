@@ -2,6 +2,21 @@
 
 import * as React from "react";
 
+function unsubscribeFromHydration(): void {
+  // React rechecks the constant client snapshot after hydration; no listener is owned.
+}
+const subscribeToHydration = (): (() => void) => unsubscribeFromHydration;
+
+function readStorage<T>(key: string, initialValue: T): T {
+  if (globalThis.window === undefined) return initialValue;
+  try {
+    const item = globalThis.window.localStorage.getItem(key);
+    return item === null ? initialValue : (JSON.parse(item) as T);
+  } catch {
+    return initialValue;
+  }
+}
+
 /**
  * Persists state to localStorage with SSR safety and JSON serialization.
  *
@@ -10,6 +25,8 @@ import * as React from "react";
  * across page refreshes and browser sessions. It is SSR-safe and returns the
  * initial value on the server until hydration completes. The hook also syncs
  * state across tabs/windows via the `storage` event.
+ * The hydration snapshot matches the server until the first client commit;
+ * client-only mounts can show their stored snapshot immediately.
  *
  * Error handling:
  * - On initial load, a JSON parse failure falls back to `initialValue`.
@@ -51,20 +68,12 @@ import * as React from "react";
  * ```
  */
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
-  const [storedValue, setStoredValue] = React.useState<T>(() => {
-    // SSR safety: return initial value on server
-    if (globalThis.window === undefined) {
-      return initialValue;
-    }
-
-    try {
-      const item = globalThis.window.localStorage.getItem(key);
-
-      return item === null ? initialValue : (JSON.parse(item) as T);
-    } catch {
-      return initialValue;
-    }
-  });
+  const hydrated = React.useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
+  const [storedValue, setStoredValue] = React.useState<T>(() => readStorage(key, initialValue));
 
   const setValue = React.useCallback(
     (value: T | ((prev: T) => T)) => {
@@ -112,5 +121,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     };
   }, [key, initialValue]);
 
-  return [storedValue, setValue];
+  return [hydrated ? storedValue : initialValue, setValue];
 }

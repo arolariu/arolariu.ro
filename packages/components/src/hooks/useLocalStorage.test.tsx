@@ -1,4 +1,5 @@
 import {act, renderHook} from "@testing-library/react";
+import {hydrateRoot, type Root} from "react-dom/client";
 import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -67,6 +68,42 @@ describe("useLocalStorage", () => {
     expect(markup).toContain("ssr-default");
 
     vi.stubGlobal("window", originalWindow);
+  });
+
+  it("hydrates the server snapshot before reading a different persisted value", async () => {
+    const snapshots: string[] = [];
+    const recoverableError = vi.fn();
+    function StoredTheme(): React.JSX.Element {
+      const [value] = useLocalStorage("hydrated-theme", "light");
+      snapshots.push(value);
+      return <span>{value}</span>;
+    }
+
+    globalThis.window.localStorage.setItem("hydrated-theme", JSON.stringify("dark"));
+    const originalWindow = globalThis.window;
+    let markup: string;
+    try {
+      vi.stubGlobal("window", undefined);
+      markup = renderToString(<StoredTheme />);
+    } finally {
+      vi.stubGlobal("window", originalWindow);
+    }
+    const container = document.createElement("div");
+    container.innerHTML = markup;
+    document.body.append(container);
+    snapshots.length = 0;
+    let root: Root | undefined;
+    try {
+      await act(async () => {
+        root = hydrateRoot(container, <StoredTheme />, {onRecoverableError: recoverableError});
+      });
+      expect(snapshots[0]).toBe("light");
+      expect(container).toHaveTextContent("dark");
+      expect(recoverableError).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+    }
   });
 
   it("syncs state across tabs via storage event", () => {
