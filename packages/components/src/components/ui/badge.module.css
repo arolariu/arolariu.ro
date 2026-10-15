@@ -70,7 +70,7 @@
 
   @media (hover: hover) {
     &:hover {
-      background-color: color-mix(in oklch, var(--ac-destructive), transparent 20%);
+      background-color: color-mix(in oklch, var(--ac-destructive) 90%, var(--ac-foreground));
     }
   }
 }

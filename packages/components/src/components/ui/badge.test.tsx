@@ -46,7 +46,9 @@ function compiledDeclarations(target: HTMLElement, hover: boolean, forcedColors:
   const declarations: Record<string, string> = {};
   compiledBadgeCss.walkRules((rule) => {
     if (rule.parent?.type === "rule") throw new Error("Nesting compiler left a nested selector");
-    const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => `.${CSS.escape(requiredClass(name))}`);
+    const selector = rule.selector
+      .replace(/\.([a-z][\w-]*)/giu, (_, name: string) => `.${CSS.escape(requiredClass(name))}`)
+      .replace(/:hover\b/gu, hover ? "" : ":not(*)");
     if (!mediaApplies(rule, hover, forcedColors) || !target.matches(selector)) return;
     rule.walkDecls((decl) => {
       declarations[decl.prop] = decl.value;
@@ -62,6 +64,74 @@ function compiledDeclarations(target: HTMLElement, hover: boolean, forcedColors:
   });
   return declarations;
 }
+
+type Theme = "light" | "dark";
+type Rgba = readonly [number, number, number, number];
+const themeTokens: Record<Theme, Record<string, string>> = {light: {}, dark: {}};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  const theme = rule.selector === ":root" ? "light" : rule.selector.includes('[data-theme="dark"]') ? "dark" : undefined;
+  if (theme) rule.walkDecls((decl) => void (themeTokens[theme][decl.prop] = decl.value));
+});
+
+// Evaluate the authored recipe with the real CSS compiler's sRGB fallback,
+// then composite translucent paint in encoded sRGB over the default canvas.
+// Native gamut mapping and consumer themes remain browser verification work.
+function recipeColor(value: string | undefined, theme: Theme): Rgba {
+  if (!value) throw new Error("Missing authored Badge paint");
+  const resolved = value.replace(/var\((--ac-[\w-]+)\)/gu, (_, token: string): string => {
+    const color = themeTokens[theme][token];
+    if (!color) throw new Error(`Missing ${theme} token ${token}`);
+    return color;
+  });
+  const output = transform({
+    filename: "badge-contrast.css",
+    code: Buffer.from(`.paint { color: ${resolved}; }`),
+    targets: {chrome: 100 << 16},
+  }).code.toString();
+  const hex = /color:\s*#([\da-f]+);/iu.exec(output)?.[1];
+  if (!hex) throw new Error(`Missing compiled sRGB paint: ${output}`);
+  const expanded = hex.length <= 4 ? [...hex].map((digit) => digit.repeat(2)).join("") : hex;
+  if (expanded.length !== 6 && expanded.length !== 8) throw new Error(`Unexpected sRGB paint: ${hex}`);
+  const channel = (offset: number): number => Number.parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+  return [channel(0), channel(2), channel(4), expanded.length === 8 ? channel(6) : 1];
+}
+
+function composite(paint: Rgba, canvas: Rgba): Rgba {
+  const alpha = paint[3];
+  return [
+    paint[0] * alpha + canvas[0] * (1 - alpha),
+    paint[1] * alpha + canvas[1] * (1 - alpha),
+    paint[2] * alpha + canvas[2] * (1 - alpha),
+    1,
+  ];
+}
+
+function textContrast(first: Rgba, second: Rgba): number {
+  const luminance = ([red, green, blue]: Rgba): number => {
+    const linear = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("authored destructive Badge in %s defaults", (theme) => {
+  it.each([false, true])("keeps ordinary text at 4.5:1 with hover=%s after canvas compositing", (hover) => {
+    render(
+      <Badge
+        variant='destructive'
+        render={<button type='button' />}>
+        Delete
+      </Badge>,
+    );
+    const root = screen.getByRole("button", {name: "Delete"});
+    const state = compiledDeclarations(root, hover, false);
+    const background = composite(recipeColor(state["background-color"], theme), recipeColor("var(--ac-background)", theme));
+    const foreground = composite(recipeColor(state["color"], theme), background);
+    expect(textContrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+  });
+});
 
 describe.each([
   ["button", false],
