@@ -117,6 +117,7 @@ function areRefsEqual<T>(
 export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
   const uniqueRefs = [...new Set(refs)];
   const refsRef = React.useRef<ReadonlyArray<React.Ref<T> | undefined>>(uniqueRefs);
+  const attachedRefsRef = React.useRef<ReadonlyArray<React.Ref<T> | undefined>>([]);
   const nodeRef = React.useRef<T | null>(null);
   const cleanupsRef = React.useRef(new Map<React.Ref<T> | undefined, () => void>());
   const attachmentRef = React.useRef(0);
@@ -124,27 +125,35 @@ export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): Reac
   const detach = React.useCallback((errors: unknown[]): void => {
     if (nodeRef.current === null) return;
     nodeRef.current = null;
-    for (const ref of refsRef.current) {
+    const attachedRefs = attachedRefsRef.current;
+    attachedRefsRef.current = [];
+    for (const ref of attachedRefs) {
       setRef(ref, null, cleanupsRef.current, errors);
     }
   }, []);
 
-  React.useLayoutEffect(() => {
-    const previousRefs = refsRef.current;
+  // Host refs attach before their owner's layout effects. Publish membership in
+  // the commit phase without leaking refs from an abandoned render.
+  React.useInsertionEffect(() => {
     refsRef.current = uniqueRefs;
+  });
 
-    if (nodeRef.current === null || areRefsEqual(previousRefs, uniqueRefs)) {
+  React.useLayoutEffect(() => {
+    const previousRefs = attachedRefsRef.current;
+    const nextRefs = refsRef.current;
+    if (nodeRef.current === null || areRefsEqual(previousRefs, nextRefs)) {
       return;
     }
 
+    attachedRefsRef.current = nextRefs;
     const errors: unknown[] = [];
     for (const ref of previousRefs) {
-      if (!uniqueRefs.includes(ref)) {
+      if (!nextRefs.includes(ref)) {
         setRef(ref, null, cleanupsRef.current, errors);
       }
     }
 
-    for (const ref of uniqueRefs) {
+    for (const ref of nextRefs) {
       if (!previousRefs.includes(ref)) {
         setRef(ref, nodeRef.current, cleanupsRef.current, errors);
       }
@@ -161,7 +170,9 @@ export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): Reac
       if (node === null) return undefined;
       nodeRef.current = node;
       const attachment = ++attachmentRef.current;
-      for (const ref of refsRef.current) {
+      const attachedRefs = refsRef.current;
+      attachedRefsRef.current = attachedRefs;
+      for (const ref of attachedRefs) {
         setRef(ref, node, cleanupsRef.current, errors);
       }
       if (errors.length > 0) detach(errors);

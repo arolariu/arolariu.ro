@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import {render, renderHook} from "@testing-library/react";
+import {act, render, renderHook} from "@testing-library/react";
 import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
 
@@ -7,12 +7,14 @@ import {useMergedRefs} from "./useMergedRefs";
 
 interface MergedRefElementProps {
   readonly refs: ReadonlyArray<React.Ref<HTMLDivElement> | undefined>;
+  readonly nodeKey?: string;
 }
 
-function MergedRefElement({refs}: Readonly<MergedRefElementProps>): React.JSX.Element {
+function MergedRefElement({refs, nodeKey}: Readonly<MergedRefElementProps>): React.JSX.Element {
   const ref = useMergedRefs(...refs);
   return (
     <div
+      key={nodeKey}
       ref={ref}
       data-testid='merged-ref-element'
     />
@@ -481,6 +483,84 @@ describe("useMergedRefs", () => {
     unmount();
     expect(cleanups).toBe(1);
     expect(secondObjectRef.current).toBeNull();
+  });
+
+  it("attaches only committed members when both the DOM node and refs change in one commit", () => {
+    const firstCleanup = vi.fn();
+    const secondCleanup = vi.fn();
+    const firstRef = vi.fn((node: HTMLDivElement | null) => (node === null ? undefined : firstCleanup));
+    const secondRef = vi.fn((node: HTMLDivElement | null) => (node === null ? undefined : secondCleanup));
+    const retainedObject = React.createRef<HTMLDivElement>();
+    const {getByTestId, rerender, unmount} = render(
+      <MergedRefElement
+        nodeKey='first'
+        refs={[firstRef, retainedObject]}
+      />,
+    );
+    const first = getByTestId("merged-ref-element");
+    rerender(
+      <MergedRefElement
+        nodeKey='second'
+        refs={[secondRef, retainedObject]}
+      />,
+    );
+    const second = getByTestId("merged-ref-element");
+
+    expect(second).not.toBe(first);
+    expect(firstRef.mock.calls).toEqual([[first]]);
+    expect(firstCleanup).toHaveBeenCalledExactlyOnceWith();
+    expect(secondRef.mock.calls).toEqual([[second]]);
+    expect(secondCleanup).not.toHaveBeenCalled();
+    expect(retainedObject.current).toBe(second);
+    unmount();
+    expect(secondCleanup).toHaveBeenCalledExactlyOnceWith();
+    expect(retainedObject.current).toBeNull();
+  });
+
+  it("does not publish proposed refs from a suspended transition", () => {
+    const currentRef = vi.fn();
+    const proposedRef = vi.fn();
+    const pending = new Promise<void>(() => {});
+    const actions: {replace?: () => void} = {};
+    function ReplaceableTarget({ref}: Readonly<{ref: React.RefCallback<HTMLDivElement>}>): React.JSX.Element {
+      const [key, setKey] = React.useState(0);
+      actions.replace = () => setKey((value) => value + 1);
+      return (
+        <div
+          key={key}
+          ref={ref}
+          data-testid='transition-target'
+        />
+      );
+    }
+    function SuspendingOwner({proposed}: Readonly<{proposed: boolean}>): React.JSX.Element {
+      const ref = useMergedRefs<HTMLDivElement>(proposed ? proposedRef : currentRef);
+      if (proposed) throw pending;
+      return <ReplaceableTarget ref={ref} />;
+    }
+    const {getByTestId, rerender} = render(
+      <React.Suspense fallback={<span>Waiting</span>}>
+        <SuspendingOwner proposed={false} />
+      </React.Suspense>,
+    );
+    const first = getByTestId("transition-target");
+    act(() => {
+      React.startTransition(() => {
+        rerender(
+          <React.Suspense fallback={<span>Waiting</span>}>
+            <SuspendingOwner proposed />
+          </React.Suspense>,
+        );
+      });
+    });
+    expect(first.isConnected).toBe(true);
+    const replace = actions.replace;
+    if (!replace) throw new Error("The committed target did not mount");
+    act(replace);
+    const second = getByTestId("transition-target");
+    expect(second).not.toBe(first);
+    expect(currentRef).toHaveBeenLastCalledWith(second);
+    expect(proposedRef).not.toHaveBeenCalled();
   });
 
   it("balances callback cleanup during StrictMode ref replay and unmount", () => {
