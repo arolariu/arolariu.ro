@@ -4,6 +4,7 @@ import {useDirection} from "@base-ui/react/direction-provider";
 import {mergeProps} from "@base-ui/react/merge-props";
 import type {BaseUIEvent, HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
+import {Home} from "lucide-react";
 import type {getRole as NativeRoleOracle} from "dom-accessibility-api" with {"resolution-mode": "require"};
 import {act, cleanup, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -56,6 +57,65 @@ let mobileQuery: MediaQueryList;
 const stylesheetFixtures: HTMLStyleElement[] = [];
 
 describe("Sidebar primitive-owned class callbacks", () => {
+  it("preserves icon-collapsed menu names while still hiding badges, actions, and submenus", async () => {
+    installDesktopStyles();
+    const user = userEvent.setup();
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <Sidebar collapsible='icon'>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip='Home navigation help'
+                render={<a href='#home' />}>
+                <Home aria-hidden='true' />
+                <span>Home</span>
+              </SidebarMenuButton>
+              <SidebarMenuBadge>3 pending</SidebarMenuBadge>
+              <SidebarMenuAction aria-label='Home actions'>More</SidebarMenuAction>
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href='#child'>Child destination</SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton>
+                <Home aria-hidden='true' />
+                <span>Home action</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    const home = screen.getByRole("link", {name: "Home"});
+    const action = screen.getByRole("button", {name: "Home action"});
+    const label = screen.getByText("Home", {selector: "span"});
+    const badge = screen.getByText("3 pending");
+    const menuAction = screen.getByRole("button", {name: "Home actions"});
+    const submenu = screen.getByRole("link", {name: "Child destination"});
+    expect(badge).toBeVisible();
+    expect(menuAction).toBeVisible();
+    expect(submenu).toBeVisible();
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+
+    expect(home).toHaveAccessibleName("Home");
+    expect(action).toHaveAccessibleName("Home action");
+    expect(getComputedStyle(label).display).not.toBe("none");
+    expect(getComputedStyle(label).position).toBe("absolute");
+    expect(getComputedStyle(label).width).toBe("1px");
+    expect(getComputedStyle(label).clipPath).toBe("inset(50%)");
+    expect(badge).not.toBeVisible();
+    expect(menuAction).not.toBeVisible();
+    expect(submenu).not.toBeVisible();
+    await user.hover(home);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Home navigation help");
+    expect(home).toHaveAccessibleName("Home");
+    expect(home).toHaveAccessibleDescription("Home navigation help");
+  });
+
   it("keeps callback-only desktop state uncontrolled through trigger, rail, and shortcut toggles", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
