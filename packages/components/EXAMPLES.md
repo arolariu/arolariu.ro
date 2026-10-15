@@ -803,11 +803,40 @@ import {
   AlertDialogTrigger,
 } from "@arolariu/components/alert-dialog";
 import {Trash} from "lucide-react";
+import {useState, type JSX} from "react";
 import styles from "./delete-confirmation.module.css";
 
-export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onConfirm: () => void}) {
+export function DeleteConfirmation({
+  itemName,
+  onConfirm,
+}: Readonly<{itemName: string; onConfirm: () => void | Promise<void>}>): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function confirm(): Promise<void> {
+    setPending(true);
+    setFailure(null);
+    try {
+      await onConfirm();
+      setOpen(false);
+    } catch (error: unknown) {
+      setFailure(error instanceof Error && error.message ? error.message : "Could not delete the item. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        if (!nextOpen && pending) details.cancel();
+        else {
+          setOpen(nextOpen);
+          if (nextOpen) setFailure(null);
+        }
+      }}>
       <AlertDialogTrigger
         render={
           <button
@@ -825,15 +854,24 @@ export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onC
             This action cannot be undone. This will permanently delete {itemName} and remove all associated data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {failure !== null && <p role='alert'>{failure}</p>}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Yes, delete it</AlertDialogAction>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            aria-busy={pending}
+            onClick={() => void confirm()}>
+            {pending ? "Deleting..." : "Yes, delete it"}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
 ```
+
+The example owns dismissal: successful completion closes it, pending work prevents duplicate confirmation and dismissal, and rejection keeps
+the dialog open with a visible error. `AlertDialogAction` itself still does not close automatically.
 
 ### Settings Modal
 
