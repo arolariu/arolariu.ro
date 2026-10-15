@@ -597,6 +597,8 @@ const legendEngineFields: ReadonlySet<string> = new Set([
  *   element or ChartContainer instead.
  * - Items with an onClick handler use native, non-submit buttons for keyboard
  *   activation. Other items remain display-only divs.
+ * - SDK-inactive series include a visible and announced "(hidden)" suffix.
+ *   Click handlers are not assumed to toggle visibility.
  * - Migrate `content={ChartLegendContent}` to `content={<ChartLegendContent />}`
  *   or `content={(props) => <ChartLegendContent {...props} />}`.
  * - Text falls back from config label to payload value to a string/number dataKey.
@@ -637,10 +639,10 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
 
   return (
     <div
-      {...getLegendRootAttributes(props)}
       ref={ref}
       data-slot='chart-legend'
-      className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}>
+      className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}
+      {...getLegendRootAttributes(props)}>
       {visiblePayload.map((item, index) => {
         const key = `${nameKey ?? item.dataKey ?? "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
@@ -667,6 +669,7 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
               />
             )}
             {itemFormatter ? itemFormatter(value, item, index) : value}
+            {item.inactive ? " (hidden)" : null}
           </>
         );
 
@@ -675,17 +678,17 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
             key={`${key}-${index}`}
             type='button'
             data-slot='chart-legend-item'
-            {...mouseHandlers}
             onClick={(event) => onClick(item, index, event)}
-            className={cn(styles.legendItem, styles.legendButton)}>
+            className={cn(styles.legendItem, styles.legendButton)}
+            {...mouseHandlers}>
             {content}
           </button>
         ) : (
           <div
             key={`${key}-${index}`}
             data-slot='chart-legend-item'
-            {...mouseHandlers}
-            className={styles.legendItem}>
+            className={styles.legendItem}
+            {...mouseHandlers}>
             {content}
           </div>
         );

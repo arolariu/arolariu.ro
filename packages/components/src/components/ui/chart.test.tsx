@@ -945,6 +945,63 @@ describe("ChartTooltipContent", () => {
 });
 
 describe("ChartLegendContent", () => {
+  it("exposes actual series hide/show transitions without treating every click handler as a toggle", async () => {
+    const user = userEvent.setup();
+    const clicked: RechartsPrimitive.LegendPayload[] = [];
+    function HideableChart(): React.JSX.Element {
+      const [hidden, setHidden] = React.useState(false);
+      return (
+        <ChartContainer
+          config={config}
+          width={400}
+          height={200}>
+          <BarChart data={[{month: "May", revenue: 42}]}>
+            <XAxis dataKey='month' />
+            <Bar
+              dataKey='revenue'
+              hide={hidden}
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              position={{x: 0, y: "100%"}}
+              content={<ChartLegendContent />}
+              onClick={(item) => {
+                clicked.push(item);
+                setHidden(!hidden);
+              }}
+            />
+          </BarChart>
+        </ChartContainer>
+      );
+    }
+    const {container} = render(<HideableChart />);
+    const item = screen.getByRole("button", {name: "Revenue"});
+    expect(container.querySelector(".recharts-bar-rectangles path")).toBeInTheDocument();
+    expect(item).not.toHaveAttribute("aria-pressed");
+    await user.click(item);
+    expect(container.querySelector(".recharts-bar-rectangles path")).toBeNull();
+    expect(clicked[0]?.inactive).toBe(false);
+    expect(item).toHaveAccessibleName("Revenue (hidden)");
+    expect(item).toHaveTextContent("(hidden)");
+    expect(item).not.toHaveAttribute("aria-pressed");
+    await user.keyboard("{Enter}");
+    expect(container.querySelector(".recharts-bar-rectangles path")).toBeInTheDocument();
+    expect(clicked[1]?.inactive).toBe(true);
+    expect(item).toHaveAccessibleName("Revenue");
+    expect(item).not.toHaveTextContent("(hidden)");
+  });
+
+  it("announces inactive display-only series without inventing interactive semantics", () => {
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartLegendContent payload={[{dataKey: "revenue", value: "Revenue", inactive: true}]} />
+      </ChartContainer>,
+    );
+    expect(container.querySelector("[data-slot='chart-legend-item']")).toHaveTextContent("Revenue (hidden)");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(container.querySelector("[aria-pressed]")).toBeNull();
+  });
+
   it("provides native keyboard activation without form submission for clickable legend items", async () => {
     const user = userEvent.setup();
     const calls: Array<readonly [number, string]> = [];

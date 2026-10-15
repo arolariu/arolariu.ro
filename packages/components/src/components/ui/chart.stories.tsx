@@ -1,4 +1,5 @@
 import type * as React from "react";
+import {useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {
@@ -229,6 +230,34 @@ export const ShapeComposition: Story = {
 /**
  * Simple bar chart with single data series.
  */
+export const ToggleSeries: Story = {
+  render: function ToggleSeries(): React.JSX.Element {
+    const [hidden, setHidden] = useState(false);
+    return (
+      <div className={storyClasses.storyFrame}>
+        <ChartContainer
+          config={chartConfig}
+          aria-label='Desktop visits; activate the legend to show or hide the series'
+          accessibleData={monthlyData}>
+          <BarChart data={chartData}>
+            <XAxis dataKey='month' />
+            <Bar
+              dataKey='desktop'
+              fill='var(--color-desktop)'
+              hide={hidden}
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              content={<ChartLegendContent />}
+              onClick={() => setHidden(!hidden)}
+            />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    );
+  },
+};
+
 export const Simple: Story = {
   render: (): React.JSX.Element => {
     const simpleData = [
