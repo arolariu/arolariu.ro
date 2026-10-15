@@ -66,6 +66,62 @@
   padding-inline: var(--ac-cell-size);
 }
 
+/* DayPicker places "around" buttons directly in the first/last month and
+   the "after" toolbar after the last caption. Keep both on the caption row,
+   leaving the actual month grid on its own full-width row. Grid columns
+   follow the root direction, including RTL and stacked multi-month views. */
+.root[data-nav-layout="around"] .month,
+.root[data-nav-layout="after"] .month {
+  display: grid;
+  column-gap: 0;
+}
+
+.root[data-nav-layout="around"] .month {
+  grid-template-columns: var(--ac-cell-size) minmax(0, 1fr) var(--ac-cell-size);
+}
+
+.root[data-nav-layout="after"] .month {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.root[data-nav-layout="around"] .monthCaption,
+.root[data-nav-layout="after"] .monthCaption {
+  grid-row: 1;
+  padding-inline: 0;
+}
+
+.root[data-nav-layout="around"] .monthCaption {
+  grid-column: 2;
+}
+
+.root[data-nav-layout="around"] .navPrevious {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.root[data-nav-layout="around"] .navNext {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.root[data-nav-layout="after"] .monthCaption {
+  grid-column: 1;
+}
+
+.root[data-nav-layout="after"] .nav {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  justify-content: flex-end;
+}
+
+.root[data-nav-layout="around"] .monthGrid,
+.root[data-nav-layout="after"] .monthGrid {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
 .dropdowns {
   display: flex;
   width: 100%;

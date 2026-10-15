@@ -5,8 +5,40 @@ import {fr} from "date-fns/locale";
 import {createRef, StrictMode, useState} from "react";
 import {CalendarDay, type RootProps} from "react-day-picker";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {Features, transform} from "lightningcss";
+import postcss from "postcss";
 
 import {Calendar, CalendarDayButton, type CalendarDayButtonProps, type DateRange} from "./calendar";
+import styles from "./calendar.module.css";
+
+function emittedCalendarStyles(): string {
+  const output = transform({
+    filename: "calendar.module.css",
+    code: Buffer.from(readFileSync(join(import.meta.dirname, "calendar.module.css"), "utf8")),
+    cssModules: true,
+    include: Features.Nesting,
+  });
+  let css = output.code.toString();
+  if (!output.exports) throw new Error("Expected compiled CSS Module exports");
+  for (const [local, exported] of Object.entries(output.exports).sort(([, left], [, right]) => right.name.length - left.name.length)) {
+    if (styles[local]) css = css.replaceAll(`.${exported.name}`, `.${styles[local]}`);
+  }
+  return css;
+}
+
+function calendarDeclarations(css: string, element: Element): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  postcss.parse(css).walkRules((rule) => {
+    if (rule.parent?.type === "atrule") return;
+    if (!rule.selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => {
+      declarations[declaration.prop] = declaration.value;
+    });
+  });
+  return declarations;
+}
 
 function dayButton(isoDate: string): HTMLButtonElement {
   const button = document.querySelector<HTMLButtonElement>(`[role="gridcell"][data-day="${isoDate}"] button`);
@@ -21,9 +53,9 @@ function hasTokenListAdd(value: unknown): value is Pick<DOMTokenList, "add"> {
 function CustomRoot({rootRef, ...props}: Readonly<RootProps>): React.JSX.Element {
   return (
     <div
-      {...props}
       ref={rootRef}
       data-custom-root='true'
+      {...props}
     />
   );
 }
@@ -31,8 +63,8 @@ function CustomRoot({rootRef, ...props}: Readonly<RootProps>): React.JSX.Element
 function EventDayButton(props: Readonly<CalendarDayButtonProps>): React.JSX.Element {
   return (
     <CalendarDayButton
-      {...props}
-      data-event={props.modifiers["event"] || undefined}>
+      data-event={props.modifiers["event"] || undefined}
+      {...props}>
       <span>{props.children}</span>
       {props.modifiers["event"] && <span>Event</span>}
     </CalendarDayButton>
@@ -77,6 +109,98 @@ function MultipleSelection(): React.JSX.Element {
 }
 
 describe("Calendar", () => {
+  it.each(
+    (["around", "after"] as const).flatMap((navLayout) =>
+      (["ltr", "rtl"] as const).flatMap((dir) => [1, 2].map((numberOfMonths) => ({navLayout, dir, numberOfMonths}))),
+    ),
+  )("lays out real $navLayout navigation with $numberOfMonths month(s) in $dir", async ({navLayout, dir, numberOfMonths}) => {
+    const user = userEvent.setup();
+    const sheet = document.createElement("style");
+    const css = emittedCalendarStyles();
+    sheet.textContent = css;
+    document.head.append(sheet);
+    try {
+      const {container} = render(
+        <Calendar
+          defaultMonth={new Date(2024, 0, 1)}
+          navLayout={navLayout}
+          dir={dir}
+          numberOfMonths={numberOfMonths}
+        />,
+      );
+      const root = container.firstElementChild;
+      expect(root).toHaveAttribute("data-nav-layout", navLayout);
+      expect(root).toHaveAttribute("dir", dir);
+      const months = Array.from(container.querySelectorAll<HTMLElement>(".rdp-month"));
+      expect(months).toHaveLength(numberOfMonths);
+      const previous = screen.getByRole("button", {name: "Go to the Previous Month"});
+      const next = screen.getByRole("button", {name: "Go to the Next Month"});
+      for (const month of months) {
+        expect(getComputedStyle(month).display).toBe("grid");
+        expect(calendarDeclarations(css, month)["grid-template-columns"]).toBe(
+          navLayout === "around" ? "var(--ac-cell-size) minmax(0, 1fr) var(--ac-cell-size)" : "minmax(0, 1fr) auto",
+        );
+        const caption = month.querySelector<HTMLElement>(".rdp-month_caption");
+        if (!caption) throw new Error("Missing real month caption");
+        expect(calendarDeclarations(css, caption)["grid-row"]).toBe("1");
+        expect(calendarDeclarations(css, caption)["grid-column"]).toBe(navLayout === "around" ? "2" : "1");
+        const grid = within(month).getByRole("grid");
+        // Lightning CSS combines row/column into grid-area. Happy DOM does not
+        // expand that shorthand: verify its emitted, matching rule directly.
+        expect(calendarDeclarations(css, grid)["grid-area"]).toBe("2 / 1 / auto / -1");
+      }
+      if (navLayout === "around") {
+        expect(container.querySelector(".rdp-nav")).toBeNull();
+        expect(previous.parentElement).toBe(months[0]);
+        expect(next.parentElement).toBe(months.at(-1));
+        expect(previous.nextElementSibling).toHaveClass("rdp-month_caption");
+        expect(next.previousElementSibling).toHaveClass("rdp-month_caption");
+        expect(calendarDeclarations(css, previous)["grid-area"]).toBe("1 / 1");
+        expect(calendarDeclarations(css, next)["grid-area"]).toBe("1 / 3");
+      } else {
+        const nav = screen.getByRole("navigation");
+        expect(nav.parentElement).toBe(months.at(-1));
+        expect(nav.previousElementSibling).toHaveClass("rdp-month_caption");
+        expect(nav.nextElementSibling).toBe(screen.getAllByRole("grid").at(-1));
+        expect(getComputedStyle(nav).position).toBe("static");
+        expect(calendarDeclarations(css, nav)["grid-area"]).toBe("1 / 2");
+        expect(getComputedStyle(nav).width).toBe("auto");
+        expect(previous.parentElement).toBe(nav);
+        expect(next.parentElement).toBe(nav);
+      }
+      await user.click(next);
+      expect(screen.getAllByRole("grid")[0]).toHaveAccessibleName("February 2024");
+      if (numberOfMonths === 2) expect(screen.getAllByRole("grid")[1]).toHaveAccessibleName("March 2024");
+    } finally {
+      sheet.remove();
+    }
+  });
+
+  it.each(["around", "after"] as const)(
+    "keeps the $navLayout dropdown and navigation keyboard order aligned with its DOM",
+    async (navLayout) => {
+      const user = userEvent.setup();
+      render(
+        <Calendar
+          captionLayout='dropdown'
+          navLayout={navLayout}
+          defaultMonth={new Date(2024, 0, 1)}
+        />,
+      );
+      const previous = screen.getByRole("button", {name: "Go to the Previous Month"});
+      const next = screen.getByRole("button", {name: "Go to the Next Month"});
+      const month = screen.getByRole("combobox", {name: "Choose the Month"});
+      const year = screen.getByRole("combobox", {name: "Choose the Year"});
+      const order = navLayout === "around" ? [previous, month, year, next] : [month, year, previous, next];
+      for (const control of order) {
+        await user.tab();
+        expect(control).toHaveFocus();
+      }
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("grid")).toHaveAccessibleName("February 2024");
+    },
+  );
+
   beforeEach(() => {
     // happy-dom accepts whitespace that native DOMTokenList rejects.
     const tokenList = document.createElement("div").classList;

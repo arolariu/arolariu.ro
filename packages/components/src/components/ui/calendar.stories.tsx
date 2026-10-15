@@ -224,6 +224,24 @@ export const DropdownCaptions: Story = {
   },
 };
 
+/** Direct month-child buttons stay around each caption in LTR and RTL. */
+export const AroundNavigation: Story = {
+  args: {mode: "single", defaultMonth: january, navLayout: "around", numberOfMonths: 2, dir: "ltr", className: storyClasses.storyFrame},
+};
+
+/** The last month's caption precedes its grouped toolbar, including tab order. */
+export const AfterNavigation: Story = {
+  args: {
+    mode: "single",
+    defaultMonth: january,
+    captionLayout: "dropdown",
+    navLayout: "after",
+    numberOfMonths: 2,
+    dir: "rtl",
+    className: storyClasses.storyFrame,
+  },
+};
+
 /** The calendar locale controls captions, day labels and day-button metadata. */
 export const Localized: Story = {
   args: {
