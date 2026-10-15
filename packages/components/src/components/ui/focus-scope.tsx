@@ -3,7 +3,7 @@
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-import {isFocusAvailable as isAvailable} from "@/lib/_focus-availability";
+import {isFocusAvailable as isAvailable, isFocusSubtreeAvailable} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
 
 import styles from "./focus-scope.module.css";
@@ -53,8 +53,9 @@ const FOCUSABLE_SELECTOR = [
 const ownedTabEvents = new WeakSet<KeyboardEvent>();
 
 function getActiveElement(owner: HTMLElement): Element | null {
+  const Shadow = owner.ownerDocument.defaultView?.ShadowRoot ?? ShadowRoot;
   const root = owner.getRootNode();
-  let active = (root instanceof ShadowRoot ? root : owner.ownerDocument).activeElement;
+  let active = (root instanceof Shadow ? root.activeElement : null) ?? owner.ownerDocument.activeElement;
   while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
   return active;
 }
@@ -92,23 +93,72 @@ function isRadioTabStop(element: HTMLElement, candidates: readonly HTMLElement[]
   return element === candidates.find((candidate) => members.has(candidate));
 }
 
-function getFocusableElements(container: HTMLElement): HTMLElement[] {
-  const available = [...container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
-    (element) => getTabIndex(element) >= 0 && isAvailable(element),
-  );
-  const ordered = available.toSorted((left, right) => {
-    const leftIndex = getTabIndex(left);
-    const rightIndex = getTabIndex(right);
+function isTabbableElement(element: HTMLElement): boolean {
+  if (!element.matches(FOCUSABLE_SELECTOR) || getTabIndex(element) < 0 || !isAvailable(element)) return false;
+  const view = element.ownerDocument.defaultView;
+  const Slot = view?.HTMLSlotElement ?? HTMLSlotElement;
+  // A contents slot remains an ordering boundary, but has no self focus box.
+  // Explicitly box-rendered slots retain their configured tabindex target.
+  return !(element instanceof Slot && view?.getComputedStyle(element).display === "contents");
+}
+
+function getSlotChildren(slot: HTMLSlotElement | null): Element[] {
+  if (!slot) return [];
+  const assigned = slot.assignedNodes();
+  // Keep intermediate slot owners intact. Any assignment, including text,
+  // suppresses fallback; fallback is used only when nothing was assigned.
+  return assigned.length === 0 ? [...slot.children] : assigned.filter((node): node is Element => node.nodeType === Node.ELEMENT_NODE);
+}
+
+function getScopeCandidates(elements: readonly Element[]): HTMLElement[] {
+  const entries: {element: HTMLElement; contents: HTMLElement[]}[] = [];
+  const visit = (element: Element): void => {
+    const Html = element.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
+    if (!(element instanceof Html)) {
+      [...element.children].forEach((child) => visit(child));
+      return;
+    }
+    const shadow = element.shadowRoot;
+    const Slot = element.ownerDocument.defaultView?.HTMLSlotElement ?? HTMLSlotElement;
+    const Shadow = element.ownerDocument.defaultView?.ShadowRoot ?? ShadowRoot;
+    const slot = element instanceof Slot && element.getRootNode() instanceof Shadow ? element : null;
+    if (shadow || slot) {
+      // A shadow/slot scope stays at its owner's position. A negative owner
+      // removes its entire scope from sequential navigation, not just itself.
+      if ((element.hasAttribute("tabindex") && getTabIndex(element) < 0) || !isFocusSubtreeAvailable(element)) return;
+      const contents = shadow ? [...shadow.children] : getSlotChildren(slot);
+      entries.push({element, contents: getScopeCandidates(contents)});
+    } else {
+      if (isTabbableElement(element)) entries.push({element, contents: []});
+      [...element.children].forEach((child) => visit(child));
+    }
+  };
+  elements.forEach((element) => visit(element));
+  const ordered = entries.toSorted((left, right) => {
+    const leftIndex = getTabIndex(left.element);
+    const rightIndex = getTabIndex(right.element);
     const leftOrder = leftIndex > 0 ? leftIndex : Number.POSITIVE_INFINITY;
     const rightOrder = rightIndex > 0 ? rightIndex : Number.POSITIVE_INFINITY;
     return leftOrder === rightOrder ? 0 : leftOrder - rightOrder;
   });
-  return ordered.filter((element) => isRadioTabStop(element, ordered));
+  return ordered.flatMap(({element, contents}) =>
+    isTabbableElement(element) && !element.shadowRoot?.delegatesFocus ? [element, ...contents] : contents,
+  );
 }
 
-function resolveActiveTarget(active: Element | null, container: HTMLElement, candidates: readonly HTMLElement[]): HTMLElement | undefined {
+function getFocusableElements(eligible: readonly HTMLElement[]): HTMLElement[] {
+  return eligible.filter((element) => isRadioTabStop(element, eligible));
+}
+
+function resolveActiveTarget(
+  active: Element | null,
+  eligible: readonly HTMLElement[],
+  candidates: readonly HTMLElement[],
+): HTMLElement | undefined {
   const Html = active?.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
-  if (!(active instanceof Html) || !container.contains(active)) return undefined;
+  // Membership comes from the same shadow/slot-aware traversal as ordering,
+  // before radio normalization removes eligible unchecked aliases.
+  if (!(active instanceof Html) || !eligible.includes(active)) return undefined;
   if (candidates.includes(active)) return active;
   if (getTabIndex(active) < 0 || !isAvailable(active)) return undefined;
   const group = getRadioGroup(active);
@@ -134,6 +184,12 @@ function resolveActiveTarget(active: Element | null, container: HTMLElement, can
  * navigation advances from that logical stop, so physical peer placement cannot escape
  * containment. Ordinary native traversal remains between representative targets.
  * This is a deliberate controller policy, not a claim about every browser's radio order.
+ * Open shadow roots and assigned slots are expanded at their owner's position,
+ * with positive tab indices ordered within each scope rather than across trees.
+ * Projected focus is read from the owner document when the owning shadow tree
+ * has no active element; membership uses that same eligible candidate collection.
+ * Native interior traversal is preserved; wrapping uses the actual exposed edges.
+ * Closed descendant shadow roots remain opaque: only their exposed host is known.
  * The innermost contained scope owns a Tab event even when permitting native interior
  * navigation. Ancestor controllers defer, but consumer handlers still bubble and may
  * cancel that transition. Non-contained descendants do not claim keyboard ownership.
@@ -191,7 +247,8 @@ const FocusScope = ({
   React.useEffect(() => {
     const container = containerRef.current;
     if (autoFocus && container && isAvailable(container)) {
-      (getFocusableElements(container)[0] ?? container).focus();
+      const eligible = getScopeCandidates([...container.children]);
+      (getFocusableElements(eligible)[0] ?? container).focus();
     }
   }, [autoFocus]);
 
@@ -201,11 +258,12 @@ const FocusScope = ({
     ownedTabEvents.add(event.nativeEvent);
 
     const container = event.currentTarget;
-    const focusable = getFocusableElements(container);
+    const eligible = getScopeCandidates([...container.children]);
+    const focusable = getFocusableElements(eligible);
     const [first] = focusable;
     const last = focusable.at(-1);
     const activeElement = getActiveElement(container);
-    const active = resolveActiveTarget(activeElement, container, focusable);
+    const active = resolveActiveTarget(activeElement, eligible, focusable);
     if (!first || !last) {
       event.preventDefault();
       container.focus();

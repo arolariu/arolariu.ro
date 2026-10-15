@@ -10,8 +10,8 @@ function isDisabledByFieldset(element: HTMLElement, ancestor: HTMLElement): bool
   return !legend?.contains(element);
 }
 
-/** Shared availability only; each focus owner retains its candidate and ordering policy. */
-export function isFocusAvailable(element: HTMLElement, allowAriaDisabled = false): boolean {
+/** Private structural owner checks, excluding visibility that descendants can override. */
+export function isFocusSubtreeAvailable(element: HTMLElement, allowAriaDisabled = false): boolean {
   if (
     !element.isConnected
     || element.matches(':disabled, input[type="hidden"]')
@@ -22,8 +22,6 @@ export function isFocusAvailable(element: HTMLElement, allowAriaDisabled = false
   }
 
   const view = element.ownerDocument.defaultView;
-  const visibility = view?.getComputedStyle(element).visibility;
-  if (visibility === "hidden" || visibility === "collapse") return false;
   for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
     if (isDisabledByFieldset(element, ancestor)) return false;
     const style = view?.getComputedStyle(ancestor);
@@ -34,6 +32,13 @@ export function isFocusAvailable(element: HTMLElement, allowAriaDisabled = false
     }
   }
   return true;
+}
+
+/** Shared availability only; each focus owner retains its candidate and ordering policy. */
+export function isFocusAvailable(element: HTMLElement, allowAriaDisabled = false): boolean {
+  if (!isFocusSubtreeAvailable(element, allowAriaDisabled)) return false;
+  const visibility = element.ownerDocument.defaultView?.getComputedStyle(element).visibility;
+  return visibility !== "hidden" && visibility !== "collapse";
 }
 
 interface FocusPanel {
