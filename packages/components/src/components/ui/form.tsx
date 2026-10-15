@@ -655,27 +655,38 @@ FormDescription.displayName = "FormDescription";
  *
  * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-invalid | ARIA invalid state}
  */
-const FormMessage = ({ref, className, children, id, ...props}: Readonly<FormMessageProps>): React.JSX.Element | null => {
+const FormMessage = ({
+  ref,
+  className,
+  children,
+  id,
+  dangerouslySetInnerHTML,
+  ...props
+}: Readonly<FormMessageProps>): React.JSX.Element | null => {
   const field = useFormField();
   const uniqueId = React.useId();
+  const paragraphRef = React.useRef<HTMLParagraphElement>(null);
+  const mergedRef = useMergedRefs(ref, paragraphRef);
   const messageId = id?.trim() || `${field.id}-${uniqueId}-form-item-message`;
   const body = field.error?.message?.trim() || children;
   const hasContent = hasMeaningfulChildren(body);
-  useMountedMetadata("message", hasContent ? messageId : undefined);
+  // Validation and meaningful React children retain precedence over caller-sanitized HTML.
+  const nativeMarkup = hasContent ? undefined : dangerouslySetInnerHTML;
+  useMountedMetadata("message", hasContent || nativeMarkup ? messageId : undefined, nativeMarkup ? paragraphRef : undefined, nativeMarkup);
 
-  if (!hasContent) {
+  if (!hasContent && !nativeMarkup) {
     return null;
   }
 
   return (
     <p
-      {...props}
-      ref={ref}
+      ref={mergedRef}
       data-slot='form-message'
       id={messageId}
-      className={cn(styles.message, className)}>
-      {body}
-    </p>
+      className={cn(styles.message, className)}
+      {...(nativeMarkup ? {dangerouslySetInnerHTML: nativeMarkup} : {children: body})}
+      {...props}
+    />
   );
 };
 FormMessage.displayName = "FormMessage";

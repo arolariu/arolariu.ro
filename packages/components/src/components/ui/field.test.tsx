@@ -16,6 +16,65 @@ import {
 } from "./field";
 
 describe("Field", () => {
+  it("renders HTML-only errors and preserves children/error precedence across native content transitions", () => {
+    const ref = createRef<HTMLDivElement>();
+    const html = {__html: "<strong>Native &amp; safe.</strong>"};
+    const {rerender, unmount} = render(
+      <FieldError
+        ref={ref}
+        dangerouslySetInnerHTML={html}
+      />,
+    );
+    expect(screen.getByRole("alert").querySelector("strong")).toHaveTextContent("Native & safe.");
+    expect(ref.current).toBe(screen.getByRole("alert"));
+    rerender(
+      <FieldError
+        ref={ref}
+        errors={[{message: " Required "}, {message: "Required"}]}
+        dangerouslySetInnerHTML={html}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Required");
+    expect(screen.getByRole("alert").querySelector("strong")).toBeNull();
+    rerender(
+      <FieldError
+        ref={ref}
+        errors={[{message: "Ignored"}]}
+        dangerouslySetInnerHTML={html}>
+        Explicit children
+      </FieldError>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Explicit children");
+    rerender(
+      <FieldError
+        ref={ref}
+        dangerouslySetInnerHTML={html}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Native & safe.");
+    rerender(
+      <FieldError
+        ref={ref}
+        dangerouslySetInnerHTML={{__html: "<!-- empty --><span></span>&nbsp;"}}
+      />,
+    );
+    expect(screen.getByRole("alert").textContent?.trim()).toBe("");
+    rerender(<FieldError ref={ref}>{0}</FieldError>);
+    expect(screen.getByRole("alert")).toHaveTextContent("0");
+    unmount();
+    expect(ref.current).toBeNull();
+  });
+
+  it("renders validation-only error content without combining children and native HTML", () => {
+    render(
+      <FieldError
+        errors={[{message: "Required"}, {message: "Invalid"}]}
+        dangerouslySetInnerHTML={{__html: "Fallback"}}
+      />,
+    );
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Required", "Invalid"]);
+  });
+
   it("renders FieldSet with custom className", () => {
     // Arrange & Act
     render(

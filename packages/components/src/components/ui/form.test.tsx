@@ -24,6 +24,7 @@ import {
   useFormState,
   useWatch,
   type FormDescriptionProps,
+  type FormMessageProps,
 } from "./form";
 import * as formExports from "./form";
 import styles from "./form.module.css";
@@ -1617,6 +1618,74 @@ describe("FormDescription mounted native HTML content", () => {
       expect(screen.getByRole("textbox", {name: "Native HTML description"})).not.toHaveAttribute("aria-describedby");
     },
   );
+});
+
+function NativeMessageFixture({message}: {readonly message: FormMessageProps}): React.JSX.Element {
+  const methods = useForm<TestFormValues>({defaultValues: {email: ""}});
+  return (
+    <Form {...methods}>
+      <FormField
+        control={methods.control}
+        name='email'
+        render={({field}) => (
+          <FormItem>
+            <FormLabel>Native error content</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage
+              data-testid='native-message'
+              {...message}
+            />
+          </FormItem>
+        )}
+      />
+      <button onClick={() => methods.setError("email", {message: " Validation wins. "})}>Set validation</button>
+      <button onClick={() => methods.clearErrors("email")}>Clear validation</button>
+    </Form>
+  );
+}
+
+describe("FormMessage native error content", () => {
+  it("renders HTML-only content and tracks text, empty markup, refs, validation and fallback transitions", async () => {
+    const user = userEvent.setup();
+    const ref = React.createRef<HTMLParagraphElement>();
+    const {rerender, unmount} = render(
+      <NativeMessageFixture
+        message={{id: "native-error", ref, dangerouslySetInnerHTML: {__html: "<strong>Native &amp; safe.</strong>"}}}
+      />,
+    );
+    const input = screen.getByRole("textbox", {name: "Native error content"});
+    expect(screen.getByTestId("native-message").querySelector("strong")).toHaveTextContent("Native & safe.");
+    expect(ref.current).toBe(screen.getByTestId("native-message"));
+    expect(input).toHaveAccessibleDescription("Native & safe.");
+    expect(input).toHaveAttribute("aria-describedby", "native-error");
+    await user.click(screen.getByRole("button", {name: "Set validation"}));
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAccessibleDescription("Validation wins.");
+    expect(screen.getByTestId("native-message").querySelector("strong")).toBeNull();
+    await user.click(screen.getByRole("button", {name: "Clear validation"}));
+    expect(input).toHaveAccessibleDescription("Native & safe.");
+    expect(input).not.toHaveAttribute("aria-invalid", "true");
+    rerender(
+      <NativeMessageFixture message={{id: "native-error", ref, dangerouslySetInnerHTML: {__html: "<!-- empty --><span></span>&nbsp;"}}} />,
+    );
+    expect(screen.getByTestId("native-message").textContent?.trim()).toBe("");
+    expect(input).not.toHaveAttribute("aria-describedby");
+    rerender(<NativeMessageFixture message={{id: "native-error", ref, dangerouslySetInnerHTML: {__html: "<em>Updated.</em>"}}} />);
+    expect(input).toHaveAccessibleDescription("Updated.");
+    rerender(<NativeMessageFixture message={{id: "native-error", ref, children: 0}} />);
+    expect(input).toHaveAccessibleDescription("0");
+    unmount();
+    expect(ref.current).toBeNull();
+  });
+
+  it("lets a validation error supersede native HTML on the first error render", async () => {
+    const user = userEvent.setup();
+    render(<NativeMessageFixture message={{dangerouslySetInnerHTML: {__html: "Fallback."}}} />);
+    await user.click(screen.getByRole("button", {name: "Set validation"}));
+    expect(screen.getByTestId("native-message")).toHaveTextContent("Validation wins.");
+  });
 });
 
 describe("Form story announcement policy", () => {

@@ -360,10 +360,18 @@ const FieldSeparator = ({ref, children, className, ...props}: Readonly<FieldSepa
  *
  * @see {@link FieldErrorProps} for available props
  */
-const FieldError = ({ref, className, children, errors, ...props}: Readonly<FieldErrorProps>): React.JSX.Element | null => {
+const FieldError = ({
+  ref,
+  className,
+  children,
+  errors,
+  dangerouslySetInnerHTML,
+  ...props
+}: Readonly<FieldErrorProps>): React.JSX.Element | null => {
   const messages = [...new Set(errors?.map((error) => error?.message?.trim()).filter((message): message is string => Boolean(message)))];
   const hasChildren = hasMeaningfulChildren(children);
-  if (!hasChildren && messages.length === 0) return null;
+  const nativeMarkup = !hasChildren && messages.length === 0 ? dangerouslySetInnerHTML : undefined;
+  if (!hasChildren && messages.length === 0 && !nativeMarkup) return null;
   const content = hasChildren ? (
     children
   ) : messages.length === 1 ? (
@@ -382,9 +390,9 @@ const FieldError = ({ref, className, children, errors, ...props}: Readonly<Field
       role='alert'
       data-slot='field-error'
       className={cn(styles.error, className)}
-      {...props}>
-      {content}
-    </div>
+      {...(nativeMarkup ? {dangerouslySetInnerHTML: nativeMarkup} : {children: content})}
+      {...props}
+    />
   );
 };
 
