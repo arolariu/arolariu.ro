@@ -11,6 +11,7 @@ import {createPortal} from "react-dom";
 
 import {useIsMobile} from "@/hooks/useIsMobile";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
+import {useMobilePanelFocusRecovery} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
 import {Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger} from "./drawer";
 import {
@@ -448,7 +449,7 @@ const MobileContent = ({
   const entriesRef = React.useRef(new Map<string, SubmenuRegistration>());
   const openingRequestsRef = React.useRef(new Set<string>());
   const pendingFocusRef = React.useRef<"entry" | HTMLElement | null>(null);
-  const activeId = path.at(-1) ?? null;
+  const activeId = useMobilePanelFocusRecovery(root.open, path, mainRef, entriesRef, pendingFocusRef);
   const active = activeId === null ? undefined : entriesRef.current.get(activeId);
   const closePath = React.useCallback((id: string): void => {
     setPath((previous) => {
@@ -528,18 +529,6 @@ const MobileContent = ({
     },
     [synchronize],
   );
-  React.useLayoutEffect(() => {
-    const target = pendingFocusRef.current;
-    if (!root.open || !target) return;
-    pendingFocusRef.current = null;
-    if (target !== "entry" && target.isConnected) {
-      target.focus();
-      return;
-    }
-    const panel = activeId === null ? mainRef.current : entriesRef.current.get(activeId)?.panelRef.current;
-    const first = panel?.querySelector<HTMLElement>('button:not(:disabled), a[href]:not([aria-disabled="true"]), [tabindex="0"]');
-    (first ?? panel)?.focus();
-  }, [activeId, path, root.open]);
   const goBack = (event: React.MouseEvent<HTMLButtonElement>): void => {
     if (!active || !requestSubmenuChange(active, false, event.nativeEvent)) return;
     synchronize(active.id, false);

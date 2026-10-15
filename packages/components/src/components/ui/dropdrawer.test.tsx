@@ -166,6 +166,62 @@ afterEach(async () => {
 });
 
 describe("DropDrawer SDK restoration review 03fdddba", () => {
+  it.each([false, true])("skips unavailable mobile entry targets and recovers failed focus (fallback=%s)", async (fallback) => {
+    media.change(true);
+    const user = userEvent.setup();
+    const panel = React.createRef<HTMLElement>();
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open focus recovery</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub>
+            <DropDrawerSubTrigger>Focus recovery panel</DropDrawerSubTrigger>
+            <DropDrawerSubContent ref={panel}>
+              <div hidden>
+                <button>Hidden target</button>
+              </div>
+              <div inert>
+                <button>Inert target</button>
+              </div>
+              <button onFocus={(event) => event.currentTarget.blur()}>Rejected target</button>
+              {!fallback && <DropDrawerItem closeOnClick={false}>Available target</DropDrawerItem>}
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await user.click(await screen.findByRole("button", {name: "Focus recovery panel"}));
+
+    await waitFor(() => expect(fallback ? panel.current : screen.getByRole("button", {name: "Available target"})).toHaveFocus());
+  });
+
+  it("preserves SDK focusableWhenDisabled mobile entry targets", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open disabled focus</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub>
+            <DropDrawerSubTrigger>Disabled focus panel</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem
+                disabled
+                focusableWhenDisabled
+                closeOnClick={false}>
+                Focusable disabled target
+              </DropDrawerItem>
+              <DropDrawerItem>Later target</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    await user.click(await screen.findByRole("button", {name: "Disabled focus panel"}));
+    expect(screen.getByRole("button", {name: "Focusable disabled target"})).toHaveFocus();
+  });
+
   it.each([false, true].flatMap((mobile) => ([undefined, true] as const).map((finalFocus) => ({mobile, finalFocus}))))(
     "restores the invoking detached SDK trigger with an internal wrapper present: mobile=$mobile, finalFocus=$finalFocus",
     async ({mobile, finalFocus}) => {

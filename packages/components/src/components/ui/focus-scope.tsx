@@ -3,6 +3,7 @@
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
+import {isFocusAvailable as isAvailable} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
 
 import styles from "./focus-scope.module.css";
@@ -50,38 +51,6 @@ const FOCUSABLE_SELECTOR = [
 ].join(", ");
 
 const ownedTabEvents = new WeakSet<KeyboardEvent>();
-
-function isDisabledByFieldset(element: HTMLElement, ancestor: HTMLElement): boolean {
-  if (!(ancestor instanceof HTMLFieldSetElement) || !ancestor.disabled || !element.matches("button, input, select, textarea")) {
-    return false;
-  }
-  const legend = [...ancestor.children].find((child) => child instanceof HTMLLegendElement);
-  return !legend?.contains(element);
-}
-
-function isAvailable(element: HTMLElement): boolean {
-  if (
-    !element.isConnected
-    || element.matches(':disabled, input[type="hidden"], [aria-disabled="true"]')
-    || element.closest("[hidden], [inert]")
-  ) {
-    return false;
-  }
-
-  const view = element.ownerDocument.defaultView;
-  const visibility = view?.getComputedStyle(element).visibility;
-  if (visibility === "hidden" || visibility === "collapse") return false;
-  for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
-    if (isDisabledByFieldset(element, ancestor)) return false;
-    const style = view?.getComputedStyle(ancestor);
-    if (style?.display === "none") return false;
-    if (ancestor instanceof HTMLDetailsElement && !ancestor.open) {
-      const summary = [...ancestor.children].find((child) => child.tagName === "SUMMARY");
-      if (!summary?.contains(element)) return false;
-    }
-  }
-  return true;
-}
 
 function getTabIndex(element: HTMLElement): number {
   if (element.hasAttribute("tabindex")) return element.tabIndex;
