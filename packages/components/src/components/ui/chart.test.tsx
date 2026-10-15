@@ -609,6 +609,79 @@ describe("ChartStyle", () => {
 
 describe("ChartTooltipContent", () => {
   it.each([
+    {value: 42, output: "tuple"},
+    {value: undefined, output: "tuple"},
+    {value: undefined, output: "node"},
+    {value: undefined, output: "null"},
+    {value: undefined, output: "undefined"},
+  ] as const)("formats a real function-dataKey series with no name: $value / $output", ({value, output}) => {
+    let sdkPayload: RechartsPrimitive.TooltipContentProps["payload"] | undefined;
+    const formatter = vi.fn<NonNullable<ChartTooltipContentProps["formatter"]>>((entryValue) => {
+      if (output === "null") return null;
+      if (output === "undefined") return undefined;
+      if (output === "node") return <strong>Missing reading</strong>;
+      return [entryValue === undefined ? "No reading" : `Reading ${entryValue}`, "Sensor"];
+    });
+    const {container} = render(
+      <ChartContainer
+        config={{}}
+        width={400}
+        height={200}>
+        <BarChart data={[{month: "May", reading: value}]}>
+          <XAxis dataKey='month' />
+          <Bar
+            dataKey={(entry: {reading?: number}) => entry.reading}
+            isAnimationActive={false}
+          />
+          <ChartTooltip
+            active
+            defaultIndex={0}
+            filterNull={false}
+            isAnimationActive={false}
+            formatter={formatter}
+            content={(props) => {
+              sdkPayload = props.payload;
+              return <ChartTooltipContent {...props} />;
+            }}
+          />
+        </BarChart>
+      </ChartContainer>,
+    );
+    expect(formatter).toHaveBeenCalled();
+    const call = formatter.mock.calls.at(-1);
+    expect(call?.[0]).toBe(value);
+    expect(call?.[1]).toBeUndefined();
+    expect(call?.[2]).toBe(sdkPayload?.[0]);
+    expect(call?.[3]).toBe(0);
+    expect(call?.[4]).toBe(sdkPayload);
+    if (output === "null" || output === "undefined") {
+      expect(container.querySelector("[data-slot='chart-tooltip-item']")).toBeNull();
+    } else if (output === "node") {
+      expect(screen.getByText("Missing reading").tagName).toBe("STRONG");
+    } else {
+      expect(screen.getByText("Sensor")).toBeInTheDocument();
+      expect(screen.getByText(value === undefined ? "No reading" : `Reading ${value}`)).toBeInTheDocument();
+    }
+  });
+
+  it("invokes a payload formatter with absent value and name while retaining the original payload", () => {
+    const formatter = vi.fn<NonNullable<ChartTooltipContentProps["formatter"]>>(() => ["Unavailable", "Sensor"]);
+    const payload = [{graphicalItemId: "sensor", formatter}];
+    render(
+      <ChartContainer config={{}}>
+        <ChartTooltipContent
+          active
+          hideLabel
+          payload={payload}
+        />
+      </ChartContainer>,
+    );
+    expect(formatter).toHaveBeenCalledWith(undefined, undefined, payload[0], 0, payload);
+    expect(formatter.mock.calls[0]?.[4]).toBe(payload);
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
+  });
+
+  it.each([
     {nameKey: "name", item: {name: "direct", payload: {name: "nested"}}, want: "Direct"},
     {nameKey: "category", item: {name: "Raw", payload: {category: "nested"}}, want: "Nested"},
     {nameKey: "category", item: {name: "Raw", payload: {category: "absent"}}, want: "Fallback"},

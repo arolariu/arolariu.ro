@@ -157,13 +157,13 @@ function ChartContainer({
   return (
     <ChartContext.Provider value={{config}}>
       <div
-        {...props}
         ref={ref}
         id={id}
         role='group'
         data-slot='chart'
         data-chart={chartId}
-        className={cn(styles.container, className)}>
+        className={cn(styles.container, className)}
+        {...props}>
         <ChartStyle
           id={chartId}
           config={config}
@@ -424,12 +424,12 @@ function ChartTooltipContent({
 
   return (
     <div
-      {...props}
       ref={ref}
       data-slot='chart-tooltip'
       role={props.role ?? (accessibilityLayer ? "status" : undefined)}
       aria-live={props["aria-live"] ?? (accessibilityLayer ? "polite" : undefined)}
-      className={cn(styles.tooltip, className)}>
+      className={cn(styles.tooltip, className)}
+      {...props}>
       {!nestLabel ? tooltipLabel : null}
       <div className={styles.tooltipBody}>
         {visiblePayload.map((item, index) => {
@@ -449,7 +449,7 @@ function ChartTooltipContent({
           };
 
           const itemFormatter = formatter ?? item.formatter;
-          const hasFormatter = typeof itemFormatter === "function" && item.value !== undefined && item.name !== undefined;
+          const hasFormatter = typeof itemFormatter === "function";
           const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
           if (hasFormatter && (formatterResult === null || formatterResult === undefined)) return null;
           const formattedEntry = isFormatterTuple(formatterResult) ? formatterResult : undefined;
