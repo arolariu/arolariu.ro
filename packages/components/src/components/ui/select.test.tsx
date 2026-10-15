@@ -3,6 +3,11 @@ import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 import {Select as BaseSelect} from "@base-ui/react/select";
+import {DirectionProvider} from "@base-ui/react/direction-provider";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {parse} from "postcss";
+import styles from "./select.module.css";
 
 import {
   Select,
@@ -30,6 +35,45 @@ function resolvedFlightRender(element: React.ReactElement): React.ReactElement {
 }
 
 describe("Select", () => {
+  it.each(["ltr", "rtl"] as const)("sizes a selected native option within its width without a consumer reset (%s)", (direction) => {
+    // Happy DOM can verify the local box model, not native popup clipping or pixel geometry.
+    const css = readFileSync(resolve(import.meta.dirname, "select.module.css"), "utf8").replace(
+      /\.([A-Za-z][\w-]*)/gu,
+      (selector, name: string) => (styles[name] ? `.${styles[name]}` : selector),
+    );
+    render(
+      <DirectionProvider direction={direction}>
+        <style>{css}</style>
+        <Select
+          defaultValue='selected'
+          open>
+          <SelectTrigger aria-label='No-reset sizing'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false}>
+            <SelectItem value='selected'>Selected option</SelectItem>
+          </SelectContent>
+        </Select>
+      </DirectionProvider>,
+    );
+    const option = screen.getByRole("option", {name: "Selected option"});
+    expect(option.tagName).toBe("DIV");
+    expect(option).toHaveAttribute("aria-selected", "true");
+    expect(getComputedStyle(option).width).toBe("100%");
+    expect(getComputedStyle(option).boxSizing).toBe("border-box");
+    const indicator = option.querySelector<HTMLElement>("[data-slot=select-item-indicator]");
+    expect(indicator).not.toBeNull();
+    expect(getComputedStyle(indicator!).position).toBe("absolute");
+    // Happy DOM does not resolve this logical custom-property declaration.
+    const offsets: string[] = [];
+    parse(css).walkRules(`.${styles.itemIndicatorSlot}`, (rule) => {
+      rule.walkDecls("inset-inline-end", (declaration) => {
+        offsets.push(declaration.value);
+      });
+    });
+    expect(offsets).toEqual(["var(--ac-space-2)"]);
+  });
+
   it.each([
     ["popup", false],
     ["popup", true],
