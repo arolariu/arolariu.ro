@@ -170,7 +170,8 @@ const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<Co
             <InputGroupButton
               variant='ghost'
               size='icon-xs'
-              aria-label={props["aria-label"] ?? "Clear selection"}
+              aria-label='Clear selection'
+              {...("aria-label" in props ? {"aria-label": props["aria-label"]} : {})}
             />
           ) : (
             <InputGroupButton
@@ -222,7 +223,8 @@ const ComboboxInput = ({
                 <InputGroupButton
                   variant='ghost'
                   size='icon-xs'
-                  aria-label={triggerProps?.["aria-label"] ?? "Show suggestions"}
+                  aria-label='Show suggestions'
+                  {...(triggerProps && "aria-label" in triggerProps ? {"aria-label": triggerProps["aria-label"]} : {})}
                 />
               ) : (
                 <InputGroupButton
@@ -432,7 +434,8 @@ const ComboboxChip = ({
                 <Button
                   variant='ghost'
                   size='icon-xs'
-                  aria-label={removeOtherProps["aria-label"] ?? "Remove selection"}
+                  aria-label='Remove selection'
+                  {...("aria-label" in removeOtherProps ? {"aria-label": removeOtherProps["aria-label"]} : {})}
                 />
               ) : (
                 <Button

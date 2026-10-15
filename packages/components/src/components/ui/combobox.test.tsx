@@ -53,6 +53,53 @@ interface Fruit {
 }
 
 describe("Combobox naming defaults", () => {
+  it.each([
+    ["trigger", "Show suggestions", "Afficher les suggestions"],
+    ["clear", "Clear selection", "Effacer la sélection"],
+    ["remove", "Remove selection", "Retirer la sélection"],
+  ] as const)("honors absent and explicitly undefined aria-label on the generated %s button", (action, defaultName, title) => {
+    type ControlProps = Pick<React.ComponentProps<"button">, "aria-label" | "title"> & {render?: React.ReactElement};
+    const picker = (controlProps: ControlProps): React.JSX.Element =>
+      action === "remove" ? (
+        <Combobox
+          multiple
+          items={["Apple"]}
+          defaultValue={["Apple"]}>
+          <ComboboxChips>
+            <ComboboxChip removeProps={controlProps}>Apple</ComboboxChip>
+            <ComboboxChipsInput aria-label='Fruits' />
+          </ComboboxChips>
+        </Combobox>
+      ) : (
+        <Combobox
+          items={["Apple"]}
+          defaultValue='Apple'>
+          <ComboboxInput
+            aria-label='Fruit'
+            showTrigger={action === "trigger"}
+            showClear={action === "clear"}
+            triggerProps={controlProps}
+            clearProps={controlProps}
+          />
+        </Combobox>
+      );
+    const {rerender} = render(picker({title}));
+    expect(screen.getByRole("button", {name: defaultName})).toHaveAttribute("aria-label", defaultName);
+
+    rerender(picker({"aria-label": undefined, title}));
+    const button = screen.getByRole("button", {name: title});
+    expect(button).not.toHaveAttribute("aria-label");
+    expect(button).toHaveAttribute("title", title);
+    expect(button.tagName).toBe("BUTTON");
+    expect(screen.queryByRole("button", {name: defaultName})).not.toBeInTheDocument();
+
+    rerender(picker({"aria-label": `Localized ${action}`, title}));
+    expect(screen.getByRole("button", {name: `Localized ${action}`})).toBeInTheDocument();
+
+    rerender(picker({"aria-label": undefined, title, render: <button aria-label={`Rendered ${action}`} />}));
+    expect(screen.getByRole("button", {name: `Rendered ${action}`})).toBeInTheDocument();
+  });
+
   it("uses a custom trigger callback's visible label rather than masking it with the icon fallback name", () => {
     render(
       <Combobox items={["Apple"]}>
