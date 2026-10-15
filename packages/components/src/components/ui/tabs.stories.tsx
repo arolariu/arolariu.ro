@@ -5,12 +5,17 @@ import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger, type TabsListVariant} from "./tabs";
 const storyStyles = `
+.ac-story-tabs-scrollFrame {
+  width: min(32rem, calc(100vw - 4rem));
+  min-width: 0;
+}
 .ac-story-tabs-scrollable {
   overflow-x: auto;
 }
 `;
 
 const storyClasses = {
+  scrollFrame: "ac-story-tabs-scrollFrame",
   scrollable: "ac-story-tabs-scrollable",
 } as const;
 
@@ -226,7 +231,9 @@ export const WithIcons: Story = {
 
 export const ManyTabs: Story = {
   render: () => (
-    <Tabs defaultValue='tab1'>
+    <Tabs
+      defaultValue='tab1'
+      className={storyClasses.scrollFrame}>
       <TabsList className={storyClasses.scrollable}>
         <TabsTrigger value='tab1'>Tab 1</TabsTrigger>
         <TabsTrigger value='tab2'>Tab 2</TabsTrigger>

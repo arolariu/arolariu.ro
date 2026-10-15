@@ -1,15 +1,18 @@
 import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import postcss, {type Container} from "postcss";
 import selectorParser from "postcss-selector-parser";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import * as TabsModule from "./tabs";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
 import styles from "./tabs.module.css";
+import * as stories from "./tabs.stories";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -869,6 +872,38 @@ describe("Tabs", () => {
 });
 
 describe("TabsList variants and indicator", () => {
+  it.each(["ltr", "rtl"] as const)(
+    "uses overflow-safe centering and keeps the ManyTabs endpoints keyboard reachable (%s)",
+    async (direction) => {
+      const user = userEvent.setup();
+      const {ManyTabs} = composeStories(stories);
+      render(
+        <DirectionProvider direction={direction}>
+          <ManyTabs />
+        </DirectionProvider>,
+      );
+      const list = screen.getByRole("tablist");
+      // CSS contract only: safe center centers fitting content and falls back to
+      // logical start on overflow. Happy DOM cannot prove scroll or pixel reachability.
+      expect(authoredDeclaration(list, "justify-content")).toBe("safe center");
+      expect(authoredDeclaration(list, "max-width")).toBe("100%");
+      expect(getComputedStyle(list).overflowX).toBe("auto");
+      const first = screen.getByRole("tab", {name: "Tab 1", exact: true});
+      const last = screen.getByRole("tab", {name: "Tab 10", exact: true});
+      await user.tab();
+      expect(first).toHaveFocus();
+      await user.keyboard("{End}{Enter}");
+      expect(last).toHaveFocus();
+      expect(last).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("tabpanel")).toHaveTextContent("Content for Tab 10");
+      await user.keyboard("{Home}{Enter}");
+      expect(first).toHaveFocus();
+      expect(first).toHaveAttribute("aria-selected", "true");
+      await user.keyboard(direction === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
+      expect(screen.getByRole("tab", {name: "Tab 2", exact: true})).toHaveFocus();
+    },
+  );
+
   it.each([
     ["horizontal", "default"],
     ["vertical", "default"],

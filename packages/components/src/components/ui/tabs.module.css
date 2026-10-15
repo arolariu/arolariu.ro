@@ -10,7 +10,8 @@
 .list {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  justify-content: safe center;
   width: fit-content;
   max-width: 100%;
   position: relative;
