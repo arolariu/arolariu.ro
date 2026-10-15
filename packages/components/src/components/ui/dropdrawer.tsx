@@ -7,6 +7,7 @@ import type {BaseUIEvent, ComponentRenderFn, HTMLProps} from "@base-ui/react/typ
 import {useRender} from "@base-ui/react/use-render";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import * as React from "react";
+import {useSubmenuCompletion} from "./_dropdrawer";
 import {createPortal} from "react-dom";
 
 import {useIsMobile} from "@/hooks/useIsMobile";
@@ -173,6 +174,7 @@ function getLivePath(id: string, entries: ReadonlyMap<string, SubmenuRegistratio
 }
 interface NavigationContextValue {
   readonly activeId: string | null;
+  readonly path: readonly string[];
   readonly panelHost: HTMLDivElement | null;
   readonly register: (entry: SubmenuRegistration) => () => void;
   readonly navigate: (id: string, event: MouseEvent) => void;
@@ -534,8 +536,8 @@ const MobileContent = ({
     synchronize(active.id, false);
   };
   const navigation = React.useMemo(
-    () => ({activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged}),
-    [activeId, panelHost, register, navigate, synchronize, panelAvailabilityChanged],
+    () => ({activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged}),
+    [activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged],
   );
   const {
     align,
@@ -784,6 +786,7 @@ function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
   );
   const register = navigation?.register;
   const synchronize = navigation?.synchronize;
+  const committedOpen = root.isMobile && root.open && Boolean(navigation?.path.includes(submenuId));
   React.useLayoutEffect(() => {
     optionsRef.current = props;
   });
@@ -796,6 +799,7 @@ function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
       synchronize?.(submenuId, props.open ?? Boolean(props.defaultOpen));
     }
   }, [props.open, props.defaultOpen, root.isMobile, root.open, submenuId, synchronize]);
+  useSubmenuCompletion(root.isMobile, committedOpen, props.onOpenChangeComplete);
   return <SubContext.Provider value={context}>{root.isMobile ? props.children : <DropdownMenuSub {...props} />}</SubContext.Provider>;
 }
 /** Disabled guards precede callbacks; enabled native buttons supply Enter/Space activation. */

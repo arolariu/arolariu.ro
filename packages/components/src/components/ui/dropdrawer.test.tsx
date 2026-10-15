@@ -166,6 +166,126 @@ afterEach(async () => {
 });
 
 describe("DropDrawer SDK restoration review 03fdddba", () => {
+  it("completes only committed mobile submenu transitions, never cancelled proposals or ancestor panel hiding", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const completed: boolean[] = [];
+    let cancel = true;
+    const panel = React.createRef<HTMLElement>();
+    render(
+      <React.StrictMode>
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Completion root</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub
+              onOpenChange={(_, details) => {
+                if (cancel) details.cancel();
+              }}
+              onOpenChangeComplete={(open) => {
+                expect(panel.current?.hidden).toBe(!open);
+                completed.push(open);
+              }}>
+              <DropDrawerSubTrigger>Completion parent</DropDrawerSubTrigger>
+              <DropDrawerSubContent ref={panel}>
+                <DropDrawerSub>
+                  <DropDrawerSubTrigger>Completion child</DropDrawerSubTrigger>
+                  <DropDrawerSubContent>
+                    <DropDrawerItem>Completion action</DropDrawerItem>
+                  </DropDrawerSubContent>
+                </DropDrawerSub>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      </React.StrictMode>,
+    );
+    const trigger = await screen.findByRole("button", {name: "Completion parent"});
+    await user.click(trigger);
+    expect(completed).toEqual([]);
+    cancel = false;
+    await user.click(trigger);
+    expect(completed).toEqual([true]);
+    await user.click(screen.getByRole("button", {name: "Completion child"}));
+    expect(completed).toEqual([true]);
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(completed).toEqual([true]);
+    cancel = true;
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(completed).toEqual([true]);
+    cancel = false;
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(completed).toEqual([true, false]);
+    expect(trigger).toHaveFocus();
+  });
+
+  it("completes controlled mobile submenu prop changes rather than unaccepted trigger and Back proposals", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const complete = vi.fn();
+    const requested = vi.fn();
+    const view = (open: boolean): React.ReactElement => (
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Controlled completion root</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub
+            open={open}
+            onOpenChange={requested}
+            onOpenChangeComplete={complete}>
+            <DropDrawerSubTrigger>Controlled completion panel</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Controlled completion action</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>
+    );
+    const {rerender} = render(view(false));
+    await user.click(await screen.findByRole("button", {name: "Controlled completion panel"}));
+    expect(requested.mock.calls.map(([open]) => open)).toEqual([true]);
+    expect(complete).not.toHaveBeenCalled();
+    rerender(view(true));
+    expect(await screen.findByRole("button", {name: "Controlled completion action"})).toBeVisible();
+    expect(complete.mock.calls).toEqual([[true]]);
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(requested.mock.calls.map(([open]) => open)).toEqual([true, false]);
+    expect(complete.mock.calls).toEqual([[true]]);
+    rerender(view(false));
+    expect(complete.mock.calls).toEqual([[true], [false]]);
+    rerender(view(false));
+    expect(complete.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it("completes default-open mobile submenus once and notifies the latest callback on root closure", async () => {
+    media.change(true);
+    const first = vi.fn();
+    const latest = vi.fn();
+    const view = (open: boolean, onComplete: (open: boolean) => void): React.ReactElement => (
+      <React.StrictMode>
+        <DropDrawer open={open}>
+          <DropDrawerTrigger>Default completion root</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub
+              defaultOpen
+              onOpenChangeComplete={onComplete}>
+              <DropDrawerSubTrigger>Default completion panel</DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem>Default completion action</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>
+      </React.StrictMode>
+    );
+    const {rerender} = render(view(true, first));
+    expect(await screen.findByRole("button", {name: "Default completion action"})).toBeVisible();
+    expect(first.mock.calls).toEqual([[true]]);
+    rerender(view(true, latest));
+    expect(latest).not.toHaveBeenCalled();
+    rerender(view(false, latest));
+    expect(latest.mock.calls).toEqual([[false]]);
+    expect(first.mock.calls).toEqual([[true]]);
+  });
+
   it.each([false, true])("skips unavailable mobile entry targets and recovers failed focus (fallback=%s)", async (fallback) => {
     media.change(true);
     const user = userEvent.setup();
