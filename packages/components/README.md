@@ -53,10 +53,29 @@ must migrate rather than select a compatibility entrypoint.
 The accessibility target is applicable **WCAG 2.2 A/AA**, with the component/application ownership and manual verification requirements
 documented in [ACCESSIBILITY.md](./ACCESSIBILITY.md). An emulated test pass is not full-page conformance.
 
-The final React 19-only build, complete workspace coverage, genuine packed contracts, minimum-runtime lanes, configured source lint and
+The earlier React 19-only build, complete workspace coverage, genuine packed contracts, minimum-runtime lanes, configured source lint and
 story graph checks are recorded in [the current verification checkpoint](./MIGRATION.md#react-19-only-verification). The older checkpoints
 below describe earlier preparation artifacts. Private helpers remain blocked public imports; publication, website adoption and complete
 native/assistive acceptance remain separate.
+
+### Required package verification
+
+From this package directory, run:
+
+```powershell
+npm test
+```
+
+The default command builds the package, creates and extracts a real local npm archive, and runs the complete Vitest suite with
+`AROLARIU_COMPONENTS_PACKED_ROOT` set to that extraction. Packed ESM/declaration/style and private-import contracts therefore run in the
+existing release workflow's `npm test` step instead of silently skipping. The command uses the already-installed real peers, performs no
+dependency installation or publication, and removes only its own temporary extraction afterward. Public declarations and story-only payload
+exclusion are checked against actual archive files, not source aliases.
+
+For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
+reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs can skip the four archive contracts when no extraction is
+supplied; they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story
+TypeScript graph, including negative API assertions.
 
 ### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
 

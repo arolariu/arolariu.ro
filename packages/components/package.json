@@ -92,8 +92,9 @@
     "build:after": "node scripts/afterBuild.ts",
     "build:clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build:exports": "node scripts/generate-exports.ts",
-    "test": "npm run test:unit",
+    "test": "npm run test:packed",
     "test:unit": "vitest run",
+    "test:packed": "node scripts/test-packed.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
