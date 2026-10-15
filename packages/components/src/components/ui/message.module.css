@@ -27,9 +27,7 @@
   align-items: center;
   justify-content: center;
   align-self: flex-end;
-  overflow: hidden;
-  border-radius: 9999px;
-  background-color: var(--ac-muted);
+  overflow: visible;
 }
 
 .message:has(.footer) > .avatar {

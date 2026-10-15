@@ -21,10 +21,10 @@ export type MessageFooterProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Groups native message rows without creating application state or live announcements. */
 const MessageGroup = ({ref, className, ...props}: Readonly<MessageGroup.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message-group'
     className={cn(styles.group, className)}
+    {...props}
   />
 );
 MessageGroup.displayName = "MessageGroup";
@@ -32,11 +32,11 @@ MessageGroup.displayName = "MessageGroup";
 /** Arranges caller-owned avatar and message content at a logical start or end side. */
 const Message = ({ref, className, align = "start", ...props}: Readonly<Message.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message'
     data-align={align}
     className={cn(styles.message, className)}
+    {...props}
   />
 );
 Message.displayName = "Message";
@@ -44,10 +44,10 @@ Message.displayName = "Message";
 /** Hosts caller-provided Avatar composition without owning image loading or fallback state. */
 const MessageAvatar = ({ref, className, ...props}: Readonly<MessageAvatar.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message-avatar'
     className={cn(styles.avatar, className)}
+    {...props}
   />
 );
 MessageAvatar.displayName = "MessageAvatar";
@@ -55,10 +55,10 @@ MessageAvatar.displayName = "MessageAvatar";
 /** Holds the shrinking header, bubble/content and footer column. */
 const MessageContent = ({ref, className, ...props}: Readonly<MessageContent.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message-content'
     className={cn(styles.content, className)}
+    {...props}
   />
 );
 MessageContent.displayName = "MessageContent";
@@ -66,10 +66,10 @@ MessageContent.displayName = "MessageContent";
 /** Displays caller-owned author/header metadata without generating text. */
 const MessageHeader = ({ref, className, ...props}: Readonly<MessageHeader.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message-header'
     className={cn(styles.header, className)}
+    {...props}
   />
 );
 MessageHeader.displayName = "MessageHeader";
@@ -77,10 +77,10 @@ MessageHeader.displayName = "MessageHeader";
 /** Displays caller-owned timestamp, status or action content at the row's logical side. */
 const MessageFooter = ({ref, className, ...props}: Readonly<MessageFooter.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='message-footer'
     className={cn(styles.footer, className)}
+    {...props}
   />
 );
 MessageFooter.displayName = "MessageFooter";
