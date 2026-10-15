@@ -52,6 +52,13 @@ const FOCUSABLE_SELECTOR = [
 
 const ownedTabEvents = new WeakSet<KeyboardEvent>();
 
+function getActiveElement(owner: HTMLElement): Element | null {
+  const root = owner.getRootNode();
+  let active = (root instanceof ShadowRoot ? root : owner.ownerDocument).activeElement;
+  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  return active;
+}
+
 function getTabIndex(element: HTMLElement): number {
   if (element.hasAttribute("tabindex")) return element.tabIndex;
   if (element.isContentEditable && !element.parentElement?.isContentEditable) return 0;
@@ -162,7 +169,7 @@ const FocusScope = ({
   const entryCapturedRef = React.useRef(false);
   const captureEntryFocus = React.useCallback((marker: HTMLSpanElement | null): void => {
     if (marker && !entryCapturedRef.current) {
-      entryFocusRef.current = marker.ownerDocument.activeElement;
+      entryFocusRef.current = getActiveElement(marker);
       entryCapturedRef.current = true;
     }
   }, []);
@@ -197,7 +204,7 @@ const FocusScope = ({
     const focusable = getFocusableElements(container);
     const [first] = focusable;
     const last = focusable.at(-1);
-    const {activeElement} = container.ownerDocument;
+    const activeElement = getActiveElement(container);
     const active = resolveActiveTarget(activeElement, container, focusable);
     if (!first || !last) {
       event.preventDefault();

@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {createRef, StrictMode} from "react";
 import {describe, expect, it} from "vitest";
@@ -6,6 +6,73 @@ import {describe, expect, it} from "vitest";
 import {FocusScope} from "./focus-scope";
 
 describe("FocusScope", () => {
+  it.each(["open", "closed"] as const)("uses the %s owning shadow tree for interior Tab, edge wrapping, and restoration", (mode) => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shadow = host.attachShadow({mode});
+    const container = document.createElement("div");
+    shadow.append(container);
+    const tree = (mounted: boolean): React.ReactElement => (
+      <>
+        <button type='button'>Shadow invoker</button>
+        {mounted && (
+          <FocusScope autoFocus>
+            <button type='button'>Shadow first</button>
+            <button type='button'>Shadow middle</button>
+            <button type='button'>Shadow last</button>
+          </FocusScope>
+        )}
+      </>
+    );
+    const {getByRole, rerender, unmount} = render(tree(false), {container, baseElement: container});
+    try {
+      const invoker = getByRole("button", {name: "Shadow invoker"});
+      invoker.focus();
+      rerender(tree(true));
+      const first = getByRole("button", {name: "Shadow first"});
+      const middle = getByRole("button", {name: "Shadow middle"});
+      const last = getByRole("button", {name: "Shadow last"});
+      expect(document.activeElement).toBe(host);
+      expect(shadow.activeElement).toBe(first);
+
+      // Dispatch in the real owning tree. Native interior traversal is intentionally
+      // delegated, so assert cancellation separately from the browser's default move.
+      expect(fireEvent.keyDown(first, {key: "Tab", composed: true})).toBe(true);
+      middle.focus();
+      expect(fireEvent.keyDown(middle, {key: "Tab", shiftKey: true, composed: true})).toBe(true);
+      last.focus();
+      expect(fireEvent.keyDown(last, {key: "Tab", composed: true})).toBe(false);
+      expect(shadow.activeElement).toBe(first);
+      expect(fireEvent.keyDown(first, {key: "Tab", shiftKey: true, composed: true})).toBe(false);
+      expect(shadow.activeElement).toBe(last);
+
+      rerender(tree(false));
+      expect(shadow.activeElement).toBe(invoker);
+      expect(document.activeElement).toBe(host);
+    } finally {
+      unmount();
+      host.remove();
+    }
+  });
+
+  it("restores the actual shadow descendant when a document-owned scope captured its host", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shadow = host.attachShadow({mode: "open"});
+    const invoker = document.createElement("button");
+    shadow.append(invoker);
+    invoker.focus();
+    const {unmount} = render(
+      <FocusScope autoFocus>
+        <button>Document action</button>
+      </FocusScope>,
+    );
+    expect(screen.getByRole("button", {name: "Document action"})).toHaveFocus();
+    unmount();
+    expect(shadow.activeElement).toBe(invoker);
+    host.remove();
+  });
+
   it("lets a contained child own native Tab from its representative even when that radio is an outer alias", async () => {
     const user = userEvent.setup();
     render(
