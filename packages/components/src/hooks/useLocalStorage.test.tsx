@@ -1,4 +1,5 @@
 import {act, renderHook} from "@testing-library/react";
+import {StrictMode} from "react";
 import {hydrateRoot, type Root} from "react-dom/client";
 import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -170,6 +171,54 @@ describe("useLocalStorage", () => {
     });
 
     expect(result.current[0]).toBe(6);
+  });
+
+  it.each(["QuotaExceededError", "SecurityError"])("keeps in-memory updates when persistence throws %s", (name) => {
+    const {result} = renderHook(() => useLocalStorage("unavailable-storage", 0));
+    vi.spyOn(globalThis.window.localStorage, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage is unavailable", name);
+    });
+
+    expect(() => {
+      act(() => result.current[1]((value) => value + 1));
+    }).not.toThrow();
+    expect(result.current[0]).toBe(1);
+    act(() => result.current[1]((value) => value + 1));
+    expect(result.current[0]).toBe(2);
+  });
+
+  it("persists the committed batch once without writing from replayed updaters", () => {
+    const {result} = renderHook(() => useLocalStorage("strict-counter", 0), {
+      wrapper: ({children}) => <StrictMode>{children}</StrictMode>,
+    });
+    const write = vi.spyOn(globalThis.window.localStorage, "setItem");
+
+    act(() => {
+      result.current[1]((value) => value + 1);
+      result.current[1]((value) => value + 1);
+    });
+
+    expect(result.current[0]).toBe(2);
+    expect(write).toHaveBeenCalledExactlyOnceWith("strict-counter", "2");
+  });
+
+  it("does not persist cross-tab state as a new local write", () => {
+    const {result} = renderHook(() => useLocalStorage("external-counter", 0));
+    act(() => result.current[1](1));
+    const write = vi.spyOn(globalThis.window.localStorage, "setItem");
+
+    act(() => {
+      globalThis.window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "external-counter",
+          newValue: "7",
+          storageArea: globalThis.window.localStorage,
+        }),
+      );
+    });
+
+    expect(result.current[0]).toBe(7);
+    expect(write).not.toHaveBeenCalled();
   });
 
   it("works with complex object types", () => {
