@@ -2,6 +2,12 @@
 
 > **Real-world examples to get you building faster.** Copy, paste, and customize these patterns for your projects.
 
+> **Upcoming v3 preparation:** use these APIs only after adopting an actually published artifact. The repository website keeps its official
+> 2.4 tarball and current runtime calls. See [MIGRATION.md](./MIGRATION.md) for precise 2.4 → 3 changes and the preserved historical guide.
+> The package is React 19-only. Mount the canonical `Toaster` once before using its manager. Deprecated composition and facade APIs are
+> removed; examples use `render` and typed ref props. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for component and consumer
+> responsibilities.
+
 ## 🚀 Getting Started
 
 ### Installation & Setup
@@ -10,7 +16,7 @@
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
 
 ```tsx
@@ -28,7 +34,8 @@ import {Button, Card} from "@arolariu/components";
 import styles from "./my-component.module.css";
 ```
 
-No utility CSS framework is required as a peer dependency in v1.0.0.
+No utility CSS framework is required. The Base UI minimum remains `^1.9`; React and ReactDOM require `^19`. Publication and website adoption
+remain separately authorized actions. Browser and assistive-technology behavior is not inferred from emulated tests.
 
 ### Useful Subpath Imports
 
@@ -36,7 +43,7 @@ No utility CSS framework is required as a peer dependency in v1.0.0.
 import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
-import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
+import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ### Composition with the `render` Prop
@@ -45,7 +52,11 @@ import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
 import {Button} from "@arolariu/components";
 
 // Use render prop instead of asChild
-<Button render={<a href='/dashboard' />}>Go to Dashboard</Button>;
+<Button
+  nativeButton={false}
+  render={<a href='/dashboard' />}>
+  Go to Dashboard
+</Button>;
 ```
 
 ```css
@@ -59,6 +70,103 @@ import {Button} from "@arolariu/components";
 ---
 
 ## 🎨 Layout Examples
+
+### Canonical manager notifications and explicit Command root
+
+Canonical toast is not callable and has no `.success()`/`.dismiss()` helpers. Manager fields use `title`/`timeout`/`type`/`actionProps`;
+provider configuration uses `timeout`/`limit`. Scoped `createToastManager<T>()` managers can be passed via `toastManager`;
+`useToastManager<T>()` sees only the nearest provider.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {toast, Toaster} from "@arolariu/components/toast";
+
+export function SaveNotification({save}: Readonly<{save: () => Promise<{name: string}>}>) {
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function notifySave(): Promise<void> {
+    setFailure(null);
+    try {
+      await toast.promise(save(), {
+        loading: "Saving...",
+        success: (result) => ({title: `Saved ${result.name}`, type: "success"}),
+        error: (error: unknown) => ({
+          title: error instanceof Error ? error.message : "Save failed",
+          type: "error",
+        }),
+      });
+    } catch (error: unknown) {
+      setFailure(error instanceof Error ? error.message : "Save failed");
+    }
+  }
+
+  return (
+    <Toaster
+      timeout={5000}
+      limit={3}>
+      <Button onClick={() => void notifySave()}>Save</Button>
+      {failure !== null && <p>{failure}</p>}
+    </Toaster>
+  );
+}
+```
+
+The Toaster is mounted before event-driven notification calls. Its children share the real provider manager. For custom lists use
+ToastProvider/ToastPortal/ToastViewport and Toast/Content/Title/Description/Action/Close rather than overriding `viewportProps.children`.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {Command, CommandDialog, CommandInput, CommandItem, CommandList} from "@arolariu/components/command";
+
+export function ActionsPalette() {
+  const [open, setOpen] = useState(false);
+  const [selection, setSelection] = useState("");
+  const [search, setSearch] = useState("");
+  const [lastAction, setLastAction] = useState("");
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open actions</Button>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title='Actions'
+        description='Choose an action'>
+        <Command
+          value={selection}
+          onValueChange={setSelection}>
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder='Search actions'
+          />
+          <CommandList>
+            <CommandItem
+              value='copy'
+              onSelect={setLastAction}>
+              Copy
+            </CommandItem>
+            <CommandItem
+              value='rename'
+              onSelect={setLastAction}>
+              Rename
+            </CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>
+      <p>Last action: {lastAction || "None"}</p>
+    </>
+  );
+}
+```
+
+Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. The automatic-root adapter is
+removed; always include the explicit Command root. For explicit before/after examples, nullable Select/Combobox, async AlertDialog
+completion and exact Skeleton caps, see [MIGRATION.md](./MIGRATION.md).
 
 ### Simple Card Layout
 
@@ -695,11 +803,40 @@ import {
   AlertDialogTrigger,
 } from "@arolariu/components/alert-dialog";
 import {Trash} from "lucide-react";
+import {useState, type JSX} from "react";
 import styles from "./delete-confirmation.module.css";
 
-export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onConfirm: () => void}) {
+export function DeleteConfirmation({
+  itemName,
+  onConfirm,
+}: Readonly<{itemName: string; onConfirm: () => void | Promise<void>}>): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function confirm(): Promise<void> {
+    setPending(true);
+    setFailure(null);
+    try {
+      await onConfirm();
+      setOpen(false);
+    } catch (error: unknown) {
+      setFailure(error instanceof Error && error.message ? error.message : "Could not delete the item. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        if (!nextOpen && pending) details.cancel();
+        else {
+          setOpen(nextOpen);
+          if (nextOpen) setFailure(null);
+        }
+      }}>
       <AlertDialogTrigger
         render={
           <button
@@ -717,15 +854,24 @@ export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onC
             This action cannot be undone. This will permanently delete {itemName} and remove all associated data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {failure !== null && <p role='alert'>{failure}</p>}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Yes, delete it</AlertDialogAction>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            aria-busy={pending}
+            onClick={() => void confirm()}>
+            {pending ? "Deleting..." : "Yes, delete it"}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
 ```
+
+The example owns dismissal: successful completion closes it, pending work prevents duplicate confirmation and dismissal, and rejection keeps
+the dialog open with a visible error. `AlertDialogAction` itself still does not close automatically.
 
 ### Settings Modal
 
@@ -1080,25 +1226,21 @@ Ready to build something amazing? **[🚀 Start with our Quick Start Guide](./RE
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Alert, AlertDescription} from "@arolariu/components/alert";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Checkbox} from "@arolariu/components/checkbox";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./login-form.module.css";
-
 // Define validation schema
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   rememberMe: z.boolean().default(false),
 });
-
 type LoginFormValues = z.infer<typeof loginSchema>;
-
 export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -1108,25 +1250,28 @@ export function LoginForm() {
       rememberMe: false,
     },
   });
-
   async function onSubmit(values: LoginFormValues) {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
       // Check credentials (mock)
       if (values.email === "demo@example.com" && values.password === "password123") {
-        toast.success("Login successful! Redirecting...");
+        toast.add({
+          title: "Login successful! Redirecting...",
+          type: "success",
+        });
         // Redirect to dashboard
         window.location.href = "/dashboard";
       } else {
         throw new Error("Invalid credentials");
       }
     } catch (error) {
-      toast.error("Login failed. Please check your credentials and try again.");
+      toast.add({
+        title: "Login failed. Please check your credentials and try again.",
+        type: "error",
+      });
     }
   }
-
   return (
     <div className={styles.page}>
       <Card className={styles.card}>
@@ -1308,7 +1453,6 @@ import {
 } from "@tanstack/react-table";
 import {ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal} from "lucide-react";
 import {useState} from "react";
-
 import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
 import {
@@ -1321,9 +1465,8 @@ import {
 } from "@arolariu/components/dropdown-menu";
 import {Input} from "@arolariu/components/input";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@arolariu/components/table";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./data-table.module.css";
-
 interface User {
   id: string;
   name: string;
@@ -1332,7 +1475,6 @@ interface User {
   status: "active" | "inactive";
   createdAt: Date;
 }
-
 const data: User[] = [
   {
     id: "1",
@@ -1359,13 +1501,10 @@ const data: User[] = [
     createdAt: new Date("2024-03-10"),
   },
 ];
-
 const columnHelper = createColumnHelper<User>();
-
 export function DataTableWithSorting() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-
   const columns = [
     columnHelper.accessor("name", {
       header: ({column}) => (
@@ -1426,19 +1565,37 @@ export function DataTableWithSorting() {
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(row.original.id);
-                toast.success("User ID copied to clipboard");
+                toast.add({
+                  title: "User ID copied to clipboard",
+                  type: "success",
+                });
               }}>
               Copy ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast.info(`Viewing user: ${row.original.name}`)}>View details</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info(`Editing user: ${row.original.name}`)}>Edit user</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                toast.add({
+                  title: `Viewing user: ${row.original.name}`,
+                  type: "info",
+                })
+              }>
+              View details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                toast.add({
+                  title: `Editing user: ${row.original.name}`,
+                  type: "info",
+                })
+              }>
+              Edit user
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     }),
   ];
-
   const table = useReactTable({
     data,
     columns,
@@ -1457,7 +1614,6 @@ export function DataTableWithSorting() {
       },
     },
   });
-
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
@@ -1625,7 +1781,6 @@ import {Plus} from "lucide-react";
 import {useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Button} from "@arolariu/components/button";
 import {
   Dialog,
@@ -1640,9 +1795,8 @@ import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, Form
 import {Input} from "@arolariu/components/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./modal-form.module.css";
-
 const projectSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters"),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
@@ -1651,12 +1805,9 @@ const projectSchema = z.object({
   }),
   budget: z.string().regex(/^\d+$/, "Budget must be a valid number"),
 });
-
 type ProjectFormValues = z.infer<typeof projectSchema>;
-
 export function CreateProjectModal() {
   const [open, setOpen] = useState(false);
-
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -1666,23 +1817,25 @@ export function CreateProjectModal() {
       budget: "",
     },
   });
-
   async function onSubmit(values: ProjectFormValues) {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       console.log("Project created:", values);
-      toast.success("Project created successfully!");
-
+      toast.add({
+        title: "Project created successfully!",
+        type: "success",
+      });
       // Close modal and reset form
       setOpen(false);
       form.reset();
     } catch (error) {
-      toast.error("Failed to create project. Please try again.");
+      toast.add({
+        title: "Failed to create project. Please try again.",
+        type: "error",
+      });
     }
   }
-
   return (
     <Dialog
       open={open}
@@ -1823,96 +1976,116 @@ export function CreateProjectModal() {
 
 ---
 
-### Recipe 4: Toast Notifications (Sonner)
+### Recipe 4: Toast Notifications (canonical manager)
 
-**Comprehensive toast notification patterns for all use cases.**
+Mount the canonical Toaster before using its manager. Keep important feedback in persistent application content as well as notifications.
 
 ```tsx
 import {CheckCircle2, Info, Loader2, XCircle} from "lucide-react";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
-import {toast, Toaster} from "@arolariu/components/sonner";
+import {toast, Toaster} from "@arolariu/components/toast";
 import styles from "./toast-demo.module.css";
-
 export function ToastDemo() {
   // Basic toasts
   const showSuccess = () => {
-    toast.success("Operation completed successfully!");
+    toast.add({
+      title: "Operation completed successfully!",
+      type: "success",
+    });
   };
-
   const showError = () => {
-    toast.error("Something went wrong. Please try again.");
+    toast.add({
+      title: "Something went wrong. Please try again.",
+      type: "error",
+    });
   };
-
   const showInfo = () => {
-    toast.info("This is an informational message.");
+    toast.add({
+      title: "This is an informational message.",
+      type: "info",
+    });
   };
-
   const showWarning = () => {
-    toast.warning("Warning: This action cannot be undone!");
+    toast.add({
+      title: "Warning: This action cannot be undone!",
+      type: "warning",
+    });
   };
-
   // Toast with action
   const showWithAction = () => {
-    toast.success("File uploaded successfully", {
-      action: {
-        label: "View",
+    toast.add({
+      title: "File uploaded successfully",
+      type: "success",
+      actionProps: {
+        children: "View",
         onClick: () => console.log("View clicked"),
       },
     });
   };
-
   // Toast with description
   const showWithDescription = () => {
-    toast.success("Project created", {
+    toast.add({
+      title: "Project created",
+      type: "success",
       description: "Your project has been created and is now live.",
     });
   };
-
   // Promise toast (loading → success/error)
-  const showPromiseToast = () => {
-    const uploadPromise = new Promise((resolve, reject) => {
+  const showPromiseToast = async () => {
+    const uploadPromise = new Promise<{
+      name: string;
+    }>((resolve, reject) => {
       setTimeout(() => {
         Math.random() > 0.5 ? resolve({name: "document.pdf"}) : reject(new Error("Upload failed"));
       }, 2000);
     });
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading file...",
-      success: (data: {name: string}) => `${data.name} uploaded successfully!`,
-      error: "Failed to upload file.",
-    });
+    try {
+      await toast.promise(uploadPromise, {
+        loading: "Uploading file...",
+        success: (data) => `${data.name} uploaded successfully!`,
+        error: "Failed to upload file.",
+      });
+    } catch {
+      // The notification displays failure; the caller still owns the rejected operation.
+      return;
+    }
   };
-
   // Custom styled toast
   const showCustomToast = () => {
-    toast.custom(
-      <div className={styles.customToast}>
-        <CheckCircle2 className={styles.customIcon} />
-        <div className={styles.customContent}>
-          <div className={styles.customTitle}>Custom Toast</div>
-          <div className={styles.customDescription}>This is a fully customized toast notification.</div>
-        </div>
-      </div>,
-    );
+    toast.add({
+      title: (
+        <span className={styles.customToast}>
+          <CheckCircle2
+            aria-hidden='true'
+            className={styles.customIcon}
+          />
+          <span className={styles.customContent}>
+            <span className={styles.customTitle}>Custom Toast</span>
+            <span className={styles.customDescription}>This is a customized notification.</span>
+          </span>
+        </span>
+      ),
+    });
   };
-
   // Loading toast (manual control)
   const showLoadingToast = () => {
-    const toastId = toast.loading("Processing your request...");
-
+    const toastId = toast.add({
+      title: "Processing your request...",
+      type: "loading",
+      timeout: 0,
+    });
     setTimeout(() => {
-      toast.success("Request processed!", {id: toastId});
+      toast.update(toastId, {
+        title: "Request processed!",
+        type: "success",
+        timeout: 5000,
+      });
     }, 3000);
   };
-
   return (
     <>
-      <Toaster
-        position='top-right'
-        richColors
-      />
+      <Toaster position='top-right' />
 
       <div className={styles.container}>
         <Card>
@@ -2138,12 +2311,13 @@ export function AppSidebar() {
                           key={item.title}
                           defaultOpen={isActive}>
                           <SidebarMenuItem>
-                            <CollapsibleTrigger asChild>
-                              <SidebarMenuButton isActive={isActive}>
-                                <item.icon />
-                                <span>{item.title}</span>
-                                <ChevronDown className={styles.chevron} />
-                              </SidebarMenuButton>
+                            <CollapsibleTrigger render={<SidebarMenuButton isActive={isActive} />}>
+                              <item.icon aria-hidden='true' />
+                              <span>{item.title}</span>
+                              <ChevronDown
+                                aria-hidden='true'
+                                className={styles.chevron}
+                              />
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <SidebarMenuSub>
@@ -2244,7 +2418,6 @@ export function AppSidebar() {
 
 ```tsx
 import {Copy, Download, Edit, LogOut, MoreVertical, Share2, Trash2, User} from "lucide-react";
-
 import {Button} from "@arolariu/components/button";
 import {
   DropdownMenu,
@@ -2256,14 +2429,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@arolariu/components/dropdown-menu";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./dropdown-demo.module.css";
-
 export function AccessibleDropdownMenu() {
   const handleAction = (action: string) => {
-    toast.info(`Action: ${action}`);
+    toast.add({
+      title: `Action: ${action}`,
+      type: "info",
+    });
   };
-
   return (
     <div className={styles.container}>
       <DropdownMenu>
@@ -2558,46 +2732,37 @@ export function DateRangePicker() {
 ```tsx
 import {Upload, X} from "lucide-react";
 import {useState} from "react";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Progress} from "@arolariu/components/progress";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./file-upload.module.css";
-
 interface FileUpload {
   id: string;
   file: File;
   progress: number;
   status: "uploading" | "complete" | "error";
 }
-
 export function FileUploadArea() {
   const [uploads, setUploads] = useState<FileUpload[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
   };
-
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     handleFiles(files);
   };
-
   const handleFiles = (files: File[]) => {
     const newUploads: FileUpload[] = files.map((file) => ({
       id: Math.random().toString(36).substring(7),
@@ -2605,15 +2770,12 @@ export function FileUploadArea() {
       progress: 0,
       status: "uploading" as const,
     }));
-
     setUploads((prev) => [...prev, ...newUploads]);
-
     // Simulate upload progress
     newUploads.forEach((upload) => {
       simulateUpload(upload.id);
     });
   };
-
   const simulateUpload = (id: string) => {
     const interval = setInterval(() => {
       setUploads((prev) =>
@@ -2621,12 +2783,13 @@ export function FileUploadArea() {
           if (upload.id === id) {
             const newProgress = Math.min(upload.progress + 10, 100);
             const newStatus = newProgress === 100 ? "complete" : upload.status;
-
             if (newStatus === "complete") {
               clearInterval(interval);
-              toast.success(`${upload.file.name} uploaded successfully`);
+              toast.add({
+                title: `${upload.file.name} uploaded successfully`,
+                type: "success",
+              });
             }
-
             return {...upload, progress: newProgress, status: newStatus};
           }
           return upload;
@@ -2634,11 +2797,9 @@ export function FileUploadArea() {
       );
     }, 300);
   };
-
   const removeUpload = (id: string) => {
     setUploads((prev) => prev.filter((upload) => upload.id !== id));
   };
-
   return (
     <div className={styles.container}>
       <Card className={styles.card}>
@@ -2836,7 +2997,6 @@ export function FileUploadArea() {
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
@@ -2845,26 +3005,22 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@ar
 import {Switch} from "@arolariu/components/switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./settings-page.module.css";
-
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
 });
-
 const notificationSchema = z.object({
   emailNotifications: z.boolean(),
   pushNotifications: z.boolean(),
   weeklyDigest: z.boolean(),
 });
-
 const appearanceSchema = z.object({
   theme: z.enum(["light", "dark", "system"]),
   language: z.string(),
 });
-
 export function SettingsPage() {
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -2874,7 +3030,6 @@ export function SettingsPage() {
       bio: "",
     },
   });
-
   const notificationForm = useForm<z.infer<typeof notificationSchema>>({
     resolver: zodResolver(notificationSchema),
     defaultValues: {
@@ -2883,7 +3038,6 @@ export function SettingsPage() {
       weeklyDigest: true,
     },
   });
-
   const appearanceForm = useForm<z.infer<typeof appearanceSchema>>({
     resolver: zodResolver(appearanceSchema),
     defaultValues: {
@@ -2891,22 +3045,27 @@ export function SettingsPage() {
       language: "en",
     },
   });
-
   const onProfileSubmit = (values: z.infer<typeof profileSchema>) => {
     console.log("Profile updated:", values);
-    toast.success("Profile updated successfully!");
+    toast.add({
+      title: "Profile updated successfully!",
+      type: "success",
+    });
   };
-
   const onNotificationSubmit = (values: z.infer<typeof notificationSchema>) => {
     console.log("Notifications updated:", values);
-    toast.success("Notification preferences updated!");
+    toast.add({
+      title: "Notification preferences updated!",
+      type: "success",
+    });
   };
-
   const onAppearanceSubmit = (values: z.infer<typeof appearanceSchema>) => {
     console.log("Appearance updated:", values);
-    toast.success("Appearance settings updated!");
+    toast.add({
+      title: "Appearance settings updated!",
+      type: "success",
+    });
   };
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -3217,38 +3376,26 @@ export function SettingsPage() {
 
 **Comprehensive error handling pattern with boundaries and toast notifications.**
 
-```tsx
-import {AlertTriangle, RefreshCw} from "lucide-react";
-import {Component, Suspense, type ReactNode} from "react";
+The caller supplies a stable initial promise started in server data loading or a client event. The client retry factory starts a replacement
+request only when Retry is activated. Do not create a new suspending promise on each render or share user-specific resources in
+module-global state.
 
+```tsx
+"use client";
+
+import {AlertTriangle, RefreshCw} from "lucide-react";
+import {use, useState, type JSX} from "react";
 import {Alert, AlertDescription, AlertTitle} from "@arolariu/components/alert";
 import {AsyncBoundary} from "@arolariu/components/async-boundary";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
-import {ErrorBoundary} from "@arolariu/components/error-boundary";
 import {Skeleton} from "@arolariu/components/skeleton";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./error-handling.module.css";
+type UserProfileData = Readonly<{id: string; name: string; email: string}>;
 
-// Async data fetching component
-async function fetchUserData(userId: string) {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // Simulate random error
-  if (Math.random() > 0.7) {
-    throw new Error("Failed to fetch user data");
-  }
-
-  return {
-    id: userId,
-    name: "John Doe",
-    email: "john@example.com",
-  };
-}
-
-function UserProfile({userId}: {userId: string}) {
-  const user = use(fetchUserData(userId));
-
+function UserProfile({resource}: Readonly<{resource: Promise<UserProfileData>}>): JSX.Element {
+  const user = use(resource);
   return (
     <Card>
       <CardHeader>
@@ -3267,9 +3414,8 @@ function UserProfile({userId}: {userId: string}) {
     </Card>
   );
 }
-
 // Loading fallback
-function ProfileSkeleton() {
+function ProfileSkeleton(): JSX.Element {
   return (
     <Card>
       <CardHeader>
@@ -3282,9 +3428,8 @@ function ProfileSkeleton() {
     </Card>
   );
 }
-
 // Error fallback
-function ProfileError({error, reset}: {error: Error; reset: () => void}) {
+function ProfileError({error, reset}: Readonly<{error: Error; reset: () => void}>): JSX.Element {
   return (
     <Alert variant='destructive'>
       <AlertTriangle />
@@ -3303,32 +3448,42 @@ function ProfileError({error, reset}: {error: Error; reset: () => void}) {
     </Alert>
   );
 }
-
-export function ErrorHandlingDemo() {
+export function ErrorHandlingDemo({
+  initialProfile,
+  reloadProfile,
+}: Readonly<{
+  initialProfile: Promise<UserProfileData>;
+  reloadProfile: () => Promise<UserProfileData>;
+}>): JSX.Element {
+  const [profileResource, setProfileResource] = useState(initialProfile);
   const handleAPIError = async () => {
     try {
       // Simulate API call that fails
       await new Promise((_, reject) => setTimeout(() => reject(new Error("API request failed")), 1000));
     } catch (error) {
-      toast.error("Failed to load data. Please try again.", {
-        action: {
-          label: "Retry",
+      toast.add({
+        title: "Failed to load data. Please try again.",
+        type: "error",
+        actionProps: {
+          children: "Retry",
           onClick: () => handleAPIError(),
         },
       });
     }
   };
-
   const handleValidationError = () => {
-    toast.error("Validation failed: Email is required");
-  };
-
-  const handleNetworkError = () => {
-    toast.error("Network error. Please check your connection.", {
-      duration: 5000,
+    toast.add({
+      title: "Validation failed: Email is required",
+      type: "error",
     });
   };
-
+  const handleNetworkError = () => {
+    toast.add({
+      title: "Network error. Please check your connection.",
+      type: "error",
+      timeout: 5000,
+    });
+  };
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -3341,14 +3496,17 @@ export function ErrorHandlingDemo() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>1. AsyncBoundary (Suspense + ErrorBoundary)</h2>
           <AsyncBoundary
-            suspenseFallback={<ProfileSkeleton />}
-            errorFallback={({error, reset}) => (
+            loadingFallback={<ProfileSkeleton />}
+            fallback={(error, reset) => (
               <ProfileError
                 error={error}
-                reset={reset}
+                reset={() => {
+                  setProfileResource(reloadProfile());
+                  reset();
+                }}
               />
             )}>
-            <UserProfile userId='123' />
+            <UserProfile resource={profileResource} />
           </AsyncBoundary>
         </div>
 
@@ -3388,7 +3546,12 @@ export function ErrorHandlingDemo() {
                 variant='outline'
                 size='sm'
                 className={styles.loginButton}
-                onClick={() => toast.info("Redirecting to login...")}>
+                onClick={() =>
+                  toast.add({
+                    title: "Redirecting to login...",
+                    type: "info",
+                  })
+                }>
                 Log In
               </Button>
             </AlertDescription>
@@ -3397,26 +3560,6 @@ export function ErrorHandlingDemo() {
       </div>
     </div>
   );
-}
-
-// React 19 use() hook polyfill (remove when React 19 is stable)
-function use<T>(promise: Promise<T>): T {
-  if ((promise as any).status === "fulfilled") {
-    return (promise as any).value;
-  } else if ((promise as any).status === "rejected") {
-    throw (promise as any).reason;
-  } else {
-    throw promise.then(
-      (value) => {
-        (promise as any).status = "fulfilled";
-        (promise as any).value = value;
-      },
-      (reason) => {
-        (promise as any).status = "rejected";
-        (promise as any).reason = reason;
-      },
-    );
-  }
 }
 ```
 

@@ -8,6 +8,37 @@ afterEach(() => {
 });
 
 describe("useFocusManager", () => {
+  it.each(["hidden", "inert", "display", "visibility", "fieldset", "details", "aria-disabled", "hidden-input"])(
+    "skips unavailable %s candidates without changing DOM order",
+    (kind) => {
+      const container = document.createElement("div");
+      const unavailable = document.createElement(kind === "hidden-input" ? "input" : "button");
+      const wrapper = document.createElement(kind === "fieldset" ? "fieldset" : kind === "details" ? "details" : "div");
+      if (kind === "hidden" || kind === "inert") wrapper.setAttribute(kind, "");
+      if (kind === "display") wrapper.style.display = "none";
+      if (kind === "visibility") wrapper.style.visibility = "hidden";
+      if (kind === "fieldset") wrapper.setAttribute("disabled", "");
+      if (kind === "aria-disabled") unavailable.setAttribute("aria-disabled", "true");
+      if (kind === "hidden-input") unavailable.setAttribute("type", "hidden");
+      const first = document.createElement("button");
+      const last = document.createElement("button");
+      first.tabIndex = 3;
+      wrapper.append(unavailable);
+      container.append(wrapper, first, last);
+      document.body.append(container);
+      const {result} = renderHook(() => useFocusManager({current: container}));
+
+      act(() => result.current.focusFirst());
+      expect(document.activeElement).toBe(first);
+      act(() => result.current.focusNext());
+      expect(document.activeElement).toBe(last);
+      act(() => result.current.focusNext());
+      expect(document.activeElement).toBe(first);
+      act(() => result.current.focusPrevious());
+      expect(document.activeElement).toBe(last);
+    },
+  );
+
   it("returns focus management functions", () => {
     const ref = {current: document.createElement("div")};
     const {result} = renderHook(() => useFocusManager(ref));

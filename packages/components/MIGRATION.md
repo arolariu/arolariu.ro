@@ -1,4 +1,406 @@
-# 🚀 Migration Guide: v0.x → v1.0
+# Migration Guide
+
+## v2.4 to v3
+
+**3.0.0 is release preparation, not a published release.** The changes below describe the approved upcoming major. Do not install an
+unavailable version, point a consumer at local source/dist, or change application runtime calls before adopting an actually published
+artifact. The repository website must retain its official published **2.4.0 tarball** and existing calls during this preparation.
+
+The historical v0.x → v1.0 guide follows this section unchanged. Its old dependency ranges and examples are historical, not instructions for
+adopting v3.
+
+### Dependency and packaging decision
+
+- Upcoming Base UI peer minimum: **`@base-ui/react@^1.9`**. Public 1.0's export map lacks `./drawer`; the actually tested 1.9 provides it
+  and declares React `^17 || ^18 || ^19`. This is a verified minimum chosen for this major, **not a claim that 1.9 is the earliest possible
+  supporting version**. Consumers using older Base UI must upgrade.
+- React and ReactDOM require **`^19`**. React 18 support is removed. Other runtime package names/ranges stay unchanged, including Motion
+  13/14, RHF 7 and Recharts 3.8-compatible peers. No Sonner, Headless UI or cmdk dependency is added.
+- ESM, declarations, original source, CSS Modules, `styles`/`styles.css`, CSS side effects and client/server boundaries remain supported.
+  MIGRATION is included in the package file list. Short public subpaths are explicit; underscore helpers are private even when emitted or
+  packed as transitive modules.
+- Receive DOM `ref` as an ordinary typed React 19 prop. Preserve cleanup-returning callback refs and object-ref targets in custom render
+  components. Repeated merged-ref identities attach once, retained refs survive reordering, and obsolete disposers cannot detach new nodes.
+- `asChild` and all deprecated/legacy public adapters are removed rather than retained behind another alias. Replace old slots with
+  `render`; set `nativeButton={false}` when a button-like primitive renders a non-button.
+- The actual component build, generated ESM/declarations/CSS/client directives, four extracted npm artifact contracts and Storybook
+  documentation build are verified. The parent's latest review-followup component workspace coverage, scoped review, configured ESLint and
+  checks recorded below are historical pre-hard-cut evidence. Physical-browser and assistive-technology verification, publication and
+  website adoption remain distinct boundaries.
+
+### Removed APIs
+
+| Removed surface                                                                                         | Canonical replacement                                                        |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| All `asChild` props                                                                                     | `render` plus the primitive's native/composed-element contract               |
+| `LegacyToaster`, `legacyToast` and `/legacy-toast`                                                      | `Toaster`, `toast.add/update/close/promise` or explicit Toast compound parts |
+| `LegacyCommandDialog` and its subpath                                                                   | `CommandDialog` containing one explicit `Command`                            |
+| `LegacyAlertDialogAction` and its subpath                                                               | `AlertDialogAction` with caller-owned successful close                       |
+| Accordion scalar values and `type` adapters                                                             | Array values in both single- and multiple-panel modes; native `multiple`     |
+| Checkbox `checked="indeterminate"`                                                                      | Boolean `checked` plus explicit `indeterminate`                              |
+| Tooltip root/provider `delayDuration`                                                                   | Native provider or trigger `delay`                                           |
+| NavigationMenuViewport/Indicator compatibility parts                                                    | NavigationMenuPositioner and its explicit viewport props                     |
+| Structural PopoverAnchor                                                                                | A measurable Content `anchor`                                                |
+| ContextMenu's deprecated `positionMethod`                                                               | Native context-menu positioning options                                      |
+| Breadcrumb `separator`, Separator `decorative` and other legacy no-op props                             | Explicit parts/native semantics                                              |
+| Branch-ambiguous DropDrawer handles                                                                     | Branch-specific menu/drawer configuration                                    |
+| Flip direction `"righ"` and DeprecatedFlipDirection                                                     | `"right"`                                                                    |
+| `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness`, `parseHslString` | Canonically named color utilities                                            |
+| Recharts `Cell` reexport                                                                                | A series `shape`                                                             |
+
+Source, declarations, root exports and component subpaths no longer expose these adapters. Old before-examples below explain migration, not
+a compatibility option.
+
+### Accessibility and visual behavior
+
+The target is applicable WCAG 2.2 A/AA. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for the criteria matrix, localized consumer content,
+motion/timing controls and manual browser/assistive-technology obligations. Native/primitive semantics, keyboard operation, focus cleanup
+and default light/dark contrast are part of the component contract. Do not infer full-page conformance from Vitest or source CSS.
+
+### Public names and collision rules
+
+Use explicit root or family imports; public named props/state types accompany existing component namespaces where those namespaces are
+defined by the family. Generic primitive roots retain their primitive generics and event-detail namespace members.
+
+| Purpose                                | v3 root name                                         | Deliberate distinction                                                                          |
+| -------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Styled field error component           | `FieldError`                                         | RHF's data type is `RHFFieldError` at the root; `/form` retains its original `FieldError` type. |
+| Native label                           | `Label`                                              | Recharts' label is `RechartsLabel`; supported non-deprecated chart aliases and helpers remain.  |
+| Canonical toast root                   | `Toast`                                              | Notification data is `ToastData<T>` / `ToastObject<T>`, not a type alias called `Toast`.        |
+| Ready-made canonical toast composition | `Toaster`                                            | The callable facade is removed; no `SonnerToaster` is included.                                 |
+| Direction context                      | `DirectionProvider`, `useDirection`, `TextDirection` | Exact Base UI provider/hook identity; no second provider or conflicting `Direction` alias.      |
+
+RHF's provider, Controller, six hook pass-throughs and existing named RHF types are retained. `Form` is still `FormProvider`, **not a native
+`<form>`**. Public additions include full Combobox/Progress/ScrollArea parts, Avatar badge/group/count, CalendarDayButton,
+NavigationMenuPositioner, DrawerSwipeHandle, Popover naming parts, TooltipArrow, NativeSelect and the additive Attachment/Bubble/Marker/
+Message display families. These display families do not introduce AI/chat SDK, upload, network, application store or localization policy.
+
+### Toast: migrate the facade to a manager
+
+In v2.4, the callable/status facade used the names `toast` and `Toaster`. In v3 **`toast` is a real Base UI manager**, not callable and not
+a heuristic overload. Mount its ready-made Toaster before emitting. Canonical Provider timeout/limit and manager timeout/type/actionProps
+replace facade duration/visibleToasts/status helpers.
+
+**Before — published v2.4 facade:**
+
+```tsx
+import {toast, Toaster} from "@arolariu/components";
+
+<Toaster
+  duration={5000}
+  visibleToasts={3}
+/>;
+// Inside an event handler, after the Toaster has mounted:
+const id = toast.success("Saved", {duration: 3000, description: "Changes stored"});
+toast.update(id, {message: "Saved again"});
+toast.dismiss(id);
+```
+
+**After — canonical v3 manager:**
+
+```tsx
+"use client";
+import {toast, Toaster} from "@arolariu/components/toast";
+import type {ToastData} from "@arolariu/components/toast";
+
+// Render once before invoking the manager, e.g. from event handlers.
+<Toaster
+  timeout={5000}
+  limit={3}
+/>;
+// Inside an event handler, after the Toaster has mounted:
+const id = toast.add({title: "Saved", description: "Changes stored", timeout: 3000, type: "success"});
+toast.update(id, {title: "Saved again"});
+toast.close(id);
+
+type Notification = ToastData<{readonly source: "editor"}>;
+```
+
+There is no v3 facade compatibility import. Move custom content to compound Toast composition and application-owned data rather than
+restoring callable status helpers, history or snapshot callbacks.
+
+Independent canonical scopes use `createToastManager<Data>()` with `toastManager={manager}` on Toaster or ToastProvider.
+`useToastManager<Data>()` reads only its nearest provider. A plain ToastProvider does **not** implicitly attach the global manager. Toaster
+`viewportProps` configures the viewport, not custom notification-list children; compose ToastProvider/Portal/Viewport and the Toast parts
+for a custom list. Ready-made top placements swipe up/right; bottom placements swipe down/right. Compound roots retain primitive
+swipe-direction options and all primitive-owned render states.
+
+Canonical `onClose`/`onRemove` retain their primitive signatures. Do not invent a removal cause or assume that a notification's timeout
+proves a user read it. Applications retain critical feedback outside disappearing notifications and own asynchronous rejection handling.
+
+### Command: one explicit native root
+
+CommandDialog is **only the modal shell**. Supply exactly one explicit Command root. The automatic-root adapter and its subpath are removed.
+
+**Before — v2.4 automatic root:**
+
+```tsx
+<CommandDialog
+  open={open}
+  onOpenChange={setOpen}>
+  <CommandInput placeholder='Search actions' />
+  <CommandList>
+    <CommandItem onSelect={copy}>Copy</CommandItem>
+  </CommandList>
+</CommandDialog>
+```
+
+**After — canonical v3:**
+
+```tsx
+import {Command, CommandDialog, CommandInput, CommandItem, CommandList} from "@arolariu/components/command";
+
+<CommandDialog
+  open={open}
+  onOpenChange={setOpen}
+  title='Actions'
+  description='Choose an action'
+  showCloseButton={false}>
+  <Command
+    value={selectedAction}
+    onValueChange={setSelectedAction}>
+    <CommandInput
+      value={search}
+      onValueChange={setSearch}
+      placeholder='Search actions'
+    />
+    <CommandList>
+      <CommandItem
+        value='copy'
+        onSelect={copy}>
+        Copy
+      </CommandItem>
+    </CommandList>
+  </Command>
+</CommandDialog>;
+```
+
+Command remains native, **not cmdk**: default matching is case-insensitive substring, not fuzzy ranking; custom filters return finite
+positive scores. Root selected `value` is distinct from Input search `value`. Controlled values are authoritative, including temporarily
+unmatched values; automatic uncontrolled fallback does not emit user-selection callbacks. Give items stable unique explicit values and IDs,
+independent of translated text/shortcut content. Inferred values include trimmed shortcut text.
+
+Keep registered items/groups directly under their List/Group for score/DOM ordering. Arbitrary cross-wrapper nested score layout, cmdk
+hooks/Loading/store/measurement variables and a generic cmdk/asChild API are not supplied. Native option focusability remains; separators
+hide during search unless `alwaysRender`. Empty is a polite local status counting visible disabled/force-mounted options but not externally
+hidden ones. Native consumer event cancellation is preserved. Local centered geometry and the default "Command menu" title are retained, not
+claimed to reproduce upstream pixels.
+
+### Breaking defaults, values, refs and native tags
+
+| Family                           | Migration / retained boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button and composed controls     | Non-button canonical targets must specify `nativeButton={false}`. Refs truthfully target `HTMLElement` where composition permits non-button elements; native button refs remain usable. Button adds `xs`, `icon-xs`, `icon-sm`, `icon-lg`; exhaustive consumer size maps must include them.                                                                                                                                                                                               |
+| Badge                            | Default element/ref becomes `span` / `HTMLSpanElement`, not div. Use `render={<div />}` deliberately for block markup; composed refs follow the real element. Ghost/link variants are additive.                                                                                                                                                                                                                                                                                           |
+| Breadcrumb/Item                  | Composed refs target HTMLElement; native parts retain their exact tags. Item's default div is noninteractive. Breadcrumb root separator is removed; use BreadcrumbSeparator.                                                                                                                                                                                                                                                                                                              |
+| Primitive render/class callbacks | Wrappers no longer evaluate these through a stateless outer renderer. Callback props/state belong to the actual primitive and callback refs are merged callbacks, not assumed mutable ref objects. Preserve forwarded props/ref and use actual state, event details and cancellation.                                                                                                                                                                                                     |
+| Accordion                        | Values and callbacks are string arrays in both single- and multiple-panel modes. Use native multiple, never type or scalar values. An empty array selects nothing; an array containing the empty string selects that item. collapsible=false cancels empty proposals using the original event details.                                                                                                                                                                                    |
+| Collapsible                      | Open callbacks keep primitive event details; `details.trigger` is not synthesized when absent. Trigger render children are retained.                                                                                                                                                                                                                                                                                                                                                      |
+| Slider                           | Scalar stays scalar; readonly/mutable ranges retain primitive inference and one thumb per supplied endpoint, including zero for an empty range. An omitted default is the primitive's single minimum, not an invented range. Keep `(value, details)` change/commit callbacks and native named inputs.                                                                                                                                                                                     |
+| Progress                         | Omitted/null values are primitive indeterminate state, not coerced to zero. Root children are retained. Four explicit parts replace the convenience track when a direct local/Base UI track is supplied; Value formatting belongs to the primitive.                                                                                                                                                                                                                                       |
+| Tabs                             | Default/line visual variants are explicit. Disabled tabs may remain keyboard-focusable under the primitive's `focusableWhenDisabled` policy, but cannot activate. Panel hiding follows transition completion, not synchronous selected-value inequality.                                                                                                                                                                                                                                  |
+| Select                           | Root retains generic object/number/multiple values and nullable single selection. Do not filter callbacks into old string-only values; retain original `(value, details)`, equality, cancellation and clear semantics. To name the listbox use `listProps`, not only Popup's label.                                                                                                                                                                                                       |
+| Combobox                         | No automatic search/List/Empty block, transient item-label registry or empty-string deselection. Move root placeholder/searchPlaceholder/emptyMessage/className to explicit Value/Input/Empty/visual parts; supply persistent Root `items`, an explicit ComboboxList, ComboboxLabel instead of group heading and root filter/data instead of item keywords. Single clearing yields null; multiple yields arrays. No legacy-combobox engine is added.                                      |
+| Dialog/Sheet                     | Content icon close defaults true; showCloseButton=false opts out. DialogFooter's optional close defaults false. Exported Close parts are unstyled. Automatic dismissal labels are caller-localizable; compose only through render.                                                                                                                                                                                                                                                        |
+| AlertDialog                      | Action is an ordinary Button and does not close. Explicitly close after successful asynchronous work and retain pending/rejection policies. Cancel remains Close-backed; the immediate legacy action is removed. Base UI retains Escape and outside-dismissal policy through original cancellable details.                                                                                                                                                                                |
+| Popover                          | The structural PopoverAnchor adapter is removed. Supply Content anchor with a measurable element/ref. Header owns layout; Title and Description own accessible registration.                                                                                                                                                                                                                                                                                                              |
+| Tooltip/HoverCard                | Render/state/timing belongs to the primitive. Use native provider/trigger delay; delayDuration is removed. Tooltip's decorative Arrow can be disabled with showArrow=false before custom TooltipArrow composition. Preserve hover/focus visibility and Escape dismissal.                                                                                                                                                                                                                  |
+| Menus                            | Popup render/class/ref/focus remain on Popup, positioning options on Positioner, portal options on Portal. Trigger refs may be HTMLElement. Primitive checked/value/nativeButton/event details are not converted; submenu `inline-end` is RTL-aware. See family props for deliberate offset defaults.                                                                                                                                                                                     |
+| Drawer                           | Actual Viewport owns gestures/snaps/nesting. Modal true alone has a blocking backdrop; nonmodal/trap-focus viewports do not. Default down/modal behavior remains; `showSwipeHandle` defaults false, and decorative DrawerSwipeHandle stays outside Content. No snap point/list is invented.                                                                                                                                                                                               |
+| NavigationMenu                   | Root supplies an automatic positioned Popup/Viewport, including opaque Flight render elements. Set positionerProps=false for explicit NavigationMenuPositioner composition. Viewport/Indicator compatibility adapters are removed.                                                                                                                                                                                                                                                        |
+| Sidebar                          | Root ref follows actual desktop/static/mobile popup; Inset is native main, list/item parts retain ul/li refs. Functional desktop/mobile setters and controlled behavior remain. Polymorphic action/label/button state is wrapper-owned, not fabricated Menu/Tooltip/Sheet state.                                                                                                                                                                                                          |
+| Calendar                         | DayPicker discriminated selection modes and primitive callbacks remain. Styled classNames append, except animation keys are a **single replaced token**, not a merged class list; provide CSS for overridden tokens. Custom components replace defaults, Custom Root must attach merged rootRef, and locale-aware CalendarDayButton preserves native button refs.                                                                                                                         |
+| Carousel/Resizable               | Keep Embla options/plugins/API and real `useCarousel` context. Navigation refs follow Button's HTMLElement contract. Resizable remains installed v4 Group/Panel/Separator with primitive imperative handles/callbacks; use percentage-string constraints and primitive orientation state, not old ad hoc selectors.                                                                                                                                                                       |
+| Chart                            | ChartContainer id/class/ref now belong to the native **outer root**, not ResponsiveContainer's optional measuring div. Native id/className are strings. Use JSX content or callbacks returning JSX for ref-capable Tooltip/Legend content, not direct function invocation. Generated data-chart scopes are internal unique IDs; use native id/class/data-slot instead. Unsafe config color declarations are omitted; nullish formatter output suppresses rows and default ranges use `~`. |
+| Form/Field                       | Form remains RHF's provider. FormControl preserves real element/event refs and child-first cancellation; no implicit replacement of the RHF update handler. Only mounted meaningful description/message nodes get ARIA references; blank/boolean/empty-fragment errors don't create empty messages, but numeric zero remains meaningful. Invalid fields can remain invalid without text. Inline messages are not automatic alerts: own one submission announcement.                       |
+| Input/OTP/Textarea/Label         | Input state/callbacks remain Base UI-owned. OTP invalid indexes fail fast; active caret suppresses placeholder, inactive empty slots retain placeholder or `·`. Textarea and Label remain native/server-compatible; Textarea defaults to manual resizing, with `data-sizing="content"` as CSS progressive enhancement, not a fabricated Base Textarea/autoresize API.                                                                                                                     |
+| Native/display parts             | AlertTitle remains h5; EmptyDescription remains paragraph by default with discriminated `as="div"` for block content. Kbd/group remain native kbd; Table remains a real table with its horizontal wrapper. Skeleton/Spinner can use `animated={false}` and reduced motion. ScrollArea convenience composition stays; explicit Root/Viewport/Content/Thumb/Corner parts support sibling axis scrollbars and actual viewport refs.                                                          |
+| Boundaries/loading               | Explicit `fallback={null}` stays empty. ErrorBoundary normalizes unknown thrown values to Error with cause, preserving genuine Error identity. Reset requires repaired descendants/replaced rejected resource. AsyncBoundary owns no fetch/cache/DOM ref. FocusScope is local keyboard scope, not a modal engine. LoadingOverlay is visual/non-intercepting; the caller owns inert/disabled/busy/focus, with status outside busy and inert subtrees.                                      |
+| DropDrawer                       | Open state survives breakpoint changes; submenu path resets and the new primitive owns focus. Mobile actions are native buttons; desktop uses Menu. `closeOnClick` defaults true, including submenu actions. Live registrations are not cached React children. Desktop maps trap-focus to Menu modal mode; mobile follows Drawer backdrop rules. Shared states are engine unions: narrow them rather than assuming Menu highlighting on mobile.                                           |
+| Local visual/motion extensions   | Background/text/canvas extensions and Copy/Counting/Flip/Ripple/Stepper/Timeline/Typewriter/VisuallyHidden remain. Canvas refs and error policies retain their owning contracts. Flip accepts right, not righ. Preserve native keyboard reveal, meaningful readable text, reduced-motion alternatives and user-operable control of continuing motion.                                                                                                                                     |
+
+### Caller-owned Stepper completion copy
+
+`completedLabel` controls the assistive text appended to completed steps. Its default remains `"Completed"`; pass translated text for the
+consumer's locale, or an empty string to omit the completion suffix. The step labels and native root `aria-label` remain caller-owned.
+
+```tsx
+<Stepper
+  steps={["Compte", "Profil", "Vérification"]}
+  activeStep={1}
+  completedLabel='Terminé'
+  aria-label='Progression'
+/>
+```
+
+### Exact Skeleton count/error policy
+
+Card `lines`, Form `fields`, List `items` and Table `rows`/`columns` must each be **finite nonnegative integers ≤ 10,000**. No coercion,
+clamping or truncation occurs. Invalid or over-limit counts synchronously throw documented **RangeError before allocation**.
+
+Table additionally requires **`(rows + (showHeader ? 1 : 0)) * columns ≤ 10,000`**, after both axes are validated and before arrays are
+allocated. `showHeader` defaults true. Valid zero dimensions remain valid: zero card lines preserve header/footer; zero form fields preserve
+submit; zero list items leave an empty root; zero table axes retain requested empty rows/header unless header is disabled. Default counts
+stay Card 3 / Form 4 / List 5 / Table 5 rows × 4 columns; List avatar remains enabled by default. All four root refs remain HTMLDivElement.
+Internal skeletons are decorative; the caller supplies one labeled loading/busy region.
+
+```tsx
+// Before: invalid counts could be silently normalized or allocate unbounded arrays.
+<TableSkeleton
+  rows={5000}
+  columns={4}
+/>;
+
+// After: validate counts upstream; this is valid with the header included.
+<TableSkeleton
+  rows={2499}
+  columns={4}
+/>;
+// Exactly 10,000 cells without a header:
+<TableSkeleton
+  rows={2500}
+  columns={4}
+  showHeader={false}
+  animated={false}
+/>;
+```
+
+### Retained extensions and unselected families
+
+CSS Modules and `--ac-*` tokens remain; no Tailwind/CVA/external cn/runtime CSS-in-JS migration. Primitive-generated geometry/animation
+styles and narrowly approved data-driven bridges (e.g. chart series color/aspect ratio) are not a general styling exception. Recharts
+non-deprecated primitives/hooks/constants, RHF pass-throughs, existing calendar/OTP regex and imperative-panel types remain. Chart config
+`stackId` is consumer metadata, not automatic series configuration; outer Recharts positioning/sorting/container props remain outer
+responsibilities. Configure legend positioning/layout through the actual `ChartLegend`, not removed no-op custom-content props.
+`ChartLegendContent` exposes its supported per-item callbacks only; engine-injected layout/presentation fields are consumed internally
+instead of leaking to the DOM. `hideIndicator` keeps configured tooltip icons, and `hideIcon` replaces legend icons with swatches. Existing
+Breadcrumb root separator and decorative compatibility flags are removed.
+
+T34/T35/T36 are unselected/gated: no optional headless or Sonner root exports and no eager imports of absent engines. Native Command and
+canonical components are not renamed substitutes for those engines. Private underscore modules may ship transitively but are not supported
+imports.
+
+### Website adoption is a later published-artifact task
+
+Do **not** apply these edits in the current library preparation. Once an approved v3 artifact is actually published:
+
+1. Update the website's official tarball/integrity through its separately authorized dependency adoption, never a local workspace alias.
+2. Migrate facade-dependent status/promise/custom calls to canonical manager/compound APIs. Preserve the current published 2.4 runtime
+   behavior until adoption is authorized.
+3. Commander must compose the canonical shell with exactly one explicit Command; keep localized title/description, stable action values,
+   separate selected/search state and app-owned shortcuts.
+4. Async AlertDialog callers must own success-close/rejection/pending policies.
+5. Recheck native refs, form/value/callback contracts and affected application tests against the published package.
+
+Verified follow-up candidates include Commander; InvoicePreferences; DeleteScanDialog/ShareInvoiceDialog; edit-invoice SharingCard,
+ItemsTable/EditInvoiceContext and AddRecipe/AddScan/Allergen/DeleteRecipe/Feedback/RemoveScan/UpdateRecipe dialogs; CreateInvoiceContext;
+ScanUploadContext and its test/types/uploadSession; ShareCollaborateCard; invoice/bulk Export dialogs and BulkActionsToolbar;
+ScanSelectionToolbar/CreateInvoiceDialog/useScans; useInvoiceDelete/useInvoiceShare/useScanAdd/useScanDelete/useScanRename/useScanRotation;
+detachScanFromInvoice/createScan. These are adoption inventory, not authorization to edit routes, auth, Next configuration or domain logic.
+
+### Evidence and limits
+
+Focused Vitest contracts use real modules/primitives; no producer replacement mocks or alternate automated runner. Strong TypeScript
+source/test/story checks do not prove packed ESM/declaration/style availability. Historical pre-hard-cut results below do not prove the new
+React 19-only artifact. Release gates retain 80% branch / 95% function, line and statement thresholds; focused coverage-disabled runs make
+no aggregate coverage claim.
+
+#### React 19-only verification
+
+The final hard-cut verification on **2026-10-15** ran the complete component workspace with `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to a
+genuine extracted npm artifact:
+
+```powershell
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Passed: 127 files, 3,319 tests, zero failures and zero skips**, including all four actual packed contracts. The configured coverage
+thresholds and exclusions were unchanged:
+
+| Metric     | Covered / total | Coverage | Threshold |
+| ---------- | --------------- | -------- | --------- |
+| Statements | 3704 / 3779     | 98.01%   | 95%       |
+| Branches   | 2769 / 2949     | 93.89%   | 80%       |
+| Functions  | 1033 / 1040     | 99.32%   | 95%       |
+| Lines      | 3482 / 3514     | 99.08%   | 95%       |
+
+- `npm run build --workspace=@arolariu/components` passed with real ESM, CSS, declarations and generated exports. The root Nx wrapper could
+  not run locally because its launcher was unavailable; this invokes the existing package build directly.
+- `npm run build-storybook --workspace=@arolariu/components` passed after the final source changes.
+- `npx --no-install eslint packages\components\src` and the complete package Prettier check passed. Existing ignored story/test/script paths
+  are not presented as linted source.
+- The actual 94-story type graph passed, as did strict packed declarations with `skipLibCheck=false`, root/subpath runtime identity,
+  private-entrypoint rejection, client directives and absence of shipped story-style payload.
+- Separate genuine React/ReactDOM **19.0.0** source and packed lanes each passed **20 runtime fixtures** with real peers and no source
+  proxies. This is focused minimum-version evidence, not every possible composition.
+- Byte inspection matched **833 emitted files** and **216 shipped source files** to the actual archive. The private cross-family motion
+  option declaration is retained where public types need it, without a public helper entrypoint or weakening `stripInternal`/compiler
+  policy.
+- The exact React 19 error-handling recipe in EXAMPLES type-checked against the actual emitted declarations.
+
+The isolated minimum runtime was restored after official npm TLS failure using version-pinned HTTPS metadata and individual file-size/SHA256
+validation. Those checks do **not** establish the original compressed npm tarball's SRI.
+
+Native Edge/Storybook inspection verified representative names, focus entry/return, 320px reflow, actual default/settled authored-hover
+color rendering, pause behavior and applied status styles. The destructive hover correction measured **5.77:1 in light mode and 5.29:1 in
+dark mode** through settled native raster evaluation, not a physical-hover claim. Recorded axe incomplete results, real screen-reader
+delivery, keyboard-only workflows, forced colors, all composited states and geometry-dependent gestures remain human-evaluation obligations
+in ACCESSIBILITY.
+
+These results do not publish the package, adopt it into the website or certify full-page WCAG conformance.
+
+#### Historical pre-hard-cut review-followup checkpoint — 2026-10-14
+
+With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 127 files / 3,147 tests / no skips**, including all **four packed contracts** and **93 story-style mount tests**. Start **15:21:14
+local**, duration **335.46 seconds**. Statements **98.35% (3765/3828)**, branches **95.32% (2996/3143)**, functions **99.41% (1022/1028)**,
+lines **99.24% (3571/3598)**; thresholds/exclusions remain unchanged.
+
+Separate real React18 source and packed lanes passed **28 fixtures** each. The story migration moved **224 classes from 74 production CSS
+Modules** into **80 story-owned style mounts**; actual packed legacy selectors fell **432 → 0**, and uncompressed production CSS decreased
+**26,551 bytes**. Parent's **74 style graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks passed with zero
+diagnostics.
+
+Independent review (`328aa289`) reported no findings, with all four original items addressed and the story-style boundary approved. Parent's
+configured full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo error
+reporting and the chart zero-geometry warning remained visible; this is not a warning-free claim.
+
+The historical 15 hook/story strong-type baseline and website fixture/build-environment limits are not cleared by this component checkpoint;
+no all-monorepo, whole-project type, publication, website-adoption or physical-browser approval is inferred.
+
+#### Historical initial v3 checkpoint — 2026-10-14
+
+The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
+
+The parent ran the final post-wave component workspace coverage checkpoint on **2026-10-14**, with `AROLARIU_COMPONENTS_PACKED_ROOT` set to
+the genuine extracted npm artifact:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 126 files / 3,043 tests / no skips**, including three actual packed contracts. Start **10:50:17 local**, duration **333.64
+seconds**. Statements **98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)**, lines **99.25%
+(3573/3600)**. The existing thresholds/exclusions were unchanged. Expected Motion reduced notices/npm configuration warnings stayed visible;
+no React Tabs act warnings after the fixture-only corrections.
+
+Final scoped review (`a3e8b0b6`) found I1/I2 and M1–M10 all addressed, zero remaining and zero new Important regressions. Parent-reported
+configured ESLint and Prettier for all **383 changed files** passed; real React18 source and actual packed lanes each passed **18
+fixtures**. This is **not an all-monorepo validation claim**. The known 15 baseline hook/story strong-type diagnostics and website
+fixture/build-environment blocks remain separate.
+
+Physical painting, native browser focus/inert, pointer/touch gestures, animation, clipboard permissions, scrolling/anchoring and
+screen-reader speech need separately accepted review evidence. Happy DOM geometry fixtures and parsed CSS are not physical-engine proof.
+Packaging/release approval, publishing and website adoption remain distinct decisions.
+
+---
+
+# 🚀 Historical Migration Guide: v0.x → v1.0
 
 > **Breaking changes from Radix UI + Tailwind to Base UI + CSS Modules**
 

@@ -8,9 +8,9 @@ import styles from "./alert.module.css";
  */
 export type AlertVariant = "default" | "destructive";
 
-const variantStyles: Record<AlertVariant, string> = {
-  default: styles.default!,
-  destructive: styles.destructive!,
+const variantStyles: Readonly<Record<AlertVariant, string | undefined>> = {
+  default: styles.default,
+  destructive: styles.destructive,
 };
 
 /**
@@ -22,17 +22,17 @@ const variantStyles: Record<AlertVariant, string> = {
  *
  * @default variant `"default"`
  */
-export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface AlertProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Additional CSS classes merged with the base alert surface styles.
    */
-  className?: string;
+  readonly className?: string;
   /**
    * The visual tone used to communicate neutral or destructive feedback.
    *
    * @default "default"
    */
-  variant?: AlertVariant;
+  readonly variant?: AlertVariant;
 }
 
 /**
@@ -57,14 +57,16 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
  * @see {@link AlertDescription}
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(({className, variant = "default", ...props}, ref) => (
+const Alert = ({ref, className, variant = "default", ...props}: Readonly<AlertProps>): React.JSX.Element => (
   <div
     ref={ref}
     role='alert'
+    data-slot='alert'
+    data-variant={variant}
     className={cn(styles.alert, variantStyles[variant], className)}
     {...props}
   />
-));
+);
 Alert.displayName = "Alert";
 
 /**
@@ -73,11 +75,11 @@ Alert.displayName = "Alert";
  * @remarks
  * Extends native heading attributes and exposes a class override for styling.
  */
-interface AlertTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+export interface AlertTitleProps extends Readonly<React.ComponentPropsWithRef<"h5">> {
   /**
    * Additional CSS classes merged with the alert title styles.
    */
-  className?: string;
+  readonly className?: string;
 }
 
 /**
@@ -97,14 +99,15 @@ interface AlertTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
  * @see {@link AlertDescription}
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const AlertTitle = React.forwardRef<HTMLHeadingElement, AlertTitleProps>(({children, className, ...props}, ref) => (
+const AlertTitle = ({ref, children, className, ...props}: Readonly<AlertTitleProps>): React.JSX.Element => (
   <h5
     ref={ref}
+    data-slot='alert-title'
     className={cn(styles.title, className)}
     {...props}>
     {children}
   </h5>
-));
+);
 AlertTitle.displayName = "AlertTitle";
 
 /**
@@ -114,11 +117,11 @@ AlertTitle.displayName = "AlertTitle";
  * Extends native `<div>` attributes so rich supporting content can be rendered inside
  * an alert body while preserving the component's spacing and typography.
  */
-interface AlertDescriptionProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface AlertDescriptionProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Additional CSS classes merged with the alert description styles.
    */
-  className?: string;
+  readonly className?: string;
 }
 
 /**
@@ -138,13 +141,45 @@ interface AlertDescriptionProps extends React.HTMLAttributes<HTMLDivElement> {
  * @see {@link AlertTitle}
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const AlertDescription = React.forwardRef<HTMLDivElement, AlertDescriptionProps>(({className, ...props}, ref) => (
+const AlertDescription = ({ref, className, ...props}: Readonly<AlertDescriptionProps>): React.JSX.Element => (
   <div
     ref={ref}
+    data-slot='alert-description'
     className={cn(styles.description, className)}
     {...props}
   />
-));
+);
 AlertDescription.displayName = "AlertDescription";
 
-export {Alert, AlertDescription, AlertTitle};
+/** Native attributes for the alert's trailing action region. */
+export type AlertActionProps = Readonly<React.ComponentPropsWithRef<"div">>;
+
+/** Groups controls beside an alert's message without intercepting their native behavior. */
+const AlertAction = ({ref, className, ...props}: Readonly<AlertActionProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='alert-action'
+    className={cn(styles.action, className)}
+    {...props}
+  />
+);
+AlertAction.displayName = "AlertAction";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Alert {
+  export type Props = AlertProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace AlertTitle {
+  export type Props = AlertTitleProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace AlertDescription {
+  export type Props = AlertDescriptionProps;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace AlertAction {
+  export type Props = Readonly<AlertActionProps>;
+}
+
+export {Alert, AlertAction, AlertDescription, AlertTitle};

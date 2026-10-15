@@ -7,6 +7,7 @@
 }
 
 .trigger {
+  min-block-size: 24px;
   display: flex;
   width: 100%;
   align-items: center;
@@ -18,7 +19,7 @@
   color: var(--ac-foreground);
   font-size: var(--ac-text-sm);
   font-weight: 500;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   outline: none;
   transition: color var(--ac-transition-fast);
@@ -69,4 +70,23 @@
 
 .panelInner {
   padding: 0 0 var(--ac-space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .icon,
+  .panel {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .trigger:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .trigger[data-disabled] {
+    color: GrayText;
+    opacity: 1;
+  }
 }

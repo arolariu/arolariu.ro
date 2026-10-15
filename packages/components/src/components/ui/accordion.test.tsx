@@ -1,7 +1,7 @@
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
 
@@ -11,7 +11,6 @@ function renderAccordion(): {
 } {
   render(
     <Accordion
-      type='single'
       className='custom-root'
       data-testid='accordion-root'>
       <AccordionItem
@@ -38,6 +37,535 @@ function renderAccordion(): {
 }
 
 describe("Accordion", () => {
+  it("exposes arrays only without weakening JSX inference", () => {
+    expectTypeOf<React.ComponentProps<typeof Accordion>>().toEqualTypeOf<Readonly<Accordion.Props>>();
+    const reflectedSingle: React.ComponentProps<typeof Accordion> = {value: ["one"]};
+    const reflectedArray: React.ComponentProps<typeof Accordion> = {value: ["one"]};
+    expect(reflectedSingle.value).toEqual(["one"]);
+    expect(reflectedArray.value).toEqual(["one"]);
+    const single = (
+      <Accordion
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<string[]>();
+        }}
+      />
+    );
+    const array = (
+      <Accordion
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<string[]>();
+        }}
+      />
+    );
+    expect(React.isValidElement(single)).toBe(true);
+    expect(React.isValidElement(array)).toBe(true);
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("type");
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("orientation");
+    expectTypeOf<Accordion.Props>().not.toHaveProperty("loopFocus");
+    // @ts-expect-error String selection adapters are intentionally removed.
+    const rejectedString: Accordion.Props = {value: "one"};
+    expect(rejectedString).toBeDefined();
+  });
+
+  it("keeps empty array selection controlled and clears it on external rerenders", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    const items = (
+      <AccordionItem value='item-1'>
+        <AccordionTrigger>Section one</AccordionTrigger>
+        <AccordionContent>Body</AccordionContent>
+      </AccordionItem>
+    );
+    const {rerender} = render(
+      <Accordion
+        value={[]}
+        defaultValue={["item-1"]}
+        onValueChange={(value) => changes.push(value)}>
+        {items}
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger);
+    expect(changes).toEqual([["item-1"]]);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    rerender(<Accordion value={["item-1"]}>{items}</Accordion>);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    rerender(<Accordion value={[]}>{items}</Accordion>);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("forbids last-panel collapse without preventing switching items", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion
+        collapsible={false}
+        defaultValue={["item-1"]}
+        onValueChange={(value) => changes.push(value)}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body one</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='item-2'>
+          <AccordionTrigger>Section two</AccordionTrigger>
+          <AccordionContent>Body two</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+    await user.click(firstTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([]);
+
+    await user.click(secondTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([["item-2"]]);
+
+    await user.keyboard("{Enter} ");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([["item-2"]]);
+  });
+
+  it("allows multiple panels to close until the non-collapsible array contract reaches its last panel", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion
+        multiple
+        collapsible={false}
+        defaultValue={["item-1", "item-2"]}
+        onValueChange={(value) => changes.push(value)}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body one</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='item-2'>
+          <AccordionTrigger>Section two</AccordionTrigger>
+          <AccordionContent>Body two</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+    await user.click(firstTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([["item-2"]]);
+
+    await user.click(secondTrigger);
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([["item-2"]]);
+  });
+
+  it("selects an empty-string item with canonical arrays rather than treating it as empty selection", () => {
+    render(
+      <Accordion value={[""]}>
+        <AccordionItem value=''>
+          <AccordionTrigger>Empty identifier</AccordionTrigger>
+          <AccordionContent>Body</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    expect(screen.getByRole("button", {name: "Empty identifier"})).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Body")).toBeVisible();
+  });
+
+  it("treats empty arrays as no selection even with an empty-string item", () => {
+    const item = (
+      <AccordionItem value=''>
+        <AccordionTrigger>Empty identifier</AccordionTrigger>
+        <AccordionContent>Body</AccordionContent>
+      </AccordionItem>
+    );
+    const {rerender} = render(
+      <Accordion
+        value={[]}
+        defaultValue={[]}>
+        {item}
+      </Accordion>,
+    );
+
+    expect(screen.getByRole("button", {name: "Empty identifier"})).toHaveAttribute("aria-expanded", "false");
+    rerender(<Accordion value={[]}>{item}</Accordion>);
+    expect(screen.getByRole("button", {name: "Empty identifier"})).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("uses canonical default arrays and the native multiple flag without a legacy type", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion
+        multiple
+        defaultValue={["item-1"]}
+        onValueChange={(value) => changes.push(value)}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body one</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='item-2'>
+          <AccordionTrigger>Section two</AccordionTrigger>
+          <AccordionContent>Body two</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    await user.click(secondTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(changes).toEqual([["item-1", "item-2"]]);
+  });
+
+  it("keeps canonical empty arrays controlled and reports arrays in single mode", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    const item = (
+      <AccordionItem value='item-1'>
+        <AccordionTrigger>Section one</AccordionTrigger>
+        <AccordionContent>Body</AccordionContent>
+      </AccordionItem>
+    );
+    const {rerender} = render(
+      <Accordion
+        value={[]}
+        onValueChange={(value) => changes.push(value)}>
+        {item}
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    await user.click(trigger);
+    expect(changes).toEqual([["item-1"]]);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    rerender(<Accordion value={["item-1"]}>{item}</Accordion>);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    rerender(<Accordion value={[]}>{item}</Accordion>);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("passes live root, item, trigger, and transition state to render callbacks", async () => {
+    const user = userEvent.setup();
+    render(
+      <Accordion
+        defaultValue={["item-1"]}
+        render={(props, state) => (
+          <section
+            {...props}
+            data-testid='render-root'
+            data-value={state.value?.join(",")}
+          />
+        )}>
+        <AccordionItem
+          value='item-1'
+          render={(props, state) => (
+            <article
+              {...props}
+              data-testid='render-item'
+              data-open={String(state.open)}
+            />
+          )}>
+          <AccordionTrigger
+            render={(props, state) => (
+              <button
+                {...props}
+                data-open={String(state.open)}
+              />
+            )}>
+            Section one
+          </AccordionTrigger>
+          <AccordionContent
+            keepMounted
+            render={(props, state) => (
+              <section
+                {...props}
+                data-testid='render-panel'
+                data-open={String(state.open)}
+                data-transition={state.transitionStatus}
+              />
+            )}>
+            Body
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const root = screen.getByTestId("render-root");
+    const item = screen.getByTestId("render-item");
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    const panel = screen.getByTestId("render-panel");
+    expect(root).toHaveAttribute("data-value", "item-1");
+    expect(item).toHaveAttribute("data-open", "true");
+    expect(trigger).toHaveAttribute("data-open", "true");
+    expect(panel).toHaveAttribute("data-open", "true");
+    expect(panel).toHaveAttribute("data-transition", "idle");
+
+    await user.click(trigger);
+    expect(root).toHaveAttribute("data-value", "");
+    expect(item).toHaveAttribute("data-open", "false");
+    expect(trigger).toHaveAttribute("data-open", "false");
+    expect(panel).toHaveAttribute("data-open", "false");
+    await waitFor(() => expect(panel).toHaveAttribute("hidden"));
+  });
+
+  it("forwards cancellable change details for single and multiple array contracts", async () => {
+    const user = userEvent.setup();
+    const canonicalChanges: {value: string[]; details: Accordion.ChangeEventDetails}[] = [];
+    const multipleChanges: {value: string[]; details: Accordion.ChangeEventDetails}[] = [];
+    render(
+      <>
+        <Accordion
+          onValueChange={(value, details) => {
+            canonicalChanges.push({value, details});
+            details.cancel();
+          }}>
+          <AccordionItem value='item-1'>
+            <AccordionTrigger>Canonical</AccordionTrigger>
+            <AccordionContent>Body one</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        <Accordion
+          multiple
+          onValueChange={(value, details) => {
+            multipleChanges.push({value, details});
+            details.cancel();
+          }}>
+          <AccordionItem value='item-1'>
+            <AccordionTrigger>Multiple</AccordionTrigger>
+            <AccordionContent>Body two</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </>,
+    );
+
+    const canonical = screen.getByRole("button", {name: "Canonical"});
+    const multiple = screen.getByRole("button", {name: "Multiple"});
+    await user.click(canonical);
+    await user.click(multiple);
+
+    expect(canonicalChanges[0]?.value).toEqual(["item-1"]);
+    expect(multipleChanges[0]?.value).toEqual(["item-1"]);
+    for (const changes of [canonicalChanges, multipleChanges]) {
+      expect(changes).toHaveLength(1);
+      expect(changes[0]?.details.reason).toBe("trigger-press");
+      expect(changes[0]?.details.event.type).toBe("click");
+      expect(changes[0]?.details.isCanceled).toBe(true);
+    }
+    expect(canonical).toHaveAttribute("aria-expanded", "false");
+    expect(multiple).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("infers the canonical callback contract from reusable props and defaults to one open panel", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    const props = {
+      defaultValue: ["item-1"],
+      onValueChange(value, details) {
+        expectTypeOf(value).toEqualTypeOf<string[]>();
+        expectTypeOf(details).toEqualTypeOf<Accordion.ChangeEventDetails>();
+        changes.push(value);
+      },
+    } satisfies Accordion.Props;
+    const rootProps: Accordion.Props = props;
+    render(
+      <Accordion {...rootProps}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body one</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='item-2'>
+          <AccordionTrigger>Section two</AccordionTrigger>
+          <AccordionContent>Body two</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+    await user.click(secondTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    await user.click(secondTrigger);
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(changes).toEqual([["item-2"], []]);
+  });
+
+  it("allows opening from empty defaults while retaining the array callback type", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion
+        defaultValue={[]}
+        onValueChange={(value, details) => {
+          expectTypeOf(value).toEqualTypeOf<string[]>();
+          expectTypeOf(details).toEqualTypeOf<Accordion.ChangeEventDetails>();
+          changes.push(value);
+        }}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.click(trigger);
+    expect(changes).toEqual([["item-1"], []]);
+  });
+
+  it.each(["root", "item"] as const)("preserves native disabled behavior from the %s when rendering a custom button", async (owner) => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion
+        disabled={owner === "root"}
+        onValueChange={(value) => changes.push(value)}>
+        <AccordionItem
+          value='item-1'
+          disabled={owner === "item"}>
+          <AccordionTrigger render={<button />}>Disabled section</AccordionTrigger>
+          <AccordionContent>Body</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Disabled section"});
+    await user.click(trigger);
+    trigger.focus();
+    await user.keyboard("{Enter} ");
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(changes).toEqual([]);
+  });
+
+  it("preserves primitive event cancellation at the item boundary", async () => {
+    const user = userEvent.setup();
+    const changes: string[][] = [];
+    render(
+      <Accordion onValueChange={(value) => changes.push(value)}>
+        <AccordionItem
+          value='item-1'
+          onOpenChange={(open, details) => {
+            expect(open).toBe(true);
+            expect(details.reason).toBe("trigger-press");
+            details.cancel();
+          }}>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Body</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(changes).toEqual([]);
+  });
+
+  it("merges composed refs, classes, and handlers while preserving inner panel styling and form behavior", async () => {
+    const user = userEvent.setup();
+    const rootRef = React.createRef<HTMLDivElement>();
+    const itemRef = React.createRef<HTMLDivElement>();
+    const triggerRef = React.createRef<HTMLElement>();
+    const renderRef = React.createRef<HTMLButtonElement>();
+    const panelRef = React.createRef<HTMLDivElement>();
+    const submit = vi.fn();
+    const clicks: string[] = [];
+    render(
+      <form onSubmit={submit}>
+        <Accordion
+          ref={rootRef}
+          className={(state) => (state.value.length ? "open-root" : "closed-root")}
+          render={<div className='render-root' />}>
+          <AccordionItem
+            ref={itemRef}
+            value='item-1'
+            className='wrapper-item'
+            render={<div className='render-item' />}>
+            <AccordionTrigger
+              ref={triggerRef}
+              className='wrapper-trigger'
+              onClick={() => clicks.push("wrapper")}
+              render={
+                <button
+                  ref={renderRef}
+                  className='render-trigger'
+                  onClick={() => clicks.push("element")}
+                />
+              }>
+              Section one
+            </AccordionTrigger>
+            <AccordionContent
+              ref={panelRef}
+              className='inner-panel'
+              render={<div className='render-panel' />}>
+              Body
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </form>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    expect(rootRef.current).toHaveClass("closed-root", "render-root");
+    await user.click(trigger);
+
+    expect(rootRef.current).toHaveClass("open-root", "render-root");
+    expect(itemRef.current).toHaveClass("wrapper-item", "render-item");
+    expect(triggerRef.current).toBe(trigger);
+    expect(renderRef.current).toBe(trigger);
+    expect(trigger).toHaveClass("wrapper-trigger", "render-trigger");
+    expect(panelRef.current).toHaveClass("render-panel");
+    expect(panelRef.current?.firstElementChild).toHaveClass("inner-panel");
+    expect(trigger).toHaveAttribute("aria-controls", panelRef.current?.id);
+    expect(panelRef.current).toHaveAttribute("aria-labelledby", trigger.id);
+    expect(clicks).toEqual(["element", "wrapper"]);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("retains focused controls and uncontrolled panel inputs across root rerenders", async () => {
+    const user = userEvent.setup();
+    const item = (
+      <AccordionItem value='item-1'>
+        <AccordionTrigger render={<button />}>Section one</AccordionTrigger>
+        <AccordionContent keepMounted>
+          <input aria-label='Notes' />
+        </AccordionContent>
+      </AccordionItem>
+    );
+    const {rerender} = render(<Accordion defaultValue={["item-1"]}>{item}</Accordion>);
+    const trigger = screen.getByRole("button", {name: "Section one"});
+    const input = screen.getByRole("textbox", {name: "Notes"});
+    await user.type(input, "Retained text");
+    trigger.focus();
+
+    rerender(
+      <Accordion
+        defaultValue={["item-1"]}
+        className='rerendered'>
+        {item}
+      </Accordion>,
+    );
+
+    expect(screen.getByRole("button", {name: "Section one"})).toBe(trigger);
+    expect(trigger).toHaveFocus();
+    expect(screen.getByRole("textbox", {name: "Notes"})).toBe(input);
+    expect(input).toHaveValue("Retained text");
+  });
+
   it("renders the accordion structure, merges class names, and exposes accessibility attributes", () => {
     // Arrange
     const {firstTrigger} = renderAccordion();
@@ -74,12 +602,10 @@ describe("Accordion", () => {
   it("calls onValueChange with the toggled item value", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleValueChange = vi.fn<(value: string | undefined, eventDetails: unknown) => void>();
+    const handleValueChange = vi.fn<(value: string[], eventDetails: unknown) => void>();
 
     render(
-      <Accordion
-        type='single'
-        onValueChange={handleValueChange}>
+      <Accordion onValueChange={handleValueChange}>
         <AccordionItem value='item-1'>
           <AccordionTrigger>Section one</AccordionTrigger>
           <AccordionContent>Panel one content</AccordionContent>
@@ -93,13 +619,13 @@ describe("Accordion", () => {
     await user.click(trigger);
 
     // Assert
-    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBe("item-1");
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toEqual(["item-1"]);
 
     // Act
     await user.click(trigger);
 
     // Assert
-    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBeUndefined();
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toEqual([]);
   });
 
   it("supports keyboard toggling with enter and space keys", async () => {
@@ -159,7 +685,7 @@ describe("Accordion", () => {
 
     render(
       <Accordion
-        type='multiple'
+        multiple
         data-testid='accordion-multiple'>
         <AccordionItem value='item-1'>
           <AccordionTrigger data-testid='trigger-1'>Section one</AccordionTrigger>
@@ -190,7 +716,7 @@ describe("Accordion", () => {
     // Arrange
     render(
       <Accordion
-        type='multiple'
+        multiple
         defaultValue={["item-1", "item-2"]}
         data-testid='accordion-controlled'>
         <AccordionItem value='item-1'>
@@ -215,17 +741,16 @@ describe("Accordion", () => {
   it("works in controlled single mode", async () => {
     // Arrange
     const user = userEvent.setup();
-    const handleValueChange = vi.fn<(value: string | undefined) => void>();
+    const handleValueChange = vi.fn<(value: string[]) => void>();
 
     function ControlledAccordion(): React.JSX.Element {
-      const [value, setValue] = React.useState("item-1");
+      const [value, setValue] = React.useState<string[]>(["item-1"]);
 
       return (
         <Accordion
-          type='single'
           value={value}
           onValueChange={(nextValue) => {
-            setValue(nextValue ?? "");
+            setValue(nextValue);
             handleValueChange(nextValue);
           }}>
           <AccordionItem value='item-1'>
@@ -252,7 +777,7 @@ describe("Accordion", () => {
     await user.click(secondTrigger);
 
     // Assert
-    expect(handleValueChange).toHaveBeenCalledWith("item-2");
+    expect(handleValueChange).toHaveBeenCalledWith(["item-2"]);
     expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Panel two content")).toBeVisible();
@@ -268,7 +793,7 @@ describe("Accordion", () => {
 
       return (
         <Accordion
-          type='multiple'
+          multiple
           value={value}
           onValueChange={(nextValue) => {
             setValue(nextValue);

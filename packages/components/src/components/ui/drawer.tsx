@@ -8,84 +8,62 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./drawer.module.css";
 
-interface DrawerProps extends React.ComponentPropsWithRef<typeof BaseDrawer.Root> {}
+/** Base UI owns open state, payloads, snap points, gestures, modality and nesting. */
+export type DrawerProps<Payload = unknown> = Readonly<
+  BaseDrawer.Root.Props<Payload> & {
+    /** Add a decorative pointer-drag surface outside Drawer.Content. @default false */
+    showSwipeHandle?: boolean;
+  }
+>;
+/** Trigger props retain Base UI's render, class callback and native button contracts. */
+export type DrawerTriggerProps = Readonly<Omit<BaseDrawer.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+/** Portal configuration for custom primitive compositions. */
+export type DrawerPortalProps = Readonly<BaseDrawer.Portal.Props>;
+/** Base UI close control, without imposed button presentation. */
+export type DrawerCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Close>>;
+/** Backdrop composition with a ref to the actual rendered element. */
+export type DrawerOverlayProps = Readonly<Omit<BaseDrawer.Backdrop.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+/** Popup composition, including Base UI's initial/final focus contracts. */
+export type DrawerContentProps = Readonly<Omit<BaseDrawer.Popup.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+/** Decorative swipe surface; its gestures are owned by the enclosing Viewport. */
+export type DrawerSwipeHandleProps = Readonly<
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {ref?: React.Ref<HTMLElement>}
+>;
+/** Layout composition using the native render contract. */
+export type DrawerHeaderProps = Readonly<DrawerSwipeHandleProps>;
+/** Action layout with the same composition contract as DrawerHeader. */
+// eslint-disable-next-line sonarjs/redundant-type-aliases -- retain the independent public footer prop name.
+export type DrawerFooterProps = DrawerHeaderProps;
+/** Accessible title props with a ref to the actual rendered heading. */
+export type DrawerTitleProps = Readonly<Omit<BaseDrawer.Title.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+/** Accessible description props with a ref to the actual rendered element. */
+export type DrawerDescriptionProps = Readonly<Omit<BaseDrawer.Description.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 
-interface DrawerTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseDrawer.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
+interface DrawerPresentation {
+  readonly hasSnapPoints: boolean;
+  readonly modal: NonNullable<BaseDrawer.Root.Props["modal"]>;
+  readonly showSwipeHandle: boolean;
+  readonly swipeDirection: NonNullable<BaseDrawer.Root.Props["swipeDirection"]>;
 }
 
-interface DrawerOverlayProps extends Omit<React.ComponentPropsWithRef<typeof BaseDrawer.Backdrop>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
+const DrawerPresentationContext = React.createContext<DrawerPresentation | null>(null);
+
+function useDrawerPresentation(): DrawerPresentation {
+  const context = React.useContext(DrawerPresentationContext);
+  if (!context) throw new Error("DrawerContent must be used within Drawer.");
+  return context;
 }
 
-interface DrawerContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseDrawer.Popup>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface DrawerHeaderProps extends React.ComponentPropsWithRef<"div"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-interface DrawerFooterProps extends React.ComponentPropsWithRef<"div"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-interface DrawerTitleProps extends Omit<React.ComponentPropsWithRef<typeof BaseDrawer.Title>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface DrawerDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof BaseDrawer.Description>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
+// Base UI merges this callback with its own ref; do not narrow composed elements to the default tag.
+function useDrawerElementRef(ref: React.Ref<HTMLElement> | undefined): React.RefCallback<HTMLElement> {
+  return React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
 }
 
 /**
@@ -95,16 +73,41 @@ interface DrawerDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof
  * - Delegates structure and state to the underlying Base UI primitive
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Preserves the underlying primitive API for advanced composition
+ * - Adds presentation context only; Base UI owns open state and snap-point selection
+ * - Handles are opt-in with `showSwipeHandle`; supplied snap points are passed through unchanged
  *
  * @example
  * ```tsx
- * <Drawer>Content</Drawer>
+ * <Drawer showSwipeHandle>
+ *   <DrawerTrigger>Open</DrawerTrigger>
+ *   <DrawerContent><DrawerTitle>Details</DrawerTitle></DrawerContent>
+ * </Drawer>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-function Drawer(props: Readonly<Drawer.Props>): React.ReactElement {
-  return <BaseDrawer.Root {...props} />;
+function Drawer<Payload = unknown>({
+  modal = true,
+  showSwipeHandle = false,
+  snapPoints,
+  swipeDirection = "down",
+  ...props
+}: Readonly<Drawer.Props<Payload>>): React.ReactElement {
+  const hasSnapPoints = Boolean(snapPoints?.length);
+  const presentation = React.useMemo(
+    () => ({hasSnapPoints, modal, showSwipeHandle, swipeDirection}),
+    [hasSnapPoints, modal, showSwipeHandle, swipeDirection],
+  );
+  return (
+    <DrawerPresentationContext.Provider value={presentation}>
+      <BaseDrawer.Root
+        modal={modal}
+        snapPoints={snapPoints}
+        swipeDirection={swipeDirection}
+        {...props}
+      />
+    </DrawerPresentationContext.Provider>
+  );
 }
 
 /**
@@ -122,24 +125,17 @@ function Drawer(props: Readonly<Drawer.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-const DrawerTrigger = React.forwardRef<HTMLButtonElement, DrawerTrigger.Props>(
-  (props: Readonly<DrawerTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-
-    return (
-      <BaseDrawer.Trigger
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: render as never,
-          props: mergeProps({className}, {}),
-        })}>
-        {children}
-      </BaseDrawer.Trigger>
-    );
-  },
-);
+const DrawerTrigger = ({ref, className, ...props}: Readonly<DrawerTrigger.Props>): React.ReactElement => {
+  const primitiveRef = useDrawerElementRef(ref);
+  return (
+    <BaseDrawer.Trigger
+      data-slot='drawer-trigger'
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
+    />
+  );
+};
 
 /**
  * Provides the drawer portal container.
@@ -172,7 +168,14 @@ const DrawerPortal: typeof BaseDrawer.Portal & {displayName?: string} = BaseDraw
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-const DrawerClose: typeof BaseDrawer.Close & {displayName?: string} = BaseDrawer.Close;
+function DrawerClose({className, ...props}: Readonly<DrawerClose.Props>): React.ReactElement {
+  return (
+    <BaseDrawer.Close
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
+    />
+  );
+}
 
 /**
  * Renders the drawer overlay.
@@ -181,6 +184,7 @@ const DrawerClose: typeof BaseDrawer.Close & {displayName?: string} = BaseDrawer
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Supports the `render` prop for element composition
+ * - Ref targets the actual rendered backdrop, including non-div render targets
  *
  * @example
  * ```tsx
@@ -190,18 +194,74 @@ const DrawerClose: typeof BaseDrawer.Close & {displayName?: string} = BaseDrawer
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
+  const {className, ref, ...otherProps} = props;
+  const primitiveRef = useDrawerElementRef(ref);
 
   return (
     <BaseDrawer.Backdrop
+      data-slot='drawer-overlay'
+      ref={primitiveRef}
+      className={typeof className === "function" ? (state) => cn(styles.backdrop, className(state)) : cn(styles.backdrop, className)}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.backdrop, className)}, {}),
-      })}
     />
   );
+}
+
+/**
+ * A decorative drag surface, not an interactive control or a gesture engine.
+ * Place it outside Drawer.Content for mouse/pen dragging; Viewport arbitrates the gesture.
+ */
+const DrawerSwipeHandle = ({ref, className, render, ...props}: Readonly<DrawerSwipeHandle.Props>): React.ReactElement =>
+  useRender({
+    defaultTagName: "div",
+    ref,
+    render,
+    props: {
+      "data-slot": "drawer-swipe-handle",
+      ...mergeProps<"div">({className: cn(styles.handle, className), "aria-hidden": true}, props),
+    },
+  });
+
+type DrawerRenderCallback = Exclude<BaseDrawer.Popup.Props["render"], React.ReactElement | undefined>;
+
+function DrawerBody({children, showSwipeHandle}: Readonly<{children: React.ReactNode; showSwipeHandle: boolean}>): React.ReactElement {
+  return (
+    <>
+      {showSwipeHandle ? <DrawerSwipeHandle /> : null}
+      <BaseDrawer.Content
+        data-slot='drawer-content'
+        className={styles.content}>
+        {children}
+      </BaseDrawer.Content>
+    </>
+  );
+}
+
+/** Only mounted Popup rendering may normalize a pending/opaque element slot. */
+function DecoratedDrawerElement({
+  render,
+  elementProps,
+  children,
+  showSwipeHandle,
+}: Readonly<{
+  render: React.ReactElement;
+  elementProps: Parameters<DrawerRenderCallback>[0];
+  children: React.ReactNode;
+  showSwipeHandle: boolean;
+}>): React.ReactElement {
+  // eslint-disable-next-line react-x/no-children-to-array -- public React normalization, never private lazy field inspection.
+  const elements = React.Children.toArray(render);
+  const [element] = elements;
+  if (elements.length !== 1 || !React.isValidElement<{children?: React.ReactNode}>(element) || element.type === React.Fragment) {
+    throw new TypeError("DrawerContent render requires a single non-Fragment React element.");
+  }
+  // eslint-disable-next-line react-x/no-clone-element -- wrap content without taking SDK event/ref/focus ownership.
+  const decorated = React.cloneElement(
+    element,
+    undefined,
+    <DrawerBody showSwipeHandle={showSwipeHandle}>{children === undefined ? element.props.children : children}</DrawerBody>,
+  );
+  return useRender({render: decorated, props: {...elementProps}});
 }
 
 /**
@@ -211,6 +271,10 @@ function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Supports the `render` prop for element composition
+ * - Uses Portal → optional modal Backdrop → Viewport → Popup → Content
+ * - Viewport owns pointer/touch arbitration; Content keeps native controls out of mouse/pen dragging
+ * - Function render callbacks receive Base UI's actual popup state, including nested and swipe state
+ * - `modal={false}` and `"trap-focus"` omit the blocking backdrop without changing Base UI's focus policy
  *
  * @example
  * ```tsx
@@ -219,28 +283,43 @@ function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-const DrawerContent = React.forwardRef<React.ComponentRef<typeof BaseDrawer.Popup>, DrawerContent.Props>(
-  (props: Readonly<DrawerContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const DrawerContent = ({ref, ...props}: Readonly<DrawerContent.Props>): React.ReactElement => {
+  const {className, children, render, ...otherProps} = props;
+  const {hasSnapPoints, modal, showSwipeHandle, swipeDirection} = useDrawerPresentation();
+  const primitiveRef = useDrawerElementRef(ref);
+  const popupRender =
+    render !== undefined && typeof render !== "function"
+      ? (elementProps: Parameters<DrawerRenderCallback>[0]) => (
+          <DecoratedDrawerElement
+            render={render}
+            elementProps={elementProps}
+            showSwipeHandle={showSwipeHandle}>
+            {children}
+          </DecoratedDrawerElement>
+        )
+      : render;
 
-    return (
-      <DrawerPortal>
-        <DrawerOverlay />
+  return (
+    <DrawerPortal>
+      {modal === true && <DrawerOverlay data-snap-points={hasSnapPoints ? "" : undefined} />}
+      <BaseDrawer.Viewport
+        data-slot='drawer-viewport'
+        data-modal={modal}
+        className={styles.viewport}>
         <BaseDrawer.Popup
-          ref={ref}
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
-          })}>
-          <div className={styles.handle} />
-          <BaseDrawer.Content className={styles.content}>{children}</BaseDrawer.Content>
+          data-slot='drawer-popup'
+          data-swipe-axis={swipeDirection === "down" || swipeDirection === "up" ? "y" : "x"}
+          data-snap-points={hasSnapPoints ? "" : undefined}
+          ref={primitiveRef}
+          render={popupRender}
+          className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
+          {...otherProps}>
+          <DrawerBody showSwipeHandle={showSwipeHandle}>{children}</DrawerBody>
         </BaseDrawer.Popup>
-      </DrawerPortal>
-    );
-  },
-);
+      </BaseDrawer.Viewport>
+    </DrawerPortal>
+  );
+};
 
 /**
  * Renders the drawer header.
@@ -258,16 +337,18 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof BaseDrawer.Popu
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerHeader(props: Readonly<DrawerHeader.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+  const {children, className, render, ref, ...otherProps} = props;
 
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.header, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render,
+    props: {
+      "data-slot": "drawer-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, otherProps, {
+        children,
+      }),
+    },
   });
 }
 
@@ -287,16 +368,18 @@ function DrawerHeader(props: Readonly<DrawerHeader.Props>): React.ReactElement {
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerFooter(props: Readonly<DrawerFooter.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+  const {children, className, render, ref, ...otherProps} = props;
 
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.footer, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render,
+    props: {
+      "data-slot": "drawer-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, otherProps, {
+        children,
+      }),
+    },
   });
 }
 
@@ -316,18 +399,16 @@ function DrawerFooter(props: Readonly<DrawerFooter.Props>): React.ReactElement {
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerTitle(props: Readonly<DrawerTitle.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+  const {className, ref, ...otherProps} = props;
+  const primitiveRef = useDrawerElementRef(ref);
 
   return (
     <BaseDrawer.Title
+      data-slot='drawer-title'
+      ref={primitiveRef}
+      className={typeof className === "function" ? (state) => cn(styles.title, className(state)) : cn(styles.title, className)}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "h2",
-        render: render as never,
-        props: mergeProps({className: cn(styles.title, className)}, {}),
-      })}>
-      {children}
-    </BaseDrawer.Title>
+    />
   );
 }
 
@@ -347,67 +428,93 @@ function DrawerTitle(props: Readonly<DrawerTitle.Props>): React.ReactElement {
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerDescription(props: Readonly<DrawerDescription.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+  const {className, ref, ...otherProps} = props;
+  const primitiveRef = useDrawerElementRef(ref);
 
   return (
     <BaseDrawer.Description
+      data-slot='drawer-description'
+      ref={primitiveRef}
+      className={typeof className === "function" ? (state) => cn(styles.description, className(state)) : cn(styles.description, className)}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "p",
-        render: render as never,
-        props: mergeProps({className: cn(styles.description, className)}, {}),
-      })}>
-      {children}
-    </BaseDrawer.Description>
+    />
   );
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Drawer {
-  export type Props = DrawerProps;
-  export type State = BaseDrawer.Root.State;
+  export type Props<Payload = unknown> = DrawerProps<Payload>;
+  export type State = Readonly<BaseDrawer.Root.State>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerTriggerProps;
-  export type State = BaseDrawer.Trigger.State;
+  export type State = Readonly<BaseDrawer.Trigger.State>;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DrawerPortal {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = DrawerPortalProps;
+  export type State = Readonly<BaseDrawer.Portal.State>;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DrawerClose {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = DrawerCloseProps;
+  export type State = Readonly<BaseDrawer.Close.State>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerOverlay {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerOverlayProps;
-  export type State = BaseDrawer.Backdrop.State;
+  export type State = Readonly<BaseDrawer.Backdrop.State>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerContentProps;
-  export type State = BaseDrawer.Popup.State;
+  export type State = Readonly<BaseDrawer.Popup.State>;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DrawerSwipeHandle {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = DrawerSwipeHandleProps;
+  export type State = Readonly<Record<string, never>>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerHeader {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerHeaderProps;
-  export type State = Record<string, never>;
+  export type State = Readonly<Record<string, never>>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerFooter {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerFooterProps;
-  export type State = Record<string, never>;
+  export type State = Readonly<Record<string, never>>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerTitle {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerTitleProps;
-  export type State = BaseDrawer.Title.State;
+  export type State = Readonly<BaseDrawer.Title.State>;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace DrawerDescription {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = DrawerDescriptionProps;
-  export type State = BaseDrawer.Description.State;
+  export type State = Readonly<BaseDrawer.Description.State>;
 }
 
 Drawer.displayName = "Drawer";
@@ -416,6 +523,7 @@ DrawerPortal.displayName = "DrawerPortal";
 DrawerClose.displayName = "DrawerClose";
 DrawerOverlay.displayName = "DrawerOverlay";
 DrawerContent.displayName = "DrawerContent";
+DrawerSwipeHandle.displayName = "DrawerSwipeHandle";
 DrawerHeader.displayName = "DrawerHeader";
 DrawerFooter.displayName = "DrawerFooter";
 DrawerTitle.displayName = "DrawerTitle";
@@ -430,6 +538,7 @@ export {
   DrawerHeader,
   DrawerOverlay,
   DrawerPortal,
+  DrawerSwipeHandle,
   DrawerTitle,
   DrawerTrigger,
 };

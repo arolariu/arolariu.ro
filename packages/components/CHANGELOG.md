@@ -9,6 +9,115 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### [3.0.0] - Unreleased (release preparation)
+
+**Current breaking contract**
+
+- Require React and ReactDOM 19; package-owned DOM refs are ordinary typed props with callback cleanup.
+- Remove all `asChild` APIs, `Legacy*` adapters/subpaths, scalar Accordion/type adapters, Checkbox's legacy indeterminate shorthand, Tooltip
+  delay aliases, obsolete navigation/anchor parts, no-op compatibility props, deprecated color aliases, Flip's misspelling and Cell.
+- Deduplicate merged-ref identities and prevent obsolete attachment disposers from detaching replacement nodes.
+- Preserve automatic NavigationMenu and Drawer anatomy through actual opaque React Flight render transport.
+- Target applicable WCAG 2.2 A/AA with native/primitive keyboard and focus behavior, localized generated controls, corrected default token
+  contrast and bounded/controllable motion. Ship ACCESSIBILITY with explicit consumer responsibilities and native/AT evidence limits.
+- Retain CSS Modules and story-mounted demonstration styles. No alternate test runner, new dependency, publication or website adoption.
+
+**Current verification:** complete component workspace passed **127 files / 3,319 tests / zero skips**, including all four genuine packed
+contracts. Component/Storybook builds, configured source lint, full formatting and the 94-story type graph passed. Actual React 19.0 source
+and packed lanes passed 20 fixtures each. See MIGRATION's current checkpoint for coverage and explicit native/AT/provenance limits.
+
+**Historical intermediate preparation (superseded by the current contract above)**
+
+**Review follow-up**
+
+- Restore React 18 DOM ref forwarding for `AlertDialogCancel` and `LegacyAlertDialogAction`, retaining their existing dismissal behavior.
+- Preserve cleanup-returning React 19 `CommandGroup` refs through search, callback replacement and unmount, including legacy React 18 null
+  detachment.
+- Add caller-owned `Stepper.completedLabel`, defaulting to `"Completed"`, so completed-step assistive text can be localized or deliberately
+  omitted.
+- Move Storybook-only layouts and demonstration styles into their owning story files. Production component CSS Modules and npm assets no
+  longer carry demo rules.
+
+**Status:** unreleased artifact preparation. Component and Storybook documentation builds, four actual npm-packed artifact contracts, 28
+isolated React 18.2 packed fixtures and the parent's latest review-followup component workspace coverage, scoped review, configured ESLint
+and 177-changed-file Prettier checks have passed. This is not publication, PR or physical-browser approval. The website retains its official
+published 2.4 tarball and runtime calls; adopting a new artifact is a separate authorized task.
+
+**Added**
+
+- Explicit root/public named types and preserved component namespaces for every supported family, plus full Combobox/Progress/ScrollArea
+  parts, Avatar badge/group/count, CalendarDayButton, NavigationMenuPositioner, DrawerSwipeHandle, Popover naming parts and TooltipArrow.
+- NativeSelect and exact Base UI DirectionProvider/useDirection/TextDirection exposure; additive domain-independent
+  Attachment/Bubble/Marker/Message display families.
+- Explicit LegacyToaster/legacyToast, LegacyCommandDialog and LegacyAlertDialogAction compatibility APIs and public subpaths.
+- Shipped MIGRATION guide, preserving historical v0 → v1 documentation and adding comprehensive 2.4 → 3 examples and behavior inventory.
+- Real-module root/type/namespace/export-generator contracts and verified actual packed-artifact contracts. Private underscore helpers are
+  excluded from generated public subpaths and blocked through the retained dist wildcard.
+
+**Breaking / migration required**
+
+- Canonical `toast` is a Base UI manager, not the callable status facade; use `add`/`update`/`close`/`promise` and canonical
+  timeout/limit/type/actionProps. Facade duration/status/custom/history remains explicit on legacy APIs. `Toast` is a component; canonical
+  notification data is ToastData/ToastObject. Legacy invalid/inactive updates throw and rejected async lifecycles stay rejected.
+- Canonical CommandDialog supplies only the modal shell; include exactly one Command, or use LegacyCommandDialog with no nested root. Native
+  substring/custom-score matching is retained, not a cmdk implementation.
+- AlertDialogAction no longer closes automatically; callers own async success-close/failure/pending policies. Content close controls now
+  default visible for Dialog/Sheet, exported Close controls are unstyled, and Sheet's automatic close follows content.
+- Badge defaults to span/HTMLSpanElement; composed refs and callbacks now truthfully follow their actual native/primitive owners. Non-button
+  canonical Button targets require nativeButton=false.
+- Canonical Accordion uses arrays unless an explicit legacy type is supplied; Select/Combobox preserve generic nullable/multiple values and
+  original callback details. Combobox conveniences move to explicit parts. Omitted Slider/Progress defaults remain primitive-owned.
+- ChartContainer id/class/ref target its native outer root. Tooltip/Legend content are ref-capable JSX, internal chart scope IDs are unique,
+  nullish formatter results suppress rows and ranges use `~`. All 59 chart aliases and RHF pass-throughs remain.
+- Skeleton counts reject negative/fractional/nonfinite/over-limit input with RangeError before allocation: each count ≤ 10,000 and table
+  total cells including optional default-visible header ≤ 10,000. Valid zero/default dimensions and div refs remain.
+- Meaningless Field/Form message output is omitted, explicit null boundary fallbacks remain null and unknown throws normalize to Error.
+  LoadingOverlay stays visual; blocking and announcements are caller-owned. Calendar animation class overrides are single tokens.
+
+**Compatibility and limits**
+
+- Base UI peer minimum becomes **`^1.9`**, the actually tested drawer-capable version. Public 1.0 lacks `./drawer`; older Base UI consumers
+  must upgrade. This is not a claim about the earliest possible supporting release.
+- React/ReactDOM **`^18.2 || ^19`** and all other runtime package names/ranges remain unchanged. Independent React 18.2 source smoke
+  evidence and all 28 fixtures against actual packed ESM have passed, distinct from React 19 and without source proxies.
+- CSS Modules/tokens/side effects, ESM/types/source/styles, retained visual extensions, deprecated Flip `righ`, chart metadata/no-ops and
+  explicit compatibility flags remain. No Sonner, Headless UI or cmdk engine/dependency is introduced; unselected families stay gated.
+- Physical paint/native focus/inert/touch/scroll anchoring/screen-reader behavior and aggregate coverage are not inferred from focused
+  Vitest/Happy DOM/source typing. See MIGRATION for full defaults/ref/value/render/error changes and deferred release evidence.
+
+**Validation — latest review-followup checkpoint 2026-10-14**
+
+- With `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to the genuine new extraction,
+  `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **127 files / 3,147 tests / no
+  skips**, including all **four packed contracts** and **93 story-style mount tests**. Start **15:21:14 local**; duration **335.46
+  seconds**.
+- Statements **98.35% (3765/3828)**; branches **95.32% (2996/3143)**; functions **99.41% (1022/1028)**; lines **99.24% (3571/3598)**.
+  Existing thresholds/exclusions remain unchanged: 80% branches; 95% functions, lines and statements.
+- Real React18 source and packed lanes each passed **28 fixtures**. Story migration removed **224 classes from 74 production CSS Modules**
+  into **80 story-owned style mounts**; actual packed legacy selectors fell **432 → 0**, with **26,551 fewer uncompressed production CSS
+  bytes**. Parent's **74 graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks passed with zero diagnostics.
+- Independent review (`328aa289`) reported no findings: all four original review items addressed, story-style boundary approved. Parent's
+  configured full ESLint and **177-changed-file** format checks passed.
+- Expected Motion/npm notices, intentional ErrorBoundary demo error reporting and the chart zero-geometry warning stayed visible; this is
+  not a warning-free claim. The historical 15 hook/story strong-type baseline, website fixture/build-environment limits, physical-browser
+  acceptance, publication and website adoption are not cleared by this component checkpoint.
+
+**Validation — historical initial v3 checkpoint 2026-10-14**
+
+The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
+
+- With `AROLARIU_COMPONENTS_PACKED_ROOT` pointing to the real extracted artifact,
+  `npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0**: **126 files / 3,043 tests / no
+  skips**, including all three actual packed contracts. Start **10:50:17 local**; duration **333.64 seconds**.
+- Statements **98.35% (3769/3832)**; branches **95.32% (2997/3144)**; functions **99.41% (1025/1031)**; lines **99.25% (3573/3600)**.
+  Thresholds/exclusions are unchanged: 80% branches; 95% functions, lines and statements.
+- Final scoped review (`a3e8b0b6`): I1/I2 and M1–M10 all addressed; zero remaining and zero new Important regressions. Parent-reported
+  configured ESLint and Prettier for all **383 changed files** passed. Real React18 source and packed lanes each passed **18 fixtures**.
+- Expected Motion reduced notices/npm configuration warnings remain visible; no React Tabs act warnings after `c16112a1a`. Corrections
+  `62e463118`, `d63c6bdc6`, `c16112a1a` were fixture-only, not production/dist changes.
+- Known 15 hook/story strong-type diagnostics and website fixture/build-environment blocks remain outside this component coverage pass. This
+  is not an all-monorepo pass; physical-browser acceptance, publication and website adoption remain separately gated.
+
 ### [2.4.0](https://www.npmjs.com/package/@arolariu/components/v/2.4.0) - 2026-10-11
 
 **✨ Added**

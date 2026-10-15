@@ -1,13 +1,65 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger} from "./drawer";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerSwipeHandle,
+  DrawerTitle,
+  DrawerTrigger,
+} from "./drawer";
+const storyStyles = `
+.ac-story-drawer-storyContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-4);
+}
+
+.ac-story-drawer-storyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-drawer-scrollArea {
+  min-height: 0;
+  max-height: 60dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+`;
+
+const storyClasses = {
+  storyContent: "ac-story-drawer-storyContent",
+  storyActions: "ac-story-drawer-storyActions",
+  scrollArea: "ac-story-drawer-scrollArea",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/Drawer",
   component: Drawer,
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+  },
+  argTypes: {
+    swipeDirection: {control: "select", options: ["down", "up", "left", "right"]},
+    modal: {control: "select", options: [true, false, "trap-focus"]},
+    showSwipeHandle: {control: "boolean"},
   },
 } satisfies Meta<typeof Drawer>;
 
@@ -18,22 +70,20 @@ type Story = StoryObj<typeof meta>;
  * Default drawer sliding from the bottom with form content.
  */
 export const Default: Story = {
-  render: () => (
-    <Drawer>
-      <DrawerTrigger>Open Drawer</DrawerTrigger>
+  render: (args) => (
+    <Drawer {...args}>
+      <DrawerTrigger render={<Button />}>Open Drawer</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Edit Profile</DrawerTitle>
           <DrawerDescription>Make changes to your profile here. Click save when you're done.</DrawerDescription>
         </DrawerHeader>
-        <div className='p-4'>
-          <p className='text-muted-foreground text-sm'>Drawer content goes here.</p>
+        <div className={storyClasses.storyContent}>
+          <p>Drawer content goes here.</p>
         </div>
         <DrawerFooter>
           <Button>Save Changes</Button>
-          <DrawerClose asChild>
-            <Button variant='outline'>Cancel</Button>
-          </DrawerClose>
+          <DrawerClose render={<Button variant='outline' />}>Cancel</DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -45,32 +95,32 @@ export const Default: Story = {
  */
 export const WithHandle: Story = {
   render: () => (
-    <Drawer>
-      <DrawerTrigger>Open Settings</DrawerTrigger>
+    <Drawer showSwipeHandle>
+      <DrawerTrigger render={<Button />}>Open Settings</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Settings</DrawerTitle>
           <DrawerDescription>Configure your preferences and options.</DrawerDescription>
         </DrawerHeader>
-        <div className='space-y-4 p-4'>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>Notifications</span>
+        <div className={storyClasses.storyContent}>
+          <div className={storyClasses.storyActions}>
+            <span>Notifications</span>
             <Button
               variant='outline'
               size='sm'>
               Enable
             </Button>
           </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>Dark Mode</span>
+          <div className={storyClasses.storyActions}>
+            <span>Dark Mode</span>
             <Button
               variant='outline'
               size='sm'>
               Toggle
             </Button>
           </div>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>Auto-save</span>
+          <div className={storyClasses.storyActions}>
+            <span>Auto-save</span>
             <Button
               variant='outline'
               size='sm'>
@@ -78,6 +128,9 @@ export const WithHandle: Story = {
             </Button>
           </div>
         </div>
+        <DrawerFooter>
+          <DrawerClose render={<Button variant='outline' />}>Close settings</DrawerClose>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   ),
@@ -88,17 +141,17 @@ export const WithHandle: Story = {
  */
 export const WithScrollableContent: Story = {
   render: () => (
-    <Drawer>
-      <DrawerTrigger>View Details</DrawerTrigger>
+    <Drawer showSwipeHandle>
+      <DrawerTrigger render={<Button />}>View Details</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Product Information</DrawerTitle>
           <DrawerDescription>Detailed specifications and features.</DrawerDescription>
         </DrawerHeader>
-        <div className='max-h-[60vh] space-y-4 overflow-y-auto p-4'>
+        <div className={storyClasses.scrollArea}>
           <section>
-            <h3 className='mb-2 font-semibold'>Features</h3>
-            <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
+            <h3>Features</h3>
+            <ul>
               <li>High-quality materials</li>
               <li>Durable construction</li>
               <li>Eco-friendly production</li>
@@ -107,8 +160,8 @@ export const WithScrollableContent: Story = {
             </ul>
           </section>
           <section>
-            <h3 className='mb-2 font-semibold'>Specifications</h3>
-            <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
+            <h3>Specifications</h3>
+            <ul>
               <li>Weight: 1.2kg</li>
               <li>Dimensions: 30cm x 20cm x 10cm</li>
               <li>Color: Multiple options available</li>
@@ -117,15 +170,13 @@ export const WithScrollableContent: Story = {
             </ul>
           </section>
           <section>
-            <h3 className='mb-2 font-semibold'>Care Instructions</h3>
-            <p className='text-muted-foreground text-sm'>Machine washable at 30°C. Do not bleach. Tumble dry on low heat.</p>
+            <h3>Care Instructions</h3>
+            <p>Machine washable at 30°C. Do not bleach. Tumble dry on low heat.</p>
           </section>
         </div>
         <DrawerFooter>
           <Button>Add to Cart</Button>
-          <DrawerClose asChild>
-            <Button variant='outline'>Close</Button>
-          </DrawerClose>
+          <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -138,16 +189,14 @@ export const WithScrollableContent: Story = {
 export const WithoutFooter: Story = {
   render: () => (
     <Drawer>
-      <DrawerTrigger>Show Information</DrawerTrigger>
+      <DrawerTrigger render={<Button />}>Show Information</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Welcome!</DrawerTitle>
           <DrawerDescription>Thank you for joining our platform.</DrawerDescription>
         </DrawerHeader>
-        <div className='p-4'>
-          <p className='text-muted-foreground text-sm'>
-            We're excited to have you here. Explore the features and let us know if you need any help getting started.
-          </p>
+        <div className={storyClasses.storyContent}>
+          <p>We're excited to have you here. Explore the features and let us know if you need any help getting started.</p>
         </div>
       </DrawerContent>
     </Drawer>
@@ -155,124 +204,29 @@ export const WithoutFooter: Story = {
 };
 
 /**
- * Drawer showing a navigation menu with icon buttons.
+ * A horizontal drawer preserves native navigation links.
  */
 export const WithNavigation: Story = {
   render: () => (
-    <Drawer>
-      <DrawerTrigger>Open Menu</DrawerTrigger>
+    <Drawer
+      swipeDirection='left'
+      showSwipeHandle>
+      <DrawerTrigger render={<Button />}>Open Menu</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Main Menu</DrawerTitle>
           <DrawerDescription>Navigate to different sections.</DrawerDescription>
         </DrawerHeader>
-        <nav style={{padding: "16px", display: "flex", flexDirection: "column", gap: "8px"}}>
-          {[
-            {
-              icon: (
-                <svg
-                  style={{width: "20px", height: "20px"}}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
-                  />
-                </svg>
-              ),
-              label: "Home",
-            },
-            {
-              icon: (
-                <svg
-                  style={{width: "20px", height: "20px"}}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
-                  />
-                </svg>
-              ),
-              label: "Profile",
-            },
-            {
-              icon: (
-                <svg
-                  style={{width: "20px", height: "20px"}}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
-                  />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                  />
-                </svg>
-              ),
-              label: "Settings",
-            },
-            {
-              icon: (
-                <svg
-                  style={{width: "20px", height: "20px"}}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
-                  />
-                </svg>
-              ),
-              label: "Documentation",
-            },
-          ].map((item, idx) => (
-            <button
-              key={idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "12px 16px",
-                border: "none",
-                background: "transparent",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 500,
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f3f4f6";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}>
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
+        <nav
+          className={storyClasses.storyContent}
+          aria-label='Drawer navigation'>
+          <a href='#home'>Home</a>
+          <a href='#profile'>Profile</a>
+          <a href='#settings'>Settings</a>
+          <a href='#documentation'>Documentation</a>
         </nav>
         <DrawerFooter>
-          <DrawerClose asChild>
-            <Button variant='outline'>Close</Button>
-          </DrawerClose>
+          <DrawerClose render={<Button variant='outline' />}>Close menu</DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -282,45 +236,37 @@ export const WithNavigation: Story = {
 /**
  * Drawer that opens another nested drawer demonstrating stacked drawers.
  */
-function NestedDrawerDemo() {
+function NestedDrawerDemo(): React.ReactElement {
   return (
-    <Drawer>
-      <DrawerTrigger>Open Primary Drawer</DrawerTrigger>
+    <Drawer showSwipeHandle>
+      <DrawerTrigger render={<Button />}>Open Primary Drawer</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Primary Drawer</DrawerTitle>
           <DrawerDescription>This drawer can open another drawer.</DrawerDescription>
         </DrawerHeader>
-        <div style={{padding: "16px"}}>
-          <p style={{fontSize: "14px", color: "#6b7280", marginBottom: "16px"}}>
-            Click the button below to open a nested drawer on top of this one.
-          </p>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button>Open Nested Drawer</Button>
-            </DrawerTrigger>
+        <div className={storyClasses.storyContent}>
+          <p>Click the button below to open a nested drawer on top of this one.</p>
+          <Drawer
+            showSwipeHandle
+            swipeDirection='right'>
+            <DrawerTrigger render={<Button />}>Open Nested Drawer</DrawerTrigger>
             <DrawerContent>
               <DrawerHeader>
                 <DrawerTitle>Nested Drawer</DrawerTitle>
                 <DrawerDescription>This is a drawer opened from within another drawer.</DrawerDescription>
               </DrawerHeader>
-              <div style={{padding: "16px"}}>
-                <p style={{fontSize: "14px", color: "#6b7280"}}>
-                  You can have multiple layers of drawers. Close this one to return to the primary drawer.
-                </p>
+              <div className={storyClasses.storyContent}>
+                <p>You can have multiple layers of drawers. Close this one to return to the primary drawer.</p>
               </div>
               <DrawerFooter>
-                <DrawerClose asChild>
-                  <Button>Close Nested Drawer</Button>
-                </DrawerClose>
+                <DrawerClose render={<Button />}>Close Nested Drawer</DrawerClose>
               </DrawerFooter>
             </DrawerContent>
           </Drawer>
         </div>
         <DrawerFooter>
-          <DrawerClose asChild>
-            <Button variant='outline'>Close Primary Drawer</Button>
-          </DrawerClose>
+          <DrawerClose render={<Button variant='outline' />}>Close Primary Drawer</DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -329,4 +275,117 @@ function NestedDrawerDemo() {
 
 export const Nested: Story = {
   render: () => <NestedDrawerDemo />,
+};
+
+/** Four directions use the same real viewport/controller, with axis-specific presentation. */
+export const Directions: Story = {
+  render: () => (
+    <div className={storyClasses.storyActions}>
+      {(["down", "up", "left", "right"] as const).map((direction) => (
+        <Drawer
+          key={direction}
+          swipeDirection={direction}
+          showSwipeHandle>
+          <DrawerTrigger render={<Button variant='outline' />}>Open {direction}</DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>{direction} drawer</DrawerTitle>
+              <DrawerDescription>Drag the handle along the drawer axis, or close with the button.</DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter>
+              <DrawerClose render={<Button variant='outline' />}>Close {direction}</DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      ))}
+    </div>
+  ),
+};
+
+/** No backdrop or page scroll lock; outside content remains interactive. */
+export const NonModal: Story = {
+  args: {modal: false, swipeDirection: "right", showSwipeHandle: true},
+  render: (args) => (
+    <div className={storyClasses.storyContent}>
+      <label>
+        Outside input <input placeholder='Still usable while the drawer is open' />
+      </label>
+      <Drawer {...args}>
+        <DrawerTrigger render={<Button />}>Open nonmodal drawer</DrawerTrigger>
+        <DrawerContent>
+          <DrawerTitle>Nonmodal drawer</DrawerTitle>
+          <DrawerDescription>The background stays interactive and scrollable.</DrawerDescription>
+          <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
+        </DrawerContent>
+      </Drawer>
+    </div>
+  ),
+};
+
+/** Focus containment without a blocking backdrop or document scroll lock. */
+export const TrapFocus: Story = {
+  args: {modal: "trap-focus", showSwipeHandle: true},
+  render: (args) => (
+    <Drawer {...args}>
+      <DrawerTrigger render={<Button />}>Open focus-trapped drawer</DrawerTrigger>
+      <DrawerContent>
+        <DrawerTitle>Focus-trapped drawer</DrawerTitle>
+        <DrawerDescription>Tab stays inside; the document remains scrollable.</DrawerDescription>
+        <input aria-label='Inside input' />
+        <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
+      </DrawerContent>
+    </Drawer>
+  ),
+};
+
+function SnapPointsDemo(): React.ReactElement {
+  const [snapPoint, setSnapPoint] = React.useState<Drawer.Props["snapPoint"]>(0.35);
+  return (
+    <Drawer
+      snapPoints={[0.35, 0.7, 1]}
+      snapPoint={snapPoint}
+      onSnapPointChange={setSnapPoint}
+      snapToSequentialPoints
+      showSwipeHandle>
+      <DrawerTrigger render={<Button />}>Open snapping drawer</DrawerTrigger>
+      <DrawerContent>
+        <DrawerTitle>Snap points</DrawerTitle>
+        <DrawerDescription>This demo explicitly supplies three snap heights; the component has no snap-point defaults.</DrawerDescription>
+        <output>Active snap: {snapPoint}</output>
+        <div className={storyClasses.storyActions}>
+          <Button onClick={() => setSnapPoint(0.35)}>35%</Button>
+          <Button onClick={() => setSnapPoint(0.7)}>70%</Button>
+          <Button onClick={() => setSnapPoint(1)}>Expand</Button>
+        </div>
+        <DrawerFooter>
+          <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+/** Consumer-controlled snap state; Base UI resolves heights and swipe requests. */
+export const SnapPoints: Story = {
+  render: () => <SnapPointsDemo />,
+};
+
+/** A separately composed decorative handle outside Content, owned by the same primitive Viewport. */
+export const SeparateSwipeHandle: Story = {
+  render: () => (
+    <Drawer>
+      <DrawerTrigger render={<Button />}>Open custom handle drawer</DrawerTrigger>
+      <DrawerContent
+        render={(props) => (
+          <section {...props}>
+            <DrawerSwipeHandle aria-label='Decorative drag handle' />
+            {props.children}
+          </section>
+        )}>
+        <DrawerTitle>Custom handle composition</DrawerTitle>
+        <DrawerDescription>The handle is decorative; all gestures still come from Base UI.</DrawerDescription>
+        <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
+      </DrawerContent>
+    </Drawer>
+  ),
 };

@@ -2,12 +2,23 @@
   position: fixed;
   inset: 0;
   z-index: 50;
+  min-height: 100dvh;
   background-color: rgb(0 0 0 / 0.55);
-  transition: opacity var(--ac-transition-normal);
+  opacity: max(var(--drawer-overlay-min-opacity, 0), calc(1 - var(--drawer-swipe-progress, 0)));
+  transition: opacity 450ms cubic-bezier(0.32, 0.72, 0, 1);
+  user-select: none;
 
   @supports (-webkit-touch-callout: none) {
     position: absolute;
   }
+}
+
+.backdrop[data-snap-points] {
+  --drawer-overlay-min-opacity: 0.5;
+}
+
+.backdrop[data-swiping] {
+  transition-duration: 0ms;
 }
 
 .backdrop[data-starting-style],
@@ -15,51 +26,264 @@
   opacity: 0;
 }
 
-.popup {
+.backdrop[data-ending-style] {
+  pointer-events: none;
+  transition-duration: calc(var(--drawer-swipe-strength, 1) * 400ms);
+}
+
+.viewport {
   position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 51;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viewport[data-modal="true"] {
+  pointer-events: auto;
+}
+
+.popup {
+  --bleed: 3rem;
+  --peek: 1rem;
+  --stack-step: 0.05;
+  --stack-height: var(--drawer-frontmost-height, var(--drawer-height, 0px));
+  --stack-progress: clamp(0, var(--drawer-swipe-progress, 0), 1);
+  --stack-peek-offset: max(0px, calc((var(--nested-drawers, 0) - var(--stack-progress)) * var(--peek)));
+  --stack-scale-base: max(0, calc(1 - (var(--nested-drawers, 0) * var(--stack-step))));
+  --stack-scale: clamp(0, calc(var(--stack-scale-base) + (var(--stack-step) * var(--stack-progress))), 1);
+  --stack-shrink: calc(1 - var(--stack-scale));
+  --drawer-content-height: var(--drawer-height, auto);
+
+  position: fixed;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-4);
-  min-height: 10rem;
-  margin-top: 6rem;
+  width: var(--drawer-content-width, auto);
+  height: var(--drawer-content-height);
+  min-height: 0;
+  max-height: var(--drawer-content-max-height, none);
+  margin: var(--drawer-inset, 0px);
   padding: var(--ac-space-4) var(--ac-space-4) var(--ac-space-6);
   border: 1px solid var(--ac-border);
-  border-bottom: 0;
-  border-radius: var(--ac-radius-lg) var(--ac-radius-lg) 0 0;
   background-color: var(--ac-background);
   color: var(--ac-foreground);
-  box-shadow: 0 -16px 40px -16px rgb(0 0 0 / 0.35);
+  box-shadow: 0 0 40px -16px rgb(0 0 0 / 0.35);
+  outline: none;
+  pointer-events: auto;
+  transform: translate3d(var(--translate-x, 0px), var(--translate-y, 0px), 0) scale(var(--stack-scale));
   transition:
-    transform var(--ac-transition-normal),
-    opacity var(--ac-transition-normal);
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  user-select: none;
+  interpolate-size: allow-keywords;
+}
+
+.popup::after {
+  position: absolute;
+  background-color: var(--drawer-bleed-background, var(--ac-background));
+  content: "";
+  pointer-events: none;
+}
+
+.popup[data-swipe-axis="y"] {
+  --drawer-content-max-height: calc(100dvh - 6rem);
+
+  inset-inline: 0;
+}
+
+.popup[data-swipe-axis="y"][data-snap-points] {
+  --drawer-content-height: 100dvh;
+}
+
+.popup[data-swipe-axis="y"]::after {
+  inset-inline: 0;
+  height: var(--bleed);
+}
+
+.popup[data-swipe-axis="x"] {
+  --drawer-content-width: 75%;
+
+  inset-block: 0;
+  flex-direction: row;
+}
+
+.popup[data-swipe-axis="x"]::after {
+  inset-block: 0;
+  width: var(--bleed);
+}
+
+.popup[data-swipe-direction="down"] {
+  --closed-transform: translate3d(0, calc(100% + var(--drawer-inset, 0px) + 2px), 0);
+  --translate-y: calc(
+    var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px) - var(--stack-peek-offset) -
+      (var(--stack-shrink) * var(--stack-height))
+  );
+
+  bottom: 0;
+  border-bottom: 0;
+  border-radius: var(--ac-radius-lg) var(--ac-radius-lg) 0 0;
+  transform-origin: bottom;
+}
+
+.popup[data-swipe-direction="down"]::after {
+  top: 100%;
+}
+
+.popup[data-swipe-direction="up"] {
+  --closed-transform: translate3d(0, calc(-100% - var(--drawer-inset, 0px) - 2px), 0);
+  --translate-y: calc(
+    var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px) + var(--stack-peek-offset) +
+      (var(--stack-shrink) * var(--stack-height))
+  );
+
+  top: 0;
+  border-top: 0;
+  border-radius: 0 0 var(--ac-radius-lg) var(--ac-radius-lg);
+  transform-origin: top;
+}
+
+.popup[data-swipe-direction="up"]::after {
+  bottom: 100%;
+}
+
+.popup[data-swipe-direction="left"] {
+  --closed-transform: translate3d(calc(-100% - var(--drawer-inset, 0px) - 2px), 0, 0);
+  --translate-x: calc(var(--drawer-swipe-movement-x, 0px) + var(--stack-peek-offset) + (var(--stack-shrink) * 100%));
+
+  left: 0;
+  border-left: 0;
+  border-radius: 0 var(--ac-radius-lg) var(--ac-radius-lg) 0;
+  transform-origin: left;
+}
+
+.popup[data-swipe-direction="left"]::after {
+  right: 100%;
+}
+
+.popup[data-swipe-direction="right"] {
+  --closed-transform: translate3d(calc(100% + var(--drawer-inset, 0px) + 2px), 0, 0);
+  --translate-x: calc(var(--drawer-swipe-movement-x, 0px) - var(--stack-peek-offset) - (var(--stack-shrink) * 100%));
+
+  right: 0;
+  border-right: 0;
+  border-radius: var(--ac-radius-lg) 0 0 var(--ac-radius-lg);
+  transform-origin: right;
+}
+
+.popup[data-swipe-direction="right"]::after {
+  left: 100%;
+}
+
+.popup[data-nested-drawer-open] {
+  overflow: hidden;
+  filter: brightness(0.95);
+}
+
+.popup[data-swipe-axis="y"][data-nested-drawer-open] {
+  height: var(--stack-height);
+}
+
+.popup[data-swiping],
+.popup[data-nested-drawer-swiping] {
+  transition-duration: 0ms;
 }
 
 .popup[data-starting-style],
 .popup[data-ending-style] {
-  opacity: 0;
-  transform: translateY(1rem);
+  transform: var(--closed-transform);
+}
+
+.popup[data-ending-style] {
+  opacity: 0.9999;
+}
+
+.popup[data-ending-style],
+.popup[data-ending-style][data-swiping],
+.popup[data-ending-style][data-nested-drawer-swiping] {
+  transition-duration: calc(var(--drawer-swipe-strength, 1) * 400ms);
 }
 
 .handle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 5rem;
+  height: 1.25rem;
+  cursor: grab;
+  transition: opacity 200ms;
+}
+
+.handle::before {
   width: 4rem;
   height: 0.25rem;
-  margin: 0 auto;
   border-radius: 999px;
   background-color: var(--ac-border);
+  content: "";
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.popup[data-swipe-axis="x"] > .handle {
+  width: 1.25rem;
+  height: 5rem;
+}
+
+.popup[data-swipe-axis="x"] > .handle::before {
+  width: 0.25rem;
+  height: 4rem;
+}
+
+.popup[data-swipe-direction="up"] > .handle,
+.popup[data-swipe-direction="left"] > .handle {
+  order: 1;
 }
 
 .content {
   display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: var(--ac-space-4);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: inherit;
+  overscroll-behavior: contain;
+  transition: opacity 300ms cubic-bezier(0.45, 1.005, 0, 1.005);
+  user-select: text;
+}
+
+.popup[data-nested-drawer-open] > .content,
+.popup[data-nested-drawer-open] > .handle {
+  opacity: 0;
+}
+
+.popup[data-nested-drawer-swiping] > .content,
+.popup[data-nested-drawer-swiping] > .handle {
+  opacity: 1;
+}
+
+.popup[data-swiping] > .content {
+  user-select: none;
 }
 
 .header {
   display: grid;
   gap: var(--ac-space-1);
+}
+
+.popup[data-swipe-axis="y"] .header {
   text-align: center;
 }
 
@@ -71,8 +295,8 @@
 }
 
 @media (min-width: 640px) {
-  .header {
-    text-align: left;
+  .popup[data-swipe-axis="x"] {
+    --drawer-content-width: 24rem;
   }
 }
 
@@ -84,4 +308,45 @@
 .description {
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .backdrop[data-swiping],
+  .backdrop[data-ending-style],
+  .popup,
+  .popup[data-swiping],
+  .popup[data-nested-drawer-swiping],
+  .popup[data-ending-style],
+  .popup[data-ending-style][data-swiping],
+  .popup[data-ending-style][data-nested-drawer-swiping],
+  .content,
+  .handle {
+    transition-duration: 0ms;
+  }
+}
+
+@media (forced-colors: active) {
+  .popup,
+  .popup[data-nested-drawer-open] {
+    border-color: CanvasText;
+    background-color: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    filter: none;
+  }
+
+  .handle::before {
+    background-color: CanvasText;
+  }
+
+  .backdrop {
+    background-color: CanvasText;
+  }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import {isFocusAvailable} from "@/lib/_focus-availability";
+
 const FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not(:disabled)",
@@ -53,7 +55,7 @@ export function useFocusManager(containerRef: React.RefObject<HTMLElement | null
     }
 
     return [...containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
-      (element) => !element.hasAttribute("disabled") && element.tabIndex >= 0,
+      (element) => !element.hasAttribute("disabled") && element.tabIndex >= 0 && isFocusAvailable(element),
     );
   }, [containerRef]);
 

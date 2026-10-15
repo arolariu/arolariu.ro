@@ -1,23 +1,27 @@
 .alert {
+  box-sizing: border-box;
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--ac-space-3);
   width: 100%;
   border-radius: var(--ac-radius-lg);
   border: 1px solid var(--ac-border);
   padding: var(--ac-space-4);
   font-size: var(--ac-text-sm);
 
-  & svg {
+  & > svg {
     position: absolute;
     top: var(--ac-space-4);
-    left: var(--ac-space-4);
+    inset-inline-start: var(--ac-space-4);
     width: 1rem;
     height: 1rem;
     color: var(--ac-foreground);
   }
 
-  /* When icon is present, add left padding */
-  &:has(svg) {
-    padding-left: calc(var(--ac-space-4) + 1rem + var(--ac-space-3));
+  /* Only a leading direct icon reserves space; icons inside actions remain in their controls. */
+  &:has(> svg) {
+    padding-inline-start: calc(var(--ac-space-4) + 1rem + var(--ac-space-3));
   }
 }
 
@@ -34,16 +38,20 @@
   border-color: color-mix(in oklch, var(--ac-destructive), transparent 50%);
   color: var(--ac-destructive);
 
-  & svg {
+  & > svg {
     color: var(--ac-destructive);
   }
 
   & .description {
-    color: color-mix(in oklch, var(--ac-destructive), transparent 20%);
+    color: var(--ac-destructive);
   }
 }
 
 .title {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin-top: 0;
   margin-bottom: var(--ac-space-1);
   font-weight: 500;
   line-height: 1.2;
@@ -51,7 +59,36 @@
 }
 
 .description {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--ac-text-sm);
   line-height: 1.5;
   color: var(--ac-muted-foreground);
+}
+
+.action {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  justify-self: end;
+}
+
+.title a,
+.description a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+@media (forced-colors: active) {
+  .alert {
+    border-color: CanvasText;
+    color: CanvasText;
+  }
+
+  .alert > svg,
+  .alert .description {
+    color: CanvasText;
+  }
 }

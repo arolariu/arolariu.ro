@@ -27,19 +27,19 @@
   --ac-secondary: oklch(0.967 0.001 286.375);
   --ac-secondary-foreground: oklch(0.21 0.006 285.885);
   --ac-muted: oklch(0.967 0.001 286.375);
-  --ac-muted-foreground: oklch(0.556 0.002 285.938);
+  --ac-muted-foreground: oklch(0.52 0.002 285.938);
   --ac-accent: oklch(0.967 0.001 286.375);
   --ac-accent-foreground: oklch(0.21 0.006 285.885);
   --ac-destructive: oklch(0.577 0.245 27.325);
-  --ac-destructive-foreground: oklch(0.577 0.245 27.325);
-  --ac-success: oklch(0.627 0.194 149.214);
+  --ac-destructive-foreground: oklch(0.985 0 0);
+  --ac-success: oklch(0.527 0.164 149.214);
   --ac-success-foreground: oklch(0.985 0 0);
   --ac-warning: oklch(0.769 0.188 70.08);
   --ac-warning-foreground: oklch(0.145 0.004 285.823);
   --ac-info: oklch(0.488 0.243 264.376);
   --ac-info-foreground: oklch(0.97 0.014 254.604);
   --ac-border: oklch(0.922 0.004 286.32);
-  --ac-input: oklch(0.922 0.004 286.32);
+  --ac-input: oklch(0.6 0.004 286.32);
   --ac-ring: oklch(0.488 0.243 264.376);
 
   /* Chart tokens */
@@ -105,7 +105,7 @@
   --ac-accent: oklch(0.269 0.006 285.885);
   --ac-accent-foreground: oklch(0.985 0 0);
   --ac-destructive: oklch(0.704 0.191 22.216);
-  --ac-destructive-foreground: oklch(0.704 0.191 22.216);
+  --ac-destructive-foreground: oklch(0.145 0.004 285.823);
   --ac-success: oklch(0.527 0.164 149.214);
   --ac-success-foreground: oklch(0.985 0 0);
   --ac-warning: oklch(0.669 0.158 70.08);
@@ -113,8 +113,8 @@
   --ac-info: oklch(0.424 0.199 265.638);
   --ac-info-foreground: oklch(0.97 0.014 254.604);
   --ac-border: oklch(0.269 0.006 285.885);
-  --ac-input: oklch(0.269 0.006 285.885);
-  --ac-ring: oklch(0.424 0.199 265.638);
+  --ac-input: oklch(0.58 0.006 285.885);
+  --ac-ring: oklch(0.7 0.14 265.638);
 
   --ac-chart-1: oklch(0.488 0.243 264.376);
   --ac-chart-2: oklch(0.696 0.17 162.48);
@@ -129,7 +129,7 @@
   --ac-sidebar-accent: oklch(0.269 0.006 285.885);
   --ac-sidebar-accent-foreground: oklch(0.985 0 0);
   --ac-sidebar-border: oklch(0.269 0.006 285.885);
-  --ac-sidebar-ring: oklch(0.424 0.199 265.638);
+  --ac-sidebar-ring: oklch(0.7 0.14 265.638);
 }
 
 /* Note: No global * reset — consumers manage their own border/box-sizing defaults */

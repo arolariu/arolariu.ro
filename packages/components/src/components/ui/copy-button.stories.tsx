@@ -1,139 +1,95 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CopyButton} from "./copy-button";
+const storyStyles = `
+.ac-story-copy-button-storyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.ac-story-copy-button-storyPanel {
+  display: grid;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-copy-button-storyRow",
+  storyPanel: "ac-story-copy-button-storyPanel",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Actions/CopyButton",
   component: CopyButton,
   tags: ["autodocs"],
-  parameters: {
-    componentSubtitle: "🆕 New in v1.0",
-  },
+  args: {value: "npm install @arolariu/components"},
   argTypes: {
-    value: {
-      control: "text",
-      description: "Text to copy to clipboard",
-    },
-    timeout: {
-      control: "number",
-      description: "Duration (ms) to show success state",
-    },
+    value: {control: "text"},
+    timeout: {control: "number"},
+    onCopyError: {description: "Receives native clipboard failures; suppressed after unmount."},
   },
 } satisfies Meta<typeof CopyButton>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    value: "npm install @arolariu/components",
-  },
-};
+export const Default: Story = {};
+export const ShortTimeout: Story = {args: {timeout: 1000}};
+export const LongText: Story = {args: {value: "A longer text value copied through the native Clipboard API."}};
+export const Disabled: Story = {args: {disabled: true}};
 
-export const ShortTimeout: Story = {
-  args: {
-    value: "Copy me!",
-    timeout: 1000,
-  },
-};
-
-export const LongText: Story = {
-  args: {
-    value: "This is a very long text that will be copied to the clipboard when you click the button.",
-  },
-};
-
-function CopyButtonWithTextContent(): React.JSX.Element {
-  const [copied, setCopied] = React.useState(false);
-
+function CopyButtonFeedback(): React.JSX.Element {
+  const [message, setMessage] = React.useState("Activate the button to copy the command.");
   return (
-    <button
-      type='button'
-      onClick={() => {
-        navigator.clipboard.writeText("Hello, world!");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      style={{
-        padding: "0.5rem 1rem",
-        fontSize: "0.875rem",
-        fontWeight: "500",
-        background: copied ? "#22c55e" : "#3b82f6",
-        color: "white",
-        border: "none",
-        borderRadius: "6px",
-        cursor: "pointer",
-        transition: "background-color 0.2s",
-        minWidth: "100px",
-      }}>
-      {copied ? "Copied!" : "Copy"}
-    </button>
+    <div className={storyClasses.storyPanel}>
+      <code>npm install @arolariu/components</code>
+      <CopyButton
+        value='npm install @arolariu/components'
+        aria-label='Copy install command'
+        onCopyError={() => setMessage("Clipboard access failed. Check browser permissions.")}
+      />
+      <p role='status'>{message}</p>
+    </div>
   );
 }
 
-/**
- * Copy button with text label that changes to "Copied!" on success.
- */
-export const WithText: Story = {
-  render: () => <CopyButtonWithTextContent />,
-};
-
-/**
- * Copy button for a long URL or code snippet.
- */
+/** Uses the actual component and reports clipboard permission failures. */
+export const WithText: Story = {render: () => <CopyButtonFeedback />};
 export const LongValue: Story = {
   render: () => (
-    <div style={{maxWidth: "32rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-      <p style={{fontSize: "0.875rem", fontWeight: "500"}}>Repository URL:</p>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          padding: "0.75rem",
-          background: "#f9fafb",
-          border: "1px solid #e5e7eb",
-          borderRadius: "6px",
-        }}>
-        <code
-          style={{
-            flex: 1,
-            fontSize: "0.875rem",
-            color: "#374151",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-          https://github.com/arolariu/arolariu.ro/tree/main/packages/components
-        </code>
-        <CopyButton value='https://github.com/arolariu/arolariu.ro/tree/main/packages/components' />
-      </div>
+    <div className={storyClasses.storyRow}>
+      <code>https://github.com/arolariu/arolariu.ro</code>
+      <CopyButton
+        value='https://github.com/arolariu/arolariu.ro'
+        aria-label='Copy repository URL'
+      />
     </div>
   ),
 };
 
-/**
- * Copy button positioned in a code snippet corner.
- */
+/** Status messages are localizable independently of a caller's fixed button name. */
+export const LocalizedStatus: Story = {
+  args: {value: "Bonjour", copyLabel: "Copier", copiedLabel: "Copié", errorLabel: "Échec de la copie"},
+};
 export const InCodeBlock: Story = {
   render: () => (
-    <div
-      style={{
-        position: "relative",
-        maxWidth: "32rem",
-        padding: "1rem",
-        background: "#1f2937",
-        color: "#f9fafb",
-        borderRadius: "8px",
-        fontFamily: "monospace",
-        fontSize: "0.875rem",
-      }}>
-      <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-        <CopyButton value='npm install @arolariu/components' />
-      </div>
-      <pre style={{margin: 0, padding: 0}}>
+    <div className={storyClasses.storyPanel}>
+      <pre>
         <code>npm install @arolariu/components</code>
       </pre>
+      <CopyButton value='npm install @arolariu/components' />
     </div>
   ),
 };

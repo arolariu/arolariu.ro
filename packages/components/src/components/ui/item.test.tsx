@@ -1,5 +1,10 @@
-import {render, screen} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import {fireEvent, render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {parse, type Rule} from "postcss";
+import * as React from "react";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
   Item,
@@ -13,12 +18,553 @@ import {
   ItemSeparator,
   ItemTitle,
 } from "./item";
+import styles from "./item.module.css";
+
+function ConsumerLink(props: Readonly<React.ComponentPropsWithRef<"a">>): React.ReactElement {
+  return <a {...props} />;
+}
 
 describe("Item", () => {
+  it("React 19 refresh: lets the real Separator own class and render callback state", () => {
+    const className = vi.fn((state: {orientation: "horizontal" | "vertical"}) => `axis-${state.orientation}`);
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <ItemSeparator
+        ref={ref}
+        orientation='vertical'
+        className={className}
+        render={(props, state) => (
+          <div
+            {...props}
+            data-axis={state.orientation}
+          />
+        )}
+      />,
+    );
+    const separator = screen.getByRole("separator");
+    expect(separator).toHaveClass("axis-vertical");
+    expect(separator).toHaveAttribute("data-axis", "vertical");
+    expect(className).toHaveBeenCalledWith(expect.objectContaining({orientation: "vertical"}));
+    expect(ref.current).toBe(separator);
+  });
+
+  it("React 19 refresh: keeps full title/description content and descendant focus outlines unclipped", () => {
+    const css = parse(readFileSync(resolve(import.meta.dirname, "item.module.css"), "utf8"));
+    for (const selector of [".title", ".description"]) {
+      const values: Record<string, string> = {};
+      css.walkRules(selector, (rule) =>
+        rule.walkDecls((decl) => {
+          values[decl.prop] = decl.value;
+        }),
+      );
+      expect(values["display"]).toBe("block");
+      expect(values).not.toHaveProperty("-webkit-line-clamp");
+      expect(values["overflow"]).not.toBe("hidden");
+    }
+  });
+
+  it("React 19 refresh: keeps a generic item group free of an incomplete list role", () => {
+    render(
+      <ItemGroup data-testid='group'>
+        <Item>Plain content</Item>
+      </ItemGroup>,
+    );
+    expect(screen.getByTestId("group")).not.toHaveAttribute("role");
+    expectTypeOf<React.ComponentProps<typeof Item>>().not.toHaveProperty("asChild");
+    expect(typeof Item).toBe("function");
+  });
+
+  it("preserves child and wrapper handlers under Item render", async () => {
+    const user = userEvent.setup();
+    const childClick = vi.fn();
+    const wrapperClick = vi.fn();
+    render(
+      <Item
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#details'
+            onClick={childClick}>
+            Details
+          </a>
+        }
+      />,
+    );
+
+    await user.click(screen.getByRole("link", {name: "Details"}));
+
+    expect(childClick).toHaveBeenCalledTimes(1);
+    expect(wrapperClick).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("link", {name: "Details"})).toHaveLength(1);
+  });
+
+  it("preserves both DOM refs and detaches them under Item render", () => {
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const {unmount} = render(
+      <Item
+        ref={wrapperRef}
+        render={
+          <a
+            href='#details'
+            ref={childRef}>
+            Details
+          </a>
+        }
+      />,
+    );
+    const link = screen.getByRole("link", {name: "Details"});
+
+    expect(childRef.current).toBe(link);
+    expect(wrapperRef.current).toBe(link);
+    unmount();
+    expect(childRef.current).toBeNull();
+    expect(wrapperRef.current).toBeNull();
+  });
+
+  it("composes a modern render element without nesting or replacing its own content", async () => {
+    const user = userEvent.setup();
+    const calls: string[] = [];
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const wrapperRef = React.createRef<HTMLAnchorElement>();
+    render(
+      <Item
+        render={
+          <a
+            ref={childRef}
+            href='#modern'
+            className='child-link'
+            aria-label='Modern details'
+            onClick={() => calls.push("child")}>
+            <span>Child details</span>
+          </a>
+        }
+        ref={wrapperRef}
+        className='wrapper-link'
+        onClick={() => calls.push("wrapper")}>
+        Wrapper fallback
+      </Item>,
+    );
+
+    const link = screen.getByRole("link", {name: "Modern details"});
+    await user.click(link);
+
+    expect(calls).toEqual(["child", "wrapper"]);
+    expect(link).toHaveClass("child-link", "wrapper-link");
+    expect(link).toHaveTextContent("Child details");
+    expect(screen.queryByText("Wrapper fallback")).not.toBeInTheDocument();
+    expect(link.querySelector("a")).toBeNull();
+    expect(childRef.current).toBe(link);
+    expect(wrapperRef.current).toBe(link);
+  });
+
+  it("supplies owned namespace state and a polymorphic merged callback ref to render functions", () => {
+    const wrapperRef = React.createRef<HTMLAnchorElement>();
+    const fixture: Item.Props = {
+      variant: "outline",
+      size: "xs",
+      ref: wrapperRef,
+      children: <span>Callback details</span>,
+      render: (props, state): React.ReactElement => {
+        expectTypeOf(state).toEqualTypeOf<Item.State>();
+        expectTypeOf(props.ref).toEqualTypeOf<React.RefCallback<HTMLElement> | null | undefined>();
+        return (
+          <a
+            {...props}
+            href='#callback'
+            data-state={`${state.slot}/${state.variant}/${state.size}`}
+          />
+        );
+      },
+    };
+    render(<Item {...fixture} />);
+
+    const link = screen.getByRole("link", {name: "Callback details"});
+    expect(link).toHaveAttribute("data-state", "item/outline/xs");
+    expect(link).toHaveAttribute("data-size", "xs");
+    expect(link).toHaveAttribute("data-variant", "outline");
+    expect(wrapperRef.current).toBe(link);
+  });
+
+  it("passes wrapper content, events and refs through a real custom render link", async () => {
+    const user = userEvent.setup();
+    const calls: string[] = [];
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const wrapperRef = React.createRef<HTMLAnchorElement>();
+    const fixture: Item.Props = {
+      ref: wrapperRef,
+      onClick: () => calls.push("wrapper"),
+      render: (
+        <ConsumerLink
+          href='#custom'
+          ref={childRef}
+          onClick={() => calls.push("child")}
+        />
+      ),
+      children: <span>Custom item link</span>,
+    };
+    render(<Item {...fixture} />);
+    const link = screen.getByRole("link", {name: "Custom item link"});
+    await user.click(link);
+
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveAttribute("data-slot", "item");
+    expect(link.querySelector("a")).toBeNull();
+    expect(childRef.current).toBe(link);
+    expect(wrapperRef.current).toBe(link);
+    expect(calls).toEqual(["child", "wrapper"]);
+  });
+
+  it("supports label render callbacks and their actual label refs", async () => {
+    const user = userEvent.setup();
+    const labelRef = React.createRef<HTMLLabelElement>();
+    const fixture: Item.Props = {
+      ref: labelRef,
+      children: <span>Select document</span>,
+      render: (props): React.ReactElement => (
+        <label
+          {...props}
+          htmlFor='document-choice'
+        />
+      ),
+    };
+    render(
+      <>
+        <Item {...fixture} />
+        <input
+          id='document-choice'
+          type='checkbox'
+        />
+      </>,
+    );
+
+    const label = screen.getByText("Select document").closest("label");
+    await user.click(screen.getByText("Select document"));
+
+    expect(labelRef.current).toBe(label);
+    expect(screen.getByRole("checkbox", {name: "Select document"})).toBeChecked();
+  });
+
+  it("preserves native cancellation and child-first order with render", () => {
+    const calls: string[] = [];
+    const child = (
+      <a
+        href='#cancelled'
+        onClick={(event) => {
+          calls.push(`child:${event.defaultPrevented}`);
+          event.preventDefault();
+        }}>
+        Cancel navigation
+      </a>
+    );
+    const onClick: React.MouseEventHandler<HTMLDivElement> = (event) => calls.push(`wrapper:${event.defaultPrevented}`);
+    render(
+      <Item
+        render={child}
+        onClick={onClick}
+      />,
+    );
+
+    expect(fireEvent.click(screen.getByRole("link", {name: "Cancel navigation"}))).toBe(false);
+    expect(calls).toEqual(["child:false", "wrapper:true"]);
+  });
+
+  it("allows a composed child to explicitly prevent the earlier Base UI handler", () => {
+    const wrapperClick = vi.fn();
+    render(
+      <Item
+        onClick={wrapperClick}
+        render={
+          <a
+            href='#prevented'
+            onClick={(event) => {
+              event.preventDefault();
+              if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                event.preventBaseUIHandler();
+              }
+            }}>
+            Prevent wrapper
+          </a>
+        }
+      />,
+    );
+
+    expect(fireEvent.click(screen.getByRole("link", {name: "Prevent wrapper"}))).toBe(false);
+    expect(wrapperClick).not.toHaveBeenCalled();
+  });
+
+  it("lets the wrapper cancel native navigation after the child handler", () => {
+    const calls: string[] = [];
+    render(
+      <Item
+        onClick={(event) => {
+          calls.push("wrapper");
+          event.preventDefault();
+        }}
+        render={
+          <a
+            href='#cancelled-by-wrapper'
+            onClick={() => calls.push("child")}>
+            Wrapper cancellation
+          </a>
+        }
+      />,
+    );
+
+    expect(fireEvent.click(screen.getByRole("link", {name: "Wrapper cancellation"}))).toBe(false);
+    expect(calls).toEqual(["child", "wrapper"]);
+  });
+
+  it("runs cleanup for both composed callback refs without losing either ref", () => {
+    const attached: (HTMLElement | null)[] = [];
+    const childCleanup = vi.fn();
+    const wrapperCleanup = vi.fn();
+    const childRef: React.RefCallback<HTMLAnchorElement> = (node) => {
+      attached.push(node);
+      return childCleanup;
+    };
+    const wrapperRef: React.RefCallback<HTMLAnchorElement> = (node) => {
+      attached.push(node);
+      return wrapperCleanup;
+    };
+    const {unmount} = render(
+      <Item
+        ref={wrapperRef}
+        render={
+          <a
+            ref={childRef}
+            href='#cleanup'>
+            Cleanup
+          </a>
+        }
+      />,
+    );
+    const link = screen.getByRole("link", {name: "Cleanup"});
+
+    expect(attached).toEqual([link, link]);
+    unmount();
+    expect(childCleanup).toHaveBeenCalledTimes(1);
+    expect(wrapperCleanup).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the default div inert rather than pretending to be a keyboard button", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(
+      <>
+        <Item
+          data-testid='inert-item'
+          onClick={onClick}>
+          Static details
+        </Item>
+        <button type='button'>Next focus target</button>
+      </>,
+    );
+    const item = screen.getByTestId("inert-item");
+    await user.tab();
+    await user.keyboard("{Enter} ");
+
+    expect(item.tagName).toBe("DIV");
+    expect(item).not.toHaveAttribute("role");
+    expect(item).not.toHaveAttribute("tabindex");
+    expect(screen.queryByRole("button", {name: "Static details"})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Next focus target"})).toHaveFocus();
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it.each(["link", "button"] as const)("authors a forced-colors outline for a keyboard-focused native %s Item", async (role) => {
+    const user = userEvent.setup();
+    const rootClass = styles.item;
+    if (rootClass === undefined) {
+      throw new Error("Missing Item CSS class");
+    }
+    render(
+      <>
+        <Item
+          variant='outline'
+          render={role === "link" ? <a href='#contrast-details' /> : <button type='button' />}>
+          Contrast details
+        </Item>
+        <button type='button'>Next focus target</button>
+      </>,
+    );
+    const target = screen.getByRole(role, {name: "Contrast details"});
+    expect(target.tagName).toBe(role === "link" ? "A" : "BUTTON");
+    expect(target).toHaveClass(rootClass);
+    expect(target).not.toHaveFocus();
+
+    await user.tab();
+    expect(target).toHaveFocus();
+
+    const stylesheet = parse(readFileSync(resolve(import.meta.dirname, "item.module.css"), "utf8"));
+    const forcedColorRules: Rule[] = [];
+    stylesheet.walkAtRules("media", (media) => {
+      if (media.params === "(forced-colors: active)") {
+        media.walkRules((rule) => {
+          forcedColorRules.push(rule);
+        });
+      }
+    });
+    const scopedSelector = (rule: Readonly<Rule>): string => rule.selector.replace(/\.item(?![\w-])/g, `.${CSS.escape(rootClass)}`);
+    const focusRule = forcedColorRules.find((rule) => target.matches(scopedSelector(rule)));
+    expect(focusRule).toBeDefined();
+    if (focusRule === undefined) {
+      throw new Error("No authored forced-colors focus rule matches the emitted Item");
+    }
+    const declarations = new Map<string, string>();
+    focusRule.walkDecls((declaration) => {
+      declarations.set(declaration.prop, declaration.value);
+    });
+    expect(declarations.get("outline-width")).toBe("2px");
+    expect(declarations.get("outline-style")).toBe("solid");
+    expect(["highlight", "canvastext"]).toContain(declarations.get("outline-color")?.toLowerCase());
+    expect(declarations.get("outline-offset")).toBe("2px");
+    expect(declarations.get("forced-color-adjust")).not.toBe("none");
+
+    await user.tab();
+    expect(screen.getByRole("button", {name: "Next focus target"})).toHaveFocus();
+    expect(target.matches(scopedSelector(focusRule))).toBe(false);
+  });
+
+  it("retains ordinary text and fragment content", () => {
+    render(
+      <>
+        <Item>Text item</Item>
+        <Item>
+          <>Fragment item</>
+        </Item>
+      </>,
+    );
+
+    expect(screen.getByText("Text item").tagName).toBe("DIV");
+    expect(screen.getByText("Fragment item").tagName).toBe("DIV");
+  });
+
+  it("preserves empty composed render content", () => {
+    render(<Item render={<article aria-label='Empty details' />} />);
+
+    expect(screen.getByRole("article", {name: "Empty details"})).toBeEmptyDOMElement();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("applies the xs layout alongside its owned size and surface attributes", () => {
+    render(
+      <Item
+        size='xs'
+        variant='muted'
+        data-testid='extra-small'>
+        <ItemMedia variant='icon'>★</ItemMedia>
+        <ItemContent>
+          <ItemTitle>Compact details</ItemTitle>
+          <ItemDescription>Compact description</ItemDescription>
+        </ItemContent>
+      </Item>,
+    );
+
+    expect(screen.getByTestId("extra-small")).toHaveAttribute("data-size", "xs");
+    expect(screen.getByTestId("extra-small").className).toContain(styles.sizeXs);
+    expect(screen.getByTestId("extra-small")).toHaveAttribute("data-variant", "muted");
+  });
+
+  it("preserves rich title and description content with valid native paragraph semantics", () => {
+    const titleRef = React.createRef<HTMLDivElement>();
+    const descriptionRef = React.createRef<HTMLParagraphElement>();
+    render(
+      <Item>
+        <ItemContent>
+          <ItemTitle ref={titleRef}>
+            <span>Long title with inline details</span>
+          </ItemTitle>
+          <ItemDescription ref={descriptionRef}>
+            Complete description with <strong>important information</strong> and <a href='#learn-more'>Learn more</a>.
+          </ItemDescription>
+        </ItemContent>
+      </Item>,
+    );
+
+    const link = screen.getByRole("link", {name: "Learn more"});
+    expect(descriptionRef.current?.tagName).toBe("P");
+    expect(descriptionRef.current).toHaveTextContent("Complete description with important information and Learn more.");
+    expect(descriptionRef.current).toContainElement(link);
+    expect(titleRef.current).toHaveTextContent("Long title with inline details");
+    expect(titleRef.current?.className).toContain(styles.title);
+    expect(descriptionRef.current?.className).toContain(styles.description);
+  });
+
+  it("forwards all native part refs, classes and slots while consuming the stable separator API", () => {
+    const groupRef = React.createRef<HTMLDivElement>();
+    const mediaRef = React.createRef<HTMLDivElement>();
+    const contentRef = React.createRef<HTMLDivElement>();
+    const actionsRef = React.createRef<HTMLDivElement>();
+    const headerRef = React.createRef<HTMLDivElement>();
+    const footerRef = React.createRef<HTMLDivElement>();
+    const separatorRef = React.createRef<HTMLDivElement>();
+    render(
+      <ItemGroup
+        role='list'
+        ref={groupRef}
+        className='custom-group'>
+        <Item role='listitem'>
+          <ItemHeader
+            ref={headerRef}
+            className='custom-header'>
+            Header
+          </ItemHeader>
+          <ItemMedia
+            ref={mediaRef}
+            className='custom-media'>
+            Media
+          </ItemMedia>
+          <ItemContent
+            ref={contentRef}
+            className='custom-content'>
+            Content
+          </ItemContent>
+          <ItemActions
+            ref={actionsRef}
+            className='custom-actions'>
+            Actions
+          </ItemActions>
+          <ItemFooter
+            ref={footerRef}
+            className='custom-footer'>
+            Footer
+          </ItemFooter>
+        </Item>
+        <ItemSeparator
+          ref={separatorRef}
+          className='custom-separator'
+          data-testid='stable-separator'
+        />
+      </ItemGroup>,
+    );
+
+    expect(groupRef.current).toBe(screen.getByRole("list"));
+    expect(groupRef.current).toHaveAttribute("data-slot", "item-group");
+    expect(groupRef.current).toHaveClass("custom-group");
+    expect(screen.getByRole("listitem")).toHaveAttribute("data-slot", "item");
+    for (const [ref, name, slot, className] of [
+      [headerRef, "Header", "item-header", "custom-header"],
+      [mediaRef, "Media", "item-media", "custom-media"],
+      [contentRef, "Content", "item-content", "custom-content"],
+      [actionsRef, "Actions", "item-actions", "custom-actions"],
+      [footerRef, "Footer", "item-footer", "custom-footer"],
+    ] as const) {
+      expect(ref.current).toBe(screen.getByText(name));
+      expect(ref.current).toHaveAttribute("data-slot", slot);
+      expect(ref.current).toHaveClass(className);
+    }
+    expect(separatorRef.current).toBe(screen.getByTestId("stable-separator"));
+    expect(separatorRef.current).toHaveAttribute("data-slot", "item-separator");
+    expect(separatorRef.current).toHaveAttribute("data-orientation", "horizontal");
+    expect(separatorRef.current).toHaveAttribute("role", "separator");
+    expect(separatorRef.current).toHaveClass("custom-separator");
+  });
+
   it("renders Item compound components with children, custom classes, and forwarded refs", () => {
     // Arrange
-    const itemGroupRef = {current: null as HTMLDivElement | null};
-    const itemRef = {current: null as HTMLDivElement | null};
+    const itemGroupRef = React.createRef<HTMLDivElement>();
+    const itemRef = React.createRef<HTMLDivElement>();
 
     // Act
     render(
@@ -50,6 +596,7 @@ describe("Item", () => {
 
     expect(itemGroup).toHaveClass("item-group-class");
     expect(item).toHaveClass("item-class");
+    expect(item.className).toContain(styles.sizeDefault);
     expect(screen.getByText("Alex Olariu")).toBeInTheDocument();
     expect(screen.getByText("Frontend Engineer")).toBeInTheDocument();
     expect(screen.getByRole("button", {name: "Invite"})).toBeInTheDocument();
@@ -57,17 +604,18 @@ describe("Item", () => {
     expect(itemRef.current).toBe(item);
   });
 
-  it("renders Item with asChild prop, cloning child element with merged props", () => {
+  it("renders Item with a render target and merged props", () => {
     // Arrange & Act
     render(
       <Item
-        asChild
         className='custom-item'
-        data-testid='item-wrapper'>
-        <article className='child-class'>
-          <span>Child content</span>
-        </article>
-      </Item>,
+        data-testid='item-wrapper'
+        render={
+          <article className='child-class'>
+            <span>Child content</span>
+          </article>
+        }
+      />,
     );
 
     // Assert
@@ -92,6 +640,7 @@ describe("Item", () => {
 
     // Assert
     expect(screen.getByTestId("item-outline")).toHaveAttribute("data-variant", "outline");
+    expect(screen.getByTestId("item-outline").className).toContain(styles.outline);
   });
 
   it("renders Item with muted variant", () => {
@@ -106,6 +655,7 @@ describe("Item", () => {
 
     // Assert
     expect(screen.getByTestId("item-muted")).toHaveAttribute("data-variant", "muted");
+    expect(screen.getByTestId("item-muted").className).toContain(styles.muted);
   });
 
   it("renders Item with sm size", () => {
@@ -120,6 +670,7 @@ describe("Item", () => {
 
     // Assert
     expect(screen.getByTestId("item-sm")).toHaveAttribute("data-size", "sm");
+    expect(screen.getByTestId("item-sm").className).toContain(styles.sizeSm);
   });
 
   it("renders ItemFooter component", () => {
@@ -174,6 +725,7 @@ describe("Item", () => {
     // Assert
     const media = screen.getByTestId("item-media-icon");
     expect(media).toHaveAttribute("data-variant", "icon");
+    expect(media.className).toContain(styles.mediaIcon);
   });
 
   it("renders ItemMedia with image variant", () => {
@@ -195,5 +747,6 @@ describe("Item", () => {
     // Assert
     const media = screen.getByTestId("item-media-image");
     expect(media).toHaveAttribute("data-variant", "image");
+    expect(media.className).toContain(styles.mediaImage);
   });
 });

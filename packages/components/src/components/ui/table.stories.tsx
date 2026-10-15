@@ -1,287 +1,160 @@
+"use client";
+
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "./table";
+const storyStyles = `
+.ac-story-table-storyStriped :where(tbody > tr:nth-child(odd)) {
+  background-color: var(--ac-muted);
+}
+
+.ac-story-table-storyCompact th,
+.ac-story-table-storyCompact td {
+  height: auto;
+  padding: var(--ac-space-1) var(--ac-space-2);
+}
+`;
+
+const storyClasses = {
+  storyStriped: "ac-story-table-storyStriped",
+  storyCompact: "ac-story-table-storyCompact",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Table",
   component: Table,
   tags: ["autodocs"],
-  parameters: {
-    layout: "padded",
-  },
+  parameters: {layout: "padded"},
 } satisfies Meta<typeof Table>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Basic table with header and body.
- */
-export const Default: Story = {
-  render: () => (
-    <Table>
+const items = [
+  {name: "Widget A", quantity: 5},
+  {name: "Widget B", quantity: 3},
+  {name: "Widget C", quantity: 2},
+] as const;
+
+function SampleTable({
+  caption = false,
+  footer = false,
+  className,
+}: Readonly<{caption?: boolean; footer?: boolean; className?: string}>): React.JSX.Element {
+  return (
+    <Table className={className}>
+      {caption && <TableCaption>Items in the collection</TableCaption>}
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Role</TableHead>
+          <TableHead scope='col'>Item</TableHead>
+          <TableHead scope='col'>Quantity</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow>
-          <TableCell>John Doe</TableCell>
-          <TableCell>john@example.com</TableCell>
-          <TableCell>Admin</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Jane Smith</TableCell>
-          <TableCell>jane@example.com</TableCell>
-          <TableCell>User</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Bob Johnson</TableCell>
-          <TableCell>bob@example.com</TableCell>
-          <TableCell>User</TableCell>
-        </TableRow>
+        {items.map((item) => (
+          <TableRow key={item.name}>
+            <TableCell>{item.name}</TableCell>
+            <TableCell>{item.quantity}</TableCell>
+          </TableRow>
+        ))}
       </TableBody>
+      {footer && (
+        <TableFooter>
+          <TableRow>
+            <TableCell>Total</TableCell>
+            <TableCell>10</TableCell>
+          </TableRow>
+        </TableFooter>
+      )}
     </Table>
-  ),
-};
+  );
+}
 
-/**
- * Table with caption.
- */
-export const WithCaption: Story = {
-  render: () => (
+export const Default: Story = {render: (): React.JSX.Element => <SampleTable />};
+export const WithCaption: Story = {render: (): React.JSX.Element => <SampleTable caption />};
+export const WithFooter: Story = {render: (): React.JSX.Element => <SampleTable footer />};
+export const Striped: Story = {render: (): React.JSX.Element => <SampleTable className={storyClasses.storyStriped} />};
+export const Compact: Story = {render: (): React.JSX.Element => <SampleTable className={storyClasses.storyCompact} />};
+
+function ExpandableTable(): React.JSX.Element {
+  const [expanded, setExpanded] = React.useState(false);
+  const detailsId = React.useId();
+  return (
     <Table>
-      <TableCaption>Recent invoices for January 2024</TableCaption>
+      <TableCaption>A row highlights when its native control is expanded.</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead>Invoice</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className='text-right'>Amount</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell>INV-001</TableCell>
-          <TableCell>Paid</TableCell>
-          <TableCell className='text-right'>$250.00</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>INV-002</TableCell>
-          <TableCell>Pending</TableCell>
-          <TableCell className='text-right'>$150.00</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  ),
-};
-
-/**
- * Table with footer.
- */
-export const WithFooter: Story = {
-  render: () => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Product</TableHead>
-          <TableHead className='text-right'>Quantity</TableHead>
-          <TableHead className='text-right'>Price</TableHead>
+          <TableHead scope='col'>Item</TableHead>
+          <TableHead scope='col'>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow>
           <TableCell>Widget A</TableCell>
-          <TableCell className='text-right'>5</TableCell>
-          <TableCell className='text-right'>$50.00</TableCell>
+          <TableCell>
+            <Button
+              size='sm'
+              variant='outline'
+              aria-expanded={expanded}
+              aria-controls={detailsId}
+              onClick={() => setExpanded(!expanded)}>
+              {expanded ? "Hide details" : "Show details"}
+            </Button>
+          </TableCell>
         </TableRow>
-        <TableRow>
+        {expanded && (
+          <TableRow id={detailsId}>
+            <TableCell colSpan={2}>Five units are available.</TableCell>
+          </TableRow>
+        )}
+        <TableRow data-state='selected'>
           <TableCell>Widget B</TableCell>
-          <TableCell className='text-right'>3</TableCell>
-          <TableCell className='text-right'>$30.00</TableCell>
+          <TableCell>Selected row</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+}
+export const WithActions: Story = {render: (): React.JSX.Element => <ExpandableTable />};
+export const ExpandedRows: Story = WithActions;
+
+export const NativeAttributes: Story = {
+  render: (): React.JSX.Element => (
+    <Table
+      cellPadding={4}
+      cellSpacing={0}
+      aria-label='Native table attribute example'
+      dir='rtl'>
+      <TableHeader>
+        <TableRow>
+          <TableHead
+            id='native-name'
+            scope='col'
+            abbr='Item'>
+            Item name
+          </TableHead>
+          <TableHead scope='col'>Quantity</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          <TableCell headers='native-name'>Widget</TableCell>
+          <TableCell rowSpan={1}>5</TableCell>
         </TableRow>
       </TableBody>
       <TableFooter>
         <TableRow>
-          <TableCell colSpan={2}>Total</TableCell>
-          <TableCell className='text-right'>$80.00</TableCell>
+          <TableCell colSpan={2}>One item</TableCell>
         </TableRow>
       </TableFooter>
     </Table>
   ),
-};
-
-/**
- * Table with alternating row colors (striped).
- */
-function StripedTable(): React.JSX.Element {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Department</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow style={{backgroundColor: "#f9fafb"}}>
-          <TableCell>Alice Johnson</TableCell>
-          <TableCell>Engineering</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Bob Smith</TableCell>
-          <TableCell>Marketing</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-        <TableRow style={{backgroundColor: "#f9fafb"}}>
-          <TableCell>Carol White</TableCell>
-          <TableCell>Sales</TableCell>
-          <TableCell>Away</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>David Brown</TableCell>
-          <TableCell>Support</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-        <TableRow style={{backgroundColor: "#f9fafb"}}>
-          <TableCell>Emma Davis</TableCell>
-          <TableCell>Engineering</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  );
-}
-
-export const Striped: Story = {
-  render: () => <StripedTable />,
-};
-
-/**
- * Table with tighter padding (compact variant).
- */
-function CompactTable(): React.JSX.Element {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead style={{padding: "6px 12px"}}>ID</TableHead>
-          <TableHead style={{padding: "6px 12px"}}>Name</TableHead>
-          <TableHead style={{padding: "6px 12px"}}>Email</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell style={{padding: "6px 12px"}}>001</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>John Doe</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>john@example.com</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{padding: "6px 12px"}}>002</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>Jane Smith</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>jane@example.com</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{padding: "6px 12px"}}>003</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>Bob Johnson</TableCell>
-          <TableCell style={{padding: "6px 12px"}}>bob@example.com</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  );
-}
-
-export const Compact: Story = {
-  render: () => <CompactTable />,
-};
-
-/**
- * Table rows with action buttons.
- */
-function TableWithActions(): React.JSX.Element {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>User</TableHead>
-          <TableHead>Role</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead style={{textAlign: "right"}}>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell>John Doe</TableCell>
-          <TableCell>Admin</TableCell>
-          <TableCell>Active</TableCell>
-          <TableCell style={{textAlign: "right"}}>
-            <div style={{display: "flex", gap: "8px", justifyContent: "flex-end"}}>
-              <button
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "4px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                }}>
-                Edit
-              </button>
-              <button
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "12px",
-                  border: "1px solid #dc2626",
-                  borderRadius: "4px",
-                  backgroundColor: "white",
-                  color: "#dc2626",
-                  cursor: "pointer",
-                }}>
-                Delete
-              </button>
-            </div>
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Jane Smith</TableCell>
-          <TableCell>User</TableCell>
-          <TableCell>Active</TableCell>
-          <TableCell style={{textAlign: "right"}}>
-            <div style={{display: "flex", gap: "8px", justifyContent: "flex-end"}}>
-              <button
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "4px",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                }}>
-                Edit
-              </button>
-              <button
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "12px",
-                  border: "1px solid #dc2626",
-                  borderRadius: "4px",
-                  backgroundColor: "white",
-                  color: "#dc2626",
-                  cursor: "pointer",
-                }}>
-                Delete
-              </button>
-            </div>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  );
-}
-
-export const WithActions: Story = {
-  render: () => <TableWithActions />,
 };

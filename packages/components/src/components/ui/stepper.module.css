@@ -1,5 +1,7 @@
 .stepper {
   display: flex;
+  min-inline-size: 0;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--ac-space-2);
 }
@@ -11,6 +13,8 @@
 .step {
   position: relative;
   display: flex;
+  min-inline-size: 0;
+  max-inline-size: 100%;
   align-items: center;
   gap: var(--ac-space-2);
 }
@@ -39,6 +43,8 @@
 }
 
 .step[data-state="active"] .indicator {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
   border-color: var(--ac-primary);
   color: var(--ac-primary);
 }
@@ -65,10 +71,42 @@
 }
 
 .label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   font-size: var(--ac-text-sm);
   color: var(--ac-foreground);
 }
 
 .step[data-state="upcoming"] .label {
   color: var(--ac-muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .indicator {
+    border-color: CanvasText;
+  }
+
+  .step[data-state="completed"] .indicator {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  .step[data-state="active"] .indicator {
+    border-color: Highlight;
+    color: CanvasText;
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .connector,
+  .step[data-state="completed"] .connector {
+    background-color: CanvasText;
+  }
 }

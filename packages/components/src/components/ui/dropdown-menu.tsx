@@ -1,633 +1,515 @@
 "use client";
 
 import {Menu as BaseMenu} from "@base-ui/react/menu";
-import {mergeProps} from "@base-ui/react/merge-props";
+import {useDirection} from "@base-ui/react/direction-provider";
+import type {ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import {Check, ChevronRight, Circle} from "lucide-react";
 import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./dropdown-menu.module.css";
 
-interface DropdownMenuProps extends React.ComponentPropsWithRef<typeof BaseMenu.Root> {}
+/** Readonly state and payload options owned by the Menu root. */
+export type DropdownMenuProps<Payload = unknown> = Readonly<BaseMenu.Root.Props<Payload>>;
+/** Accessible group props including primitive state-aware render and class callbacks. */
+export type DropdownMenuGroupProps = Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Group>>;
+/** Real Portal props including container, keepMounted, render and DOM ref. */
+export type DropdownMenuPortalProps = Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Portal>>;
+/** Native radio-group props, retaining upstream value and event-detail types. */
+export type DropdownMenuRadioGroupProps = Readonly<React.ComponentPropsWithRef<typeof BaseMenu.RadioGroup>>;
+/** Native submenu-root options; no additional GUI state is introduced. */
+export type DropdownMenuSubProps = Readonly<BaseMenu.SubmenuRoot.Props>;
+/** Primitive trigger props, including polymorphic React 19 HTMLElement refs. */
+export type DropdownMenuTriggerProps<Payload = unknown> = Readonly<
+  Omit<BaseMenu.Trigger.Props<Payload>, "ref"> & React.RefAttributes<HTMLElement>
+>;
+/** Primitive submenu trigger options with logical inset spacing. */
+export type DropdownMenuSubTriggerProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger> & {
+    /** Align text with indicator rows. @default false */
+    inset?: boolean;
+  }
+>;
 
-interface DropdownMenuTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
+type DropdownMenuPositioningProps = Omit<BaseMenu.Positioner.Props, keyof BaseMenu.Popup.Props>;
+type MenuDataAttributes = {readonly [key: `data-${string}`]: string | number | boolean | undefined};
+
+/** Popup props target the role-bearing menu; placement options target its Positioner. */
+export type DropdownMenuContentProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.Popup>
+    & DropdownMenuPositioningProps & {
+      /** Additional Positioner DOM, ref, render and state-class props. */
+      positionerProps?: Readonly<
+        Omit<React.ComponentPropsWithRef<typeof BaseMenu.Positioner>, keyof DropdownMenuPositioningProps | "children"> & MenuDataAttributes
+      >;
+      /** Portal options. Nested modal menus should target the enclosing primitive Portal, not an external sibling. */
+      portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseMenu.Portal>, "children"> & MenuDataAttributes>;
+    }
+>;
+/** Primitive item props with presentation-only variants. */
+export type DropdownMenuItemProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.Item> & {
+    /** Align text with indicator rows. @default false */
+    inset?: boolean;
+    /** Visual treatment without changing activation behavior. @default "default" */
+    variant?: "default" | "destructive";
+  }
+>;
+/** Native checkbox options; checked values and change details are not adapted. */
+export type DropdownMenuCheckboxItemProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.CheckboxItem> & {
+    /** Add a further logical inset to the indicator row. @default false */
+    inset?: boolean;
+  }
+>;
+/** Native radio options with optional logical inset spacing. */
+export type DropdownMenuRadioItemProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.RadioItem> & {
+    /** Add a further logical inset to the indicator row. @default false */
+    inset?: boolean;
+  }
+>;
+/** Primitive group label props with optional logical inset spacing. */
+export type DropdownMenuLabelProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseMenu.GroupLabel> & {
+    /** Align text with indicator rows. @default false */
+    inset?: boolean;
+  }
+>;
+/** Primitive separator props. */
+export type DropdownMenuSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Separator>>;
+/** Presentation-only shortcut props with native span refs and render composition. */
+export type DropdownMenuShortcutProps = Readonly<
+  React.ComponentPropsWithRef<"span"> & {
+    /** Replace the span while preserving its props. */
+    render?: useRender.RenderProp<Record<string, never>>;
+  }
+>;
+
+type MenuRender<State> = React.ReactElement | ComponentRenderFn<HTMLProps, State> | undefined;
+
+function getMenuRenderElement<State>(render: MenuRender<State>): React.ReactElement<{children?: React.ReactNode}> | undefined {
+  if (typeof render === "function") return undefined;
+  // eslint-disable-next-line react-x/no-children-to-array -- React's public resolver unwraps Flight-lazy render elements supported by Base UI.
+  const [element] = React.Children.toArray(render);
+  return React.isValidElement<{children?: React.ReactNode}>(element) ? element : undefined;
 }
 
-interface DropdownMenuSubTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
+function getMenuChildren<State>(children: React.ReactNode, render: MenuRender<State>): React.ReactNode {
+  return children === undefined ? getMenuRenderElement(render)?.props.children : children;
 }
 
-interface DropdownMenuContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Positioner>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
+function withMenuChildren<State>(render: MenuRender<State>, children: React.ReactNode): MenuRender<State> {
+  if (render === undefined || typeof render === "function") return render;
+  return function renderMenuElement(elementProps): React.ReactElement {
+    return (
+      <MenuElement
+        render={render}
+        elementProps={elementProps}>
+        {children}
+      </MenuElement>
+    );
+  };
 }
 
-interface DropdownMenuItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Item>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
+/** Normalization belongs to a mounted primitive, never an unopened popup wrapper. */
+function MenuElement({
+  render,
+  elementProps,
+  children,
+}: Readonly<{render: React.ReactElement; elementProps: HTMLProps; children: React.ReactNode}>): React.ReactElement {
+  const element = getMenuRenderElement(render);
+  if (!element || element.type === React.Fragment) throw new TypeError("Menu render requires a single non-Fragment React element.");
+  // eslint-disable-next-line react-x/no-clone-element -- replace compound children while preserving primitive ref/event composition.
+  return useRender({render: React.cloneElement(element, {children}), props: {...elementProps}});
 }
 
-interface DropdownMenuCheckboxItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.CheckboxItem>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface DropdownMenuRadioItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.RadioItem>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface DropdownMenuLabelProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.GroupLabel>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Applies inset spacing to align nested content.
-   * @default false
-   */
-  inset?: boolean;
-}
-
-interface DropdownMenuSeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Separator>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
-
-interface DropdownMenuShortcutProps extends React.ComponentPropsWithRef<"span"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-  /**
-   * Overrides the default rendered element while preserving component behavior.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /**
-   * Enables child element composition instead of rendering the default wrapper.
-   * @default false
-   * @deprecated Prefer Base UI's `render` prop.
-   */
-  asChild?: boolean;
-}
-
-/**
- * Coordinates dropdown menu state and accessibility behavior.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <DropdownMenu>Content</DropdownMenu>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenu(props: Readonly<DropdownMenu.Props>): React.ReactElement {
+/** Coordinates Menu state, accessible relationships and payload children without a DOM wrapper. */
+function DropdownMenu<Payload>(props: Readonly<DropdownMenu.Props<Payload>>): React.JSX.Element {
   return <BaseMenu.Root {...props} />;
 }
 
-/**
- * Renders the dropdown menu group.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <DropdownMenuGroup>Content</DropdownMenuGroup>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
+/** Groups related menu items using the primitive's accessible group semantics. */
 const DropdownMenuGroup = BaseMenu.Group;
-/**
- * Provides the dropdown menu portal container.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <DropdownMenuPortal>Content</DropdownMenuPortal>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
+/** Hosts menu content in the primitive portal, supporting custom document containers. */
 const DropdownMenuPortal = BaseMenu.Portal;
-/**
- * Coordinates the dropdown menu radio group.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <DropdownMenuRadioGroup>Content</DropdownMenuRadioGroup>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
+/** Preserves native radio values (including null) and cancellable change details. */
 const DropdownMenuRadioGroup = BaseMenu.RadioGroup;
-/**
- * Coordinates the dropdown menu sub.
- *
- * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Preserves the underlying primitive API for advanced composition
- *
- * @example
- * ```tsx
- * <DropdownMenuSub>Content</DropdownMenuSub>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-const DropdownMenuSub: typeof BaseMenu.SubmenuRoot & {displayName?: string} = BaseMenu.SubmenuRoot;
+/** Coordinates nested Menu state and keyboard behavior. */
+const DropdownMenuSub = BaseMenu.SubmenuRoot;
 
 /**
- * Renders the dropdown menu trigger.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuTrigger>Content</DropdownMenuTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
+ * Opens a menu with the primitive's native button behavior by default.
+ * Set nativeButton={false} for non-button render targets.
  */
-const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTrigger.Props>(
-  (props: Readonly<DropdownMenuTrigger.Props>, ref): React.ReactElement => {
-    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-    const {asChild = false, children, className, render, ...otherProps} = props;
-    const renderProp = asChild && React.isValidElement(children) ? children : render;
+function DropdownMenuTrigger<Payload = unknown>(props: Readonly<DropdownMenuTrigger.Props<Payload>>): React.JSX.Element {
+  const {ref, children, render, nativeButton, className, ...otherProps} = props;
+  const primitiveRef = useMergedRefs(ref);
+  return (
+    <BaseMenu.Trigger
+      data-slot='dropdown-menu-trigger'
+      ref={primitiveRef}
+      className={(state) => cn(styles.trigger, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      {...otherProps}>
+      {children}
+    </BaseMenu.Trigger>
+  );
+}
+DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
 
-    return (
-      <BaseMenu.Trigger
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: renderProp as never,
-          props: mergeProps({className}, {}),
-        })}>
-        {renderProp ? undefined : children}
-      </BaseMenu.Trigger>
-    );
-  },
-);
-
-/**
- * Renders the dropdown menu sub trigger.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuSubTrigger>Content</DropdownMenuSubTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuSubTrigger(props: Readonly<DropdownMenuSubTrigger.Props>): React.ReactElement {
+/** Opens a submenu, retaining primitive render/class state and a direction-aware decorative arrow. */
+const DropdownMenuSubTrigger = ({ref, ...props}: Readonly<DropdownMenuSubTrigger.Props>): React.ReactElement => {
+  const direction = useDirection();
   const {className, children, inset = false, render, ...otherProps} = props;
-
+  const content = (
+    <>
+      {getMenuChildren(children, render)}
+      <ChevronRight
+        aria-hidden='true'
+        data-direction={direction}
+        className={styles.subTriggerIcon}
+      />
+    </>
+  );
   return (
     <BaseMenu.SubmenuTrigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.subTrigger, inset && styles.inset, className)}, {}),
-      })}>
-      {children}
-      <ChevronRight className={styles.subTriggerIcon} />
+      data-slot='dropdown-menu-sub-trigger'
+      data-inset={inset}
+      ref={ref}
+      className={(state) =>
+        cn(styles.item, styles.subTrigger, inset && styles.inset, typeof className === "function" ? className(state) : className)
+      }
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
+      {content}
     </BaseMenu.SubmenuTrigger>
   );
-}
+};
+DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
 
 /**
- * Renders the dropdown menu sub content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuSubContent>Content</DropdownMenuSubContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
+ * Portals and positions the role-bearing Popup.
+ * Popup ARIA, event handlers, render state, class callbacks, ref and finalFocus
+ * never land on the positioning container. Defaults: bottom/start, offsets 4/0.
  */
-function DropdownMenuSubContent(props: Readonly<DropdownMenuContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
+const DropdownMenuContent = ({ref, ...props}: Readonly<DropdownMenuContent.Props>): React.ReactElement => {
+  const direction = useDirection();
+  const {
+    align = "start",
+    alignOffset = 0,
+    side = "bottom",
+    sideOffset = 4,
+    anchor,
+    positionMethod,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    arrowPadding,
+    disableAnchorTracking,
+    collisionAvoidance,
+    positionerProps,
+    portalProps,
+    className,
+    dir = direction,
+    children,
+    render,
+    ...popupProps
+  } = props;
+  const {className: positionerClassName, render: positionerRender, ...positionerNativeProps} = positionerProps ?? {};
+  const {render: portalRender, ...portalNativeProps} = portalProps ?? {};
+  const popup = (
+    <BaseMenu.Popup
+      data-slot='dropdown-menu-content'
+      ref={ref}
+      dir={dir}
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      className={(state) => cn(styles.content, typeof className === "function" ? className(state) : className)}
+      {...popupProps}>
+      {children}
+    </BaseMenu.Popup>
+  );
+  const positioner = (
     <BaseMenu.Positioner
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        props: mergeProps({className: styles.positioner}, {}),
-      })}>
-      <BaseMenu.Popup
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.content, className)}, {}),
-        })}>
-        {children}
-      </BaseMenu.Popup>
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      anchor={anchor}
+      positionMethod={positionMethod}
+      collisionBoundary={collisionBoundary}
+      collisionPadding={collisionPadding}
+      sticky={sticky}
+      arrowPadding={arrowPadding}
+      disableAnchorTracking={disableAnchorTracking}
+      collisionAvoidance={collisionAvoidance}
+      render={withMenuChildren(positionerRender, popup)}
+      className={(state) =>
+        cn(styles.positioner, typeof positionerClassName === "function" ? positionerClassName(state) : positionerClassName)
+      }
+      {...positionerNativeProps}>
+      {popup}
     </BaseMenu.Positioner>
   );
-}
+  return (
+    <DropdownMenuPortal
+      render={withMenuChildren(portalRender, null)}
+      {...portalNativeProps}>
+      {positioner}
+    </DropdownMenuPortal>
+  );
+};
+DropdownMenuContent.displayName = "DropdownMenuContent";
 
-/**
- * Renders the dropdown menu content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuContent>Content</DropdownMenuContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-const DropdownMenuContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.Popup>, DropdownMenuContent.Props>(
-  (props: Readonly<DropdownMenuContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+/** Portaled submenu Popup. Defaults: inline-end/start (right in LTR), offsets 0/-3. */
+const DropdownMenuSubContent = ({ref, ...props}: Readonly<DropdownMenuSubContent.Props>): React.ReactElement => {
+  const {align = "start", alignOffset = -3, side = "inline-end", sideOffset = 0, ...otherProps} = props;
+  return (
+    <DropdownMenuContent
+      data-slot='dropdown-menu-sub-content'
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      ref={ref}
+      {...otherProps}
+    />
+  );
+};
+DropdownMenuSubContent.displayName = "DropdownMenuSubContent";
 
-    return (
-      <DropdownMenuPortal>
-        <BaseMenu.Positioner
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            props: mergeProps({className: styles.positioner}, {}),
-          })}>
-          <BaseMenu.Popup
-            ref={ref}
-            render={useRender({
-              defaultTagName: "div",
-              render: render as never,
-              props: mergeProps({className: cn(styles.content, className)}, {}),
-            })}>
-            {children}
-          </BaseMenu.Popup>
-        </BaseMenu.Positioner>
-      </DropdownMenuPortal>
-    );
-  },
-);
-
-/**
- * Renders the dropdown menu item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuItem>Content</DropdownMenuItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuItem(props: Readonly<DropdownMenuItem.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Activates a primitive-owned menu item with optional inset and destructive presentation. */
+const DropdownMenuItem = ({ref, ...props}: Readonly<DropdownMenuItem.Props>): React.ReactElement => {
+  const {children, className, inset = false, variant = "default", render, nativeButton, ...otherProps} = props;
   return (
     <BaseMenu.Item
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: renderProp as never,
-        props: mergeProps({className: cn(styles.item, inset && styles.inset, className)}, {}),
-      })}>
-      {renderProp ? undefined : children}
+      data-slot='dropdown-menu-item'
+      data-inset={inset}
+      data-variant={variant}
+      ref={ref}
+      nativeButton={nativeButton}
+      className={(state) => cn(styles.item, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      {...otherProps}>
+      {children}
     </BaseMenu.Item>
   );
-}
+};
+DropdownMenuItem.displayName = "DropdownMenuItem";
 
-/**
- * Renders the dropdown menu checkbox item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuCheckboxItem>Content</DropdownMenuCheckboxItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuCheckboxItem(props: Readonly<DropdownMenuCheckboxItem.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseMenu.CheckboxItem
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
-      })}>
+/** Toggles the real Menu checkbox; its indicator and label share the render target. */
+const DropdownMenuCheckboxItem = ({ref, ...props}: Readonly<DropdownMenuCheckboxItem.Props>): React.ReactElement => {
+  const {className, children, inset = false, render, ...otherProps} = props;
+  const content = (
+    <>
       <span className={styles.indicatorSlot}>
         <BaseMenu.CheckboxItemIndicator>
-          <Check className={styles.indicatorIcon} />
+          <Check
+            aria-hidden='true'
+            className={styles.indicatorIcon}
+          />
         </BaseMenu.CheckboxItemIndicator>
       </span>
-      {children}
+      {getMenuChildren(children, render)}
+    </>
+  );
+  return (
+    <BaseMenu.CheckboxItem
+      data-slot='dropdown-menu-checkbox-item'
+      data-inset={inset}
+      ref={ref}
+      className={(state) =>
+        cn(
+          styles.item,
+          styles.indicatorItem,
+          inset && styles.indicatorInset,
+          typeof className === "function" ? className(state) : className,
+        )
+      }
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
+      {content}
     </BaseMenu.CheckboxItem>
   );
-}
+};
+DropdownMenuCheckboxItem.displayName = "DropdownMenuCheckboxItem";
 
-/**
- * Renders the dropdown menu radio item.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuRadioItem>Content</DropdownMenuRadioItem>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuRadioItem(props: Readonly<DropdownMenuRadioItem.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseMenu.RadioItem
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
-      })}>
+/** Selects a native Menu radio value with an indicator relative to its own row. */
+const DropdownMenuRadioItem = ({ref, ...props}: Readonly<DropdownMenuRadioItem.Props>): React.ReactElement => {
+  const {className, children, inset = false, render, ...otherProps} = props;
+  const content = (
+    <>
       <span className={styles.indicatorSlot}>
         <BaseMenu.RadioItemIndicator>
-          <Circle className={styles.radioIndicatorIcon} />
+          <Circle
+            aria-hidden='true'
+            className={styles.radioIndicatorIcon}
+          />
         </BaseMenu.RadioItemIndicator>
       </span>
-      {children}
+      {getMenuChildren(children, render)}
+    </>
+  );
+  return (
+    <BaseMenu.RadioItem
+      data-slot='dropdown-menu-radio-item'
+      data-inset={inset}
+      ref={ref}
+      className={(state) =>
+        cn(
+          styles.item,
+          styles.indicatorItem,
+          inset && styles.indicatorInset,
+          typeof className === "function" ? className(state) : className,
+        )
+      }
+      render={withMenuChildren(render, content)}
+      {...otherProps}>
+      {content}
     </BaseMenu.RadioItem>
   );
-}
+};
+DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
 
-/**
- * Renders the dropdown menu label.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuLabel>Content</DropdownMenuLabel>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuLabel(props: Readonly<DropdownMenuLabel.Props>): React.ReactElement {
-  const {className, children, inset = false, render, ...otherProps} = props;
-
+/** Names the surrounding primitive Menu group; not a substitute for Popup aria-label. */
+const DropdownMenuLabel = ({ref, ...props}: Readonly<DropdownMenuLabel.Props>): React.ReactElement => {
+  const {className, children, render, inset = false, ...otherProps} = props;
   return (
     <BaseMenu.GroupLabel
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.label, inset && styles.inset, className)}, {}),
-      })}>
+      data-slot='dropdown-menu-label'
+      data-inset={inset}
+      ref={ref}
+      render={children === undefined ? render : withMenuChildren(render, children)}
+      className={(state) => cn(styles.label, inset && styles.inset, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
     </BaseMenu.GroupLabel>
   );
-}
+};
+DropdownMenuLabel.displayName = "DropdownMenuLabel";
 
-/**
- * Renders the dropdown menu separator.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuSeparator>Content</DropdownMenuSeparator>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuSeparator(props: Readonly<DropdownMenuSeparator.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
-
+/** Separates Menu sections using the real separator primitive and its render state. */
+const DropdownMenuSeparator = ({ref, ...props}: Readonly<DropdownMenuSeparator.Props>): React.ReactElement => {
+  const {className, ...otherProps} = props;
   return (
     <BaseMenu.Separator
+      data-slot='dropdown-menu-separator'
+      ref={ref}
+      className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.separator, className)}, {}),
-      })}
     />
   );
-}
+};
+DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
 
-/**
- * Renders the dropdown menu shortcut.
- *
- * @remarks
- * - Renders a `<span>` element by default
- * - Built on {@link https://base-ui.com/react/components/menu | Base UI Menu}
- * - Supports the `render` prop for element composition
- *
- * @example
- * ```tsx
- * <DropdownMenuShortcut>Content</DropdownMenuShortcut>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
- */
-function DropdownMenuShortcut(props: Readonly<DropdownMenuShortcut.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Displays a trailing shortcut hint; does not register a keyboard shortcut. */
+const DropdownMenuShortcut = ({ref, ...props}: Readonly<DropdownMenuShortcut.Props>): React.ReactElement => {
+  const {children, className, render, ...otherProps} = props;
   return useRender({
     defaultTagName: "span",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.shortcut, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render: children === undefined ? render : withMenuChildren(render, children),
+    props: {
+      "data-slot": "dropdown-menu-shortcut",
+      className: cn(styles.shortcut, className),
+      ...(children === undefined ? {} : {children}),
+      ...otherProps,
+    },
   });
-}
+};
+DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenu {
-  export type Props = DropdownMenuProps;
+  export type Props<Payload = unknown> = DropdownMenuProps<Payload>;
   export type State = BaseMenu.Root.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace DropdownMenuGroup {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = DropdownMenuGroupProps;
+  export type State = BaseMenu.Group.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace DropdownMenuPortal {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = DropdownMenuPortalProps;
+  export type State = BaseMenu.Portal.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace DropdownMenuRadioGroup {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = DropdownMenuRadioGroupProps;
+  export type State = BaseMenu.RadioGroup.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
+namespace DropdownMenuSub {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
+  export type Props = DropdownMenuSubProps;
+  export type State = BaseMenu.SubmenuRoot.State;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuTrigger {
-  export type Props = DropdownMenuTriggerProps;
+  export type Props<Payload = unknown> = DropdownMenuTriggerProps<Payload>;
   export type State = BaseMenu.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuSubTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuSubTriggerProps;
   export type State = BaseMenu.SubmenuTrigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuContentProps;
   export type State = BaseMenu.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuSubContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuContentProps;
   export type State = BaseMenu.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuItemProps;
   export type State = BaseMenu.Item.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuCheckboxItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuCheckboxItemProps;
   export type State = BaseMenu.CheckboxItem.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuRadioItem {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuRadioItemProps;
   export type State = BaseMenu.RadioItem.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuLabel {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuLabelProps;
   export type State = BaseMenu.GroupLabel.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuSeparator {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuSeparatorProps;
   export type State = BaseMenu.Separator.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace API
 namespace DropdownMenuShortcut {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
   export type Props = DropdownMenuShortcutProps;
   export type State = Record<string, never>;
 }
-
-DropdownMenu.displayName = "DropdownMenu";
-DropdownMenuGroup.displayName = "DropdownMenuGroup";
-DropdownMenuPortal.displayName = "DropdownMenuPortal";
-DropdownMenuRadioGroup.displayName = "DropdownMenuRadioGroup";
-DropdownMenuSub.displayName = "DropdownMenuSub";
-DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
-DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
-DropdownMenuSubContent.displayName = "DropdownMenuSubContent";
-DropdownMenuContent.displayName = "DropdownMenuContent";
-DropdownMenuItem.displayName = "DropdownMenuItem";
-DropdownMenuCheckboxItem.displayName = "DropdownMenuCheckboxItem";
-DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
-DropdownMenuLabel.displayName = "DropdownMenuLabel";
-DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
-DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 
 export {
   DropdownMenu,

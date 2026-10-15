@@ -22,75 +22,42 @@
   white-space: nowrap;
 }
 
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  min-height: 100dvh;
-  background-color: rgb(0 0 0 / 0.5);
-  transition: opacity var(--ac-transition-normal);
-  touch-action: none;
-
-  @supports (-webkit-touch-callout: none) {
-    position: absolute;
-  }
-
-  &[data-starting-style],
-  &[data-ending-style] {
-    opacity: 0;
-  }
-}
-
 .dialogPopup {
-  box-sizing: border-box;
-  position: fixed;
-  z-index: 10000;
-  top: 50%;
-  left: 50%;
+  gap: 0;
   display: flex;
   flex-direction: column;
   width: min(34rem, calc(100vw - 2rem));
   max-height: min(90vh, 44rem);
   overflow: hidden;
   padding: 0;
-  border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-lg);
-  background-color: var(--ac-background);
-  color: var(--ac-foreground);
-  box-shadow:
-    0 10px 30px -5px rgb(0 0 0 / 0.1),
-    0 4px 10px -5px rgb(0 0 0 / 0.04);
-  transform: translate(-50%, -50%);
-  transition:
-    opacity var(--ac-transition-normal),
-    transform var(--ac-transition-normal);
-
-  &[data-starting-style],
-  &[data-ending-style] {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
-  }
 }
 
 .inputWrapper {
-  display: flex;
-  align-items: center;
-  padding-inline: var(--ac-space-4);
-  border-bottom: 1px solid var(--ac-border);
+  border-bottom: 1px solid var(--ac-input);
+}
+
+.inputGroup {
+  height: auto;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: transparent;
 }
 
 .searchIcon {
   width: 1.25rem;
   height: 1.25rem;
   flex-shrink: 0;
-  margin-right: var(--ac-space-3);
   opacity: 0.5;
 }
 
 .input {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   height: 3rem;
-  padding-block: var(--ac-space-3);
+  padding: var(--ac-space-3);
   border: 0;
   border-radius: var(--ac-radius-md);
   background-color: transparent;
@@ -100,6 +67,11 @@
 
   &::placeholder {
     color: var(--ac-muted-foreground);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: -2px;
   }
 
   &:disabled {
@@ -151,10 +123,18 @@
   height: 1px;
   margin: var(--ac-space-1) var(--ac-space-1);
   background-color: var(--ac-border);
+
+  &[aria-orientation="vertical"] {
+    width: 1px;
+    height: auto;
+    align-self: stretch;
+  }
 }
 
 .item {
   position: relative;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   display: flex;
   align-items: center;
   gap: var(--ac-space-3);
@@ -184,6 +164,25 @@
   box-shadow: inset 0 0 0 2px var(--ac-ring);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .input:focus-visible,
+  .item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    box-shadow: none;
+  }
+
+  .item[data-selected="true"] {
+    outline: 1px solid Highlight;
+  }
+}
+
 .item svg {
   width: 1.25rem;
   height: 1.25rem;
@@ -196,4 +195,9 @@
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-xs);
   letter-spacing: 0.2em;
+}
+
+.group[hidden],
+.item[hidden] {
+  display: none;
 }

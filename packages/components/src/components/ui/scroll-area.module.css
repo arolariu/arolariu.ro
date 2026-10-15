@@ -7,6 +7,13 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  outline: none;
+}
+
+.viewport:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--ac-ring), transparent 50%);
 }
 
 .content {
@@ -21,27 +28,52 @@
 }
 
 .vertical {
-  width: 0.625rem;
-  height: 100%;
-  padding: 1px;
-  border-left: 1px solid transparent;
+  width: 1.5rem;
 }
 
 .horizontal {
   flex-direction: column;
-  width: 100%;
-  height: 0.625rem;
-  padding: 1px;
-  border-top: 1px solid transparent;
+  height: 1.5rem;
 }
 
 .thumb {
   position: relative;
   flex: 1;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+}
+
+/* Keep the drag hit target 24px wide/high while painting a slimmer thumb. */
+.thumb::before {
+  position: absolute;
+  inset: 0.25rem 0.5rem;
+  content: "";
   border-radius: 999px;
-  background-color: var(--ac-border);
+  background-color: var(--ac-input);
+  pointer-events: none;
+}
+
+.horizontal .thumb::before {
+  inset: 0.5rem 0.25rem;
 }
 
 .corner {
   background-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollbar {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .viewport:focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+
+  .thumb::before {
+    background-color: ButtonText;
+  }
 }

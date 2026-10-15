@@ -24,8 +24,9 @@ src/index.ts
   composition primitives may omit the CSS file.
 - Export every public component and public type from `src/index.ts`.
 - Use `cn()` from `src/lib/utilities.ts` for class composition.
-- Prefer Base UI `render` composition; retain `asChild` only for compatible existing APIs.
-- Use `React.forwardRef` when a component must expose a DOM ref.
+- Use Base UI `render` composition; do not restore removed `asChild` or legacy public adapters.
+- The package is React 19-only. Receive a typed `ref` prop and preserve callback cleanup and object-ref ownership.
+- Apply the component/consumer accessibility contract in `ACCESSIBILITY.md`; emulated tests do not establish full WCAG conformance.
 
 ## Local Verification
 

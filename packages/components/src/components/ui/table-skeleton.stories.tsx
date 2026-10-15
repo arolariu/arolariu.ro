@@ -1,19 +1,65 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {TableSkeleton} from "./table-skeleton";
+const storyStyles = `
+.ac-story-table-skeleton-storyPreview {
+  width: 48rem;
+  max-width: 100%;
+}
+
+.ac-story-table-skeleton-storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-table-skeleton-storyHeading {
+  margin: 0 0 var(--ac-space-4);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-table-skeleton-storyPreview",
+  storyPanel: "ac-story-table-skeleton-storyPanel",
+  storyHeading: "ac-story-table-skeleton-storyHeading",
+} as const;
 
 const meta = {
   title: "Components/Feedback/TableSkeleton",
   component: TableSkeleton,
   tags: ["autodocs"],
+  args: {
+    role: "status",
+    "aria-label": "Loading records",
+  },
+  decorators: [
+    (Story) => (
+      <div className={storyClasses.storyPreview}>
+        <Story />
+      </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   argTypes: {
     rows: {
-      control: {type: "range", min: 1, max: 20, step: 1},
-      description: "Number of body rows rendered beneath the table header placeholders",
+      control: {type: "range", min: 0, max: 20, step: 1},
+      description: "Rows: integer 0–10,000; total cells including the header must be ≤10,000. Demo slider limited to 20.",
     },
     columns: {
-      control: {type: "range", min: 1, max: 10, step: 1},
-      description: "Number of columns rendered for both the header and body rows",
+      control: {type: "range", min: 0, max: 10, step: 1},
+      description: "Columns: integer 0–10,000; total cells including the header must be ≤10,000. Demo slider limited to 10.",
     },
+    showHeader: {control: "boolean", description: "Show the decorative header; its cells contribute to the total limit"},
+    animated: {control: "boolean", description: "Shared Skeleton motion; reduced-motion preferences always keep it static"},
   },
 } satisfies Meta<typeof TableSkeleton>;
 
@@ -50,18 +96,49 @@ export const Wide: Story = {
   },
 };
 
+/** Body placeholders without a header. */
+export const WithoutHeader: Story = {
+  args: {showHeader: false},
+};
+
+/** Zero body rows preserve the decorative header. */
+export const HeaderOnly: Story = {
+  args: {rows: 0},
+};
+
+/** Zero columns preserve empty row shapes, without pretending to be a table. */
+export const ZeroColumns: Story = {
+  args: {columns: 0, rows: 3},
+};
+
+/** Both axes may be zero; the optional header can be omitted too. */
+export const Empty: Story = {
+  args: {rows: 0, columns: 0, showHeader: false},
+};
+
+/** Explicitly static placeholders retain their visible loading surface. */
+export const Static: Story = {
+  args: {animated: false},
+};
+
 /**
  * Table skeleton in a container.
  */
 export const InContainer: Story = {
   render: () => (
-    <div style={{padding: "1.5rem", background: "white", border: "1px solid #e5e7eb", borderRadius: "8px"}}>
-      <h3 style={{marginBottom: "1rem", fontSize: "1.125rem", fontWeight: "600"}}>Data Table</h3>
+    <section
+      className={storyClasses.storyPanel}
+      role='status'
+      aria-labelledby='table-skeleton-heading'>
+      <h2
+        id='table-skeleton-heading'
+        className={storyClasses.storyHeading}>
+        Loading records
+      </h2>
       <TableSkeleton
         rows={8}
         columns={5}
-        aria-label='Loading invoices table'
       />
-    </div>
+    </section>
   ),
 };

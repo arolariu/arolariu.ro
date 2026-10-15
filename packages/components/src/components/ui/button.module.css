@@ -1,10 +1,15 @@
 .button {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  max-inline-size: 100%;
   box-sizing: border-box;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: var(--ac-space-2);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   border-radius: var(--ac-radius-md);
   font-size: var(--ac-text-xs);
   line-height: 1.6;
@@ -54,18 +59,18 @@
 
 .destructive {
   background-color: var(--ac-destructive);
-  color: var(--ac-background);
+  color: var(--ac-destructive-foreground);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 
   @media (hover: hover) {
     &:hover:not([data-disabled]) {
-      background-color: color-mix(in oklch, var(--ac-destructive), transparent 10%);
+      background-color: color-mix(in oklch, var(--ac-destructive), black 10%);
     }
   }
 }
 
 .outline {
-  border: 1px solid var(--ac-border);
+  border: 1px solid var(--ac-input);
   background-color: var(--ac-background);
   color: var(--ac-foreground);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -116,19 +121,31 @@
 
 /* Sizes — Mira compact */
 .sizeDefault {
-  height: var(--ac-size-default);
+  min-block-size: max(24px, var(--ac-size-default));
   padding: var(--ac-space-1) var(--ac-space-3);
 }
 
 .sizeSm {
-  height: var(--ac-size-md);
+  min-block-size: max(24px, var(--ac-size-md));
   padding: var(--ac-space-1) var(--ac-space-2);
   font-size: var(--ac-text-xs);
   border-radius: var(--ac-radius-sm);
 }
 
+.sizeXs {
+  min-block-size: max(24px, var(--ac-size-sm));
+  padding: 0 var(--ac-space-2);
+  font-size: var(--ac-text-xs);
+  border-radius: var(--ac-radius-sm);
+
+  & svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
 .sizeLg {
-  height: var(--ac-size-lg);
+  min-block-size: max(24px, var(--ac-size-lg));
   padding: var(--ac-space-1) var(--ac-space-4);
   font-size: var(--ac-text-sm);
   border-radius: var(--ac-radius-md);
@@ -138,4 +155,56 @@
   width: var(--ac-size-default);
   height: var(--ac-size-default);
   padding: 0;
+}
+
+.sizeIconXs {
+  width: var(--ac-size-sm);
+  height: var(--ac-size-sm);
+  padding: 0;
+  border-radius: var(--ac-radius-sm);
+
+  & svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+}
+
+.sizeIconSm {
+  width: var(--ac-size-md);
+  height: var(--ac-size-md);
+  padding: 0;
+  border-radius: var(--ac-radius-sm);
+}
+
+.sizeIconLg {
+  width: var(--ac-size-lg);
+  height: var(--ac-size-lg);
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .button {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background-color: ButtonFace;
+    box-shadow: none;
+  }
+
+  .button:focus-visible {
+    outline-color: Highlight;
+    outline-offset: 2px;
+  }
+
+  .button[data-disabled],
+  .button:disabled {
+    border-color: GrayText;
+    color: GrayText;
+    opacity: 1;
+  }
 }

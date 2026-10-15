@@ -1,100 +1,120 @@
+import {Calendar, File, Folder, Settings} from "lucide-react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "./command";
+import {Button} from "./button";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "./command";
+const storyStyles = `
+.ac-story-command-story {
+  width: min(28rem, calc(100vw - 2rem));
+  border: 1px solid var(--ac-border);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.ac-story-command-storyControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+  margin-block-end: var(--ac-space-3);
+}
+`;
+
+const storyClasses = {
+  story: "ac-story-command-story",
+  storyControls: "ac-story-command-storyControls",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Command",
   component: Command,
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Native registry engine, not cmdk. Search uses case-insensitive substrings by default. Positive custom scores reorder groups/items with stable ties. Root value controls selection; CommandInput value controls search. Home/End, arrows, Meta endpoints, Alt groups and default Ctrl+n/j/p/k navigate.",
+      },
+    },
   },
 } satisfies Meta<typeof Command>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default command palette with search and items.
- */
+/** Searchable grouped actions, including a disabled native option. */
 export const Default: Story = {
   render: () => (
-    <Command className='w-[450px] rounded-lg border shadow-md'>
-      <CommandInput placeholder='Type a command or search...' />
+    <Command className={storyClasses.story}>
+      <CommandInput
+        placeholder='Type a command or search...'
+        aria-label='Search commands'
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading='Suggestions'>
-          <CommandItem>Calendar</CommandItem>
-          <CommandItem>Search Emoji</CommandItem>
-          <CommandItem>Calculator</CommandItem>
+          <CommandItem value='calendar'>Calendar</CommandItem>
+          <CommandItem value='emoji'>Search Emoji</CommandItem>
+          <CommandItem
+            value='calculator'
+            disabled>
+            Calculator (unavailable)
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Settings'>
-          <CommandItem>Profile</CommandItem>
-          <CommandItem>Billing</CommandItem>
-          <CommandItem>Settings</CommandItem>
+          <CommandItem value='profile'>Profile</CommandItem>
+          <CommandItem value='billing'>Billing</CommandItem>
+          <CommandItem
+            value='settings'
+            keywords={["preferences"]}>
+            Settings
+          </CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
   ),
 };
 
-/**
- * Command palette with icons and keyboard shortcuts.
- */
+/** Icons remain decorative; shortcut text uses the public presentation helper. */
 export const WithIcons: Story = {
   render: () => (
-    <Command className='w-[450px] rounded-lg border shadow-md'>
-      <CommandInput placeholder='Search commands...' />
+    <Command className={storyClasses.story}>
+      <CommandInput aria-label='Search actions' />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading='Actions'>
-          <CommandItem>
-            <svg
-              className='mr-2 h-4 w-4'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 4v16m8-8H4'
-              />
-            </svg>
-            <span>New File</span>
-            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘N</span>
+          <CommandItem value='new-file'>
+            <File aria-hidden='true' />
+            New File<CommandShortcut>⌘N</CommandShortcut>
           </CommandItem>
-          <CommandItem>
-            <svg
-              className='mr-2 h-4 w-4'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-              />
-            </svg>
-            <span>Copy</span>
-            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘C</span>
+          <CommandItem value='new-folder'>
+            <Folder aria-hidden='true' />
+            New Folder<CommandShortcut>⌘F</CommandShortcut>
           </CommandItem>
-          <CommandItem>
-            <svg
-              className='mr-2 h-4 w-4'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'
-              />
-            </svg>
-            <span>Paste</span>
-            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘V</span>
+          <CommandItem value='calendar'>
+            <Calendar aria-hidden='true' />
+            Calendar
+          </CommandItem>
+          <CommandItem value='settings'>
+            <Settings aria-hidden='true' />
+            Settings
           </CommandItem>
         </CommandGroup>
       </CommandList>
@@ -102,292 +122,204 @@ export const WithIcons: Story = {
   ),
 };
 
-/**
- * Command palette with multiple categorized groups.
- */
+/** Alt+arrows jump between registered groups; the pinned group inherits forceMount. */
 export const WithMultipleGroups: Story = {
   render: () => (
-    <Command className='w-[450px] rounded-lg border shadow-md'>
-      <CommandInput placeholder='Search...' />
+    <Command
+      className={storyClasses.story}
+      loop>
+      <CommandInput aria-label='Search grouped actions' />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading='Navigation'>
-          <CommandItem>Dashboard</CommandItem>
-          <CommandItem>Projects</CommandItem>
-          <CommandItem>Team</CommandItem>
-          <CommandItem>Calendar</CommandItem>
+          <CommandItem value='dashboard'>Dashboard</CommandItem>
+          <CommandItem value='projects'>Projects</CommandItem>
         </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Actions'>
-          <CommandItem>Create New Project</CommandItem>
-          <CommandItem>Invite Team Member</CommandItem>
-          <CommandItem>Export Data</CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Settings'>
-          <CommandItem>Profile Settings</CommandItem>
-          <CommandItem>Account Preferences</CommandItem>
-          <CommandItem>Keyboard Shortcuts</CommandItem>
+        <CommandSeparator alwaysRender />
+        <CommandGroup
+          heading='Always available'
+          forceMount>
+          <CommandItem value='help'>Help</CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
   ),
 };
 
-/**
- * Simple command list without search input.
- */
+/** Focusable native options also work without a combobox. */
 export const WithoutSearch: Story = {
   render: () => (
-    <Command className='w-[350px] rounded-lg border shadow-md'>
+    <Command
+      className={storyClasses.story}
+      defaultValue='print'>
       <CommandList>
-        <CommandGroup heading='Quick Actions'>
-          <CommandItem>New Document</CommandItem>
-          <CommandItem>Open Recent</CommandItem>
-          <CommandItem>Save As...</CommandItem>
-          <CommandItem>Print</CommandItem>
+        <CommandGroup heading='Quick actions'>
+          <CommandItem value='new'>New Document</CommandItem>
+          <CommandItem value='recent'>Open Recent</CommandItem>
+          <CommandItem value='print'>Print</CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
   ),
 };
 
-/**
- * Command palette with file, settings, and user categories.
- */
+/** Retained categories and icon presentation without inline or utility styling. */
 export const WithCategories: Story = {
   render: () => (
-    <Command style={{width: "450px", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"}}>
-      <CommandInput placeholder='Search across all categories...' />
+    <Command className={storyClasses.story}>
+      <CommandInput aria-label='Search all categories' />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading='📁 Files'>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-              />
-            </svg>
-            <span>Open File</span>
+        <CommandEmpty>No matching commands.</CommandEmpty>
+        <CommandGroup heading='Files'>
+          <CommandItem value='open-file'>
+            <File aria-hidden='true' />
+            Open File
           </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 4v16m8-8H4'
-              />
-            </svg>
-            <span>New File</span>
-          </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
-              />
-            </svg>
-            <span>New Folder</span>
+          <CommandItem value='new-folder'>
+            <Folder aria-hidden='true' />
+            New Folder
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading='⚙️ Settings'>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
-              />
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-              />
-            </svg>
-            <span>Preferences</span>
+        <CommandGroup heading='Preferences'>
+          <CommandItem value='settings'>
+            <Settings aria-hidden='true' />
+            Settings
           </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'
-              />
-            </svg>
-            <span>Change Password</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='👤 User'>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
-              />
-            </svg>
-            <span>Profile</span>
-          </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
-              />
-            </svg>
-            <span>Sign Out</span>
-          </CommandItem>
+          <CommandItem value='keyboard'>Keyboard Shortcuts</CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
   ),
 };
-
-/**
- * Command palette showing a recently used items section.
- */
+/** Explicit registration order with a selected recent action. */
 export const WithRecentItems: Story = {
   render: () => (
-    <Command style={{width: "450px", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"}}>
-      <CommandInput placeholder='Search files and actions...' />
+    <Command
+      className={storyClasses.story}
+      defaultValue='notes'>
+      <CommandInput aria-label='Search recent documents' />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading='🕐 Recent'>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-              />
-            </svg>
-            <span>project-report.pdf</span>
-            <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>2 hours ago</span>
+        <CommandEmpty>No matching documents.</CommandEmpty>
+        <CommandGroup heading='Recent'>
+          <CommandItem value='report'>
+            Project report<CommandShortcut>2 hours ago</CommandShortcut>
           </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-              />
-            </svg>
-            <span>meeting-notes.txt</span>
-            <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>Yesterday</span>
-          </CommandItem>
-          <CommandItem>
-            <svg
-              style={{marginRight: "8px", width: "16px", height: "16px"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-              />
-            </svg>
-            <span>budget-2024.xlsx</span>
-            <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>3 days ago</span>
+          <CommandItem value='notes'>
+            Meeting notes<CommandShortcut>Yesterday</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading='All Files'>
-          <CommandItem>Documents</CommandItem>
-          <CommandItem>Downloads</CommandItem>
-          <CommandItem>Pictures</CommandItem>
+        <CommandGroup heading='All files'>
+          <CommandItem value='documents'>Documents</CommandItem>
+          <CommandItem value='downloads'>Downloads</CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  ),
+};
+/** Empty live status with an initial nonmatching uncontrolled query. */
+export const Empty: Story = {
+  render: () => (
+    <Command className={storyClasses.story}>
+      <CommandInput
+        defaultValue='zz'
+        aria-label='Search commands'
+      />
+      <CommandList>
+        <CommandEmpty>No commands found. Try a different search.</CommandEmpty>
+        <CommandGroup heading='Suggestions'>
+          <CommandItem value='apple'>Apple</CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
   ),
 };
 
-/**
- * Command palette with custom empty state message.
- */
-export const Empty: Story = {
+function ControlledPalette(): React.JSX.Element {
+  const [search, setSearch] = React.useState("");
+  const [selected, setSelected] = React.useState("apple");
+  const [reject, setReject] = React.useState(false);
+  return (
+    <div>
+      <div className={storyClasses.storyControls}>
+        <Button onClick={() => setSearch("zz")}>No matches</Button>
+        <Button onClick={() => setSearch("app")}>Find apple directly</Button>
+        <Button
+          onClick={() => setReject((current) => !current)}
+          aria-pressed={reject}>
+          Reject proposals
+        </Button>
+      </div>
+      <Command
+        className={storyClasses.story}
+        value={selected}
+        onValueChange={(proposal) => {
+          if (!reject) setSelected(proposal);
+        }}>
+        <CommandInput
+          aria-label='Search fruit'
+          value={search}
+          onValueChange={(proposal) => {
+            if (!reject) setSearch(proposal);
+          }}
+        />
+        <CommandList>
+          <CommandEmpty>No matching fruit.</CommandEmpty>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+            <CommandItem value='banana'>Banana</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+      <output aria-live='polite'>
+        Committed search: {search}; selected: {selected}
+      </output>
+    </div>
+  );
+}
+
+/** Demonstrates direct zz→app recovery and visibly rejected controlled proposals. */
+export const Controlled: Story = {render: () => <ControlledPalette />};
+
+/** Positive score ordering; Second and Third have stable equal scores. */
+export const Scored: Story = {
   render: () => (
-    <Command style={{width: "450px", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"}}>
-      <CommandInput placeholder='Search for commands...' />
+    <Command
+      className={storyClasses.story}
+      filter={(value) => (value === "first" ? 0.2 : 0.9)}>
+      <CommandInput
+        defaultValue='query'
+        aria-label='Search scored commands'
+      />
       <CommandList>
-        <CommandEmpty>
-          <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", padding: "32px 16px"}}>
-            <svg
-              style={{width: "48px", height: "48px", color: "#d1d5db"}}
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'>
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-              />
-            </svg>
-            <div style={{textAlign: "center"}}>
-              <div style={{fontWeight: 500, marginBottom: "4px"}}>No commands found</div>
-              <div style={{fontSize: "14px", color: "#6b7280"}}>Try searching for something else or use different keywords</div>
-            </div>
-          </div>
-        </CommandEmpty>
-        <CommandGroup heading='Suggestions'>
-          <CommandItem>Dashboard</CommandItem>
-          <CommandItem>Settings</CommandItem>
+        <CommandGroup heading='Scored results'>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+          <CommandItem value='third'>Third</CommandItem>
         </CommandGroup>
       </CommandList>
     </Command>
+  ),
+};
+
+/** Real Dialog composition: no automatic/nested Command roots; focus is primitive-owned. */
+export const InDialog: Story = {
+  render: () => (
+    <CommandDialog
+      defaultOpen
+      title='Command palette'
+      description='Search for an action to run.'
+      showCloseButton>
+      <Command>
+        <CommandInput aria-label='Search dialog actions' />
+        <CommandList>
+          <CommandEmpty>No matching actions.</CommandEmpty>
+          <CommandGroup heading='Actions'>
+            <CommandItem value='open'>Open document</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </CommandDialog>
   ),
 };

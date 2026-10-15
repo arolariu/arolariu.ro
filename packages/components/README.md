@@ -35,9 +35,139 @@ for modern applications that demand both beauty and performance._
 - **⚡ Performance Optimized** - Tree-shakeable exports, minimal bundle impact, and source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools
 - **🌙 Flexible Theming** - Light and dark mode via `.dark` or `[data-theme="dark"]`
-- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible, built with RSLib
+- **🚀 Modern Stack** - React 19 only, ESM, SSR compatible, built with RSLib
 
 The current package version is owned by [`package.json`](./package.json).
+
+### Upcoming major: preparation, not publication
+
+This workspace prepares **3.0.0**; passing validation does not mean v3 is available on npm or authorize publication. Read
+[MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes, exact Toast and Command examples,
+retained extensions and historical v0 → v1 guide. Website adoption remains a separate task: the repository website must keep its official
+published **2.4 tarball and runtime calls** until a new artifact is published and its adoption authorized.
+
+The upcoming Base UI minimum remains **`^1.9`**. React and ReactDOM peers are now **`^19`**. Package-owned components receive DOM refs as
+ordinary React 19 props. React 18, `asChild`, deprecated aliases and explicit legacy facades are no longer supported. Existing consumers
+must migrate rather than select a compatibility entrypoint.
+
+The accessibility target is applicable **WCAG 2.2 A/AA**, with the component/application ownership and manual verification requirements
+documented in [ACCESSIBILITY.md](./ACCESSIBILITY.md). An emulated test pass is not full-page conformance.
+
+The earlier React 19-only build, complete workspace coverage, genuine packed contracts, minimum-runtime lanes, configured source lint and
+story graph checks are recorded in [the current verification checkpoint](./MIGRATION.md#react-19-only-verification). The older checkpoints
+below describe earlier preparation artifacts. Private helpers remain blocked public imports; publication, website adoption and complete
+native/assistive acceptance remain separate.
+
+### Required package verification
+
+From this package directory, run:
+
+```powershell
+npm test
+```
+
+The default command builds the package, creates and extracts a real local npm archive, and runs the complete Vitest suite with
+`AROLARIU_COMPONENTS_PACKED_ROOT` set to that extraction. Packed ESM/declaration/style and private-import contracts therefore run in the
+existing release workflow's `npm test` step instead of silently skipping. The command uses the already-installed real peers, performs no
+dependency installation or publication, and removes only its own temporary extraction afterward. Public declarations and story-only payload
+exclusion are checked against actual archive files, not source aliases.
+
+The strict packed-declaration compiler check uses the same deadline as the complete source compiler check, separate from runtime test
+deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
+
+For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
+reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs can skip the four archive contracts when no extraction is
+supplied; they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story
+TypeScript graph, including negative API assertions.
+
+### Caller attribute escape hatch
+
+Remaining native, `data-*`, and ARIA props are applied after component presets, including native `useRender` prop bags. For example,
+`<Alert role="status" aria-live="polite">Saved</Alert>` can replace the default announcement semantics. An explicitly supplied `undefined`
+can clear an optional preset attribute.
+
+Props consumed for composition still retain that contract: `className` is merged, refs keep their shared ownership and cleanup, and
+caller-first cancellable event handlers preserve primitive behavior unless cancelled. Use the documented `render` API for deeper element
+composition. Applications own the resulting accessibility and behavior when overriding native semantics or component state markers.
+
+### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
+
+This checkpoint predates the React 19-only API removal and accessibility changes. Its React 18 results describe the old preparation artifact
+and are not a current support promise.
+
+With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 127 files / 3,147 tests / no skips**, including all **four actual packed contracts** and **93 story-style mount tests**. Start
+**15:21:14 local**, duration **335.46 seconds**. Thresholds and exclusions remain unchanged:
+
+| Metric     | Coverage | Covered / total | Unchanged threshold |
+| ---------- | -------- | --------------- | ------------------- |
+| Statements | 98.35%   | 3765 / 3828     | 95%                 |
+| Branches   | 95.32%   | 2996 / 3143     | 80%                 |
+| Functions  | 99.41%   | 1022 / 1028     | 95%                 |
+| Lines      | 99.24%   | 3571 / 3598     | 95%                 |
+
+The separate real React18 source and packed lanes passed **28 fixtures** each. Story ownership moved **224 classes from 74 production CSS
+Modules** into **80 story-owned style mounts**: actual packed legacy selector occurrences fell **432 → 0**, and uncompressed production
+`dist` CSS decreased **26,551 bytes**. Parent's **74 style graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks
+passed with zero diagnostics.
+
+Independent review (`328aa289`) reported no findings: all four original review items were addressed and the story-style boundary approved.
+Parent's configured full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo
+error reporting and the chart zero-geometry warning remained visible; this is not a warning-free claim.
+
+This is not an all-monorepo or whole-project type pass. The historical 15 hook/story strong-type diagnostic baseline, website
+fixture/build-environment limits, physical-browser acceptance, publication and website adoption are not cleared by this checkpoint.
+
+### Historical initial v3 validation checkpoint — 2026-10-14
+
+The following **3,043-test checkpoint is historical**, preceding the review/style follow-up above; it is not the latest validation.
+
+The parent ran the exact component workspace coverage command with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the real extracted npm artifact,
+not a source proxy:
+
+```bash
+npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
+```
+
+**Exit 0: 126 files / 3,043 tests / no skips**, including all three actual packed contracts. The run started at **10:50:17 local** and
+completed in **333.64 seconds**. Thresholds and exclusions were unchanged:
+
+| Metric     | Coverage | Covered / total | Unchanged threshold |
+| ---------- | -------- | --------------- | ------------------- |
+| Statements | 98.35%   | 3769 / 3832     | 95%                 |
+| Branches   | 95.32%   | 2997 / 3144     | 80%                 |
+| Functions  | 99.41%   | 1025 / 1031     | 95%                 |
+| Lines      | 99.25%   | 3573 / 3600     | 95%                 |
+
+The final scoped review (`a3e8b0b6`) found both Important and all ten Minor findings addressed, zero remaining and zero new Important
+regressions. Parent-reported configured ESLint and Prettier for all **383 changed files** passed; the independent source and actual packed
+React18 lanes each passed **18 fixtures**. This is a component workspace checkpoint, **not an all-monorepo pass**: the known 15 baseline
+hook/story strong-type diagnostics, website unit-fixture/build-environment blocks and physical-browser acceptance remain separate. Expected
+Motion reduced-motion notices and npm configuration warnings are not suppressed; earlier fixture-only corrections resolved React Tabs act
+warnings.
+
+### Canonical APIs only
+
+Storybook-only layout and demo styling is owned and mounted by the corresponding `.stories.tsx` file. Production CSS Modules contain only
+component styling; demo styles are not part of the built or packed library. Story mounting preserves scoped class names without adding
+application style objects or a styling dependency.
+
+- Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
+  `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
+- The callable toast facade and all `Legacy*` components/subpaths are removed. No Sonner export/dependency is introduced.
+- `CommandDialog` is a modal shell containing exactly one explicit `Command`. Command is native substring/custom-score matching, not cmdk.
+- `AlertDialogAction` does not close automatically. Close explicitly after success and retain pending/rejection behavior.
+- Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
+  `Toast` versus `ToastData`; original `DirectionProvider`/`useDirection` with `TextDirection`.
+
+All supported runtime values, public named types and defined component namespaces are explicitly exposed at the root, with short
+component/hook/utility subpaths. Supported non-deprecated chart aliases and existing RHF pass-throughs are retained. Private underscore
+modules may be packed transitively but are blocked as public entrypoints, including through the retained nested dist wildcard.
 
 ## 🚀 Quick Start
 
@@ -49,8 +179,11 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion react-hook-form recharts
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
+
+Install an **actually published** package version. The upcoming v3 examples below are migration preparation, not authorization to install an
+unpublished artifact or replace the website's published dependency.
 
 ### Basic Setup
 
@@ -170,6 +303,9 @@ Explore representative components below. The live public inventory is owned by `
 | **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
 | **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
 
+Upcoming additive families also include `NativeSelect`, exact Base UI direction context, `Attachment`, `Bubble`, `Marker` and `Message`.
+These are domain-independent native/composed display APIs, not upload controls or an AI/chat SDK. Callers supply text, data and policy.
+
 ### 🎛️ Form Controls
 
 | Component       | Description                        | Import                              |
@@ -193,6 +329,10 @@ Explore representative components below. The live public inventory is owned by `
 | **Toast**    | Base UI-backed toast system     | `@arolariu/components/toast`    |
 | **Spinner**  | Loading indicators              | `@arolariu/components/spinner`  |
 
+Card/Form/List/Table skeleton layouts keep their native div refs and defaults. Every count is a finite nonnegative integer ≤ 10,000; table
+total cells **including its optional default-visible header** are also capped at 10,000. Invalid/over-limit inputs throw RangeError before
+allocation, without coercion/clamping. `animated={false}` is explicit static presentation; callers own one loading announcement.
+
 ### 🎪 Animated Backgrounds
 
 | Component               | Description                     | Import                                      |
@@ -210,7 +350,7 @@ Explore representative components below. The live public inventory is owned by `
 
 - `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
 - `tailwindcss` is no longer a peer dependency.
-- `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
+- `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
 - If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
 - CSS custom properties now use the `--ac-*` prefix.
@@ -223,7 +363,7 @@ Explore representative components below. The live public inventory is owned by `
 
 - **Base layer**: [`@base-ui/react`](https://base-ui.com/) provides the primitive building blocks
 - **Composition**: Base UI's `render` prop is the preferred composition API
-- **Backward compatibility**: `asChild` is still supported where available as a shim for Radix-era usage
+- **React 19 contract**: refs are props; deprecated compatibility adapters are not shipped
 
 ### Styling
 
@@ -257,7 +397,7 @@ Explore representative components below. The live public inventory is owned by `
 import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
-import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
+import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ---
@@ -556,6 +696,11 @@ Inspect generated class names, Base UI data attributes, and source-mapped module
 
 **Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and
 better performance.
+
+These browser targets are not fresh physical-engine validation for the upcoming major. Vitest/Happy DOM and CSS parsing do not prove native
+focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech. Packed ESM/types/CSS/client directive
+checks, Storybook/build results and the passing component coverage/review/lint checkpoints are not physical-engine proof. Physical-engine
+risk acceptance, publication and website adoption remain separate release work.
 
 ---
 

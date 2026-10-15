@@ -4,13 +4,17 @@
 
 ## 🎯 Accessibility First
 
-Every component is built on **Base UI** primitives, ensuring:
+Interactive wrappers delegate to **Base UI** where appropriate; static and local extensions use native semantics. The target is applicable
+**WCAG 2.2 Level A and AA**, including:
 
 - Correct ARIA attributes and roles
 - Keyboard navigation support
-- Screen reader compatibility
+- Meaningful names and assistive relationships
 - Focus management
-- Color contrast compliance (WCAG 2.1 AA)
+- Default-theme contrast, reflow, target sizing and user-controlled motion
+
+Primitives and emulated tests are not proof of full-page conformance. Consumers own localized content, alternative text, custom themes and
+valid render composition. Native browser and assistive-technology evaluation remain necessary; see the package's `ACCESSIBILITY.md`.
 
 ## 🎨 Design Tokens
 
@@ -46,7 +50,8 @@ Components follow the **compound component** pattern:
 Every component follows these conventions:
 
 - `className` prop for custom styling
-- `forwardRef` for DOM access
+- Typed React 19 `ref` props for DOM access and callback cleanup
+- Canonical `render` composition, without deprecated child slots or legacy adapters
 - `displayName` for debugging
 - JSDoc for API documentation
 - Co-located tests and stories

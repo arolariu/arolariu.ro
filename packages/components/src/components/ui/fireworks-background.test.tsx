@@ -1,639 +1,370 @@
 import * as React from "react";
-
-import {fireEvent, render, screen} from "@testing-library/react";
-import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  type MotionValue = {
-    get: () => number;
-    on: (event: "change", listener: (latest: number) => void) => () => void;
-    set: (value: number) => void;
-  };
-
-  function createMotionValue(initialValue: number): MotionValue {
-    let currentValue = initialValue;
-    const listeners = new Set<(latest: number) => void>();
-
-    return {
-      get: () => currentValue,
-      on: (_event, listener) => {
-        listeners.add(listener);
-        listener(currentValue);
-
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-      set: (value) => {
-        currentValue = value;
-
-        for (const listener of listeners) {
-          listener(value);
-        }
-      },
-    };
-  }
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-    useMotionValue: (initialValue: number) => ReactModule.useMemo(() => createMotionValue(initialValue), [initialValue]),
-    useSpring: <TValue,>(value: TValue) => value,
-  };
-});
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {act, fireEvent, render, screen} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {FireworksBackground} from "./fireworks-background";
 
-type MockCanvasContext = {
-  arc: ReturnType<typeof vi.fn>;
-  beginPath: ReturnType<typeof vi.fn>;
-  clearRect: ReturnType<typeof vi.fn>;
-  clip: ReturnType<typeof vi.fn>;
-  closePath: ReturnType<typeof vi.fn>;
-  createLinearGradient: ReturnType<typeof vi.fn>;
-  drawImage: ReturnType<typeof vi.fn>;
-  ellipse: ReturnType<typeof vi.fn>;
-  fill: ReturnType<typeof vi.fn>;
-  fillRect: ReturnType<typeof vi.fn>;
-  getImageData: ReturnType<typeof vi.fn>;
-  isPointInPath: ReturnType<typeof vi.fn>;
-  isPointInStroke: ReturnType<typeof vi.fn>;
-  lineTo: ReturnType<typeof vi.fn>;
-  moveTo: ReturnType<typeof vi.fn>;
-  rect: ReturnType<typeof vi.fn>;
-  restore: ReturnType<typeof vi.fn>;
-  save: ReturnType<typeof vi.fn>;
-  scale: ReturnType<typeof vi.fn>;
-  stroke: ReturnType<typeof vi.fn>;
-};
-
-const mockCanvasContext: MockCanvasContext = {
-  arc: vi.fn(),
-  beginPath: vi.fn(),
+let box = new DOMRect(100, 50, 200, 100);
+let reduced = false;
+let media: MediaQueryList;
+let observers: ResizeBoundary[] = [];
+let views: ViewBoundary[] = [];
+let frames = new Map<number, FrameRequestCallback>();
+let timers = new Map<number, () => void>();
+let nextId = 0;
+const context = {
   clearRect: vi.fn(),
-  clip: vi.fn(),
-  closePath: vi.fn(),
-  createLinearGradient: vi.fn(() => ({
-    addColorStop: vi.fn(),
-  })),
-  drawImage: vi.fn(),
-  ellipse: vi.fn(),
-  fill: vi.fn(),
-  fillRect: vi.fn(),
-  getImageData: vi.fn(() => ({
-    data: new Uint8ClampedArray(400),
-  })),
-  isPointInPath: vi.fn(() => false),
-  isPointInStroke: vi.fn(() => false),
-  lineTo: vi.fn(),
-  moveTo: vi.fn(),
-  rect: vi.fn(),
-  restore: vi.fn(),
   save: vi.fn(),
-  scale: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
   stroke: vi.fn(),
-};
-
-beforeAll(() => {
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => mockCanvasContext as unknown as CanvasRenderingContext2D);
-  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockImplementation(
-    () =>
-      ({
-        bottom: 120,
-        height: 120,
-        left: 0,
-        right: 240,
-        toJSON: () => ({}),
-        top: 0,
-        width: 240,
-        x: 0,
-        y: 0,
-      }) as DOMRect,
-  );
-  vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(() => 1);
-  vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => undefined);
-
-  if (!("Path2D" in globalThis)) {
-    class MockPath2D {
-      public ellipse(): void {}
-
-      public rect(): void {}
-    }
-
-    Object.assign(globalThis, {Path2D: MockPath2D});
+  arc: vi.fn(),
+  fill: vi.fn(),
+  globalAlpha: 1,
+  fillStyle: "",
+  strokeStyle: "",
+  lineWidth: 1,
+  lineCap: "round",
+} satisfies Partial<CanvasRenderingContext2D>;
+class ViewBoundary implements IntersectionObserver {
+  readonly root: IntersectionObserver["root"] = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds = [0];
+  readonly disconnect = vi.fn();
+  readonly unobserve = vi.fn();
+  private target: Element | null = null;
+  private readonly callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    views.push(this);
   }
-});
-
+  observe(target: Element): void {
+    this.target = target;
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  visibility(isIntersecting: boolean): void {
+    if (!this.target) throw new Error("Missing observed target");
+    const rect = this.target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target: this.target,
+          isIntersecting,
+          intersectionRatio: isIntersecting ? 1 : 0,
+          boundingClientRect: rect,
+          intersectionRect: rect,
+          rootBounds: null,
+          time: 0,
+        },
+      ],
+      this,
+    );
+  }
+}
+class ResizeBoundary implements ResizeObserver {
+  readonly observe = vi.fn();
+  readonly unobserve = vi.fn();
+  readonly disconnect = vi.fn();
+  private readonly callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    observers.push(this);
+  }
+  resize(): void {
+    this.callback([], this);
+  }
+}
+function frame(): void {
+  const pending = [...frames.values()];
+  frames.clear();
+  act(() => {
+    for (const callback of pending) callback(16);
+  });
+}
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
+  box = new DOMRect(100, 50, 200, 100);
+  reduced = false;
+  observers = [];
+  views = [];
+  frames = new Map();
+  timers = new Map();
+  nextId = 0;
+  media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+  vi.spyOn(window, "matchMedia").mockReturnValue(media);
+  vi.spyOn(Math, "random").mockReturnValue(0.5);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => box);
+  Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: 2});
+  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {configurable: true, value: vi.fn(() => context)});
+  vi.stubGlobal("ResizeObserver", ResizeBoundary);
+  vi.stubGlobal("IntersectionObserver", ViewBoundary);
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+  vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+    const id = ++nextId;
+    frames.set(id, callback);
+    return id;
   });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
+  vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation((id) => {
+    frames.delete(id);
   });
+  vi.stubGlobal("setTimeout", (handler: TimerHandler): number => {
+    if (typeof handler !== "function") throw new TypeError("Expected a timer callback");
+    const id = ++nextId;
+    timers.set(id, (): void => {
+      handler();
+    });
+    return id;
+  });
+  vi.spyOn(window, "clearTimeout").mockImplementation((id) => {
+    if (typeof id === "number") timers.delete(id);
+  });
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("FireworksBackground", () => {
-  it("renders FireworksBackground with custom classes and forwarded refs", () => {
-    // Arrange
-    const fireworksRef = {current: null as HTMLDivElement | null};
-
-    // Act
-    render(
+  it("uses an equivalent native keyboard launch and ignores decorative container clicks", () => {
+    const {container} = render(
       <FireworksBackground
-        ref={fireworksRef}
-        className='fireworks-background-class'
-        data-testid='fireworks-background'
+        population={0}
+        fireworkSpeed={4}
       />,
     );
-
-    // Assert
-    const fireworksBackground = screen.getByTestId("fireworks-background");
-
-    expect(fireworksBackground).toHaveClass("fireworks-background-class");
-    expect(fireworksRef.current).toBe(fireworksBackground);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    context.moveTo.mockClear();
+    const root = container.firstElementChild;
+    if (!root) throw new Error("Missing fireworks root");
+    fireEvent.click(root);
+    frame();
+    expect(context.moveTo).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {detail: 0});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledWith(200, 196);
   });
 
-  it("renders FireworksBackground with custom particleCount", () => {
-    // Act
+  it("rejects sparse palettes rather than painting a success-shaped random/default color", () => {
+    expect(() => render(<FireworksBackground color={Array<string>(2)} />)).toThrow(/palette/u);
+  });
+  it("stops offscreen/document-hidden work and resumes when visible", () => {
+    const ref = React.createRef<HTMLDivElement>();
     render(
       <FireworksBackground
-        population={2}
-        data-testid='fireworks-custom'
+        ref={ref}
+        loop
+        motionPaused={false}
       />,
     );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-custom");
-
-    expect(fireworks).toBeInTheDocument();
+    act(() => {
+      views[0]?.visibility(true);
+      views[0]?.visibility(false);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(timers.size).toBe(0);
+    const clears = context.clearRect.mock.calls.length;
+    frame();
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "running");
+    expect(timers.size).toBe(1);
+    const hidden = vi.spyOn(document, "visibilityState", "get");
+    act(() => {
+      hidden.mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(timers.size).toBe(0);
   });
-
-  it("renders FireworksBackground with custom colors", () => {
-    // Act
+  it("maps offset/scaled clicks into the element-sized DPR backing bitmap", () => {
+    const ref = React.createRef<HTMLDivElement>();
     render(
       <FireworksBackground
-        color={["#FF0000", "#00FF00", "#0000FF"]}
-        data-testid='fireworks-colors'
+        ref={ref}
+        population={0}
+        color='#123456'
+        fireworkSpeed={4}
       />,
     );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-colors");
-
-    expect(fireworks).toBeInTheDocument();
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const canvas = ref.current?.querySelector("canvas");
+    expect(canvas).toHaveAttribute("width", "400");
+    expect(canvas).toHaveAttribute("height", "200");
+    if (!ref.current) throw new Error("Missing fireworks root");
+    context.moveTo.mockClear();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledWith(100, 196);
+    expect(context.strokeStyle).toBe("#123456");
   });
 
-  it("renders FireworksBackground with single color string", () => {
-    // Act
+  it("maps click target height as well as launch x when the canvas is offset and scaled", () => {
+    const ref = React.createRef<HTMLDivElement>();
     render(
       <FireworksBackground
-        color='#FF0000'
-        data-testid='fireworks-single-color'
+        ref={ref}
+        population={0}
+        fireworkSpeed={150}
       />,
     );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-single-color");
-
-    expect(fireworks).toBeInTheDocument();
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    if (!ref.current) throw new Error("Missing root");
+    context.arc.mockClear();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
+    frame();
+    expect(context.arc).not.toHaveBeenCalled();
+    expect(context.moveTo.mock.calls[0]?.[0]).toBeCloseTo(100);
+    expect(context.moveTo.mock.calls[0]?.[1]).toBe(50);
+    frame();
+    expect(context.arc).toHaveBeenCalled();
   });
 
-  it("renders FireworksBackground with custom speed and size ranges", () => {
-    // Act
-    render(
+  it("rebuilds on element resize, preserves children/canvas props, and forwards the div ref", () => {
+    reduced = true;
+    const ref = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
       <FireworksBackground
-        fireworkSpeed={{min: 3, max: 6}}
-        fireworkSize={{min: 1, max: 3}}
-        particleSpeed={{min: 1, max: 5}}
-        particleSize={{min: 1, max: 3}}
-        data-testid='fireworks-ranges'
-      />,
+        ref={ref}
+        className='custom'
+        canvasProps={{className: "custom-canvas", title: "Canvas"}}>
+        <img
+          alt='Foreground'
+          src='image.png'
+        />
+      </FireworksBackground>,
     );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-ranges");
-
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("renders FireworksBackground with number values instead of ranges", () => {
-    // Act
-    render(
-      <FireworksBackground
-        fireworkSpeed={5}
-        fireworkSize={3}
-        particleSpeed={4}
-        particleSize={2}
-        data-testid='fireworks-numbers'
-      />,
-    );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-numbers");
-
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("renders FireworksBackground canvas element", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-canvas' />);
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-canvas");
-    const canvas = fireworks.querySelector("canvas");
-
-    expect(canvas).toBeInTheDocument();
-    expect(canvas?.tagName).toBe("CANVAS");
-  });
-
-  it("renders FireworksBackground with canvasProps", () => {
-    // Act
-    render(
-      <FireworksBackground
-        canvasProps={{className: "custom-canvas-class"}}
-        data-testid='fireworks-canvas-props'
-      />,
-    );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-canvas-props");
-    const canvas = fireworks.querySelector("canvas");
-
-    expect(canvas).toHaveClass("custom-canvas-class");
-  });
-
-  it("initializes canvas and renders without crashing", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-init' />);
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-init");
-    const canvas = fireworks.querySelector("canvas");
-
-    expect(canvas).toBeInTheDocument();
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("handles click event to launch firework at cursor position", () => {
-    // Arrange
-    render(<FireworksBackground data-testid='fireworks-clickable' />);
-    const fireworks = screen.getByTestId("fireworks-clickable");
-
-    // Act - simulate click at specific position
-    fireEvent.click(fireworks, {clientX: 100, clientY: 50});
-
-    // Assert - component should handle click without crashing
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("handles window resize event and updates canvas dimensions", () => {
-    // Arrange
-    render(<FireworksBackground data-testid='fireworks-resize' />);
-
-    // Act - trigger resize event
-    fireEvent.resize(globalThis.window);
-
-    // Assert - canvas should still be in document
-    const fireworks = screen.getByTestId("fireworks-resize");
-    const canvas = fireworks.querySelector("canvas");
-
-    expect(canvas).toBeInTheDocument();
-  });
-
-  it("starts animation loop on mount", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-animation' />);
-
-    // Assert - component renders and initializes
-    const fireworks = screen.getByTestId("fireworks-animation");
-
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("cleans up on unmount", () => {
-    // Act
-    const {unmount} = render(<FireworksBackground data-testid='fireworks-cleanup' />);
+    expect(ref.current).toHaveClass("custom");
+    expect(screen.getByRole("img", {name: "Foreground"})).toBeInTheDocument();
+    const canvas = ref.current?.querySelector("canvas");
+    expect(canvas).toHaveClass("custom-canvas");
+    expect(canvas).toHaveAttribute("aria-hidden", "true");
+    expect(observers[0]?.observe).toHaveBeenCalledWith(canvas);
+    act(() => {
+      box = new DOMRect(100, 50, 300, 150);
+      observers[0]?.resize();
+    });
+    expect(canvas).toHaveAttribute("width", "600");
+    expect(canvas).toHaveAttribute("height", "300");
+    expect(context.arc).toHaveBeenCalled();
     unmount();
-
-    // Assert - unmount should complete without errors
-    expect(true).toBe(true);
+    expect(observers[0]?.disconnect).toHaveBeenCalledOnce();
+    expect(ref.current).toBeNull();
   });
 
-  it("launches fireworks automatically with population multiplier", () => {
-    // Act
-    render(
+  it("does not restart default physics on an unrelated rerender", () => {
+    const {rerender} = render(<FireworksBackground title='first' />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const clears = context.clearRect.mock.calls.length;
+    const launches = timers.size;
+    rerender(<FireworksBackground title='second' />);
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    expect(timers.size).toBe(launches);
+  });
+
+  it("bounds click-created trails and paints real explosion particles", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {rerender} = render(
       <FireworksBackground
-        population={3}
-        data-testid='fireworks-population'
+        ref={ref}
+        population={0}
+        fireworkSpeed={4}
       />,
     );
-
-    // Assert
-    const fireworks = screen.getByTestId("fireworks-population");
-
-    expect(fireworks).toBeInTheDocument();
-  });
-
-  it("renders with custom speed and size configurations", () => {
-    // Act
-    render(
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    if (!ref.current) throw new Error("Missing root");
+    for (let i = 0; i < 100; i += 1)
+      fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
+    context.stroke.mockClear();
+    frame();
+    expect(context.stroke.mock.calls.length).toBeLessThanOrEqual(16);
+    expect(context.stroke.mock.calls.length).toBeGreaterThan(0);
+    rerender(
       <FireworksBackground
-        fireworkSpeed={{min: 3, max: 6}}
-        fireworkSize={{min: 1, max: 3}}
-        particleSpeed={{min: 1, max: 5}}
-        particleSize={{min: 1, max: 2}}
-        data-testid='fireworks-trails'
+        ref={ref}
+        population={0}
+        fireworkSpeed={200}
+        color='#abcdef'
       />,
     );
-
-    // Assert
-    expect(screen.getByTestId("fireworks-trails")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {clientX: 150, clientY: 70, detail: 1});
+    context.arc.mockClear();
+    frame();
+    expect(context.arc.mock.calls.length).toBeGreaterThanOrEqual(50);
+    expect(context.arc.mock.calls.length).toBeLessThanOrEqual(150);
+    expect(context.fillStyle).toBe("#abcdef");
+    expect(context.globalAlpha).toBeLessThan(1);
   });
 
-  it("creates particles with proper physics properties", () => {
-    // Act
-    render(
+  it("pauses timers/RAF on a live preference change and guards stale work after cleanup", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
       <FireworksBackground
-        particleSpeed={{min: 1, max: 3}}
-        particleSize={{min: 1, max: 2}}
-        data-testid='fireworks-particles'
+        ref={ref}
+        loop
+        motionPaused={false}
       />,
     );
-
-    // Assert
-    expect(screen.getByTestId("fireworks-particles")).toBeInTheDocument();
-  });
-
-  it("handles firework explosion animations", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-explosion' />);
-
-    // Assert
-    expect(screen.getByTestId("fireworks-explosion")).toBeInTheDocument();
-  });
-
-  it("handles color as array and selects random color from palette", () => {
-    // Act
-    render(
-      <FireworksBackground
-        color={["#FF0000", "#00FF00", "#0000FF", "#FFFF00"]}
-        data-testid='fireworks-color-array'
-      />,
-    );
-
-    // Assert
-    expect(screen.getByTestId("fireworks-color-array")).toBeInTheDocument();
-  });
-
-  it("handles missing canvas context gracefully", () => {
-    // Arrange
-    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValueOnce(null);
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-no-context' />);
-
-    // Assert - should not crash
-    expect(screen.getByTestId("fireworks-no-context")).toBeInTheDocument();
-
-    // Cleanup
-    getContextSpy.mockRestore();
-  });
-
-  it("renders with particle physics simulation", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-physics' />);
-
-    // Assert
-    expect(screen.getByTestId("fireworks-physics")).toBeInTheDocument();
-  });
-
-  it("manages particle lifecycle", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-cleanup-particles' />);
-
-    // Assert
-    expect(screen.getByTestId("fireworks-cleanup-particles")).toBeInTheDocument();
-  });
-
-  it("handles firework trajectory", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-target' />);
-
-    // Assert
-    expect(screen.getByTestId("fireworks-target")).toBeInTheDocument();
-  });
-
-  it("draws firework trail correctly", () => {
-    // Act
-    render(<FireworksBackground data-testid='fireworks-single-trail' />);
-
-    // Assert
-    expect(screen.getByTestId("fireworks-single-trail")).toBeInTheDocument();
-  });
-
-  it("draws particles with proper alpha decay", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    act(() => {
+      views[0]?.visibility(true);
     });
-    mockCanvasContext.arc.mockClear();
-    mockCanvasContext.fill.mockClear();
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-particle-draw' />);
-
-    // Trigger animation callback multiple times
-    if (animationCallback) {
-      animationCallback(0);
-      animationCallback(16);
-      animationCallback(32);
-    }
-
-    // Assert - canvas methods should be called for particle drawing
-    expect(screen.getByTestId("fireworks-particle-draw")).toBeInTheDocument();
-  });
-
-  it("removes dead fireworks from array", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    expect(timers.size).toBe(1);
+    const staleFrame = [...frames.values()][0];
+    const staleLaunch = [...timers.values()][0];
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
     });
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-removal' />);
-
-    // Trigger multiple animation frames to allow firework lifecycle
-    if (animationCallback) {
-      for (let i = 0; i < 100; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - component should handle firework removal without crashing
-    expect(screen.getByTestId("fireworks-removal")).toBeInTheDocument();
-  });
-
-  it("removes dead particles from explosions array", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(timers.size).toBe(0);
+    const clears = context.clearRect.mock.calls.length;
+    const arcs = context.arc.mock.calls.length;
+    act(() => {
+      staleFrame?.(32);
+      staleLaunch?.();
     });
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-particle-cleanup' />);
-
-    // Simulate click to create fireworks
-    const container = screen.getByTestId("fireworks-particle-cleanup");
-    fireEvent.click(container, {clientX: 100, clientY: 50});
-
-    // Trigger animation frames
-    if (animationCallback) {
-      for (let i = 0; i < 100; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - should clean up particles without crashing
-    expect(screen.getByTestId("fireworks-particle-cleanup")).toBeInTheDocument();
-  });
-
-  it("draws firework trail with multiple points", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    expect(context.arc).toHaveBeenCalledTimes(arcs);
+    expect(timers.size).toBe(0);
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
     });
-    mockCanvasContext.moveTo.mockClear();
-    mockCanvasContext.lineTo.mockClear();
-    mockCanvasContext.stroke.mockClear();
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-trail-points' />);
-
-    // Trigger animation callbacks
-    if (animationCallback) {
-      for (let i = 0; i < 20; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - should draw trail with moveTo/lineTo operations
-    expect(screen.getByTestId("fireworks-trail-points")).toBeInTheDocument();
+    expect(timers.size).toBe(1);
+    unmount();
+    expect(timers.size).toBe(0);
+    expect(frames.size).toBe(0);
   });
 
-  it("handles firework explosion and particle creation", () => {
-    // Arrange
-    let animationCallback: FrameRequestCallback | null = null;
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
-      animationCallback = callback;
-      return 1;
-    });
-
-    // Act
-    render(<FireworksBackground data-testid='fireworks-explode' />);
-
-    // Trigger animations to allow fireworks to reach target and explode
-    if (animationCallback) {
-      for (let i = 0; i < 200; i++) {
-        animationCallback(i * 16);
-      }
-    }
-
-    // Assert - explosions should be handled without errors
-    expect(screen.getByTestId("fireworks-explode")).toBeInTheDocument();
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])("rejects invalid population %s", (population) => {
+    expect(() => render(<FireworksBackground population={population} />)).toThrow(/population/u);
   });
-
-  it("launches fireworks automatically with setTimeout", () => {
-    // Arrange
-    vi.useFakeTimers();
-
-    // Act
-    render(
-      <FireworksBackground
-        population={2}
-        data-testid='fireworks-auto-launch'
-      />,
-    );
-
-    // Fast-forward time to trigger auto-launches
-    vi.advanceTimersByTime(5000);
-
-    // Assert - should create multiple fireworks over time
-    expect(screen.getByTestId("fireworks-auto-launch")).toBeInTheDocument();
-
-    // Cleanup
-    vi.useRealTimers();
-  });
-
-  it("updates canvas dimensions on window resize", () => {
-    // Arrange
-    render(<FireworksBackground data-testid='fireworks-resize-dims' />);
-    const canvas = document.querySelector("canvas");
-
-    // Act
-    Object.defineProperty(globalThis, "innerWidth", {
+  it("rejects invalid ranges, an empty palette, empty geometry and missing rendering context", () => {
+    expect(() => render(<FireworksBackground fireworkSpeed={{min: 4, max: 2}} />)).toThrow(/range/u);
+    expect(() => render(<FireworksBackground color={[]} />)).toThrow(/palette/u);
+    box = new DOMRect(0, 0, 0, 0);
+    expect(() => render(<FireworksBackground />)).toThrow(/geometry/u);
+    box = new DOMRect(0, 0, 200, 100);
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
       configurable: true,
-      value: 1024,
-      writable: true,
+      value: (): CanvasRenderingContext2D | null => null,
     });
-    fireEvent.resize(globalThis.window);
-
-    // Assert - canvas should update dimensions
-    expect(canvas).toBeInTheDocument();
+    expect(() => render(<FireworksBackground />)).toThrow(/2D/u);
   });
 });

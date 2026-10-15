@@ -1,6 +1,11 @@
-import {render, screen} from "@testing-library/react";
+import {Menu as BaseMenu} from "@base-ui/react/menu";
+import {Menubar as BaseMenubar} from "@base-ui/react/menubar";
+import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it} from "vitest";
+import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
   Menubar,
@@ -10,6 +15,7 @@ import {
   MenubarItem,
   MenubarLabel,
   MenubarMenu,
+  MenubarPortal,
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarSeparator,
@@ -19,6 +25,14 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "./menubar";
+
+function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+  return <button {...props} />;
+}
+
+function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement {
+  return <div {...props} />;
+}
 
 function renderMenubar(): HTMLElement {
   render(
@@ -40,6 +54,439 @@ function renderMenubar(): HTMLElement {
 }
 
 describe("Menubar", () => {
+  it.each(["open", "cancel"] as const)(
+    "preserves custom native-button composition form/ref/state semantics when callbacks %s",
+    async (interaction) => {
+      const user = userEvent.setup();
+      const errors = vi.spyOn(console, "error");
+      const childRef = React.createRef<HTMLButtonElement>();
+      const wrapperRef = React.createRef<HTMLElement>();
+      const calls: string[] = [];
+      let submissions = 0;
+      try {
+        render(
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submissions += 1;
+            }}>
+            <Menubar>
+              <MenubarMenu>
+                <MenubarTrigger
+                  ref={wrapperRef}
+                  className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
+                  onClick={() => calls.push("wrapper")}
+                  render={
+                    <LegacyControl
+                      ref={childRef}
+                      onMouseDown={(event) => {
+                        if (
+                          interaction === "cancel"
+                          && "preventBaseUIHandler" in event
+                          && typeof event.preventBaseUIHandler === "function"
+                        ) {
+                          event.preventBaseUIHandler();
+                        }
+                      }}
+                      onClick={() => calls.push("child")}>
+                      File
+                    </LegacyControl>
+                  }
+                />
+                <MenubarContent aria-label='Custom file actions'>
+                  <MenubarItem>Rename</MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
+            </Menubar>
+          </form>,
+        );
+        const trigger = screen.getByRole("menuitem", {name: "File"});
+        expect(trigger.tagName).toBe("BUTTON");
+        expect(trigger).toHaveAttribute("type", "button");
+        expect(trigger.querySelector("button")).toBeNull();
+        expect(childRef.current).toBe(trigger);
+        expect(wrapperRef.current).toBe(trigger);
+        await user.click(trigger);
+        expect(calls).toEqual(["child", "wrapper"]);
+        expect(submissions).toBe(0);
+        expect(trigger).toHaveClass(interaction === "open" ? "trigger-open" : "trigger-closed");
+        if (interaction === "open") {
+          expect(screen.getByRole("menu", {name: "Custom file actions"})).toBeInTheDocument();
+        } else {
+          expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+        }
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        errors.mockRestore();
+      }
+    },
+  );
+
+  it("preserves caller-selected non-native mode for a custom Menubar trigger", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    try {
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger
+              nativeButton={false}
+              render={<LegacyRegion>File</LegacyRegion>}
+            />
+            <MenubarContent aria-label='Custom file actions'>
+              <MenubarItem>Rename</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+      const trigger = screen.getByRole("menuitem", {name: "File"});
+      expect(trigger.tagName).toBe("DIV");
+      expect(trigger).not.toHaveAttribute("type");
+      await act(async () => {
+        trigger.focus();
+      });
+      await user.keyboard("{Enter}");
+      expect(await screen.findByRole("menu", {name: "Custom file actions"})).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it("keeps explicit menus inside an element-render Menubar", () => {
+    render(
+      <Menubar render={<nav>Ignored content</nav>}>
+        <MenubarMenu>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Rename</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    expect(screen.getByRole("menubar")).toContainElement(screen.getByRole("menuitem", {name: "File"}));
+    expect(screen.queryByText("Ignored content")).not.toBeInTheDocument();
+  });
+
+  it("passes actual Root and Trigger state, refs, events and children to function renders", async () => {
+    const user = userEvent.setup();
+    const rootRef = React.createRef<HTMLDivElement>();
+    const triggerRef = React.createRef<HTMLElement>();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const events: string[] = [];
+    render(
+      <Menubar
+        ref={rootRef}
+        aria-label='Application menus'
+        className={(state) => (state.hasSubmenuOpen ? "root-open" : "root-closed")}
+        render={(props, state) => (
+          <nav
+            {...props}
+            data-root-open={state.hasSubmenuOpen}
+            data-orientation={state.orientation}
+          />
+        )}>
+        <MenubarMenu>
+          <MenubarTrigger
+            ref={triggerRef}
+            className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
+            onClick={() => events.push("wrapper")}
+            render={(props, state) => (
+              <button
+                {...props}
+                ref={(node) => {
+                  childRef.current = node;
+                  if (typeof props.ref === "function") return props.ref(node);
+                  if (props.ref) props.ref.current = node;
+                }}
+                data-trigger-open={state.open}
+              />
+            )}>
+            File
+          </MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Rename</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    const root = screen.getByRole("menubar", {name: "Application menus"});
+    const trigger = screen.getByRole("menuitem", {name: "File"});
+    expect(rootRef.current).toBe(root);
+    expect(triggerRef.current).toBe(trigger);
+    expect(childRef.current).toBe(trigger);
+    expect(trigger.querySelector("button")).toBeNull();
+    expect(trigger).toHaveAttribute("type", "button");
+    expect(root).toHaveAttribute("data-root-open", "false");
+    await user.click(trigger);
+    expect(events).toEqual(["wrapper"]);
+    expect(trigger).toHaveClass("trigger-open");
+    expect(root).toHaveClass("root-open");
+    expect(root).toHaveAttribute("data-root-open", "true");
+  });
+
+  it("retains Popup/Positioner/Portal callbacks and refs while reusing Dropdown content", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const positionerRef = React.createRef<HTMLDivElement>();
+    const portalRef = React.createRef<HTMLDivElement>();
+    render(
+      <Menubar>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent
+            ref={ref}
+            aria-label='File actions'
+            className={(state) => (state.open ? "popup-open" : "popup-closed")}
+            render={(props, state) => (
+              <section
+                {...props}
+                data-popup-open={state.open}
+              />
+            )}
+            positionerProps={{
+              ref: positionerRef,
+              className: (state) => (state.open ? "positioner-open" : "positioner-closed"),
+              render: (props) => (
+                <div
+                  {...props}
+                  data-testid='positioner'
+                />
+              ),
+            }}
+            portalProps={{
+              ref: portalRef,
+              className: () => "portal-class",
+              render: (props) => (
+                <div
+                  {...props}
+                  data-testid='portal'
+                />
+              ),
+            }}>
+            <MenubarItem>Rename</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    const popup = screen.getByRole("menu", {name: "File actions"});
+    expect(ref.current).toBe(popup);
+    expect(popup).toHaveClass("popup-open");
+    expect(popup).toHaveAttribute("data-popup-open", "true");
+    expect(positionerRef.current).toBe(screen.getByTestId("positioner"));
+    expect(positionerRef.current).toHaveClass("positioner-open");
+    expect(positionerRef.current).not.toHaveAttribute("aria-label");
+    expect(portalRef.current).toBe(screen.getByTestId("portal"));
+    expect(portalRef.current).toHaveClass("portal-class");
+  });
+
+  it("uses keyboard top-level navigation and skips disabled triggers", async () => {
+    const user = userEvent.setup();
+    render(
+      <Menubar>
+        <MenubarMenu>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>New</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger disabled>Disabled</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Unavailable</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger>Edit</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Copy</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    await act(async () => {
+      screen.getByRole("menuitem", {name: "File"}).focus();
+    });
+    await user.keyboard("{ArrowRight}");
+    const edit = screen.getByRole("menuitem", {name: "Edit"});
+    expect(edit).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByRole("menuitem", {name: "Copy"})).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(edit).toHaveFocus());
+    fireEvent.click(screen.getByRole("menuitem", {name: "Disabled"}));
+    expect(screen.queryByRole("menuitem", {name: "Unavailable"})).not.toBeInTheDocument();
+  });
+
+  it("keyboard-opens portaled submenus and Escape restores focus to both triggers", async () => {
+    const user = userEvent.setup();
+    const subRef = React.createRef<HTMLElement>();
+    const popupRef = React.createRef<HTMLDivElement>();
+    render(
+      <Menubar>
+        <MenubarMenu>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent data-testid='overflow-parent'>
+            <MenubarSub>
+              <MenubarSubTrigger
+                ref={subRef}
+                className={(state) => (state.open ? "sub-open" : "sub-closed")}
+                render={(props, state) => (
+                  <div
+                    {...props}
+                    data-sub-open={state.open}
+                  />
+                )}>
+                Share
+              </MenubarSubTrigger>
+              <MenubarSubContent
+                ref={popupRef}
+                aria-label='Share options'
+                className={(state) => (state.nested ? "nested" : "root")}
+                render={(props, state) => (
+                  <div
+                    {...props}
+                    data-nested={state.nested}
+                  />
+                )}>
+                <MenubarItem>Email</MenubarItem>
+              </MenubarSubContent>
+            </MenubarSub>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    const rootTrigger = screen.getByRole("menuitem", {name: "File"});
+    await act(async () => {
+      rootTrigger.focus();
+    });
+    await user.keyboard("{ArrowDown}");
+    const trigger = screen.getByRole("menuitem", {name: "Share"});
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.keyboard("{ArrowRight}");
+    const popup = await screen.findByRole("menu", {name: "Share options"});
+    expect(subRef.current).toBe(trigger);
+    expect(popupRef.current).toBe(popup);
+    expect(popup).toHaveClass("nested");
+    expect(trigger).toHaveClass("sub-open");
+    expect(screen.getByTestId("overflow-parent")).not.toContainElement(popup);
+    expect(document.body).toContainElement(popup);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(rootTrigger).toHaveFocus());
+  });
+
+  it("supports controlled menu rerender and native cancellation details", async () => {
+    const user = userEvent.setup();
+    const view = (open: boolean): React.ReactElement => (
+      <Menubar>
+        <MenubarMenu
+          open={open}
+          onOpenChange={(_next, details) => details.cancel()}>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Rename</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+    );
+    const result = render(view(false));
+    await user.click(screen.getByRole("menuitem", {name: "File"}));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    result.rerender(view(true));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    result.rerender(view(false));
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+  });
+
+  it("uses canonical variants and native checkbox/radio change details", async () => {
+    const user = userEvent.setup();
+    const details: string[] = [];
+    render(
+      <Menubar>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>Options</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem variant='destructive'>Delete</MenubarItem>
+            <MenubarCheckboxItem
+              inset
+              onCheckedChange={(checked, event) => details.push(`${checked}:${event.reason}`)}
+              className={(state) => (state.checked ? "checked" : "unchecked")}
+              render={(props) => <div {...props} />}>
+              Toolbar
+            </MenubarCheckboxItem>
+            <MenubarRadioGroup
+              defaultValue={null}
+              onValueChange={(value: unknown, event) => details.push(`${String(value)}:${event.reason}`)}>
+              <MenubarRadioItem
+                inset
+                value='light'
+                className={(state) => (state.checked ? "checked" : "unchecked")}
+                render={(props) => <div {...props} />}>
+                Light
+              </MenubarRadioItem>
+              <MenubarRadioItem value={null}>None</MenubarRadioItem>
+            </MenubarRadioGroup>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    expect(screen.getByRole("menuitem", {name: "Delete"})).toHaveAttribute("data-variant", "destructive");
+    const checkbox = screen.getByRole("menuitemcheckbox", {name: "Toolbar"});
+    await user.click(checkbox);
+    expect(checkbox).toHaveAttribute("data-inset", "true");
+    expect(checkbox).toHaveClass("checked");
+    const radio = screen.getByRole("menuitemradio", {name: "Light"});
+    await user.click(radio);
+    expect(radio).toHaveAttribute("data-inset", "true");
+    expect(radio).toHaveClass("checked");
+    expect(details).toEqual(["true:item-press", "light:item-press"]);
+  });
+
+  it("preserves standalone Portal refs, group names and Popup/Root namespace types", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <Menubar>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarPortal ref={ref}>
+            <span>Portal child</span>
+          </MenubarPortal>
+          <MenubarContent>
+            <MenubarGroup>
+              <MenubarLabel className={() => "label-class"}>Files</MenubarLabel>
+              <MenubarItem>Rename</MenubarItem>
+            </MenubarGroup>
+            <MenubarSeparator className={() => "separator-class"} />
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    expect(ref.current).toContainElement(screen.getByText("Portal child"));
+    expect(screen.getByRole("group", {name: "Files"})).toBeInTheDocument();
+    expect(screen.getByRole("separator")).toHaveClass("separator-class");
+    expectTypeOf<Menubar.Props["render"]>().toEqualTypeOf<BaseMenubar.Props["render"]>();
+    expectTypeOf<MenubarContent.Props["render"]>().toEqualTypeOf<BaseMenu.Popup.Props["render"]>();
+    expectTypeOf<MenubarContent.Props["finalFocus"]>().toEqualTypeOf<BaseMenu.Popup.Props["finalFocus"]>();
+    expectTypeOf<MenubarTrigger.Props["ref"]>().toEqualTypeOf<React.Ref<HTMLElement> | undefined>();
+  });
+
+  it("names the role-bearing Menubar Popup", () => {
+    render(
+      <Menubar>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent aria-label='File actions'>
+            <MenubarItem>Rename</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    expect(screen.getByRole("menu", {name: "File actions"})).toBeInTheDocument();
+  });
+
   it("renders the menubar structure, merges class names, and exposes accessibility attributes", () => {
     // Arrange
     const trigger = renderMenubar();
@@ -125,7 +572,7 @@ describe("Menubar", () => {
             <MenubarTrigger>View</MenubarTrigger>
             <MenubarContent>
               <MenubarCheckboxItem
-                checked={false}
+                defaultChecked={false}
                 data-testid='toggle-checkbox'>
                 Toggle Feature
               </MenubarCheckboxItem>
@@ -139,8 +586,7 @@ describe("Menubar", () => {
       const checkboxItem = await screen.findByRole("menuitemcheckbox", {name: "Toggle Feature"});
       await user.click(checkboxItem);
 
-      // Assert - checkbox should be toggled (Base UI handles state)
-      expect(checkboxItem).toBeInTheDocument();
+      expect(checkboxItem).toHaveAttribute("aria-checked", "true");
     });
   });
 
@@ -153,7 +599,7 @@ describe("Menubar", () => {
           <MenubarMenu>
             <MenubarTrigger>Theme</MenubarTrigger>
             <MenubarContent>
-              <MenubarRadioGroup value='light'>
+              <MenubarRadioGroup defaultValue='light'>
                 <MenubarRadioItem value='light'>Light</MenubarRadioItem>
                 <MenubarRadioItem value='dark'>Dark</MenubarRadioItem>
                 <MenubarRadioItem value='system'>System</MenubarRadioItem>
@@ -208,7 +654,7 @@ describe("Menubar", () => {
           <MenubarMenu>
             <MenubarTrigger>Theme</MenubarTrigger>
             <MenubarContent>
-              <MenubarRadioGroup value='light'>
+              <MenubarRadioGroup defaultValue='light'>
                 <MenubarRadioItem value='light'>Light</MenubarRadioItem>
                 <MenubarRadioItem
                   value='dark'
@@ -226,8 +672,7 @@ describe("Menubar", () => {
       const darkRadio = await screen.findByRole("menuitemradio", {name: "Dark"});
       await user.click(darkRadio);
 
-      // Assert - radio selection (Base UI handles state)
-      expect(darkRadio).toBeInTheDocument();
+      expect(darkRadio).toHaveAttribute("aria-checked", "true");
     });
   });
 
@@ -485,9 +930,7 @@ describe("Menubar", () => {
             <MenubarContent>
               <MenubarItem>
                 Zoom in
-                <MenubarShortcut asChild>
-                  <span data-testid='shortcut-child'>⌘+</span>
-                </MenubarShortcut>
+                <MenubarShortcut render={<span data-testid='shortcut-child'>⌘+</span>} />
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
@@ -502,4 +945,8 @@ describe("Menubar", () => {
       expect(screen.getByTestId("shortcut-child").querySelector("span")).toBeNull();
     });
   });
+});
+it("refresh accessibility: authors a contrasting menubar keyboard focus outline", () => {
+  const css = readFileSync(join(import.meta.dirname, "menubar.module.css"), "utf8");
+  expect(css).toMatch(/\.trigger:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ac-ring\)/u);
 });

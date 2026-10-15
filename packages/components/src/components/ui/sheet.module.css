@@ -2,6 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 50;
+  isolation: isolate;
   background-color: rgb(0 0 0 / 0.55);
   transition: opacity var(--ac-transition-normal);
 
@@ -17,7 +18,10 @@
 
 .popup {
   position: fixed;
-  z-index: 51;
+  z-index: 50;
+  box-sizing: border-box;
+  max-height: 100dvh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-4);
@@ -84,24 +88,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: none;
-  border-radius: var(--ac-radius-sm);
-  background: transparent;
-  color: var(--ac-muted-foreground);
-  cursor: pointer;
-  outline: none;
-}
-
-.close:focus-visible {
-  outline: 2px solid var(--ac-ring);
-  outline-offset: 2px;
 }
 
 .closeIcon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
 }
 
 .header {
@@ -137,4 +128,35 @@
 .description {
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .popup {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .backdrop {
+    background-color: color-mix(in srgb, CanvasText, transparent 75%);
+    forced-color-adjust: none;
+  }
+
+  .popup {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

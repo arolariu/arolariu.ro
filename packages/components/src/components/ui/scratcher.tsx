@@ -1,192 +1,296 @@
 "use client";
 
 import {motion, useAnimation} from "motion/react";
-import React, {useEffect, useRef, useState} from "react";
+import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./scratcher.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link Scratcher}. */
 export interface ScratcherProps {
-  /** Content revealed after the overlay is scratched away. @default undefined */
-  children: React.ReactNode;
-  /** Width of the scratch card surface in pixels. @default undefined */
-  width: number;
-  /** Height of the scratch card surface in pixels. @default undefined */
-  height: number;
-  /** Percentage of cleared pixels required before completion fires. @default 50 */
-  minScratchPercentage?: number;
-  /** Additional CSS classes merged with the scratch card container. @default undefined */
-  className?: string;
-  /** Callback invoked once the scratch completion threshold is reached. @default undefined */
-  onComplete?: () => void;
-  /** Three-stop gradient used for the scratchable overlay. @default ["#A97CF8", "#F38CB8", "#FDCC92"] */
-  gradientColors?: [string, string, string];
+  /** React 19 ref to the root div. */
+  readonly ref?: React.Ref<HTMLDivElement>;
+  /** Always-mounted content. This visual reveal is not a security or accessibility gate. */
+  readonly children: React.ReactNode;
+  /** Positive finite surface width in CSS pixels. */
+  readonly width: number;
+  /** Positive finite surface height in CSS pixels. */
+  readonly height: number;
+  /** Cleared-pixel completion threshold in 0–100. @default 50 */
+  readonly minScratchPercentage?: number;
+  /** Additional root classes. */
+  readonly className?: string;
+  /** Called once per card after feedback completes, or immediately when motion is paused. */
+  readonly onComplete?: () => void;
+  /** Overlay gradient stops; changing their values resets the card. */
+  readonly gradientColors?: readonly [string, string, string];
+  /** Accessible native reveal button label; callers may localize it. @default "Reveal content" */
+  readonly revealLabel?: string;
+  /** Accessible completion announcement; callers may localize it. @default "Content revealed" */
+  readonly completedLabel?: string;
 }
 
-const defaultGradientColors: [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
-const ignoreAnimationError = (): null => null;
+const defaultGradientColors: readonly [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
+type ScratchStyle = React.CSSProperties & {
+  readonly "--ac-scratcher-width": string;
+  readonly "--ac-scratcher-height": string;
+};
+
+interface ScratchGeneration {
+  readonly width: number;
+  readonly height: number;
+  readonly first: string;
+  readonly second: string;
+  readonly third: string;
+}
+
+function requireContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Scratcher requires a 2D canvas rendering context.");
+  return context;
+}
+
+function ScratcherSurface({
+  ref,
+  width,
+  height,
+  minScratchPercentage = 50,
+  onComplete,
+  children,
+  className,
+  gradientColors = defaultGradientColors,
+  revealLabel = "Reveal content",
+  completedLabel = "Content revealed",
+}: Readonly<ScratcherProps>): React.JSX.Element {
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const completedRef = React.useRef(false);
+  const notifiedRef = React.useRef(false);
+  const pointerRef = React.useRef<number | null>(null);
+  const callbackRef = React.useRef(onComplete);
+  // The half-second feedback follows a deliberate activation, not autoplay.
+  const {paused} = useVisualEffectPolicy(rootRef, {loop: true});
+  const controls = useAnimation();
+  const [first, second, third] = gradientColors;
+  const generation = React.useMemo<ScratchGeneration>(() => ({width, height, first, second, third}), [width, height, first, second, third]);
+  const generationRef = React.useRef(generation);
+  const [completedGeneration, setCompletedGeneration] = React.useState<ScratchGeneration | null>(null);
+  const [animationFailure, setAnimationFailure] = React.useState<{readonly generation: ScratchGeneration; readonly error: Error} | null>(
+    null,
+  );
+  const complete = completedGeneration === generation;
+  const setRefs = useMergedRefs(rootRef, ref);
+
+  React.useLayoutEffect(() => {
+    generationRef.current = generation;
+    completedRef.current = false;
+    notifiedRef.current = false;
+    pointerRef.current = null;
+    controls.stop();
+    controls.set({scale: 1, rotate: 0});
+  }, [controls, generation]);
+
+  React.useEffect(() => {
+    callbackRef.current = onComplete;
+  }, [onComplete]);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = requireContext(canvas);
+    let active = true;
+    let painted = false;
+    const paint = (): void => {
+      if (!active) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio;
+      if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
+        throw new RangeError("Scratcher geometry and DPR must be finite and positive.");
+      }
+      const scale = Math.min(dpr, 2048 / rect.width, 2048 / rect.height);
+      const bitmapWidth = Math.max(1, Math.round(rect.width * scale));
+      const bitmapHeight = Math.max(1, Math.round(rect.height * scale));
+      if (painted && canvas.width === bitmapWidth && canvas.height === bitmapHeight) return;
+      canvas.width = bitmapWidth;
+      canvas.height = bitmapHeight;
+      context.globalCompositeOperation = "source-over";
+      context.clearRect(0, 0, bitmapWidth, bitmapHeight);
+      if (!completedRef.current) {
+        const gradient = context.createLinearGradient(0, 0, bitmapWidth, bitmapHeight);
+        gradient.addColorStop(0, first);
+        gradient.addColorStop(0.5, second);
+        gradient.addColorStop(1, third);
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, bitmapWidth, bitmapHeight);
+      }
+      painted = true;
+    };
+    paint();
+    const observer = new ResizeObserver(paint);
+    observer.observe(canvas);
+    window.addEventListener("resize", paint);
+    return (): void => {
+      active = false;
+      observer.disconnect();
+      window.removeEventListener("resize", paint);
+    };
+  }, [generation, first, second, third]);
+
+  const scratch = React.useCallback((clientX: number, clientY: number): void => {
+    if (completedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (![rect.width, rect.height, clientX, clientY].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) {
+      throw new RangeError("Scratcher pointer geometry must be finite and non-empty.");
+    }
+    const context = requireContext(canvas);
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    context.globalCompositeOperation = "destination-out";
+    context.beginPath();
+    context.arc(x, y, 30 * (canvas.width / rect.width), 0, Math.PI * 2);
+    context.fill();
+  }, []);
+
+  const reveal = React.useCallback((): void => {
+    if (completedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    requireContext(canvas).clearRect(0, 0, canvas.width, canvas.height);
+    completedRef.current = true;
+    pointerRef.current = null;
+    setCompletedGeneration(generation);
+  }, [generation]);
+
+  const checkCompletion = React.useCallback((): void => {
+    if (completedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const pixels = requireContext(canvas).getImageData(0, 0, canvas.width, canvas.height).data;
+    const totalPixels = canvas.width * canvas.height;
+    if (totalPixels === 0 || pixels.length !== totalPixels * 4) throw new Error("Scratcher pixel buffer has invalid geometry.");
+    let clearPixels = 0;
+    for (let index = 3; index < pixels.length; index += 4) if (pixels[index] === 0) clearPixels += 1;
+    if ((clearPixels / totalPixels) * 100 >= minScratchPercentage) reveal();
+  }, [minScratchPercentage, reveal]);
+
+  React.useEffect(() => {
+    let active = true;
+    const move = (event: PointerEvent): void => {
+      if (active && pointerRef.current === event.pointerId && !event.defaultPrevented) scratch(event.clientX, event.clientY);
+    };
+    const end = (event: PointerEvent): void => {
+      if (!active || pointerRef.current !== event.pointerId) return;
+      pointerRef.current = null;
+      checkCompletion();
+    };
+    const cancel = (event: PointerEvent): void => {
+      if (pointerRef.current === event.pointerId) pointerRef.current = null;
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", end);
+    document.addEventListener("pointercancel", cancel);
+    return (): void => {
+      active = false;
+      pointerRef.current = null;
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", end);
+      document.removeEventListener("pointercancel", cancel);
+    };
+  }, [checkCompletion, scratch]);
+
+  React.useEffect(() => {
+    if (!complete) return;
+    let active = true;
+    const notify = (): void => {
+      if (!active || generationRef.current !== generation || !completedRef.current || notifiedRef.current) return;
+      notifiedRef.current = true;
+      callbackRef.current?.();
+    };
+    if (paused) {
+      controls.stop();
+      controls.set({scale: 1, rotate: 0});
+      notify();
+    } else {
+      controls
+        .start({
+          scale: [1, 1.5, 1],
+          rotate: [0, 10, -10, 10, -10, 0],
+          transition: {duration: 0.5},
+        })
+        .then(notify)
+        .catch((error: unknown): void => {
+          if (active && generationRef.current === generation)
+            setAnimationFailure({
+              generation,
+              error: error instanceof Error ? error : new Error("Scratcher completion animation failed.", {cause: error}),
+            });
+        });
+    }
+    return (): void => {
+      active = false;
+      controls.stop();
+    };
+  }, [complete, paused, controls, generation]);
+
+  if (animationFailure?.generation === generation) throw animationFailure.error;
+  const surfaceStyle: ScratchStyle = {"--ac-scratcher-width": `${width}px`, "--ac-scratcher-height": `${height}px`};
+  return (
+    <motion.div
+      ref={setRefs}
+      className={cn(styles.root, className)}
+      style={surfaceStyle}
+      animate={controls}
+      data-state={complete ? "complete" : "covered"}
+      data-motion={paused ? "paused" : "running"}>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className={styles.canvas}
+        aria-hidden='true'
+        onPointerDown={(event): void => {
+          if (event.button !== 0 || event.defaultPrevented || completedRef.current) return;
+          pointerRef.current = event.pointerId;
+          scratch(event.clientX, event.clientY);
+        }}
+      />
+      {children}
+      <button
+        type='button'
+        className={styles.reveal}
+        disabled={complete}
+        onClick={reveal}>
+        {revealLabel}
+      </button>
+      <span
+        className={styles.status}
+        role='status'>
+        {complete ? completedLabel : ""}
+      </span>
+    </motion.div>
+  );
+}
+ScratcherSurface.displayName = "ScratcherSurface";
 
 /**
- * Renders a scratch-card reveal surface with animated completion feedback.
+ * Renders a pointer scratch-card with an equivalent keyboard reveal path.
  *
- * @remarks
- * - Animated component using the `motion` library
- * - Renders a `<div>` element containing a `<canvas>`
- * - Styling via CSS Modules with `--ac-*` custom properties
- * - Client-side only (`"use client"` directive)
- *
- * @example
- * ```tsx
- * <Scratcher width={320} height={180}>Prize unlocked</Scratcher>
- * ```
- *
- * @see {@link ScratcherProps} for available props
+ * @remarks Dimensions/gradient changes reset the card. Children are always mounted and accessible;
+ * do not put secrets or authorization gates behind this purely visual overlay.
+ * @throws {RangeError} If dimensions or the completion threshold are invalid.
  */
-export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>(
-  ({width, height, minScratchPercentage = 50, onComplete, children, className, gradientColors = defaultGradientColors}, forwardedRef) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isScratching, setIsScratching] = useState(false);
-    const [isComplete, setIsComplete] = useState(false);
-
-    const controls = useAnimation();
-
-    useEffect(() => {
-      const canvas = canvasRef.current;
-      const context = canvas?.getContext("2d");
-      if (!canvas || !context) {
-        return;
-      }
-
-      context.fillStyle = "#ccc";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, gradientColors[0]);
-      gradient.addColorStop(0.5, gradientColors[1]);
-      gradient.addColorStop(1, gradientColors[2]);
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-    }, [gradientColors]);
-
-    const scratch = React.useCallback((clientX: number, clientY: number): void => {
-      const canvas = canvasRef.current;
-      const context = canvas?.getContext("2d");
-      if (!canvas || !context) {
-        return;
-      }
-
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left + 16;
-      const y = clientY - rect.top + 16;
-      context.globalCompositeOperation = "destination-out";
-      context.beginPath();
-      context.arc(x, y, 30, 0, Math.PI * 2);
-      context.fill();
-    }, []);
-
-    const startAnimation = React.useCallback(async (): Promise<void> => {
-      await controls.start({
-        scale: [1, 1.5, 1],
-        rotate: [0, 10, -10, 10, -10, 0],
-        transition: {duration: 0.5},
-      });
-
-      onComplete?.();
-    }, [controls, onComplete]);
-
-    const checkCompletion = React.useCallback((): void => {
-      if (isComplete) {
-        return;
-      }
-
-      const canvas = canvasRef.current;
-      const context = canvas?.getContext("2d");
-      if (!canvas || !context) {
-        return;
-      }
-
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = imageData.data;
-      const totalPixels = pixels.length / 4;
-      let clearPixels = 0;
-
-      for (let index = 3; index < pixels.length; index += 4) {
-        if (pixels[index] === 0) {
-          clearPixels += 1;
-        }
-      }
-
-      const percentage = (clearPixels / totalPixels) * 100;
-      if (percentage >= minScratchPercentage) {
-        setIsComplete(true);
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        startAnimation().catch(ignoreAnimationError);
-      }
-    }, [isComplete, minScratchPercentage, startAnimation]);
-
-    useEffect(() => {
-      const handleDocumentMouseMove = (event: MouseEvent): void => {
-        if (isScratching) {
-          scratch(event.clientX, event.clientY);
-        }
-      };
-
-      const handleDocumentTouchMove = (event: TouchEvent): void => {
-        if (!isScratching) {
-          return;
-        }
-
-        const [touch] = event.touches;
-        if (!touch) {
-          return;
-        }
-
-        scratch(touch.clientX, touch.clientY);
-      };
-
-      const handleDocumentPointerEnd = (): void => {
-        setIsScratching(false);
-        checkCompletion();
-      };
-
-      globalThis.document.addEventListener("mousemove", handleDocumentMouseMove);
-      globalThis.document.addEventListener("touchmove", handleDocumentTouchMove);
-      globalThis.document.addEventListener("mouseup", handleDocumentPointerEnd);
-      globalThis.document.addEventListener("touchend", handleDocumentPointerEnd);
-      globalThis.document.addEventListener("touchcancel", handleDocumentPointerEnd);
-
-      return () => {
-        globalThis.document.removeEventListener("mousemove", handleDocumentMouseMove);
-        globalThis.document.removeEventListener("touchmove", handleDocumentTouchMove);
-        globalThis.document.removeEventListener("mouseup", handleDocumentPointerEnd);
-        globalThis.document.removeEventListener("touchend", handleDocumentPointerEnd);
-        globalThis.document.removeEventListener("touchcancel", handleDocumentPointerEnd);
-      };
-    }, [checkCompletion, isScratching, scratch]);
-
-    return (
-      <motion.div
-        ref={forwardedRef}
-        className={cn(styles.root, className)}
-        style={{
-          width,
-          height,
-          cursor:
-            "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNSIgc3R5bGU9ImZpbGw6I2ZmZjtzdHJva2U6IzAwMDtzdHJva2Utd2lkdGg6MXB4OyIgLz4KPC9zdmc+'), auto",
-        }}
-        animate={controls}>
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          className={styles.canvas}
-          onMouseDown={() => setIsScratching(true)}
-          onTouchStart={() => setIsScratching(true)}
-        />
-        {children}
-      </motion.div>
-    );
-  },
-);
-
+export function Scratcher(props: Readonly<ScratcherProps>): React.JSX.Element {
+  const {width, height, minScratchPercentage = 50} = props;
+  if (![width, height].every((dimension) => Number.isFinite(dimension) && dimension > 0)) {
+    throw new RangeError("Scratcher dimensions must be positive and finite.");
+  }
+  if (!Number.isFinite(minScratchPercentage) || minScratchPercentage < 0 || minScratchPercentage > 100) {
+    throw new RangeError("Scratcher completion percentage must be finite and in 0–100.");
+  }
+  return <ScratcherSurface {...props} />;
+}
 Scratcher.displayName = "Scratcher";

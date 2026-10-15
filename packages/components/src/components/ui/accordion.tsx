@@ -1,80 +1,52 @@
 "use client";
 
 import {Accordion as BaseAccordion} from "@base-ui/react/accordion";
-import {mergeProps} from "@base-ui/react/merge-props";
-import {useRender} from "@base-ui/react/use-render";
 import {ChevronDown} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./accordion.module.css";
 
-type AccordionRootBaseProps = Omit<
-  React.ComponentPropsWithRef<typeof BaseAccordion.Root>,
-  "defaultValue" | "multiple" | "onValueChange" | "value" | "className"
->;
-
 /**
- * Props for the single-item accordion root wrapper.
+ * Canonical array-valued accordion props, including single-panel mode.
+ *
+ * An empty array is no selection; `[""]` selects the item whose identifier is
+ * the empty string. Callbacks always receive `string[]`.
  */
-interface AccordionSingleProps extends AccordionRootBaseProps {
-  /** Controls whether the accordion only allows one item to be expanded at a time. @default "single" */
-  type?: "single";
-  /** Legacy compatibility flag accepted by the wrapper but not forwarded to Base UI. @default undefined */
-  collapsible?: boolean;
-  /** Additional CSS classes merged with the accordion root styles. @default undefined */
-  className?: string;
-  /** The initially expanded item value in uncontrolled single mode. @default undefined */
-  defaultValue?: string;
-  /** Called when the expanded item changes in single mode. @default undefined */
-  onValueChange?: (value: string | undefined, eventDetails: unknown) => void;
-  /** The controlled expanded item value in single mode. @default undefined */
-  value?: string;
+export interface AccordionProps extends Omit<BaseAccordion.Root.Props<string>, "loopFocus" | "orientation"> {
+  /** Whether the last expanded panel can be collapsed. @default true */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  collapsible?: boolean | undefined;
 }
-
-/**
- * Props for the multi-item accordion root wrapper.
- */
-interface AccordionMultipleProps extends AccordionRootBaseProps {
-  /** Controls whether the accordion allows multiple items to stay expanded. @default "multiple" */
-  type: "multiple";
-  /** Legacy compatibility flag accepted by the wrapper but not forwarded to Base UI. @default undefined */
-  collapsible?: boolean;
-  /** Additional CSS classes merged with the accordion root styles. @default undefined */
-  className?: string;
-  /** The initially expanded item values in uncontrolled multi mode. @default undefined */
-  defaultValue?: string[];
-  /** Called when the expanded item values change in multi mode. @default undefined */
-  onValueChange?: (value: string[], eventDetails: unknown) => void;
-  /** The controlled expanded item values in multi mode. @default undefined */
-  value?: string[];
-}
-
-type AccordionSingleRootProps = Omit<AccordionSingleProps, "className" | "collapsible" | "render" | "type">;
-type AccordionMultipleRootProps = Omit<AccordionMultipleProps, "className" | "collapsible" | "render" | "type">;
 
 /**
  * Props for an accordion item wrapper.
  */
-interface AccordionItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Item>, "className"> {
+export interface AccordionItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Item>, "className" | "value"> {
+  /** Unique string identifier; canonical arrays also support the empty string. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  value?: string | undefined;
   /** Additional CSS classes merged with the accordion item styles. @default undefined */
-  className?: string;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  className?: string | undefined;
 }
 
 /**
  * Props for an accordion trigger wrapper.
  */
-interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Trigger>, "className"> {
+export interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Trigger>, "className"> {
   /** Additional CSS classes merged with the accordion trigger styles. @default undefined */
-  className?: string;
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  className?: string | undefined;
 }
 
 /**
  * Props for an accordion content wrapper.
  */
-interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Panel>, "className"> {
-  /** Additional CSS classes merged with the accordion content styles. @default undefined */
-  className?: string;
+export interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Panel>, "className"> {
+  /** Additional classes for the inner content slot, preserving outer panel animation styles. @default undefined */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  className?: string | undefined;
 }
 
 /**
@@ -84,6 +56,9 @@ interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof 
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
  * - Supports the `render` prop for element composition
+ * - Uses Base UI array values and the native `multiple` flag
+ * - `collapsible={false}` cancels last-panel closing without replacing primitive state
+ * - Callbacks receive `string[]` and the original `Accordion.ChangeEventDetails`
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage
@@ -98,56 +73,25 @@ interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof 
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
-  const {className, render, type = "single"} = props;
-  const accordionRender = useRender({
-    defaultTagName: "div",
-    render: render as never,
-    props: mergeProps({className: cn(className)}, {}),
-  });
-
-  if (type === "multiple") {
-    const {defaultValue, onValueChange, value, ...otherProps} = omitAccordionWrapperProps(props) as AccordionMultipleRootProps;
-
-    return (
-      <BaseAccordion.Root
-        multiple
-        defaultValue={defaultValue}
-        onValueChange={onValueChange}
-        value={value}
-        {...otherProps}
-        render={accordionRender}
-      />
-    );
-  }
-
-  const {defaultValue, onValueChange, value, ...otherProps} = omitAccordionWrapperProps(props) as AccordionSingleRootProps;
+const Accordion = (props: Readonly<Accordion.Props>): React.ReactElement => {
+  const {ref, collapsible = true, onValueChange, ...otherProps} = props;
 
   return (
-    <BaseAccordion.Root
-      multiple={false}
-      defaultValue={defaultValue ? [defaultValue] : undefined}
+    <BaseAccordion.Root<string>
+      data-slot='accordion'
+      ref={ref}
       onValueChange={(nextValue, eventDetails) => {
-        onValueChange?.(nextValue[0], eventDetails);
+        if (!collapsible && nextValue.length === 0) {
+          eventDetails.cancel();
+          return;
+        }
+        onValueChange?.(nextValue, eventDetails);
       }}
-      value={value ? [value] : undefined}
       {...otherProps}
-      render={accordionRender}
     />
   );
-}
+};
 Accordion.displayName = "Accordion";
-
-function omitAccordionWrapperProps(props: Accordion.Props): AccordionSingleRootProps | AccordionMultipleRootProps {
-  const rootProps: Partial<Accordion.Props> = {...props};
-
-  Reflect.deleteProperty(rootProps, "className");
-  Reflect.deleteProperty(rootProps, "collapsible");
-  Reflect.deleteProperty(rootProps, "render");
-  Reflect.deleteProperty(rootProps, "type");
-
-  return rootProps as AccordionSingleRootProps | AccordionMultipleRootProps;
-}
 
 /**
  * Wraps a single accordion item with shared border and spacing styles.
@@ -168,21 +112,20 @@ function omitAccordionWrapperProps(props: Accordion.Props): AccordionSingleRootP
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-function AccordionItem(props: Readonly<AccordionItem.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const AccordionItem = (props: Readonly<AccordionItem.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
   return (
     <BaseAccordion.Item
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.item, className)}, {}),
-      })}>
+      data-slot='accordion-item'
+      ref={ref}
+      className={cn(styles.item, className)}
+      render={render}
+      {...otherProps}>
       {children}
     </BaseAccordion.Item>
   );
-}
+};
 AccordionItem.displayName = "AccordionItem";
 
 /**
@@ -203,27 +146,26 @@ AccordionItem.displayName = "AccordionItem";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const AccordionTrigger = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Trigger>, AccordionTrigger.Props>(
-  (props: Readonly<AccordionTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AccordionTrigger = (props: Readonly<AccordionTrigger.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAccordion.Header className={styles.header}>
-        <BaseAccordion.Trigger
-          ref={ref}
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "button",
-            render: render as never,
-            props: mergeProps({className: cn(styles.trigger, className)}, {}),
-          })}>
-          <span>{children}</span>
-          <ChevronDown className={styles.icon} />
-        </BaseAccordion.Trigger>
-      </BaseAccordion.Header>
-    );
-  },
-);
+  return (
+    <BaseAccordion.Header className={styles.header}>
+      <BaseAccordion.Trigger
+        data-slot='accordion-trigger'
+        ref={ref}
+        className={cn(styles.trigger, className)}
+        render={render}
+        {...otherProps}>
+        <span>{children}</span>
+        <ChevronDown
+          aria-hidden
+          className={styles.icon}
+        />
+      </BaseAccordion.Trigger>
+    </BaseAccordion.Header>
+  );
+};
 AccordionTrigger.displayName = "AccordionTrigger";
 
 /**
@@ -242,36 +184,39 @@ AccordionTrigger.displayName = "AccordionTrigger";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-const AccordionContent = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Panel>, AccordionContent.Props>(
-  (props: Readonly<AccordionContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const AccordionContent = (props: Readonly<AccordionContent.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseAccordion.Panel
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: styles.panel}, {}),
-        })}>
-        <div className={cn(styles.panelInner, className)}>{children}</div>
-      </BaseAccordion.Panel>
-    );
-  },
-);
+  return (
+    <BaseAccordion.Panel
+      data-slot='accordion-content'
+      ref={ref}
+      className={styles.panel}
+      render={render}
+      {...otherProps}>
+      <div
+        data-slot='accordion-content-inner'
+        className={cn(styles.panelInner, className)}>
+        {children}
+      </div>
+    </BaseAccordion.Panel>
+  );
+};
 AccordionContent.displayName = "AccordionContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Accordion {
-  export type Props = AccordionSingleProps | AccordionMultipleProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserve the mandated Accordion.Props public namespace contract
+  export type Props = AccordionProps;
   export type State = BaseAccordion.Root.State<string>;
+  export type ChangeEventDetails = BaseAccordion.Root.ChangeEventDetails;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace AccordionItem {
   export type Props = AccordionItemProps;
   export type State = BaseAccordion.Item.State;
+  export type ChangeEventDetails = BaseAccordion.Item.ChangeEventDetails;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

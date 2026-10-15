@@ -1,5 +1,8 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
@@ -9,33 +12,48 @@ import styles from "./button-group.module.css";
 /** Supported layout directions for {@link ButtonGroup}. */
 export type ButtonGroupOrientation = "horizontal" | "vertical";
 
-interface ButtonGroupVariantOptions {
+/** Options for generating {@link ButtonGroup} layout classes. */
+export interface ButtonGroupVariantOptions {
   /** Orientation used to resolve the root style classes. @default "horizontal" */
-  orientation?: ButtonGroupOrientation;
+  readonly orientation?: ButtonGroupOrientation;
   /** Additional classes merged into the generated variant string. @default undefined */
-  className?: string;
+  readonly className?: string;
 }
 
 /**
  * Props for the {@link ButtonGroup} component.
  */
-export interface ButtonGroupProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Arrangement of grouped controls. @default "horizontal" */
-  orientation?: ButtonGroupOrientation;
-}
+export type ButtonGroupProps = Readonly<
+  React.ComponentPropsWithRef<"div"> & {
+    /** Arrangement of grouped controls. @default "horizontal" */
+    orientation?: ButtonGroupOrientation;
+  }
+>;
+
+/** State exposed to {@link ButtonGroupText} render callbacks. */
+export type ButtonGroupTextState = Readonly<{slot: "button-group-text"}>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type ButtonGroupTextRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
 
 /**
  * Props for the {@link ButtonGroupText} component.
  */
-export interface ButtonGroupTextProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Enables rendering an existing div-compatible child element. @default false */
-  asChild?: boolean;
-}
+export type ButtonGroupTextProps = Readonly<
+  Omit<useRender.ComponentProps<"div", ButtonGroupTextState, ButtonGroupTextRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /**
  * Props for the {@link ButtonGroupSeparator} component.
  */
-export type ButtonGroupSeparatorProps = React.ComponentPropsWithoutRef<typeof Separator>;
+export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
 
 /**
  * Returns the CSS class list for a button group root.
@@ -70,25 +88,24 @@ function buttonGroupVariants({orientation = "horizontal", className}: Readonly<B
  *
  * @see {@link ButtonGroupProps} for available props
  */
-const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
-  ({className, orientation = "horizontal", ...props}: Readonly<ButtonGroupProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      role='group'
-      data-slot='button-group'
-      data-orientation={orientation}
-      className={buttonGroupVariants({orientation, className})}
-      {...props}
-    />
-  ),
+const ButtonGroup = ({ref, className, orientation = "horizontal", ...props}: Readonly<ButtonGroupProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    role='group'
+    data-slot='button-group'
+    data-orientation={orientation}
+    className={buttonGroupVariants({orientation, className})}
+    {...props}
+  />
 );
 
 /**
  * Adds descriptive text content within a button group layout.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a `<div>` element by default
+ * - Base UI owns render composition, merging both refs and event handlers.
+ * - Renders a `<div>` by default; prefer `render` for labels or other markup.
+ * - The common `HTMLElement` ref boundary supports refs to the chosen target.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -98,31 +115,15 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
  *
  * @see {@link ButtonGroupTextProps} for available props
  */
-const ButtonGroupText = React.forwardRef<HTMLDivElement, ButtonGroupTextProps>(
-  ({className, asChild = false, children, ...props}: Readonly<ButtonGroupTextProps>, ref): React.JSX.Element => {
-    const mergedClassName = cn(styles.text, className);
-
-    if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<React.ComponentPropsWithoutRef<"div"> & {ref?: React.Ref<HTMLDivElement>}>;
-
-      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
-      return React.cloneElement(child, {
-        ...props,
-        ref,
-        className: cn(mergedClassName, child.props.className),
-      });
-    }
-
-    return (
-      <div
-        ref={ref}
-        className={mergedClassName}
-        {...props}>
-        {children}
-      </div>
-    );
-  },
-);
+const ButtonGroupText = ({ref, className, render, children, ...props}: Readonly<ButtonGroupTextProps>): React.ReactElement => {
+  return useRender<ButtonGroupTextState, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "button-group-text"},
+    props: mergeProps<"div">({className: cn(styles.text, className)}, props, {children}),
+  });
+};
 
 /**
  * Inserts a separator between grouped controls.
@@ -139,16 +140,19 @@ const ButtonGroupText = React.forwardRef<HTMLDivElement, ButtonGroupTextProps>(
  *
  * @see {@link ButtonGroupSeparatorProps} for available props
  */
-const ButtonGroupSeparator = React.forwardRef<HTMLDivElement, ButtonGroupSeparatorProps>(
-  ({className, orientation = "vertical", ...props}: Readonly<ButtonGroupSeparatorProps>, ref): React.JSX.Element => (
-    <Separator
-      ref={ref}
-      data-slot='button-group-separator'
-      orientation={orientation}
-      className={cn(styles.separator, className)}
-      {...props}
-    />
-  ),
+const ButtonGroupSeparator = ({
+  ref,
+  className,
+  orientation = "vertical",
+  ...props
+}: Readonly<ButtonGroupSeparatorProps>): React.JSX.Element => (
+  <Separator
+    ref={ref}
+    data-slot='button-group-separator'
+    orientation={orientation}
+    className={cn(styles.separator, className)}
+    {...props}
+  />
 );
 
 ButtonGroup.displayName = "ButtonGroup";

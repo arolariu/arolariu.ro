@@ -1,203 +1,137 @@
 import * as React from "react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {cleanup, render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {render, screen} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {FlipButton, type FlipDirection} from "./flip-button";
 
-vi.mock("motion/react", async () => {
-  const ReactModule = await import("react");
-
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
-  }
-
-  return {
-    motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
-      span: createMotionPrimitive("span"),
-    },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-  };
-});
-
-import {FlipButton} from "./flip-button";
-
+const right: FlipDirection = "right";
+const animateDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
 beforeEach(() => {
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
-    configurable: true,
-    value: 120,
-  });
-  Object.defineProperty(globalThis.HTMLElement.prototype, "offsetWidth", {
-    configurable: true,
-    value: 240,
-  });
+  Object.defineProperty(Element.prototype, "animate", {configurable: true, value: undefined});
+  vi.stubGlobal("EventTarget", DOMEventTarget);
+});
+afterEach(() => {
+  cleanup();
+  if (animateDescriptor) Object.defineProperty(Element.prototype, "animate", animateDescriptor);
+  else Reflect.deleteProperty(Element.prototype, "animate");
+  vi.unstubAllGlobals();
 });
 
-describe("FlipButton", () => {
-  it("renders FlipButton with custom classes and forwarded refs", () => {
-    // Arrange
-    const flipButtonRef = {current: null as HTMLButtonElement | null};
+describe("FlipButton with real Motion", () => {
+  it.each(["hover", "focus"] as const)(
+    "keeps both action-face labels in one stable name through real %s transitions",
+    async (interaction) => {
+      const user = userEvent.setup();
+      render(
+        <FlipButton
+          frontText='Show details'
+          backText='Open details'
+          transition={{duration: 0}}
+        />,
+      );
+      const button = screen.getByRole("button");
+      const [front, back] = button.querySelectorAll("span");
+      expect(front).toHaveStyle({opacity: "1"});
+      expect(back).toHaveStyle({opacity: "0"});
+      expect(button).toHaveAccessibleName("Show details / Open details");
+      if (interaction === "hover") await user.hover(button);
+      else await user.tab();
+      await waitFor(() => {
+        expect(front).toHaveStyle({opacity: "0"});
+        expect(back).toHaveStyle({opacity: "1"});
+      });
+      expect(button).toHaveAccessibleName("Show details / Open details");
+      if (interaction === "hover") await user.unhover(button);
+      else await user.tab();
+      await waitFor(() => {
+        expect(front).toHaveStyle({opacity: "1"});
+        expect(back).toHaveStyle({opacity: "0"});
+      });
+      expect(button).toHaveAccessibleName("Show details / Open details");
+    },
+  );
 
-    // Act
+  it("does not duplicate an identical action label", () => {
     render(
       <FlipButton
-        ref={flipButtonRef}
-        backText='Hovered'
-        className='flip-button-class'
-        frontText='Default'
+        frontText='Open details'
+        backText='Open details'
       />,
     );
-
-    // Assert
-    const flipButton = screen.getAllByText("Default")[0]?.closest("button");
-
-    expect(flipButton).not.toBeNull();
-    expect(flipButton).toHaveClass("flip-button-class");
-    expect(flipButtonRef.current).toBe(flipButton);
+    expect(screen.getByRole("button")).toHaveAccessibleName("Open details");
   });
 
-  it("renders FlipButton with from='bottom' direction", () => {
-    // Arrange
+  it("accepts the correctly spelled right direction and has one stable accessible label", () => {
     render(
       <FlipButton
-        backText='Back'
-        from='bottom'
-        frontText='Front'
-        data-testid='flip-button-bottom'
+        frontText='Open'
+        backText='Open details'
+        from={right}
       />,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-bottom");
-    expect(button).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Open / Open details"})).toHaveAttribute("type", "button");
   });
 
-  it("renders FlipButton with from='left' direction", () => {
-    // Arrange
+  it.each(["top", "bottom", "left", "right"] as const)("supports the %s direction", (from) => {
     render(
       <FlipButton
-        backText='Back'
-        from='left'
-        frontText='Front'
-        data-testid='flip-button-left'
+        frontText='Open'
+        backText='Open details'
+        from={from}
       />,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-left");
-    expect(button).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Open / Open details"})).toBeInTheDocument();
   });
 
-  it("renders FlipButton with from='righ' direction", () => {
-    // Arrange
+  it("retains native keyboard activation, caller label, classes and ref", async () => {
+    const user = userEvent.setup();
+    const ref = React.createRef<HTMLButtonElement>();
+    const onClick = vi.fn();
     render(
       <FlipButton
-        backText='Back'
-        from='righ'
-        frontText='Front'
-        data-testid='flip-button-right'
+        ref={ref}
+        frontText='Open details'
+        backText='Open details'
+        aria-label='Open details documentation'
+        className='caller'
+        onClick={onClick}
       />,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-right");
-    expect(button).toBeInTheDocument();
+    await user.tab();
+    await user.keyboard("{Enter} ");
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(ref.current).toBe(screen.getByRole("button", {name: "Open details documentation"}));
+    expect(ref.current).toHaveClass("caller");
   });
 
-  it("renders FlipButton with custom front and back class names", () => {
-    // Arrange
-    const {container} = render(
-      <FlipButton
-        backClassName='custom-back'
-        backText='Back'
-        frontClassName='custom-front'
-        frontText='Front'
-        data-testid='flip-button-custom'
-      />,
+  it("does not activate a disabled button or submit a form by default", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
+    const {rerender} = render(
+      <form onSubmit={onSubmit}>
+        <FlipButton
+          frontText='Open'
+          backText='Open details'
+          onClick={onClick}
+          disabled
+        />
+      </form>,
     );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-custom");
-    expect(button).toBeInTheDocument();
-
-    // Check for custom classes in the rendered output
-    const frontFace = container.querySelector(".custom-front");
-    const backFace = container.querySelector(".custom-back");
-    expect(frontFace).toBeInTheDocument();
-    expect(backFace).toBeInTheDocument();
-  });
-
-  it("handles onClick event", () => {
-    // Arrange
-    const handleClick = vi.fn();
-
-    render(
-      <FlipButton
-        backText='Back'
-        frontText='Front'
-        onClick={handleClick}
-        data-testid='flip-button-click'
-      />,
+    await user.click(screen.getByRole("button"));
+    expect(onClick).not.toHaveBeenCalled();
+    rerender(
+      <form onSubmit={onSubmit}>
+        <FlipButton
+          frontText='Open'
+          backText='Open details'
+          onClick={onClick}
+        />
+      </form>,
     );
-
-    // Act
-    const button = screen.getByTestId("flip-button-click");
-    button.click();
-
-    // Assert
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders FlipButton with custom transition", () => {
-    // Arrange
-    const customTransition = {type: "tween" as const, duration: 0.5};
-
-    render(
-      <FlipButton
-        backText='Back'
-        frontText='Front'
-        transition={customTransition}
-        data-testid='flip-button-transition'
-      />,
-    );
-
-    // Assert
-    const button = screen.getByTestId("flip-button-transition");
-    expect(button).toBeInTheDocument();
+    await user.click(screen.getByRole("button"));
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

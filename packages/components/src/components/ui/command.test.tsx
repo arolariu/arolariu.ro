@@ -1,4 +1,8 @@
 import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {Features, transform} from "lightningcss";
+import {AtRule, parse, type Node} from "postcss";
 
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -15,8 +19,1611 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./command";
+import styles from "./command.module.css";
+
+/** Resolve real compiled selector/media applicability; no native paint or focus-visible heuristic claim. */
+function compiledCommandDeclarations(element: HTMLElement, forcedColors: boolean): Map<string, string> {
+  const compiled = transform({
+    filename: "command.module.css",
+    code: Buffer.from(readFileSync(join(import.meta.dirname, "command.module.css"), "utf8")),
+    include: Features.Nesting,
+    // Public compiler polyfill supplies a deterministic stand-in for the browser's focus-visible state.
+    pseudoClasses: {focusVisible: "review-focus-visible"},
+  }).code.toString();
+  const declarations = new Map<string, string>();
+  parse(compiled).walkRules((rule) => {
+    for (let parent: Node["parent"] = rule.parent; parent; parent = parent.parent) {
+      if (!(parent instanceof AtRule) || parent.name !== "media") continue;
+      if (parent.params.includes("forced-colors") && !forcedColors) return;
+      if (parent.params.includes("prefers-reduced-motion")) return;
+    }
+    const selectors = rule.selectors.map((selector) =>
+      selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+        if (name === "review-focus-visible") return match;
+        const localClass = styles[name];
+        return localClass ? `.${localClass}` : match;
+      }),
+    );
+    if (!selectors.some((selector) => !selector.includes("::") && element.matches(selector))) return;
+    rule.walkDecls((declaration) => {
+      declarations.set(declaration.prop, declaration.value);
+    });
+  });
+  return declarations;
+}
 
 describe("Command", () => {
+  it.each([
+    {key: "{Home}", expected: "A"},
+    {key: "{ArrowDown}", expected: "B"},
+  ])("follows nested DOM order for $key from A", async ({key, expected}) => {
+    const user = userEvent.setup();
+    render(
+      <Command defaultValue='a'>
+        <CommandInput aria-label='Nested navigation' />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            <CommandGroup heading='Inner'>
+              <CommandItem value='b'>B</CommandItem>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "B", "C"]);
+    const input = screen.getByRole("combobox", {name: "Nested navigation"});
+    await user.click(input);
+    await user.keyboard(key);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: expected}).id);
+  });
+
+  it.each([
+    {
+      mode: "unfiltered",
+      visible: ["Root first", "A", "B", "Inner disabled", "C", "Root tie", "D", "Root last"],
+      selectable: ["Root first", "A", "B", "C", "Root tie", "D", "Root last"],
+    },
+    {
+      mode: "ranked",
+      visible: ["Inner disabled", "B", "C", "A", "Root tie", "D", "Root first", "Root last"],
+      selectable: ["B", "C", "A", "Root tie", "D", "Root first", "Root last"],
+    },
+    {
+      mode: "tied",
+      visible: ["Root first", "A", "B", "Inner disabled", "C", "Root tie", "D", "Root last"],
+      selectable: ["Root first", "A", "B", "C", "Root tie", "D", "Root last"],
+    },
+  ])("traverses $mode nested and root options in DOM order, excluding disabled options", async ({mode, visible, selectable}) => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <Command
+        onValueChange={onValueChange}
+        filter={(value) => (mode === "tied" ? 1 : ({root: 0.6, a: 0.4, b: 0.8, disabled: 1, c: 0.8, tie: 1, d: 1, last: 0.1}[value] ?? 0))}>
+        <CommandInput
+          aria-label='Hierarchy search'
+          defaultValue={mode === "unfiltered" ? "" : "query"}
+        />
+        <CommandList>
+          <CommandItem value='root'>Root first</CommandItem>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            <CommandGroup heading='Middle'>
+              <CommandGroup heading='Inner'>
+                <CommandItem
+                  value='b'
+                  onSelect={onSelect}>
+                  B
+                </CommandItem>
+                <CommandItem
+                  value='disabled'
+                  disabled
+                  onSelect={onSelect}>
+                  Inner disabled
+                </CommandItem>
+              </CommandGroup>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+          <CommandItem value='tie'>Root tie</CommandItem>
+          <CommandGroup heading='Sibling'>
+            <CommandItem value='d'>D</CommandItem>
+          </CommandGroup>
+          <CommandItem value='last'>Root last</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Hierarchy search"});
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(visible);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.click(input);
+    await user.keyboard("{Home}");
+    for (const [index, name] of selectable.entries()) {
+      if (index > 0) await user.keyboard("{ArrowDown}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+      expect(input).toHaveFocus();
+    }
+    await user.keyboard("{Home}{End}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Root last"}).id);
+    for (const name of selectable.toReversed().slice(1)) {
+      await user.keyboard("{ArrowUp}");
+      expect(screen.getByRole("option", {name})).toHaveAttribute("aria-selected", "true");
+    }
+    expect(screen.getByRole("option", {name: "Inner disabled"})).toHaveAttribute("aria-selected", "false");
+    expect(onValueChange.mock.calls.flat()).not.toContain("disabled");
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("only commits nested keyboard proposals accepted by the parent (filtering: %s)", async (filtering) => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    const fixture = (value: string): React.JSX.Element => (
+      <Command
+        value={value}
+        onValueChange={onValueChange}
+        filter={(item) => ({a: 0.9, b: 0.8, c: 0.1})[item] ?? 0}>
+        <CommandInput defaultValue={filtering ? "query" : ""} />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem
+              value='a'
+              onSelect={onSelect}>
+              A
+            </CommandItem>
+            <CommandGroup heading='Inner'>
+              <CommandItem value='b'>B</CommandItem>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("a"));
+    const first = screen.getByRole("option", {name: "A"});
+    const inner = screen.getByRole("option", {name: "B"});
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "B", "C"]);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.click(first);
+    onSelect.mockClear();
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange.mock.calls).toEqual([["b"]]);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    expect(inner).toHaveAttribute("aria-selected", "false");
+    await user.keyboard("{Enter}");
+    expect(onSelect.mock.calls).toEqual([["a"]]);
+    rerender(fixture("b"));
+    expect(inner).toHaveFocus();
+    expect(inner).toHaveAttribute("aria-selected", "true");
+    expect(onValueChange.mock.calls).toEqual([["b"]]);
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange.mock.calls).toEqual([["b"], ["c"]]);
+    expect(inner).toHaveFocus();
+    rerender(fixture("c"));
+    expect(screen.getByRole("option", {name: "C"})).toHaveFocus();
+    expect(onValueChange.mock.calls).toEqual([["b"], ["c"]]);
+  });
+
+  it("keeps nested ordering coherent after score changes, group removal, and remounting", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const fixture = (includeInner: boolean, filtering: boolean): React.JSX.Element => (
+      <Command
+        defaultValue='b'
+        onValueChange={onValueChange}
+        filter={(value) => ({a: 0.1, b: 0.9, c: 0.8})[value] ?? 0}>
+        <CommandInput value={filtering ? "query" : ""} />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            {includeInner && (
+              <CommandGroup heading='Inner'>
+                <CommandItem value='b'>B</CommandItem>
+              </CommandGroup>
+            )}
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(true, false));
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    rerender(fixture(true, true));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["B", "C", "A"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "B"}).id);
+    rerender(fixture(false, true));
+    expect(screen.queryByRole("group", {name: "Inner"})).not.toBeInTheDocument();
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["C", "A"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    rerender(fixture(true, false));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "C", "B"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.keyboard("{Home}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "B"}).id);
+  });
+
+  it("keeps matching nested group ancestry visible and its active descendant consistent with empty state", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Nested search' />
+        <CommandList>
+          <CommandEmpty>No nested matches</CommandEmpty>
+          <CommandGroup heading='Outer group'>
+            <CommandItem value='unrelated'>Unrelated</CommandItem>
+            <CommandGroup heading='Middle group'>
+              <CommandGroup heading='Inner group'>
+                <CommandItem value='needle'>Needle</CommandItem>
+              </CommandGroup>
+            </CommandGroup>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Nested search"});
+    await user.type(input, "needle");
+    const match = screen.getByRole("option", {name: "Needle"});
+    expect(match).toBeVisible();
+    for (const name of ["Outer group", "Middle group", "Inner group"]) expect(screen.getByRole("group", {name})).toBeVisible();
+    expect(input).toHaveAttribute("aria-activedescendant", match.id);
+    expect(screen.queryByText("No nested matches")).not.toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "absent");
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByText("No nested matches")).toBeVisible();
+  });
+
+  it("does not expose matches or active descendants beneath an explicitly hidden ancestor", async () => {
+    render(
+      <Command>
+        <CommandInput
+          aria-label='Hidden ancestor search'
+          defaultValue='needle'
+        />
+        <CommandList>
+          <CommandEmpty>No available matches</CommandEmpty>
+          <CommandGroup
+            hidden
+            heading='Hidden outer'>
+            <CommandGroup
+              forceMount
+              heading='Forced inner'>
+              <CommandItem value='needle'>Hidden needle</CommandItem>
+            </CommandGroup>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox")).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByText("No available matches")).toBeVisible();
+  });
+
+  it("refresh accessibility: localizes the optional command-dialog close control", () => {
+    render(
+      <CommandDialog
+        open
+        showCloseButton
+        title='Commandes'
+        closeLabel='Fermer les commandes'>
+        <Command>
+          <CommandInput aria-label='Rechercher' />
+          <CommandList>
+            <CommandItem>Ouvrir</CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>,
+    );
+    expect(screen.getByRole("button", {name: "Fermer les commandes"})).toBeInTheDocument();
+  });
+
+  it("keeps an Item callback ref attached across registry and search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: Array<HTMLDivElement | null> = [];
+    const selections: string[] = [];
+    const ref: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node);
+    };
+    const {unmount} = render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup heading='Fruit'>
+            <CommandItem
+              ref={ref}
+              onSelect={(value) => selections.push(value)}>
+              Apple
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const item = screen.getByRole("option", {name: "Apple"});
+    expect(events).toEqual([item]);
+    await user.type(screen.getByRole("combobox"), "missing");
+    expect(item).not.toBeVisible();
+    await user.clear(screen.getByRole("combobox"));
+    expect(screen.getByRole("option", {name: "Apple"})).toBe(item);
+    expect(item).toHaveAttribute("aria-selected", "true");
+    expect(events).toEqual([item]);
+    await user.keyboard("{Enter}");
+    expect(selections).toEqual(["Apple"]);
+    unmount();
+    expect(events).toEqual([item, null]);
+  });
+
+  it("runs Item callback cleanup exactly once on replacement and unmount, not search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: string[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "first:attach" : "first:null");
+      return () => {
+        events.push("first:cleanup");
+      };
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "second:attach" : "second:null");
+      return () => {
+        events.push("second:cleanup");
+      };
+    };
+    const fixture = (ref: React.Ref<HTMLDivElement>): React.JSX.Element => (
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem
+            ref={ref}
+            value='apple'>
+            Apple
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender, unmount} = render(fixture(first));
+    await user.type(screen.getByRole("combobox"), "missing");
+    await user.clear(screen.getByRole("combobox"));
+    rerender(fixture(second));
+    expect(events).toContain("first:cleanup");
+    expect(events).not.toContain("first:null");
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach"]);
+    await user.type(screen.getByRole("combobox"), "apple");
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach"]);
+    unmount();
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach", "second:cleanup"]);
+  });
+
+  it("keeps a Group callback ref attached across registry and search rerenders", async () => {
+    const user = userEvent.setup();
+    const events: Array<HTMLDivElement | null> = [];
+    const ref: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node);
+    };
+    const {unmount} = render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup
+            ref={ref}
+            heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const group = screen.getByRole("group", {name: "Fruit"});
+    expect(events).toEqual([group]);
+    await user.type(screen.getByRole("combobox"), "missing");
+    expect(group).not.toBeVisible();
+    await user.clear(screen.getByRole("combobox"));
+    expect(group).toBeVisible();
+    expect(events).toEqual([group]);
+    unmount();
+    expect(events).toEqual([group, null]);
+  });
+
+  it("runs Group callback cleanup exactly once on replacement and unmount", () => {
+    const events: string[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "first:attach" : "first:null");
+      return () => {
+        events.push("first:cleanup");
+      };
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      events.push(node ? "second:attach" : "second:null");
+      return () => {
+        events.push("second:cleanup");
+      };
+    };
+    const fixture = (ref: React.Ref<HTMLDivElement>): React.JSX.Element => (
+      <Command>
+        <CommandList>
+          <CommandGroup
+            ref={ref}
+            heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender, unmount} = render(fixture(first));
+    rerender(fixture(second));
+    expect(events).toContain("first:cleanup");
+    expect(events).not.toContain("first:null");
+    unmount();
+    expect(events).toEqual(["first:attach", "first:cleanup", "second:attach", "second:cleanup"]);
+  });
+
+  it("keeps option-origin ArrowDown/Home/End focus and Enter/Space activation coherent", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <Command>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onSelect={onSelect}>
+            First
+          </CommandItem>
+          <CommandItem
+            value='disabled'
+            disabled
+            onSelect={onSelect}>
+            Disabled
+          </CommandItem>
+          <CommandItem
+            value='second'
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+          <CommandItem
+            value='last'
+            onSelect={onSelect}>
+            Last
+          </CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const first = screen.getByRole("option", {name: "First"});
+    const second = screen.getByRole("option", {name: "Second"});
+    const last = screen.getByRole("option", {name: "Last"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}{Home}");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard(" ");
+    await user.keyboard("{End}");
+    expect(last).toHaveFocus();
+    expect(last).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}{ArrowUp}");
+    expect(second).toHaveFocus();
+    expect(onSelect.mock.calls.map(([value]) => value)).toEqual(["second", "first", "last"]);
+  });
+
+  it("moves option focus only when the controlled selected-value proposal commits", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    const fixture = (value: string): React.JSX.Element => (
+      <Command
+        value={value}
+        onValueChange={onValueChange}>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onSelect={onSelect}>
+            First
+          </CommandItem>
+          <CommandItem
+            value='second'
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("first"));
+    const first = screen.getByRole("option", {name: "First"});
+    const second = screen.getByRole("option", {name: "Second"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange).toHaveBeenLastCalledWith("second");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenLastCalledWith("first");
+    await user.keyboard("{ArrowDown}");
+    rerender(fixture("first"));
+    expect(first).toHaveFocus();
+    rerender(fixture("second"));
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    await user.keyboard(" ");
+    expect(onSelect).toHaveBeenLastCalledWith("second");
+  });
+
+  it("moves actual option focus for a synchronously accepted controlled keyboard proposal", async () => {
+    const user = userEvent.setup();
+    function Fixture(): React.JSX.Element {
+      const [value, setValue] = React.useState("first");
+      return (
+        <Command
+          value={value}
+          onValueChange={setValue}>
+          <CommandList>
+            <CommandItem value='first'>First</CommandItem>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandList>
+        </Command>
+      );
+    }
+    render(<Fixture />);
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    await user.keyboard("{ArrowDown}");
+    const second = screen.getByRole("option", {name: "Second"});
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("does not steal native focus moved outside while a controlled keyboard proposal is pending", async () => {
+    const user = userEvent.setup();
+    const fixture = (value: string): React.JSX.Element => (
+      <>
+        <button type='button'>Outside</button>
+        <Command value={value}>
+          <CommandList>
+            <CommandItem value='first'>First</CommandItem>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandList>
+        </Command>
+      </>
+    );
+    const {rerender} = render(fixture("first"));
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("button", {name: "Outside"}));
+    rerender(fixture("second"));
+    expect(screen.getByRole("button", {name: "Outside"})).toHaveFocus();
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the combobox focused while committed navigation changes its active descendant", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{Home}{End}");
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+  });
+
+  it.each(["root", "item"] as const)("keeps actual option focus when a %s keyboard consumer cancels navigation", async (boundary) => {
+    const user = userEvent.setup();
+    const cancel: React.KeyboardEventHandler<HTMLDivElement> = (event) => event.preventDefault();
+    render(
+      <Command onKeyDown={boundary === "root" ? cancel : undefined}>
+        <CommandList>
+          <CommandItem
+            value='first'
+            onKeyDown={boundary === "item" ? cancel : undefined}>
+            First
+          </CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it.each(["items", "groups"] as const)("retains the focused option and committed selection when scored %s reorder", async (kind) => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          {kind === "groups" ? (
+            <>
+              <CommandGroup heading='A'>
+                <CommandItem
+                  value='first'
+                  onSelect={onSelect}>
+                  First
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup heading='B'>
+                <CommandItem
+                  value='second'
+                  onSelect={onSelect}>
+                  Second
+                </CommandItem>
+              </CommandGroup>
+            </>
+          ) : (
+            <>
+              <CommandItem
+                value='first'
+                onSelect={onSelect}>
+                First
+              </CommandItem>
+              <CommandItem
+                value='second'
+                onSelect={onSelect}>
+                Second
+              </CommandItem>
+            </>
+          )}
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    rerender(fixture(true));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Second", "First"]);
+    expect(first.isConnected).toBe(true);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Home}{Enter}");
+    expect(screen.getByRole("option", {name: "Second"})).toHaveFocus();
+    expect(onSelect).toHaveBeenLastCalledWith("second");
+  });
+
+  it.each(["input", "textarea"] as const)(
+    "retains real nested %s focus and its native text selection when its scored group moves",
+    (kind) => {
+      const fixture = (preferSecond: boolean): React.JSX.Element => (
+        <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+          <CommandInput
+            defaultValue='query'
+            aria-label='Search commands'
+          />
+          <CommandList>
+            <CommandGroup heading='A'>
+              <CommandItem
+                value='first'
+                aria-label='First'>
+                First
+                {kind === "input" ? (
+                  <input
+                    aria-label='Inline notes'
+                    defaultValue='abcdef'
+                  />
+                ) : (
+                  <textarea
+                    aria-label='Inline notes'
+                    defaultValue='abcdef'
+                  />
+                )}
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='B'>
+              <CommandItem value='second'>Second</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      );
+      const {rerender} = render(fixture(false));
+      const notes = screen.getByRole("textbox", {name: "Inline notes"});
+      if (!(notes instanceof HTMLInputElement) && !(notes instanceof HTMLTextAreaElement))
+        throw new Error("Expected the real native notes control.");
+      act(() => {
+        notes.focus();
+        notes.setSelectionRange(1, 4, "backward");
+      });
+      rerender(fixture(true));
+      expect(screen.getAllByRole("option").map((item) => item.getAttribute("aria-label") ?? item.textContent)).toEqual(["Second", "First"]);
+      expect(notes).toHaveFocus();
+      expect(notes.selectionStart).toBe(1);
+      expect(notes.selectionEnd).toBe(4);
+      expect(notes.selectionDirection).toBe("backward");
+    },
+  );
+
+  it("honors a real child focus handler handing focus outside during group-order restoration", () => {
+    const outsideRef = React.createRef<HTMLButtonElement>();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <>
+        <button
+          type='button'
+          ref={outsideRef}>
+          Outside
+        </button>
+        <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+          <CommandInput
+            defaultValue='query'
+            aria-label='Search commands'
+          />
+          <CommandList>
+            <CommandGroup heading='A'>
+              <CommandItem
+                value='first'
+                aria-label='First'>
+                First
+                <input
+                  aria-label='Inline notes'
+                  onFocus={(event) => {
+                    if (preferSecond) {
+                      event.preventDefault();
+                      outsideRef.current?.focus();
+                    }
+                  }}
+                />
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='B'>
+              <CommandItem value='second'>Second</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </>
+    );
+    const {rerender} = render(fixture(false));
+    act(() => screen.getByRole("textbox", {name: "Inline notes"}).focus());
+    rerender(fixture(true));
+    expect(screen.getByRole("button", {name: "Outside"})).toHaveFocus();
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("allows a caller focus handoff to select a different real option during score restoration", () => {
+    const secondRef = React.createRef<HTMLDivElement>();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandGroup heading='A'>
+            <CommandItem
+              value='first'
+              onFocus={() => {
+                if (preferSecond) secondRef.current?.focus();
+              }}>
+              First
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='B'>
+            <CommandItem
+              value='second'
+              ref={secondRef}>
+              Second
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    act(() => screen.getByRole("option", {name: "First"}).focus());
+    rerender(fixture(true));
+    const second = screen.getByRole("option", {name: "Second"});
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("does not emit a new selection proposal while restoring a controlled option after a group move", () => {
+    const onValueChange = vi.fn();
+    const fixture = (preferSecond: boolean): React.JSX.Element => (
+      <Command
+        value='second'
+        onValueChange={onValueChange}
+        filter={(value) => ((value === "second") === preferSecond ? 0.9 : 0.1)}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandGroup heading='A'>
+            <CommandItem value='first'>First</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='B'>
+            <CommandItem value='second'>Second</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    onValueChange.mockClear();
+    rerender(fixture(true));
+    expect(first).toHaveFocus();
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("composes Separator class callbacks with actual primitive-owned orientation state", () => {
+    const className = vi.fn((state: CommandSeparator.State) => `consumer-${state.orientation}`);
+    const fixture = (orientation: CommandSeparator.State["orientation"]): React.JSX.Element => (
+      <Command>
+        <CommandList>
+          <CommandSeparator
+            orientation={orientation}
+            className={className}
+          />
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("vertical"));
+    const separator = screen.getByRole("separator");
+    expect(className).toHaveBeenCalledWith({orientation: "vertical"});
+    expect(separator).toHaveClass("consumer-vertical");
+    expect(separator.classList.length).toBeGreaterThan(1);
+    rerender(fixture("horizontal"));
+    expect(className).toHaveBeenCalledWith({orientation: "horizontal"});
+    expect(separator).toHaveClass("consumer-horizontal");
+    expect(separator).not.toHaveClass("consumer-vertical");
+    expect(separator.classList.length).toBeGreaterThan(1);
+  });
+
+  it("does not let consumer-hidden scores boost a visible group's rank", () => {
+    render(
+      <Command filter={(value) => (value === "hidden" ? 1 : value === "pear" ? 0.5 : 0.1)}>
+        <CommandInput
+          aria-label='Search commands'
+          defaultValue='query'
+        />
+        <CommandList>
+          <CommandGroup heading='Fruit'>
+            <CommandItem
+              value='hidden'
+              hidden>
+              Hidden favorite
+            </CommandItem>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='Favorites'>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Pear", "Apple"]);
+  });
+
+  it("keeps consumer-hidden items and groups registered but out of navigation and empty counts", () => {
+    const fixture = (hidden: boolean): React.JSX.Element => (
+      <Command>
+        <CommandInput
+          aria-label='Search commands'
+          defaultValue='app'
+        />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandGroup
+            heading='Hidden fruit'
+            hidden={hidden}
+            forceMount>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+          <CommandItem
+            value='pear'
+            hidden
+            forceMount>
+            Pear
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(true));
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox")).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByRole("status")).toHaveTextContent("No results");
+    rerender(fixture(false));
+    expect(screen.getByRole("option", {name: "Apple"})).toBeVisible();
+    expect(screen.queryByRole("option", {name: "Pear"})).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Apple"}).id);
+  });
+
+  it("leaves nested native controls' Enter and arrow semantics to those controls", () => {
+    const onSelect = vi.fn();
+    render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem onSelect={onSelect}>
+            Apple<button type='button'>Details</button>
+          </CommandItem>
+          <CommandItem>Pear</CommandItem>
+        </CommandList>
+        <textarea aria-label='Notes' />
+      </Command>,
+    );
+    fireEvent.keyDown(screen.getByRole("button", {name: "Details"}), {key: "Enter"});
+    fireEvent.click(screen.getByRole("button", {name: "Details"}));
+    expect(onSelect).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole("textbox", {name: "Notes"}), {key: "ArrowDown"});
+    expect(screen.getByRole("option", {name: "Pear"})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("preserves native input name/form/disabled semantics and InputGroup addon focus", async () => {
+    const user = userEvent.setup();
+    const inputRef = React.createRef<HTMLInputElement>();
+    const {container, rerender} = render(
+      <form id='command-form'>
+        <Command>
+          <CommandInput
+            ref={inputRef}
+            name='query'
+            form='command-form'
+            defaultValue='app'
+            aria-label='Search commands'
+          />
+          <CommandList id='command-results'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandList>
+        </Command>
+      </form>,
+    );
+    const input = screen.getByRole("combobox");
+    expect(inputRef.current).toBe(input);
+    expect(input).toHaveAttribute("aria-controls", "command-results");
+    const form = container.querySelector("form");
+    if (!form) throw new Error("Expected a native form.");
+    expect(new FormData(form).get("query")).toBe("app");
+    const icon = container.querySelector("[data-slot='command-input-wrapper'] svg");
+    if (!icon) throw new Error("Expected a decorative search icon.");
+    await user.click(icon);
+    expect(input).toHaveFocus();
+    rerender(
+      <form id='command-form'>
+        <Command>
+          <CommandInput
+            name='query'
+            disabled
+            aria-label='Search commands'
+          />
+          <CommandList>
+            <CommandItem>Apple</CommandItem>
+          </CommandList>
+        </Command>
+      </form>,
+    );
+    expect(input).toBeDisabled();
+    expect(new FormData(form).has("query")).toBe(false);
+  });
+
+  it("forwards native refs for every display part and clears them on unmount", () => {
+    const root = React.createRef<HTMLDivElement>();
+    const input = React.createRef<HTMLInputElement>();
+    const list = React.createRef<HTMLDivElement>();
+    const group = React.createRef<HTMLDivElement>();
+    const item = React.createRef<HTMLDivElement>();
+    const shortcut = React.createRef<HTMLSpanElement>();
+    const separator = React.createRef<HTMLDivElement>();
+    const empty = React.createRef<HTMLDivElement>();
+    const {unmount} = render(
+      <>
+        <Command ref={root}>
+          <CommandInput
+            ref={input}
+            aria-label='Search commands'
+          />
+          <CommandList ref={list}>
+            <CommandGroup
+              ref={group}
+              heading='Actions'>
+              <CommandItem ref={item}>
+                Apple<CommandShortcut ref={shortcut}>A</CommandShortcut>
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator ref={separator} />
+          </CommandList>
+        </Command>
+        <Command>
+          <CommandList>
+            <CommandEmpty ref={empty}>No results</CommandEmpty>
+          </CommandList>
+        </Command>
+      </>,
+    );
+    expect(root.current).toBe(screen.getAllByRole("toolbar")[0]);
+    expect(input.current).toBe(screen.getByRole("combobox"));
+    expect(list.current).toBe(screen.getAllByRole("listbox")[0]);
+    expect(group.current).toBe(screen.getByRole("group", {name: "Actions"}));
+    expect(item.current).toBe(screen.getByRole("option"));
+    expect(shortcut.current).toBe(screen.getByText("A"));
+    expect(separator.current).toBe(screen.getByRole("separator"));
+    expect(empty.current).toBe(screen.getByRole("status"));
+    unmount();
+    for (const ref of [root, input, list, group, item, shortcut, separator, empty]) expect(ref.current).toBeNull();
+  });
+
+  it("preserves actual separator render state, refs and caller events", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const onClick = vi.fn();
+    render(
+      <Command>
+        <CommandList>
+          <CommandSeparator
+            ref={ref}
+            orientation='vertical'
+            onClick={onClick}
+            render={(props, state) => (
+              <div
+                {...props}
+                data-orientation={state.orientation}
+              />
+            )}
+          />
+        </CommandList>
+      </Command>,
+    );
+    const separator = screen.getByRole("separator");
+    expect(ref.current).toBe(separator);
+    expect(separator).toHaveAttribute("aria-orientation", "vertical");
+    expect(separator).toHaveAttribute("data-orientation", "vertical");
+    fireEvent.click(separator);
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("keeps real registrations under StrictMode and separates two controller contexts", () => {
+    render(
+      <React.StrictMode>
+        <Command>
+          <CommandInput
+            aria-label='First search'
+            defaultValue='app'
+          />
+          <CommandList>
+            <CommandGroup heading='First fruit'>
+              <CommandItem value='apple'>Apple</CommandItem>
+              <CommandItem value='banana'>Banana</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+        <Command>
+          <CommandInput
+            aria-label='Second search'
+            defaultValue='ban'
+          />
+          <CommandList>
+            <CommandGroup heading='Second fruit'>
+              <CommandItem value='apple'>Other apple</CommandItem>
+              <CommandItem value='banana'>Other banana</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </React.StrictMode>,
+    );
+    expect(screen.getByRole("combobox", {name: "First search"})).toHaveAttribute(
+      "aria-activedescendant",
+      screen.getByRole("option", {name: "Apple"}).id,
+    );
+    expect(screen.getByRole("combobox", {name: "Second search"})).toHaveAttribute(
+      "aria-activedescendant",
+      screen.getByRole("option", {name: "Other banana"}).id,
+    );
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+  });
+
+  it("updates metadata and removes scored registrations without stale active descendants", () => {
+    const fixture = (includePear: boolean, keyword: string): React.JSX.Element => (
+      <Command>
+        <CommandInput
+          defaultValue='favorite'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandGroup heading='Fruit'>
+            <CommandItem
+              value='apple'
+              keywords={[keyword]}>
+              Apple
+            </CommandItem>
+            {includePear && (
+              <CommandItem
+                value='pear'
+                keywords={["favorite"]}>
+                Pear
+              </CommandItem>
+            )}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(true, "other"));
+    expect(screen.getByRole("combobox")).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Pear"}).id);
+    rerender(fixture(false, "favorite"));
+    expect(screen.getByRole("combobox")).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Apple"}).id);
+    rerender(fixture(false, "other"));
+    expect(screen.getByRole("combobox")).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByRole("status")).toHaveTextContent("No results");
+  });
+
+  it("does not call a custom filter when filtering is disabled and rejects nonfinite or negative scores", () => {
+    const filter = vi.fn((value: string) => (value === "apple" ? Number.NaN : -1));
+    const fixture = (shouldFilter: boolean): React.JSX.Element => (
+      <Command
+        shouldFilter={shouldFilter}
+        filter={filter}>
+        <CommandInput
+          defaultValue='query'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandItem value='apple'>Apple</CommandItem>
+          <CommandItem value='pear'>Pear</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+    expect(filter).not.toHaveBeenCalled();
+    rerender(fixture(true));
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("No results");
+  });
+
+  it("respects cancelled input keyboard handlers and IME and modified option activation", () => {
+    const onSelect = vi.fn();
+    render(
+      <Command>
+        <CommandInput
+          aria-label='Search commands'
+          onKeyDown={(event) => event.preventDefault()}
+        />
+        <CommandList>
+          <CommandItem onSelect={onSelect}>Apple</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    const item = screen.getByRole("option");
+    fireEvent.keyDown(input, {key: "Enter"});
+    fireEvent.keyDown(item, {key: "Enter", isComposing: true});
+    fireEvent.keyDown(item, {key: "Enter", altKey: true});
+    fireEvent.keyDown(item, {key: "Enter", metaKey: true});
+    fireEvent.keyDown(item, {key: "Enter", ctrlKey: true});
+    fireEvent.keyDown(item, {key: "Enter", shiftKey: true});
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("supports accepted controlled selected-value proposals", () => {
+    function Fixture(): React.JSX.Element {
+      const [value, setValue] = React.useState("apple");
+      return (
+        <Command
+          value={value}
+          onValueChange={setValue}>
+          <CommandInput aria-label='Search commands' />
+          <CommandList>
+            <CommandItem value='apple'>Apple</CommandItem>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandList>
+        </Command>
+      );
+    }
+    render(<Fixture />);
+    fireEvent.keyDown(screen.getByRole("combobox"), {key: "ArrowDown"});
+    expect(screen.getByRole("option", {name: "Pear"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("uses the root defaultValue as the selected item, not the search", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <Command
+        defaultValue='banana'
+        onValueChange={onValueChange}>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+          <CommandItem value='banana'>Banana</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    expect(input).toHaveValue("");
+    expect(screen.getByRole("option", {name: "Banana"})).toHaveAttribute("aria-selected", "true");
+    await user.click(input);
+    await user.keyboard("{ArrowUp}");
+    expect(onValueChange).toHaveBeenLastCalledWith("apple");
+    expect(screen.getByRole("option", {name: "Apple"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps selection on the committed controlled value when a parent rejects navigation and clicking", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    const fixture = (value: string): React.JSX.Element => (
+      <Command
+        value={value}
+        onValueChange={onValueChange}>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+          <CommandItem
+            value='banana'
+            onSelect={onSelect}>
+            Banana
+          </CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("apple"));
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange).toHaveBeenLastCalledWith("banana");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Apple"}).id);
+    await user.click(screen.getByRole("option", {name: "Banana"}));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("option", {name: "Banana"})).toHaveAttribute("aria-selected", "false");
+    rerender(fixture("banana"));
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Banana"}).id);
+    rerender(fixture("not-registered"));
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+  });
+
+  it("filters using committed controlled search when a parent rejects the change", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <Command>
+        <CommandInput
+          value='app'
+          onValueChange={onValueChange}
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+            <CommandItem value='banana'>Banana</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    await user.type(screen.getByRole("combobox"), "z");
+    expect(onValueChange).toHaveBeenLastCalledWith("appz");
+    expect(screen.getByRole("combobox")).toHaveValue("app");
+    expect(screen.getByRole("option", {name: "Apple"})).toBeVisible();
+    expect(screen.queryByRole("option", {name: "Banana"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("honors an uncontrolled input defaultValue and committed external replacements", () => {
+    const {rerender} = render(
+      <Command>
+        <CommandInput
+          defaultValue='app'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+          <CommandItem value='banana'>Banana</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getByRole("combobox")).toHaveValue("app");
+    expect(screen.queryByRole("option", {name: "Banana"})).not.toBeInTheDocument();
+    rerender(
+      <Command>
+        <CommandInput
+          value='ban'
+          aria-label='Search commands'
+        />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+          <CommandItem value='banana'>Banana</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getByRole("option", {name: "Banana"})).toBeVisible();
+  });
+
+  it("sorts positive scores in DOM and keyboard order with stable ties and restores registration order", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command filter={(value) => ({first: 0.2, second: 0.9, third: 0.9, absent: 0})[value] ?? 0}>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandSeparator alwaysRender />
+          <CommandItem value='second'>Second</CommandItem>
+          <CommandItem value='third'>Third</CommandItem>
+          <CommandItem value='absent'>Absent</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    await user.type(input, "query");
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Second", "Third", "First"]);
+    await user.keyboard("{Home}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Third"}).id);
+    await user.clear(input);
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["First", "Second", "Third", "Absent"]);
+  });
+
+  it("orders groups by their best child score and labels each group by its heading", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command filter={(value) => (value === "pear" ? 1 : 0.1)}>
+        <CommandInput aria-label='Search commands' />
+        <CommandList label='Results'>
+          <CommandGroup
+            heading='Fruit'
+            value='fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='Favorites'>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    await user.type(screen.getByRole("combobox"), "query");
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Pear", "Apple"]);
+    expect(screen.getByRole("group", {name: "Fruit"})).toContainElement(screen.getByRole("option", {name: "Apple"}));
+    expect(screen.getByRole("listbox", {name: "Results"})).toHaveAttribute(
+      "id",
+      screen.getByRole("combobox").getAttribute("aria-controls"),
+    );
+  });
+
+  it("inherits group forceMount for every descendant and retains hidden registrations and local state", async () => {
+    const user = userEvent.setup();
+    let mounts = 0;
+    function PersistentLabel(): React.JSX.Element {
+      React.useEffect(() => {
+        mounts++;
+      }, []);
+      return <span>Apple</span>;
+    }
+    render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup
+            heading='Pinned'
+            forceMount>
+            <CommandItem value='pinned'>Pinned item</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>
+              <PersistentLabel />
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    await user.type(input, "zz");
+    expect(screen.getByRole("option", {name: "Pinned item"})).toBeVisible();
+    expect(screen.getByText("Apple")).not.toBeVisible();
+    fireEvent.change(input, {target: {value: "app"}});
+    expect(screen.getByRole("option", {name: "Apple"})).toBeVisible();
+    expect(mounts).toBe(1);
+  });
+
+  it.each(["click", "keyDown", "focus", "mouseEnter"] as const)("runs and honors a cancelled item %s consumer before selection", (kind) => {
+    const onSelect = vi.fn();
+    const cancel = vi.fn((event: React.SyntheticEvent<HTMLDivElement>) => event.preventDefault());
+    render(
+      <Command>
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem
+            value='second'
+            onClick={cancel}
+            onKeyDown={cancel}
+            onFocus={cancel}
+            onMouseEnter={cancel}
+            onSelect={onSelect}>
+            Second
+          </CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const item = screen.getByRole("option", {name: "Second"});
+    if (kind === "keyDown") fireEvent.keyDown(item, {key: "Enter"});
+    else fireEvent[kind](item);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(item).toHaveAttribute("aria-selected", "false");
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("honors cancelled input changes without mutating search or emitting proposals", () => {
+    const onValueChange = vi.fn();
+    render(
+      <Command>
+        <CommandInput
+          aria-label='Search commands'
+          onChange={(event) => event.preventDefault()}
+          onValueChange={onValueChange}
+        />
+        <CommandList>
+          <CommandItem>Apple</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    fireEvent.change(screen.getByRole("combobox"), {target: {value: "zz"}});
+    expect(screen.getByRole("combobox")).toHaveValue("");
+    expect(screen.getByRole("option", {name: "Apple"})).toBeVisible();
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("supports Ctrl+n/j and Ctrl+p/k by default but preserves unrelated modified keys", () => {
+    render(
+      <Command>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandItem>First</CommandItem>
+          <CommandItem>Second</CommandItem>
+          <CommandItem>Third</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    fireEvent.keyDown(input, {key: "n"});
+    fireEvent.keyDown(input, {key: "j", metaKey: true});
+    fireEvent.keyDown(input, {key: "ArrowDown", shiftKey: true});
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "n", ctrlKey: true});
+    expect(screen.getByRole("option", {name: "Second"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "j", ctrlKey: true});
+    expect(screen.getByRole("option", {name: "Third"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "p", ctrlKey: true});
+    fireEvent.keyDown(input, {key: "k", ctrlKey: true});
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("allows Vim bindings to be disabled and uses Meta arrows for endpoints and Alt arrows for groups", () => {
+    render(
+      <Command vimBindings={false}>
+        <CommandInput aria-label='Search commands' />
+        <CommandList>
+          <CommandGroup heading='A'>
+            <CommandItem>First</CommandItem>
+            <CommandItem>Second</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='B'>
+            <CommandItem>Third</CommandItem>
+            <CommandItem>Fourth</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox");
+    fireEvent.keyDown(input, {key: "n", ctrlKey: true});
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "ArrowDown", altKey: true});
+    expect(screen.getByRole("option", {name: "Third"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "ArrowDown", metaKey: true});
+    expect(screen.getByRole("option", {name: "Fourth"})).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(input, {key: "ArrowUp", metaKey: true});
+    expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("does not activate twice when an option receives Enter or Space and suppresses disabled handlers", () => {
+    const onSelect = vi.fn();
+    const disabledSelect = vi.fn();
+    render(
+      <Command>
+        <CommandList>
+          <CommandItem onSelect={onSelect}>First</CommandItem>
+          <CommandItem
+            disabled
+            onSelect={disabledSelect}>
+            Disabled
+          </CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const first = screen.getByRole("option", {name: "First"});
+    fireEvent.keyDown(first, {key: "Enter"});
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(first, {key: " "});
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    const disabled = screen.getByRole("option", {name: "Disabled"});
+    fireEvent.click(disabled);
+    fireEvent.focus(disabled);
+    fireEvent.keyDown(disabled, {key: "Enter"});
+    expect(disabledSelect).not.toHaveBeenCalled();
+    expect(disabled).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("does not add a Command root inside the canonical dialog and wires real title and description", () => {
+    render(
+      <CommandDialog
+        open
+        title='Actions'
+        description='Choose an action'
+        showCloseButton>
+        <Command label='Commands'>
+          <CommandInput aria-label='Search commands' />
+          <CommandList>
+            <CommandItem>Apple</CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>,
+    );
+    expect(screen.getByRole("dialog", {name: "Actions", description: "Choose an action"})).toBeInTheDocument();
+    expect(screen.getAllByRole("toolbar")).toHaveLength(1);
+    expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+  });
+
+  it("does not show the canonical dialog close by default and forwards its popup ref", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <CommandDialog
+        open
+        ref={ref}>
+        <Command>
+          <CommandList>
+            <CommandItem>Apple</CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>,
+    );
+    expect(ref.current).toBe(screen.getByRole("dialog"));
+    expect(screen.queryByRole("button", {name: "Close"})).not.toBeInTheDocument();
+  });
+
+  it("recovers a grouped item after a nonmatching query", async () => {
+    const user = userEvent.setup();
+    function Fixture(): React.JSX.Element {
+      const [search, setSearch] = React.useState("");
+      return (
+        <>
+          <button onClick={() => setSearch("zz")}>No matches</button>
+          <button onClick={() => setSearch("app")}>Find apple</button>
+          <Command>
+            <CommandInput
+              value={search}
+              onValueChange={setSearch}
+              aria-label='Search commands'
+            />
+            <CommandList>
+              <CommandGroup heading='Fruit'>
+                <CommandItem value='apple'>Apple</CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </>
+      );
+    }
+    render(<Fixture />);
+    await user.click(screen.getByRole("button", {name: "No matches"}));
+    expect(screen.queryByRole("option", {name: "Apple"})).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", {name: "Find apple"}));
+    expect(screen.getByRole("option", {name: "Apple"})).toBeInTheDocument();
+  });
+
   it.each(["disabled", "removed"] as const)("keeps the fallback active after a selected item is %s and restored", async (state) => {
     // Arrange
     const user = userEvent.setup();
@@ -186,8 +1793,8 @@ describe("Command", () => {
 
     // Assert
     expect(screen.getByText("No results")).toBeInTheDocument();
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
-    expect(screen.queryByText("Projects")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", {name: "Home"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", {name: "Projects"})).not.toBeInTheDocument();
   });
 
   it("should navigate with the keyboard and select the active item on enter", async () => {
@@ -225,16 +1832,18 @@ describe("Command", () => {
       <CommandDialog
         open
         title='Command palette'>
-        <CommandInput placeholder='Search commands' />
-        <CommandList>
-          <CommandGroup heading='Navigation'>
-            <CommandItem>
-              Home
-              <CommandShortcut>H</CommandShortcut>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-        </CommandList>
+        <Command>
+          <CommandInput placeholder='Search commands' />
+          <CommandList>
+            <CommandGroup heading='Navigation'>
+              <CommandItem>
+                Home
+                <CommandShortcut>H</CommandShortcut>
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+          </CommandList>
+        </Command>
       </CommandDialog>,
     );
 
@@ -401,7 +2010,7 @@ describe("Command", () => {
 
     // Assert
     expect(screen.getByText("Settings")).toBeInTheDocument();
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", {name: "Home"})).not.toBeInTheDocument();
   });
 
   it("should handle Home key when no selectable items exist", async () => {
@@ -482,7 +2091,7 @@ describe("Command", () => {
     const input = screen.getByRole("combobox");
     fireEvent.keyDown(input, {
       key: "Enter",
-      nativeEvent: {isComposing: true} as KeyboardEvent,
+      isComposing: true,
     });
 
     // Assert - should not trigger selection while composing
@@ -636,7 +2245,7 @@ describe("Command", () => {
     // Assert
     expect(customFilter).toHaveBeenCalled();
     expect(screen.getByText("Apple")).toBeInTheDocument();
-    expect(screen.queryByText("Banana")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", {name: "Banana"})).not.toBeInTheDocument();
   });
 
   it("should handle forceMount on CommandItem", async () => {
@@ -659,7 +2268,7 @@ describe("Command", () => {
 
     // Assert
     expect(screen.getByText("Always Visible")).toBeInTheDocument();
-    expect(screen.queryByText("Sometimes Visible")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", {name: "Sometimes Visible"})).not.toBeInTheDocument();
   });
 
   it("should handle forceMount on CommandGroup", async () => {
@@ -936,10 +2545,12 @@ describe("Command", () => {
       <CommandDialog
         open
         title='Custom Command Dialog'>
-        <CommandInput placeholder='Search' />
-        <CommandList>
-          <CommandItem>Item</CommandItem>
-        </CommandList>
+        <Command>
+          <CommandInput placeholder='Search' />
+          <CommandList>
+            <CommandItem>Item</CommandItem>
+          </CommandList>
+        </Command>
       </CommandDialog>,
     );
 
@@ -951,10 +2562,12 @@ describe("Command", () => {
     // Arrange
     render(
       <CommandDialog open>
-        <CommandInput placeholder='Search' />
-        <CommandList>
-          <CommandItem>Item</CommandItem>
-        </CommandList>
+        <Command>
+          <CommandInput placeholder='Search' />
+          <CommandList>
+            <CommandItem>Item</CommandItem>
+          </CommandList>
+        </Command>
       </CommandDialog>,
     );
 
@@ -1068,7 +2681,7 @@ describe("Command", () => {
       </Command>,
     );
 
-    const input = screen.getByRole("combobox") as HTMLInputElement;
+    const input = screen.getByRole("combobox");
     const user = userEvent.setup();
 
     await user.click(input);
@@ -1095,7 +2708,7 @@ describe("Command", () => {
       </Command>,
     );
 
-    const input = screen.getByRole("combobox") as HTMLInputElement;
+    const input = screen.getByRole("combobox");
     const user = userEvent.setup();
 
     await user.click(input);
@@ -1198,3 +2811,31 @@ describe("Command", () => {
     expect(callbackRef).toHaveBeenCalledWith(screen.getByText("First"));
   });
 });
+it.each([false, true])(
+  "review 03fdddba: compiled focus selectors apply to the actual CommandInput with forced colors=%s",
+  async (forcedColors) => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Compiled focus input' />
+        <CommandList>
+          <CommandItem>Action</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Compiled focus input"});
+    expect(compiledCommandDeclarations(input, forcedColors).get("outline")).toBe("none");
+    await user.tab();
+    expect(input).toHaveFocus();
+    input.classList.add("review-focus-visible");
+    const focused = compiledCommandDeclarations(input, forcedColors);
+    expect(focused.get("outline")).toBe(forcedColors ? "2px solid highlight" : "2px solid var(--ac-ring)");
+    expect(focused.get("outline-offset")).toBe("-2px");
+    const wrapper = input.closest<HTMLElement>('[data-slot="command-input-wrapper"]');
+    expect(wrapper).not.toBeNull();
+    if (!wrapper) throw new Error("CommandInput must retain its input wrapper.");
+    expect(compiledCommandDeclarations(wrapper, forcedColors).get("border-bottom")).toBe("1px solid var(--ac-input)");
+    input.classList.remove("review-focus-visible");
+    expect(compiledCommandDeclarations(input, forcedColors).get("outline")).toBe("none");
+  },
+);

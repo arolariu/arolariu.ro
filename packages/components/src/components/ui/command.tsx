@@ -1,913 +1,950 @@
 "use client";
 
-import {Dialog as BaseDialog} from "@base-ui/react/dialog";
 import {Separator as BaseSeparator} from "@base-ui/react/separator";
 import {Search} from "lucide-react";
 import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
-
+import {Dialog, DialogContent, DialogDescription, DialogTitle, type DialogProps} from "./dialog";
+import {InputGroup, InputGroupAddon} from "./input-group";
 import styles from "./command.module.css";
 
-type CommandFilter = (value: string, search: string, keywords?: string[]) => number;
+/** Positive scores match and sort descending; keywords are a per-call mutable snapshot. */
+export type CommandFilter = (value: string, search: string, keywords?: string[]) => number;
 
-interface CommandProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Command palette content.
-   * @default undefined
-   */
-  children?: React.ReactNode;
-  /**
-   * Accessible label announced for the command region.
-   * @default undefined
-   */
-  label?: string;
-  /**
-   * Whether items should be filtered automatically as the search value changes.
-   * @default true
-   */
-  shouldFilter?: boolean;
-  /**
-   * Custom scoring function used to determine whether an item matches the current search value.
-   * @default undefined
-   */
-  filter?: CommandFilter;
-  /**
-   * Deprecated uncontrolled search value placeholder retained for API compatibility.
-   * @default undefined
-   */
-  defaultValue?: string;
-  /**
-   * Deprecated controlled search value placeholder retained for API compatibility.
-   * @default undefined
-   */
-  value?: string;
-  /**
-   * Deprecated change callback retained for API compatibility.
-   * @default undefined
-   */
-  onValueChange?: (value: string) => void;
-  /**
-   * Whether keyboard navigation should wrap from the last item to the first.
-   * @default false
-   */
-  loop?: boolean;
-  /**
-   * Whether pointer hover should avoid changing the active item.
-   * @default false
-   */
-  disablePointerSelection?: boolean;
-  /**
-   * Deprecated Vim keybinding toggle retained for API compatibility.
-   * @default undefined
-   */
-  vimBindings?: boolean;
+/** Native command registry options. Selected value is distinct from input search. */
+export type CommandProps = Readonly<
+  React.ComponentPropsWithRef<"div"> & {
+    /** Accessible command/list label. @default "Commands" */
+    label?: string;
+    /** Apply the local substring or supplied scoring filter. @default true */
+    shouldFilter?: boolean;
+    /** Custom item scoring; no cmdk fuzzy-ranking algorithm is implied. */
+    filter?: CommandFilter;
+    /** Initial selected item value (not initial search). */
+    defaultValue?: string;
+    /** Committed selected item value; rejected proposals never change selection. */
+    value?: string;
+    /** Selection proposal from pointer, focus or keyboard interaction. */
+    onValueChange?: (value: string) => void;
+    /** Wrap arrow navigation at the endpoints. @default false */
+    loop?: boolean;
+    /** Prevent hover from selecting items. @default false */
+    disablePointerSelection?: boolean;
+    /** Enable Ctrl+n/j and Ctrl+p/k navigation. @default true */
+    vimBindings?: boolean;
+  }
+>;
+
+/** Modal shell only: callers provide exactly one explicit Command root. */
+export type CommandDialogProps = Readonly<
+  Omit<DialogProps, "children"> & {
+    ref?: React.Ref<HTMLDivElement>;
+    children?: React.ReactNode;
+    /** Real accessible dialog title. @default "Command menu" */
+    title?: React.ReactNode;
+    /** Real accessible description. @default "Search for a command to run..." */
+    description?: React.ReactNode;
+    /** Popup classes. */
+    className?: string;
+    /** Append the shared Dialog close control. @default false */
+    showCloseButton?: boolean;
+    /** Caller-localizable name for the optional dismissal control. @default "Close" */
+    closeLabel?: string;
+  }
+>;
+
+/** Native input props, including name/form/disabled and the committed search value. */
+export type CommandInputProps = Readonly<
+  Omit<React.ComponentPropsWithRef<"input">, "type" | "value" | "defaultValue"> & {
+    /** Committed controlled search. */
+    value?: string;
+    /** Initial uncontrolled search. @default "" */
+    defaultValue?: string;
+    /** Search proposal, after a non-cancelled native onChange. */
+    onValueChange?: (search: string) => void;
+  }
+>;
+
+/** Native listbox props. Its effective id is linked to the combobox. */
+export type CommandListProps = Readonly<React.ComponentPropsWithRef<"div"> & {label?: string}>;
+/** Native live status props; mounted only while there are no visible options. */
+export type CommandEmptyProps = Readonly<React.ComponentPropsWithRef<"div">>;
+/** Registered, labelled group. Hidden descendants stay mounted and searchable. */
+export type CommandGroupProps = Readonly<
+  React.ComponentPropsWithRef<"div"> & {
+    heading?: React.ReactNode;
+    /** Optional group metadata; identity is the group's stable DOM id. */
+    value?: string;
+    /** Keep this group and its items visible regardless of filtering. @default false */
+    forceMount?: boolean;
+  }
+>;
+/** Primitive-owned separator composition, state, orientation and refs. */
+export type CommandSeparatorProps = Readonly<
+  React.ComponentPropsWithRef<typeof BaseSeparator> & {
+    /** Keep separators visible during filtering. @default false */
+    alwaysRender?: boolean;
+  }
+>;
+/** Native option props with cancellable consumer events and filtering metadata. */
+export type CommandItemProps = Readonly<
+  Omit<React.ComponentPropsWithRef<"div">, "onSelect"> & {
+    /** Skip this option for navigation and activation. @default false */
+    disabled?: boolean;
+    /** Activation callback (distinct from the root's selected-value proposal). */
+    onSelect?: (value: string) => void;
+    /** Filtering/selection value; defaults to trimmed rendered text. */
+    value?: string;
+    /** Additional substring/custom-filter search terms. @default [] */
+    keywords?: readonly string[];
+    /** Keep visible irrespective of scores; inherited from the group. @default false */
+    forceMount?: boolean;
+  }
+>;
+/** Native shortcut text props with a forwarded span ref. */
+export type CommandShortcutProps = Readonly<React.ComponentPropsWithRef<"span">>;
+
+interface RegisteredItem {
+  readonly disabled: boolean;
+  readonly forceMount: boolean;
+  readonly hidden: boolean;
+  readonly groupId: string | null;
+  readonly id: string;
+  readonly keywords: readonly string[];
+  readonly order: number;
+  readonly ref: React.RefObject<HTMLDivElement | null>;
+  readonly value: string;
 }
 
-interface CommandDialogProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseDialog.Root>, "children"> {
-  /**
-   * Command palette content rendered inside the dialog popup.
-   * @default undefined
-   */
-  children?: React.ReactNode;
-  /**
-   * Accessible dialog title announced to assistive technologies.
-   * @default "Command menu"
-   */
-  title?: React.ReactNode;
+interface RegisteredGroup {
+  readonly id: string;
+  readonly parentId: string | null;
+  readonly order: number;
+  readonly ref: React.RefObject<HTMLDivElement | null>;
 }
 
-interface CommandInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "type" | "value"> {
-  /**
-   * Controlled search value.
-   * @default undefined
-   */
-  value?: string;
-  /**
-   * Native input change handler invoked before the command-specific callback.
-   * @default undefined
-   */
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  /**
-   * Callback fired when the command search value changes.
-   * @default undefined
-   */
-  onValueChange?: (search: string) => void;
-}
-
-interface CommandListProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Command items and groups.
-   * @default undefined
-   */
-  children?: React.ReactNode;
-  /**
-   * Accessible label for the listbox container.
-   * @default undefined
-   */
-  label?: string;
-}
-
-interface CommandGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "value"> {
-  /**
-   * Group contents.
-   * @default undefined
-   */
-  children?: React.ReactNode;
-  /**
-   * Optional visual heading displayed above the group items.
-   * @default undefined
-   */
-  heading?: React.ReactNode;
-  /**
-   * Optional stable value retained for API compatibility.
-   * @default undefined
-   */
-  value?: string;
-  /**
-   * Whether the group should remain rendered even when it has no visible items.
-   * @default false
-   */
-  forceMount?: boolean;
-}
-
-interface CommandSeparatorProps extends React.ComponentPropsWithoutRef<typeof BaseSeparator> {
-  /**
-   * Whether the separator should remain visible while filtering is active.
-   * @default false
-   */
-  alwaysRender?: boolean;
-}
-
-interface CommandItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
-  /**
-   * Item contents.
-   * @default undefined
-   */
-  children?: React.ReactNode;
-  /**
-   * Whether the item is disabled and should be skipped by selection logic.
-   * @default false
-   */
-  disabled?: boolean;
-  /**
-   * Callback invoked when the item is selected.
-   * @default undefined
-   */
-  onSelect?: (value: string) => void;
-  /**
-   * Optional value used for filtering and selection callbacks.
-   * @default undefined
-   */
-  value?: string;
-  /**
-   * Additional search keywords included in the filter match set.
-   * @default []
-   */
-  keywords?: string[];
-  /**
-   * Whether the item should remain rendered even when filtered out.
-   * @default false
-   */
-  forceMount?: boolean;
-}
-
-interface CommandRegisteredItem {
-  disabled: boolean;
-  forceMount: boolean;
-  groupId: string | null;
-  id: string;
-  keywords: string[];
-  order: number;
-  ref: React.RefObject<HTMLDivElement | null>;
-  textValue: string;
-  value?: string;
+interface Registry {
+  readonly items: ReadonlyMap<string, RegisteredItem>;
+  readonly groups: ReadonlyMap<string, RegisteredGroup>;
+  readonly nextOrder: number;
+  readonly revision: number;
 }
 
 interface CommandContextValue {
-  activeItemId: string | null;
-  disablePointerSelection: boolean;
-  getVisibleItemCount: () => number;
-  hasVisibleItemsInGroup: (groupId: string) => boolean;
-  isFiltering: boolean;
-  isItemVisible: (itemId: string) => boolean;
-  listId: string;
-  loop: boolean;
-  registerItem: (item: Omit<CommandRegisteredItem, "order">) => void;
-  search: string;
-  setSearch: (value: string) => void;
-  selectNextItem: () => void;
-  selectPreviousItem: () => void;
-  selectSpecificItem: (itemId: string | null) => void;
-  shouldFilter: boolean;
-  triggerActiveItem: () => void;
-  unregisterItem: (itemId: string) => void;
+  readonly activeItemId: string | null;
+  readonly disablePointerSelection: boolean;
+  readonly isFiltering: boolean;
+  readonly isItemVisible: (itemId: string) => boolean;
+  readonly isRestoringFocus: (element: HTMLElement) => boolean;
+  readonly hasVisibleItemsInGroup: (groupId: string) => boolean;
+  readonly label: string;
+  readonly listId: string;
+  readonly registerItem: (item: Omit<RegisteredItem, "order">) => void;
+  readonly unregisterItem: (id: string) => void;
+  readonly registerGroup: (group: Omit<RegisteredGroup, "order">) => void;
+  readonly unregisterGroup: (id: string) => void;
+  readonly search: string;
+  readonly setSearch: (search: string) => void;
+  readonly setListId: (id: string) => void;
+  readonly selectItem: (id: string) => void;
+  readonly visibleItemCount: number;
 }
 
 const CommandContext = React.createContext<CommandContextValue | null>(null);
-const CommandGroupContext = React.createContext<string | null>(null);
-
-function assignRef<TValue>(ref: React.ForwardedRef<TValue>, value: TValue): void {
-  if (typeof ref === "function") {
-    ref(value);
-    return;
-  }
-
-  if (ref) {
-    ref.current = value;
-  }
-}
-
-function normalizeCommandValue(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function defaultCommandFilter(value: string, search: string, keywords: string[] = []): number {
-  if (search.length === 0) {
-    return 1;
-  }
-
-  const normalizedSearch = normalizeCommandValue(search);
-  const normalizedValue = normalizeCommandValue([value, ...keywords].join(" "));
-
-  return normalizedValue.includes(normalizedSearch) ? 1 : 0;
-}
+const CommandGroupContext = React.createContext<Readonly<{id: string; forceMount: boolean; hidden: boolean}> | null>(null);
 
 function useCommandContext(componentName: string): CommandContextValue {
   const context = React.useContext(CommandContext);
-
-  if (!context) {
-    throw new Error(`${componentName} must be used within Command.`);
-  }
-
+  if (!context) throw new Error(`${componentName} must be used within Command.`);
   return context;
 }
 
+function defaultCommandFilter(value: string, search: string, keywords: readonly string[] = []): number {
+  const haystack = [value, ...keywords].join(" ").trim().toLowerCase();
+  return haystack.includes(search.trim().toLowerCase()) ? 1 : 0;
+}
+
+interface RankedNode {
+  readonly node: HTMLDivElement;
+  readonly score: number;
+  readonly order: number;
+}
+
+interface NavigationFocusRequest {
+  readonly origin: HTMLElement;
+  readonly originId: string;
+  readonly targetId: string;
+}
+
+interface NativeTextSelection {
+  readonly start: number;
+  readonly end: number;
+  readonly direction: "forward" | "backward" | "none";
+}
+
+interface NativeFocusSnapshot {
+  readonly element: HTMLElement;
+  readonly selection: NativeTextSelection | null;
+}
+
+function captureRegisteredFocus(entries: readonly RankedNode[]): NativeFocusSnapshot | null {
+  const element = entries[0]?.node.ownerDocument.activeElement;
+  if (!(element instanceof HTMLElement) || !entries.some(({node}) => node.contains(element))) return null;
+  let selection: NativeTextSelection | null = null;
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    const {selectionStart: start, selectionEnd: end, selectionDirection: direction} = element;
+    if (start !== null && end !== null) selection = {start, end, direction: direction === null ? "none" : direction};
+  }
+  return {element, selection};
+}
+
+function restoreRegisteredFocus(snapshot: NativeFocusSnapshot | null): void {
+  if (!snapshot) return;
+  const {element, selection} = snapshot;
+  const owner = element.ownerDocument;
+  const focused = owner.activeElement;
+  if (!element.isConnected || element.closest("[hidden], [inert]") || focused === element) return;
+  // A caller that deliberately focused another control during the move keeps ownership.
+  if (focused && focused !== owner.body && focused !== owner.documentElement) return;
+  element.focus({preventScroll: true});
+  if (
+    owner.activeElement === element
+    && selection
+    && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)
+    && element.selectionStart !== null
+  ) {
+    element.setSelectionRange(selection.start, selection.end, selection.direction);
+  }
+}
+
 /**
- * Provides a lightweight, filterable command surface without depending on cmdk.
- *
- * @remarks
- * This wrapper preserves the existing compound-component API while replacing the
- * underlying implementation with a small context-driven registry. It supports
- * text filtering, arrow-key navigation, Enter-to-select, and pointer hover
- * selection for common command palette use cases.
- *
- * @example
- * ```tsx
- * <Command label='Quick actions'>
- *   <CommandInput placeholder='Search actions...' />
- *   <CommandList>
- *     <CommandItem onSelect={() => console.log("Open")}>Open</CommandItem>
- *   </CommandList>
- * </Command>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
+ * The native registry owns DOM score ordering of registered sibling groups/options.
+ * Replace only registered slots, then restore the real focused descendant and its text selection.
  */
-const Command = React.forwardRef<HTMLDivElement, CommandProps>(
-  (
-    {
-      children,
-      className,
-      defaultValue: _defaultValue,
-      disablePointerSelection = false,
-      filter,
-      label,
-      loop = false,
-      onKeyDown,
-      onValueChange: _onValueChange,
-      shouldFilter = true,
-      value: _value,
-      vimBindings: _vimBindings,
-      ...props
-    },
-    ref,
-  ) => {
-    const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
-    const [search, setSearch] = React.useState("");
-    const itemOrderRef = React.useRef(0);
-    const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());
-    const [itemsVersion, setItemsVersion] = React.useState(0);
-    const listId = React.useId();
-
-    const registerItem = React.useCallback((item: Omit<CommandRegisteredItem, "order">): void => {
-      const existingItem = itemsRef.current.get(item.id);
-      const nextItem: CommandRegisteredItem = {
-        ...item,
-        order: existingItem?.order ?? itemOrderRef.current++,
-      };
-
-      const hasChanged =
-        !existingItem
-        || existingItem.disabled !== nextItem.disabled
-        || existingItem.forceMount !== nextItem.forceMount
-        || existingItem.groupId !== nextItem.groupId
-        || existingItem.keywords.join("\0") !== nextItem.keywords.join("\0")
-        || existingItem.ref !== nextItem.ref
-        || existingItem.textValue !== nextItem.textValue
-        || existingItem.value !== nextItem.value;
-
-      if (!hasChanged) {
-        return;
-      }
-
-      itemsRef.current.set(item.id, nextItem);
-      setItemsVersion((currentVersion) => currentVersion + 1);
-    }, []);
-
-    const unregisterItem = React.useCallback((itemId: string): void => {
-      if (!itemsRef.current.delete(itemId)) {
-        return;
-      }
-
-      setItemsVersion((currentVersion) => currentVersion + 1);
-    }, []);
-
-    const items = React.useMemo(() => {
-      return [...itemsRef.current.values()].toSorted((firstItem, secondItem) => firstItem.order - secondItem.order);
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- itemsVersion is an intentional change counter
-    }, [itemsVersion]);
-
-    const isFiltering = shouldFilter && search.trim().length > 0;
-
-    const isItemVisible = React.useCallback(
-      (itemId: string): boolean => {
-        const item = itemsRef.current.get(itemId);
-
-        if (!item) {
-          return false;
-        }
-
-        if (item.forceMount || !shouldFilter || search.trim().length === 0) {
-          return true;
-        }
-
-        const itemValue = item.value ?? item.textValue;
-        const itemFilter = filter ?? defaultCommandFilter;
-
-        return itemFilter(itemValue, search, item.keywords) > 0;
-      },
-      [filter, search, shouldFilter],
-    );
-
-    const visibleItems = React.useMemo(() => items.filter((item) => isItemVisible(item.id)), [isItemVisible, items]);
-
-    const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
-
-    const activeItemId = selectableItems.find((item) => item.id === selectedItemId)?.id ?? selectableItems[0]?.id ?? null;
-
-    // Remember the fallback so a removed, filtered, or disabled selection cannot reappear later.
-    if (selectedItemId !== activeItemId) {
-      setSelectedItemId(activeItemId);
+function orderRegisteredNodes(
+  entries: readonly RankedNode[],
+  filtering: boolean,
+  restoreFocus: (snapshot: NativeFocusSnapshot | null) => void,
+): void {
+  const focused = captureRegisteredFocus(entries);
+  const parents = new Map<HTMLElement, RankedNode[]>();
+  for (const entry of entries) {
+    const parent = entry.node.parentElement;
+    if (parent) {
+      const siblings = parents.get(parent) ?? [];
+      siblings.push(entry);
+      parents.set(parent, siblings);
     }
-
-    React.useEffect(() => {
-      if (!activeItemId) {
-        return;
-      }
-
-      itemsRef.current.get(activeItemId)?.ref.current?.scrollIntoView({
-        block: "nearest",
+  }
+  for (const [parent, siblings] of parents) {
+    const sorted = siblings.toSorted((a, b) => (filtering ? b.score - a.score : 0) || a.order - b.order);
+    const registered = new Set<Element>(siblings.map(({node}) => node));
+    const current = [...parent.children].filter((child) => registered.has(child));
+    if (!current.every((node, index) => node === sorted[index]?.node)) {
+      const slots = current.map((node) => {
+        const slot = parent.ownerDocument.createComment("command-order");
+        node.replaceWith(slot);
+        return slot;
       });
-    }, [activeItemId]);
+      slots.forEach((slot, index) => {
+        const entry = sorted[index];
+        if (entry) slot.replaceWith(entry.node);
+      });
+    }
+  }
+  restoreFocus(focused);
+}
 
-    const selectSpecificItem = React.useCallback((itemId: string | null): void => {
-      setSelectedItemId(itemId);
-    }, []);
+type NavigationRequest =
+  | Readonly<{kind: "step"; direction: 1 | -1; group: boolean}>
+  | Readonly<{kind: "endpoint"; direction: 1 | -1}>
+  | Readonly<{kind: "activate"}>;
 
-    const selectNextItem = React.useCallback((): void => {
-      if (selectableItems.length === 0) {
-        return;
-      }
+function vimNavigationRequest(key: string): NavigationRequest | null {
+  if (key === "n" || key === "j") return {kind: "step", direction: 1, group: false};
+  if (key === "p" || key === "k") return {kind: "step", direction: -1, group: false};
+  return null;
+}
 
-      const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
+function navigationRequest(event: React.KeyboardEvent<HTMLDivElement>, vimBindings: boolean): NavigationRequest | null {
+  if (event.nativeEvent.isComposing || event.shiftKey) return null;
+  if (event.ctrlKey) {
+    if (!vimBindings || event.altKey || event.metaKey) return null;
+    return vimNavigationRequest(event.key);
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    return event.metaKey ? {kind: "endpoint", direction} : {kind: "step", direction, group: event.altKey};
+  }
+  if (event.altKey || event.metaKey) return null;
+  if (event.key === "Home") return {kind: "endpoint", direction: -1};
+  if (event.key === "End") return {kind: "endpoint", direction: 1};
+  return event.key === "Enter" ? {kind: "activate"} : null;
+}
 
-      if (currentIndex === -1) {
-        setSelectedItemId(selectableItems[0].id);
-        return;
-      }
+function nextGroupIndex(items: readonly RegisteredItem[], index: number, direction: 1 | -1): number {
+  const current = items[index];
+  if (!current) return 0;
+  const groupKey = (item: RegisteredItem): string => item.groupId ?? item.id;
+  const candidates = direction > 0 ? items.slice(index + 1) : items.slice(0, index).toReversed();
+  const target = candidates.find((item) => groupKey(item) !== groupKey(current));
+  return target ? items.findIndex((item) => groupKey(item) === groupKey(target)) : direction > 0 ? items.length : -1;
+}
 
-      const nextIndex = currentIndex + 1;
+function nextItem(
+  items: readonly RegisteredItem[],
+  activeId: string | null,
+  request: Extract<NavigationRequest, {kind: "step"}>,
+  loop: boolean,
+): RegisteredItem | undefined {
+  const index = items.findIndex((item) => item.id === activeId);
+  const next = request.group ? nextGroupIndex(items, index, request.direction) : index === -1 ? 0 : index + request.direction;
+  if (next >= 0 && next < items.length) return items[next];
+  return loop ? (request.direction > 0 ? items[0] : items.at(-1)) : undefined;
+}
 
-      if (nextIndex >= selectableItems.length) {
-        setSelectedItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
-        return;
-      }
+function isNestedControl(target: EventTarget): boolean {
+  if (!(target instanceof Element)) return false;
+  const control = target.closest("button, a, input, textarea, select");
+  return control !== null && control.getAttribute("data-slot") !== "command-input";
+}
 
-      setSelectedItemId(selectableItems[nextIndex].id);
-    }, [activeItemId, loop, selectableItems]);
+/**
+ * Native, context-scoped command controller; not a cmdk package emulation.
+ * Filtering retains registrations, score order, stable ties and committed control.
+ * Home/End, arrows, Meta endpoints, Alt groups and optional Ctrl Vim keys navigate.
+ * Option-origin navigation transfers focus only after selection commits; input focus stays put.
+ * Place registered groups/items directly beneath CommandList/CommandGroup for score ordering.
+ */
+const Command = ({
+  ref,
+  children,
+  className,
+  defaultValue = "",
+  disablePointerSelection = false,
+  filter = defaultCommandFilter,
+  label = "Commands",
+  loop = false,
+  onKeyDown,
+  onValueChange,
+  shouldFilter = true,
+  value,
+  vimBindings = true,
+  ...props
+}: Readonly<CommandProps>): React.JSX.Element => {
+  const [selection, setSelection] = React.useState(defaultValue);
+  const [search, setSearch] = React.useState("");
+  const generatedListId = React.useId();
+  const [listId, setListId] = React.useState(generatedListId);
+  const navigationFocusRequestRef = React.useRef<NavigationFocusRequest | null>(null);
+  const restoringFocusRef = React.useRef<HTMLElement | null>(null);
+  const isRestoringFocus = React.useCallback((element: HTMLElement): boolean => {
+    const restoring = restoringFocusRef.current;
+    return restoring !== null && element.contains(restoring);
+  }, []);
+  const [registry, setRegistry] = React.useState<Registry>(() => ({
+    items: new Map(),
+    groups: new Map(),
+    nextOrder: 0,
+    revision: 0,
+  }));
 
-    const selectPreviousItem = React.useCallback((): void => {
-      if (selectableItems.length === 0) {
-        return;
-      }
+  const registerItem = React.useCallback((item: Omit<RegisteredItem, "order">): void => {
+    setRegistry((current) => {
+      const existing = current.items.get(item.id);
+      if (
+        existing
+        && existing.disabled === item.disabled
+        && existing.forceMount === item.forceMount
+        && existing.hidden === item.hidden
+        && existing.groupId === item.groupId
+        && existing.ref === item.ref
+        && existing.value === item.value
+        && existing.keywords.length === item.keywords.length
+        && existing.keywords.every((keyword, index) => keyword === item.keywords[index])
+      )
+        return current;
+      const items = new Map(current.items);
+      items.set(item.id, {...item, keywords: [...item.keywords], order: existing?.order ?? current.nextOrder});
+      return {...current, items, nextOrder: current.nextOrder + (existing ? 0 : 1), revision: current.revision + 1};
+    });
+  }, []);
+  const unregisterItem = React.useCallback((id: string): void => {
+    setRegistry((current) => {
+      if (!current.items.has(id)) return current;
+      const items = new Map(current.items);
+      items.delete(id);
+      return {...current, items, revision: current.revision + 1};
+    });
+  }, []);
+  const registerGroup = React.useCallback((group: Omit<RegisteredGroup, "order">): void => {
+    setRegistry((current) => {
+      const existing = current.groups.get(group.id);
+      if (existing?.ref === group.ref && existing.parentId === group.parentId) return current;
+      const groups = new Map(current.groups);
+      groups.set(group.id, {...group, order: existing?.order ?? current.nextOrder});
+      return {...current, groups, nextOrder: current.nextOrder + (existing ? 0 : 1), revision: current.revision + 1};
+    });
+  }, []);
+  const unregisterGroup = React.useCallback((id: string): void => {
+    setRegistry((current) => {
+      if (!current.groups.has(id)) return current;
+      const groups = new Map(current.groups);
+      groups.delete(id);
+      return {...current, groups, revision: current.revision + 1};
+    });
+  }, []);
 
-      const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
-
-      if (currentIndex === -1) {
-        setSelectedItemId(selectableItems[0].id);
-        return;
-      }
-
-      const previousIndex = currentIndex - 1;
-
-      if (previousIndex < 0) {
-        setSelectedItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
-        return;
-      }
-
-      setSelectedItemId(selectableItems[previousIndex].id);
-    }, [activeItemId, loop, selectableItems]);
-
-    const triggerActiveItem = React.useCallback((): void => {
-      if (!activeItemId) {
-        return;
-      }
-
-      itemsRef.current.get(activeItemId)?.ref.current?.click();
-    }, [activeItemId]);
-
-    const hasVisibleItemsInGroup = React.useCallback(
-      (groupId: string): boolean => visibleItems.some((item) => item.groupId === groupId),
-      [visibleItems],
-    );
-
-    const getVisibleItemCount = React.useCallback((): number => visibleItems.length, [visibleItems.length]);
-
-    const contextValue = React.useMemo<CommandContextValue>(
-      () => ({
-        activeItemId,
-        disablePointerSelection,
-        getVisibleItemCount,
-        hasVisibleItemsInGroup,
-        isFiltering,
-        isItemVisible,
-        listId,
-        loop,
-        registerItem,
-        search,
-        setSearch,
-        selectNextItem,
-        selectPreviousItem,
-        selectSpecificItem,
-        shouldFilter,
-        triggerActiveItem,
-        unregisterItem,
+  const isFiltering = shouldFilter && search.trim().length > 0;
+  const rankedItems = React.useMemo(
+    () =>
+      [...registry.items.values()].map((item) => {
+        const result = isFiltering ? filter(item.value, search, [...item.keywords]) : 1;
+        const score = Number.isFinite(result) && result > 0 ? result : 0;
+        return {item, score, visible: !item.hidden && (item.forceMount || !isFiltering || score > 0)};
       }),
-      [
-        activeItemId,
-        disablePointerSelection,
-        getVisibleItemCount,
-        hasVisibleItemsInGroup,
-        isFiltering,
-        isItemVisible,
-        listId,
-        loop,
-        registerItem,
-        search,
-        setSearch,
-        selectNextItem,
-        selectPreviousItem,
-        selectSpecificItem,
-        shouldFilter,
-        triggerActiveItem,
-        unregisterItem,
-      ],
-    );
+    [filter, isFiltering, registry.items, search],
+  );
+  const groupRanks = React.useMemo(() => {
+    const ranks = new Map<string, {score: number; order: number}>();
+    for (const {item, score, visible} of rankedItems) {
+      let groupId = visible ? item.groupId : null;
+      const visited = new Set<string>();
+      while (groupId && !visited.has(groupId)) {
+        visited.add(groupId);
+        const group = registry.groups.get(groupId);
+        const existing = ranks.get(groupId);
+        ranks.set(groupId, {
+          score: Math.max(existing?.score ?? 0, score),
+          order: group?.order ?? item.order,
+        });
+        groupId = group?.parentId ?? null;
+      }
+    }
+    return ranks;
+  }, [rankedItems, registry.groups]);
+  const visibleItems = React.useMemo(() => {
+    const paths = rankedItems
+      .filter(({visible}) => visible)
+      .map(({item, score}) => {
+        const path = [{id: item.id, score, order: item.order}];
+        let {groupId} = item;
+        const visited = new Set<string>();
+        while (groupId && !visited.has(groupId)) {
+          visited.add(groupId);
+          const rank = groupRanks.get(groupId);
+          if (!rank) break;
+          path.unshift({id: groupId, ...rank});
+          groupId = registry.groups.get(groupId)?.parentId ?? null;
+        }
+        return {item, path};
+      });
+    return paths
+      .toSorted((a, b) => {
+        // Compare the first diverging siblings, keeping each ancestor's subtree together like the DOM.
+        for (let index = 0; index < Math.min(a.path.length, b.path.length); index++) {
+          const first = a.path[index];
+          const second = b.path[index];
+          if (first && second && first.id !== second.id)
+            return (isFiltering ? second.score - first.score : 0) || first.order - second.order;
+        }
+        return 0;
+      })
+      .map(({item}) => item);
+  }, [groupRanks, isFiltering, rankedItems, registry.groups]);
+  const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
+  const selectedValue = value ?? selection;
+  const activeItem = selectableItems.find((item) => item.value === selectedValue) ?? (value === undefined ? selectableItems[0] : undefined);
+  const activeItemId = activeItem?.id ?? null;
 
-    return (
-      <CommandContext.Provider value={contextValue}>
-        <div
-          ref={ref}
-          aria-label={label}
-          className={cn(styles.command, className)}
-          role='toolbar'
-          onKeyDown={(event) => {
-            onKeyDown?.(event);
+  // Guarded same-owner reconciliation remembers fallback without an extra effect render.
+  const fallbackValue = activeItem?.value ?? "";
+  if (value === undefined && registry.revision > 0 && selection !== fallbackValue) setSelection(fallbackValue);
+  React.useLayoutEffect(() => {
+    const entries: RankedNode[] = [];
+    for (const {item, score} of rankedItems) {
+      const node = item.ref.current;
+      if (node) entries.push({node, score, order: item.order});
+    }
+    for (const group of registry.groups.values()) {
+      const node = group.ref.current;
+      if (node) entries.push({node, score: groupRanks.get(group.id)?.score ?? 0, order: group.order});
+    }
+    orderRegisteredNodes(entries, isFiltering, (snapshot) => {
+      // Restoring this descendant is not a proposal; a caller's handoff to another option still is.
+      restoringFocusRef.current = snapshot?.element ?? null;
+      try {
+        restoreRegisteredFocus(snapshot);
+      } finally {
+        restoringFocusRef.current = null;
+      }
+    });
+  }, [groupRanks, isFiltering, rankedItems, registry.groups]);
+  React.useLayoutEffect(() => {
+    const request = navigationFocusRequestRef.current;
+    if (!request) return;
+    if (!request.origin.isConnected || request.origin.ownerDocument.activeElement !== request.origin) {
+      navigationFocusRequestRef.current = null;
+      return;
+    }
+    if (activeItemId === request.targetId) {
+      navigationFocusRequestRef.current = null;
+      activeItem?.ref.current?.focus({preventScroll: true});
+    } else if (activeItemId !== request.originId) {
+      navigationFocusRequestRef.current = null;
+    }
+  }, [activeItem, activeItemId]);
+  React.useEffect(() => {
+    activeItem?.ref.current?.scrollIntoView({block: "nearest"});
+  }, [activeItem]);
 
-            if (event.defaultPrevented) {
-              return;
+  const selectItem = React.useCallback(
+    (id: string): void => {
+      const item = selectableItems.find((candidate) => candidate.id === id);
+      if (!item || item.value === selectedValue) return;
+      if (value === undefined) setSelection(item.value);
+      onValueChange?.(item.value);
+    },
+    [onValueChange, selectableItems, selectedValue, value],
+  );
+
+  const navigateToItem = (item: RegisteredItem, owner: Document): void => {
+    const focused = owner.activeElement;
+    const origin = focused instanceof HTMLElement ? registry.items.get(focused.id)?.ref.current : null;
+    navigationFocusRequestRef.current = origin && origin === focused ? {origin, originId: origin.id, targetId: item.id} : null;
+    selectItem(item.id);
+    if (navigationFocusRequestRef.current && item.id === activeItemId) {
+      navigationFocusRequestRef.current = null;
+      item.ref.current?.focus({preventScroll: true});
+    }
+  };
+
+  const context = React.useMemo<CommandContextValue>(
+    () => ({
+      activeItemId,
+      disablePointerSelection,
+      isFiltering,
+      isItemVisible: (id) => visibleItems.some((item) => item.id === id),
+      isRestoringFocus,
+      hasVisibleItemsInGroup: (id) => groupRanks.has(id),
+      label,
+      listId,
+      registerItem,
+      unregisterItem,
+      registerGroup,
+      unregisterGroup,
+      search,
+      setSearch,
+      setListId,
+      selectItem,
+      visibleItemCount: visibleItems.length,
+    }),
+    [
+      activeItemId,
+      disablePointerSelection,
+      isFiltering,
+      isRestoringFocus,
+      groupRanks,
+      label,
+      listId,
+      registerGroup,
+      registerItem,
+      search,
+      selectItem,
+      unregisterGroup,
+      unregisterItem,
+      visibleItems,
+    ],
+  );
+
+  return (
+    <CommandContext.Provider value={context}>
+      <div
+        ref={ref}
+        data-slot='command'
+        aria-label={props["aria-label"] ?? label}
+        className={cn(styles.command, className)}
+        role='toolbar'
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (event.defaultPrevented || isNestedControl(event.target)) return;
+          const request = navigationRequest(event, vimBindings);
+          if (!request) return;
+          if (request.kind === "activate") {
+            if (activeItem) {
+              event.preventDefault();
+              activeItem.ref.current?.click();
             }
-
-            switch (event.key) {
-              case "ArrowDown": {
-                event.preventDefault();
-                selectNextItem();
-                break;
-              }
-
-              case "ArrowUp": {
-                event.preventDefault();
-                selectPreviousItem();
-                break;
-              }
-
-              case "Home": {
-                if (selectableItems.length === 0) {
-                  return;
-                }
-
-                event.preventDefault();
-                setSelectedItemId(selectableItems[0].id);
-                break;
-              }
-
-              case "End": {
-                if (selectableItems.length === 0) {
-                  return;
-                }
-
-                event.preventDefault();
-                setSelectedItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
-                break;
-              }
-
-              case "Enter": {
-                if (event.nativeEvent.isComposing) {
-                  return;
-                }
-
-                event.preventDefault();
-                triggerActiveItem();
-                break;
-              }
-
-              default: {
-                break;
-              }
-            }
-          }}
-          {...props}>
-          {children}
-        </div>
-      </CommandContext.Provider>
-    );
-  },
-);
+            return;
+          }
+          const item =
+            request.kind === "endpoint"
+              ? request.direction > 0
+                ? selectableItems.at(-1)
+                : selectableItems[0]
+              : nextItem(selectableItems, activeItemId, request, loop);
+          if (item) {
+            event.preventDefault();
+            navigateToItem(item, event.currentTarget.ownerDocument);
+          }
+        }}
+        {...props}>
+        {children}
+      </div>
+    </CommandContext.Provider>
+  );
+};
 Command.displayName = "Command";
 
 /**
- * Renders the command surface inside a modal dialog.
- *
- * @remarks
- * - Renders a Base UI dialog popup
- * - Built on Base UI Dialog primitives
- *
- * @example
- * ```tsx
- * <CommandDialog open={open} onOpenChange={setOpen}>
- *   <CommandInput placeholder='Search...' />
- * </CommandDialog>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
+ * Shared Dialog modal with real title/description and no implicit Command root.
+ * Use `<CommandDialog><Command>…</Command></CommandDialog>` for canonical composition.
  */
-function CommandDialog({children, open, onOpenChange, title = "Command menu", ...props}: Readonly<CommandDialogProps>): React.JSX.Element {
-  return (
-    <BaseDialog.Root
-      open={open}
-      onOpenChange={onOpenChange}
-      {...props}>
-      <BaseDialog.Portal>
-        <BaseDialog.Backdrop className={styles.backdrop} />
-        <BaseDialog.Popup className={styles.dialogPopup}>
-          <BaseDialog.Title className={styles.srOnly}>{title}</BaseDialog.Title>
-          <Command>{children}</Command>
-        </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
-  );
-}
+const CommandDialog = ({
+  ref,
+  children,
+  title = "Command menu",
+  description = "Search for a command to run...",
+  className,
+  showCloseButton = false,
+  closeLabel,
+  ...props
+}: Readonly<CommandDialogProps>): React.JSX.Element => (
+  <Dialog {...props}>
+    <DialogContent
+      ref={ref}
+      className={cn(styles.dialogPopup, className)}
+      showCloseButton={showCloseButton}
+      closeLabel={closeLabel}>
+      <DialogTitle className={cn(styles.srOnly)}>{title}</DialogTitle>
+      <DialogDescription className={cn(styles.srOnly)}>{description}</DialogDescription>
+      {children}
+    </DialogContent>
+  </Dialog>
+);
 CommandDialog.displayName = "CommandDialog";
 
-/**
- * Provides the searchable input surface for a command palette.
- *
- * @remarks
- * - Renders an `<input>` element inside a wrapper `<div>`
- * - Built on the shared command registry context
- *
- * @example
- * ```tsx
- * <CommandInput placeholder='Search...' />
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/combobox_role | ARIA Combobox Role}
- */
-const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(({className, onChange, onValueChange, value, ...props}, ref) => {
-  const {activeItemId, listId, search, selectSpecificItem, setSearch} = useCommandContext("CommandInput");
-  const isControlled = value !== undefined;
-  const inputValue = isControlled ? value : search;
-
-  React.useEffect(() => {
-    if (!isControlled) {
-      return;
-    }
-
-    setSearch(value ?? "");
-  }, [isControlled, setSearch, value]);
-
-  return (
-    <div className={styles.inputWrapper}>
-      <Search className={styles.searchIcon} />
-      <input
-        ref={ref}
-        aria-activedescendant={activeItemId ?? undefined}
-        aria-autocomplete='list'
-        aria-controls={listId}
-        aria-expanded='true'
-        className={cn(styles.input, className)}
-        onChange={(event) => {
-          onChange?.(event);
-
-          const nextSearchValue = event.currentTarget.value;
-          setSearch(nextSearchValue);
-          onValueChange?.(nextSearchValue);
-          selectSpecificItem(null);
-        }}
-        role='combobox'
-        type='text'
-        value={inputValue}
-        {...props}
-      />
-    </div>
-  );
-});
-CommandInput.displayName = "CommandInput";
-
-/**
- * Renders the listbox container that hosts command items and groups.
- *
- * @remarks
- * - Renders a `<div>` element with `role="listbox"`
- * - Built on the shared command registry context
- *
- * @example
- * ```tsx
- * <CommandList>
- *   <CommandItem>Settings</CommandItem>
- * </CommandList>
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/listbox_role | ARIA Listbox Role}
- */
-const CommandList = React.forwardRef<HTMLDivElement, CommandListProps>(({className, label, ...props}, ref) => {
-  const {listId} = useCommandContext("CommandList");
-
+/** Search combobox composed with the real InputGroup chrome and native form input. */
+const CommandInput = ({
+  ref,
+  className,
+  onChange,
+  onValueChange,
+  value,
+  defaultValue = "",
+  ...props
+}: Readonly<CommandInputProps>): React.JSX.Element => {
+  const {activeItemId, listId, setSearch} = useCommandContext("CommandInput");
+  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
+  const inputValue = value ?? uncontrolledValue;
+  React.useLayoutEffect(() => {
+    setSearch(inputValue);
+  }, [inputValue, setSearch]);
   return (
     <div
-      aria-label={label}
+      data-slot='command-input-wrapper'
+      className={styles.inputWrapper}>
+      <InputGroup className={styles.inputGroup}>
+        <input
+          ref={ref}
+          data-slot='command-input'
+          aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : "Search commands")}
+          aria-activedescendant={activeItemId ?? undefined}
+          aria-autocomplete='list'
+          aria-controls={listId}
+          aria-expanded='true'
+          className={cn(styles.input, className)}
+          onChange={(event) => {
+            onChange?.(event);
+            if (event.defaultPrevented) return;
+            const proposal = event.currentTarget.value;
+            if (value === undefined) setUncontrolledValue(proposal);
+            onValueChange?.(proposal);
+          }}
+          role='combobox'
+          type='text'
+          value={inputValue}
+          {...props}
+        />
+        <InputGroupAddon>
+          <Search
+            aria-hidden='true'
+            className={styles.searchIcon}
+          />
+        </InputGroupAddon>
+      </InputGroup>
+    </div>
+  );
+};
+CommandInput.displayName = "CommandInput";
+
+/** Labelled listbox; a custom id is committed back to the input's aria-controls. */
+const CommandList = ({ref, className, label, id, ...props}: Readonly<CommandListProps>): React.JSX.Element => {
+  const {listId, setListId, label: rootLabel} = useCommandContext("CommandList");
+  const generatedId = React.useId();
+  const effectiveId = id ?? generatedId;
+  React.useLayoutEffect(() => {
+    setListId(effectiveId);
+  }, [effectiveId, setListId]);
+  return (
+    <div
       ref={ref}
+      data-slot='command-list'
+      aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : (label ?? rootLabel))}
       className={cn(styles.list, className)}
       id={listId}
       role='listbox'
       {...props}
     />
   );
-});
+};
 CommandList.displayName = "CommandList";
 
-/**
- * Renders a fallback empty-state message when no command items are visible.
- *
- * @remarks
- * - Renders a `<div>` element with `role="status"`
- * - Built on the shared command registry context
- *
- * @example
- * ```tsx
- * <CommandEmpty>No results found.</CommandEmpty>
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/status_role | ARIA Status Role}
- */
-const CommandEmpty = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
-  const {getVisibleItemCount} = useCommandContext("CommandEmpty");
-
-  if (getVisibleItemCount() > 0) {
-    return null;
-  }
-
+/** Live empty status. Force-mounted and disabled options still count as visible. */
+const CommandEmpty = ({ref, className, ...props}: Readonly<CommandEmptyProps>): React.JSX.Element | null => {
+  const {visibleItemCount} = useCommandContext("CommandEmpty");
+  if (visibleItemCount > 0) return null;
   return (
     <div
       ref={ref}
+      data-slot='command-empty'
       className={cn(styles.empty, className)}
       role='status'
-      {...props}
-    />
-  );
-});
-CommandEmpty.displayName = "CommandEmpty";
-
-/**
- * Groups related command items under an optional heading.
- *
- * @remarks
- * - Renders a `<div>` element
- * - Built on the shared command registry context
- *
- * @example
- * ```tsx
- * <CommandGroup heading='Suggestions'>
- *   <CommandItem>Profile</CommandItem>
- * </CommandGroup>
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/group_role | ARIA Group Role}
- */
-const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
-  ({children, className, forceMount = false, heading, value: _value, ...props}, ref) => {
-    const groupId = React.useId();
-    const {hasVisibleItemsInGroup, isFiltering} = useCommandContext("CommandGroup");
-
-    if (!forceMount && isFiltering && !hasVisibleItemsInGroup(groupId)) {
-      return null;
-    }
-
-    return (
-      <CommandGroupContext.Provider value={groupId}>
-        <div
-          ref={ref}
-          className={cn(styles.group, className)}
-          data-command-group=''
-          {...props}>
-          {heading ? <div className={styles.groupHeading}>{heading}</div> : null}
-          {children}
-        </div>
-      </CommandGroupContext.Provider>
-    );
-  },
-);
-CommandGroup.displayName = "CommandGroup";
-
-/**
- * Renders a separator between command groups or item sections.
- *
- * @remarks
- * - Renders the shared separator primitive
- * - Built on Base UI Separator
- *
- * @example
- * ```tsx
- * <CommandSeparator />
- * ```
- *
- * @see {@link https://base-ui.com/react/components/separator | Base UI Separator Docs}
- */
-const CommandSeparator = React.forwardRef<HTMLDivElement, CommandSeparatorProps>(
-  ({alwaysRender = false, className, orientation = "horizontal", ...props}, ref) => {
-    const {isFiltering} = useCommandContext("CommandSeparator");
-
-    if (isFiltering && !alwaysRender) {
-      return null;
-    }
-
-    return (
-      <BaseSeparator
-        ref={ref}
-        className={cn(styles.separator, className)}
-        orientation={orientation}
-        {...props}
-      />
-    );
-  },
-);
-CommandSeparator.displayName = "CommandSeparator";
-
-/**
- * Renders a selectable command option with filtering metadata and keyboard support.
- *
- * @remarks
- * - Renders a `<div>` element with `role="option"`
- * - Built on the shared command registry context
- *
- * @example
- * ```tsx
- * <CommandItem keywords={["preferences"]}>Settings</CommandItem>
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/option_role | ARIA Option Role}
- */
-const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
-  ({children, className, disabled = false, forceMount = false, keywords = [], onClick, onMouseEnter, onSelect, value, ...props}, ref) => {
-    const {activeItemId, disablePointerSelection, isFiltering, isItemVisible, registerItem, selectSpecificItem, unregisterItem} =
-      useCommandContext("CommandItem");
-    const groupId = React.useContext(CommandGroupContext);
-    const generatedId = React.useId();
-    const itemRef = React.useRef<HTMLDivElement | null>(null);
-    const keywordSignature = React.useMemo(() => keywords.join("\0"), [keywords]);
-
-    React.useLayoutEffect(() => {
-      const textValue = value ?? itemRef.current?.textContent?.trim() ?? "";
-
-      registerItem({
-        disabled,
-        forceMount,
-        groupId,
-        id: generatedId,
-        keywords,
-        ref: itemRef,
-        textValue,
-        value,
-      });
-    }, [children, disabled, forceMount, generatedId, groupId, keywordSignature, keywords, registerItem, value]);
-
-    React.useEffect(() => {
-      return () => {
-        unregisterItem(generatedId);
-      };
-    }, [generatedId, unregisterItem]);
-
-    const isVisible = forceMount || !isFiltering || isItemVisible(generatedId);
-
-    if (!isVisible) {
-      return null;
-    }
-
-    const isSelected = activeItemId === generatedId;
-
-    return (
-      <div
-        {...props}
-        ref={(node) => {
-          itemRef.current = node;
-          assignRef(ref, node);
-        }}
-        aria-disabled={disabled || undefined}
-        aria-selected={isSelected}
-        className={cn(styles.item, className)}
-        data-disabled={disabled ? "true" : undefined}
-        data-selected={isSelected ? "true" : undefined}
-        id={generatedId}
-        onClick={(event) => {
-          if (disabled) {
-            event.preventDefault();
-            return;
-          }
-
-          selectSpecificItem(generatedId);
-          onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
-          onClick?.(event);
-        }}
-        onKeyDown={(event) => {
-          if (disabled) {
-            event.preventDefault();
-            return;
-          }
-
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            selectSpecificItem(generatedId);
-            onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
-          }
-        }}
-        onFocus={() => {
-          if (disabled) {
-            return;
-          }
-
-          selectSpecificItem(generatedId);
-        }}
-        onMouseEnter={(event) => {
-          onMouseEnter?.(event);
-
-          if (disabled || disablePointerSelection) {
-            return;
-          }
-
-          selectSpecificItem(generatedId);
-        }}
-        role='option'
-        tabIndex={disabled ? -1 : 0}>
-        {children}
-      </div>
-    );
-  },
-);
-CommandItem.displayName = "CommandItem";
-
-/**
- * Renders auxiliary shortcut text aligned to the edge of a command item.
- *
- * @remarks
- * - Renders a `<span>` element
- * - Built as a lightweight presentational helper for command menus
- *
- * @example
- * ```tsx
- * <CommandShortcut>⌘K</CommandShortcut>
- * ```
- *
- * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/span | HTML span element}
- */
-const CommandShortcut = ({className, ...props}: Readonly<React.HTMLAttributes<HTMLSpanElement>>): React.JSX.Element => {
-  return (
-    <span
-      className={cn(styles.shortcut, className)}
+      aria-live='polite'
       {...props}
     />
   );
 };
+CommandEmpty.displayName = "CommandEmpty";
+
+/** Retains child registrations while hidden; the heading supplies the group's name. */
+const CommandGroup = ({
+  ref,
+  children,
+  className,
+  forceMount = false,
+  heading,
+  hidden,
+  id,
+  value,
+  ...props
+}: Readonly<CommandGroupProps>): React.JSX.Element => {
+  const generatedId = React.useId();
+  const groupId = id ?? generatedId;
+  const headingId = `${groupId}-heading`;
+  const parent = React.useContext(CommandGroupContext);
+  const inheritedForceMount = forceMount || (parent?.forceMount ?? false);
+  const externallyHidden = Boolean(hidden || parent?.hidden);
+  const {hasVisibleItemsInGroup, isFiltering, registerGroup, unregisterGroup} = useCommandContext("CommandGroup");
+  const groupRef = React.useRef<HTMLDivElement | null>(null);
+  const mergedRef = useMergedRefs(groupRef, ref);
+  const groupContext = React.useMemo(
+    () => ({id: groupId, forceMount: inheritedForceMount, hidden: externallyHidden}),
+    [externallyHidden, groupId, inheritedForceMount],
+  );
+  React.useLayoutEffect(() => {
+    registerGroup({id: groupId, parentId: parent?.id ?? null, ref: groupRef});
+    return () => {
+      unregisterGroup(groupId);
+    };
+  }, [groupId, parent?.id, registerGroup, unregisterGroup]);
+  return (
+    <CommandGroupContext.Provider value={groupContext}>
+      <div
+        ref={mergedRef}
+        id={groupId}
+        role='group'
+        aria-labelledby={props["aria-labelledby"] ?? (heading !== undefined && heading !== null ? headingId : undefined)}
+        className={cn(styles.group, className)}
+        data-slot='command-group'
+        data-command-group=''
+        data-value={value}
+        hidden={hidden || externallyHidden || (!inheritedForceMount && isFiltering && !hasVisibleItemsInGroup(groupId))}
+        {...props}>
+        {heading !== undefined && heading !== null ? (
+          <div
+            id={headingId}
+            className={styles.groupHeading}>
+            {heading}
+          </div>
+        ) : null}
+        {children}
+      </div>
+    </CommandGroupContext.Provider>
+  );
+};
+CommandGroup.displayName = "CommandGroup";
+
+/** Primitive separator; native path retains orientation/render/state semantics. */
+const CommandSeparator = ({
+  ref,
+  alwaysRender = false,
+  className,
+  orientation = "horizontal",
+  ...props
+}: Readonly<CommandSeparatorProps>): React.JSX.Element | null => {
+  const {isFiltering} = useCommandContext("CommandSeparator");
+  if (isFiltering && !alwaysRender) return null;
+  return (
+    <BaseSeparator
+      ref={ref}
+      data-slot='command-separator'
+      className={typeof className === "function" ? (state) => cn(styles.separator, className(state)) : cn(styles.separator, className)}
+      orientation={orientation}
+      {...props}
+    />
+  );
+};
+CommandSeparator.displayName = "CommandSeparator";
+
+const EMPTY_KEYWORDS: readonly string[] = [];
+
+/** Native option with one activation path and caller-first cancellable handlers. */
+const CommandItem = ({
+  ref,
+  children,
+  className,
+  disabled = false,
+  forceMount = false,
+  hidden,
+  keywords = EMPTY_KEYWORDS,
+  onClick,
+  onKeyDown,
+  onFocus,
+  onMouseEnter,
+  onSelect,
+  value,
+  id,
+  ...props
+}: Readonly<CommandItemProps>): React.JSX.Element => {
+  const {activeItemId, disablePointerSelection, isFiltering, isItemVisible, isRestoringFocus, registerItem, selectItem, unregisterItem} =
+    useCommandContext("CommandItem");
+  const group = React.useContext(CommandGroupContext);
+  const generatedId = React.useId();
+  const itemId = id ?? generatedId;
+  const itemRef = React.useRef<HTMLDivElement | null>(null);
+  const mergedRef = useMergedRefs(itemRef, ref);
+  const inheritedForceMount = forceMount || (group?.forceMount ?? false);
+  const externallyHidden = Boolean(hidden || group?.hidden);
+  React.useLayoutEffect(() => {
+    registerItem({
+      disabled,
+      forceMount: inheritedForceMount,
+      hidden: externallyHidden,
+      groupId: group?.id ?? null,
+      id: itemId,
+      keywords,
+      ref: itemRef,
+      value: value ?? itemRef.current?.textContent?.trim() ?? "",
+    });
+  }, [children, disabled, externallyHidden, group?.id, inheritedForceMount, itemId, keywords, registerItem, value]);
+  React.useLayoutEffect(
+    () => () => {
+      unregisterItem(itemId);
+    },
+    [itemId, unregisterItem],
+  );
+  const isVisible = !externallyHidden && (inheritedForceMount || !isFiltering || isItemVisible(itemId));
+  const isSelected = activeItemId === itemId;
+  return (
+    <div
+      ref={mergedRef}
+      data-slot='command-item'
+      aria-disabled={disabled || undefined}
+      aria-selected={isSelected}
+      className={cn(styles.item, className)}
+      data-disabled={disabled ? "true" : undefined}
+      data-selected={isSelected ? "true" : undefined}
+      hidden={hidden || !isVisible}
+      id={itemId}
+      onClick={(event) => {
+        onClick?.(event);
+        if (event.defaultPrevented || isNestedControl(event.target)) return;
+        if (disabled || !isVisible) {
+          event.preventDefault();
+          return;
+        }
+        selectItem(itemId);
+        onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
+      }}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+        if (
+          event.defaultPrevented
+          || isNestedControl(event.target)
+          || event.nativeEvent.isComposing
+          || event.ctrlKey
+          || event.altKey
+          || event.metaKey
+          || event.shiftKey
+        )
+          return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (!disabled && isVisible) event.currentTarget.click();
+        }
+      }}
+      onFocus={(event) => {
+        onFocus?.(event);
+        if (!event.defaultPrevented && !isRestoringFocus(event.currentTarget) && !isNestedControl(event.target) && !disabled && isVisible)
+          selectItem(itemId);
+      }}
+      onMouseEnter={(event) => {
+        onMouseEnter?.(event);
+        if (!event.defaultPrevented && !disabled && isVisible && !disablePointerSelection) selectItem(itemId);
+      }}
+      role='option'
+      tabIndex={disabled ? -1 : (props.tabIndex ?? 0)}
+      {...props}>
+      {children}
+    </div>
+  );
+};
+CommandItem.displayName = "CommandItem";
+
+/** Shortcut presentation with native span semantics and a React 19 ref prop. */
+const CommandShortcut = ({ref, className, ...props}: Readonly<CommandShortcutProps>): React.JSX.Element => (
+  <span
+    ref={ref}
+    data-slot='command-shortcut'
+    className={cn(styles.shortcut, className)}
+    {...props}
+  />
+);
 CommandShortcut.displayName = "CommandShortcut";
+
+/* eslint-disable no-redeclare, sonarjs/redundant-type-aliases -- canonical component namespace typing API */
+namespace Command {
+  export type Props = CommandProps;
+}
+namespace CommandDialog {
+  export type Props = CommandDialogProps;
+  export type State = Dialog.State;
+}
+namespace CommandInput {
+  export type Props = CommandInputProps;
+}
+namespace CommandList {
+  export type Props = CommandListProps;
+}
+namespace CommandEmpty {
+  export type Props = CommandEmptyProps;
+}
+namespace CommandGroup {
+  export type Props = CommandGroupProps;
+}
+namespace CommandSeparator {
+  export type Props = CommandSeparatorProps;
+  export type State = BaseSeparator.State;
+}
+namespace CommandItem {
+  export type Props = CommandItemProps;
+}
+namespace CommandShortcut {
+  export type Props = CommandShortcutProps;
+}
+/* eslint-enable no-redeclare, sonarjs/redundant-type-aliases */
 
 export {Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut};

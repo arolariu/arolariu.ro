@@ -6,488 +6,287 @@ import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {Button, buttonVariants, type ButtonProps, type ButtonSize, type ButtonVariant} from "./button";
 import styles from "./alert-dialog.module.css";
-import buttonStyles from "./button.module.css";
 
-interface AlertDialogProps extends React.ComponentPropsWithRef<typeof BaseAlertDialog.Root> {}
+/** Real modal primitive state, dismissal and imperative actions. */
+export type AlertDialogProps<Payload = unknown> = Readonly<BaseAlertDialog.Root.Props<Payload>>;
+/** Trigger composition retains primitive render state and slot compatibility. */
+export type AlertDialogTriggerProps = Readonly<Omit<BaseAlertDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+/** Backdrop presentation with primitive composition. */
+export type AlertDialogOverlayProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Backdrop>, "className"> & {className?: string}
+>;
+/** Supported confirmation popup widths and media/action layouts. */
+export type AlertDialogSize = "default" | "sm";
+/** Confirmation popup props with primitive-owned render, ref and focus contracts. */
+export type AlertDialogContentProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Popup>, "className"> & {
+    className?: string;
+    /** Compact or standard confirmation layout. @default "default" */
+    size?: AlertDialogSize;
+  }
+>;
+/** Layout composition uses the actual Base UI polymorphic render contract. */
+export type AlertDialogHeaderProps = Readonly<
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
+/** Confirmation action layout. */
+export type AlertDialogFooterProps = Readonly<AlertDialogHeaderProps>;
+/** Optional visual media. Decorative icons should be `aria-hidden`; meaningful images need alternative text. */
+export type AlertDialogMediaProps = Readonly<
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {ref?: React.Ref<HTMLElement>}
+>;
+/** Accessible confirmation heading. */
+export type AlertDialogTitleProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Title>, "className"> & {className?: string}
+>;
+/** Accessible confirmation description. */
+export type AlertDialogDescriptionProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Description>, "className"> & {className?: string}
+>;
+/** Ordinary Button props: confirmation does not implicitly dismiss the modal. */
+export type AlertDialogActionProps = ButtonProps;
+/** Explicit dismissal control with the shared Button's visual presets. */
+export type AlertDialogCancelProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Close>, "className"> & {
+    className?: string;
+    /** Shared button variant. @default "outline" */
+    variant?: ButtonVariant;
+    /** Shared button size. @default "default" */
+    size?: ButtonSize;
+  }
+>;
 
-interface AlertDialogTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Trigger>, "className"> {
-  /** Additional CSS classes merged with the alert-dialog trigger styles. @default undefined */
-  className?: string;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer Base UI's `render` prop. */
-  asChild?: boolean;
-}
-
-interface AlertDialogOverlayProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Backdrop>, "className"> {
-  /** Additional CSS classes merged with the alert-dialog backdrop styles. @default undefined */
-  className?: string;
-}
-
-interface AlertDialogContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Popup>, "className"> {
-  /** Additional CSS classes merged with the alert-dialog popup styles. @default undefined */
-  className?: string;
-}
-
-interface AlertDialogHeaderProps extends React.ComponentPropsWithRef<"div"> {
-  /** Additional CSS classes merged with the alert-dialog header layout styles. @default undefined */
-  className?: string;
-  /** Custom element or render callback used to replace the default header container. @default undefined */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer the `render` prop. */
-  asChild?: boolean;
-}
-
-interface AlertDialogFooterProps extends React.ComponentPropsWithRef<"div"> {
-  /** Additional CSS classes merged with the alert-dialog footer layout styles. @default undefined */
-  className?: string;
-  /** Custom element or render callback used to replace the default footer container. @default undefined */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer the `render` prop. */
-  asChild?: boolean;
-}
-
-interface AlertDialogTitleProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Title>, "className"> {
-  /** Additional CSS classes merged with the alert-dialog title styles. @default undefined */
-  className?: string;
-}
-
-interface AlertDialogDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Description>, "className"> {
-  /** Additional CSS classes merged with the alert-dialog description styles. @default undefined */
-  className?: string;
-}
-
-interface AlertDialogActionProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Close>, "className"> {
-  /** Additional CSS classes merged with the primary action button styles. @default undefined */
-  className?: string;
-}
-
-interface AlertDialogCancelProps extends Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Close>, "className"> {
-  /** Additional CSS classes merged with the cancel action button styles. @default undefined */
-  className?: string;
-}
-
-/**
- * Coordinates destructive confirmation dialogs with modal accessibility behavior.
- *
- * @remarks
- * - Renders no DOM element by default and coordinates descendant alert-dialog parts
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports composition through descendant `render` props
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialog>
- *   <AlertDialogTrigger>Delete</AlertDialogTrigger>
- *   <AlertDialogContent>
- *     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
- *   </AlertDialogContent>
- * </AlertDialog>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialog(props: Readonly<AlertDialog.Props>): React.ReactElement {
+/** Coordinates a confirmation modal. Base UI owns focus and dismissal; callers own work policy. */
+function AlertDialog<Payload = unknown>(props: Readonly<AlertDialog.Props<Payload>>): React.ReactElement {
   return <BaseAlertDialog.Root {...props} />;
 }
 AlertDialog.displayName = "AlertDialog";
 
-/**
- * Opens the alert dialog from an interactive trigger element.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogTrigger>Delete</AlertDialogTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-const AlertDialogTrigger = React.forwardRef<HTMLButtonElement, AlertDialogTrigger.Props>((props, forwardedRef) => {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Opens a confirmation modal with primitive-owned state and ref merging. */
+const AlertDialogTrigger = ({
+  ref,
+  children,
+  render,
+  nativeButton,
+  className,
+  ...props
+}: Readonly<AlertDialogTrigger.Props>): React.ReactElement => {
+  const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
   return (
     <BaseAlertDialog.Trigger
-      {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
+      data-slot='alert-dialog-trigger'
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={render}
+      {...props}>
+      {children}
     </BaseAlertDialog.Trigger>
   );
-});
+};
 AlertDialogTrigger.displayName = "AlertDialogTrigger";
 
-/**
- * Portals alert-dialog descendants outside the local DOM hierarchy.
- *
- * @remarks
- * - Renders no DOM element by default and portals descendants into the document body
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Does not expose a `render` prop because it only controls mounting context
- * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogPortal>
- *   <AlertDialogOverlay />
- *   <AlertDialogContent />
- * </AlertDialogPortal>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
+/** Portals confirmation parts; retains Base UI's `keepMounted` contract. */
 const AlertDialogPortal = BaseAlertDialog.Portal;
-AlertDialogPortal.displayName = "AlertDialogPortal";
 
-/**
- * Renders the dimmed backdrop behind the alert dialog popup.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogOverlay />
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialogOverlay(props: Readonly<AlertDialogOverlay.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
-
+/** Renders the styled backdrop below the popup, with real primitive render state. */
+function AlertDialogOverlay({className, ...props}: Readonly<AlertDialogOverlay.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Backdrop
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.backdrop, className)}, {}),
-      })}
+      data-slot='alert-dialog-overlay'
+      className={cn(styles.backdrop, className)}
+      {...props}
     />
   );
 }
 AlertDialogOverlay.displayName = "AlertDialogOverlay";
 
-/**
- * Renders the alert dialog popup inside a portal with its backdrop.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogContent>
- *   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
- * </AlertDialogContent>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-const AlertDialogContent = React.forwardRef<HTMLDivElement, AlertDialogContent.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <AlertDialogPortal>
-      <AlertDialogOverlay />
-      <BaseAlertDialog.Popup
-        {...otherProps}
-        ref={forwardedRef}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.popup, className)}, {}),
-        })}>
-        {children}
-      </BaseAlertDialog.Popup>
-    </AlertDialogPortal>
-  );
-});
+/** Portals the confirmation popup with a standard or compact media/action layout. */
+const AlertDialogContent = ({
+  ref,
+  className,
+  children,
+  size = "default",
+  ...props
+}: Readonly<AlertDialogContent.Props>): React.ReactElement => (
+  <AlertDialogPortal>
+    <AlertDialogOverlay />
+    <BaseAlertDialog.Popup
+      data-slot='alert-dialog-content'
+      data-size={size}
+      ref={ref}
+      className={cn(styles.popup, className)}
+      {...props}>
+      {children}
+    </BaseAlertDialog.Popup>
+  </AlertDialogPortal>
+);
 AlertDialogContent.displayName = "AlertDialogContent";
 
-/**
- * Lays out the alert dialog heading and supporting content.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogHeader>
- *   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
- * </AlertDialogHeader>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialogHeader(props: Readonly<AlertDialogHeader.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Composes the title, description and optional media without discarding refs or children. */
+const AlertDialogHeader = ({ref, children, className, render, ...props}: Readonly<AlertDialogHeader.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.header, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render,
+    props: {
+      "data-slot": "alert-dialog-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+        children,
+      }),
+    },
   });
-}
+};
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
-/**
- * Lays out confirmation and dismissal actions at the bottom edge.
- *
- * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogFooter>
- *   <AlertDialogCancel>Cancel</AlertDialogCancel>
- * </AlertDialogFooter>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialogFooter(props: Readonly<AlertDialogFooter.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+/** Lays out confirmation and explicit cancellation actions. */
+const AlertDialogFooter = ({ref, children, className, render, ...props}: Readonly<AlertDialogFooter.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.footer, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render,
+    props: {
+      "data-slot": "alert-dialog-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+        children,
+      }),
+    },
   });
-}
+};
 AlertDialogFooter.displayName = "AlertDialogFooter";
 
-/**
- * Renders the accessible heading for alert dialog content.
- *
- * @remarks
- * - Renders an `<h2>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogTitle>Are you sure?</AlertDialogTitle>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialogTitle(props: Readonly<AlertDialogTitle.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+/** Renders optional visual media in either popup size; no dismissal or business behavior. */
+const AlertDialogMedia = ({ref, className, render, ...props}: Readonly<AlertDialogMedia.Props>): React.ReactElement =>
+  useRender({
+    defaultTagName: "div",
+    ref,
+    render,
+    props: {"data-slot": "alert-dialog-media", ...mergeProps<"div">({className: cn(styles.media, className)}, props)},
+  });
+AlertDialogMedia.displayName = "AlertDialogMedia";
 
+/** Renders the accessible confirmation heading with primitive-owned composition. */
+function AlertDialogTitle({className, ...props}: Readonly<AlertDialogTitle.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Title
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "h2",
-        render: render as never,
-        props: mergeProps({className: cn(styles.title, className)}, {}),
-      })}>
-      {children}
-    </BaseAlertDialog.Title>
+      data-slot='alert-dialog-title'
+      className={cn(styles.title, className)}
+      {...props}
+    />
   );
 }
 AlertDialogTitle.displayName = "AlertDialogTitle";
 
-/**
- * Renders supporting copy beneath the alert dialog title.
- *
- * @remarks
- * - Renders a `<p>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-function AlertDialogDescription(props: Readonly<AlertDialogDescription.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+/** Renders the accessible confirmation description with primitive-owned composition. */
+function AlertDialogDescription({className, ...props}: Readonly<AlertDialogDescription.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Description
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "p",
-        render: render as never,
-        props: mergeProps({className: cn(styles.description, className)}, {}),
-      })}>
-      {children}
-    </BaseAlertDialog.Description>
+      data-slot='alert-dialog-description'
+      className={cn(styles.description, className)}
+      {...props}
+    />
   );
 }
 AlertDialogDescription.displayName = "AlertDialogDescription";
 
 /**
- * Renders the primary confirmation action inside the alert dialog.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogAction>Continue</AlertDialogAction>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ * An ordinary Button, not a Close primitive. Pending and rejected work do not close the modal.
+ * Close explicitly on success using controlled `open` or the root's `actionsRef`.
  */
-const AlertDialogAction = React.forwardRef<HTMLButtonElement, AlertDialogAction.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseAlertDialog.Close
-      {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps(
-          {
-            className: cn(buttonStyles.button, buttonStyles.default, buttonStyles.sizeDefault, className),
-          },
-          {},
-        ),
-      })}>
-      {children}
-    </BaseAlertDialog.Close>
-  );
-});
+const AlertDialogAction = ({ref, ...props}: Readonly<AlertDialogAction.Props>): React.ReactElement => (
+  <Button
+    data-slot='alert-dialog-action'
+    ref={ref}
+    {...props}
+  />
+);
 AlertDialogAction.displayName = "AlertDialogAction";
 
-/**
- * Renders the secondary dismissal action inside the alert dialog.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <AlertDialogCancel>Cancel</AlertDialogCancel>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
- */
-const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
-
-  return (
-    <BaseAlertDialog.Close
-      {...otherProps}
-      ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps(
-          {
-            className: cn(buttonStyles.button, buttonStyles.outline, buttonStyles.sizeDefault, styles.cancel, className),
-          },
-          {},
-        ),
-      })}>
-      {children}
-    </BaseAlertDialog.Close>
-  );
-});
+/** An explicit Close-backed cancel control, using the shared Button's size/variant vocabulary. */
+const AlertDialogCancel = ({
+  ref,
+  className,
+  variant = "outline",
+  size = "default",
+  ...props
+}: Readonly<AlertDialogCancel.Props>): React.ReactElement => (
+  <BaseAlertDialog.Close
+    data-slot='alert-dialog-cancel'
+    data-variant={variant}
+    data-size={size}
+    ref={ref}
+    className={cn(buttonVariants({variant, size}), className)}
+    {...props}
+  />
+);
 AlertDialogCancel.displayName = "AlertDialogCancel";
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialog {
-  export type Props = AlertDialogProps;
+  export type Props<Payload = unknown> = AlertDialogProps<Payload>;
   export type State = BaseAlertDialog.Root.State;
+  export type Actions = BaseAlertDialog.Root.Actions;
+  export type ChangeEventDetails = BaseAlertDialog.Root.ChangeEventDetails;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogTrigger {
-  export type Props = AlertDialogTriggerProps;
+  export type Props = Readonly<AlertDialogTriggerProps>;
   export type State = BaseAlertDialog.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogOverlay {
-  export type Props = AlertDialogOverlayProps;
+  export type Props = Readonly<AlertDialogOverlayProps>;
   export type State = BaseAlertDialog.Backdrop.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogContent {
-  export type Props = AlertDialogContentProps;
+  export type Props = Readonly<AlertDialogContentProps>;
   export type State = BaseAlertDialog.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogHeader {
-  export type Props = AlertDialogHeaderProps;
+  export type Props = Readonly<AlertDialogHeaderProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogFooter {
-  export type Props = AlertDialogFooterProps;
+  export type Props = Readonly<AlertDialogFooterProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
+namespace AlertDialogMedia {
+  export type Props = Readonly<AlertDialogMediaProps>;
+  export type State = Record<string, never>;
+}
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogTitle {
-  export type Props = AlertDialogTitleProps;
+  export type Props = Readonly<AlertDialogTitleProps>;
   export type State = BaseAlertDialog.Title.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogDescription {
-  export type Props = AlertDialogDescriptionProps;
+  export type Props = Readonly<AlertDialogDescriptionProps>;
   export type State = BaseAlertDialog.Description.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogAction {
-  export type Props = AlertDialogActionProps;
-  export type State = BaseAlertDialog.Close.State;
+  export type Props = Readonly<AlertDialogActionProps>;
+  export type State = Button.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace AlertDialogCancel {
-  export type Props = AlertDialogCancelProps;
+  export type Props = Readonly<AlertDialogCancelProps>;
   export type State = BaseAlertDialog.Close.State;
 }
 
@@ -499,6 +298,7 @@ export {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogOverlay,
   AlertDialogPortal,
   AlertDialogTitle,

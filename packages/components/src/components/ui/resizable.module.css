@@ -4,17 +4,13 @@
   height: 100%;
 }
 
-.group[data-panel-group-direction="vertical"] {
-  flex-direction: column;
-}
-
 .handle {
   position: relative;
   display: flex;
   width: 1px;
   align-items: center;
   justify-content: center;
-  background-color: var(--ac-border);
+  background-color: var(--ac-input);
   outline: none;
 }
 
@@ -22,7 +18,7 @@
   position: absolute;
   inset-block: 0;
   left: 50%;
-  width: 0.25rem;
+  width: 1.5rem;
   content: "";
   transform: translateX(-50%);
 }
@@ -33,16 +29,16 @@
     0 0 0 2px var(--ac-background);
 }
 
-.handle[data-panel-group-direction="vertical"] {
+.handle[aria-orientation="horizontal"] {
   width: 100%;
   height: 1px;
 }
 
-.handle[data-panel-group-direction="vertical"]::after {
+.handle[aria-orientation="horizontal"]::after {
   top: 0;
   left: 0;
   width: 100%;
-  height: 0.25rem;
+  height: 1.5rem;
   transform: translateY(-50%);
 }
 
@@ -54,16 +50,94 @@
   height: 1rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--ac-border);
+  border: 1px solid var(--ac-input);
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-background);
 }
 
-.handle[data-panel-group-direction="vertical"] .handleGrip {
+.handle[aria-orientation="horizontal"] .handleGrip {
   transform: rotate(90deg);
 }
 
 .handleGripIcon {
   width: 0.625rem;
   height: 0.625rem;
+}
+
+.resizeControls {
+  position: relative;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  flex: 0 0 0;
+  align-self: center;
+  display: flex;
+}
+
+.resizeControls button {
+  position: absolute;
+  inset-block-start: 1rem;
+  inset-inline-start: -1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--ac-input);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  cursor: pointer;
+}
+
+.resizeControls button + button {
+  inset-inline-start: 0;
+}
+
+.resizeControls[data-orientation="vertical"] button {
+  inset-block-start: -0.75rem;
+  inset-inline-start: 1rem;
+}
+
+.resizeControls[data-orientation="vertical"] button + button {
+  inset-inline-start: 2.5rem;
+}
+
+.resizeControls button:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.resizeControls button:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .handle,
+  .handleGrip {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .resizeControls button {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+  .resizeControls button:focus-visible {
+    outline-color: Highlight;
+  }
+  .handle {
+    background-color: CanvasText;
+  }
+
+  .handle:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .handleGrip {
+    border-color: CanvasText;
+    background-color: Canvas;
+    color: CanvasText;
+  }
 }

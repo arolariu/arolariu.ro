@@ -2,35 +2,86 @@
 
 import {Avatar as BaseAvatar} from "@base-ui/react/avatar";
 import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./avatar.module.css";
 
-/**
- * Props for the shared avatar root.
- */
-interface AvatarProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Root>, "className"> {
-  /** Additional CSS classes merged with the avatar root styles. @default undefined */
-  className?: string;
+/** Supported avatar size presets. */
+export type AvatarSize = "sm" | "default" | "lg";
+
+/** Primitive-owned image status augmented with the selected size. */
+export interface AvatarState extends Readonly<BaseAvatar.Root.State> {
+  readonly size: AvatarSize;
 }
 
-/**
- * Props for the shared avatar image.
- */
-interface AvatarImageProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Image>, "className"> {
-  /** Additional CSS classes merged with the avatar image styles. @default undefined */
-  className?: string;
-}
+type RootRenderCallback = Exclude<BaseAvatar.Root.Props["render"], React.ReactElement | undefined>;
 
-/**
- * Props for the shared avatar fallback.
- */
-interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Fallback>, "className"> {
-  /** Additional CSS classes merged with the avatar fallback styles. @default undefined */
-  className?: string;
-}
+/** Readonly Base UI root props with shared visual sizing. */
+export type AvatarProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Root>, "className" | "render"> & {
+    /** Avatar size preset. @default "default" */
+    size?: AvatarSize;
+    /** Additional classes or a callback receiving the actual root state. */
+    className?: string | ((state: AvatarState) => string | undefined);
+    /** Element or callback rendered by the owning Base UI root. */
+    render?: React.ReactElement | ((props: Parameters<RootRenderCallback>[0], state: AvatarState) => React.ReactElement);
+  }
+>;
+
+/** Primitive-owned image loading and transition state. */
+export type AvatarImageState = Readonly<BaseAvatar.Image.State>;
+
+/** Readonly Base UI image props, including its loading and render callbacks. */
+export type AvatarImageProps = Readonly<React.ComponentPropsWithRef<typeof BaseAvatar.Image>>;
+
+/** Primitive-owned fallback image loading state. */
+export type AvatarFallbackState = Readonly<BaseAvatar.Fallback.State>;
+
+/** Readonly Base UI fallback props, including its delay and render callbacks. */
+export type AvatarFallbackProps = Readonly<React.ComponentPropsWithRef<typeof BaseAvatar.Fallback>>;
+
+// Base UI merges input refs into a callback (or null) before invoking render.
+type AvatarPartRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
+
+/** State owned by the native avatar badge renderer. */
+export type AvatarBadgeState = Readonly<{slot: "avatar-badge"}>;
+
+/** Native span props with Base UI render composition for the corner badge. */
+export type AvatarBadgeProps = Readonly<
+  Omit<useRender.ComponentProps<"span", AvatarBadgeState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a span. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
+
+/** State owned by the native avatar group renderer. */
+export type AvatarGroupState = Readonly<{slot: "avatar-group"}>;
+
+/** Native div props with Base UI render composition for an avatar stack. */
+export type AvatarGroupProps = Readonly<
+  Omit<useRender.ComponentProps<"div", AvatarGroupState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
+
+/** State owned by the native avatar group count renderer. */
+export type AvatarGroupCountState = Readonly<{slot: "avatar-group-count"}>;
+
+/** Native div props with Base UI render composition for remaining-avatar content. */
+export type AvatarGroupCountProps = Readonly<
+  Omit<useRender.ComponentProps<"div", AvatarGroupCountState, AvatarPartRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /**
  * Displays a user avatar container with shared sizing and shape styles.
@@ -51,22 +102,25 @@ interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof Ba
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>((props, forwardedRef) => {
-  const {className, children, render, ...otherProps} = props;
+const Avatar = ({ref: forwardedRef, ...props}: Readonly<Avatar.Props>): React.ReactElement => {
+  const {className, children, render, size = "default", ...otherProps} = props;
 
   return (
     <BaseAvatar.Root
-      {...otherProps}
+      data-slot='avatar'
+      data-size={size}
       ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "span",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
+      className={
+        typeof className === "function"
+          ? (state) => cn(styles.root, styles[size], className({...state, size}))
+          : cn(styles.root, styles[size], className)
+      }
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, size}) : render}
+      {...otherProps}>
       {children}
     </BaseAvatar.Root>
   );
-});
+};
 Avatar.displayName = "Avatar";
 
 /**
@@ -85,21 +139,19 @@ Avatar.displayName = "Avatar";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImage.Props>((props, forwardedRef) => {
+const AvatarImage = ({ref: forwardedRef, ...props}: Readonly<AvatarImage.Props>): React.ReactElement => {
   const {className, render, ...otherProps} = props;
 
   return (
     <BaseAvatar.Image
-      {...otherProps}
+      data-slot='avatar-image'
       ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "img",
-        render: render as never,
-        props: mergeProps({className: cn(styles.image, className)}, {}),
-      })}
+      className={typeof className === "function" ? (state) => cn(styles.image, className(state)) : cn(styles.image, className)}
+      render={render}
+      {...otherProps}
     />
   );
-});
+};
 AvatarImage.displayName = "AvatarImage";
 
 /**
@@ -118,40 +170,132 @@ AvatarImage.displayName = "AvatarImage";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallback.Props>((props, forwardedRef) => {
+const AvatarFallback = ({ref: forwardedRef, ...props}: Readonly<AvatarFallback.Props>): React.ReactElement => {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseAvatar.Fallback
-      {...otherProps}
+      data-slot='avatar-fallback'
       ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "span",
-        render: render as never,
-        props: mergeProps({className: cn(styles.fallback, className)}, {}),
-      })}>
+      className={typeof className === "function" ? (state) => cn(styles.fallback, className(state)) : cn(styles.fallback, className)}
+      render={render}
+      {...otherProps}>
       {children}
     </BaseAvatar.Fallback>
   );
-});
+};
 AvatarFallback.displayName = "AvatarFallback";
+
+/**
+ * Places caller-provided status content at an avatar's bottom inline-end corner.
+ *
+ * @remarks
+ * Place directly inside {@link Avatar}; its size follows the root preset.
+ * Icons are hidden at `sm`, leaving a compact dot. Supply an accessible label
+ * for meaningful status, or `aria-hidden` for a purely decorative badge.
+ * Composed targets accept their corresponding DOM refs; callback props carry
+ * Base UI's merged callback ref rather than a default-span object ref.
+ */
+const AvatarBadge = ({ref, ...props}: Readonly<AvatarBadge.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarBadge.State, HTMLElement>({
+    defaultTagName: "span",
+    ref,
+    render,
+    state: {slot: "avatar-badge"},
+    props: mergeProps<"span">({className: cn(styles.badge, className)}, otherProps),
+  });
+};
+AvatarBadge.displayName = "AvatarBadge";
+
+/**
+ * Displays directly nested avatars and an optional trailing {@link AvatarGroupCount}.
+ *
+ * @remarks
+ * The stack uses logical overlap for LTR/RTL and keeps badge-bearing avatars
+ * above unbadged peers. Supply `role="group"` and a label when the collection
+ * needs a group name; the default native div adds no redundant ARIA.
+ * The common `HTMLElement` ref boundary supports the actual composed target.
+ */
+const AvatarGroup = ({ref, ...props}: Readonly<AvatarGroup.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarGroup.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "avatar-group"},
+    props: mergeProps<"div">({className: cn(styles.group, className)}, otherProps),
+  });
+};
+AvatarGroup.displayName = "AvatarGroup";
+
+/**
+ * Displays caller-provided remaining-avatar content, such as `+3`.
+ *
+ * @remarks
+ * A trailing count matches the first direct avatar's `sm`/`default`/`lg` size.
+ * Mixed-size groups deliberately use the first avatar as the sizing reference.
+ * Outside a group it uses the default size. Provide a descriptive accessible
+ * label when a number alone does not explain the remaining items.
+ * Composed targets accept their corresponding DOM refs through `HTMLElement`.
+ */
+const AvatarGroupCount = ({ref, ...props}: Readonly<AvatarGroupCount.Props>): React.ReactElement => {
+  const {className, render, ...otherProps} = props;
+  return useRender<AvatarGroupCount.State, HTMLElement>({
+    defaultTagName: "div",
+    ref,
+    render,
+    state: {slot: "avatar-group-count"},
+    props: mergeProps<"div">({className: cn(styles.groupCount, className)}, otherProps),
+  });
+};
+AvatarGroupCount.displayName = "AvatarGroupCount";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Avatar {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = AvatarProps;
-  export type State = BaseAvatar.Root.State;
+  export type State = AvatarState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace AvatarImage {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = AvatarImageProps;
-  export type State = BaseAvatar.Image.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = AvatarImageState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace AvatarFallback {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = AvatarFallbackProps;
-  export type State = BaseAvatar.Fallback.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = AvatarFallbackState;
 }
 
-export {Avatar, AvatarFallback, AvatarImage};
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace AvatarBadge {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = AvatarBadgeProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = AvatarBadgeState;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace AvatarGroup {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = AvatarGroupProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = AvatarGroupState;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace AvatarGroupCount {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type Props = AvatarGroupCountProps;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = AvatarGroupCountState;
+}
+
+export {Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage};

@@ -10,11 +10,13 @@ import styles from "./skeleton.module.css";
  * Extends native `<div>` attributes so loading placeholders can be sized, annotated,
  * and composed freely while exposing a documented class override.
  */
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Additional CSS classes merged with the default skeleton shimmer styles.
    */
-  className?: string;
+  readonly className?: string;
+  /** Enables two decorative pulses (four seconds); reduced motion and `false` disable them. @default true */
+  readonly animated?: boolean;
 }
 
 /**
@@ -25,21 +27,30 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * Renders a styled `<div>` with the library's skeleton animation. Size it with layout
  * classes to mimic the eventual content and reduce perceived loading jank.
+ * Reduced motion and `animated={false}` keep the visible loading surface static.
+ * Set loading announcements on the containing region or supply a localized role/label.
  *
  * @example
  * ```tsx
- * <Skeleton className="h-4 w-32" aria-label="Loading account name" />
+ * <Skeleton className="account-name-placeholder" aria-hidden="true" />
  * ```
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({className, ...props}, ref) => (
+const Skeleton = ({ref, className, animated = true, ...props}: Readonly<SkeletonProps>): React.JSX.Element => (
   <div
     ref={ref}
+    data-slot='skeleton'
+    data-animated={animated}
     className={cn(styles.skeleton, className)}
     {...props}
   />
-));
+);
 Skeleton.displayName = "Skeleton";
+
+// eslint-disable-next-line no-redeclare -- public component namespace
+namespace Skeleton {
+  export type Props = SkeletonProps;
+}
 
 export {Skeleton};

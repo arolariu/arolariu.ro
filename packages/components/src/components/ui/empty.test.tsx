@@ -5,10 +5,46 @@ import {describe, expect, it} from "vitest";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "./empty";
 
 describe("Empty", () => {
+  it("supports a correctly typed rich description while keeping paragraph defaults", () => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia>
+            <img
+              src='/empty.svg'
+              alt='Empty library'
+            />
+          </EmptyMedia>
+          <EmptyTitle>
+            <h2>No saved items</h2>
+          </EmptyTitle>
+          <EmptyDescription
+            as='div'
+            ref={ref}>
+            <p>Save something to get started.</p>
+            <ul>
+              <li>
+                <a href='/help'>Read the guide</a>
+              </li>
+            </ul>
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <button type='button'>Create item</button>
+        </EmptyContent>
+      </Empty>,
+    );
+    expect(ref.current).toBeInstanceOf(HTMLDivElement);
+    expect(screen.getByRole("link", {name: "Read the guide"})).toHaveAttribute("href", "/help");
+    expect(screen.getByRole("list").parentElement).toBe(ref.current);
+    expect(screen.getByRole("img", {name: "Empty library"})).toHaveAttribute("src", "/empty.svg");
+    expect(screen.getByRole("button", {name: "Create item"})).toHaveAttribute("type", "button");
+  });
   it("renders Empty compound components with children, custom classes, and forwarded refs", () => {
     // Arrange
-    const emptyRef = {current: null as HTMLDivElement | null};
-    const contentRef = {current: null as HTMLDivElement | null};
+    const emptyRef = createRef<HTMLDivElement>();
+    const contentRef = createRef<HTMLDivElement>();
 
     // Act
     render(

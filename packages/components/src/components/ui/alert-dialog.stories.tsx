@@ -1,5 +1,7 @@
-import React from "react";
+import {TriangleAlert} from "lucide-react";
+import {useId, useRef, useState, type ReactElement} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,207 +10,108 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger,
+  type AlertDialogSize,
 } from "./alert-dialog";
+import {Button, type ButtonVariant} from "./button";
+const storyStyles = `
+.ac-story-alert-dialog-storyStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.ac-story-alert-dialog-error {
+  color: var(--ac-destructive);
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-alert-dialog-storyStack",
+  error: "ac-story-alert-dialog-error",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Feedback/AlertDialog",
   component: AlertDialog,
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Canonical Action is an ordinary Button: it does not close implicitly. Callers close explicitly on successful work. Cancel is Close-backed. Base UI 1.9 ignores backdrop dismissal but emits cancellable Escape requests; the library adds no business policy.",
+      },
+    },
   },
 } satisfies Meta<typeof AlertDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default alert dialog with destructive action confirmation.
- */
-export const Default: Story = {
-  render: () => (
-    <AlertDialog>
-      <AlertDialogTrigger>Delete Account</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  ),
-};
-
-/**
- * Alert dialog with only a confirmation action, no cancel button.
- */
-export const WithoutCancel: Story = {
-  render: () => (
-    <AlertDialog>
-      <AlertDialogTrigger>Acknowledge</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Terms and Conditions Updated</AlertDialogTitle>
-          <AlertDialogDescription>We have updated our terms and conditions. Please review them before continuing.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction>I Understand</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  ),
-};
-
-/**
- * Alert dialog with long content to demonstrate scrolling behavior.
- */
-export const WithLongContent: Story = {
-  render: () => (
-    <AlertDialog>
-      <AlertDialogTrigger>View Details</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Data Processing Notice</AlertDialogTitle>
-          <AlertDialogDescription>
-            By continuing, you agree to our data processing terms. We collect, store, and process your personal information in accordance
-            with applicable privacy laws. Your data may be shared with third-party service providers who assist us in operating our
-            platform. You have the right to access, modify, or delete your personal data at any time. For more information, please review
-            our complete privacy policy available on our website.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Decline</AlertDialogCancel>
-          <AlertDialogAction>Accept</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  ),
-};
-
-/**
- * Alert dialog triggered by a custom element.
- */
-export const CustomTrigger: Story = {
-  render: () => (
-    <AlertDialog>
-      <AlertDialogTrigger className='bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-6 py-3 font-semibold'>
-        Delete Everything
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Critical Action</AlertDialogTitle>
-          <AlertDialogDescription>
-            You are about to delete all data. This action is irreversible and will affect all users.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Go Back</AlertDialogCancel>
-          <AlertDialogAction>Delete All</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  ),
-};
-
-/**
- * Destructive confirmation dialog for critical actions like account deletion.
- */
-export const DestructiveConfirm: Story = {
-  render: () => (
-    <AlertDialog>
-      <AlertDialogTrigger
-        style={{
-          background: "#ef4444",
-          color: "#fff",
-          padding: "8px 16px",
-          borderRadius: "6px",
-          border: "none",
-          cursor: "pointer",
-          fontWeight: 500,
-        }}>
-        Delete Account
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle style={{color: "#dc2626"}}>⚠️ Delete Account</AlertDialogTitle>
-          <AlertDialogDescription>
-            <div style={{display: "flex", flexDirection: "column", gap: "12px", paddingTop: "8px"}}>
-              <p>This action cannot be undone. This will permanently delete your account and remove all your data from our servers.</p>
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "6px",
-                  padding: "12px",
-                  fontSize: "14px",
-                }}>
-                <strong style={{color: "#dc2626"}}>What will be deleted:</strong>
-                <ul style={{marginTop: "8px", marginLeft: "20px", color: "#991b1b"}}>
-                  <li>All personal information</li>
-                  <li>All projects and files</li>
-                  <li>All comments and activity</li>
-                  <li>All billing information</li>
-                </ul>
-              </div>
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction style={{background: "#dc2626", color: "#fff"}}>Yes, Delete My Account</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  ),
-};
-
-/**
- * Confirmation dialog with a "Don't show again" checkbox option.
- */
-function WithCheckboxDemo() {
-  const [dontShowAgain, setDontShowAgain] = React.useState(false);
-
+function ConfirmationDemo({
+  size = "default",
+  variant = "default",
+  triggerVariant = "outline",
+  showCancel = true,
+  longContent = false,
+  checkbox = false,
+}: Readonly<{
+  size?: AlertDialogSize;
+  variant?: ButtonVariant;
+  triggerVariant?: ButtonVariant;
+  showCancel?: boolean;
+  longContent?: boolean;
+  checkbox?: boolean;
+}>): ReactElement {
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const id = useId();
   return (
-    <AlertDialog>
-      <AlertDialogTrigger
-        style={{background: "#3b82f6", color: "#fff", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer"}}>
-        Show Tutorial
-      </AlertDialogTrigger>
-      <AlertDialogContent>
+    <AlertDialog
+      open={open}
+      onOpenChange={setOpen}>
+      <AlertDialogTrigger render={<Button variant={triggerVariant} />}>Review confirmation</AlertDialogTrigger>
+      <AlertDialogContent size={size}>
         <AlertDialogHeader>
-          <AlertDialogTitle>Welcome Tutorial</AlertDialogTitle>
+          <AlertDialogMedia>
+            <TriangleAlert aria-hidden='true' />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Confirm this action?</AlertDialogTitle>
           <AlertDialogDescription>
-            <div style={{display: "flex", flexDirection: "column", gap: "12px"}}>
-              <p>Would you like to start the interactive tutorial? It will guide you through the main features of the application.</p>
-              <div style={{display: "flex", alignItems: "center", gap: "8px", paddingTop: "8px"}}>
-                <input
-                  type='checkbox'
-                  id='dont-show'
-                  checked={dontShowAgain}
-                  onChange={(e) => setDontShowAgain(e.target.checked)}
-                  style={{width: "16px", height: "16px", cursor: "pointer"}}
-                />
-                <label
-                  htmlFor='dont-show'
-                  style={{fontSize: "14px", cursor: "pointer"}}>
-                  Don't show this message again
-                </label>
-              </div>
-            </div>
+            {longContent
+              ? "Review every detail before continuing. This example shows a longer confirmation message that may wrap across several lines. The content stays bounded to the viewport, and all actions remain explicit. The caller decides how work is performed and when it succeeds."
+              : "Review the details. The caller explicitly closes on confirmation."}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {checkbox && (
+          <label htmlFor={id}>
+            <input
+              id={id}
+              type='checkbox'
+              checked={checked}
+              onChange={(event) => setChecked(event.target.checked)}
+            />{" "}
+            Remember this preference
+          </label>
+        )}
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => console.log("Skipped. Don't show again:", dontShowAgain)}>Skip Tutorial</AlertDialogCancel>
-          <AlertDialogAction onClick={() => console.log("Starting tutorial. Don't show again:", dontShowAgain)}>
-            Start Tutorial
+          {showCancel && <AlertDialogCancel size={size === "sm" ? "sm" : "default"}>Cancel</AlertDialogCancel>}
+          <AlertDialogAction
+            variant={variant}
+            size={size === "sm" ? "sm" : "default"}
+            onClick={() => setOpen(false)}>
+            Confirm
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -216,6 +119,100 @@ function WithCheckboxDemo() {
   );
 }
 
-export const WithCheckbox: Story = {
-  render: () => <WithCheckboxDemo />,
+export const Default: Story = {render: (): ReactElement => <ConfirmationDemo />};
+export const WithoutCancel: Story = {render: (): ReactElement => <ConfirmationDemo showCancel={false} />};
+export const WithLongContent: Story = {render: (): ReactElement => <ConfirmationDemo longContent />};
+export const CustomTrigger: Story = {render: (): ReactElement => <ConfirmationDemo triggerVariant='secondary' />};
+export const DestructiveConfirm: Story = {render: (): ReactElement => <ConfirmationDemo variant='destructive' />};
+export const WithCheckbox: Story = {render: (): ReactElement => <ConfirmationDemo checkbox />};
+export const SmallWithMedia: Story = {render: (): ReactElement => <ConfirmationDemo size='sm' />};
+
+function ControlledAsyncDemo(): ReactElement {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const work = useRef<ReturnType<typeof Promise.withResolvers<void>> | null>(null);
+  async function confirm(): Promise<void> {
+    const request = Promise.withResolvers<void>();
+    work.current = request;
+    setPending(true);
+    setError("");
+    try {
+      await request.promise;
+      setOpen(false);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      work.current = null;
+      setPending(false);
+    }
+  }
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        // This demonstration's owner cancels dismissal while work is pending, not the library.
+        if (!nextOpen && pending) details.cancel();
+        else setOpen(nextOpen);
+      }}>
+      <AlertDialogTrigger render={<Button variant='outline' />}>Controlled async confirmation</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Wait for work to finish</AlertDialogTitle>
+          <AlertDialogDescription>Start work, then simulate success or rejection. Only success explicitly closes.</AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && (
+          <p
+            role='alert'
+            className={storyClasses.error}>
+            {error}
+          </p>
+        )}
+        {pending && (
+          <div className={storyClasses.storyStack}>
+            <p role='status'>Work is pending.</p>
+            <Button
+              variant='secondary'
+              onClick={() => work.current?.resolve()}>
+              Simulate success
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => work.current?.reject(new Error("Work rejected; try again."))}>
+              Simulate rejection
+            </Button>
+          </div>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            onClick={confirm}>
+            {pending ? "Working" : "Start work"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+export const ControlledAsync: Story = {render: (): ReactElement => <ControlledAsyncDemo />};
+
+export const FocusContract: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Open by keyboard: focus enters Cancel, Tab/Shift+Tab moves among controls, Cancel returns focus to the trigger, and backdrop presses do not dismiss. Escape follows Base UI's cancellable contract. During pending work this example's owner cancels dismissal. Native focus containment/inert enforcement requires browser inspection; Vitest covers observable real-controller behavior only.",
+      },
+    },
+  },
+  render: (): ReactElement => (
+    <div className={storyClasses.storyStack}>
+      <p>Check the default focus contract and the owner-controlled pending/error path.</p>
+      <ConfirmationDemo />
+      <ControlledAsyncDemo />
+      <Button variant='outline'>Background focus target</Button>
+    </div>
+  ),
 };

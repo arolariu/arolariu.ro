@@ -16,12 +16,20 @@ const meta = {
     },
     size: {
       control: "select",
-      options: ["default", "sm", "lg", "icon"],
+      options: ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"],
       description: "Size preset",
     },
     disabled: {
       control: "boolean",
       description: "Whether the button should ignore user interaction",
+    },
+    nativeButton: {
+      control: "boolean",
+      description: "Set false for non-button render targets",
+    },
+    focusableWhenDisabled: {
+      control: "boolean",
+      description: "Keeps an unavailable action in the tab order without allowing activation",
     },
   },
 } satisfies Meta<typeof Button>;
@@ -85,6 +93,13 @@ export const Small: Story = {
   },
 };
 
+export const ExtraSmall: Story = {
+  args: {
+    children: "Extra small",
+    size: "xs",
+  },
+};
+
 export const Large: Story = {
   args: {
     children: "Large",
@@ -98,6 +113,70 @@ export const Icon: Story = {
     children: "🚀",
     variant: "default",
     size: "icon",
+    "aria-label": "Launch",
+  },
+};
+
+export const IconExtraSmall = {
+  args: {
+    children: "＋",
+    size: "icon-xs",
+    "aria-label": "Add",
+  } satisfies Button.Props,
+} satisfies Story;
+
+export const IconSmall: Story = {
+  args: {
+    children: "＋",
+    size: "icon-sm",
+    "aria-label": "Add",
+  },
+};
+
+export const IconLarge: Story = {
+  args: {
+    children: "＋",
+    size: "icon-lg",
+    "aria-label": "Add",
+  },
+};
+
+export const NonNative = {
+  args: {
+    children: "Keyboard action",
+    nativeButton: false,
+    render: <div />,
+  } satisfies Button.Props,
+} satisfies Story;
+
+export const Navigation = {
+  args: {
+    children: "Read documentation",
+    nativeButton: false,
+    render: <a href='#documentation' />,
+    variant: "link",
+  } satisfies Button.Props,
+} satisfies Story;
+
+export const FocusableDisabled = {
+  args: {
+    children: "Currently unavailable",
+    disabled: true,
+    focusableWhenDisabled: true,
+    render: (props, state) => (
+      <button
+        {...props}
+        aria-label={`${state.variant} action ${state.disabled ? "unavailable" : "available"}`}
+      />
+    ),
+  } satisfies Button.Props,
+} satisfies Story;
+
+export const RenderedNavigation: Story = {
+  args: {
+    nativeButton: false,
+    render: <a href='#navigation'>Open navigation</a>,
+    variant: "outline",
   },
 };
 
