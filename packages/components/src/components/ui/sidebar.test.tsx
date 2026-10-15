@@ -56,6 +56,43 @@ let mobileQuery: MediaQueryList;
 const stylesheetFixtures: HTMLStyleElement[] = [];
 
 describe("Sidebar primitive-owned class callbacks", () => {
+  it("keeps callback-only desktop state uncontrolled through trigger, rail, and shortcut toggles", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(
+      <SidebarProvider onOpenChange={onOpenChange}>
+        <SidebarTrigger />
+        <SidebarRail />
+      </SidebarProvider>,
+    );
+    const [trigger, rail] = screen.getAllByRole("button", {name: "Toggle Sidebar"});
+    await user.click(trigger!);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(rail!);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{Control>}b{/Control}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(onOpenChange.mock.calls).toEqual([[false], [true], [false]]);
+  });
+
+  it("does not commit controlled proposals until the open prop changes", async () => {
+    const onOpenChange = vi.fn();
+    const view = (open: boolean): React.ReactElement => (
+      <SidebarProvider
+        open={open}
+        onOpenChange={onOpenChange}>
+        <SidebarTrigger />
+      </SidebarProvider>
+    );
+    const {rerender} = render(view(true));
+    const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
+    await userEvent.setup().click(trigger);
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    rerender(view(false));
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("refresh accessibility: exposes toggle state and a keyboard-reachable Rail", async () => {
     const user = userEvent.setup();
     render(

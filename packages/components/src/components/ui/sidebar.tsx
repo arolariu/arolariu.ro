@@ -292,16 +292,13 @@ const SidebarProvider = ({
     (value: boolean | ((value: boolean) => boolean)) => {
       const nextValue = typeof value === "function" ? value(open) : value;
 
-      if (setOpenProp) {
-        setOpenProp(nextValue);
-      } else {
-        setInternalOpen(nextValue);
-      }
+      if (openProp === undefined) setInternalOpen(nextValue);
+      setOpenProp?.(nextValue);
 
       // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [open, setOpenProp],
+    [open, openProp, setOpenProp],
   );
 
   const toggleSidebar = React.useCallback(() => {
