@@ -13,10 +13,10 @@
   inline-size: 24px;
   block-size: 24px;
   flex-shrink: 0;
-  border: 1px solid var(--ac-primary);
+  border: 1px solid var(--ac-ring);
   border-radius: 999px;
   background-color: var(--ac-background);
-  color: var(--ac-primary);
+  color: var(--ac-ring);
   cursor: pointer;
   outline: none;
   transition:

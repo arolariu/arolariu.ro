@@ -126,6 +126,52 @@ describe.each(["light", "dark"] as const)("%s destructive Button hover", (theme)
   });
 });
 
+describe.each(["light", "dark"] as const)("%s essential selection visuals", (theme) => {
+  const resolveColor = (value: string): RGBA => fallbackColor(resolveButtonColors(value, theme));
+  function border(family: string, selector: string): RGBA {
+    const rule = declarations(family, selector);
+    const value = rule.get("border-color") ?? rule.get("border");
+    const token = value?.match(/var\(--ac-[\w-]+\)/u)?.[0];
+    if (!token) throw new Error(`Missing ${family} ${selector} border color.`);
+    return resolveColor(token);
+  }
+
+  it.each([".checkbox", ".checkbox[data-checked]", ".checkbox[data-indeterminate]"])(
+    "keeps the checkbox boundary distinguishable against the page in %s",
+    (selector) => {
+      expect(colorContrast(border("checkbox", selector), resolveColor("var(--ac-background)"))).toBeGreaterThanOrEqual(3);
+    },
+  );
+
+  it.each([".checkbox[data-checked]", ".checkbox[data-indeterminate]"])(
+    "keeps the checkbox glyph distinguishable from its selected fill in %s",
+    (selector) => {
+      const rule = declarations("checkbox", selector);
+      expect(colorContrast(resolveColor(rule.get("color") ?? ""), resolveColor(rule.get("background-color") ?? ""))).toBeGreaterThanOrEqual(
+        3,
+      );
+    },
+  );
+
+  it("keeps both the radio boundary and its currentcolor selection dot distinguishable from the input fill", () => {
+    const rule = declarations("radio-group", ".item");
+    const background = resolveColor(rule.get("background-color") ?? "");
+    expect(colorContrast(border("radio-group", ".item"), background)).toBeGreaterThanOrEqual(3);
+    expect(declarations("radio-group", ".icon").get("fill")).toBe("currentColor");
+    expect(colorContrast(resolveColor(rule.get("color") ?? ""), background)).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each(["normal", "hover"] as const)("retains a distinguishable pressed toggle marker during %s", (state) => {
+    const pressed = declarations("toggle", ".root[data-pressed]");
+    const hover = declarations("toggle", ".root:not([data-disabled]):hover");
+    const surface = state === "hover" ? hover.get("background-color") : pressed.get("background-color");
+    const marker = border("toggle", ".root[data-pressed]");
+    expect(colorContrast(marker, resolveColor(surface ?? ""))).toBeGreaterThanOrEqual(3);
+    expect(colorContrast(marker, resolveColor("var(--ac-background)"))).toBeGreaterThanOrEqual(3);
+    expect(hover.has("border-color")).toBe(false);
+  });
+});
+
 describe("Controls accessibility CSS contracts", () => {
   it("removes slot adapters and ignored children from public composition contracts", () => {
     expectTypeOf<ButtonGroupTextProps>().not.toHaveProperty("asChild");
@@ -219,7 +265,7 @@ describe("Controls accessibility CSS contracts", () => {
   });
 
   it("preserves a visible pressed toggle state during hover", () => {
-    expect(declarations("toggle", ".root[data-pressed]").get("border-color")).toBe("var(--ac-primary)");
+    expect(declarations("toggle", ".root[data-pressed]").get("border-color")).toBe("var(--ac-ring)");
   });
 
   it.each([

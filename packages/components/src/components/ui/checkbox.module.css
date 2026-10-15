@@ -9,7 +9,7 @@
   block-size: 24px;
   flex-shrink: 0;
   border-radius: var(--ac-radius-xs);
-  border: 1px solid var(--ac-primary);
+  border: 1px solid var(--ac-ring);
   background-color: transparent;
   color: currentcolor;
   cursor: pointer;
@@ -32,7 +32,7 @@
   &[data-indeterminate] {
     background-color: var(--ac-primary);
     color: var(--ac-primary-foreground);
-    border-color: var(--ac-primary);
+    border-color: var(--ac-ring);
   }
 }
 

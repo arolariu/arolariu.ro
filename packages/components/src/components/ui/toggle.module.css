@@ -33,7 +33,7 @@
 .root[data-pressed] {
   background-color: var(--ac-accent);
   color: var(--ac-accent-foreground);
-  border-color: var(--ac-primary);
+  border-color: var(--ac-ring);
 }
 
 .default {
