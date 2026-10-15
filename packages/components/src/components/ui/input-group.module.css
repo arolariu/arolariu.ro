@@ -30,6 +30,11 @@
   box-shadow: 0 0 0 1px color-mix(in oklch, var(--ac-destructive), transparent 65%);
 }
 
+.group:focus-within:where(:has([aria-invalid="true"]), :has([data-slot="input-group-control"][data-invalid])) {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
 .group[data-disabled="true"],
 .group:has([data-slot="input-group-control"]:disabled),
 .group:has([data-slot="input-group-control"][data-disabled]) {
@@ -120,6 +125,7 @@
 .group .textarea[aria-invalid="true"] {
   border-color: transparent;
   box-shadow: none;
+  outline: none;
 }
 
 .textarea {

@@ -25,6 +25,11 @@
     box-shadow: 0 0 0 1px var(--ac-ring);
   }
 
+  &:focus-visible:where([aria-invalid="true"], [data-invalid]) {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: 2px;
+  }
+
   &:disabled,
   &[data-disabled] {
     cursor: not-allowed;
