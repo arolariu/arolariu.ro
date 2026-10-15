@@ -1,6 +1,14 @@
 "use client";
 
-import {isMotionValue, motion, useInView, type HTMLMotionProps, type Transition, type UseInViewOptions} from "motion/react";
+import {
+  animate as animateElement,
+  isMotionValue,
+  motion,
+  useInView,
+  type HTMLMotionProps,
+  type Transition,
+  type UseInViewOptions,
+} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -23,6 +31,7 @@ export interface HighlightTextProps extends HTMLMotionProps<"span">, VisualEffec
 }
 
 const animation = {backgroundSize: "100% 100%"};
+const hiddenAnimation = {backgroundSize: "0% 100%"};
 const defaultTransition: Transition = {duration: 2, ease: "easeInOut"};
 
 function isHighlightMotionChild(value: HighlightTextProps["children"]): value is Exclude<HighlightTextProps["children"], React.ReactNode> {
@@ -69,17 +78,25 @@ function HighlightText({
     margin: inViewMargin,
   });
   const revealed = inView ? inViewResult : visible || inViewResult;
-  const staticTarget = reducedMotion || revealed ? animation : {backgroundSize: "0% 100%"};
+  const staticTarget = reducedMotion || revealed ? animation : hiddenAnimation;
+
+  React.useLayoutEffect(() => {
+    if (!paused || !localRef.current) return;
+    // Motion diffs destinations, not transition-only changes. Supersede the
+    // real element's running value animation even when its target is unchanged.
+    const settledAnimation = animateElement(localRef.current, staticTarget, {duration: 0});
+    return (): void => settledAnimation.stop();
+  }, [paused, staticTarget]);
 
   return (
     <motion.span
-      {...props}
       ref={setRefs}
       data-motion={paused ? "paused" : "running"}
       initial={paused ? false : (initial ?? {backgroundSize: "0% 100%"})}
       animate={paused ? staticTarget : (animate ?? staticTarget)}
       transition={paused ? {duration: 0} : transition}
-      className={cn(styles.highlight, className)}>
+      className={cn(styles.highlight, className)}
+      {...props}>
       {text}
       {isHighlightMotionChild(children) ? <motion.span>{children}</motion.span> : children}
     </motion.span>

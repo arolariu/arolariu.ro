@@ -60,11 +60,11 @@ export const ControlledLoop: Story = {
       <div className={storyClasses.demo}>
         <Button onClick={() => setPaused(!paused)}>{paused ? "Resume highlight" : "Pause highlight"}</Button>
         <HighlightText
-          {...args}
           loop
           motionPaused={paused}
           animate={{backgroundSize: ["0% 100%", "100% 100%"]}}
           transition={{duration: 2, repeat: Infinity}}
+          {...args}
         />
       </div>
     );

@@ -96,6 +96,66 @@ afterEach(() => {
 });
 
 describe("HighlightText", () => {
+  it.each(["caller pause", "five-second settle", "live reduced motion"] as const)(
+    "settles a real ten-second reveal and stops updates on %s even when the destination is unchanged",
+    async (reason) => {
+      reduced = false;
+      const updates: string[] = [];
+      const onUpdate = (latest: Record<string, unknown>): void => {
+        if (typeof latest["backgroundSize"] === "string") updates.push(latest["backgroundSize"]);
+      };
+      const {rerender} = render(
+        <HighlightText
+          text='Long reveal'
+          transition={{duration: 10}}
+          onUpdate={onUpdate}
+        />,
+      );
+      await act(async () => {
+        for (const observer of observed) if (observer.target) observer.enter(true);
+      });
+      const text = screen.getByText("Long reveal");
+      await waitFor(() => expect(updates.some((value) => Number.parseFloat(value) > 0 && Number.parseFloat(value) < 100)).toBe(true));
+      if (reason === "caller pause") {
+        rerender(
+          <HighlightText
+            text='Long reveal'
+            motionPaused
+            transition={{duration: 10}}
+            onUpdate={onUpdate}
+          />,
+        );
+      } else if (reason === "live reduced motion") {
+        act(() => {
+          reduced = true;
+          media.dispatchEvent(new Event("change"));
+        });
+      } else {
+        await act(async () => {
+          await new Promise((resolve) => window.setTimeout(resolve, 5050));
+        });
+      }
+      expect(text).toHaveAttribute("data-motion", "paused");
+      await waitFor(() => expect(text).toHaveStyle({backgroundSize: "100% 100%"}));
+      const settledUpdates = updates.length;
+      await act(async () => {
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+      });
+      expect(updates).toHaveLength(settledUpdates);
+      expect(text).toHaveStyle({backgroundSize: "100% 100%"});
+    },
+  );
+
+  it("finishes the default two-second reveal before the policy deadline", async () => {
+    reduced = false;
+    render(<HighlightText text='Default reveal' />);
+    await act(async () => {
+      for (const observer of observed) if (observer.target) observer.enter(true);
+    });
+    await waitFor(() => expect(screen.getByText("Default reveal")).toHaveStyle({backgroundSize: "100% 100%"}), {timeout: 3000});
+    expect(screen.getByText("Default reveal")).toHaveAttribute("data-motion", "running");
+  });
+
   it.each(["0% 100%", "50% 100%", "100% 100%", "0% 100%"])(
     "keeps an opaque light backing for dark text throughout a repeated dark-theme sweep at %s",
     async (backgroundSize) => {
