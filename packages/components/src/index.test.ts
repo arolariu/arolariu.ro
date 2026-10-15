@@ -563,7 +563,7 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
         expect(rootTarget, rootName).toBe(target);
       }
     }
-  }, 30000);
+  }, 120000);
 
   it("keeps mounted Storybook styles out of shipped source and executable assets", () => {
     const directory = getPackedRoot();

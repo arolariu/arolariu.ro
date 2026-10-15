@@ -72,6 +72,9 @@ existing release workflow's `npm test` step instead of silently skipping. The co
 dependency installation or publication, and removes only its own temporary extraction afterward. Public declarations and story-only payload
 exclusion are checked against actual archive files, not source aliases.
 
+The strict packed-declaration compiler check uses the same deadline as the complete source compiler check, separate from runtime test
+deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
+
 For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
 reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs can skip the four archive contracts when no extraction is
 supplied; they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story
