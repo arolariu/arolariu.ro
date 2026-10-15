@@ -1,4 +1,5 @@
 import {Slider as BaseSlider} from "@base-ui/react/slider";
+import {Field as BaseField} from "@base-ui/react/field";
 import {act, fireEvent, render as renderComponent, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
@@ -19,6 +20,76 @@ function getPart(container: HTMLElement, slot: string): HTMLElement {
 }
 
 describe("Slider", () => {
+  it("sets and clears explicit invalidity on actual range inputs without losing names, form values or keyboard state", async () => {
+    const user = userEvent.setup();
+    function fixture(invalid: React.AriaAttributes["aria-invalid"]): React.JSX.Element {
+      return (
+        <form aria-label='Validation form'>
+          <p id='validation-help'>Choose both endpoints.</p>
+          <Slider
+            name='range'
+            defaultValue={[20, 80]}
+            getAriaLabel={(index) => (index === 0 ? "Lower bound" : "Upper bound")}
+            aria-describedby='validation-help'
+            aria-invalid={invalid}
+          />
+        </form>
+      );
+    }
+    const {rerender, container} = await render(fixture(undefined));
+    const sliders = screen.getAllByRole("slider");
+    expect(sliders.map((slider) => slider.getAttribute("aria-invalid"))).toEqual([null, null]);
+    rerender(fixture(true));
+    for (const slider of screen.getAllByRole("slider")) {
+      expect(slider).toHaveAttribute("aria-invalid", "true");
+      expect(slider).toHaveAccessibleDescription("Choose both endpoints.");
+      expect(slider.closest('[data-slot="slider-thumb"]')).toHaveAttribute("data-invalid");
+    }
+    expect(screen.getByRole("slider", {name: "Lower bound"})).toBe(sliders[0]);
+    expect(screen.getByRole("slider", {name: "Upper bound"})).toBe(sliders[1]);
+    await user.click(sliders[0]!);
+    await user.keyboard("{ArrowRight}");
+    expect(sliders[0]).toHaveAttribute("aria-valuenow", "21");
+    expect(new FormData(screen.getByRole("form") as HTMLFormElement).getAll("range")).toEqual(["21", "80"]);
+    rerender(fixture(false));
+    for (const slider of screen.getAllByRole("slider")) {
+      expect(slider).toHaveAttribute("aria-invalid", "false");
+      expect(slider.closest('[data-slot="slider-thumb"]')).not.toHaveAttribute("data-invalid");
+    }
+    rerender(fixture("grammar"));
+    expect(screen.getAllByRole("slider").every((slider) => slider.getAttribute("aria-invalid") === "grammar")).toBe(true);
+    rerender(fixture(undefined));
+    expect(screen.getAllByRole("slider")).toEqual(sliders);
+    expect(sliders[0]).toHaveAttribute("aria-valuenow", "21");
+    expect(container.querySelector("[data-invalid]")).toBeNull();
+  });
+
+  it("retains inherited Field validation, labels and form ownership when no explicit invalidity is supplied", async () => {
+    function fixture(invalid: boolean): React.JSX.Element {
+      return (
+        <form>
+          <BaseField.Root
+            invalid={invalid}
+            name='field-range'>
+            <BaseField.Label>Field range</BaseField.Label>
+            <BaseField.Description>Field help.</BaseField.Description>
+            <Slider defaultValue={[20, 80]} />
+          </BaseField.Root>
+        </form>
+      );
+    }
+    const {rerender, container} = await render(fixture(true));
+    for (const slider of screen.getAllByRole("slider")) {
+      expect(slider).toHaveAccessibleName("Field range");
+      expect(slider).toHaveAccessibleDescription("Field help.");
+      expect(slider).toHaveAttribute("aria-invalid", "true");
+      expect(slider).toHaveAttribute("name", "field-range");
+    }
+    rerender(fixture(false));
+    expect(screen.getAllByRole("slider").every((slider) => slider.getAttribute("aria-invalid") !== "true")).toBe(true);
+    expect(container.querySelector('[data-slot="slider-thumb"][data-invalid]')).toBeNull();
+  });
+
   it("names and describes the actual focusable inputs, including distinct range endpoints", async () => {
     await render(
       <>

@@ -23,6 +23,24 @@ export type SliderProps<Value extends number | readonly number[] = number | read
 export type SliderState = BaseSlider.Root.State;
 
 /**
+ * Base UI exposes its generated range input through Thumb's render children,
+ * not through a native inputProps prop. Preserve that input's refs and handlers.
+ */
+function withInputInvalidity(children: React.ReactNode, invalid: React.AriaAttributes["aria-invalid"]): React.ReactNode {
+  return React.Children.map(children, (child): React.ReactNode => {
+    let content: React.ReactNode = child;
+    if (React.isValidElement<React.ComponentPropsWithRef<"input">>(child)) {
+      if (child.type === React.Fragment) {
+        content = React.cloneElement(child, {children: withInputInvalidity(child.props.children, invalid)});
+      } else if (child.type === "input" && invalid !== undefined) {
+        content = React.cloneElement(child, {"aria-invalid": invalid});
+      }
+    }
+    return content;
+  });
+}
+
+/**
  * Renders a scalar or range slider with one focusable thumb per supplied value.
  *
  * @remarks
@@ -55,13 +73,13 @@ function Slider<Value extends number | readonly number[]>(props: Readonly<Slider
 
   return (
     <BaseSlider.Root<Value>
-      {...otherProps}
       ref={ref}
       data-slot='slider'
       defaultValue={defaultValue}
       value={value}
       thumbAlignment={thumbAlignment}
-      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}>
+      className={(state) => cn(styles.root, typeof className === "function" ? className(state) : className)}
+      {...otherProps}>
       {children}
       <BaseSlider.Control
         data-slot='slider-control'
@@ -81,11 +99,21 @@ function Slider<Value extends number | readonly number[]>(props: Readonly<Slider
             aria-label={ariaLabel}
             aria-labelledby={getAriaLabel ? undefined : ariaLabelledBy}
             aria-describedby={ariaDescribedBy}
-            aria-invalid={ariaInvalid}
             getAriaLabel={getAriaLabel}
             getAriaValueText={getAriaValueText}
             data-slot='slider-thumb'
             className={styles.thumb}
+            render={(thumbProps, state) => (
+              <div
+                {...{
+                  ...thumbProps,
+                  "data-invalid": (ariaInvalid === undefined ? state.valid === false : ariaInvalid !== false && ariaInvalid !== "false")
+                    ? ""
+                    : undefined,
+                  children: withInputInvalidity(thumbProps.children, ariaInvalid),
+                }}
+              />
+            )}
           />
         ))}
       </BaseSlider.Control>
