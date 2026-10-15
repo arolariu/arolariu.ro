@@ -1,4 +1,4 @@
-import {act, renderHook} from "@testing-library/react";
+import {act, render, renderHook, screen} from "@testing-library/react";
 import * as React from "react";
 import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -6,6 +6,24 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useIntersectionObserver} from "./useIntersectionObserver";
 
 type MockIntersectionObserverCallback = (entries: IntersectionObserverEntry[]) => void;
+
+function ObservedTarget({visible, id}: Readonly<{visible: boolean; id: string}>): React.JSX.Element {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const entry = useIntersectionObserver(ref);
+  return (
+    <>
+      {visible && (
+        <div
+          key={id}
+          id={id}
+          ref={ref}
+          data-testid='observed-target'
+        />
+      )}
+      <output>{entry?.target.id ?? "none"}</output>
+    </>
+  );
+}
 
 describe("useIntersectionObserver", () => {
   let mockIntersectionObserver: {
@@ -50,6 +68,58 @@ describe("useIntersectionObserver", () => {
 
     expect(globalThis.IntersectionObserver).toHaveBeenCalled();
     expect(mockIntersectionObserver.observe).toHaveBeenCalledWith(element);
+  });
+
+  it("observes a target mounted later under the same ref object", () => {
+    const {rerender} = render(
+      <ObservedTarget
+        visible={false}
+        id='later'
+      />,
+    );
+    expect(mockIntersectionObserver.observe).not.toHaveBeenCalled();
+    rerender(
+      <ObservedTarget
+        visible
+        id='later'
+      />,
+    );
+    expect(mockIntersectionObserver.observe).toHaveBeenCalledWith(screen.getByTestId("observed-target"));
+  });
+
+  it("replaces observation and ignores stale deliveries when a keyed target changes", () => {
+    const {rerender} = render(
+      <ObservedTarget
+        visible
+        id='first'
+      />,
+    );
+    const first = screen.getByTestId("observed-target");
+    const oldCallback = mockIntersectionObserver.callback;
+    if (!oldCallback) throw new Error("The first observer did not subscribe");
+    const entry: IntersectionObserverEntry = {
+      target: first,
+      isIntersecting: true,
+      intersectionRatio: 1,
+      boundingClientRect: first.getBoundingClientRect(),
+      intersectionRect: first.getBoundingClientRect(),
+      rootBounds: null,
+      time: 0,
+    };
+    act(() => oldCallback([entry]));
+    expect(screen.getByRole("status")).toHaveTextContent("first");
+
+    rerender(
+      <ObservedTarget
+        visible
+        id='second'
+      />,
+    );
+    expect(mockIntersectionObserver.disconnect).toHaveBeenCalledTimes(1);
+    expect(mockIntersectionObserver.observe).toHaveBeenLastCalledWith(screen.getByTestId("observed-target"));
+    expect(screen.getByRole("status")).toHaveTextContent("none");
+    act(() => oldCallback([entry]));
+    expect(screen.getByRole("status")).toHaveTextContent("none");
   });
 
   it("returns IntersectionObserverEntry when element is intersecting", () => {
@@ -222,5 +292,13 @@ describe("useIntersectionObserver", () => {
     rerender({opts: {threshold: 0.8}});
 
     expect(mockIntersectionObserver.disconnect).toHaveBeenCalled();
+  });
+
+  it("retains the observation when a rerender supplies equivalent threshold values", () => {
+    const ref = {current: document.createElement("div")};
+    const {rerender} = renderHook(() => useIntersectionObserver(ref, {threshold: [0, 0.5]}));
+    rerender();
+    expect(globalThis.IntersectionObserver).toHaveBeenCalledTimes(1);
+    expect(mockIntersectionObserver.disconnect).not.toHaveBeenCalled();
   });
 });
