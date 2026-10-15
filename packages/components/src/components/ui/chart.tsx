@@ -632,8 +632,7 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
   } = publicProps;
   const {config} = useChart();
 
-  const visiblePayload = payload?.filter((item) => item.type !== "none");
-  if (!visiblePayload?.length) {
+  if (!payload?.some((item) => item.type !== "none")) {
     return null;
   }
 
@@ -643,7 +642,8 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
       data-slot='chart-legend'
       className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}
       {...getLegendRootAttributes(props)}>
-      {visiblePayload.map((item, index) => {
+      {payload.map((item, index) => {
+        if (item.type === "none") return null;
         const key = `${nameKey ?? item.dataKey ?? "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
         const value = itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey);

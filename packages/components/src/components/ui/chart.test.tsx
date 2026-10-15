@@ -945,6 +945,90 @@ describe("ChartTooltipContent", () => {
 });
 
 describe("ChartLegendContent", () => {
+  it.each(["element", "callback"] as const)(
+    "preserves original payload indices after a none-type series with %s content",
+    async (contentType) => {
+      const user = userEvent.setup();
+      const formatter = vi.fn<NonNullable<DefaultLegendContentProps["formatter"]>>((value) => <span>{value}</span>);
+      const calls: Array<{item: RechartsPrimitive.LegendPayload; index: number; type: string; target: EventTarget | null}> = [];
+      const onItem: NonNullable<ChartLegendContentProps["onClick"]> = (item, index, event) =>
+        calls.push({item, index, type: event.type, target: event.currentTarget});
+      const {container} = render(
+        <ChartContainer
+          config={config}
+          width={400}
+          height={200}>
+          <BarChart data={[{hidden: 1, revenue: 2}]}>
+            <Bar
+              dataKey='hidden'
+              name='A hidden'
+              legendType='none'
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey='revenue'
+              name='B visible'
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              itemSorter={null}
+              content={contentType === "element" ? <ChartLegendContent aria-label='Series' /> : renderLegendContent}
+              formatter={formatter}
+              onClick={onItem}
+              onMouseEnter={onItem}
+              onMouseLeave={onItem}
+            />
+          </BarChart>
+        </ChartContainer>,
+      );
+      const item = screen.getByRole("button", {name: "Revenue"});
+      expect(screen.queryByText("A hidden")).not.toBeInTheDocument();
+      expect(container.querySelectorAll("[data-slot='chart-legend-item']")).toHaveLength(1);
+      expect(item).toHaveAttribute("type", "button");
+      await user.hover(item);
+      await user.click(item);
+      await user.unhover(item);
+      item.focus();
+      await user.keyboard("{Enter} ");
+
+      expect(formatter).toHaveBeenCalled();
+      expect.soft([...new Set(formatter.mock.calls.map(([, , index]) => index))]).toEqual([1]);
+      expect.soft(calls.map(({index, type}) => [index, type])).toEqual([
+        [1, "mouseenter"],
+        [1, "click"],
+        [1, "mouseleave"],
+        [1, "click"],
+        [1, "click"],
+      ]);
+      for (const call of calls) {
+        expect(call.item).toBe(formatter.mock.calls.at(-1)?.[1]);
+        expect(call.item.dataKey).toBe("revenue");
+        expect(call.target).toBe(item);
+      }
+    },
+  );
+
+  it("passes the original payload index to an item formatter instead of the legend formatter", () => {
+    const formatter = vi.fn<NonNullable<DefaultLegendContentProps["formatter"]>>(() => "Legend fallback");
+    const itemFormatter = vi.fn<NonNullable<DefaultLegendContentProps["formatter"]>>((value) => `Item ${value}`);
+    const payload: RechartsPrimitive.LegendPayload[] = [
+      {dataKey: "hidden", value: "Hidden", type: "none", formatter: itemFormatter},
+      {dataKey: "revenue", value: "revenue", formatter: itemFormatter},
+    ];
+    render(
+      <ChartContainer config={config}>
+        <ChartLegendContent
+          payload={payload}
+          formatter={formatter}
+        />
+      </ChartContainer>,
+    );
+    expect(screen.getByText("Item Revenue")).toBeInTheDocument();
+    expect(screen.queryByText("Hidden")).not.toBeInTheDocument();
+    expect(itemFormatter).toHaveBeenCalledExactlyOnceWith("Revenue", payload[1], 1);
+    expect(formatter).not.toHaveBeenCalled();
+  });
+
   it("exposes actual series hide/show transitions without treating every click handler as a toggle", async () => {
     const user = userEvent.setup();
     const clicked: RechartsPrimitive.LegendPayload[] = [];
