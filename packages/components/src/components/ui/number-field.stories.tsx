@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import * as React from "react";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -129,134 +130,171 @@ export const Default: Story = {
  * Number field with min and max constraints.
  */
 export const WithLimits: Story = {
-  render: () => (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium'>Select quantity (1-10)</label>
-      <NumberField
-        defaultValue={1}
-        min={1}
-        max={10}>
-        <NumberFieldGroup>
-          <NumberFieldDecrement />
-          <NumberFieldInput aria-label='Quantity' />
-          <NumberFieldIncrement />
-        </NumberFieldGroup>
-      </NumberField>
-      <p className='text-muted-foreground text-xs'>Minimum: 1, Maximum: 10</p>
-    </div>
-  ),
+  render: function WithLimitsExample(): React.JSX.Element {
+    const inputId = React.useId();
+    return (
+      <div className='space-y-2'>
+        <label
+          htmlFor={inputId}
+          className='text-sm font-medium'>
+          Select quantity (1-10)
+        </label>
+        <NumberField
+          id={inputId}
+          defaultValue={1}
+          min={1}
+          max={10}>
+          <NumberFieldGroup>
+            <NumberFieldDecrement />
+            <NumberFieldInput />
+            <NumberFieldIncrement />
+          </NumberFieldGroup>
+        </NumberField>
+        <p className='text-muted-foreground text-xs'>Minimum: 1, Maximum: 10</p>
+      </div>
+    );
+  },
 };
 
 /**
  * Number field with step increment for decimal values.
  */
 export const WithStep: Story = {
-  render: () => (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium'>Adjust opacity</label>
-      <NumberField
-        defaultValue={1.0}
-        min={0}
-        max={1}
-        step={0.1}
-        format={{style: "percent"}}>
-        <NumberFieldGroup>
-          <NumberFieldDecrement />
-          <NumberFieldInput aria-label='Opacity' />
-          <NumberFieldIncrement />
-        </NumberFieldGroup>
-      </NumberField>
-      <p className='text-muted-foreground text-xs'>Step: 0.1 (10%)</p>
-    </div>
-  ),
+  render: function WithStepExample(): React.JSX.Element {
+    const inputId = React.useId();
+    return (
+      <div className='space-y-2'>
+        <label
+          htmlFor={inputId}
+          className='text-sm font-medium'>
+          Adjust opacity
+        </label>
+        <NumberField
+          id={inputId}
+          defaultValue={1.0}
+          min={0}
+          max={1}
+          step={0.1}
+          format={{style: "percent"}}>
+          <NumberFieldGroup>
+            <NumberFieldDecrement />
+            <NumberFieldInput />
+            <NumberFieldIncrement />
+          </NumberFieldGroup>
+        </NumberField>
+        <p className='text-muted-foreground text-xs'>Step: 0.1 (10%)</p>
+      </div>
+    );
+  },
 };
 
 /**
  * Number field for currency input with custom formatting.
  */
 export const Currency: Story = {
-  render: () => (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium'>Enter amount</label>
-      <NumberField
-        defaultValue={100}
-        min={0}
-        step={1}
-        format={{
-          style: "currency",
-          currency: "USD",
-        }}>
-        <NumberFieldGroup>
-          <NumberFieldDecrement />
-          <NumberFieldInput aria-label='Amount' />
-          <NumberFieldIncrement />
-        </NumberFieldGroup>
-      </NumberField>
-      <p className='text-muted-foreground text-xs'>Currency: USD</p>
-    </div>
-  ),
+  render: function CurrencyExample(): React.JSX.Element {
+    const inputId = React.useId();
+    return (
+      <div className='space-y-2'>
+        <label
+          htmlFor={inputId}
+          className='text-sm font-medium'>
+          Enter amount
+        </label>
+        <NumberField
+          id={inputId}
+          defaultValue={100}
+          min={0}
+          step={1}
+          format={{
+            style: "currency",
+            currency: "USD",
+          }}>
+          <NumberFieldGroup>
+            <NumberFieldDecrement />
+            <NumberFieldInput />
+            <NumberFieldIncrement />
+          </NumberFieldGroup>
+        </NumberField>
+        <p className='text-muted-foreground text-xs'>Currency: USD</p>
+      </div>
+    );
+  },
 };
 
 /**
  * Number field showing currency with $ prefix.
  */
 export const WithCurrency: Story = {
-  render: () => (
-    <div className={storyClasses.currencyStack}>
-      <label className={storyClasses.currencyLabel}>Budget Amount</label>
-      <div className={storyClasses.currencyPositioner}>
-        <span className={storyClasses.currencyPrefix}>$</span>
-        <NumberField
-          defaultValue={1000}
-          min={0}
-          step={50}
-          format={{
-            style: "decimal",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }}>
-          <NumberFieldGroup>
-            <NumberFieldDecrement />
-            <NumberFieldInput
-              aria-label='Budget'
-              className={storyClasses.currencyInput}
-            />
-            <NumberFieldIncrement />
-          </NumberFieldGroup>
-        </NumberField>
+  render: function WithCurrencyExample(): React.JSX.Element {
+    const inputId = React.useId();
+    return (
+      <div className={storyClasses.currencyStack}>
+        <label
+          htmlFor={inputId}
+          className={storyClasses.currencyLabel}>
+          Budget Amount
+        </label>
+        <div className={storyClasses.currencyPositioner}>
+          <span className={storyClasses.currencyPrefix}>$</span>
+          <NumberField
+            id={inputId}
+            defaultValue={1000}
+            min={0}
+            step={50}
+            format={{
+              style: "decimal",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }}>
+            <NumberFieldGroup>
+              <NumberFieldDecrement />
+              <NumberFieldInput className={storyClasses.currencyInput} />
+              <NumberFieldIncrement />
+            </NumberFieldGroup>
+          </NumberField>
+        </div>
+        <p className={storyClasses.description}>Set your monthly budget in USD</p>
       </div>
-      <p className={storyClasses.description}>Set your monthly budget in USD</p>
-    </div>
-  ),
+    );
+  },
 };
 
 /**
  * Number field constrained between 0 and 100 with validation.
  */
 export const MinMax: Story = {
-  render: () => (
-    <div className={storyClasses.percentageStack}>
-      <label className={storyClasses.percentageLabel}>Progress Percentage</label>
-      <NumberField
-        defaultValue={50}
-        min={0}
-        max={100}
-        step={5}>
-        <NumberFieldGroup>
-          <NumberFieldDecrement />
-          <NumberFieldInput aria-label='Percentage' />
-          <NumberFieldIncrement />
-        </NumberFieldGroup>
-      </NumberField>
-      <div className={storyClasses.rangeLabels}>
-        <span>Min: 0%</span>
-        <span>Max: 100%</span>
+  render: function MinMaxExample(): React.JSX.Element {
+    const inputId = React.useId();
+    return (
+      <div className={storyClasses.percentageStack}>
+        <label
+          htmlFor={inputId}
+          className={storyClasses.percentageLabel}>
+          Progress Percentage
+        </label>
+        <NumberField
+          id={inputId}
+          defaultValue={50}
+          min={0}
+          max={100}
+          step={5}>
+          <NumberFieldGroup>
+            <NumberFieldDecrement />
+            <NumberFieldInput />
+            <NumberFieldIncrement />
+          </NumberFieldGroup>
+        </NumberField>
+        <div className={storyClasses.rangeLabels}>
+          <span>Min: 0%</span>
+          <span>Max: 100%</span>
+        </div>
+        <div className={storyClasses.progressTrack}>
+          <div className={storyClasses.progressIndicator} />
+        </div>
       </div>
-      <div className={storyClasses.progressTrack}>
-        <div className={storyClasses.progressIndicator} />
-      </div>
-    </div>
-  ),
+    );
+  },
 };
 
 /**

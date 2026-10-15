@@ -1,6 +1,7 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {
@@ -11,8 +12,38 @@ import {
   NumberFieldInput,
   NumberFieldScrubArea,
 } from "./number-field";
+import * as stories from "./number-field.stories";
 
 describe("NumberField", () => {
+  const {WithLimits, WithStep, Currency, WithCurrency, MinMax} = composeStories(stories);
+
+  it.each([
+    {Example: WithLimits, label: "Select quantity (1-10)"},
+    {Example: WithStep, label: "Adjust opacity"},
+    {Example: Currency, label: "Enter amount"},
+    {Example: WithCurrency, label: "Budget Amount"},
+    {Example: MinMax, label: "Progress Percentage"},
+  ])("associates the full visible story label '$label' with each mounted input and label-click focus", async ({Example, label}) => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Example />
+        <Example />
+      </>,
+    );
+    const inputs = screen.getAllByRole("textbox", {name: label, exact: true});
+    expect(inputs).toHaveLength(2);
+    expect(inputs[0]?.id).not.toBe(inputs[1]?.id);
+    const labels = screen.getAllByText(label, {selector: "label"});
+    for (const [index, visibleLabel] of labels.entries()) {
+      const input = inputs[index];
+      expect((visibleLabel as HTMLLabelElement).control).toBe(input);
+      expect(input).toHaveAccessibleName(label);
+      await user.click(visibleLabel);
+      expect(input).toHaveFocus();
+    }
+  });
+
   function statefulField(value: number, disabled: boolean): React.ReactElement {
     return (
       <NumberField

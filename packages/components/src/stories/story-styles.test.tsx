@@ -313,7 +313,7 @@ describe("story-owned style lifecycle", () => {
   it("keeps fixed currency demo presentation mounted in the owning story instead of inline React objects", () => {
     const {WithCurrency} = composeStories(numberFieldStories);
     const {container} = render(<WithCurrency />);
-    const input = screen.getByRole("textbox", {name: "Budget"});
+    const input = screen.getByRole("textbox", {name: "Budget Amount"});
     expect(input).toHaveClass("ac-story-number-field-currencyInput");
     expect(input).not.toHaveAttribute("style");
     expect(getComputedStyle(input).paddingLeft).toBe("28px");
