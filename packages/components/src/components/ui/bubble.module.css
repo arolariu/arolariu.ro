@@ -92,7 +92,7 @@ a.content:focus-visible {
 
 .destructive > .content {
   background-color: color-mix(in oklch, var(--ac-destructive) 10%, var(--ac-background));
-  color: var(--ac-destructive);
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
 }
 
 @media (hover: hover) {

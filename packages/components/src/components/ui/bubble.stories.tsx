@@ -8,10 +8,20 @@ const storyStyles = `
   inline-size: min(32rem, 90vw);
   gap: var(--ac-space-6);
 }
+
+.ac-story-bubble-errorSurface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-4);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
 `;
 
 const storyClasses = {
   storyStack: "ac-story-bubble-storyStack",
+  errorSurface: "ac-story-bubble-errorSurface",
 } as const;
 
 const meta = {
@@ -108,9 +118,9 @@ export const NativeRenderAndNavigation: Story = {
         <BubbleContent
           render={(props, state): React.ReactElement => (
             <button
-              {...props}
               type='button'
               data-example-slot={state.slot}
+              {...props}
             />
           )}>
           Caller-composed native button
@@ -141,6 +151,41 @@ export const EmptyErrorLongContentAndRTL: Story = {
       <Bubble variant='outline'>
         <BubbleContent aria-label='Empty bubble content' />
       </Bubble>
+    </BubbleGroup>
+  ),
+};
+
+function ErrorStateExample({theme}: Readonly<{theme: "light" | "dark"}>): React.JSX.Element {
+  const [attempts, setAttempts] = React.useState(0);
+  return (
+    <section
+      aria-label={`${theme} destructive states`}
+      data-theme={theme}
+      className={storyClasses.errorSurface}>
+      <Bubble variant='destructive'>
+        <BubbleContent>Message could not be sent.</BubbleContent>
+      </Bubble>
+      <Bubble variant='destructive'>
+        <BubbleContent
+          render={<button type='button' />}
+          onClick={() => setAttempts((previous) => previous + 1)}>
+          Retry sending message
+        </BubbleContent>
+      </Bubble>
+      <Bubble variant='destructive'>
+        <BubbleContent render={<a href='#delivery-details' />}>Review delivery error</BubbleContent>
+      </Bubble>
+      <output aria-label='Retry attempts'>{attempts}</output>
+    </section>
+  );
+}
+
+/** Inspect ordinary error text and native button/link hover in both default themes. */
+export const ErrorStates: Story = {
+  render: (): React.JSX.Element => (
+    <BubbleGroup className={storyClasses.storyStack}>
+      <ErrorStateExample theme='light' />
+      <ErrorStateExample theme='dark' />
     </BubbleGroup>
   ),
 };

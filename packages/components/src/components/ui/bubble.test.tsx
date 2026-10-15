@@ -1,12 +1,18 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {fireEvent, render, screen, within} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {transform} from "lightningcss";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
-import {parse} from "postcss";
+import {AtRule, parse, type Node as CssNode} from "postcss";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, expectTypeOf, it} from "vitest";
 
 import {Bubble, BubbleContent, BubbleGroup, BubbleReactions} from "./bubble";
 import styles from "./bubble.module.css";
+import * as stories from "./bubble.stories";
+
+const {ErrorStates} = composeStories(stories);
 
 const css = parse(readFileSync(join(import.meta.dirname, "bubble.module.css"), "utf8"));
 function cssClass(name: string): string {
@@ -21,7 +27,131 @@ function declarations(selector: string): Record<string, string> {
   return result;
 }
 
+type Theme = "light" | "dark";
+type Rgba = readonly [number, number, number, number];
+const themeTokens: Record<Theme, Record<string, string>> = {light: {}, dark: {}};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  const theme = rule.selector === ":root" ? "light" : rule.selector.includes('[data-theme="dark"]') ? "dark" : undefined;
+  if (theme) rule.walkDecls((decl) => void (themeTokens[theme][decl.prop] = decl.value));
+});
+
+function authoredPaint(target: HTMLElement, hover: boolean): Record<string, string> {
+  const result: Record<string, string> = {};
+  css.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (!(ancestor instanceof AtRule)) continue;
+      if (ancestor.name !== "media" || ancestor.params !== "(hover: hover)" || !hover) return;
+    }
+    const selector = rule.selector
+      .replace(/:global\(([^)]+)\)/gu, "$1")
+      .replace(/\.([a-z][\w-]*)/giu, (_, name: string) => `.${CSS.escape(cssClass(name))}`)
+      .replace(/:hover\b/gu, hover ? "" : ":not(*)");
+    if (target.matches(selector)) rule.walkDecls((decl) => void (result[decl.prop] = decl.value));
+  });
+  return result;
+}
+
+// Use the real compiler to evaluate authored OKLCH mixes with live default
+// tokens. Its sRGB fallback is a deterministic model, not native pixel proof.
+function recipeColor(value: string | undefined, theme: Theme): Rgba {
+  if (!value) throw new Error("Missing authored Bubble paint");
+  const resolved = value.replace(/var\((--ac-[\w-]+)\)/gu, (_, token: string): string => {
+    const color = themeTokens[theme][token];
+    if (!color) throw new Error(`Missing ${theme} token ${token}`);
+    return color;
+  });
+  const output = transform({
+    filename: "bubble-contrast.css",
+    code: Buffer.from(`.paint { color: ${resolved}; }`),
+    targets: {chrome: 100 << 16},
+  }).code.toString();
+  const hex = /color:\s*#([\da-f]+);/iu.exec(output)?.[1];
+  if (!hex) throw new Error(`Missing compiled sRGB paint: ${output}`);
+  const expanded = hex.length <= 4 ? [...hex].map((digit) => digit.repeat(2)).join("") : hex;
+  if (expanded.length !== 6 && expanded.length !== 8) throw new Error(`Unexpected sRGB paint: ${hex}`);
+  const channel = (offset: number): number => Number.parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+  return [channel(0), channel(2), channel(4), expanded.length === 8 ? channel(6) : 1];
+}
+
+function composite(paint: Rgba, canvas: Rgba): Rgba {
+  const alpha = paint[3];
+  return [
+    paint[0] * alpha + canvas[0] * (1 - alpha),
+    paint[1] * alpha + canvas[1] * (1 - alpha),
+    paint[2] * alpha + canvas[2] * (1 - alpha),
+    1,
+  ];
+}
+
+function textContrast(first: Rgba, second: Rgba): number {
+  const luminance = ([red, green, blue]: Rgba): number => {
+    const linear = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("authored destructive Bubble in %s defaults", (theme) => {
+  it.each([
+    ["text", false],
+    ["text", true],
+    ["button", false],
+    ["button", true],
+    ["link", false],
+    ["link", true],
+  ] as const)("keeps ordinary %s text at 4.5:1 with hover=%s", (kind, hover) => {
+    render(
+      <Bubble variant='destructive'>
+        <BubbleContent render={kind === "button" ? <button type='button' /> : kind === "link" ? <a href='#details' /> : undefined}>
+          Message could not be sent
+        </BubbleContent>
+      </Bubble>,
+    );
+    const target = screen.getByText("Message could not be sent");
+    const state = authoredPaint(target, hover);
+    const background = composite(recipeColor(state["background-color"], theme), recipeColor("var(--ac-background)", theme));
+    const foreground = composite(recipeColor(state["color"], theme), background);
+    expect(textContrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe("Bubble", () => {
+  it("makes authored idle and interactive error stories reachable in both themes", async () => {
+    const user = userEvent.setup();
+    const {container} = render(<ErrorStates />);
+    expect(container.querySelector("style")?.textContent).toContain(".ac-story-bubble-errorSurface");
+    for (const theme of ["light", "dark"]) {
+      const region = screen.getByRole("region", {name: `${theme} destructive states`});
+      expect(region).toHaveAttribute("data-theme", theme);
+      const text = within(region).getByText("Message could not be sent.");
+      const button = within(region).getByRole("button", {name: "Retry sending message"});
+      const link = within(region).getByRole("link", {name: "Review delivery error"});
+      for (const target of [text, button, link]) {
+        expect(target).toHaveClass(cssClass("content"));
+        expect(target.parentElement).toHaveClass(cssClass("destructive"));
+      }
+      await user.hover(button);
+      await user.click(button);
+      expect(within(region).getByLabelText("Retry attempts")).toHaveTextContent("1");
+      await user.hover(link);
+      expect(link).toHaveAttribute("href", "#delivery-details");
+    }
+  });
+
+  it("lets native rest props override preset slot and alignment attributes", () => {
+    render(
+      <Bubble
+        align='start'
+        {...{"data-slot": "caller-bubble", "data-align": "end"}}>
+        Caller surface
+      </Bubble>,
+    );
+    expect(screen.getByText("Caller surface")).toHaveAttribute("data-slot", "caller-bubble");
+    expect(screen.getByText("Caller surface")).toHaveAttribute("data-align", "end");
+  });
+
   it("publishes native group/root/reaction refs and the content's actual composed element ref", () => {
     expectTypeOf<React.ComponentRef<typeof Bubble>>().toEqualTypeOf<HTMLDivElement>();
     expectTypeOf<React.ComponentRef<typeof BubbleGroup>>().toEqualTypeOf<HTMLDivElement>();

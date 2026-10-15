@@ -43,10 +43,10 @@ const variantStyles: Record<BubbleVariant, string | undefined> = {
 /** Groups caller-provided bubbles in a shrinking native column. */
 const BubbleGroup = ({ref, className, ...props}: Readonly<BubbleGroup.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='bubble-group'
     className={cn(styles.group, className)}
+    {...props}
   />
 );
 BubbleGroup.displayName = "BubbleGroup";
@@ -54,12 +54,12 @@ BubbleGroup.displayName = "BubbleGroup";
 /** Defines a bubble surface and logical alignment without owning message or reaction state. */
 const Bubble = ({ref, className, variant = "default", align = "start", ...props}: Readonly<Bubble.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='bubble'
     data-variant={variant}
     data-align={align}
     className={cn(styles.bubble, variantStyles[variant], className)}
+    {...props}
   />
 );
 Bubble.displayName = "Bubble";
@@ -88,12 +88,12 @@ const BubbleReactions = ({
   ...props
 }: Readonly<BubbleReactions.Props>): React.JSX.Element => (
   <div
-    {...props}
     ref={ref}
     data-slot='bubble-reactions'
     data-side={side}
     data-align={align}
     className={cn(styles.reactions, className)}
+    {...props}
   />
 );
 BubbleReactions.displayName = "BubbleReactions";
