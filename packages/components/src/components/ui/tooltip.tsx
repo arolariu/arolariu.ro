@@ -314,7 +314,6 @@ const TooltipPopupWithArrow = ({ref, render, children, showArrow, ...props}: Rea
 
   return (
     <BaseTooltip.Popup
-      {...props}
       render={(elementProps, state) => (
         <TooltipPopupSurface
           elementProps={elementProps}
@@ -322,7 +321,8 @@ const TooltipPopupWithArrow = ({ref, render, children, showArrow, ...props}: Rea
           render={renderWithArrow}
         />
       )}
-      ref={ref}>
+      ref={ref}
+      {...props}>
       {render !== undefined ? (
         children
       ) : (
@@ -407,7 +407,7 @@ function appendTooltipArrow(render: React.ReactElement, children: React.ReactNod
     element,
     undefined,
     <>
-      {element.props.children === undefined ? children : element.props.children}
+      {Object.hasOwn(element.props, "children") ? element.props.children : children}
       <TooltipArrow />
     </>,
   );

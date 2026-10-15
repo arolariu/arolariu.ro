@@ -84,6 +84,49 @@ function renderTooltip({
 }
 
 describe("Tooltip", () => {
+  it.each(
+    (["static", "callback", "opaque"] as const).flatMap((mode) =>
+      [
+        {label: "absent", present: false, children: undefined, expected: "Fallback body"},
+        {label: "undefined", present: true, children: undefined, expected: ""},
+        {label: "null", present: true, children: null, expected: ""},
+        {label: "false", present: true, children: false, expected: ""},
+        {label: "zero", present: true, children: 0, expected: "0"},
+        {label: "empty", present: true, children: "", expected: ""},
+        {label: "element", present: true, children: <strong>Owned body</strong>, expected: "Owned body"},
+      ].map((value) => ({mode, ...value})),
+    ),
+  )("preserves $mode render children presence for $label with the default arrow", async ({mode, present, children, expected}) => {
+    const LazySurface = React.lazy(async () => ({
+      default: (props: Readonly<React.ComponentPropsWithRef<"section">>): React.ReactElement => <section {...props} />,
+    }));
+    const childProps = present ? {children} : {};
+    const element = mode === "opaque" ? <LazySurface {...childProps} /> : <section {...childProps} />;
+    render(
+      <React.Suspense fallback='Resolving tooltip surface'>
+        <Tooltip defaultOpen>
+          <TooltipTrigger>Presence trigger</TooltipTrigger>
+          <TooltipContent
+            render={
+              mode === "callback"
+                ? (props) => (
+                    <section
+                      {...props}
+                      {...childProps}
+                    />
+                  )
+                : element
+            }>
+            Fallback body
+          </TooltipContent>
+        </Tooltip>
+      </React.Suspense>,
+    );
+    const popup = await screen.findByRole("tooltip");
+    expect(popup.textContent).toBe(expected);
+    expect(popup.querySelectorAll('[data-slot="tooltip-arrow"]')).toHaveLength(1);
+  });
+
   it("refresh accessibility: wraps long supplemental copy within available width", () => {
     const css = readFileSync(join(import.meta.dirname, "tooltip.module.css"), "utf8");
     expect(css).toMatch(/\.popup\s*\{[^}]*max-width:\s*min\(var\(--available-width/u);
