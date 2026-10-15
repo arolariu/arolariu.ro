@@ -305,7 +305,7 @@ const ReviewAnchor = ({
   const id = React.useId();
   return useRender<Record<string, never>, HTMLAnchorElement>({
     defaultTagName: "a",
-    ref: childRef ? [ref, childRef] : ref,
+    ref: childRef ? [ref ?? null, childRef] : ref,
     props: {...props, id: props.id ?? id},
   });
 };

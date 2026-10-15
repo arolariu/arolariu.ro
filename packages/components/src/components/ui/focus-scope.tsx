@@ -154,7 +154,7 @@ function resolveActiveTarget(active: Element | null, container: HTMLElement, can
  * ```
  */
 const FocusScope = ({
-  ref,
+  ref = null,
   contain = true,
   restoreFocus = true,
   autoFocus = false,

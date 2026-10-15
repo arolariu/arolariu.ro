@@ -371,6 +371,21 @@ Reference tests in the current codebase:
 - assert state attributes such as `aria-checked` or `data-disabled`
 - keep tests focused on public behavior rather than internal implementation details
 
+### Required Type Contracts
+
+The ordinary Vitest suite includes `src/type-contracts.test.ts`. It checks the real production modules, colocated tests, build scripts, and
+all TypeScript Storybook stories with strict null checking. This makes `expectTypeOf` and unused `@ts-expect-error` directives real compiler
+failures instead of assertions erased by ordinary test transpilation.
+
+Run the focused check from this package:
+
+```powershell
+npm run test:unit -- src/type-contracts.test.ts --coverage.enabled=false
+```
+
+The test graph emits no declarations: tests and stories are not published declaration surfaces. The package build and real packed contracts
+separately verify the emitted public declarations.
+
 ---
 
 ## Accessibility Expectations

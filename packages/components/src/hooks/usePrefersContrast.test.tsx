@@ -8,21 +8,31 @@ type MediaQueryListener = (event: MediaQueryChangeEvent) => void;
 
 describe("usePrefersContrast", () => {
   let listeners: MediaQueryListener[];
-  let addEventListener: ReturnType<typeof vi.fn>;
-  let removeEventListener: ReturnType<typeof vi.fn>;
+  let addEventListener: ReturnType<typeof vi.fn<(event: string, handler: EventListenerOrEventListenerObject) => void>>;
+  let removeEventListener: ReturnType<typeof vi.fn<(event: string, handler: EventListenerOrEventListenerObject) => void>>;
+  let matches: boolean;
 
   beforeEach(() => {
     listeners = [];
-    addEventListener = vi.fn((_event: string, handler: MediaQueryListener) => {
-      listeners.push(handler);
+    matches = false;
+    addEventListener = vi.fn((_event: string, handler: EventListenerOrEventListenerObject) => {
+      listeners.push((event) => {
+        const change = new MediaQueryListEvent("change", {matches: event.matches, media: "(prefers-contrast: more)"});
+        if (typeof handler === "function") handler(change);
+        else handler.handleEvent(change);
+      });
     });
-    removeEventListener = vi.fn();
+    removeEventListener = vi.fn<(event: string, handler: EventListenerOrEventListenerObject) => void>();
 
     Object.defineProperty(globalThis.window, "matchMedia", {
       writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: false,
+      value: vi.fn().mockImplementation((query: string): MediaQueryList => ({
+        matches,
         media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
         addEventListener,
         removeEventListener,
       })),
@@ -36,12 +46,7 @@ describe("usePrefersContrast", () => {
   });
 
   it("returns true when user prefers high contrast", () => {
-    vi.spyOn(globalThis.window, "matchMedia").mockReturnValue({
-      matches: true,
-      media: "(prefers-contrast: more)",
-      addEventListener,
-      removeEventListener,
-    } as MediaQueryList);
+    matches = true;
 
     const {result} = renderHook(() => usePrefersContrast());
 

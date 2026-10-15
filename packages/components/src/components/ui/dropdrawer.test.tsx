@@ -7,6 +7,7 @@ import {hydrateRoot, type Root} from "react-dom/client";
 import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+import {Button} from "./button";
 import {
   DropDrawer,
   DropDrawerContent,
@@ -326,12 +327,11 @@ describe("DropDrawer SDK restoration review 03fdddba", () => {
           <DropDrawerSub>
             <DropDrawerSubTrigger>Disabled focus panel</DropDrawerSubTrigger>
             <DropDrawerSubContent>
-              <DropDrawerItem
+              <Button
                 disabled
-                focusableWhenDisabled
-                closeOnClick={false}>
+                focusableWhenDisabled>
                 Focusable disabled target
-              </DropDrawerItem>
+              </Button>
               <DropDrawerItem>Later target</DropDrawerItem>
             </DropDrawerSubContent>
           </DropDrawerSub>

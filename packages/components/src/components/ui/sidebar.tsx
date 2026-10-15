@@ -830,7 +830,7 @@ export type SidebarGroupActionProps = SidebarControlProps<SidebarGroupActionStat
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
 const SidebarGroupAction = ({
-  ref,
+  ref = null,
   className,
   children,
   render,
@@ -996,7 +996,7 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
 const SidebarMenuButton = ({
-  ref,
+  ref = null,
   isActive = false,
   variant = "default",
   size = "default",
@@ -1082,7 +1082,7 @@ export interface SidebarMenuActionProps extends SidebarControlProps<SidebarMenuA
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
  */
 const SidebarMenuAction = ({
-  ref,
+  ref = null,
   className,
   showOnHover = false,
   children,

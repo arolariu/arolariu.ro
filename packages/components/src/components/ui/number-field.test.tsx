@@ -31,7 +31,7 @@ describe("NumberField", () => {
         <Example />
       </>,
     );
-    const inputs = screen.getAllByRole("textbox", {name: label, exact: true});
+    const inputs = screen.getAllByRole("textbox", {name: label});
     expect(inputs).toHaveLength(2);
     expect(inputs[0]?.id).not.toBe(inputs[1]?.id);
     const labels = screen.getAllByText(label, {selector: "label"});

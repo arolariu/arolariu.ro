@@ -888,8 +888,8 @@ describe("TabsList variants and indicator", () => {
       expect(authoredDeclaration(list, "justify-content")).toBe("safe center");
       expect(authoredDeclaration(list, "max-width")).toBe("100%");
       expect(getComputedStyle(list).overflowX).toBe("auto");
-      const first = screen.getByRole("tab", {name: "Tab 1", exact: true});
-      const last = screen.getByRole("tab", {name: "Tab 10", exact: true});
+      const first = screen.getByRole("tab", {name: "Tab 1"});
+      const last = screen.getByRole("tab", {name: "Tab 10"});
       await user.tab();
       expect(first).toHaveFocus();
       await user.keyboard("{End}{Enter}");
@@ -900,7 +900,7 @@ describe("TabsList variants and indicator", () => {
       expect(first).toHaveFocus();
       expect(first).toHaveAttribute("aria-selected", "true");
       await user.keyboard(direction === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
-      expect(screen.getByRole("tab", {name: "Tab 2", exact: true})).toHaveFocus();
+      expect(screen.getByRole("tab", {name: "Tab 2"})).toHaveFocus();
     },
   );
 

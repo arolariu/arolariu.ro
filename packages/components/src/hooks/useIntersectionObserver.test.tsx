@@ -27,25 +27,42 @@ function ObservedTarget({visible, id}: Readonly<{visible: boolean; id: string}>)
 
 describe("useIntersectionObserver", () => {
   let mockIntersectionObserver: {
-    observe: ReturnType<typeof vi.fn>;
-    unobserve: ReturnType<typeof vi.fn>;
-    disconnect: ReturnType<typeof vi.fn>;
+    observe: ReturnType<typeof vi.fn<IntersectionObserver["observe"]>>;
+    unobserve: ReturnType<typeof vi.fn<IntersectionObserver["unobserve"]>>;
+    disconnect: ReturnType<typeof vi.fn<IntersectionObserver["disconnect"]>>;
     callback: MockIntersectionObserverCallback | null;
   };
 
   beforeEach(() => {
     mockIntersectionObserver = {
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      observe: vi.fn<IntersectionObserver["observe"]>(),
+      unobserve: vi.fn<IntersectionObserver["unobserve"]>(),
+      disconnect: vi.fn<IntersectionObserver["disconnect"]>(),
       callback: null,
     };
 
-    globalThis.IntersectionObserver = vi.fn(function (callback: MockIntersectionObserverCallback) {
-      mockIntersectionObserver.callback = callback;
+    globalThis.IntersectionObserver = vi.fn(
+      class implements IntersectionObserver {
+        readonly root: Element | Document | null;
+        readonly rootMargin: string;
+        readonly scrollMargin = "0px";
+        readonly thresholds: readonly number[];
+        readonly observe = mockIntersectionObserver.observe;
+        readonly unobserve = mockIntersectionObserver.unobserve;
+        readonly disconnect = mockIntersectionObserver.disconnect;
 
-      return mockIntersectionObserver;
-    }) as typeof IntersectionObserver;
+        constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+          this.root = options?.root ?? null;
+          this.rootMargin = options?.rootMargin ?? "0px";
+          this.thresholds = Array.isArray(options?.threshold) ? options.threshold : [options?.threshold ?? 0];
+          mockIntersectionObserver.callback = (entries) => callback(entries, this);
+        }
+
+        takeRecords(): IntersectionObserverEntry[] {
+          return [];
+        }
+      },
+    );
   });
 
   afterEach(() => {
