@@ -53,6 +53,64 @@ function compiledCommandDeclarations(element: HTMLElement, forcedColors: boolean
 }
 
 describe("Command", () => {
+  it("keeps matching nested group ancestry visible and its active descendant consistent with empty state", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command>
+        <CommandInput aria-label='Nested search' />
+        <CommandList>
+          <CommandEmpty>No nested matches</CommandEmpty>
+          <CommandGroup heading='Outer group'>
+            <CommandItem value='unrelated'>Unrelated</CommandItem>
+            <CommandGroup heading='Middle group'>
+              <CommandGroup heading='Inner group'>
+                <CommandItem value='needle'>Needle</CommandItem>
+              </CommandGroup>
+            </CommandGroup>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Nested search"});
+    await user.type(input, "needle");
+    const match = screen.getByRole("option", {name: "Needle"});
+    expect(match).toBeVisible();
+    for (const name of ["Outer group", "Middle group", "Inner group"]) expect(screen.getByRole("group", {name})).toBeVisible();
+    expect(input).toHaveAttribute("aria-activedescendant", match.id);
+    expect(screen.queryByText("No nested matches")).not.toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "absent");
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByText("No nested matches")).toBeVisible();
+  });
+
+  it("does not expose matches or active descendants beneath an explicitly hidden ancestor", async () => {
+    render(
+      <Command>
+        <CommandInput
+          aria-label='Hidden ancestor search'
+          defaultValue='needle'
+        />
+        <CommandList>
+          <CommandEmpty>No available matches</CommandEmpty>
+          <CommandGroup
+            hidden
+            heading='Hidden outer'>
+            <CommandGroup
+              forceMount
+              heading='Forced inner'>
+              <CommandItem value='needle'>Hidden needle</CommandItem>
+            </CommandGroup>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox")).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.getByText("No available matches")).toBeVisible();
+  });
+
   it("refresh accessibility: localizes the optional command-dialog close control", () => {
     render(
       <CommandDialog

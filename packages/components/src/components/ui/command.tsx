@@ -120,6 +120,7 @@ interface RegisteredItem {
 
 interface RegisteredGroup {
   readonly id: string;
+  readonly parentId: string | null;
   readonly order: number;
   readonly ref: React.RefObject<HTMLDivElement | null>;
 }
@@ -381,7 +382,7 @@ const Command = ({
   const registerGroup = React.useCallback((group: Omit<RegisteredGroup, "order">): void => {
     setRegistry((current) => {
       const existing = current.groups.get(group.id);
-      if (existing?.ref === group.ref) return current;
+      if (existing?.ref === group.ref && existing.parentId === group.parentId) return current;
       const groups = new Map(current.groups);
       groups.set(group.id, {...group, order: existing?.order ?? current.nextOrder});
       return {...current, groups, nextOrder: current.nextOrder + (existing ? 0 : 1), revision: current.revision + 1};
@@ -409,12 +410,17 @@ const Command = ({
   const groupRanks = React.useMemo(() => {
     const ranks = new Map<string, {score: number; order: number}>();
     for (const {item, score, visible} of rankedItems) {
-      if (item.groupId && visible) {
-        const existing = ranks.get(item.groupId);
-        ranks.set(item.groupId, {
+      let groupId = visible ? item.groupId : null;
+      const visited = new Set<string>();
+      while (groupId && !visited.has(groupId)) {
+        visited.add(groupId);
+        const group = registry.groups.get(groupId);
+        const existing = ranks.get(groupId);
+        ranks.set(groupId, {
           score: Math.max(existing?.score ?? 0, score),
-          order: registry.groups.get(item.groupId)?.order ?? item.order,
+          order: group?.order ?? item.order,
         });
+        groupId = group?.parentId ?? null;
       }
     }
     return ranks;
@@ -508,7 +514,7 @@ const Command = ({
       isFiltering,
       isItemVisible: (id) => visibleItems.some((item) => item.id === id),
       isRestoringFocus,
-      hasVisibleItemsInGroup: (id) => visibleItems.some((item) => item.groupId === id),
+      hasVisibleItemsInGroup: (id) => groupRanks.has(id),
       label,
       listId,
       registerItem,
@@ -526,6 +532,7 @@ const Command = ({
       disablePointerSelection,
       isFiltering,
       isRestoringFocus,
+      groupRanks,
       label,
       listId,
       registerGroup,
@@ -724,15 +731,14 @@ const CommandGroup = ({
     [externallyHidden, groupId, inheritedForceMount],
   );
   React.useLayoutEffect(() => {
-    registerGroup({id: groupId, ref: groupRef});
+    registerGroup({id: groupId, parentId: parent?.id ?? null, ref: groupRef});
     return () => {
       unregisterGroup(groupId);
     };
-  }, [groupId, registerGroup, unregisterGroup]);
+  }, [groupId, parent?.id, registerGroup, unregisterGroup]);
   return (
     <CommandGroupContext.Provider value={groupContext}>
       <div
-        {...props}
         ref={mergedRef}
         id={groupId}
         role='group'
@@ -741,7 +747,8 @@ const CommandGroup = ({
         data-slot='command-group'
         data-command-group=''
         data-value={value}
-        hidden={hidden || externallyHidden || (!inheritedForceMount && isFiltering && !hasVisibleItemsInGroup(groupId))}>
+        hidden={hidden || externallyHidden || (!inheritedForceMount && isFiltering && !hasVisibleItemsInGroup(groupId))}
+        {...props}>
         {heading !== undefined && heading !== null ? (
           <div
             id={headingId}
