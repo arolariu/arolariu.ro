@@ -425,21 +425,35 @@ const Command = ({
     }
     return ranks;
   }, [rankedItems, registry.groups]);
-  const visibleItems = React.useMemo(
-    () =>
-      rankedItems
-        .filter(({visible}) => visible)
-        .toSorted((a, b) => {
-          if (a.item.groupId !== b.item.groupId) {
-            const first = (a.item.groupId ? groupRanks.get(a.item.groupId) : undefined) ?? {score: a.score, order: a.item.order};
-            const second = (b.item.groupId ? groupRanks.get(b.item.groupId) : undefined) ?? {score: b.score, order: b.item.order};
+  const visibleItems = React.useMemo(() => {
+    const paths = rankedItems
+      .filter(({visible}) => visible)
+      .map(({item, score}) => {
+        const path = [{id: item.id, score, order: item.order}];
+        let {groupId} = item;
+        const visited = new Set<string>();
+        while (groupId && !visited.has(groupId)) {
+          visited.add(groupId);
+          const rank = groupRanks.get(groupId);
+          if (!rank) break;
+          path.unshift({id: groupId, ...rank});
+          groupId = registry.groups.get(groupId)?.parentId ?? null;
+        }
+        return {item, path};
+      });
+    return paths
+      .toSorted((a, b) => {
+        // Compare the first diverging siblings, keeping each ancestor's subtree together like the DOM.
+        for (let index = 0; index < Math.min(a.path.length, b.path.length); index++) {
+          const first = a.path[index];
+          const second = b.path[index];
+          if (first && second && first.id !== second.id)
             return (isFiltering ? second.score - first.score : 0) || first.order - second.order;
-          }
-          return (isFiltering ? b.score - a.score : 0) || a.item.order - b.item.order;
-        })
-        .map(({item}) => item),
-    [groupRanks, isFiltering, rankedItems],
-  );
+        }
+        return 0;
+      })
+      .map(({item}) => item);
+  }, [groupRanks, isFiltering, rankedItems, registry.groups]);
   const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
   const selectedValue = value ?? selection;
   const activeItem = selectableItems.find((item) => item.value === selectedValue) ?? (value === undefined ? selectableItems[0] : undefined);

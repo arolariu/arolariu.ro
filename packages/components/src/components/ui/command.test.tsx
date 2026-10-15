@@ -53,6 +53,203 @@ function compiledCommandDeclarations(element: HTMLElement, forcedColors: boolean
 }
 
 describe("Command", () => {
+  it.each([
+    {key: "{Home}", expected: "A"},
+    {key: "{ArrowDown}", expected: "B"},
+  ])("follows nested DOM order for $key from A", async ({key, expected}) => {
+    const user = userEvent.setup();
+    render(
+      <Command defaultValue='a'>
+        <CommandInput aria-label='Nested navigation' />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            <CommandGroup heading='Inner'>
+              <CommandItem value='b'>B</CommandItem>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "B", "C"]);
+    const input = screen.getByRole("combobox", {name: "Nested navigation"});
+    await user.click(input);
+    await user.keyboard(key);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: expected}).id);
+  });
+
+  it.each([
+    {
+      mode: "unfiltered",
+      visible: ["Root first", "A", "B", "Inner disabled", "C", "Root tie", "D", "Root last"],
+      selectable: ["Root first", "A", "B", "C", "Root tie", "D", "Root last"],
+    },
+    {
+      mode: "ranked",
+      visible: ["Inner disabled", "B", "C", "A", "Root tie", "D", "Root first", "Root last"],
+      selectable: ["B", "C", "A", "Root tie", "D", "Root first", "Root last"],
+    },
+    {
+      mode: "tied",
+      visible: ["Root first", "A", "B", "Inner disabled", "C", "Root tie", "D", "Root last"],
+      selectable: ["Root first", "A", "B", "C", "Root tie", "D", "Root last"],
+    },
+  ])("traverses $mode nested and root options in DOM order, excluding disabled options", async ({mode, visible, selectable}) => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <Command
+        onValueChange={onValueChange}
+        filter={(value) => (mode === "tied" ? 1 : ({root: 0.6, a: 0.4, b: 0.8, disabled: 1, c: 0.8, tie: 1, d: 1, last: 0.1}[value] ?? 0))}>
+        <CommandInput
+          aria-label='Hierarchy search'
+          defaultValue={mode === "unfiltered" ? "" : "query"}
+        />
+        <CommandList>
+          <CommandItem value='root'>Root first</CommandItem>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            <CommandGroup heading='Middle'>
+              <CommandGroup heading='Inner'>
+                <CommandItem
+                  value='b'
+                  onSelect={onSelect}>
+                  B
+                </CommandItem>
+                <CommandItem
+                  value='disabled'
+                  disabled
+                  onSelect={onSelect}>
+                  Inner disabled
+                </CommandItem>
+              </CommandGroup>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+          <CommandItem value='tie'>Root tie</CommandItem>
+          <CommandGroup heading='Sibling'>
+            <CommandItem value='d'>D</CommandItem>
+          </CommandGroup>
+          <CommandItem value='last'>Root last</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Hierarchy search"});
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(visible);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.click(input);
+    await user.keyboard("{Home}");
+    for (const [index, name] of selectable.entries()) {
+      if (index > 0) await user.keyboard("{ArrowDown}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+      expect(input).toHaveFocus();
+    }
+    await user.keyboard("{Home}{End}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Root last"}).id);
+    for (const name of selectable.toReversed().slice(1)) {
+      await user.keyboard("{ArrowUp}");
+      expect(screen.getByRole("option", {name})).toHaveAttribute("aria-selected", "true");
+    }
+    expect(screen.getByRole("option", {name: "Inner disabled"})).toHaveAttribute("aria-selected", "false");
+    expect(onValueChange.mock.calls.flat()).not.toContain("disabled");
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("only commits nested keyboard proposals accepted by the parent (filtering: %s)", async (filtering) => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onSelect = vi.fn();
+    const fixture = (value: string): React.JSX.Element => (
+      <Command
+        value={value}
+        onValueChange={onValueChange}
+        filter={(item) => ({a: 0.9, b: 0.8, c: 0.1})[item] ?? 0}>
+        <CommandInput defaultValue={filtering ? "query" : ""} />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem
+              value='a'
+              onSelect={onSelect}>
+              A
+            </CommandItem>
+            <CommandGroup heading='Inner'>
+              <CommandItem value='b'>B</CommandItem>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("a"));
+    const first = screen.getByRole("option", {name: "A"});
+    const inner = screen.getByRole("option", {name: "B"});
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "B", "C"]);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.click(first);
+    onSelect.mockClear();
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange.mock.calls).toEqual([["b"]]);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    expect(inner).toHaveAttribute("aria-selected", "false");
+    await user.keyboard("{Enter}");
+    expect(onSelect.mock.calls).toEqual([["a"]]);
+    rerender(fixture("b"));
+    expect(inner).toHaveFocus();
+    expect(inner).toHaveAttribute("aria-selected", "true");
+    expect(onValueChange.mock.calls).toEqual([["b"]]);
+    await user.keyboard("{ArrowDown}");
+    expect(onValueChange.mock.calls).toEqual([["b"], ["c"]]);
+    expect(inner).toHaveFocus();
+    rerender(fixture("c"));
+    expect(screen.getByRole("option", {name: "C"})).toHaveFocus();
+    expect(onValueChange.mock.calls).toEqual([["b"], ["c"]]);
+  });
+
+  it("keeps nested ordering coherent after score changes, group removal, and remounting", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const fixture = (includeInner: boolean, filtering: boolean): React.JSX.Element => (
+      <Command
+        defaultValue='b'
+        onValueChange={onValueChange}
+        filter={(value) => ({a: 0.1, b: 0.9, c: 0.8})[value] ?? 0}>
+        <CommandInput value={filtering ? "query" : ""} />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            {includeInner && (
+              <CommandGroup heading='Inner'>
+                <CommandItem value='b'>B</CommandItem>
+              </CommandGroup>
+            )}
+            <CommandItem value='c'>C</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(true, false));
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    rerender(fixture(true, true));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["B", "C", "A"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "B"}).id);
+    rerender(fixture(false, true));
+    expect(screen.queryByRole("group", {name: "Inner"})).not.toBeInTheDocument();
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["C", "A"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    rerender(fixture(true, false));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "C", "B"]);
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.keyboard("{Home}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "B"}).id);
+  });
+
   it("keeps matching nested group ancestry visible and its active descendant consistent with empty state", async () => {
     const user = userEvent.setup();
     render(
