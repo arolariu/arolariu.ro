@@ -57,6 +57,41 @@ afterEach(() => {
 });
 
 describe("CountingNumber with real Motion", () => {
+  it.each([false, true])("preserves the initial reduced-motion jump when the live preference changes (visible: %s)", (visible) => {
+    let reduced = true;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+    vi.spyOn(window, "matchMedia").mockReturnValue(media);
+    const removeListener = vi.spyOn(media, "removeEventListener");
+    const {unmount} = render(
+      <CountingNumber
+        number={100}
+        fromNumber={37}
+        inView
+        data-testid='count'
+      />,
+    );
+    const visual = screen.getByTestId("count").querySelector('[data-slot="counting-number-visual"]');
+    expect(visual).toHaveTextContent(/^100$/);
+    if (visible) {
+      act(() => {
+        observed.forEach((observer) => observer.enter());
+      });
+    }
+
+    // Dispatch synchronously, before the policy's five-second settlement can mask a stale mirror.
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(visual).toHaveTextContent(/^100$/);
+    expect(visual).not.toHaveTextContent(/^37$/);
+
+    unmount();
+    expect(removeListener).toHaveBeenCalledWith("change", expect.any(Function));
+    expect(observed.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
+  });
+
   it("preserves a real default count instead of jumping to the target before its first visible frame", async () => {
     render(
       <CountingNumber

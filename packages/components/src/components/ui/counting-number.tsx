@@ -76,13 +76,14 @@ function CountingNumber({
   });
   const isInView = !inView || inViewResult;
 
+  React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
+
   React.useEffect(() => {
     if (reducedMotion || settled) springValue.jump(number);
     else if (paused) springValue.stop();
     else if (isInView) springValue.set(number);
   }, [isInView, number, paused, reducedMotion, settled, springValue]);
 
-  React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
   const visualValue = reducedMotion || settled ? number : displayedNumber;
   const formatted = decimalPlaces > 0 ? visualValue.toFixed(decimalPlaces) : Math.round(visualValue).toString();
   const negative = formatted.startsWith("-");
