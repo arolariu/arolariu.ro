@@ -1,5 +1,6 @@
 import * as React from "react";
-import {cleanup, render, screen} from "@testing-library/react";
+import {EventTarget as DOMEventTarget} from "happy-dom";
+import {cleanup, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -9,34 +10,79 @@ const right: FlipDirection = "right";
 const animateDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
 beforeEach(() => {
   Object.defineProperty(Element.prototype, "animate", {configurable: true, value: undefined});
+  vi.stubGlobal("EventTarget", DOMEventTarget);
 });
 afterEach(() => {
   cleanup();
   if (animateDescriptor) Object.defineProperty(Element.prototype, "animate", animateDescriptor);
   else Reflect.deleteProperty(Element.prototype, "animate");
+  vi.unstubAllGlobals();
 });
 
 describe("FlipButton with real Motion", () => {
+  it.each(["hover", "focus"] as const)(
+    "keeps both action-face labels in one stable name through real %s transitions",
+    async (interaction) => {
+      const user = userEvent.setup();
+      render(
+        <FlipButton
+          frontText='Show details'
+          backText='Open details'
+          transition={{duration: 0}}
+        />,
+      );
+      const button = screen.getByRole("button");
+      const [front, back] = button.querySelectorAll("span");
+      expect(front).toHaveStyle({opacity: "1"});
+      expect(back).toHaveStyle({opacity: "0"});
+      expect(button).toHaveAccessibleName("Show details / Open details");
+      if (interaction === "hover") await user.hover(button);
+      else await user.tab();
+      await waitFor(() => {
+        expect(front).toHaveStyle({opacity: "0"});
+        expect(back).toHaveStyle({opacity: "1"});
+      });
+      expect(button).toHaveAccessibleName("Show details / Open details");
+      if (interaction === "hover") await user.unhover(button);
+      else await user.tab();
+      await waitFor(() => {
+        expect(front).toHaveStyle({opacity: "1"});
+        expect(back).toHaveStyle({opacity: "0"});
+      });
+      expect(button).toHaveAccessibleName("Show details / Open details");
+    },
+  );
+
+  it("does not duplicate an identical action label", () => {
+    render(
+      <FlipButton
+        frontText='Open details'
+        backText='Open details'
+      />,
+    );
+    expect(screen.getByRole("button")).toHaveAccessibleName("Open details");
+  });
+
   it("accepts the correctly spelled right direction and has one stable accessible label", () => {
     render(
       <FlipButton
         frontText='Open'
-        backText='Details'
+        backText='Open details'
         from={right}
       />,
     );
-    expect(screen.getByRole("button", {name: "Open"})).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", {name: "Open / Open details"})).toHaveAttribute("type", "button");
   });
 
   it.each(["top", "bottom", "left", "right"] as const)("supports the %s direction", (from) => {
     render(
       <FlipButton
         frontText='Open'
-        backText='Details'
+        backText='Open details'
         from={from}
       />,
     );
-    expect(screen.getByRole("button", {name: "Open"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Open / Open details"})).toBeInTheDocument();
   });
 
   it("retains native keyboard activation, caller label, classes and ref", async () => {
@@ -46,9 +92,9 @@ describe("FlipButton with real Motion", () => {
     render(
       <FlipButton
         ref={ref}
-        frontText='Open'
-        backText='Details'
-        aria-label='Show details'
+        frontText='Open details'
+        backText='Open details'
+        aria-label='Open details documentation'
         className='caller'
         onClick={onClick}
       />,
@@ -56,7 +102,7 @@ describe("FlipButton with real Motion", () => {
     await user.tab();
     await user.keyboard("{Enter} ");
     expect(onClick).toHaveBeenCalledTimes(2);
-    expect(ref.current).toBe(screen.getByRole("button", {name: "Show details"}));
+    expect(ref.current).toBe(screen.getByRole("button", {name: "Open details documentation"}));
     expect(ref.current).toHaveClass("caller");
   });
 
@@ -68,7 +114,7 @@ describe("FlipButton with real Motion", () => {
       <form onSubmit={onSubmit}>
         <FlipButton
           frontText='Open'
-          backText='Details'
+          backText='Open details'
           onClick={onClick}
           disabled
         />
@@ -80,7 +126,7 @@ describe("FlipButton with real Motion", () => {
       <form onSubmit={onSubmit}>
         <FlipButton
           frontText='Open'
-          backText='Details'
+          backText='Open details'
           onClick={onClick}
         />
       </form>,

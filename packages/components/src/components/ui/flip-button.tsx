@@ -37,10 +37,12 @@ export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
  * - Renders a `<button>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
+ * - The stable generated accessible name includes both action-face labels.
+ *   Caller-supplied names must also agree with each visible label.
  *
  * @example
  * ```tsx
- * <FlipButton frontText="Learn more" backText="Open" />
+ * <FlipButton frontText="Show details" backText="Open details" />
  * ```
  *
  * @see {@link FlipButtonProps} for available props
@@ -97,7 +99,7 @@ function FlipButton({
     <motion.button
       ref={setRefs}
       type='button'
-      aria-label={frontText}
+      aria-label={frontText === backText ? frontText : `${frontText} / ${backText}`}
       initial='initial'
       whileHover='hover'
       whileFocus='hover'

@@ -31,7 +31,7 @@ const meta = {
   title: "Components/Actions/FlipButton",
   component: FlipButton,
   tags: ["autodocs"],
-  args: {frontText: "Show details", backText: "Open", from: "top"},
+  args: {frontText: "Show details", backText: "Open details", from: "top"},
   argTypes: {from: {control: "select", options: ["top", "bottom", "left", "right"]}},
 } satisfies Meta<typeof FlipButton>;
 export default meta;
@@ -40,8 +40,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const FlipFromBottom: Story = {args: {from: "bottom"}};
 export const FlipFromLeft: Story = {args: {from: "left"}};
-/** Correct spelling; the old `righ` alias is deprecated, not removed. */
+/** Flips from the right using the supported direction spelling. */
 export const FlipFromRight: Story = {args: {from: "right"}};
 export const CustomStyling: Story = {args: {className: cn(storyClasses.storyLarge), frontClassName: cn(storyClasses.storyFront)}};
 export const Disabled: Story = {args: {disabled: true}};
-export const CallerLabel: Story = {args: {"aria-label": "Open full documentation", frontText: "Docs", backText: "Read now"}};
+export const CallerLabel: Story = {
+  args: {"aria-label": "Open documentation in a new tab", frontText: "Open documentation", backText: "Open documentation"},
+};
