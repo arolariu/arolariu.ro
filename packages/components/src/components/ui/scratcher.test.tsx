@@ -403,6 +403,118 @@ describe("Scratcher", () => {
     expect(screen.getByRole("button", {name: "Reveal content"})).toBeDisabled();
   });
 
+  it("mounts box-less without throwing or painting, then paints on the next positive observation", () => {
+    box = new DOMRect(0, 0, 0, 0);
+    render(
+      <Scratcher
+        width={200}
+        height={100}>
+        Content
+      </Scratcher>,
+    );
+    expect(context.fillRect).not.toHaveBeenCalled();
+    act(() => {
+      box = new DOMRect(100, 50, 200, 100);
+      observers[0]?.resize();
+    });
+    expect(canvas().width).toBe(400);
+    expect(canvas().height).toBe(200);
+    expect(context.fillRect).toHaveBeenCalledWith(0, 0, 400, 200);
+  });
+
+  it("keeps its scratched bitmap while box-less and repaints only when a later positive observation changes its size", () => {
+    render(
+      <Scratcher
+        width={200}
+        height={100}>
+        Content
+      </Scratcher>,
+    );
+    gesture();
+    const paints = context.fillRect.mock.calls.length;
+    act(() => {
+      box = new DOMRect(0, 0, 0, 0);
+      globalThis.window.dispatchEvent(new Event("resize"));
+      observers[0]?.resize();
+    });
+    expect(canvas().width).toBe(400);
+    act(() => {
+      box = new DOMRect(100, 50, 200, 100);
+      observers[0]?.resize();
+    });
+    expect(context.fillRect).toHaveBeenCalledTimes(paints);
+    act(() => {
+      box = new DOMRect(100, 50, 300, 150);
+      observers[0]?.resize();
+    });
+    expect(canvas().width).toBe(600);
+    expect(canvas().height).toBe(300);
+    expect(context.fillRect.mock.calls.length).toBeGreaterThan(paints);
+  });
+
+  it("ignores pointer moves after the surface loses its box mid-gesture without throwing", () => {
+    render(
+      <Scratcher
+        width={200}
+        height={100}>
+        Content
+      </Scratcher>,
+    );
+    fireEvent.pointerDown(canvas(), {clientX: 150, clientY: 70, pointerId: 1, button: 0});
+    expect(context.arc).toHaveBeenCalledOnce();
+    box = new DOMRect(0, 0, 0, 0);
+    fireEvent.pointerMove(document, {clientX: 160, clientY: 75, pointerId: 1});
+    expect(context.arc).toHaveBeenCalledOnce();
+    fireEvent.pointerUp(document, {pointerId: 1});
+    expect(screen.getByRole("button", {name: "Reveal content"})).toBeEnabled();
+  });
+
+  it("ignores presses on a box-less surface without reporting an error, scratching or completing", () => {
+    const complete = vi.fn();
+    const errors: unknown[] = [];
+    const capture = (event: ErrorEvent): void => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    render(
+      <Scratcher
+        width={200}
+        height={100}
+        onComplete={complete}>
+        Prize
+      </Scratcher>,
+    );
+    box = new DOMRect(0, 0, 0, 0);
+    cleared = 40000;
+    globalThis.window.addEventListener("error", capture);
+    try {
+      fireEvent.pointerDown(canvas(), {clientX: 150, clientY: 70, pointerId: 1, button: 0});
+    } finally {
+      globalThis.window.removeEventListener("error", capture);
+    }
+    expect(errors).toEqual([]);
+    fireEvent.pointerMove(document, {clientX: 160, clientY: 75, pointerId: 1});
+    fireEvent.pointerUp(document, {pointerId: 1});
+    expect(context.arc).not.toHaveBeenCalled();
+    expect(context.getImageData).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).toBeEnabled();
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1])("falls back to a 1x bitmap for devicePixelRatio %s", (dpr) => {
+    Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: dpr});
+    render(
+      <Scratcher
+        width={200}
+        height={100}>
+        Content
+      </Scratcher>,
+    );
+    expect(canvas().width).toBe(200);
+    expect(canvas().height).toBe(100);
+    expect(context.fillRect).toHaveBeenCalledWith(0, 0, 200, 100);
+  });
+
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])("rejects invalid width %s", (width) => {
     expect(() =>
       render(

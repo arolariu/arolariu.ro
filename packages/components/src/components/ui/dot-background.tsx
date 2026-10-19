@@ -35,8 +35,11 @@ function isDecorativeSvg(children: React.ReactNode): boolean {
 /**
  * Renders a decorative element-sized dot grid, capped at 4096 dots.
  *
- * @remarks Dense requests are evenly downsampled. Glow has a static reduced-motion/offscreen alternative.
- * @throws {RangeError} If spacing, radius, offsets, or measured geometry are invalid.
+ * @remarks Dense requests are evenly downsampled. Glow has a static reduced-motion/offscreen alternative. A box-less SVG (for
+ * example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not an error: it renders no dots before
+ * its first positive measurement and otherwise keeps its last grid until a positive `ResizeObserver` or window resize
+ * measurement regenerates it.
+ * @throws {RangeError} Only for invalid props: spacing, radius or offsets. Measured geometry never throws.
  */
 function DotBackground({
   ref,
@@ -72,9 +75,9 @@ function DotBackground({
     const resize = (): void => {
       if (!active) return;
       const rect = element.getBoundingClientRect();
-      if (![rect.width, rect.height].every((value) => Number.isFinite(value)) || rect.width <= 0 || rect.height <= 0) {
-        throw new RangeError("DotBackground measured geometry must be finite and non-empty.");
-      }
+      // A box-less SVG (display:none, an inactive kept-mounted panel, a collapsed section) is a normal runtime state,
+      // not an error: keep the last measured grid (none before the first positive measurement) until measurable.
+      if (![rect.width, rect.height].every((value) => Number.isFinite(value)) || rect.width <= 0 || rect.height <= 0) return;
       setDimensions((previous) =>
         previous.width === rect.width && previous.height === rect.height ? previous : {width: rect.width, height: rect.height},
       );

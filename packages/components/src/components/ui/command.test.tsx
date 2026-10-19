@@ -4,8 +4,10 @@ import {join} from "node:path";
 import {Features, transform} from "lightningcss";
 import {AtRule, parse, type Node} from "postcss";
 
-import {act, fireEvent, render, screen} from "@testing-library/react";
+import {act, fireEvent, render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {hydrateRoot, type Root} from "react-dom/client";
+import {renderToString} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 
 import {
@@ -241,13 +243,535 @@ describe("Command", () => {
     expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["C", "A"]);
     expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
     rerender(fixture(true, false));
-    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "C", "B"]);
+    // The remounted Inner group renders between A and C, so DOM and keyboard order follow JSX, not first registration.
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["A", "B", "C"]);
     expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
     expect(onValueChange).not.toHaveBeenCalled();
     await user.keyboard("{Home}{ArrowDown}");
-    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
-    await user.keyboard("{ArrowDown}");
     expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "B"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "C"}).id);
+  });
+
+  it("renders and navigates a conditional middle item and group in JSX order after they mount", async () => {
+    const user = userEvent.setup();
+    const fixture = (expanded: boolean): React.JSX.Element => (
+      <Command>
+        <CommandInput aria-label='Conditional search' />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          {expanded && <CommandItem value='middle'>Middle</CommandItem>}
+          {expanded && (
+            <CommandGroup heading='Inserted'>
+              <CommandItem value='nested'>Nested</CommandItem>
+            </CommandGroup>
+          )}
+          <CommandItem value='last'>Last</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture(false));
+    rerender(fixture(true));
+    const rendered = ["First", "Middle", "Nested", "Last"];
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(rendered);
+    const input = screen.getByRole("combobox", {name: "Conditional search"});
+    await user.click(input);
+    await user.keyboard("{Home}");
+    for (const [index, name] of rendered.entries()) {
+      if (index > 0) await user.keyboard("{ArrowDown}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+    }
+    await user.keyboard("{Home}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "First"}).id);
+    await user.keyboard("{End}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Last"}).id);
+  });
+
+  it("keeps shouldFilter={false} keyed results in the consumer's order across keystrokes", async () => {
+    const user = userEvent.setup();
+    const results: Readonly<Record<string, readonly string[]>> = {
+      "": ["Alpha", "Beta"],
+      b: ["Beta", "Alpha"],
+      be: ["Gamma", "Beta"],
+      bet: ["Delta", "Beta", "Gamma"],
+    };
+    function ServerRankedResults(): React.JSX.Element {
+      const [search, setSearch] = React.useState("");
+      return (
+        <Command shouldFilter={false}>
+          <CommandInput
+            aria-label='Server search'
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {(results[search] ?? []).map((name) => (
+              <CommandItem
+                key={name}
+                value={name.toLowerCase()}>
+                {name}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      );
+    }
+    render(<ServerRankedResults />);
+    const input = screen.getByRole("combobox", {name: "Server search"});
+    const names = (): Array<string | null> => screen.getAllByRole("option").map((item) => item.textContent);
+    const expectActive = (name: string): void => {
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+    };
+    expect(names()).toEqual(["Alpha", "Beta"]);
+    expectActive("Alpha");
+    await user.type(input, "b");
+    expect(names()).toEqual(["Beta", "Alpha"]);
+    expectActive("Alpha");
+    await user.keyboard("{Home}");
+    expectActive("Beta");
+    await user.keyboard("{ArrowDown}");
+    expectActive("Alpha");
+    // The selected result disappears: the default active item is the consumer's first result, not the first registered one.
+    await user.type(input, "e");
+    expect(names()).toEqual(["Gamma", "Beta"]);
+    expectActive("Gamma");
+    await user.keyboard("{ArrowDown}");
+    expectActive("Beta");
+    await user.type(input, "t");
+    expect(names()).toEqual(["Delta", "Beta", "Gamma"]);
+    expectActive("Beta");
+    await user.keyboard("{ArrowDown}");
+    expectActive("Gamma");
+    await user.keyboard("{Home}");
+    expectActive("Delta");
+  });
+
+  it.each(["root", "memoized", "list", "list-memoized"] as const)(
+    "navigates a keyed %s-owned reorder in its new on-screen order without searching",
+    async (owner) => {
+      const user = userEvent.setup();
+      const forward = ["First", "Second", "Third"] as const;
+      const listOwned = owner === "list" || owner === "list-memoized";
+      // Memoized rows bail out of the reorder render; list-owned memoized rows re-render no Command item or root.
+      const MemoizedRow = React.memo(function MemoizedRow({name}: Readonly<{name: string}>): React.JSX.Element {
+        return <CommandItem value={name.toLowerCase()}>{name}</CommandItem>;
+      });
+      function Results({names}: Readonly<{names: readonly string[]}>): React.JSX.Element {
+        return (
+          <CommandList>
+            {names.map((name) =>
+              owner === "memoized" || owner === "list-memoized" ? (
+                <MemoizedRow
+                  key={name}
+                  name={name}
+                />
+              ) : (
+                <CommandItem
+                  key={name}
+                  value={name.toLowerCase()}>
+                  {name}
+                </CommandItem>
+              ),
+            )}
+          </CommandList>
+        );
+      }
+      function ListOwnedResults(): React.JSX.Element {
+        const [reversed, setReversed] = React.useState(false);
+        return (
+          <>
+            <button
+              type='button'
+              onClick={() => setReversed(true)}>
+              Reverse
+            </button>
+            <Results names={reversed ? forward.toReversed() : forward} />
+          </>
+        );
+      }
+      const fixture = (reversed: boolean): React.JSX.Element => (
+        <Command>
+          <CommandInput aria-label='Reordered search' />
+          {listOwned ? <ListOwnedResults /> : <Results names={reversed ? forward.toReversed() : forward} />}
+        </Command>
+      );
+      const {rerender} = render(fixture(false));
+      const input = screen.getByRole("combobox", {name: "Reordered search"});
+      if (listOwned) await user.click(screen.getByRole("button", {name: "Reverse"}));
+      else rerender(fixture(true));
+      expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Third", "Second", "First"]);
+      await user.click(input);
+      await user.keyboard("{Home}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Third"}).id);
+      await user.keyboard("{ArrowDown}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+      await user.keyboard("{End}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "First"}).id);
+      await user.keyboard("{ArrowUp}");
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+    },
+  );
+
+  it.each([false, true])(
+    "re-reads a store-owned reorder of memoized rows inside CommandList that re-renders no Command part (filtering: %s)",
+    async (filtering) => {
+      const user = userEvent.setup();
+      let order: readonly string[] = ["First", "Second", "Third"];
+      const listeners = new Set<() => void>();
+      const subscribe = (listener: () => void): (() => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      };
+      const MemoizedRow = React.memo(function MemoizedRow({name}: Readonly<{name: string}>): React.JSX.Element {
+        return <CommandItem value={name.toLowerCase()}>{name}</CommandItem>;
+      });
+      // Only this store selector re-renders on reorder; its memoized rows bail out and React merely moves them.
+      function StoreRows(): React.JSX.Element {
+        const names = React.useSyncExternalStore(subscribe, () => order);
+        return (
+          <>
+            {names.map((name) => (
+              <MemoizedRow
+                key={name}
+                name={name}
+              />
+            ))}
+          </>
+        );
+      }
+      render(
+        <Command filter={(value) => (value === "first" ? 0.9 : 0.5)}>
+          <CommandInput
+            aria-label='Store search'
+            defaultValue={filtering ? "query" : ""}
+          />
+          <CommandList>
+            <StoreRows />
+          </CommandList>
+        </Command>,
+      );
+      const names = (): Array<string | null> => screen.getAllByRole("option").map((item) => item.textContent);
+      expect(names()).toEqual(["First", "Second", "Third"]);
+      await act(async () => {
+        order = ["Third", "Second", "First"];
+        for (const listener of listeners) listener();
+      });
+      // While filtering, First keeps its higher score and the equal scores tie in the new rendered order.
+      const expected: readonly [string, string, string] = filtering ? ["First", "Third", "Second"] : ["Third", "Second", "First"];
+      expect(names()).toEqual(expected);
+      const input = screen.getByRole("combobox", {name: "Store search"});
+      const expectActive = (name: string): void => {
+        expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+      };
+      await user.click(input);
+      await user.keyboard("{Home}");
+      expectActive(expected[0]);
+      await user.keyboard("{ArrowDown}");
+      expectActive(expected[1]);
+      await user.keyboard("{End}");
+      expectActive(expected[2]);
+    },
+  );
+
+  it("drains its own placement mutations and observes exactly one external memoized move in the list", async () => {
+    const user = userEvent.setup();
+    let deliveries = 0;
+    const NativeObserver = globalThis.MutationObserver;
+    // Count only deliveries to observers of a listbox, i.e. Command's own list observer.
+    vi.stubGlobal("MutationObserver", function CountingObserver(callback: MutationCallback): MutationObserver {
+      let observesListbox = false;
+      const observer = new NativeObserver((records, self) => {
+        if (observesListbox) deliveries += 1;
+        callback(records, self);
+      });
+      const observe = observer.observe.bind(observer);
+      observer.observe = (target, options): void => {
+        observesListbox ||= target instanceof Element && target.getAttribute("role") === "listbox";
+        observe(target, options);
+      };
+      return observer;
+    });
+    try {
+      let order: readonly string[] = ["Alpha", "Beta", "Gamma"];
+      const listeners = new Set<() => void>();
+      const subscribe = (listener: () => void): (() => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      };
+      const MemoizedRow = React.memo(function MemoizedRow({name}: Readonly<{name: string}>): React.JSX.Element {
+        return <CommandItem value={name.toLowerCase()}>{name}</CommandItem>;
+      });
+      function StoreRows(): React.JSX.Element {
+        const names = React.useSyncExternalStore(subscribe, () => order);
+        return (
+          <>
+            {names.map((name) => (
+              <MemoizedRow
+                key={name}
+                name={name}
+              />
+            ))}
+          </>
+        );
+      }
+      render(
+        <Command filter={(value) => (value === "gamma" ? 0.9 : 0.5)}>
+          <CommandInput aria-label='Observed search' />
+          <CommandList>
+            <StoreRows />
+          </CommandList>
+        </Command>,
+      );
+      const names = (): Array<string | null> => screen.getAllByRole("option").map((item) => item.textContent);
+      await user.type(screen.getByRole("combobox", {name: "Observed search"}), "q");
+      // Command's own score placement moved Gamma, but those mutations were drained, not fed back to the observer.
+      expect(names()).toEqual(["Gamma", "Alpha", "Beta"]);
+      expect(deliveries).toBe(0);
+      await act(async () => {
+        order = ["Beta", "Alpha", "Gamma"];
+        for (const listener of listeners) listener();
+      });
+      expect(names()).toEqual(["Gamma", "Beta", "Alpha"]);
+      expect(deliveries).toBe(1);
+      await user.keyboard("{Home}{ArrowDown}");
+      expect(screen.getByRole("combobox")).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Beta"}).id);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("returns DOM and keyboard order to the rendered order after filtering across mounts and keyed reorders", async () => {
+    const user = userEvent.setup();
+    const fixture = (names: readonly string[], search: string): React.JSX.Element => (
+      <Command filter={(value) => (value === "zeta" ? 0.9 : 0.5)}>
+        <CommandInput
+          aria-label='Ordered search'
+          value={search}
+        />
+        <CommandList>
+          {names.map((name) => (
+            <CommandItem
+              key={name}
+              value={name.toLowerCase()}>
+              {name}
+            </CommandItem>
+          ))}
+        </CommandList>
+      </Command>
+    );
+    const names = (): Array<string | null> => screen.getAllByRole("option").map((item) => item.textContent);
+    const {rerender} = render(fixture(["Alpha", "Gamma", "Zeta"], ""));
+    rerender(fixture(["Alpha", "Gamma", "Zeta"], "query"));
+    expect(names()).toEqual(["Zeta", "Alpha", "Gamma"]);
+    // Beta mounts mid-list and Gamma moves before Alpha while filtering: equal scores tie in the new rendered order.
+    rerender(fixture(["Gamma", "Beta", "Alpha", "Zeta"], "query"));
+    expect(names()).toEqual(["Zeta", "Gamma", "Beta", "Alpha"]);
+    const input = screen.getByRole("combobox", {name: "Ordered search"});
+    await user.click(input);
+    await user.keyboard("{Home}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Gamma"}).id);
+    rerender(fixture(["Gamma", "Beta", "Alpha", "Zeta"], ""));
+    expect(names()).toEqual(["Gamma", "Beta", "Alpha", "Zeta"]);
+    await user.keyboard("{Home}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Gamma"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Beta"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Alpha"}).id);
+    await user.keyboard("{End}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Zeta"}).id);
+  });
+
+  it("keeps a group mounted while filtering at its rendered position during ties and after the search clears", async () => {
+    const user = userEvent.setup();
+    const fixture = (expanded: boolean, search: string): React.JSX.Element => (
+      <Command filter={() => 1}>
+        <CommandInput
+          aria-label='Group search'
+          value={search}
+        />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          {expanded && (
+            <CommandGroup heading='Inserted'>
+              <CommandItem value='nested'>Nested</CommandItem>
+            </CommandGroup>
+          )}
+          <CommandItem value='last'>Last</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const names = (): Array<string | null> => screen.getAllByRole("option").map((item) => item.textContent);
+    const {rerender} = render(fixture(false, "query"));
+    rerender(fixture(true, "query"));
+    expect(names()).toEqual(["First", "Nested", "Last"]);
+    rerender(fixture(true, ""));
+    expect(names()).toEqual(["First", "Nested", "Last"]);
+    const input = screen.getByRole("combobox", {name: "Group search"});
+    await user.click(input);
+    await user.keyboard("{Home}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Nested"}).id);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Last"}).id);
+  });
+
+  it("keeps a focused option focused and selected when clearing the search returns it to its rendered position", () => {
+    const onValueChange = vi.fn();
+    const fixture = (search: string): React.JSX.Element => (
+      <Command
+        onValueChange={onValueChange}
+        filter={(value) => (value === "second" ? 0.9 : 0.1)}>
+        <CommandInput
+          aria-label='Restore search'
+          value={search}
+        />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const {rerender} = render(fixture("query"));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Second", "First"]);
+    const first = screen.getByRole("option", {name: "First"});
+    act(() => first.focus());
+    expect(onValueChange.mock.calls).toEqual([["first"]]);
+    rerender(fixture(""));
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["First", "Second"]);
+    expect(first.isConnected).toBe(true);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-selected", "true");
+    expect(onValueChange.mock.calls).toEqual([["first"]]);
+  });
+
+  it("keeps the adjacent-group divider on the second displayed group and hidden position markers out of the tree", async () => {
+    const user = userEvent.setup();
+    render(
+      <Command filter={(value) => (value === "pear" ? 0.9 : 0.1)}>
+        <CommandInput aria-label='Divider search' />
+        <CommandList>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+          </CommandGroup>
+          <CommandGroup heading='Favorites'>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading='Other'>
+            <CommandItem value='plum'>Plum</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const listbox = screen.getByRole("listbox");
+    const divider = (name: string): string | undefined =>
+      compiledCommandDeclarations(within(listbox).getByRole("group", {name}), false).get("border-top");
+    const groupNames = (): string[] =>
+      within(listbox)
+        .getAllByRole("group")
+        .map((group) => group.firstElementChild?.textContent ?? "");
+    expect(groupNames()).toEqual(["Fruit", "Favorites", "Other"]);
+    expect(divider("Fruit")).toBeUndefined();
+    expect(divider("Favorites")).toBe("1px solid var(--ac-border)");
+    expect(divider("Other")).toBeUndefined();
+    await user.type(screen.getByRole("combobox"), "p");
+    expect(groupNames()).toEqual(["Favorites", "Fruit", "Other"]);
+    expect(divider("Favorites")).toBeUndefined();
+    expect(divider("Fruit")).toBe("1px solid var(--ac-border)");
+    expect(divider("Other")).toBe("1px solid var(--ac-border)");
+    await user.clear(screen.getByRole("combobox"));
+    expect(groupNames()).toEqual(["Fruit", "Favorites", "Other"]);
+    expect(divider("Fruit")).toBeUndefined();
+    expect(divider("Favorites")).toBe("1px solid var(--ac-border)");
+    expect(divider("Other")).toBeUndefined();
+    const markers = listbox.querySelectorAll<HTMLElement>("[data-command-anchor]");
+    // One inert rendered-position marker per registered group and option.
+    expect(markers).toHaveLength(6);
+    for (const marker of markers) {
+      expect(marker).not.toBeVisible();
+      expect(marker).toHaveAttribute("aria-hidden", "true");
+      expect(marker.childNodes).toHaveLength(0);
+      // Owned display:none, not only the user-agent [hidden] rule that consumer resets can override.
+      expect(compiledCommandDeclarations(marker, false).get("display")).toBe("none");
+    }
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    for (const group of within(listbox).getAllByRole("group")) expect(group.parentElement).toBe(listbox);
+  });
+
+  it("does not re-render Command when filtering moves whole groups without changing their rendered order", async () => {
+    const user = userEvent.setup();
+    const commits: string[] = [];
+    render(
+      <React.Profiler
+        id='command'
+        onRender={(_id, phase) => commits.push(phase)}>
+        <Command filter={(value) => (value === "pear" ? 0.9 : 0.1)}>
+          <CommandInput aria-label='Grouped render search' />
+          <CommandList>
+            <CommandGroup heading='Fruit'>
+              <CommandItem value='apple'>Apple</CommandItem>
+              <CommandItem value='banana'>Banana</CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='Favorites'>
+              <CommandItem value='pear'>Pear</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </React.Profiler>,
+    );
+    const input = screen.getByRole("combobox", {name: "Grouped render search"});
+    await user.type(input, "p");
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Pear", "Apple", "Banana"]);
+    commits.length = 0;
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Banana"}).id);
+    // Exactly the selection commit: moving whole groups must not commit new rendered ranks for their nested anchors.
+    expect(commits).toEqual(["update"]);
+  });
+
+  it("hydrates server-rendered position anchors without mismatches and keeps the rendered order", async () => {
+    const ui = (
+      <Command>
+        <CommandInput aria-label='Hydrated search' />
+        <CommandList>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading='Tools'>
+            <CommandItem value='hammer'>Hammer</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(ui);
+    document.body.append(container);
+    expect(container.querySelectorAll("[data-command-anchor]")).toHaveLength(5);
+    const consoleError = vi.spyOn(console, "error");
+    const recoverableError = vi.fn();
+    let root: Root | undefined;
+    try {
+      await act(async () => {
+        root = hydrateRoot(container, ui, {onRecoverableError: recoverableError});
+      });
+      expect(recoverableError).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(
+        within(container)
+          .getAllByRole("option")
+          .map((item) => item.textContent),
+      ).toEqual(["Apple", "Pear", "Hammer"]);
+      const input = within(container).getByRole("combobox", {name: "Hydrated search"});
+      expect(input).toHaveAttribute("aria-activedescendant", within(container).getByRole("option", {name: "Apple"}).id);
+      fireEvent.keyDown(input, {key: "End"});
+      expect(input).toHaveAttribute("aria-activedescendant", within(container).getByRole("option", {name: "Hammer"}).id);
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+      consoleError.mockRestore();
+    }
   });
 
   it("keeps matching nested group ancestry visible and its active descendant consistent with empty state", async () => {
@@ -1344,7 +1868,7 @@ describe("Command", () => {
     expect(screen.getByRole("option", {name: "Banana"})).toBeVisible();
   });
 
-  it("sorts positive scores in DOM and keyboard order with stable ties and restores registration order", async () => {
+  it("sorts positive scores in DOM and keyboard order with stable ties and restores rendered order", async () => {
     const user = userEvent.setup();
     render(
       <Command filter={(value) => ({first: 0.2, second: 0.9, third: 0.9, absent: 0})[value] ?? 0}>

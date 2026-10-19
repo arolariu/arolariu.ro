@@ -105,10 +105,10 @@ function ScratcherSurface({
     const paint = (): void => {
       if (!active) return;
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio;
-      if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
-        throw new RangeError("Scratcher geometry and DPR must be finite and positive.");
-      }
+      // A box-less surface (display:none, an inactive kept-mounted panel, a collapsed section) is a normal runtime
+      // state, not an error: keep the current bitmap, including scratch progress, until a positive measurement.
+      if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) return;
+      const dpr = Number.isFinite(window.devicePixelRatio) && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
       const scale = Math.min(dpr, 2048 / rect.width, 2048 / rect.height);
       const bitmapWidth = Math.max(1, Math.round(rect.width * scale));
       const bitmapHeight = Math.max(1, Math.round(rect.height * scale));
@@ -138,13 +138,15 @@ function ScratcherSurface({
     };
   }, [generation, first, second, third]);
 
-  const scratch = React.useCallback((clientX: number, clientY: number): void => {
-    if (completedRef.current) return;
+  // Returns false when the point is ignored: completed, unmounted, or box-less/non-finite geometry.
+  const scratch = React.useCallback((clientX: number, clientY: number): boolean => {
+    if (completedRef.current) return false;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return false;
     const rect = canvas.getBoundingClientRect();
+    // Pointer input on a box-less surface is ignored rather than mapped through an empty transform.
     if (![rect.width, rect.height, clientX, clientY].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) {
-      throw new RangeError("Scratcher pointer geometry must be finite and non-empty.");
+      return false;
     }
     const context = requireContext(canvas);
     const x = (clientX - rect.left) * (canvas.width / rect.width);
@@ -153,6 +155,7 @@ function ScratcherSurface({
     context.beginPath();
     context.arc(x, y, 30 * (canvas.width / rect.width), 0, Math.PI * 2);
     context.fill();
+    return true;
   }, []);
 
   const reveal = React.useCallback((): void => {
@@ -254,8 +257,8 @@ function ScratcherSurface({
         aria-hidden='true'
         onPointerDown={(event): void => {
           if (event.button !== 0 || event.defaultPrevented || completedRef.current) return;
-          pointerRef.current = event.pointerId;
-          scratch(event.clientX, event.clientY);
+          // Only an accepted press owns the gesture, so a box-less press cannot later trigger a completion check.
+          if (scratch(event.clientX, event.clientY)) pointerRef.current = event.pointerId;
         }}
       />
       {children}
@@ -280,8 +283,11 @@ ScratcherSurface.displayName = "ScratcherSurface";
  * Renders a pointer scratch-card with an equivalent keyboard reveal path.
  *
  * @remarks Dimensions/gradient changes reset the card. Children are always mounted and accessible;
- * do not put secrets or authorization gates behind this purely visual overlay.
- * @throws {RangeError} If dimensions or the completion threshold are invalid.
+ * do not put secrets or authorization gates behind this purely visual overlay. A box-less surface (for example `display: none`,
+ * an inactive kept-mounted tab panel or a collapsed section) is not an error: it ignores pointer input and keeps its current
+ * bitmap, including scratch progress, until a positive `ResizeObserver` or window resize measurement; only a changed bitmap size
+ * repaints it. A non-finite or non-positive `devicePixelRatio` falls back to 1.
+ * @throws {RangeError} Only for invalid props: dimensions or the completion threshold. Measured geometry never throws.
  */
 export function Scratcher(props: Readonly<ScratcherProps>): React.JSX.Element {
   const {width, height, minScratchPercentage = 50} = props;

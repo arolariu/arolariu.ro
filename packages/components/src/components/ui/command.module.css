@@ -104,7 +104,8 @@
   padding: 2px 0;
   color: inherit;
 
-  & + .group {
+  /* Every group is preceded by its own hidden position anchor; divide only directly adjacent groups. */
+  & + [data-command-anchor] + .group {
     margin-top: 2px;
     border-top: 1px solid var(--ac-border);
     padding-top: var(--ac-space-1);
@@ -200,4 +201,9 @@
 .group[hidden],
 .item[hidden] {
   display: none;
+}
+
+/* Command's internal position anchor never renders, even when consumer CSS resets [hidden] or styles list children. */
+.anchor {
+  display: none !important;
 }

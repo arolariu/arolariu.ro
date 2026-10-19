@@ -6,6 +6,14 @@ import * as React from "react";
 
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
+import {
+  isAnchorInOrder,
+  measureRenderedOrder,
+  orderRegisteredNodes,
+  restoreRegisteredFocus,
+  sameRanks,
+  type RankedNode,
+} from "./_command-order";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, type DialogProps} from "./dialog";
 import {InputGroup, InputGroupAddon} from "./input-group";
 import styles from "./command.module.css";
@@ -113,7 +121,6 @@ interface RegisteredItem {
   readonly groupId: string | null;
   readonly id: string;
   readonly keywords: readonly string[];
-  readonly order: number;
   readonly ref: React.RefObject<HTMLDivElement | null>;
   readonly value: string;
 }
@@ -121,14 +128,12 @@ interface RegisteredItem {
 interface RegisteredGroup {
   readonly id: string;
   readonly parentId: string | null;
-  readonly order: number;
   readonly ref: React.RefObject<HTMLDivElement | null>;
 }
 
 interface Registry {
   readonly items: ReadonlyMap<string, RegisteredItem>;
   readonly groups: ReadonlyMap<string, RegisteredGroup>;
-  readonly nextOrder: number;
   readonly revision: number;
 }
 
@@ -141,14 +146,17 @@ interface CommandContextValue {
   readonly hasVisibleItemsInGroup: (groupId: string) => boolean;
   readonly label: string;
   readonly listId: string;
-  readonly registerItem: (item: Omit<RegisteredItem, "order">) => void;
+  readonly listRef: React.RefObject<HTMLDivElement | null>;
+  readonly observeOrder: (list: HTMLElement) => () => void;
+  readonly registerItem: (item: RegisteredItem) => void;
   readonly unregisterItem: (id: string) => void;
-  readonly registerGroup: (group: Omit<RegisteredGroup, "order">) => void;
+  readonly registerGroup: (group: RegisteredGroup) => void;
   readonly unregisterGroup: (id: string) => void;
   readonly search: string;
   readonly setSearch: (search: string) => void;
   readonly setListId: (id: string) => void;
   readonly selectItem: (id: string) => void;
+  readonly verifyOrder: (anchor: Element | null) => void;
   readonly visibleItemCount: number;
 }
 
@@ -166,95 +174,10 @@ function defaultCommandFilter(value: string, search: string, keywords: readonly 
   return haystack.includes(search.trim().toLowerCase()) ? 1 : 0;
 }
 
-interface RankedNode {
-  readonly node: HTMLDivElement;
-  readonly score: number;
-  readonly order: number;
-}
-
 interface NavigationFocusRequest {
   readonly origin: HTMLElement;
   readonly originId: string;
   readonly targetId: string;
-}
-
-interface NativeTextSelection {
-  readonly start: number;
-  readonly end: number;
-  readonly direction: "forward" | "backward" | "none";
-}
-
-interface NativeFocusSnapshot {
-  readonly element: HTMLElement;
-  readonly selection: NativeTextSelection | null;
-}
-
-function captureRegisteredFocus(entries: readonly RankedNode[]): NativeFocusSnapshot | null {
-  const element = entries[0]?.node.ownerDocument.activeElement;
-  if (!(element instanceof HTMLElement) || !entries.some(({node}) => node.contains(element))) return null;
-  let selection: NativeTextSelection | null = null;
-  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-    const {selectionStart: start, selectionEnd: end, selectionDirection: direction} = element;
-    if (start !== null && end !== null) selection = {start, end, direction: direction === null ? "none" : direction};
-  }
-  return {element, selection};
-}
-
-function restoreRegisteredFocus(snapshot: NativeFocusSnapshot | null): void {
-  if (!snapshot) return;
-  const {element, selection} = snapshot;
-  const owner = element.ownerDocument;
-  const focused = owner.activeElement;
-  if (!element.isConnected || element.closest("[hidden], [inert]") || focused === element) return;
-  // A caller that deliberately focused another control during the move keeps ownership.
-  if (focused && focused !== owner.body && focused !== owner.documentElement) return;
-  element.focus({preventScroll: true});
-  if (
-    owner.activeElement === element
-    && selection
-    && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)
-    && element.selectionStart !== null
-  ) {
-    element.setSelectionRange(selection.start, selection.end, selection.direction);
-  }
-}
-
-/**
- * The native registry owns DOM score ordering of registered sibling groups/options.
- * Replace only registered slots, then restore the real focused descendant and its text selection.
- */
-function orderRegisteredNodes(
-  entries: readonly RankedNode[],
-  filtering: boolean,
-  restoreFocus: (snapshot: NativeFocusSnapshot | null) => void,
-): void {
-  const focused = captureRegisteredFocus(entries);
-  const parents = new Map<HTMLElement, RankedNode[]>();
-  for (const entry of entries) {
-    const parent = entry.node.parentElement;
-    if (parent) {
-      const siblings = parents.get(parent) ?? [];
-      siblings.push(entry);
-      parents.set(parent, siblings);
-    }
-  }
-  for (const [parent, siblings] of parents) {
-    const sorted = siblings.toSorted((a, b) => (filtering ? b.score - a.score : 0) || a.order - b.order);
-    const registered = new Set<Element>(siblings.map(({node}) => node));
-    const current = [...parent.children].filter((child) => registered.has(child));
-    if (!current.every((node, index) => node === sorted[index]?.node)) {
-      const slots = current.map((node) => {
-        const slot = parent.ownerDocument.createComment("command-order");
-        node.replaceWith(slot);
-        return slot;
-      });
-      slots.forEach((slot, index) => {
-        const entry = sorted[index];
-        if (entry) slot.replaceWith(entry.node);
-      });
-    }
-  }
-  restoreFocus(focused);
 }
 
 type NavigationRequest =
@@ -313,7 +236,9 @@ function isNestedControl(target: EventTarget): boolean {
 
 /**
  * Native, context-scoped command controller; not a cmdk package emulation.
- * Filtering retains registrations, score order, stable ties and committed control.
+ * Filtering retains registrations, score order, rendered-order ties and committed control; unfiltered DOM and keyboard
+ * order always follow the consumer's rendered order inside CommandList, including keyed reorders by memoized rows that
+ * re-render no Command part (a list MutationObserver re-reads them) and late mounts.
  * Home/End, arrows, Meta endpoints, Alt groups and optional Ctrl Vim keys navigate.
  * Option-origin navigation transfers focus only after selection commits; input focus stays put.
  * Place registered groups/items directly beneath CommandList/CommandGroup for score ordering.
@@ -344,14 +269,40 @@ const Command = ({
     const restoring = restoringFocusRef.current;
     return restoring !== null && element.contains(restoring);
   }, []);
-  const [registry, setRegistry] = React.useState<Registry>(() => ({
-    items: new Map(),
-    groups: new Map(),
-    nextOrder: 0,
-    revision: 0,
-  }));
+  const [registry, setRegistry] = React.useState<Registry>(() => ({items: new Map(), groups: new Map(), revision: 0}));
+  const listRef = React.useRef<HTMLDivElement | null>(null);
+  const observerRef = React.useRef<MutationObserver | null>(null);
+  const reconcileRef = React.useRef<() => void>(() => undefined);
+  const naturalRef = React.useRef<ReadonlyMap<string, number>>(new Map());
+  // Sibling-relative rendered rank of each anchored id, measured after commit; placement moves never change it.
+  const [natural, setNatural] = React.useState<ReadonlyMap<string, number>>(() => new Map());
+  const measureOrder = React.useCallback((): void => {
+    const ranks = listRef.current ? measureRenderedOrder(listRef.current) : new Map<string, number>();
+    if (sameRanks(ranks, naturalRef.current)) return;
+    naturalRef.current = ranks;
+    setNatural(ranks);
+  }, []);
+  // O(1) local check per committed anchor; only an out-of-order or unmeasured anchor pays for a full measure.
+  const verifyOrder = React.useCallback(
+    (anchor: Element | null): void => {
+      if (anchor && listRef.current?.contains(anchor) && !isAnchorInOrder(anchor, naturalRef.current)) measureOrder();
+    },
+    [measureOrder],
+  );
+  // Commits that move memoized rows re-render no Command part; the list's observer still re-reads their order.
+  const observeOrder = React.useCallback((list: HTMLElement): (() => void) => {
+    const observer = new MutationObserver(() => {
+      reconcileRef.current();
+    });
+    observer.observe(list, {childList: true, subtree: true});
+    observerRef.current = observer;
+    return () => {
+      observer.disconnect();
+      if (observerRef.current === observer) observerRef.current = null;
+    };
+  }, []);
 
-  const registerItem = React.useCallback((item: Omit<RegisteredItem, "order">): void => {
+  const registerItem = React.useCallback((item: RegisteredItem): void => {
     setRegistry((current) => {
       const existing = current.items.get(item.id);
       if (
@@ -367,8 +318,8 @@ const Command = ({
       )
         return current;
       const items = new Map(current.items);
-      items.set(item.id, {...item, keywords: [...item.keywords], order: existing?.order ?? current.nextOrder});
-      return {...current, items, nextOrder: current.nextOrder + (existing ? 0 : 1), revision: current.revision + 1};
+      items.set(item.id, {...item, keywords: [...item.keywords]});
+      return {...current, items, revision: current.revision + 1};
     });
   }, []);
   const unregisterItem = React.useCallback((id: string): void => {
@@ -379,13 +330,13 @@ const Command = ({
       return {...current, items, revision: current.revision + 1};
     });
   }, []);
-  const registerGroup = React.useCallback((group: Omit<RegisteredGroup, "order">): void => {
+  const registerGroup = React.useCallback((group: RegisteredGroup): void => {
     setRegistry((current) => {
       const existing = current.groups.get(group.id);
       if (existing?.ref === group.ref && existing.parentId === group.parentId) return current;
       const groups = new Map(current.groups);
-      groups.set(group.id, {...group, order: existing?.order ?? current.nextOrder});
-      return {...current, groups, nextOrder: current.nextOrder + (existing ? 0 : 1), revision: current.revision + 1};
+      groups.set(group.id, group);
+      return {...current, groups, revision: current.revision + 1};
     });
   }, []);
   const unregisterGroup = React.useCallback((id: string): void => {
@@ -414,22 +365,21 @@ const Command = ({
       const visited = new Set<string>();
       while (groupId && !visited.has(groupId)) {
         visited.add(groupId);
-        const group = registry.groups.get(groupId);
         const existing = ranks.get(groupId);
         ranks.set(groupId, {
           score: Math.max(existing?.score ?? 0, score),
-          order: group?.order ?? item.order,
+          order: natural.get(groupId) ?? Number.MAX_SAFE_INTEGER,
         });
-        groupId = group?.parentId ?? null;
+        groupId = registry.groups.get(groupId)?.parentId ?? null;
       }
     }
     return ranks;
-  }, [rankedItems, registry.groups]);
+  }, [natural, rankedItems, registry.groups]);
   const visibleItems = React.useMemo(() => {
     const paths = rankedItems
       .filter(({visible}) => visible)
       .map(({item, score}) => {
-        const path = [{id: item.id, score, order: item.order}];
+        const path = [{id: item.id, score, order: natural.get(item.id) ?? Number.MAX_SAFE_INTEGER}];
         let {groupId} = item;
         const visited = new Set<string>();
         while (groupId && !visited.has(groupId)) {
@@ -453,7 +403,7 @@ const Command = ({
         return 0;
       })
       .map(({item}) => item);
-  }, [groupRanks, isFiltering, rankedItems, registry.groups]);
+  }, [groupRanks, isFiltering, natural, rankedItems, registry.groups]);
   const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
   const selectedValue = value ?? selection;
   const activeItem = selectableItems.find((item) => item.value === selectedValue) ?? (value === undefined ? selectableItems[0] : undefined);
@@ -462,15 +412,18 @@ const Command = ({
   // Guarded same-owner reconciliation remembers fallback without an extra effect render.
   const fallbackValue = activeItem?.value ?? "";
   if (value === undefined && registry.revision > 0 && selection !== fallbackValue) setSelection(fallbackValue);
-  React.useLayoutEffect(() => {
-    const entries: RankedNode[] = [];
+  // Re-measure rendered order (keyed moves can bypass the registry), pin nodes to anchors, then drop the observer's records
+  // of these already-handled mutations so Command's own placement never feeds back into the observer.
+  const reconcileOrder = (): void => {
+    measureOrder();
+    const entries = new Map<string, RankedNode>();
     for (const {item, score} of rankedItems) {
       const node = item.ref.current;
-      if (node) entries.push({node, score, order: item.order});
+      if (node) entries.set(item.id, {node, score});
     }
     for (const group of registry.groups.values()) {
       const node = group.ref.current;
-      if (node) entries.push({node, score: groupRanks.get(group.id)?.score ?? 0, order: group.order});
+      if (node) entries.set(group.id, {node, score: groupRanks.get(group.id)?.score ?? 0});
     }
     orderRegisteredNodes(entries, isFiltering, (snapshot) => {
       // Restoring this descendant is not a proposal; a caller's handoff to another option still is.
@@ -481,7 +434,12 @@ const Command = ({
         restoringFocusRef.current = null;
       }
     });
-  }, [groupRanks, isFiltering, rankedItems, registry.groups]);
+    observerRef.current?.takeRecords();
+  };
+  React.useLayoutEffect(() => {
+    reconcileRef.current = reconcileOrder;
+    reconcileOrder();
+  });
   React.useLayoutEffect(() => {
     const request = navigationFocusRequestRef.current;
     if (!request) return;
@@ -531,6 +489,8 @@ const Command = ({
       hasVisibleItemsInGroup: (id) => groupRanks.has(id),
       label,
       listId,
+      listRef,
+      observeOrder,
       registerItem,
       unregisterItem,
       registerGroup,
@@ -539,6 +499,7 @@ const Command = ({
       setSearch,
       setListId,
       selectItem,
+      verifyOrder,
       visibleItemCount: visibleItems.length,
     }),
     [
@@ -551,10 +512,12 @@ const Command = ({
       listId,
       registerGroup,
       registerItem,
+      observeOrder,
       search,
       selectItem,
       unregisterGroup,
       unregisterItem,
+      verifyOrder,
       visibleItems,
     ],
   );
@@ -682,15 +645,20 @@ CommandInput.displayName = "CommandInput";
 
 /** Labelled listbox; a custom id is committed back to the input's aria-controls. */
 const CommandList = ({ref, className, label, id, ...props}: Readonly<CommandListProps>): React.JSX.Element => {
-  const {listId, setListId, label: rootLabel} = useCommandContext("CommandList");
+  const {listId, listRef, observeOrder, setListId, label: rootLabel} = useCommandContext("CommandList");
+  const mergedRef = useMergedRefs(listRef, ref);
   const generatedId = React.useId();
   const effectiveId = id ?? generatedId;
   React.useLayoutEffect(() => {
     setListId(effectiveId);
   }, [effectiveId, setListId]);
+  React.useLayoutEffect(() => {
+    const list = listRef.current;
+    return list ? observeOrder(list) : undefined;
+  }, [listRef, observeOrder]);
   return (
     <div
-      ref={ref}
+      ref={mergedRef}
       data-slot='command-list'
       aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : (label ?? rootLabel))}
       className={cn(styles.list, className)}
@@ -719,7 +687,25 @@ const CommandEmpty = ({ref, className, ...props}: Readonly<CommandEmptyProps>): 
 };
 CommandEmpty.displayName = "CommandEmpty";
 
-/** Retains child registrations while hidden; the heading supplies the group's name. */
+/** Hidden, empty, never-moved position anchor that React renders first for each group/option, outside the accessibility tree. */
+function CommandOrderAnchor({id}: Readonly<{id: string}>): React.JSX.Element {
+  const {verifyOrder} = useCommandContext("CommandOrderAnchor");
+  const anchorRef = React.useRef<HTMLSpanElement | null>(null);
+  React.useLayoutEffect(() => {
+    verifyOrder(anchorRef.current);
+  });
+  return (
+    <span
+      ref={anchorRef}
+      hidden
+      aria-hidden='true'
+      className={styles.anchor}
+      data-command-anchor={id}
+    />
+  );
+}
+
+/** Retains child registrations while hidden; the heading supplies the group's name; a hidden position anchor precedes it. */
 const CommandGroup = ({
   ref,
   children,
@@ -752,6 +738,7 @@ const CommandGroup = ({
   }, [groupId, parent?.id, registerGroup, unregisterGroup]);
   return (
     <CommandGroupContext.Provider value={groupContext}>
+      <CommandOrderAnchor id={groupId} />
       <div
         ref={mergedRef}
         id={groupId}
@@ -801,7 +788,7 @@ CommandSeparator.displayName = "CommandSeparator";
 
 const EMPTY_KEYWORDS: readonly string[] = [];
 
-/** Native option with one activation path and caller-first cancellable handlers. */
+/** Native option with one activation path and caller-first cancellable handlers; a hidden position anchor precedes it. */
 const CommandItem = ({
   ref,
   children,
@@ -849,57 +836,60 @@ const CommandItem = ({
   const isVisible = !externallyHidden && (inheritedForceMount || !isFiltering || isItemVisible(itemId));
   const isSelected = activeItemId === itemId;
   return (
-    <div
-      ref={mergedRef}
-      data-slot='command-item'
-      aria-disabled={disabled || undefined}
-      aria-selected={isSelected}
-      className={cn(styles.item, className)}
-      data-disabled={disabled ? "true" : undefined}
-      data-selected={isSelected ? "true" : undefined}
-      hidden={hidden || !isVisible}
-      id={itemId}
-      onClick={(event) => {
-        onClick?.(event);
-        if (event.defaultPrevented || isNestedControl(event.target)) return;
-        if (disabled || !isVisible) {
-          event.preventDefault();
-          return;
-        }
-        selectItem(itemId);
-        onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
-      }}
-      onKeyDown={(event) => {
-        onKeyDown?.(event);
-        if (
-          event.defaultPrevented
-          || isNestedControl(event.target)
-          || event.nativeEvent.isComposing
-          || event.ctrlKey
-          || event.altKey
-          || event.metaKey
-          || event.shiftKey
-        )
-          return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          if (!disabled && isVisible) event.currentTarget.click();
-        }
-      }}
-      onFocus={(event) => {
-        onFocus?.(event);
-        if (!event.defaultPrevented && !isRestoringFocus(event.currentTarget) && !isNestedControl(event.target) && !disabled && isVisible)
+    <>
+      <CommandOrderAnchor id={itemId} />
+      <div
+        ref={mergedRef}
+        data-slot='command-item'
+        aria-disabled={disabled || undefined}
+        aria-selected={isSelected}
+        className={cn(styles.item, className)}
+        data-disabled={disabled ? "true" : undefined}
+        data-selected={isSelected ? "true" : undefined}
+        hidden={hidden || !isVisible}
+        id={itemId}
+        onClick={(event) => {
+          onClick?.(event);
+          if (event.defaultPrevented || isNestedControl(event.target)) return;
+          if (disabled || !isVisible) {
+            event.preventDefault();
+            return;
+          }
           selectItem(itemId);
-      }}
-      onMouseEnter={(event) => {
-        onMouseEnter?.(event);
-        if (!event.defaultPrevented && !disabled && isVisible && !disablePointerSelection) selectItem(itemId);
-      }}
-      role='option'
-      tabIndex={disabled ? -1 : (props.tabIndex ?? 0)}
-      {...props}>
-      {children}
-    </div>
+          onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
+        }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (
+            event.defaultPrevented
+            || isNestedControl(event.target)
+            || event.nativeEvent.isComposing
+            || event.ctrlKey
+            || event.altKey
+            || event.metaKey
+            || event.shiftKey
+          )
+            return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (!disabled && isVisible) event.currentTarget.click();
+          }
+        }}
+        onFocus={(event) => {
+          onFocus?.(event);
+          if (!event.defaultPrevented && !isRestoringFocus(event.currentTarget) && !isNestedControl(event.target) && !disabled && isVisible)
+            selectItem(itemId);
+        }}
+        onMouseEnter={(event) => {
+          onMouseEnter?.(event);
+          if (!event.defaultPrevented && !disabled && isVisible && !disablePointerSelection) selectItem(itemId);
+        }}
+        role='option'
+        tabIndex={disabled ? -1 : (props.tabIndex ?? 0)}
+        {...props}>
+        {children}
+      </div>
+    </>
   );
 };
 CommandItem.displayName = "CommandItem";

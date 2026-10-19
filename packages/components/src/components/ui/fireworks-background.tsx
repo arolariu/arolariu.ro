@@ -248,6 +248,10 @@ export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithR
  * @remarks
  * - Native canvas physics, capped at 16 trails and 2048 particles
  * - Element-sized DPR backing bitmap, with a static starburst when motion is paused
+ * - A box-less canvas (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not
+ *   an error: it stays idle (no sizing, drawing, launch timer or frame loop) and ignores launch presses until a positive
+ *   `ResizeObserver` or window resize measurement, which resizes it and resumes it under the motion policy
+ * - A non-finite or non-positive `devicePixelRatio` falls back to 1
  * - Renders a `<div>` element containing a `<canvas>`
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
@@ -258,7 +262,7 @@ export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithR
  * ```
  *
  * @see {@link FireworksBackgroundProps} for available props
- * @throws {RangeError} If population, speed/size ranges, palette or measured geometry is invalid.
+ * @throws {RangeError} Only for invalid props: population, speed/size ranges or palette. Measured geometry never throws.
  * @throws {Error} If a 2D canvas context is unavailable.
  */
 function FireworksBackground({
@@ -300,23 +304,25 @@ function FireworksBackground({
     }
 
     let active = true;
+    let drawable = false;
     let maxX = 0;
     let maxY = 0;
     let launchTimeoutId: number | null = null;
     let animationFrameId: number | null = null;
     let lastLaunch = -Infinity;
 
-    const setCanvasSize = (): void => {
+    // A box-less canvas (display:none, an inactive kept-mounted panel, a collapsed section) is a normal
+    // runtime state, not an error: report it as "not drawable yet" and leave the backing store untouched.
+    const setCanvasSize = (): boolean => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio;
-      if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
-        throw new RangeError("FireworksBackground geometry and DPR must be finite and positive.");
-      }
+      if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) return false;
+      const dpr = Number.isFinite(window.devicePixelRatio) && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
       const scale = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
       maxX = Math.max(1, Math.round(rect.width * scale));
       maxY = Math.max(1, Math.round(rect.height * scale));
       canvas.width = maxX;
       canvas.height = maxY;
+      return true;
     };
 
     const explosions: Array<ParticleType> = [];
@@ -396,27 +402,36 @@ function FireworksBackground({
     };
     const resize = (): void => {
       if (!active) return;
-      setCanvasSize();
+      drawable = setCanvasSize();
       fireworks.length = 0;
       explosions.length = 0;
-      if (paused) drawStatic();
+      if (!drawable) {
+        // Losing the box idles both loops until the next positive observation.
+        if (launchTimeoutId !== null) globalThis.window.clearTimeout(launchTimeoutId);
+        if (animationFrameId !== null) globalThis.cancelAnimationFrame(animationFrameId);
+        launchTimeoutId = null;
+        animationFrameId = null;
+        return;
+      }
+      if (paused) {
+        drawStatic();
+        return;
+      }
+      // Restart loops left idle by a box-less mount or a lost box; running loops continue at the new size.
+      if (launchTimeoutId === null) launchFirework();
+      if (animationFrameId === null) animate();
     };
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     globalThis.window.addEventListener("resize", resize);
-    if (!paused) {
-      launchFirework();
-      animate();
-    }
 
     const handleClick = (event: MouseEvent): void => {
       if (!active || paused || event.defaultPrevented || fireworks.length >= 16 || performance.now() - lastLaunch < 1000) return;
-      lastLaunch = performance.now();
       const rect = canvas.getBoundingClientRect();
-      if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) {
-        throw new RangeError("FireworksBackground click geometry must be finite and non-empty.");
-      }
+      // Presses on a box-less surface are ignored: they neither throw nor spend the one-launch-per-second budget.
+      if (!drawable || ![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) return;
+      lastLaunch = performance.now();
       const x = event.detail === 0 ? maxX / 2 : (event.clientX - rect.left) * (canvas.width / rect.width);
       const y = event.detail === 0 ? maxY * 0.3 : (event.clientY - rect.top) * (canvas.height / rect.height);
       const fireworkColor = getColor(color);

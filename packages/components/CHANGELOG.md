@@ -20,6 +20,10 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Preserve automatic NavigationMenu and Drawer anatomy through actual opaque React Flight render transport.
 - Target applicable WCAG 2.2 A/AA with native/primitive keyboard and focus behavior, localized generated controls, corrected default token
   contrast and bounded/controllable motion. Ship ACCESSIBILITY with explicit consumer responsibilities and native/AT evidence limits.
+- Command keeps and navigates the consumer's rendered order inside CommandList, including memoized-row reorders that re-render no Command
+  part: no reordering unless filtering, score order with rendered-order ties while filtering, and rendered order restored afterwards. Each
+  CommandItem/CommandGroup renders a hidden, empty `data-command-anchor` span as its first DOM node; consumer
+  `:first-child`/`:nth-child`/adjacent-sibling selectors over Command parts must account for it.
 - Retain CSS Modules and story-mounted demonstration styles. No alternate test runner, new dependency, publication or website adoption.
 
 **Current verification:** complete component workspace passed **127 files / 3,319 tests / zero skips**, including all four genuine packed

@@ -116,6 +116,9 @@ function createBubbleStyle(
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
  * - RGB triplets accept comma/space syntax; caller palette overrides are normalized
+ * - Interactive pointer moves over a box-less container (for example `display: none`, an inactive kept-mounted tab panel
+ *   or a zero-height section with overflowing children) are ignored rather than thrown: the follower stays in place
+ *   until the container is measurable again
  *
  * @example
  * ```tsx
@@ -123,6 +126,8 @@ function createBubbleStyle(
  * ```
  *
  * @see {@link BubbleBackgroundProps} for available props
+ * @throws {TypeError} If an RGB color prop or `--ac-bubble-*-color` style override is not a string.
+ * @throws {RangeError} Only for other invalid RGB color props or overrides (channel count or range). Measured geometry never throws.
  */
 function BubbleBackground({
   ref,
@@ -162,9 +167,9 @@ function BubbleBackground({
 
     const handleMouseMove = (event: MouseEvent): void => {
       const rect = currentContainer.getBoundingClientRect();
-      if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) {
-        throw new RangeError("BubbleBackground interactive geometry must be finite and non-empty.");
-      }
+      // A box-less container (display:none, an inactive kept-mounted panel, a zero-height section whose overflowing
+      // children are under the pointer) is a normal runtime state, not an error: ignore the move.
+      if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width <= 0 || rect.height <= 0) return;
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       mouseX.set(event.clientX - centerX);

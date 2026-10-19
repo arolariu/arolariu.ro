@@ -352,15 +352,111 @@ describe("FireworksBackground", () => {
     expect(frames.size).toBe(0);
   });
 
+  it.each([
+    {width: 0, height: 0},
+    {width: -10, height: 50},
+    {width: Number.NaN, height: 100},
+    {width: 200, height: Number.POSITIVE_INFINITY},
+  ])("mounts a box-less $width × $height canvas without throwing or drawing, then paints when measurable", ({width, height}) => {
+    reduced = true;
+    box = new DOMRect(100, 50, width, height);
+    const ref = React.createRef<HTMLDivElement>();
+    render(<FireworksBackground ref={ref} />);
+    const canvas = ref.current?.querySelector("canvas");
+    expect(canvas).not.toHaveAttribute("width");
+    expect(context.clearRect).not.toHaveBeenCalled();
+    expect(context.arc).not.toHaveBeenCalled();
+    act(() => {
+      box = new DOMRect(100, 50, 200, 100);
+      observers.at(-1)?.resize();
+    });
+    expect(canvas).toHaveAttribute("width", "400");
+    expect(canvas).toHaveAttribute("height", "200");
+    expect(context.arc).toHaveBeenCalled();
+  });
+
+  it("idles launches and frames when a window or observer resize reports a lost box, then resumes on the next positive observation", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <FireworksBackground
+        ref={ref}
+        loop
+        motionPaused={false}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(timers.size).toBe(1);
+    expect(frames.size).toBe(1);
+    const canvas = ref.current?.querySelector("canvas");
+    act(() => {
+      box = new DOMRect(0, 0, 0, 0);
+      globalThis.window.dispatchEvent(new Event("resize"));
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "running");
+    expect(timers.size).toBe(0);
+    expect(frames.size).toBe(0);
+    act(() => {
+      observers.at(-1)?.resize();
+    });
+    expect(timers.size).toBe(0);
+    expect(frames.size).toBe(0);
+    expect(canvas).toHaveAttribute("width", "400");
+    act(() => {
+      box = new DOMRect(100, 50, 300, 150);
+      observers.at(-1)?.resize();
+    });
+    expect(canvas).toHaveAttribute("width", "600");
+    expect(canvas).toHaveAttribute("height", "300");
+    expect(timers.size).toBe(1);
+    expect(frames.size).toBe(1);
+  });
+
+  it("ignores launch presses on a box-less surface without throwing or spending the launch budget", () => {
+    render(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const launch = screen.getByRole("button", {name: "Launch fireworks"});
+    context.moveTo.mockClear();
+    box = new DOMRect(0, 0, 0, 0);
+    fireEvent.click(launch, {clientX: 150, clientY: 70, detail: 1});
+    act(() => {
+      observers.at(-1)?.resize();
+    });
+    box = new DOMRect(100, 50, 200, 100);
+    fireEvent.click(launch, {detail: 0});
+    frame();
+    expect(context.moveTo).not.toHaveBeenCalled();
+    act(() => {
+      observers.at(-1)?.resize();
+    });
+    fireEvent.click(launch, {clientX: 150, clientY: 70, detail: 1});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledWith(100, 196);
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1])("falls back to a 1x backing bitmap for devicePixelRatio %s", (dpr) => {
+    Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: dpr});
+    const ref = React.createRef<HTMLDivElement>();
+    render(<FireworksBackground ref={ref} />);
+    const canvas = ref.current?.querySelector("canvas");
+    expect(canvas).toHaveAttribute("width", "200");
+    expect(canvas).toHaveAttribute("height", "100");
+  });
+
   it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])("rejects invalid population %s", (population) => {
     expect(() => render(<FireworksBackground population={population} />)).toThrow(/population/u);
   });
-  it("rejects invalid ranges, an empty palette, empty geometry and missing rendering context", () => {
+  it("rejects invalid ranges, an empty palette and a missing rendering context", () => {
     expect(() => render(<FireworksBackground fireworkSpeed={{min: 4, max: 2}} />)).toThrow(/range/u);
     expect(() => render(<FireworksBackground color={[]} />)).toThrow(/palette/u);
-    box = new DOMRect(0, 0, 0, 0);
-    expect(() => render(<FireworksBackground />)).toThrow(/geometry/u);
-    box = new DOMRect(0, 0, 200, 100);
     Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
       configurable: true,
       value: (): CanvasRenderingContext2D | null => null,

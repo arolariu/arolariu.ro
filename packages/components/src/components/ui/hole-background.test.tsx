@@ -291,14 +291,70 @@ describe("HoleBackground", () => {
     expect(context.ellipse.mock.calls.length).toBeLessThanOrEqual(53);
     expect(context.ellipse.mock.calls.length).toBeGreaterThan(1);
   });
+  it.each([
+    {width: 0, height: 0},
+    {width: -10, height: 50},
+    {width: Number.NaN, height: 100},
+    {width: Number.MIN_VALUE, height: 100},
+  ])("mounts a box-less $width × $height canvas without throwing or drawing, then paints when measurable", ({width, height}) => {
+    box = new DOMRect(10, 20, width, height);
+    const ref = React.createRef<HTMLCanvasElement>();
+    render(<HoleBackground ref={ref} />);
+    expect(ref.current).not.toHaveAttribute("width");
+    expect(context.clearRect).not.toHaveBeenCalled();
+    expect(context.ellipse).not.toHaveBeenCalled();
+    expect(context.drawImage).not.toHaveBeenCalled();
+    act(() => {
+      box = new DOMRect(10, 20, 200, 100);
+      observers.at(-1)?.resize();
+    });
+    expect(ref.current).toHaveAttribute("width", "400");
+    expect(ref.current).toHaveAttribute("height", "200");
+    expect(context.ellipse).toHaveBeenCalledWith(100, 45, 150, 70, 0, 0, Math.PI * 2);
+    expect(context.drawImage).toHaveBeenCalled();
+  });
+
+  it("idles its frame loop when a window or observer resize reports a lost box, then resumes on the next positive observation", () => {
+    reduced = false;
+    const ref = React.createRef<HTMLCanvasElement>();
+    render(<HoleBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const animating = (): number => [...frames.values()].filter((callback) => callback.name === "animate").length;
+    expect(animating()).toBe(1);
+    act(() => {
+      box = new DOMRect(0, 0, 0, 0);
+      globalThis.window.dispatchEvent(new Event("resize"));
+      observers.at(-1)?.resize();
+    });
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "running");
+    expect(animating()).toBe(0);
+    expect(ref.current).toHaveAttribute("width", "400");
+    context.ellipse.mockClear();
+    act(() => {
+      box = new DOMRect(10, 20, 300, 150);
+      observers.at(-1)?.resize();
+    });
+    expect(ref.current).toHaveAttribute("width", "600");
+    expect(context.ellipse).toHaveBeenCalledWith(150, 67.5, 225, 105, 0, 0, Math.PI * 2);
+    expect(animating()).toBe(1);
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1])("falls back to a 1x backing transform for devicePixelRatio %s", (dpr) => {
+    Object.defineProperty(window, "devicePixelRatio", {configurable: true, value: dpr});
+    const ref = React.createRef<HTMLCanvasElement>();
+    render(<HoleBackground ref={ref} />);
+    expect(ref.current).toHaveAttribute("width", "200");
+    expect(ref.current).toHaveAttribute("height", "100");
+    expect(context.scale).toHaveBeenCalledWith(1, 1);
+  });
+
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5])("rejects invalid disc count %s", (numberOfDiscs) => {
     expect(() => renderToString(<HoleBackground numberOfDiscs={numberOfDiscs} />)).toThrow(/count/u);
   });
-  it("rejects invalid particle channels, empty geometry and missing 2D contexts", () => {
+  it("rejects invalid particle channels and missing 2D contexts", () => {
     expect(() => render(<HoleBackground particleRGBColor={[255, Number.NaN, 0]} />)).toThrow(/RGB/u);
-    box = new DOMRect(0, 0, 0, 0);
-    expect(() => render(<HoleBackground />)).toThrow(/geometry/u);
-    box = new DOMRect(0, 0, 200, 100);
     Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
       configurable: true,
       value: (): CanvasRenderingContext2D | null => null,

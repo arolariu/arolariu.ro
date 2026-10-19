@@ -130,9 +130,38 @@ describe("DotBackground", () => {
     expect(container.querySelectorAll("circle").length).toBeGreaterThan(0);
   });
 
-  it("rejects empty measured geometry instead of scheduling an empty animated grid", () => {
-    box = new DOMRect(0, 0, 0, 0);
-    expect(() => render(<DotBackground />)).toThrow(/geometry/u);
+  it.each([
+    {width: 0, height: 0},
+    {width: -16, height: 16},
+    {width: Number.NaN, height: 16},
+    {width: 32, height: Number.POSITIVE_INFINITY},
+  ])("renders no dots for a box-less $width × $height mount and builds the grid on the next positive observation", ({width, height}) => {
+    box = new DOMRect(0, 0, width, height);
+    const ref = React.createRef<SVGSVGElement>();
+    render(<DotBackground ref={ref} />);
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(0);
+    act(() => {
+      box = new DOMRect(0, 0, 32, 16);
+      observers[0]?.resize();
+    });
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(2);
+  });
+
+  it("keeps its last grid without throwing when a window or observer resize reports a lost box, then regenerates", () => {
+    const ref = React.createRef<SVGSVGElement>();
+    render(<DotBackground ref={ref} />);
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(2);
+    act(() => {
+      box = new DOMRect(0, 0, 0, 0);
+      globalThis.window.dispatchEvent(new Event("resize"));
+      observers[0]?.resize();
+    });
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(2);
+    act(() => {
+      box = new DOMRect(0, 0, 48, 32);
+      observers[0]?.resize();
+    });
+    expect(ref.current?.querySelectorAll("circle")).toHaveLength(6);
   });
 
   it("keeps even subnormal positive spacing bounded and non-empty", () => {

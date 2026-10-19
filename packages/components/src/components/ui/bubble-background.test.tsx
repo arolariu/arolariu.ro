@@ -1,5 +1,6 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
+import {frame} from "motion/react";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
@@ -56,6 +57,18 @@ const colors: BubbleBackgroundColors = {
   fifth: "130,140,150",
   sixth: "160 170 180",
 };
+/** Resolves after Motion's render loop has completed `count` frames. */
+async function motionFrames(count: number): Promise<void> {
+  for (let index = 0; index < count; index += 1) {
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        frame.postRender(() => {
+          resolve();
+        });
+      });
+    });
+  }
+}
 
 beforeEach(() => {
   reduced = true;
@@ -168,5 +181,67 @@ describe("BubbleBackground", () => {
     await waitFor(() => expect(follower).toHaveStyle({transform: "none"}));
     unmount();
     expect(ref.current).toBeNull();
+  });
+
+  it("follows pointer moves relative to a measurable offset container's center", async () => {
+    reduced = false;
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <BubbleBackground
+        ref={ref}
+        interactive
+        transition={{duration: 0}}
+      />,
+    );
+    const root = ref.current;
+    if (!root) throw new Error("Missing root");
+    vi.spyOn(root, "getBoundingClientRect").mockReturnValue(new DOMRect(10, 20, 200, 100));
+    act(() => {
+      views[0]?.enter();
+    });
+    const follower = root.querySelector<HTMLDivElement>('[data-bubble="interactive"]');
+    fireEvent.mouseMove(root, {clientX: 175, clientY: 105});
+    await waitFor(() => {
+      expect(follower?.style.transform).toContain("65px");
+      expect(follower?.style.transform).toContain("35px");
+    });
+  });
+
+  it("ignores pointer moves over a box-less container without throwing or moving the follower, then follows once measurable", async () => {
+    reduced = false;
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <BubbleBackground
+        ref={ref}
+        interactive
+        transition={{duration: 0}}
+      />,
+    );
+    const root = ref.current;
+    if (!root) throw new Error("Missing root");
+    const rect = vi.spyOn(root, "getBoundingClientRect").mockReturnValue(new DOMRect(10, 20, 200, 100));
+    act(() => {
+      views[0]?.enter();
+    });
+    const follower = root.querySelector<HTMLDivElement>('[data-bubble="interactive"]');
+    fireEvent.mouseMove(root, {clientX: 40, clientY: 30});
+    await waitFor(() => {
+      expect(follower?.style.transform).toContain("-70px");
+      expect(follower?.style.transform).toContain("-40px");
+    });
+    const resting = follower?.style.transform;
+    for (const box of [new DOMRect(10, 20, 0, 0), new DOMRect(10, 20, Number.NaN, 100), new DOMRect(10, 20, 200, -1)]) {
+      rect.mockReturnValue(box);
+      fireEvent.mouseMove(root, {clientX: 90, clientY: 80});
+    }
+    await motionFrames(5);
+    expect(root).toHaveAttribute("data-motion", "running");
+    expect(follower?.style.transform).toBe(resting);
+    rect.mockReturnValue(new DOMRect(10, 20, 200, 100));
+    fireEvent.mouseMove(root, {clientX: 60, clientY: 50});
+    await waitFor(() => {
+      expect(follower?.style.transform).toContain("-50px");
+      expect(follower?.style.transform).toContain("-20px");
+    });
   });
 });

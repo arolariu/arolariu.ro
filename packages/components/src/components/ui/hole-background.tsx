@@ -108,6 +108,10 @@ const createInitialState = (): HoleState => ({
  *
  * @remarks
  * - Animated component using the `motion` library
+ * - A box-less canvas (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not
+ *   an error: it stays idle (no sizing, drawing or frame loop) until a positive `ResizeObserver` or window resize
+ *   measurement, which rebuilds and redraws it under the motion policy
+ * - A non-finite or non-positive `devicePixelRatio` falls back to 1
  * - Renders a `<div>` element containing a `<canvas>`
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
@@ -118,7 +122,7 @@ const createInitialState = (): HoleState => ({
  * ```
  *
  * @see {@link HoleBackgroundProps} for available props
- * @throws {RangeError} If counts, RGB channels or measured geometry are invalid.
+ * @throws {RangeError} Only for invalid props: line/disc counts or RGB channels. Measured geometry never throws.
  * @throws {Error} If a 2D canvas context is unavailable.
  */
 function HoleBackground({
@@ -164,26 +168,25 @@ function HoleBackground({
     [tweenValue],
   );
 
-  const setSize = React.useCallback((): void => {
+  // A box-less canvas (display:none, an inactive kept-mounted panel, a collapsed section) is a normal runtime
+  // state, not an error: report it as "not drawable yet" without touching the backing store or cached state.
+  const setSize = React.useCallback((): boolean => {
     const canvas = canvasRef.current;
     if (!canvas) {
-      return;
+      return false;
     }
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio;
-    if (![rect.width, rect.height, dpr].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0 || dpr <= 0) {
-      throw new RangeError("HoleBackground geometry and DPR must be finite and positive.");
-    }
-    stateRef.current.rect = {width: rect.width, height: rect.height};
+    if (![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) return false;
+    const dpr = Number.isFinite(window.devicePixelRatio) && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
     const requestedScale = Math.min(dpr, 4096 / rect.width, 4096 / rect.height);
     const bitmapWidth = Math.max(1, Math.min(4096, Math.round(rect.width * requestedScale)));
     const bitmapHeight = Math.max(1, Math.min(4096, Math.round(rect.height * requestedScale)));
     const scaleX = bitmapWidth / rect.width;
     const scaleY = bitmapHeight / rect.height;
-    if (![scaleX, scaleY].every((scale) => Number.isFinite(scale) && scale > 0)) {
-      throw new RangeError("HoleBackground geometry cannot produce a finite backing-space transform.");
-    }
+    // Sub-pixel boxes whose backing-space transform overflows are likewise not drawable yet.
+    if (![scaleX, scaleY].every((scale) => Number.isFinite(scale) && scale > 0)) return false;
+    stateRef.current.rect = {width: rect.width, height: rect.height};
     stateRef.current.render = {
       bitmapWidth,
       bitmapHeight,
@@ -192,6 +195,7 @@ function HoleBackground({
     };
     canvas.width = bitmapWidth;
     canvas.height = bitmapHeight;
+    return true;
   }, []);
 
   const setDiscs = React.useCallback((): void => {
@@ -437,11 +441,12 @@ function HoleBackground({
     context.restore();
   }, [drawDiscs, drawLines, drawParticles, moveDiscs, moveParticles, paused]);
 
-  const init = React.useCallback((): void => {
-    setSize();
+  const init = React.useCallback((): boolean => {
+    if (!setSize()) return false;
     setDiscs();
     setLines();
     setParticles();
+    return true;
   }, [setDiscs, setLines, setParticles, setSize]);
 
   React.useEffect(() => {
@@ -453,9 +458,9 @@ function HoleBackground({
     let active = true;
     let animationFrameId: number | null = null;
     const state = stateRef.current;
-    init();
+    let drawable = init();
     const animate = (): void => {
-      if (!active) return;
+      if (!active || !drawable) return;
       tick();
       if (!paused) animationFrameId = requestAnimationFrame(animate);
     };
@@ -463,11 +468,19 @@ function HoleBackground({
 
     const handleResize = (): void => {
       if (!active) return;
-      setSize();
+      drawable = setSize();
+      if (!drawable) {
+        // Losing the box idles the frame loop until the next positive observation.
+        if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+        return;
+      }
       setDiscs();
       setLines();
       setParticles();
-      tick();
+      // Restart a loop left idle by a box-less mount or a lost box; otherwise redraw immediately at the new size.
+      if (animationFrameId === null) animate();
+      else tick();
     };
 
     const observer = new ResizeObserver(handleResize);

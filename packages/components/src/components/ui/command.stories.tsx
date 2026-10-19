@@ -50,7 +50,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Native registry engine, not cmdk. Search uses case-insensitive substrings by default. Positive custom scores reorder groups/items with stable ties. Root value controls selection; CommandInput value controls search. Home/End, arrows, Meta endpoints, Alt groups and default Ctrl+n/j/p/k navigate.",
+          "Native registry engine, not cmdk. Search uses case-insensitive substrings by default. Rendered order is kept and navigated; while searching, positive custom scores reorder groups/items with rendered-order ties, and clearing restores rendered order. Root value controls selection; CommandInput value controls search. Home/End, arrows, Meta endpoints, Alt groups and default Ctrl+n/j/p/k navigate.",
       },
     },
   },
@@ -192,7 +192,7 @@ export const WithCategories: Story = {
     </Command>
   ),
 };
-/** Explicit registration order with a selected recent action. */
+/** Explicit rendered order with a selected recent action. */
 export const WithRecentItems: Story = {
   render: () => (
     <Command
@@ -282,7 +282,7 @@ function ControlledPalette(): React.JSX.Element {
 /** Demonstrates direct zz→app recovery and visibly rejected controlled proposals. */
 export const Controlled: Story = {render: () => <ControlledPalette />};
 
-/** Positive score ordering; Second and Third have stable equal scores. */
+/** Positive score ordering; equal-scored Second and Third keep their rendered order. */
 export const Scored: Story = {
   render: () => (
     <Command

@@ -180,6 +180,13 @@ positive scores. Root selected `value` is distinct from Input search `value`. Co
 unmatched values; automatic uncontrolled fallback does not emit user-selection callbacks. Give items stable unique explicit values and IDs,
 independent of translated text/shortcut content. Inferred values include trimmed shortcut text.
 
+Command keeps and navigates the consumer's rendered order of groups/items inside CommandList, including keyed reorders by memoized rows that
+re-render no Command part (a list MutationObserver re-reads them). It never reorders the DOM unless filtering; while filtering, positive
+scores order groups/items with rendered-order ties, and clearing the search restores the rendered order, including keyed reorders and
+items/groups mounted meanwhile. Each CommandItem/CommandGroup renders a hidden, empty `data-command-anchor` span (with an owned
+`display: none`) as its first DOM node; consumer CSS that relies on `:first-child`, `:nth-child` or adjacent-sibling selectors over Command
+parts must account for it.
+
 Keep registered items/groups directly under their List/Group for score/DOM ordering. Arbitrary cross-wrapper nested score layout, cmdk
 hooks/Loading/store/measurement variables and a generic cmdk/asChild API are not supplied. Native option focusability remains; separators
 hide during search unless `alwaysRender`. Empty is a polite local status counting visible disabled/force-mounted options but not externally
