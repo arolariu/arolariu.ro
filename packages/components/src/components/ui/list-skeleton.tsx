@@ -38,8 +38,11 @@ interface ListSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * Each item includes optional avatar media plus two text lines, making it suitable for
  * activity feeds, contact lists, or navigation menus that load incrementally.
- * Placeholders are decorative. Set one loading role/label/busy announcement on
- * this root or a containing region, not on individual items.
+ * Placeholders are decorative and the skeleton announces nothing; do not give individual
+ * items a role or label. Announce loading through a status region that is mounted before
+ * loading starts and receives its text when loading begins, such as a persistent
+ * `VisuallyHidden` status or `useAnnounce`: a status element inserted already populated is
+ * not reliably announced, and `aria-busy` on a live region defers its announcements.
  * `animated={false}` and the shared reduced-motion policy keep placeholders static.
  *
  * @throws {RangeError} Before allocation when items is not a nonnegative finite
@@ -47,7 +50,8 @@ interface ListSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * @example
  * ```tsx
- * <ListSkeleton items={8} showAvatar={false} role="status" aria-label="Loading results" aria-busy />
+ * <VisuallyHidden role="status">{loading ? "Loading results" : null}</VisuallyHidden>
+ * {loading ? <ListSkeleton items={8} showAvatar={false} /> : <ResultList />}
  * ```
  *
  * @see {@link ListSkeletonProps} for available props

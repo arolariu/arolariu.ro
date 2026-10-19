@@ -554,6 +554,14 @@ export type ChartLegendContentProps = LegendRootAttributes
     readonly hideIcon?: boolean;
     /** Direct or nested payload field identifying a config entry. */
     readonly nameKey?: string;
+    /**
+     * Caller-owned text appended to series the SDK reports as inactive (hidden).
+     * It is visible and, for clickable items, part of the button's accessible name.
+     * Pass localized text, or `""`/`null` to suppress it.
+     *
+     * @default " (hidden)"
+     */
+    readonly inactiveSuffix?: React.ReactNode;
     /** Content spacing only; outer legend positioning remains primitive-owned. @default "bottom" */
     readonly verticalAlign?: "top" | "bottom" | "middle";
   };
@@ -597,7 +605,9 @@ const legendEngineFields: ReadonlySet<string> = new Set([
  *   element or ChartContainer instead.
  * - Items with an onClick handler use native, non-submit buttons for keyboard
  *   activation. Other items remain display-only divs.
- * - SDK-inactive series include a visible and announced "(hidden)" suffix.
+ * - SDK-inactive series append `inactiveSuffix` (English `" (hidden)"` by
+ *   default), which is visible and announced as part of a clickable item's
+ *   name. Pass localized text, or `""`/`null` to suppress it.
  *   Click handlers are not assumed to toggle visibility.
  * - Migrate `content={ChartLegendContent}` to `content={<ChartLegendContent />}`
  *   or `content={(props) => <ChartLegendContent {...props} />}`.
@@ -612,6 +622,7 @@ const legendEngineFields: ReadonlySet<string> = new Set([
  * @example
  * ```tsx
  * <ChartLegend content={<ChartLegendContent />} />
+ * <ChartLegend content={<ChartLegendContent inactiveSuffix=' (masquée)' />} onClick={toggleSeries} />
  * ```
  *
  * @see {@link https://recharts.org/en-US/api/Legend | Recharts Legend Docs}
@@ -622,6 +633,7 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
     className,
     hideIcon = false,
     nameKey,
+    inactiveSuffix = " (hidden)",
     payload,
     verticalAlign = "bottom",
     formatter,
@@ -669,7 +681,7 @@ function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): Rea
               />
             )}
             {itemFormatter ? itemFormatter(value, item, index) : value}
-            {item.inactive ? " (hidden)" : null}
+            {item.inactive ? inactiveSuffix : null}
           </>
         );
 

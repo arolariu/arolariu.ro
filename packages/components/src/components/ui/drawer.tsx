@@ -1,10 +1,12 @@
 "use client";
 
-import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
+import {Drawer as BaseDrawer, DrawerPopupCssVariables} from "@base-ui/react/drawer";
 import {mergeProps} from "@base-ui/react/merge-props";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
+import {useEventCallback} from "@/hooks/useEventCallback";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./drawer.module.css";
 
@@ -24,7 +26,17 @@ export type DrawerCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseD
 /** Backdrop composition with a ref to the actual rendered element. */
 export type DrawerOverlayProps = Readonly<Omit<BaseDrawer.Backdrop.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 /** Popup composition, including Base UI's initial/final focus contracts. */
-export type DrawerContentProps = Readonly<Omit<BaseDrawer.Popup.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DrawerContentProps = Readonly<
+  Omit<BaseDrawer.Popup.Props, "ref"> & {
+    ref?: React.Ref<HTMLElement>;
+    /**
+     * Props for the internal Portal, for example `keepMounted` (keep the closed drawer and its form state mounted
+     * but hidden) or `container` (portal into a theme-scoped element, shadow root or another document). Content
+     * always supplies the portal's children.
+     */
+    portalProps?: Readonly<Omit<DrawerPortalProps, "children">>;
+  }
+>;
 /** Decorative swipe surface; its gestures are owned by the enclosing Viewport. */
 export type DrawerSwipeHandleProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {ref?: React.Ref<HTMLElement>}
@@ -39,11 +51,16 @@ export type DrawerTitleProps = Readonly<Omit<BaseDrawer.Title.Props, "ref"> & {r
 /** Accessible description props with a ref to the actual rendered element. */
 export type DrawerDescriptionProps = Readonly<Omit<BaseDrawer.Description.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 
+type DrawerSnapPoint = BaseDrawer.Root.SnapPoint;
+type DrawerSnapPointChangeDetails = BaseDrawer.Root.SnapPointChangeEventDetails;
+
 interface DrawerPresentation {
   readonly hasSnapPoints: boolean;
   readonly modal: NonNullable<BaseDrawer.Root.Props["modal"]>;
   readonly showSwipeHandle: boolean;
   readonly swipeDirection: NonNullable<BaseDrawer.Root.Props["swipeDirection"]>;
+  /** Stable request to reveal a focused popup descendant hidden by a partial snap point. */
+  readonly revealFocusedElement: (popup: HTMLElement, target: Element, event: FocusEvent) => void;
 }
 
 const DrawerPresentationContext = React.createContext<DrawerPresentation | null>(null);
@@ -52,6 +69,128 @@ function useDrawerPresentation(): DrawerPresentation {
   const context = React.useContext(DrawerPresentationContext);
   if (!context) throw new Error("DrawerContent must be used within Drawer.");
   return context;
+}
+
+/** Mirrors Base UI's uncontrolled resolution so wrapper-owned snap state renders exactly as the primitive's did. */
+function resolveUncontrolledSnapPoint(
+  value: DrawerSnapPoint | null,
+  snapPoints: readonly DrawerSnapPoint[] | undefined,
+  defaultSnapPoint: DrawerSnapPoint | null | undefined,
+): DrawerSnapPoint | null {
+  if (!snapPoints?.length || (value !== null && snapPoints.some((point) => Object.is(point, value)))) return value;
+  return defaultSnapPoint === undefined ? (snapPoints[0] ?? null) : defaultSnapPoint;
+}
+
+/** Resolves a snap point with Base UI's documented units: viewport fractions up to 1, otherwise px or rem. */
+function snapPointHeight(snapPoint: DrawerSnapPoint, viewportHeight: number, rootFontSize: number): number | null {
+  if (typeof snapPoint === "number") {
+    if (!Number.isFinite(snapPoint)) return null;
+    return snapPoint <= 1 ? Math.min(Math.max(snapPoint, 0), 1) * viewportHeight : snapPoint;
+  }
+  const value = Number.parseFloat(snapPoint);
+  const unit = snapPoint.trim();
+  if (!Number.isFinite(value)) return null;
+  if (unit.endsWith("px")) return value;
+  return unit.endsWith("rem") ? value * rootFontSize : null;
+}
+
+/** The tallest supplied snap point, measured against the popup's own viewport and document. */
+function largestSnapPoint(snapPoints: readonly DrawerSnapPoint[], popup: HTMLElement): DrawerSnapPoint | null {
+  const {documentElement, defaultView} = popup.ownerDocument;
+  const viewportHeight = popup.parentElement?.offsetHeight || documentElement.clientHeight;
+  const rootFontSize = Number.parseFloat(defaultView?.getComputedStyle(documentElement).fontSize ?? "") || 16;
+  let largestValue: DrawerSnapPoint | null = null;
+  let largestHeight = Number.NEGATIVE_INFINITY;
+  for (const value of snapPoints) {
+    const height = snapPointHeight(value, viewportHeight, rootFontSize);
+    if (height !== null && height > largestHeight) {
+      largestValue = value;
+      largestHeight = height;
+    }
+  }
+  return largestValue;
+}
+
+/**
+ * Whether any part of `target` lies in the band a partial snap point translates off-screen. Geometry is relative
+ * to the popup, so enter/exit transforms and swipe movement never count as hidden.
+ */
+function isBeyondVisibleSnapHeight(popup: HTMLElement, target: Element): boolean {
+  const offset = Number.parseFloat(popup.style.getPropertyValue(DrawerPopupCssVariables.snapPointOffset));
+  if (!Number.isFinite(offset) || offset === 0) return false;
+  const popupRect = popup.getBoundingClientRect();
+  if (popupRect.height <= 0) return false;
+  const targetRect = target.getBoundingClientRect();
+  // Downward drawers translate their bottom band away; upward drawers (negative offsets) hide their top band.
+  return offset > 0 ? targetRect.bottom - popupRect.top > popupRect.height - offset : targetRect.top - popupRect.top < -offset;
+}
+
+/** Base UI-shaped details for a library-initiated snap request; owners can cancel it like any other request. */
+function createSnapPointChangeDetails(event: Event): DrawerSnapPointChangeDetails {
+  let canceled = false;
+  let propagationAllowed = false;
+  return {
+    reason: "none",
+    event,
+    trigger: undefined,
+    cancel: () => {
+      canceled = true;
+    },
+    allowPropagation: () => {
+      propagationAllowed = true;
+    },
+    get isCanceled() {
+      return canceled;
+    },
+    get isPropagationAllowed() {
+      return propagationAllowed;
+    },
+  };
+}
+
+function isNodeTarget(target: EventTarget | null): target is Node {
+  return target !== null && "nodeType" in target && typeof target.nodeType === "number";
+}
+
+/** Realm-independent element check: portaled popups may live in another document. */
+function isElementTarget(target: EventTarget | null): target is Element {
+  return isNodeTarget(target) && target.nodeType === 1;
+}
+
+/**
+ * Listens on the popup's own DOM (so nested, separately portaled drawers never report into a parent) and asks the
+ * root to reveal focused descendants. Focus produced by pressing that control is left alone: the pointer proves the
+ * control is visible, and moving it mid-press could retarget the click.
+ */
+function useSnapFocusReveal(reveal: DrawerPresentation["revealFocusedElement"]): React.RefCallback<HTMLElement> {
+  return React.useCallback(
+    (popup: HTMLElement | null) => {
+      if (!popup) return undefined;
+      let pressed: Node | null = null;
+      const recordPress = (event: PointerEvent): void => {
+        pressed = isNodeTarget(event.target) ? event.target : null;
+      };
+      const clearPress = (): void => {
+        pressed = null;
+      };
+      const revealFocus = (event: FocusEvent): void => {
+        const press = pressed;
+        pressed = null;
+        const {target} = event;
+        if (!isElementTarget(target) || target === popup || (press !== null && target.contains(press))) return;
+        reveal(popup, target, event);
+      };
+      popup.addEventListener("pointerdown", recordPress, {capture: true});
+      popup.addEventListener("keydown", clearPress, {capture: true});
+      popup.addEventListener("focusin", revealFocus);
+      return () => {
+        popup.removeEventListener("pointerdown", recordPress, {capture: true});
+        popup.removeEventListener("keydown", clearPress, {capture: true});
+        popup.removeEventListener("focusin", revealFocus);
+      };
+    },
+    [reveal],
+  );
 }
 
 // Base UI merges this callback with its own ref; do not narrow composed elements to the default tag.
@@ -73,12 +212,20 @@ function useDrawerElementRef(ref: React.Ref<HTMLElement> | undefined): React.Ref
  * - Delegates structure and state to the underlying Base UI primitive
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Preserves the underlying primitive API for advanced composition
- * - Adds presentation context only; Base UI owns open state and snap-point selection
- * - Handles are opt-in with `showSwipeHandle`; supplied snap points are passed through unchanged
+ * - Base UI owns open state, gestures and snap-point resolution; supplied snap points are passed through unchanged
+ * - Handles are opt-in with `showSwipeHandle`
+ * - With vertical `snapPoints`, when keyboard or programmatic focus lands on a control that the active snap point
+ *   keeps (even partly) off-screen, Drawer requests its largest supplied snap point with `reason: "none"`.
+ *   Uncontrolled drawers expand; controlled drawers receive the request through `onSnapPointChange` and must apply
+ *   it (or cancel it and reveal the control another way). Focus produced by pressing the control never moves it.
+ * - Supply a snap point tall enough to show every focusable control (for example `1`), or keep focusable controls
+ *   within the smallest snap height; focus cannot be revealed beyond the largest snap point.
  *
  * @example
  * ```tsx
- * <Drawer showSwipeHandle>
+ * <Drawer
+ *   showSwipeHandle
+ *   snapPoints={[0.35, 1]}>
  *   <DrawerTrigger>Open</DrawerTrigger>
  *   <DrawerContent><DrawerTitle>Details</DrawerTitle></DrawerContent>
  * </Drawer>
@@ -90,19 +237,41 @@ function Drawer<Payload = unknown>({
   modal = true,
   showSwipeHandle = false,
   snapPoints,
+  snapPoint,
+  defaultSnapPoint,
+  onSnapPointChange,
   swipeDirection = "down",
   ...props
 }: Readonly<Drawer.Props<Payload>>): React.ReactElement {
   const hasSnapPoints = Boolean(snapPoints?.length);
+  // The wrapper owns uncontrolled snap state so it can request a snap point; Base UI resolves it unchanged.
+  const [uncontrolledSnapPoint, setUncontrolledSnapPoint] = React.useState<DrawerSnapPoint | null>(() =>
+    defaultSnapPoint === undefined ? (snapPoints?.[0] ?? null) : defaultSnapPoint,
+  );
+  const activeSnapPoint =
+    snapPoint === undefined ? resolveUncontrolledSnapPoint(uncontrolledSnapPoint, snapPoints, defaultSnapPoint) : snapPoint;
+  const handleSnapPointChange = (value: DrawerSnapPoint | null, details: DrawerSnapPointChangeDetails): void => {
+    onSnapPointChange?.(value, details);
+    if (!details.isCanceled && snapPoint === undefined) setUncontrolledSnapPoint(value);
+  };
+  const revealFocusedElement = useEventCallback((popup: HTMLElement, target: Element, event: FocusEvent): void => {
+    if (!snapPoints?.length || !isBeyondVisibleSnapHeight(popup, target)) return;
+    const largest = largestSnapPoint(snapPoints, popup);
+    if (largest === null || Object.is(largest, activeSnapPoint)) return;
+    handleSnapPointChange(largest, createSnapPointChangeDetails(event));
+  });
   const presentation = React.useMemo(
-    () => ({hasSnapPoints, modal, showSwipeHandle, swipeDirection}),
-    [hasSnapPoints, modal, showSwipeHandle, swipeDirection],
+    () => ({hasSnapPoints, modal, showSwipeHandle, swipeDirection, revealFocusedElement}),
+    [hasSnapPoints, modal, showSwipeHandle, swipeDirection, revealFocusedElement],
   );
   return (
     <DrawerPresentationContext.Provider value={presentation}>
       <BaseDrawer.Root
         modal={modal}
         snapPoints={snapPoints}
+        snapPoint={activeSnapPoint}
+        defaultSnapPoint={defaultSnapPoint}
+        onSnapPointChange={handleSnapPointChange}
         swipeDirection={swipeDirection}
         {...props}
       />
@@ -275,18 +444,23 @@ function DecoratedDrawerElement({
  * - Viewport owns pointer/touch arbitration; Content keeps native controls out of mouse/pen dragging
  * - Function render callbacks receive Base UI's actual popup state, including nested and swipe state
  * - `modal={false}` and `"trap-focus"` omit the blocking backdrop without changing Base UI's focus policy
+ * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed drawer mounted with `hidden`,
+ *   preserving form state, and `container` chooses the element or shadow root that receives the portal
+ * - Reports focus that lands beyond a partial snap point to `Drawer`, which requests its largest snap point
  *
  * @example
  * ```tsx
- * <DrawerContent>Content</DrawerContent>
+ * <DrawerContent portalProps={{keepMounted: true}}>Content</DrawerContent>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 const DrawerContent = ({ref, ...props}: Readonly<DrawerContent.Props>): React.ReactElement => {
-  const {className, children, render, ...otherProps} = props;
-  const {hasSnapPoints, modal, showSwipeHandle, swipeDirection} = useDrawerPresentation();
+  const {className, children, render, portalProps, ...otherProps} = props;
+  const {hasSnapPoints, modal, showSwipeHandle, swipeDirection, revealFocusedElement} = useDrawerPresentation();
   const primitiveRef = useDrawerElementRef(ref);
+  const snapFocusRef = useSnapFocusReveal(revealFocusedElement);
+  const popupRef = useMergedRefs<HTMLElement>(primitiveRef, snapFocusRef);
   const popupRender =
     render !== undefined && typeof render !== "function"
       ? (elementProps: Parameters<DrawerRenderCallback>[0]) => (
@@ -300,7 +474,7 @@ const DrawerContent = ({ref, ...props}: Readonly<DrawerContent.Props>): React.Re
       : render;
 
   return (
-    <DrawerPortal>
+    <DrawerPortal {...portalProps}>
       {modal === true && <DrawerOverlay data-snap-points={hasSnapPoints ? "" : undefined} />}
       <BaseDrawer.Viewport
         data-slot='drawer-viewport'
@@ -310,7 +484,7 @@ const DrawerContent = ({ref, ...props}: Readonly<DrawerContent.Props>): React.Re
           data-slot='drawer-popup'
           data-swipe-axis={swipeDirection === "down" || swipeDirection === "up" ? "y" : "x"}
           data-snap-points={hasSnapPoints ? "" : undefined}
-          ref={primitiveRef}
+          ref={popupRef}
           render={popupRender}
           className={typeof className === "function" ? (state) => cn(styles.popup, className(state)) : cn(styles.popup, className)}
           {...otherProps}>

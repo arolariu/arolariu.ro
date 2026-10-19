@@ -1,3 +1,4 @@
+import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {Menubar as BaseMenubar} from "@base-ui/react/menubar";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
@@ -5,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -25,6 +27,9 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "./menubar";
+import * as stories from "./menubar.stories";
+
+const {Vertical: VerticalStory} = composeStories(stories);
 
 function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
   return <button {...props} />;
@@ -949,4 +954,64 @@ describe("Menubar", () => {
 it("refresh accessibility: authors a contrasting menubar keyboard focus outline", () => {
   const css = readFileSync(join(import.meta.dirname, "menubar.module.css"), "utf8");
   expect(css).toMatch(/\.trigger:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--ac-ring\)/u);
+});
+
+describe("Menubar final review M7: orientation-aware popup placement", () => {
+  it.each([
+    {orientation: "horizontal", direction: "ltr", side: "bottom"},
+    {orientation: "vertical", direction: "ltr", side: "inline-end"},
+    {orientation: "vertical", direction: "rtl", side: "inline-end"},
+  ] as const)("lets Base UI open a $orientation $direction Menubar popup on the $side side", ({orientation, direction, side}) => {
+    render(
+      <DirectionProvider direction={direction}>
+        <Menubar
+          aria-label='Application menus'
+          orientation={orientation}>
+          <MenubarMenu defaultOpen>
+            <MenubarTrigger>File</MenubarTrigger>
+            <MenubarContent aria-label='File actions'>
+              <MenubarItem>New</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Edit</MenubarTrigger>
+            <MenubarContent aria-label='Edit actions'>
+              <MenubarItem>Copy</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
+      </DirectionProvider>,
+    );
+    expect(screen.getByRole("menubar", {name: "Application menus"})).toHaveAttribute("aria-orientation", orientation);
+    const popup = screen.getByRole("menu", {name: "File actions"});
+    expect(popup).toHaveAttribute("data-side", side);
+    expect(popup).toHaveAttribute("data-align", "start");
+  });
+
+  it("keeps an explicit caller side in a vertical Menubar", () => {
+    render(
+      <Menubar
+        aria-label='Application menus'
+        orientation='vertical'>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent
+            aria-label='File actions'
+            side='bottom'
+            collisionAvoidance={{side: "none", align: "none"}}>
+            <MenubarItem>New</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    expect(screen.getByRole("menu", {name: "File actions"})).toHaveAttribute("data-side", "bottom");
+  });
+
+  it("opens the Vertical story menu toward the inline end", async () => {
+    const user = userEvent.setup();
+    render(<VerticalStory />);
+    expect(screen.getByRole("menubar", {name: "Workspace menus"})).toHaveAttribute("aria-orientation", "vertical");
+    await user.click(screen.getByRole("menuitem", {name: "File"}));
+    expect(await screen.findByRole("menu", {name: "File actions"})).toHaveAttribute("data-side", "inline-end");
+  });
 });

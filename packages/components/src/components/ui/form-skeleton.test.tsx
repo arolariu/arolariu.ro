@@ -6,6 +6,7 @@ import {describe, expect, it} from "vitest";
 import {FormSkeleton as RootFormSkeleton} from "../../index";
 import {FormSkeleton} from "./form-skeleton";
 import styles from "./form-skeleton.module.css";
+import {VisuallyHidden} from "./visually-hidden";
 
 describe("FormSkeleton", () => {
   it("has the same identity at the actual package root", () => {
@@ -68,20 +69,31 @@ describe("FormSkeleton", () => {
     expect(clicks).toBe(1);
   });
 
-  it("keeps label, input and submit placeholders decorative under one caller announcement", () => {
-    const {container} = render(
-      <FormSkeleton
-        role='status'
-        aria-label='Loading form'
-        aria-busy
-        aria-live='polite'
-        animated={false}
-      />,
+  it("keeps label, input and submit placeholders decorative while a persistent caller-owned region announces loading", () => {
+    const view = (loading: boolean): React.JSX.Element => (
+      <>
+        <VisuallyHidden role='status'>{loading ? "Loading form" : null}</VisuallyHidden>
+        {loading ? (
+          <FormSkeleton
+            data-testid='skeleton'
+            animated={false}
+          />
+        ) : (
+          <p>Form ready</p>
+        )}
+      </>
     );
+    const {container, rerender} = render(view(false));
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
 
+    rerender(view(true));
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(screen.getByRole("status", {name: "Loading form"})).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Loading form");
+    expect(status).not.toHaveAttribute("aria-busy");
+    expect(screen.getByTestId("skeleton")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("skeleton")).not.toContainElement(status);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     const placeholders = container.querySelectorAll('[data-slot="skeleton"]');

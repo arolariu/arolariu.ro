@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Button} from "./button";
+import {Button, buttonVariants} from "./button";
 
 const meta = {
   title: "Components/Actions/Button",
@@ -25,7 +25,7 @@ const meta = {
     },
     nativeButton: {
       control: "boolean",
-      description: "Set false for non-button render targets",
+      description: "Set false for non-link render targets that take button semantics, such as <div>; style links with buttonVariants()",
     },
     focusableWhenDisabled: {
       control: "boolean",
@@ -141,6 +141,7 @@ export const IconLarge: Story = {
   },
 };
 
+/** A non-link element that takes button semantics: `nativeButton={false}` adds the role, focus and Enter/Space activation. */
 export const NonNative = {
   args: {
     children: "Keyboard action",
@@ -149,14 +150,23 @@ export const NonNative = {
   } satisfies Button.Props,
 } satisfies Story;
 
-export const Navigation = {
+/**
+ * Links are not buttons: style a native `<a href>` with `buttonVariants()` instead of rendering it through Button,
+ * so it is announced and listed as a link and follows on Enter, not Space.
+ */
+export const Navigation: Story = {
   args: {
-    children: "Read documentation",
-    nativeButton: false,
-    render: <a href='#documentation' />,
     variant: "link",
-  } satisfies Button.Props,
-} satisfies Story;
+    size: "default",
+  },
+  render: ({variant, size}) => (
+    <a
+      href='#documentation'
+      className={buttonVariants({variant, size})}>
+      Read documentation
+    </a>
+  ),
+};
 
 export const FocusableDisabled = {
   args: {
@@ -172,12 +182,19 @@ export const FocusableDisabled = {
   } satisfies Button.Props,
 } satisfies Story;
 
+/** Any visual variant can style a native link; the element stays an `<a href>` with link semantics. */
 export const RenderedNavigation: Story = {
   args: {
-    nativeButton: false,
-    render: <a href='#navigation'>Open navigation</a>,
     variant: "outline",
+    size: "default",
   },
+  render: ({variant, size}) => (
+    <a
+      href='#navigation'
+      className={buttonVariants({variant, size})}>
+      Open navigation
+    </a>
+  ),
 };
 
 export const Disabled: Story = {

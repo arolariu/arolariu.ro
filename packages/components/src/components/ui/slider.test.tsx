@@ -2,11 +2,16 @@ import {Slider as BaseSlider} from "@base-ui/react/slider";
 import {Field as BaseField} from "@base-ui/react/field";
 import {act, fireEvent, render as renderComponent, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse} from "postcss";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
 import {beforeEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {Slider} from "./slider";
+import styles from "./slider.module.css";
 import * as stories from "./slider.stories";
 
 async function render(element: React.ReactElement): Promise<ReturnType<typeof renderComponent>> {
@@ -18,6 +23,141 @@ function getPart(container: HTMLElement, slot: string): HTMLElement {
   if (!part) throw new Error(`Missing slider part: ${slot}`);
   return part;
 }
+
+type Theme = "light" | "dark";
+type Oklch = readonly [lightness: number, chroma: number, hue: number];
+type ModelPaint = Readonly<{color: Oklch; alpha: number}>;
+type EncodedRgb = readonly [red: number, green: number, blue: number];
+
+const themeTokens: Record<Theme, Map<string, string>> = {light: new Map(), dark: new Map()};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  if (rule.selector !== ":root" && !rule.selector.includes('[data-theme="dark"]')) return;
+  const tokens = rule.selector === ":root" ? themeTokens.light : themeTokens.dark;
+  rule.walkDecls((declaration) => {
+    tokens.set(declaration.prop, declaration.value);
+  });
+});
+
+// Lower real native CSS nesting before matching compiled rules against the rendered parts.
+const compiledSliderCss = parse(
+  transform({
+    filename: "slider.module.css",
+    code: readFileSync(join(import.meta.dirname, "slider.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+  }).code.toString(),
+);
+
+/** Unconditional compiled declarations; forced-colors and reduced-motion overrides are separate contracts. */
+function compiledPaint(element: HTMLElement): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  compiledSliderCss.walkRules((rule) => {
+    if (rule.parent instanceof AtRule) return;
+    const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+      const className = styles[name];
+      if (!className) throw new Error(`Missing slider class: ${name}`);
+      return `.${CSS.escape(className)}`;
+    });
+    if (element.matches(selector))
+      rule.walkDecls((declaration) => {
+        declarations[declaration.prop] = declaration.value;
+      });
+  });
+  return declarations;
+}
+
+function oklchToken(theme: Theme, token: string): Oklch {
+  const value = themeTokens[theme].get(token);
+  const match = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/u.exec(value ?? "");
+  if (!match) throw new Error(`Missing opaque ${theme} token ${token}: ${value}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+// `color-mix(in oklch, …)` of opaque colours: shorter-arc hue, and an achromatic hue (C = 0) is powerless.
+function mixOklch(first: Oklch, second: Oklch, firstWeight: number): Oklch {
+  let firstHue = first[1] === 0 ? second[2] : first[2];
+  let secondHue = second[1] === 0 ? first[2] : second[2];
+  if (secondHue - firstHue > 180) firstHue += 360;
+  else if (firstHue - secondHue > 180) secondHue += 360;
+  const mix = (a: number, b: number): number => a * firstWeight + b * (1 - firstWeight);
+  return [mix(first[0], second[0]), mix(first[1], second[1]), mix(firstHue, secondHue) % 360];
+}
+
+/** Resolves compiled paint: a token, `transparent`, or a two-operand `color-mix(in oklch, …)`. */
+function modelPaint(value: string | undefined, theme: Theme): ModelPaint {
+  if (!value) throw new Error("Missing compiled Slider paint");
+  const operand = (text: string): ModelPaint => {
+    if (text === "transparent" || text === "#0000") return {color: [0, 0, 0], alpha: 0};
+    const token = /^var\((--ac-[\w-]+)\)$/u.exec(text)?.[1];
+    if (!token) throw new Error(`Unmodelled Slider paint: ${text}`);
+    return {color: oklchToken(theme, token), alpha: 1};
+  };
+  const mixed = /^color-mix\(in oklch, (.+?)(?: (\d+)%)?, (.+?)(?: (\d+)%)?\)$/u.exec(value);
+  if (!mixed?.[1] || !mixed[3]) return operand(value);
+  if (mixed[2] && mixed[4] && Number(mixed[2]) + Number(mixed[4]) !== 100) throw new Error(`Unmodelled color-mix weights: ${value}`);
+  const firstWeight = (mixed[2] ? Number(mixed[2]) : mixed[4] ? 100 - Number(mixed[4]) : 50) / 100;
+  const first = operand(mixed[1]);
+  const second = operand(mixed[3]);
+  // Premultiplied interpolation with `transparent` keeps the colour and scales its alpha.
+  if (second.alpha === 0) return {color: first.color, alpha: firstWeight * first.alpha};
+  if (first.alpha !== 1 || second.alpha !== 1) throw new Error(`Unmodelled translucent color-mix: ${value}`);
+  return {color: mixOklch(first.color, second.color, firstWeight), alpha: 1};
+}
+
+// Same default-token model as `src/styles.test.ts`: OKLCH → clipped linear sRGB → WCAG luminance. Translucent
+// paint composites in gamma-encoded sRGB, as browsers paint it; gamut mapping and consumer themes stay browser work.
+function linearRgb([lightness, chroma, hueDegrees]: Oklch): EncodedRgb {
+  const hue = (hueDegrees * Math.PI) / 180;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const clip = (channel: number): number => Math.max(0, Math.min(1, channel));
+  return [
+    clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
+
+const encodeSrgb = (channel: number): number => (channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055);
+const decodeSrgb = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+
+function paintOver(paint: ModelPaint, backdrop: EncodedRgb): EncodedRgb {
+  const [red = 0, green = 0, blue = 0] = linearRgb(paint.color).map(encodeSrgb);
+  const blend = (channel: number, under: number): number => channel * paint.alpha + under * (1 - paint.alpha);
+  return [blend(red, backdrop[0]), blend(green, backdrop[1]), blend(blue, backdrop[2])];
+}
+
+function modelContrast(first: EncodedRgb, second: EncodedRgb): number {
+  const luminance = (rgb: EncodedRgb): number => {
+    const [red = 0, green = 0, blue = 0] = rgb.map(decodeSrgb);
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("review correction: Slider range in %s defaults (token luminance model)", (theme) => {
+  it("keeps the compiled range fill at 3:1 against the translucent track it fills", async () => {
+    const {container} = await render(
+      <Slider
+        aria-label='Volume'
+        defaultValue={40}
+      />,
+    );
+    const track = compiledPaint(getPart(container, "slider-track"));
+    const range = compiledPaint(getPart(container, "slider-range"));
+    const page = paintOver(modelPaint("var(--ac-background)", theme), [0, 0, 0]);
+    const unfilled = paintOver(modelPaint(track["background-color"], theme), page);
+    const filled = paintOver(modelPaint(range["background-color"], theme), unfilled);
+    // The fill is the value indicator inside the track, so it must stand out from the unfilled track it abuts.
+    expect(modelContrast(filled, unfilled)).toBeGreaterThanOrEqual(3);
+    expect(range["background-color"]).toBe("var(--ac-primary-emphasis)");
+  });
+});
 
 describe("Slider", () => {
   it("sets and clears explicit invalidity on actual range inputs without losing names, form values or keyboard state", async () => {

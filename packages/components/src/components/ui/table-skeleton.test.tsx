@@ -6,6 +6,7 @@ import {describe, expect, it} from "vitest";
 import {TableSkeleton as RootTableSkeleton} from "../../index";
 import {TableSkeleton} from "./table-skeleton";
 import styles from "./table-skeleton.module.css";
+import {VisuallyHidden} from "./visually-hidden";
 
 describe("TableSkeleton", () => {
   it("has the same identity at the actual package root", () => {
@@ -182,20 +183,31 @@ describe("TableSkeleton", () => {
     expect(clicks).toBe(1);
   });
 
-  it("keeps all cells decorative with one caller-owned announcement, not a fake table", () => {
-    const {container} = render(
-      <TableSkeleton
-        role='status'
-        aria-label='Loading records'
-        aria-busy
-        aria-live='polite'
-        animated={false}
-      />,
+  it("keeps all cells decorative while a persistent caller-owned region announces loading, not a fake table", () => {
+    const view = (loading: boolean): React.JSX.Element => (
+      <>
+        <VisuallyHidden role='status'>{loading ? "Loading records" : null}</VisuallyHidden>
+        {loading ? (
+          <TableSkeleton
+            data-testid='skeleton'
+            animated={false}
+          />
+        ) : (
+          <p>Records ready</p>
+        )}
+      </>
     );
+    const {container, rerender} = render(view(false));
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
 
+    rerender(view(true));
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(screen.getByRole("status", {name: "Loading records"})).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Loading records");
+    expect(status).not.toHaveAttribute("aria-busy");
+    expect(screen.getByTestId("skeleton")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("skeleton")).not.toContainElement(status);
     for (const role of ["table", "row", "cell", "columnheader"]) {
       expect(screen.queryByRole(role)).not.toBeInTheDocument();
     }

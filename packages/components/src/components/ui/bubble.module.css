@@ -56,6 +56,18 @@ a.content:focus-visible {
   align-self: flex-end;
 }
 
+/*
+ * Links inside a surface share its verified text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only
+ * link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for
+ * example `buttonVariants()`) still keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.content) a:is(a) {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .default > .content {
   background-color: var(--ac-primary);
   color: var(--ac-primary-foreground);
@@ -97,7 +109,7 @@ a.content:focus-visible {
 
 @media (hover: hover) {
   .default > :is(button, a).content:hover {
-    background-color: color-mix(in oklch, var(--ac-primary) 80%, var(--ac-background));
+    background-color: color-mix(in oklch, var(--ac-primary) 90%, var(--ac-foreground));
   }
 
   .secondary > :is(button, a).content:hover {

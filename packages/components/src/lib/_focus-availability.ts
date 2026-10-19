@@ -2,11 +2,16 @@
 
 import * as React from "react";
 
-function isDisabledByFieldset(element: HTMLElement, ancestor: HTMLElement): boolean {
-  if (!(ancestor instanceof HTMLFieldSetElement) || !ancestor.disabled || !element.matches("button, input, select, textarea")) {
+/** The element's own window; same-origin iframe content fails the parent window's constructors. */
+type ElementRealm = Document["defaultView"];
+
+function isDisabledByFieldset(element: HTMLElement, ancestor: HTMLElement, view: ElementRealm): boolean {
+  const FieldSet = view?.HTMLFieldSetElement ?? HTMLFieldSetElement;
+  if (!(ancestor instanceof FieldSet) || !ancestor.disabled || !element.matches("button, input, select, textarea")) {
     return false;
   }
-  const legend = [...ancestor.children].find((child) => child instanceof HTMLLegendElement);
+  const Legend = view?.HTMLLegendElement ?? HTMLLegendElement;
+  const legend = [...ancestor.children].find((child) => child instanceof Legend);
   return !legend?.contains(element);
 }
 
@@ -22,11 +27,12 @@ export function isFocusSubtreeAvailable(element: HTMLElement, allowAriaDisabled 
   }
 
   const view = element.ownerDocument.defaultView;
+  const Details = view?.HTMLDetailsElement ?? HTMLDetailsElement;
   for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
-    if (isDisabledByFieldset(element, ancestor)) return false;
+    if (isDisabledByFieldset(element, ancestor, view)) return false;
     const style = view?.getComputedStyle(ancestor);
     if (style?.display === "none") return false;
-    if (ancestor instanceof HTMLDetailsElement && !ancestor.open) {
+    if (ancestor instanceof Details && !ancestor.open) {
       const summary = [...ancestor.children].find((child) => child.tagName === "SUMMARY");
       if (!summary?.contains(element)) return false;
     }

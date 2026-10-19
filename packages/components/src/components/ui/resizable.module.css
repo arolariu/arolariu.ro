@@ -74,10 +74,14 @@
   display: flex;
 }
 
+/*
+ * react-resizable-panels claims, from a document capture listener, every press inside a separator's widened hit area:
+ * by default 10px (fine pointers) or 20px (coarse pointers) centred on the line, in CSS pixels. The 0×0 container sits
+ * on the separator's trailing edge; each control keeps 12px from that edge (at least 11px from the 1px line), so no
+ * control pixel lies in either area and presses stay ordinary clicks. Pixels, not rem: the primitive's sizes do not scale.
+ */
 .resizeControls button {
   position: absolute;
-  inset-block-start: 1rem;
-  inset-inline-start: -1.5rem;
   width: 1.5rem;
   height: 1.5rem;
   border: 1px solid var(--ac-input);
@@ -86,17 +90,28 @@
   cursor: pointer;
 }
 
-.resizeControls button + button {
-  inset-inline-start: 0;
+/* Horizontal groups (vertical line): decrease before the line, increase after it, below the centred grip. */
+.resizeDecrease {
+  inset-block-start: 1rem;
+  inset-inline-end: 12px;
 }
 
-.resizeControls[data-orientation="vertical"] button {
-  inset-block-start: -0.75rem;
+.resizeIncrease {
+  inset-block-start: 1rem;
+  inset-inline-start: 12px;
+}
+
+/* Vertical groups (horizontal line): decrease above the line, increase below it. */
+.resizeControls[data-orientation="vertical"] .resizeDecrease {
+  inset-block-start: auto;
+  inset-block-end: 12px;
   inset-inline-start: 1rem;
+  inset-inline-end: auto;
 }
 
-.resizeControls[data-orientation="vertical"] button + button {
-  inset-inline-start: 2.5rem;
+.resizeControls[data-orientation="vertical"] .resizeIncrease {
+  inset-block-start: 12px;
+  inset-inline-start: 1rem;
 }
 
 .resizeControls button:focus-visible {

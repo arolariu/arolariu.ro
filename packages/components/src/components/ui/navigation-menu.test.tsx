@@ -2,6 +2,8 @@ import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {NavigationMenu as BaseNavigationMenu} from "@base-ui/react/navigation-menu";
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {AtRule, parse, type Node as CssNode} from "postcss";
 import * as React from "react";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -18,6 +20,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "./navigation-menu";
+import styles from "./navigation-menu.module.css";
 
 interface MeasurementFixture {
   readonly resize: (element: Element) => void;
@@ -1014,6 +1017,152 @@ describe("NavigationMenu", () => {
     } finally {
       unmount();
       frameSpy.mockRestore();
+    }
+  });
+});
+
+type Theme = "light" | "dark";
+type Rgba = readonly [number, number, number, number];
+
+const compiledNavigationCss = parse(
+  transform({
+    filename: "navigation-menu.module.css",
+    code: readFileSync(join(import.meta.dirname, "navigation-menu.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+    pseudoClasses: {focusVisible: "review-focus-visible"},
+  }).code.toString(),
+);
+const themeTokens: Record<Theme, Record<string, string>> = {light: {}, dark: {}};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  const theme = rule.selector === ":root" ? "light" : rule.selector.includes('[data-theme="dark"]') ? "dark" : undefined;
+  if (theme) rule.walkDecls((declaration) => void (themeTokens[theme][declaration.prop] = declaration.value));
+});
+
+/** Compiled declarations whose selector and media ancestry apply to the real element in the given state. */
+function compiledNavigationPaint(element: Element, state: Readonly<{hover: boolean; forcedColors: boolean}>): Map<string, string> {
+  const declarations = new Map<string, string>();
+  compiledNavigationCss.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (!(ancestor instanceof AtRule)) continue;
+      const condition = ancestor.params.replaceAll(/\s/gu, "");
+      if (ancestor.name !== "media") throw new Error(`Unexpected compiled conditional: ${ancestor.name}`);
+      if (condition === "(prefers-reduced-motion:reduce)") return;
+      if (condition !== "(forced-colors:active)") throw new Error(`Unhandled compiled media condition: ${ancestor.params}`);
+      if (!state.forcedColors) return;
+    }
+    const selectors = rule.selectors.map((selector) =>
+      selector
+        .replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+          const local = styles[name];
+          return local ? `.${CSS.escape(local)}` : match;
+        })
+        .replaceAll(/:hover\b/gu, state.hover ? "" : ":not(*)"),
+    );
+    if (!selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => void declarations.set(declaration.prop, declaration.value));
+  });
+  return declarations;
+}
+
+// The real compiler evaluates authored OKLCH tokens; its sRGB fallback is a deterministic model, not native pixel proof.
+function tokenPaint(value: string | undefined, theme: Theme): Rgba {
+  if (!value) throw new Error("Missing authored navigation paint");
+  const resolved = value.replaceAll(/var\((--ac-[\w-]+)\)/gu, (_: string, token: string): string => {
+    const color = themeTokens[theme][token];
+    if (!color) throw new Error(`Missing ${theme} token ${token}`);
+    return color;
+  });
+  const output = transform({
+    filename: "navigation-contrast.css",
+    code: Buffer.from(`.paint { color: ${resolved}; }`),
+    targets: {chrome: 100 << 16},
+  }).code.toString();
+  const hex = /color:\s*#([\da-f]+);/iu.exec(output)?.[1];
+  if (!hex) throw new Error(`Missing compiled sRGB paint: ${output}`);
+  const expanded = hex.length <= 4 ? [...hex].map((digit) => digit.repeat(2)).join("") : hex;
+  if (expanded.length !== 6 && expanded.length !== 8) throw new Error(`Unexpected sRGB paint: ${hex}`);
+  const channel = (offset: number): number => Number.parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+  return [channel(0), channel(2), channel(4), expanded.length === 8 ? channel(6) : 1];
+}
+
+function composite(paint: Rgba, canvas: Rgba): Rgba {
+  const alpha = paint[3];
+  return [
+    paint[0] * alpha + canvas[0] * (1 - alpha),
+    paint[1] * alpha + canvas[1] * (1 - alpha),
+    paint[2] * alpha + canvas[2] * (1 - alpha),
+    1,
+  ];
+}
+
+function contrastRatio(first: Rgba, second: Rgba): number {
+  const luminance = ([red, green, blue]: Rgba): number => {
+    const linear = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe("NavigationMenu final review M3: current-page link indicator", () => {
+  it.each(["light", "dark"] as const)("marks the current page with a 3:1 underline that hover never shows in %s", (theme) => {
+    render(
+      <NavigationMenu aria-label='Site'>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuLink
+              href='/'
+              active>
+              Home
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href='/docs'>Docs</NavigationMenuLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>,
+    );
+    const current = screen.getByRole("link", {name: "Home"});
+    expect(current).toHaveAttribute("aria-current", "page");
+    const currentPaint = compiledNavigationPaint(current, {hover: false, forcedColors: false});
+    expect(currentPaint.get("text-decoration-line")).toBe("underline");
+    expect(currentPaint.get("text-decoration-thickness")).toBe("2px");
+    expect(Number.parseFloat(currentPaint.get("text-underline-offset") ?? "0")).toBeGreaterThan(0);
+    // The underline is painted in currentColor over the current-page surface.
+    const surface = composite(tokenPaint(currentPaint.get("background-color"), theme), tokenPaint("var(--ac-background)", theme));
+    const underline = composite(tokenPaint(currentPaint.get("color"), theme), surface);
+    expect(contrastRatio(underline, surface)).toBeGreaterThanOrEqual(3);
+    const hovered = compiledNavigationPaint(screen.getByRole("link", {name: "Docs"}), {hover: true, forcedColors: false});
+    expect(hovered.get("background-color")).toBe(currentPaint.get("background-color"));
+    expect(hovered.get("text-decoration")).toBe("none");
+    expect(hovered.has("text-decoration-line")).toBe(false);
+  });
+
+  it.each([
+    {source: "active", props: {active: true}},
+    {source: "a caller aria-current", props: {"aria-current": "page"}},
+  ] as const)("keeps the current-page underline for $source with and without forced colors", ({props}) => {
+    render(
+      <NavigationMenu aria-label='Site'>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuLink
+              href='/'
+              {...props}>
+              Home
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>,
+    );
+    const link = screen.getByRole("link", {name: "Home"});
+    expect(link).toHaveAttribute("aria-current", "page");
+    for (const forcedColors of [false, true]) {
+      const paint = compiledNavigationPaint(link, {hover: false, forcedColors});
+      expect(paint.get("text-decoration-line"), `forced colors=${forcedColors}`).toBe("underline");
+      expect(paint.get("text-decoration-thickness"), `forced colors=${forcedColors}`).toBe("2px");
     }
   });
 });

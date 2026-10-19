@@ -1,5 +1,8 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse} from "postcss";
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -12,6 +15,7 @@ let observers: ResizeBoundary[] = [];
 let views: ViewBoundary[] = [];
 let frames = new Map<number, FrameRequestCallback>();
 let timers = new Map<number, () => void>();
+let timerNames = new Map<number, string>();
 let nextId = 0;
 const context = {
   clearRect: vi.fn(),
@@ -87,6 +91,28 @@ function frame(): void {
     for (const callback of pending) callback(16);
   });
 }
+/** Fires the visual-effect policy's five-second `settleMotion` timer (automatic motion settles without `loop`). */
+function settle(): void {
+  const id = [...timerNames].find(([, name]) => name === "settleMotion")?.[0];
+  const callback = id === undefined ? undefined : timers.get(id);
+  if (id === undefined || !callback) throw new Error("Missing automatic-motion settle timer");
+  timers.delete(id);
+  act(() => {
+    callback();
+  });
+}
+/** Runs scheduled frames until the loop idles (bounded); reports the frame count and the final frame's arc draws. */
+function runUntilIdle(): {readonly rendered: number; readonly finalArcs: number} {
+  let rendered = 0;
+  let finalArcs = 0;
+  while (frames.size > 0 && rendered < 1000) {
+    const arcs = context.arc.mock.calls.length;
+    frame();
+    finalArcs = context.arc.mock.calls.length - arcs;
+    rendered += 1;
+  }
+  return {rendered, finalArcs};
+}
 beforeEach(() => {
   box = new DOMRect(100, 50, 200, 100);
   reduced = false;
@@ -94,6 +120,7 @@ beforeEach(() => {
   views = [];
   frames = new Map();
   timers = new Map();
+  timerNames = new Map();
   nextId = 0;
   media = window.matchMedia("(prefers-reduced-motion: reduce)");
   Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
@@ -119,6 +146,7 @@ beforeEach(() => {
     timers.set(id, (): void => {
       handler();
     });
+    timerNames.set(id, handler.name);
     return id;
   });
   vi.spyOn(window, "clearTimeout").mockImplementation((id) => {
@@ -350,6 +378,157 @@ describe("FireworksBackground", () => {
     unmount();
     expect(timers.size).toBe(0);
     expect(frames.size).toBe(0);
+  });
+
+  it("keeps user launches available after automatic motion settles: frames run until the launch finishes, then idle", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <FireworksBackground
+        ref={ref}
+        fireworkSpeed={4}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(ref.current).toHaveAttribute("data-motion", "running");
+    settle();
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+    expect(timers.size).toBe(0);
+    expect(frames.size).toBe(0);
+    const launch = screen.getByRole("button", {name: "Launch fireworks"});
+    expect(launch).toBeEnabled();
+    expect(launch).not.toHaveAttribute("aria-disabled");
+    const now = vi.spyOn(performance, "now").mockReturnValue(10_000);
+    context.moveTo.mockClear();
+    fireEvent.click(launch, {clientX: 150, clientY: 70, detail: 1});
+    expect(frames.size).toBe(1);
+    const first = runUntilIdle();
+    expect(context.moveTo).toHaveBeenCalledWith(100, 196);
+    expect(first.rendered).toBeGreaterThan(40);
+    expect(frames.size).toBe(0);
+    expect(first.finalArcs).toBe(24);
+    expect(timers.size).toBe(0);
+    now.mockReturnValue(12_000);
+    fireEvent.click(launch, {detail: 0});
+    expect(frames.size).toBe(1);
+    expect(runUntilIdle().rendered).toBeGreaterThan(40);
+    expect(frames.size).toBe(0);
+    expect(timers.size).toBe(0);
+    expect(ref.current).toHaveAttribute("data-motion", "paused");
+  });
+
+  it("keeps population={0} click-only keyboard launches working after automatic motion settles", () => {
+    render(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    settle();
+    context.moveTo.mockClear();
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {detail: 0});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledWith(200, 196);
+    runUntilIdle();
+    expect(frames.size).toBe(0);
+    expect(timers.size).toBe(0);
+  });
+
+  it("marks the launch control aria-disabled under motionPaused, reduced motion or a hidden document without moving focus", () => {
+    const {rerender} = render(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+        loop
+        motionPaused={false}
+      />,
+    );
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const launch = screen.getByRole("button", {name: "Launch fireworks"});
+    act(() => {
+      launch.focus();
+    });
+    expect(launch).not.toHaveAttribute("aria-disabled");
+    rerender(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+        loop
+        motionPaused
+      />,
+    );
+    expect(launch).toHaveAttribute("aria-disabled", "true");
+    expect(launch).toBeEnabled();
+    expect(launch).toHaveFocus();
+    context.moveTo.mockClear();
+    fireEvent.click(launch, {detail: 0});
+    fireEvent.click(launch, {clientX: 150, clientY: 70, detail: 1});
+    expect(frames.size).toBe(0);
+    rerender(
+      <FireworksBackground
+        population={0}
+        fireworkSpeed={4}
+        loop
+        motionPaused={false}
+      />,
+    );
+    expect(launch).not.toHaveAttribute("aria-disabled");
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    expect(launch).toHaveAttribute("aria-disabled", "true");
+    expect(launch).toHaveFocus();
+    fireEvent.click(launch, {detail: 0});
+    expect(frames.size).toBe(0);
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(launch).toHaveAttribute("aria-disabled", "true");
+    expect(launch).toHaveFocus();
+    fireEvent.click(launch, {detail: 0});
+    expect(frames.size).toBe(0);
+    visibility.mockReturnValue("visible");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(launch).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(launch, {detail: 0});
+    frame();
+    expect(context.moveTo).toHaveBeenCalledOnce();
+    expect(context.moveTo).toHaveBeenCalledWith(200, 196);
+  });
+
+  it("gives the aria-disabled launch control visible disabled styling, including in forced colors", () => {
+    const stylesheet = parse(readFileSync(join(import.meta.dirname, "fireworks-background.module.css"), "utf8"));
+    const disabledDeclarations = (scope: string): Map<string, string> => {
+      const declarations = new Map<string, string>();
+      stylesheet.walkRules('.launch[aria-disabled="true"]', (rule) => {
+        if ((rule.parent instanceof AtRule ? rule.parent.params : "root") !== scope) return;
+        rule.walkDecls((declaration) => {
+          declarations.set(declaration.prop, declaration.value);
+        });
+      });
+      return declarations;
+    };
+    const base = disabledDeclarations("root");
+    expect(base.get("opacity")).toBe("0.5");
+    expect(base.get("cursor")).toBe("not-allowed");
+    const forced = disabledDeclarations("(forced-colors: active)");
+    expect(forced.get("color")).toBe("GrayText");
+    expect(forced.get("border-color")).toBe("GrayText");
+    expect(forced.get("opacity")).toBe("1");
   });
 
   it.each([

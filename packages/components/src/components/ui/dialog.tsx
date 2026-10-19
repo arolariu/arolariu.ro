@@ -32,6 +32,12 @@ export type DialogContentProps = Readonly<
     showCloseButton?: boolean;
     /** Caller-localizable accessible name for the automatic icon close. @default "Close" */
     closeLabel?: string;
+    /**
+     * Props for the internal Portal, for example `keepMounted` (keep the closed popup and its form state mounted
+     * but hidden) or `container` (portal into a theme-scoped element, shadow root or another document). Content
+     * always supplies the portal's children.
+     */
+    portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Portal>, "children">>;
   }
 >;
 /** Layout composition uses Base UI's polymorphic callback props, not div-specific refs. */
@@ -57,6 +63,9 @@ export type DialogDescriptionProps = Readonly<
 >;
 
 type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
+
+/** Base UI keeps root modality private, so the styled Content reads the value its `Dialog` received. */
+const DialogModalityContext = React.createContext<NonNullable<BaseDialog.Root.Props["modal"]>>(true);
 
 function normalizedElement(render: React.ReactNode): React.ReactElement<{children?: React.ReactNode}> {
   // eslint-disable-next-line react-x/no-children-to-array -- public React normalization supports Flight/lazy slots without reading private lazy fields.
@@ -91,9 +100,35 @@ function DecoratedDialogElement({
   return useRender({render: decorated, props: {...elementProps}});
 }
 
-/** Coordinates a modal dialog without adding a DOM wrapper. */
-function Dialog<Payload = unknown>(props: Readonly<Dialog.Props<Payload>>): React.ReactElement {
-  return <BaseDialog.Root {...props} />;
+/**
+ * Coordinates a dialog without adding a DOM wrapper.
+ *
+ * @remarks
+ * - Base UI owns open state, focus, dismissal, trigger payloads and modality.
+ * - `modal` defaults to `true`. `DialogContent` renders its page-blocking backdrop only for `modal={true}`;
+ *   `false` and `"trap-focus"` keep the rest of the page visible and pressable, as Base UI documents (an outside
+ *   press still dismisses the dialog unless `disablePointerDismissal` is set).
+ * - Focus-trapping modes need a close control inside the popup so touch screen-reader users can leave it.
+ *
+ * @example
+ * ```tsx
+ * <Dialog modal='trap-focus'>
+ *   <DialogTrigger>Open notes</DialogTrigger>
+ *   <DialogContent>
+ *     <DialogTitle>Notes</DialogTitle>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ */
+function Dialog<Payload = unknown>({modal = true, ...props}: Readonly<Dialog.Props<Payload>>): React.ReactElement {
+  return (
+    <DialogModalityContext.Provider value={modal}>
+      <BaseDialog.Root
+        modal={modal}
+        {...props}
+      />
+    </DialogModalityContext.Provider>
+  );
 }
 Dialog.displayName = "Dialog";
 
@@ -149,8 +184,25 @@ function DialogOverlay({className, ...props}: Readonly<DialogOverlay.Props>): Re
 DialogOverlay.displayName = "DialogOverlay";
 
 /**
- * Portals a popup above its backdrop. Base UI owns modal/focus behavior.
- * The automatic icon close is last in DOM order; opt out with `showCloseButton={false}`.
+ * Portals the styled dialog popup, above a page-blocking backdrop when the dialog is fully modal.
+ *
+ * @remarks
+ * - Base UI owns focus, dismissal and modal behavior. The backdrop renders only when the enclosing `Dialog` has
+ *   `modal={true}` (its default); under a raw Base UI root the backdrop is always rendered.
+ * - The automatic icon close is last in DOM order; opt out with `showCloseButton={false}` only when another
+ *   close control remains inside the popup.
+ * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed popup mounted with `hidden`,
+ *   preserving form state, and `container` chooses the element or shadow root that receives the portal.
+ *
+ * @example
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger>Edit draft</DialogTrigger>
+ *   <DialogContent portalProps={{keepMounted: true}}>
+ *     <DialogTitle>Draft</DialogTitle>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
  */
 const DialogContent = ({
   ref,
@@ -159,8 +211,10 @@ const DialogContent = ({
   render,
   showCloseButton = true,
   closeLabel = "Close",
+  portalProps,
   ...props
 }: Readonly<DialogContent.Props>): React.ReactElement => {
+  const modal = React.useContext(DialogModalityContext);
   const closeControl = showCloseButton ? (
     <DialogClose
       aria-label={closeLabel}
@@ -180,8 +234,8 @@ const DialogContent = ({
   ) : null;
   const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
   return (
-    <DialogPortal>
-      <DialogOverlay />
+    <DialogPortal {...portalProps}>
+      {modal === true ? <DialogOverlay /> : null}
       <BaseDialog.Popup
         data-slot='dialog-content'
         ref={ref}

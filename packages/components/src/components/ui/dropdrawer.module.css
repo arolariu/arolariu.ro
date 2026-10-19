@@ -94,8 +94,9 @@
   cursor: not-allowed;
 }
 
+/* Same recipe as the desktop menu item: plain --ac-destructive is below 4.5:1 on the light muted group. */
 .mobileItem[data-variant="destructive"] {
-  color: var(--ac-destructive);
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
 }
 
 .mobileGroup {

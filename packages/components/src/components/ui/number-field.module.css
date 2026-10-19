@@ -110,7 +110,7 @@
 .decrement[data-pressed],
 .scrubArea[data-scrubbing] {
   background-color: color-mix(in oklch, var(--ac-primary), var(--ac-background) 78%);
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
 }
 
 .stepperSymbol {

@@ -10,9 +10,13 @@ The library owns native semantics, primitive state, DOM ref composition, default
 generated controls. Applications own meaningful localized content, labels, alternative text, logical headings, chart descriptions, document
 landmarks and any overrides to component semantics or design tokens.
 
-Use visible labels when possible. Name icon-only actions with an action-specific `aria-label` or visible/visually hidden text. Preserve all
-supplied DOM props and `ref` in custom `render` targets. Do not replace a real button with a generic element unless its complete keyboard,
-focus and disabled contract is retained; set `nativeButton={false}` for non-button targets.
+Use visible labels when possible. Give icon-only actions an action-specific accessible name. Button's icon sizes (`icon`, `icon-xs`,
+`icon-sm`, `icon-lg`) require a string `aria-label` or `aria-labelledby` in their types, so visible or visually hidden text alone does not
+satisfy them; other icon-only controls can be named with `aria-label`, `aria-labelledby` or visually hidden text. Preserve all supplied DOM
+props and `ref` in custom `render` targets. Navigation stays a native link: style an `<a href>` with `buttonVariants()` instead of rendering
+it through `Button`, which would announce it as a button, drop it from the page's links and activate it on Space. Do not replace a real
+button with a generic element unless its complete keyboard, focus and disabled contract is retained; set `nativeButton={false}` only for
+non-link targets that take button semantics, such as a `<div>`.
 
 Remaining native/ARIA/data props are applied after library presets as an intentional escape hatch; explicit `undefined` can remove an
 optional default attribute. Consumed classes, refs and cancellable handlers remain composed. Overriding roles, names, visibility, state
@@ -22,6 +26,19 @@ evidence does not establish conformance for those overrides.
 Do not hide interactive or meaningful descendants with `aria-hidden`. Decorative icons, canvases and duplicate animated text can be hidden
 only when their meaning is otherwise available. Table headings, input errors and overlay descriptions must stay associated with the content
 they describe.
+
+Some component defaults leave a specific obligation with the application:
+
+- Announce loading and other status changes through a live region that is mounted before the change and then receives text: LoadingOverlay's
+  `loadingLabel`, AsyncBoundary's default fallback, `useAnnounce` or a persistent `VisuallyHidden role="status"`. A status element inserted
+  already populated, an accessible name alone (such as Spinner's) or `aria-busy` on the region itself is not a reliable announcement.
+- FocusScope's `contain` (on by default) has no built-in exit: provide and announce a keyboard exit, such as an Escape handler or a
+  reachable Done control.
+- With vertical Drawer `snapPoints`, include a snap point tall enough to show every focusable control or keep focusable controls within the
+  smallest snap height; controlled snap points must apply or cancel Drawer's focus-driven expansion request.
+- Set accordion heading levels with AccordionTrigger's `headerProps.render` so they continue the page outline.
+- Mark only real destinations as current: Sidebar `isActive` sets `aria-current="page"`, so pass `aria-current={undefined}` to section or
+  disclosure triggers that only show active styling.
 
 ## Required criteria and evidence
 
@@ -51,11 +68,12 @@ as an essential control boundary.
 Reduced motion preserves content and state without relying on animation. It does not, by itself, satisfy
 [Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html). Nonessential automatic motion lasting more than five
 seconds alongside other content needs a user-operable pause, stop or hide mechanism. Intentional continuing motion must provide that
-mechanism in the consuming composition. Do not offer an inaccessible pointer-only pause.
+mechanism in the consuming composition. Do not offer an inaccessible pointer-only pause. The library's visual effects settle their automatic
+motion five seconds after mount; `loop` removes that limit and requires a localized, native control that sets `motionPaused`.
 
-Toast and carousel applications must choose appropriate reading time and user controls. Hover/focus pausing alone does not establish that
-every user can extend or disable a time limit. Critical instructions, errors and required actions must not exist only in an automatically
-disappearing notification.
+Toast and carousel applications must choose appropriate reading time and user controls. Toasts persist until closed unless `timeout` is set,
+because it defaults to `0`. Hover/focus pausing alone does not establish that every user can extend or disable a time limit. Critical
+instructions, errors and required actions must not exist only in an automatically disappearing notification.
 
 ## Verification boundary
 

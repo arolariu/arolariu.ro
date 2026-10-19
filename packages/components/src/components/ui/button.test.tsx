@@ -9,7 +9,7 @@ import {Button, buttonVariants} from "./button";
 import styles from "./button.module.css";
 import * as buttonStories from "./button.stories";
 
-const {FocusableDisabled, IconExtraSmall, Navigation, NonNative} = buttonStories;
+const {FocusableDisabled, IconExtraSmall, NonNative} = buttonStories;
 
 function requiredClass(name: string): string {
   const className = styles[name];
@@ -331,42 +331,71 @@ describe("Button", () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it("preserves anchor href and native Enter while adding Space activation", async () => {
+  it("keeps native link semantics for an anchor styled with buttonVariants", async () => {
     const user = userEvent.setup();
-    const onClick = vi.fn((event: React.MouseEvent<HTMLButtonElement>): void => event.preventDefault());
+    const onClick = vi.fn((event: React.MouseEvent<HTMLAnchorElement>): void => event.preventDefault());
     render(
-      <Button
-        nativeButton={false}
-        render={<a href='#destination' />}
+      <a
+        href='#destination'
+        className={buttonVariants({variant: "outline", size: "sm"})}
         onClick={onClick}>
         Navigate
-      </Button>,
+      </a>,
     );
-    const anchor = screen.getByRole("button", {name: "Navigate"});
-    expect(anchor).toHaveAttribute("href", "#destination");
-    expect(anchor).not.toHaveAttribute("type");
+    const link = screen.getByRole("link", {name: "Navigate"});
+    expect(link).toHaveAttribute("href", "#destination");
+    expect(link).not.toHaveAttribute("role");
+    expect(link).not.toHaveAttribute("type");
+    expect(link).toHaveClass(requiredClass("button"), requiredClass("outline"), requiredClass("sizeSm"));
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
     await user.tab();
-    await user.keyboard("{Enter} ");
-    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(link).toHaveFocus();
+    await user.keyboard(" ");
+    expect(onClick).not.toHaveBeenCalled();
+    await user.keyboard("{Enter}");
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it("honors cancelled link keyboard activation without replacing href semantics", async () => {
+  it.each([
+    ["Navigation", "Read documentation", "#documentation", "link"],
+    ["RenderedNavigation", "Open navigation", "#navigation", "outline"],
+  ] as const)("renders the %s story as a native link instead of a button", async (story, name, href, variant) => {
+    const user = userEvent.setup();
+    const Story = composeStories(buttonStories)[story];
+    render(<Story />);
+    const link = screen.getByRole("link", {name});
+    const activations = vi.fn((event: MouseEvent): void => event.preventDefault());
+    link.addEventListener("click", activations);
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveAttribute("href", href);
+    expect(link).not.toHaveAttribute("role");
+    expect(link).toHaveClass(requiredClass("button"), requiredClass(variant), requiredClass("sizeDefault"));
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    await user.tab();
+    expect(link).toHaveFocus();
+    await user.keyboard(" ");
+    expect(activations).not.toHaveBeenCalled();
+    await user.keyboard("{Enter}");
+    expect(activations).toHaveBeenCalledTimes(1);
+  });
+
+  it("honors cancelled keyboard activation on a non-native render target", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     render(
       <Button
         nativeButton={false}
-        render={<a href='#cancelled' />}
+        render={<span />}
         onClick={onClick}
         onKeyDown={(event) => event.preventDefault()}
         onKeyUp={(event) => event.preventDefault()}>
-        Cancelled navigation
+        Cancelled action
       </Button>,
     );
     await user.tab();
+    expect(screen.getByRole("button", {name: "Cancelled action"})).toHaveFocus();
     await user.keyboard("{Enter} ");
     expect(onClick).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", {name: "Cancelled navigation"})).toHaveAttribute("href", "#cancelled");
   });
 
   it("lets child handlers cancel wrapper click and non-native keyboard activation", async () => {
@@ -431,10 +460,10 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("composes render links with both refs and handlers", async () => {
+  it("composes non-native render targets with both refs and handlers", async () => {
     const user = userEvent.setup();
     const ref = createRef<HTMLElement>();
-    const childRef = createRef<HTMLAnchorElement>();
+    const childRef = createRef<HTMLSpanElement>();
     const calls: string[] = [];
     render(
       <Button
@@ -443,26 +472,25 @@ describe("Button", () => {
         className='wrapper'
         onClick={() => calls.push("wrapper")}
         render={
-          <a
+          <span
             ref={childRef}
-            href='#destination'
             className='child'
-            onClick={(event) => {
-              event.preventDefault();
+            onClick={() => {
               calls.push("child");
             }}>
-            Navigation
-          </a>
+            Composed action
+          </span>
         }
       />,
     );
-    const anchor = screen.getByRole("button", {name: "Navigation"});
-    expect(anchor).not.toHaveAttribute("type");
-    expect(anchor).toHaveAttribute("href", "#destination");
-    expect(anchor).toHaveClass("child", "wrapper");
-    expect(ref.current).toBe(anchor);
-    expect(childRef.current).toBe(anchor);
-    await user.click(anchor);
+    const target = screen.getByRole("button", {name: "Composed action"});
+    expect(target.tagName).toBe("SPAN");
+    expect(target).not.toHaveAttribute("type");
+    expect(target).toHaveAttribute("tabindex", "0");
+    expect(target).toHaveClass("child", "wrapper", requiredClass("button"));
+    expect(ref.current).toBe(target);
+    expect(childRef.current).toBe(target);
+    await user.click(target);
     expect(calls).toEqual(["child", "wrapper"]);
   });
 
@@ -526,15 +554,13 @@ describe("Button", () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it("renders real navigation, named icon, and disabled callback stories", () => {
+  it("renders real named icon and disabled callback stories", () => {
     render(
       <>
-        <Button {...Navigation.args} />
         <Button {...IconExtraSmall.args} />
         <Button {...FocusableDisabled.args} />
       </>,
     );
-    expect(screen.getByRole("button", {name: "Read documentation"})).toHaveAttribute("href", "#documentation");
     expect(screen.getByRole("button", {name: "Add"})).toHaveClass(requiredClass("sizeIconXs"));
     expect(screen.getByRole("button", {name: "default action unavailable"})).toHaveAttribute("aria-disabled", "true");
   });

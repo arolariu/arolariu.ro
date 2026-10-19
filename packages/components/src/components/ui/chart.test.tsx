@@ -1086,6 +1086,59 @@ describe("ChartLegendContent", () => {
     expect(container.querySelector("[aria-pressed]")).toBeNull();
   });
 
+  it.each([
+    {label: "localized", inactiveSuffix: " (masquée)", expected: "Revenue (masquée)"},
+    {label: "empty-string suppressed", inactiveSuffix: "", expected: "Revenue"},
+    {label: "null suppressed", inactiveSuffix: null, expected: "Revenue"},
+  ] as const)("renders a $label inactive suffix in the visible text and accessible name", ({inactiveSuffix, expected}) => {
+    const payload: RechartsPrimitive.LegendPayload[] = [{dataKey: "revenue", value: "Revenue", inactive: true}];
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartLegendContent
+          data-testid='display-legend'
+          inactiveSuffix={inactiveSuffix}
+          payload={payload}
+        />
+        <ChartLegendContent
+          data-testid='interactive-legend'
+          inactiveSuffix={inactiveSuffix}
+          onClick={() => undefined}
+          payload={payload}
+        />
+      </ChartContainer>,
+    );
+    const displayItem = screen.getByTestId("display-legend").querySelector("[data-slot='chart-legend-item']");
+    const interactiveItem = screen.getByRole("button");
+    expect(displayItem?.textContent).toBe(expected);
+    expect(interactiveItem.textContent).toBe(expected);
+    expect(interactiveItem).toHaveAccessibleName(expected);
+    // The suffix is consumed by the content renderer and never reaches the legend root DOM.
+    expect(container.querySelector("[inactivesuffix]")).toBeNull();
+  });
+
+  it("keeps a localized inactive suffix when the Recharts legend clones the content element", () => {
+    render(
+      <ChartContainer
+        config={config}
+        width={400}
+        height={200}>
+        <BarChart data={[{month: "May", revenue: 42}]}>
+          <Bar
+            dataKey='revenue'
+            hide
+            isAnimationActive={false}
+          />
+          <ChartLegend
+            content={<ChartLegendContent inactiveSuffix=' (ascuns)' />}
+            onClick={() => undefined}
+          />
+        </BarChart>
+      </ChartContainer>,
+    );
+    expect(screen.getByRole("button", {name: "Revenue (ascuns)"})).toHaveTextContent(/^Revenue \(ascuns\)$/u);
+    expect(screen.queryByText(/\(hidden\)/u)).toBeNull();
+  });
+
   it("provides native keyboard activation without form submission for clickable legend items", async () => {
     const user = userEvent.setup();
     const calls: Array<readonly [number, string]> = [];

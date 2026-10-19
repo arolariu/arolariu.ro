@@ -311,13 +311,138 @@ function hasMeaningfulChildren(children: React.ReactNode): boolean {
 
 type MetadataKind = "control" | "label" | "description" | "message";
 type MountedMetadata = Readonly<{kind: MetadataKind; id: string}>;
+/** A FormDescription/FormMessage element written in a FormItem's children, read from its props. */
+type StaticFormPart = Readonly<{id: string | undefined; content: boolean}>;
+/**
+ * Parts written in a FormItem's children tree. Only server HTML and hydration renders use them, because
+ * mounted metadata does not exist until layout effects run; afterwards mounted metadata is authoritative.
+ */
+type StaticFormParts = Readonly<{
+  controlId: string | undefined;
+  labelTarget: string | undefined;
+  descriptions: readonly StaticFormPart[];
+  messages: readonly StaticFormPart[];
+}>;
 type FormItemContextValue = Readonly<{
   id: string;
   metadata: ReadonlyMap<string, MountedMetadata>;
   register: (kind: MetadataKind, key: string, id: string) => () => void;
+  parts: StaticFormParts;
 }>;
 
 const FormItemContext = React.createContext<FormItemContextValue | null>(null);
+
+const unsubscribeFromHydration = (): void => undefined;
+const subscribeToHydration = (): (() => void) => unsubscribeFromHydration;
+const clientSnapshot = (): boolean => true;
+const serverSnapshot = (): boolean => false;
+
+/** `false` while rendering on the server or hydrating server HTML, `true` for every client render after that. */
+function useHydrated(): boolean {
+  return React.useSyncExternalStore(subscribeToHydration, clientSnapshot, serverSnapshot);
+}
+
+type StaticPartProps = Readonly<{children?: React.ReactNode; id?: unknown; htmlFor?: unknown; dangerouslySetInnerHTML?: unknown}>;
+type StaticPartsAccumulator = {
+  controlId: string | undefined;
+  labelTarget: string | undefined;
+  descriptions: StaticFormPart[];
+  messages: StaticFormPart[];
+};
+
+function explicitIdOf(value: unknown): string | undefined {
+  return typeof value === "string" ? value.trim() || undefined : undefined;
+}
+
+function staticPartOf(props: StaticPartProps): StaticFormPart {
+  return {id: explicitIdOf(props.id), content: hasMeaningfulChildren(props.children) || Boolean(props.dangerouslySetInnerHTML)};
+}
+
+/**
+ * Reads the form parts written in a FormItem's children through arrays, fragments and other elements'
+ * children, without entering nested FormItems. Parts rendered internally by other components are only
+ * known once they mount. Pure: element props are read, never rendered output, refs or DOM.
+ */
+function collectStaticParts(node: React.ReactNode, parts: StaticPartsAccumulator): void {
+  if (Array.isArray(node)) {
+    for (const child of node as React.ReactNode[]) collectStaticParts(child, parts);
+    return;
+  }
+  if (!React.isValidElement<StaticPartProps>(node) || node.type === FormItem) return;
+  const {props} = node;
+  switch (node.type) {
+    case FormControl: {
+      const child = props.children;
+      const childId =
+        React.isValidElement<StaticPartProps>(child) && child.type !== React.Fragment ? explicitIdOf(child.props.id) : undefined;
+      parts.controlId ??= explicitIdOf(props.id) ?? childId;
+      break;
+    }
+    case FormLabel: {
+      parts.labelTarget ??= explicitIdOf(props.htmlFor);
+      break;
+    }
+    case FormDescription: {
+      parts.descriptions.push(staticPartOf(props));
+      break;
+    }
+    case FormMessage: {
+      parts.messages.push(staticPartOf(props));
+      break;
+    }
+    default: {
+      collectStaticParts(props.children, parts);
+    }
+  }
+}
+
+function staticPartsOf(children: React.ReactNode): StaticFormParts {
+  const parts: StaticPartsAccumulator = {controlId: undefined, labelTarget: undefined, descriptions: [], messages: []};
+  collectStaticParts(children, parts);
+  return parts;
+}
+
+/** Statically visible generated parts that render an element; a FormMessage renders only with content or an error. */
+function generatedPartCount(parts: StaticFormParts, kind: "description" | "message", hasErrorText: boolean): number {
+  return kind === "description"
+    ? parts.descriptions.filter((part) => part.id === undefined).length
+    : parts.messages.filter((part) => part.id === undefined && (part.content || hasErrorText)).length;
+}
+
+/**
+ * Server/hydration ID for a generated description or message: the deterministic item-scoped ID when it is the
+ * item's only statically visible generated part of its kind (so the control can reference it), else its unique ID.
+ */
+function serverPartId(item: FormItemContextValue, kind: "description" | "message", hasErrorText: boolean, uniqueId: string): string {
+  return generatedPartCount(item.parts, kind, hasErrorText) === 1 ? `${item.id}-form-item-${kind}` : uniqueId;
+}
+
+function uniqueIds(ids: ReadonlyArray<string | undefined>): string[] {
+  return [...new Set(ids.filter((entry): entry is string => entry !== undefined))];
+}
+
+/** Associations for server HTML and the hydration render, derived without effects from the item's written parts. */
+function staticFieldIds(
+  item: FormItemContextValue,
+  hasErrorText: boolean,
+): Readonly<{formItemId: string; descriptionIds: string[]; messageIds: string[]}> {
+  const {id, parts} = item;
+  const singleDescription = generatedPartCount(parts, "description", hasErrorText) === 1;
+  const singleMessage = generatedPartCount(parts, "message", hasErrorText) === 1;
+  return {
+    formItemId: parts.controlId ?? parts.labelTarget ?? `${id}-form-item`,
+    descriptionIds: uniqueIds(
+      parts.descriptions
+        .filter((part) => part.content)
+        .map((part) => part.id ?? (singleDescription ? `${id}-form-item-description` : undefined)),
+    ),
+    messageIds: uniqueIds(
+      parts.messages
+        .filter((part) => part.content || hasErrorText)
+        .map((part) => part.id ?? (singleMessage ? `${id}-form-item-message` : undefined)),
+    ),
+  };
+}
 
 function metadataIds(item: FormItemContextValue, kind: MetadataKind): string[] {
   return [...new Set([...item.metadata.values()].filter((entry) => entry.kind === kind).map((entry) => entry.id))];
@@ -406,6 +531,9 @@ export type UseFormFieldReturn = Readonly<
  * Reads the nearest {@link FormField} and {@link FormItem} contexts, then combines them
  * with an exact RHF field-state subscription. Description/message IDs reflect mounted
  * meaningful content; their singular forms resolve to the first mounted entry.
+ * Server rendering and the hydration render have no mounted content yet, so they derive the
+ * same IDs from the parts written in the FormItem's children (see {@link FormItem}); the
+ * first client render after hydration switches to mounted metadata.
  * Guards diagnose missing Form, FormField, and FormItem before reading their values.
  *
  * @example
@@ -415,10 +543,15 @@ export type UseFormFieldReturn = Readonly<
  *
  * @see {@link https://react-hook-form.com/docs/useformcontext | React Hook Form useFormContext Docs}
  */
-const useFormField = (): UseFormFieldReturn => {
+const useFormField = (): UseFormFieldReturn => useFormFieldContext().field;
+
+type FormFieldContextState = Readonly<{field: UseFormFieldReturn; item: FormItemContextValue; hydrated: boolean}>;
+
+function useFormFieldContext(): FormFieldContextState {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
   const methods = useFormContext<FieldValues, unknown>();
+  const hydrated = useHydrated();
 
   if (!methods) {
     throw new Error("useFormField should be used within <Form>");
@@ -435,20 +568,29 @@ const useFormField = (): UseFormFieldReturn => {
   const formState = useFormState({control: methods.control, name: fieldContext.name, exact: true});
   const fieldState = methods.getFieldState(fieldContext.name, formState);
   const {id} = itemContext;
-  const descriptionIds = metadataIds(itemContext, "description");
-  const messageIds = metadataIds(itemContext, "message");
+  const ids = hydrated
+    ? {
+        descriptionIds: metadataIds(itemContext, "description"),
+        messageIds: metadataIds(itemContext, "message"),
+        formItemId: metadataIds(itemContext, "control")[0] ?? metadataIds(itemContext, "label")[0] ?? `${id}-form-item`,
+      }
+    : staticFieldIds(itemContext, Boolean(fieldState.error?.message?.trim()));
 
   return {
-    ...fieldState,
-    descriptionIds,
-    messageIds,
-    formDescriptionId: descriptionIds[0] ?? `${id}-form-item-description`,
-    formItemId: metadataIds(itemContext, "control")[0] ?? metadataIds(itemContext, "label")[0] ?? `${id}-form-item`,
-    formMessageId: messageIds[0] ?? `${id}-form-item-message`,
-    id,
-    name: fieldContext.name,
+    field: {
+      ...fieldState,
+      descriptionIds: ids.descriptionIds,
+      messageIds: ids.messageIds,
+      formDescriptionId: ids.descriptionIds[0] ?? `${id}-form-item-description`,
+      formItemId: ids.formItemId,
+      formMessageId: ids.messageIds[0] ?? `${id}-form-item-message`,
+      id,
+      name: fieldContext.name,
+    },
+    item: itemContext,
+    hydrated,
   };
-};
+}
 
 /**
  * Wraps a label, control, description, and message into a single form item.
@@ -456,6 +598,17 @@ const useFormField = (): UseFormFieldReturn => {
  * @remarks
  * - Renders a `<div>` element
  * - Built on the shared form item context
+ * - Server HTML and the hydration render already carry the label/control association and
+ *   the control's `aria-describedby`: they are derived, without effects, from the
+ *   `FormLabel`, `FormControl`, `FormDescription` and `FormMessage` elements written in this
+ *   item's children (through fragments and wrapper elements, but not inside nested items).
+ *   Explicit control, label-target, description and message IDs are honored there too.
+ * - After hydration, mounted parts refine those links, so no reference points at an absent or
+ *   empty part. Parts rendered internally by other components are linked once they mount.
+ *   Server HTML links a generated description or message only when it is the item's single
+ *   generated part of that kind; give additional parts explicit IDs to link them before
+ *   hydration as well (this also keeps a directly written part and one rendered by another
+ *   component from sharing the item-scoped generated ID in server HTML).
  *
  * @example
  * ```tsx
@@ -482,7 +635,9 @@ const FormItem = ({ref, className, id: providedId, ...props}: Readonly<FormItemP
       });
     };
   }, []);
-  const context = React.useMemo(() => ({id, metadata, register}), [id, metadata, register]);
+  const {children} = props;
+  const parts = React.useMemo(() => staticPartsOf(children), [children]);
+  const context = React.useMemo(() => ({id, metadata, register, parts}), [id, metadata, register, parts]);
 
   return (
     <FormItemContext.Provider value={context}>
@@ -545,7 +700,10 @@ type FormControlTarget = React.ComponentType<React.HTMLAttributes<HTMLElement> &
  * Input render/class callbacks stay primitive-owned.
  * Wrapper ID overrides child ID; either retargets FormLabel. A label-only htmlFor
  * becomes the control ID. Generated description/message IDs are linked only while
- * meaningful content is mounted. Caller-supplied ARIA tokens remain caller-owned.
+ * meaningful content is mounted. Server HTML and the hydration render apply the same
+ * rules to the parts written in the FormItem's children (see `FormItem`), so the label
+ * association and `aria-describedby` do not wait for effects. Caller-supplied ARIA tokens
+ * remain caller-owned.
  * Blank explicit IDs fall back to generated IDs. Non-element/fragment content
  * retains the legacy div fallback; use `FormControl<HTMLDivElement>` for that target.
  */
@@ -604,6 +762,9 @@ FormControl.displayName = "FormControl";
  *   meaningful text; native DOM rendering, not string parsing, resolves entities
  * - Native props and caller-owned HTML trust/sanitization responsibilities remain
  *   unchanged, and empty native paragraphs remain valid mounted elements
+ * - A generated ID is item-scoped (`<itemId>-form-item-description`) in server HTML when this is
+ *   the item's only generated description written in its children, so the control can reference
+ *   it before hydration; after hydration every mounted description uses a unique generated ID
  *
  * @example
  * ```tsx
@@ -613,15 +774,17 @@ FormControl.displayName = "FormControl";
  * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/p | HTML paragraph element}
  */
 const FormDescription = ({ref, className, id, children, ...props}: Readonly<FormDescriptionProps>): React.JSX.Element => {
-  const field = useFormField();
+  const {field, item, hydrated} = useFormFieldContext();
   const uniqueId = React.useId();
   const paragraphRef = React.useRef<HTMLParagraphElement>(null);
   const mergedRef = useMergedRefs(ref, paragraphRef);
   const {dangerouslySetInnerHTML} = props;
-  const descriptionId = id?.trim() || `${field.id}-${uniqueId}-form-item-description`;
+  const explicitId = id?.trim() || undefined;
+  const mountedId = explicitId ?? `${field.id}-${uniqueId}-form-item-description`;
+  const descriptionId = hydrated || explicitId ? mountedId : serverPartId(item, "description", false, mountedId);
   useMountedMetadata(
     "description",
-    hasMeaningfulChildren(children) || dangerouslySetInnerHTML ? descriptionId : undefined,
+    hasMeaningfulChildren(children) || dangerouslySetInnerHTML ? mountedId : undefined,
     dangerouslySetInnerHTML ? paragraphRef : undefined,
     dangerouslySetInnerHTML,
   );
@@ -647,6 +810,9 @@ FormDescription.displayName = "FormDescription";
  * - Trims error text and falls back to meaningful children, including numeric zero
  * - Not an alert/live region by default: callers own one form-level submission
  *   announcement/summary rather than announcing every inline error twice
+ * - A generated ID is item-scoped (`<itemId>-form-item-message`) in server HTML when this is the
+ *   item's only rendered generated message written in its children, so a server-known field
+ *   error is linked before hydration; after hydration every mounted message uses a unique ID
  *
  * @example
  * ```tsx
@@ -663,16 +829,19 @@ const FormMessage = ({
   dangerouslySetInnerHTML,
   ...props
 }: Readonly<FormMessageProps>): React.JSX.Element | null => {
-  const field = useFormField();
+  const {field, item, hydrated} = useFormFieldContext();
   const uniqueId = React.useId();
   const paragraphRef = React.useRef<HTMLParagraphElement>(null);
   const mergedRef = useMergedRefs(ref, paragraphRef);
-  const messageId = id?.trim() || `${field.id}-${uniqueId}-form-item-message`;
-  const body = field.error?.message?.trim() || children;
+  const explicitId = id?.trim() || undefined;
+  const mountedId = explicitId ?? `${field.id}-${uniqueId}-form-item-message`;
+  const errorText = field.error?.message?.trim();
+  const messageId = hydrated || explicitId ? mountedId : serverPartId(item, "message", Boolean(errorText), mountedId);
+  const body = errorText || children;
   const hasContent = hasMeaningfulChildren(body);
   // Validation and meaningful React children retain precedence over caller-sanitized HTML.
   const nativeMarkup = hasContent ? undefined : dangerouslySetInnerHTML;
-  useMountedMetadata("message", hasContent || nativeMarkup ? messageId : undefined, nativeMarkup ? paragraphRef : undefined, nativeMarkup);
+  useMountedMetadata("message", hasContent || nativeMarkup ? mountedId : undefined, nativeMarkup ? paragraphRef : undefined, nativeMarkup);
 
   if (!hasContent && !nativeMarkup) {
     return null;

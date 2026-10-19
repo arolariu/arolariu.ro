@@ -72,4 +72,15 @@ describe.each(["light", "dark"] as const)("%s default design-token accessibility
   ] as const)("provides 3:1 essential control/focus contrast for %s on %s", (foreground, background) => {
     expect(contrast(theme, foreground, background)).toBeGreaterThanOrEqual(3);
   });
+
+  // `--ac-primary-emphasis` is the primary hue drawn directly on neutral surfaces: Badge link text, the
+  // active Stepper number and Accordion hover text sit on the page background, and Progress/Meter fills
+  // are the only value indicator over the `--ac-secondary` track.
+  it("provides 4.5:1 ordinary text contrast for primary-emphasis on background", () => {
+    expect(contrast(theme, "primary-emphasis", "background")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("provides 3:1 value-indicator contrast for primary-emphasis on the secondary track", () => {
+    expect(contrast(theme, "primary-emphasis", "secondary")).toBeGreaterThanOrEqual(3);
+  });
 });

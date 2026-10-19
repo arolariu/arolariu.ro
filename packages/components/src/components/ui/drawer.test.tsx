@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {AtRule, parse, type AnyNode} from "postcss";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -20,6 +21,9 @@ import {
   DrawerTrigger,
 } from "./drawer";
 import styles from "./drawer.module.css";
+import * as stories from "./drawer.stories";
+
+const {SnapPoints: SnapPointsStory} = composeStories(stories);
 
 const originalBodyStyles = document.body.style.cssText;
 const originalHtmlStyles = document.documentElement.style.cssText;
@@ -1255,6 +1259,400 @@ describe("Drawer", () => {
     expect(handle).toHaveAttribute("aria-hidden", "true");
     expect(handle).not.toHaveAttribute("tabindex");
     expect(handle).not.toHaveAttribute("role");
+  });
+
+  it("keeps the styled drawer and its form state mounted through portalProps.keepMounted", async () => {
+    const user = userEvent.setup();
+    render(
+      <Drawer defaultOpen>
+        <DrawerTrigger>Reopen kept drawer</DrawerTrigger>
+        <DrawerContent portalProps={{keepMounted: true}}>
+          <DrawerTitle>Kept drawer</DrawerTitle>
+          <input aria-label='Drawer draft' />
+          <DrawerClose>Close kept drawer</DrawerClose>
+        </DrawerContent>
+      </Drawer>,
+    );
+    const popup = await screen.findByRole("dialog", {name: "Kept drawer"});
+    await user.type(screen.getByRole("textbox", {name: "Drawer draft"}), "kept");
+    await user.click(screen.getByRole("button", {name: "Close kept drawer"}));
+    await waitFor(() => expect(popup).toHaveAttribute("hidden"));
+    expect(popup).toBeInTheDocument();
+    expect(popup).toHaveClass(drawerClass("popup"));
+    await user.click(screen.getByRole("button", {name: "Reopen kept drawer"}));
+    expect(await screen.findByRole("dialog", {name: "Kept drawer"})).toBe(popup);
+    expect(screen.getByRole("textbox", {name: "Drawer draft"})).toHaveValue("kept");
+  });
+
+  it("portals the styled drawer, viewport and backdrop into portalProps.container with the remaining Portal props", async () => {
+    const host = document.createElement("section");
+    document.body.append(host);
+    const view = render(
+      <Drawer defaultOpen>
+        <DrawerContent portalProps={{container: host, className: "caller-portal"}}>
+          <DrawerTitle>Contained drawer</DrawerTitle>
+          <DrawerClose>Close</DrawerClose>
+        </DrawerContent>
+      </Drawer>,
+    );
+    const popup = await screen.findByRole("dialog", {name: "Contained drawer"});
+    expect(host).toContainElement(popup);
+    expect(host).toContainElement(document.querySelector<HTMLElement>('[data-slot="drawer-overlay"]'));
+    expect(popup.closest(".caller-portal")?.parentElement).toBe(host);
+    view.unmount();
+    host.remove();
+  });
+
+  describe("snap-point focus reveal (authored geometry fixture, not a layout engine)", () => {
+    const popupTop = 400;
+    afterEach(() => {
+      cleanup();
+      vi.restoreAllMocks();
+    });
+
+    /**
+     * Viewport 800px, popup 400px. Popup-relative bands: footer content is pinned to the bottom
+     * (320-360px), `straddling-control` crosses the 200px edge and everything else sits at 20-60px.
+     */
+    function installSnapGeometry(): void {
+      vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+        const slot = this.getAttribute("data-slot");
+        if (slot === "drawer-viewport") return 800;
+        return slot === "drawer-popup" ? 400 : 40;
+      });
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+        if (this.getAttribute("data-slot") === "drawer-popup") return new DOMRect(0, popupTop, 400, 400);
+        if (this.closest('[data-slot="drawer-footer"]')) return new DOMRect(0, popupTop + 320, 120, 40);
+        if (this.dataset["testid"] === "straddling-control") return new DOMRect(0, popupTop + 180, 120, 40);
+        return new DOMRect(0, popupTop + 20, 120, 40);
+      });
+      const rect = new DOMRect(0, 0, 120, 40);
+      const rects: DOMRectList = {
+        0: rect,
+        length: 1,
+        item: (index) => (index === 0 ? rect : null),
+        [Symbol.iterator]: () => [rect][Symbol.iterator](),
+      };
+      vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue(rects);
+    }
+
+    function snapOffset(popup: HTMLElement): string {
+      return popup.style.getPropertyValue("--drawer-snap-point-offset");
+    }
+
+    it.each([
+      {direction: "down", offset: "200px", hidden: "Close snapped drawer", shown: "Top action"},
+      {direction: "up", offset: "-200px", hidden: "Top action", shown: "Close snapped drawer"},
+    ] as const)(
+      "expands an uncontrolled $direction drawer to its largest snap point when focus lands beyond the visible height",
+      async ({direction, offset, hidden, shown}) => {
+        installSnapGeometry();
+        const changes: {value: Drawer.Props["snapPoint"]; reason: string}[] = [];
+        render(
+          <Drawer
+            defaultOpen
+            swipeDirection={direction}
+            snapPoints={[0.25, 0.5]}
+            onSnapPointChange={(value, details) => changes.push({value, reason: details.reason})}>
+            <DrawerContent>
+              <DrawerTitle>Snap focus drawer</DrawerTitle>
+              <button type='button'>Top action</button>
+              <DrawerFooter>
+                <DrawerClose>Close snapped drawer</DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>,
+        );
+        const popup = await screen.findByRole("dialog", {name: "Snap focus drawer"});
+        await waitFor(() => expect(snapOffset(popup)).toBe(offset));
+        act(() => screen.getByRole("button", {name: shown}).focus());
+        expect(changes).toEqual([]);
+        expect(snapOffset(popup)).toBe(offset);
+        act(() => screen.getByRole("button", {name: hidden}).focus());
+        expect(changes).toEqual([{value: 0.5, reason: "none"}]);
+        await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+      },
+    );
+
+    it.each([
+      {accept: false, offset: "200px"},
+      {accept: true, offset: "0px"},
+    ] as const)("requests the largest snap point from a controlled owner (accepted=$accept)", async ({accept, offset}) => {
+      installSnapGeometry();
+      const requests: Drawer.Props["snapPoint"][] = [];
+      function ControlledSnapDrawer(): React.ReactElement {
+        const [snapPoint, setSnapPoint] = React.useState<Drawer.Props["snapPoint"]>(0.25);
+        return (
+          <Drawer
+            defaultOpen
+            snapPoints={[0.25, 0.5]}
+            snapPoint={snapPoint}
+            onSnapPointChange={(value) => {
+              requests.push(value);
+              if (accept) setSnapPoint(value);
+            }}>
+            <DrawerContent>
+              <DrawerTitle>Controlled snap focus</DrawerTitle>
+              <DrawerFooter>
+                <DrawerClose>Close controlled drawer</DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        );
+      }
+      render(<ControlledSnapDrawer />);
+      const popup = await screen.findByRole("dialog", {name: "Controlled snap focus"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      act(() => screen.getByRole("button", {name: "Close controlled drawer"}).focus());
+      expect(requests).toEqual([0.5]);
+      await waitFor(() => expect(snapOffset(popup)).toBe(offset));
+    });
+
+    it("keeps an uncontrolled snap point when the owner cancels the focus-driven request", async () => {
+      installSnapGeometry();
+      const requests: Drawer.Props["snapPoint"][] = [];
+      render(
+        <Drawer
+          defaultOpen
+          snapPoints={[0.25, 0.5]}
+          onSnapPointChange={(value, details) => {
+            requests.push(value);
+            details.cancel();
+          }}>
+          <DrawerContent>
+            <DrawerTitle>Canceled snap focus</DrawerTitle>
+            <DrawerFooter>
+              <DrawerClose>Close canceled drawer</DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Canceled snap focus"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      act(() => screen.getByRole("button", {name: "Close canceled drawer"}).focus());
+      expect(requests).toEqual([0.5]);
+      expect(snapOffset(popup)).toBe("200px");
+    });
+
+    it("does not move a partially visible control that a pointer press focused, but reveals it for keyboard focus", async () => {
+      installSnapGeometry();
+      const requests: Drawer.Props["snapPoint"][] = [];
+      render(
+        <Drawer
+          defaultOpen
+          snapPoints={[0.25, 0.5]}
+          onSnapPointChange={(value) => requests.push(value)}>
+          <DrawerContent>
+            <DrawerTitle>Pressed snap focus</DrawerTitle>
+            <button type='button'>Top action</button>
+            <button
+              type='button'
+              data-testid='straddling-control'>
+              Edge action
+            </button>
+          </DrawerContent>
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Pressed snap focus"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      const edge = screen.getByRole("button", {name: "Edge action"});
+      const top = screen.getByRole("button", {name: "Top action"});
+      fireEvent.pointerDown(edge, {pointerType: "mouse"});
+      act(() => edge.focus());
+      expect(requests).toEqual([]);
+      act(() => top.focus());
+      // A press that never focused its control must not exempt a later keyboard focus of that control.
+      fireEvent.pointerDown(edge, {pointerType: "mouse"});
+      fireEvent.keyDown(top, {key: "Tab"});
+      act(() => edge.focus());
+      expect(requests).toEqual([0.5]);
+      await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+    });
+
+    it("issues exactly one request per focus under Strict Mode ref and effect replay", async () => {
+      installSnapGeometry();
+      const requests: Drawer.Props["snapPoint"][] = [];
+      render(
+        <React.StrictMode>
+          <Drawer
+            defaultOpen
+            snapPoints={[0.25, 0.5]}
+            onSnapPointChange={(value) => requests.push(value)}>
+            <DrawerContent>
+              <DrawerTitle>Strict snap focus</DrawerTitle>
+              <DrawerFooter>
+                <DrawerClose>Close strict drawer</DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        </React.StrictMode>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Strict snap focus"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      act(() => screen.getByRole("button", {name: "Close strict drawer"}).focus());
+      expect(requests).toEqual([0.5]);
+      await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+    });
+
+    it("ignores focus inside a nested, separately portaled drawer", async () => {
+      installSnapGeometry();
+      const parentRequests: Drawer.Props["snapPoint"][] = [];
+      render(
+        <Drawer
+          defaultOpen
+          snapPoints={[0.25, 0.5]}
+          onSnapPointChange={(value) => parentRequests.push(value)}>
+          <DrawerContent>
+            <DrawerTitle>Parent snap drawer</DrawerTitle>
+            <Drawer defaultOpen>
+              <DrawerContent>
+                <DrawerTitle>Nested plain drawer</DrawerTitle>
+                <DrawerFooter>
+                  <DrawerClose>Close nested plain drawer</DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </DrawerContent>
+        </Drawer>,
+      );
+      const parent = await screen.findByRole("dialog", {name: "Parent snap drawer", hidden: true});
+      await waitFor(() => expect(snapOffset(parent)).toBe("200px"));
+      const nestedClose = await screen.findByRole("button", {name: "Close nested plain drawer"});
+      expect(parent).not.toContainElement(nestedClose);
+      act(() => nestedClose.focus());
+      expect(parentRequests).toEqual([]);
+      expect(snapOffset(parent)).toBe("200px");
+    });
+
+    it.each([
+      {label: "without snap points", snapPoints: undefined, swipeDirection: "down"},
+      {label: "on a horizontal axis", snapPoints: [0.25, 0.5], swipeDirection: "right"},
+    ] as const)("never requests a snap point $label", async ({snapPoints, swipeDirection}) => {
+      installSnapGeometry();
+      const requests: Drawer.Props["snapPoint"][] = [];
+      render(
+        <Drawer
+          defaultOpen
+          swipeDirection={swipeDirection}
+          snapPoints={snapPoints === undefined ? undefined : [...snapPoints]}
+          onSnapPointChange={(value) => requests.push(value)}>
+          <DrawerContent>
+            <DrawerTitle>Unsnapped focus</DrawerTitle>
+            <DrawerFooter>
+              <DrawerClose>Close unsnapped drawer</DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Unsnapped focus"});
+      act(() => screen.getByRole("button", {name: "Close unsnapped drawer"}).focus());
+      expect(requests).toEqual([]);
+      expect(snapOffset(popup)).toBe("0px");
+    });
+
+    it("reveals the SnapPoints story's footer Close when keyboard focus reaches it at the smallest snap point", async () => {
+      installSnapGeometry();
+      const user = userEvent.setup();
+      render(<SnapPointsStory />);
+      await user.click(screen.getByRole("button", {name: "Open snapping drawer"}));
+      const popup = await screen.findByRole("dialog", {name: "Snap points"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("120px"));
+      expect(screen.getByRole("status")).toHaveTextContent("Active snap: 0.35");
+      await user.tab();
+      expect(screen.getByRole("button", {name: "35%"})).toHaveFocus();
+      expect(snapOffset(popup)).toBe("120px");
+      await user.tab();
+      await user.tab();
+      await user.tab();
+      expect(screen.getByRole("button", {name: "Close"})).toHaveFocus();
+      expect(screen.getByRole("status")).toHaveTextContent("Active snap: 1");
+      await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+    });
+
+    // Snap points [0.125, 0.25, 0.5] resolve to 100/200/400px of the 800px viewport: offsets 300/200/0px.
+    it.each([
+      {
+        label: "without defaultSnapPoint",
+        defaultSnapPoint: undefined,
+        cancelReset: false,
+        opened: {value: 0.125, offset: "300px"},
+        swiped: {from: 350, to: 250, value: 0.25, offset: "200px"},
+        reopened: "300px",
+      },
+      {
+        label: "with defaultSnapPoint",
+        defaultSnapPoint: 0.25,
+        cancelReset: false,
+        opened: {value: 0.25, offset: "200px"},
+        swiped: {from: 250, to: 350, value: 0.125, offset: "300px"},
+        reopened: "200px",
+      },
+      {
+        label: "when the owner cancels the close reset",
+        defaultSnapPoint: 0.25,
+        cancelReset: true,
+        opened: {value: 0.25, offset: "200px"},
+        swiped: {from: 250, to: 350, value: 0.125, offset: "300px"},
+        reopened: "0px",
+      },
+    ] as const)(
+      "resets wrapper-owned uncontrolled snap state through Base UI's close request ($label)",
+      async ({defaultSnapPoint, cancelReset, opened, swiped, reopened}) => {
+        installSnapGeometry();
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(400);
+        // Only hit testing is a double: drags land on whichever popup is currently mounted.
+        vi.spyOn(document, "elementFromPoint").mockImplementation(() => document.querySelector('[data-slot="drawer-popup"]'));
+        const user = userEvent.setup();
+        const changes: {value: Drawer.Props["snapPoint"]; reason: string}[] = [];
+        render(
+          <Drawer
+            snapPoints={[0.125, 0.25, 0.5]}
+            defaultSnapPoint={defaultSnapPoint}
+            snapToSequentialPoints
+            onSnapPointChange={(value, details) => {
+              changes.push({value, reason: details.reason});
+              if (cancelReset && details.reason === "escape-key") details.cancel();
+            }}>
+            <DrawerTrigger>Open resettable drawer</DrawerTrigger>
+            <DrawerContent>
+              <DrawerTitle>Resettable snap drawer</DrawerTitle>
+              <DrawerFooter>
+                <DrawerClose>Close resettable drawer</DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>,
+        );
+        const trigger = screen.getByRole("button", {name: "Open resettable drawer"});
+        await user.click(trigger);
+        const popup = await screen.findByRole("dialog", {name: "Resettable snap drawer"});
+        await waitFor(() => expect(snapOffset(popup)).toBe(opened.offset));
+        expect(changes).toEqual([]);
+
+        // Base UI-originated change: a slow drag on the popup settles on the adjacent snap point.
+        dispatchPointer(popup, "pointerdown", 100, swiped.from, 100);
+        dispatchPointer(popup, "pointermove", 100, swiped.from, 120);
+        dispatchPointer(popup, "pointermove", 100, swiped.to, 820);
+        dispatchPointer(popup, "pointerup", 100, swiped.to, 920);
+        await waitFor(() => expect(snapOffset(popup)).toBe(swiped.offset));
+
+        // Wrapper-originated change: keyboard focus in the off-screen footer band expands to the largest snap point.
+        act(() => screen.getByRole("button", {name: "Close resettable drawer"}).focus());
+        await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+
+        await user.keyboard("{Escape}");
+        await waitFor(() => expect(screen.queryByRole("dialog", {name: "Resettable snap drawer"})).not.toBeInTheDocument());
+        expect(changes).toEqual([
+          {value: swiped.value, reason: "swipe"},
+          {value: 0.5, reason: "none"},
+          {value: opened.value, reason: "escape-key"},
+        ]);
+
+        await user.click(trigger);
+        const reopenedPopup = await screen.findByRole("dialog", {name: "Resettable snap drawer"});
+        await waitFor(() => expect(snapOffset(reopenedPopup)).toBe(reopened));
+        expect(changes).toHaveLength(3);
+      },
+    );
   });
 });
 import {Drawer as BaseDrawer} from "@base-ui/react/drawer";

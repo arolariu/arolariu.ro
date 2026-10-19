@@ -49,13 +49,15 @@
   color: var(--ac-accent-foreground);
 }
 
+/* Plain --ac-destructive text drops below 4.5:1 on the light highlight and on muted groups; mixing in the
+   foreground (as Bubble does) keeps it at or above 4.5:1 on popover, highlight and muted surfaces in both themes. */
 .item[data-variant="destructive"] {
-  color: var(--ac-destructive);
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
 }
 
 .item[data-variant="destructive"][data-highlighted] {
   background-color: color-mix(in oklch, var(--ac-destructive) 10%, transparent);
-  color: var(--ac-destructive);
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
 }
 
 .item :where(svg) {

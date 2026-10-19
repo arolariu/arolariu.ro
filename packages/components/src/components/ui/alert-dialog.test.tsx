@@ -155,6 +155,48 @@ describe("AlertDialog", () => {
     expect(screen.getByRole("button", {name: "Confirm"})).toHaveAttribute("data-variant", "default");
   });
 
+  it("keeps the styled confirmation and its form state mounted through portalProps.keepMounted", async () => {
+    const user = userEvent.setup();
+    render(
+      <AlertDialog defaultOpen>
+        <AlertDialogTrigger>Reopen kept confirmation</AlertDialogTrigger>
+        <AlertDialogContent portalProps={{keepMounted: true}}>
+          <AlertDialogTitle>Kept confirmation</AlertDialogTitle>
+          <input aria-label='Deletion reason' />
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>,
+    );
+    const popup = screen.getByRole("alertdialog", {name: "Kept confirmation"});
+    await user.type(screen.getByRole("textbox", {name: "Deletion reason"}), "duplicate");
+    await user.click(screen.getByRole("button", {name: "Cancel"}));
+    await waitFor(() => expect(popup).toHaveAttribute("hidden"));
+    expect(popup).toBeInTheDocument();
+    expect(popup).toHaveClass(requiredStyle("popup"));
+    await user.click(screen.getByRole("button", {name: "Reopen kept confirmation"}));
+    expect(screen.getByRole("alertdialog", {name: "Kept confirmation"})).toBe(popup);
+    expect(screen.getByRole("textbox", {name: "Deletion reason"})).toHaveValue("duplicate");
+  });
+
+  it("portals the styled confirmation and backdrop into portalProps.container with the remaining Portal props", () => {
+    const host = document.createElement("section");
+    document.body.append(host);
+    const view = render(
+      <AlertDialog defaultOpen>
+        <AlertDialogContent portalProps={{container: host, className: "caller-portal"}}>
+          <AlertDialogTitle>Contained confirmation</AlertDialogTitle>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+        </AlertDialogContent>
+      </AlertDialog>,
+    );
+    const popup = screen.getByRole("alertdialog", {name: "Contained confirmation"});
+    expect(host).toContainElement(popup);
+    expect(host).toContainElement(document.querySelector<HTMLElement>('[data-slot="alert-dialog-overlay"]'));
+    expect(popup.closest(".caller-portal")?.parentElement).toBe(host);
+    view.unmount();
+    host.remove();
+  });
+
   it("renders the actual FocusContract story and exercises its owner-controlled rejected/successful work", async () => {
     const user = userEvent.setup();
     render(<FocusContractStory />);

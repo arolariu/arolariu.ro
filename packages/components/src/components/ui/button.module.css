@@ -14,6 +14,8 @@
   font-size: var(--ac-text-xs);
   line-height: 1.6;
   font-weight: 500;
+  /* Removes the UA underline from buttonVariants() anchors; .link re-adds its own (see .link). */
+  text-decoration: none;
   transition:
     background-color var(--ac-transition-fast),
     color var(--ac-transition-fast),
@@ -111,6 +113,11 @@
   background-color: transparent;
   color: var(--ac-foreground);
   text-underline-offset: 4px;
+
+  /* Real links keep a non-colour cue at rest (WCAG 1.4.1); a <button> never matches :any-link. */
+  &:any-link {
+    text-decoration: underline;
+  }
 
   @media (hover: hover) {
     &:hover:not([data-disabled]) {

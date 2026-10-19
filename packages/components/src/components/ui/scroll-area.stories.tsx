@@ -27,7 +27,8 @@ const storyStyles = `
 
 .ac-story-scroll-area-storyNotes {
   margin: 0;
-  padding: var(--ac-space-4) var(--ac-space-6);
+  /* Symmetric padding: the component reserves the scrollbar gutter, so stories no longer pad around the track. */
+  padding: var(--ac-space-4);
 }
 
 .ac-story-scroll-area-storyNotes li {

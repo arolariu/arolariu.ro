@@ -68,6 +68,13 @@ Bubble.displayName = "Bubble";
  * Hosts wrapped bubble content, optionally composed onto a native link or button.
  * Composed targets own native button type/disabled/keyboard semantics. Base UI
  * merges child content, both refs, classes and child-first cancellable handlers.
+ *
+ * @remarks
+ * Plain nested `<a>` links inherit the bubble's text colour and are underlined. Class-styled anchors keep their own
+ * paint, so on the primary surface of the `default` variant (the Bubble default) use an opaque-fill variant: Button
+ * `default`, `secondary`, `outline` or `destructive`, or Badge `default`, `secondary` or `destructive`. Transparent-fill
+ * variants (Button `link`/`ghost`; Badge `outline`/`ghost`/`link`) keep text colours meant for neutral surfaces, which
+ * fall below 4.5:1 on that primary surface in the light theme (Badge `link` also in dark), so they are not supported there.
  */
 const BubbleContent = ({ref, className, render, ...props}: Readonly<BubbleContent.Props>): React.ReactElement =>
   useRender<BubbleContent.State, HTMLElement>({

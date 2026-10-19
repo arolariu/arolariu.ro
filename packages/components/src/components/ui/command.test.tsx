@@ -748,11 +748,11 @@ describe("Command", () => {
     const container = document.createElement("div");
     container.innerHTML = renderToString(ui);
     document.body.append(container);
-    expect(container.querySelectorAll("[data-command-anchor]")).toHaveLength(5);
     const consoleError = vi.spyOn(console, "error");
     const recoverableError = vi.fn();
     let root: Root | undefined;
     try {
+      expect(container.querySelectorAll("[data-command-anchor]")).toHaveLength(5);
       await act(async () => {
         root = hydrateRoot(container, ui, {onRecoverableError: recoverableError});
       });
@@ -767,6 +767,222 @@ describe("Command", () => {
       expect(input).toHaveAttribute("aria-activedescendant", within(container).getByRole("option", {name: "Apple"}).id);
       fireEvent.keyDown(input, {key: "End"});
       expect(input).toHaveAttribute("aria-activedescendant", within(container).getByRole("option", {name: "Hammer"}).id);
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+      consoleError.mockRestore();
+    }
+  });
+
+  it.each([false, true])("gives the active option a 2px ring outline beyond its tint (forced colors: %s)", (forcedColors) => {
+    render(
+      <Command>
+        <CommandInput aria-label='Indicator search' />
+        <CommandList>
+          <CommandItem value='first'>First</CommandItem>
+          <CommandItem value='second'>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const active = screen.getByRole("option", {name: "First"});
+    expect(active).toHaveAttribute("data-selected", "true");
+    // The combobox keeps DOM focus, so this outline (not :focus-visible) is the non-colour cue for what Enter runs.
+    const declarations = compiledCommandDeclarations(active, forcedColors);
+    expect(declarations.get("outline")).toBe(forcedColors ? "2px solid highlight" : "2px solid var(--ac-ring)");
+    expect(declarations.get("outline-offset")).toBe("-2px");
+    expect(compiledCommandDeclarations(screen.getByRole("option", {name: "Second"}), forcedColors).get("outline")).toBe("none");
+  });
+
+  it.each(["inside", "beside"] as const)(
+    "keeps one persistent empty status placed %s CommandList outside the listbox and toggles only its content",
+    async (placement) => {
+      const user = userEvent.setup();
+      const empty = <CommandEmpty>No results</CommandEmpty>;
+      render(
+        <Command>
+          <CommandInput aria-label='Persistent search' />
+          {placement === "beside" ? empty : null}
+          <CommandList>
+            {placement === "inside" ? empty : null}
+            <CommandGroup heading='Fruit'>
+              <CommandItem value='apple'>Apple</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>,
+      );
+      const status = screen.getByRole("status");
+      const listbox = screen.getByRole("listbox");
+      const ownedRoles = (): Array<string | null> =>
+        [...listbox.children].filter((child) => !child.hasAttribute("data-command-anchor")).map((child) => child.getAttribute("role"));
+      // Mounted (and empty) while results exist, so the later message is a content change, not an inserted region.
+      expect(status).toBeEmptyDOMElement();
+      expect(status).toHaveAttribute("aria-live", "polite");
+      expect(status).toHaveAttribute("aria-atomic", "true");
+      expect(listbox.contains(status)).toBe(false);
+      expect(ownedRoles()).toEqual(["group"]);
+      await user.type(screen.getByRole("combobox"), "zz");
+      expect(screen.getByRole("status")).toBe(status);
+      expect(status).toHaveTextContent("No results");
+      expect(ownedRoles()).toEqual(["group"]);
+      await user.clear(screen.getByRole("combobox"));
+      expect(screen.getByRole("status")).toBe(status);
+      expect(status).toBeEmptyDOMElement();
+    },
+  );
+
+  it("hydrates an in-list CommandEmpty into one persistent polite status outside the listbox", async () => {
+    const ui = (
+      <Command>
+        <CommandInput aria-label='Hydrated empty search' />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+          <CommandGroup heading='Fruit'>
+            <CommandItem value='apple'>Apple</CommandItem>
+            <CommandItem value='pear'>Pear</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+    const html = renderToString(ui);
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.append(container);
+    const consoleError = vi.spyOn(console, "error");
+    const recoverableError = vi.fn();
+    let root: Root | undefined;
+    try {
+      // (a) The slot is client-only, so the server never emits a status that hydration would have to reconcile.
+      expect(html).not.toContain('role="status"');
+      expect(container.querySelector('[role="status"]')).toBeNull();
+      expect(container.querySelector('[data-slot="command-empty-slot"]')).toBeEmptyDOMElement();
+      await act(async () => {
+        root = hydrateRoot(container, ui, {onRecoverableError: recoverableError});
+      });
+      // (b) No hydration mismatch or other reported error.
+      expect(recoverableError).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+      // (c) Exactly one empty polite status, mounted before any query and outside the listbox.
+      expect(within(container).getAllByRole("status")).toHaveLength(1);
+      const status = within(container).getByRole("status");
+      expect(status).toBeEmptyDOMElement();
+      expect(status).toHaveAttribute("aria-live", "polite");
+      expect(within(container).getByRole("listbox").contains(status)).toBe(false);
+      // (d) A query without results changes only that region's content.
+      fireEvent.change(within(container).getByRole("combobox", {name: "Hydrated empty search"}), {target: {value: "zz"}});
+      expect(within(container).queryByRole("option")).not.toBeInTheDocument();
+      expect(within(container).getAllByRole("status")).toEqual([status]);
+      expect(status).toHaveTextContent("No results");
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+      consoleError.mockRestore();
+    }
+  });
+
+  it.each([
+    {
+      source: "an associated <label htmlFor>",
+      name: "Rechercher",
+      named: (
+        <>
+          <label htmlFor='native-command-search'>Rechercher</label>
+          <CommandInput id='native-command-search' />
+        </>
+      ),
+    },
+    {
+      source: "a wrapping <label>",
+      name: "Căutare",
+      named: (
+        <label>
+          Căutare
+          <CommandInput />
+        </label>
+      ),
+    },
+    {source: "title", name: "Suche", named: <CommandInput title='Suche' />},
+    {
+      source: "aria-labelledby",
+      name: "Buscar",
+      named: (
+        <>
+          <span id='labelled-command-search'>Buscar</span>
+          <CommandInput aria-labelledby='labelled-command-search' />
+        </>
+      ),
+    },
+  ])("lets $source name CommandInput instead of the English fallback", ({name, named}) => {
+    render(
+      <Command>
+        {named}
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getByRole("combobox", {name})).not.toHaveAttribute("aria-label");
+  });
+
+  it("keeps a placeholder-only CommandInput named by its placeholder instead of the English fallback", () => {
+    render(
+      <Command>
+        <CommandInput placeholder='Caută comenzi' />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByPlaceholderText("Caută comenzi");
+    // HTML-AAM names a placeholder-only input from its placeholder; dom-accessibility-api does not model that source,
+    // so assert that no higher-precedence name source overrides it.
+    expect(input).toHaveRole("combobox");
+    expect(input).not.toHaveAttribute("aria-label");
+    expect(input).not.toHaveAttribute("aria-labelledby");
+  });
+
+  it.each([
+    {name: "Search commands", input: <CommandInput />},
+    {name: "Rechercher des commandes", input: <CommandInput fallbackLabel='Rechercher des commandes' />},
+  ])("applies the localizable fallback name '$name' only when nothing else names CommandInput", ({name, input}) => {
+    render(
+      <Command>
+        {input}
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+    expect(screen.getByRole("combobox", {name})).toHaveAttribute("aria-label", name);
+  });
+
+  it.each([
+    {source: "nothing", label: false, expected: "Search commands"},
+    {source: "a native label", label: true, expected: null},
+  ])("decides the fallback name after hydration without a mismatch when named by $source", async ({label, expected}) => {
+    const ui = (
+      <Command>
+        {label ? <label htmlFor='hydrated-command-input'>Rechercher</label> : null}
+        <CommandInput id='hydrated-command-input' />
+        <CommandList>
+          <CommandItem value='apple'>Apple</CommandItem>
+        </CommandList>
+      </Command>
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(ui);
+    document.body.append(container);
+    const consoleError = vi.spyOn(console, "error");
+    const recoverableError = vi.fn();
+    let root: Root | undefined;
+    try {
+      // Server markup never guesses: name sources such as an associated label are only known after mount.
+      expect(container.querySelector("input")).not.toHaveAttribute("aria-label");
+      await act(async () => {
+        root = hydrateRoot(container, ui, {onRecoverableError: recoverableError});
+      });
+      expect(recoverableError).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(container.querySelector("input")?.getAttribute("aria-label") ?? null).toBe(expected);
     } finally {
       await act(async () => root?.unmount());
       container.remove();
@@ -1835,7 +2051,8 @@ describe("Command", () => {
     expect(screen.getByRole("combobox")).toHaveValue("app");
     expect(screen.getByRole("option", {name: "Apple"})).toBeVisible();
     expect(screen.queryByRole("option", {name: "Banana"})).not.toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // The live region stays mounted while results exist; only its content is withheld.
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
   it("honors an uncontrolled input defaultValue and committed external replacements", () => {

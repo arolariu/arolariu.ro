@@ -1,6 +1,7 @@
 import {use, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {AsyncBoundary, type AsyncBoundaryProps} from "./async-boundary";
+import {VisuallyHidden} from "./visually-hidden";
 
 const meta = {
   title: "Components/Utilities/AsyncBoundary",
@@ -25,13 +26,21 @@ function ResourceContent({resource}: Readonly<{resource: Promise<string>}>): Rea
   return <p>{message}</p>;
 }
 
-function ResourceDemo({loadingFallback}: Readonly<Pick<AsyncBoundaryProps, "loadingFallback">>): React.JSX.Element {
+type ResourceDemoProps = Pick<AsyncBoundaryProps, "loadingFallback" | "loadingLabel"> & {
+  /** Text the demo writes into its own persistent status region while the request is pending. */
+  readonly pendingAnnouncement?: string;
+};
+
+function ResourceDemo({loadingFallback, loadingLabel, pendingAnnouncement}: Readonly<ResourceDemoProps>): React.JSX.Element {
   const [resource, setResource] = useState(() => Promise.withResolvers<string>());
   const [outcome, setOutcome] = useState<"pending" | "resolved" | "rejected">("pending");
   const [reported, setReported] = useState<string | null>(null);
   return (
     <section aria-label='Controlled async resource'>
       <p>Choose how the pending request completes. No promises are created by the suspending child.</p>
+      {pendingAnnouncement === undefined ? null : (
+        <VisuallyHidden role='status'>{outcome === "pending" ? pendingAnnouncement : null}</VisuallyHidden>
+      )}
       <button
         type='button'
         disabled={outcome !== "pending"}
@@ -61,6 +70,7 @@ function ResourceDemo({loadingFallback}: Readonly<Pick<AsyncBoundaryProps, "load
       </button>
       <AsyncBoundary
         loadingFallback={loadingFallback}
+        loadingLabel={loadingLabel}
         onError={(error) => setReported(error.message)}
         fallback={(error, reset) => (
           <div role='alert'>
@@ -83,15 +93,29 @@ function ResourceDemo({loadingFallback}: Readonly<Pick<AsyncBoundaryProps, "load
   );
 }
 
-/** Actual resolve, reject and retry paths with the default Spinner while pending. */
+/**
+ * Actual resolve, reject and retry paths with the default decorative Spinner while pending. Whenever the fallback mounts,
+ * for example after "Start another request", the boundary writes `loadingLabel` into its persistent status region.
+ */
 export const Loading: Story = {render: () => <ResourceDemo />};
 
-/** Custom status feedback replaces the default Spinner. */
+/** The default fallback's announcement is localizable through `loadingLabel`. */
+export const LocalizedLoading: Story = {render: () => <ResourceDemo loadingLabel='Se încarcă cererea de exemplu' />};
+
+/**
+ * Custom feedback replaces the default Spinner and its announcement, so the caller owns one: this demo writes into its
+ * own visually hidden status region, mounted before any later request starts.
+ */
 export const CustomLoading: Story = {
-  render: () => <ResourceDemo loadingFallback={<p role='status'>Waiting for the example request…</p>} />,
+  render: () => (
+    <ResourceDemo
+      loadingFallback={<p>Waiting for the example request…</p>}
+      pendingAnnouncement='Waiting for the example request'
+    />
+  ),
 };
 
-/** Null is an intentional empty pending state rather than an implicit default. */
+/** Null is an intentional empty pending state rather than an implicit default: nothing is rendered or announced. */
 export const EmptyLoading: Story = {render: () => <ResourceDemo loadingFallback={null} />};
 
 /** Non-suspending children render immediately without additional wrappers or styles. */

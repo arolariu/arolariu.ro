@@ -33,8 +33,11 @@ interface CardSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  * Mimics the visual structure of the library's card primitive with a header, stacked
  * content lines, and a trailing footer action placeholder to reduce layout shift while
  * data-backed card content is loading.
- * Placeholders are decorative. Set one loading role/label/busy announcement on
- * this root or a containing region, not on individual placeholders.
+ * Placeholders are decorative and the skeleton announces nothing; do not give individual
+ * placeholders a role or label. Announce loading through a status region that is mounted
+ * before loading starts and receives its text when loading begins, such as a persistent
+ * `VisuallyHidden` status or `useAnnounce`: a status element inserted already populated is
+ * not reliably announced, and `aria-busy` on a live region defers its announcements.
  * `animated={false}` and the shared reduced-motion policy keep placeholders static.
  *
  * @throws {RangeError} Before allocation when lines is not a nonnegative finite
@@ -42,7 +45,8 @@ interface CardSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * @example
  * ```tsx
- * <CardSkeleton lines={4} role="status" aria-label="Loading summary" aria-busy />
+ * <VisuallyHidden role="status">{loading ? "Loading summary" : null}</VisuallyHidden>
+ * {loading ? <CardSkeleton lines={4} /> : <SummaryCard />}
  * ```
  *
  * @see {@link CardSkeletonProps} for available props

@@ -25,6 +25,12 @@ export type AlertDialogContentProps = Readonly<
     className?: string;
     /** Compact or standard confirmation layout. @default "default" */
     size?: AlertDialogSize;
+    /**
+     * Props for the internal Portal, for example `keepMounted` (keep the closed confirmation and its form state
+     * mounted but hidden) or `container` (portal into a theme-scoped element, shadow root or another document).
+     * Content always supplies the portal's children.
+     */
+    portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Portal>, "children">>;
   }
 >;
 /** Layout composition uses the actual Base UI polymorphic render contract. */
@@ -112,15 +118,34 @@ function AlertDialogOverlay({className, ...props}: Readonly<AlertDialogOverlay.P
 }
 AlertDialogOverlay.displayName = "AlertDialogOverlay";
 
-/** Portals the confirmation popup with a standard or compact media/action layout. */
+/**
+ * Portals the confirmation popup above its backdrop with a standard or compact media/action layout.
+ *
+ * @remarks
+ * - Base UI keeps alert dialogs modal: it owns focus, Escape requests and ignores backdrop presses.
+ * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed confirmation mounted with
+ *   `hidden`, preserving form state, and `container` chooses the element or shadow root that receives the portal.
+ *
+ * @example
+ * ```tsx
+ * <AlertDialog>
+ *   <AlertDialogTrigger>Delete</AlertDialogTrigger>
+ *   <AlertDialogContent portalProps={{keepMounted: true}}>
+ *     <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+ *     <AlertDialogCancel>Cancel</AlertDialogCancel>
+ *   </AlertDialogContent>
+ * </AlertDialog>
+ * ```
+ */
 const AlertDialogContent = ({
   ref,
   className,
   children,
   size = "default",
+  portalProps,
   ...props
 }: Readonly<AlertDialogContent.Props>): React.ReactElement => (
-  <AlertDialogPortal>
+  <AlertDialogPortal {...portalProps}>
     <AlertDialogOverlay />
     <BaseAlertDialog.Popup
       data-slot='alert-dialog-content'

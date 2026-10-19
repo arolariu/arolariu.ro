@@ -49,15 +49,28 @@ import {convertHexToHslString} from "@arolariu/components/color-conversion-utili
 ### Composition with the `render` Prop
 
 ```tsx
-import {Button} from "@arolariu/components";
+"use client";
 
-// Use render prop instead of asChild
+import {Button, buttonVariants} from "@arolariu/components/button";
+
+// Use render instead of asChild. nativeButton={false} is for non-link targets that take button semantics.
 <Button
   nativeButton={false}
-  render={<a href='/dashboard' />}>
-  Go to Dashboard
+  render={<div />}>
+  Run task
 </Button>;
+
+// Links stay native anchors; buttonVariants() gives them the button appearance.
+<a
+  href='/dashboard'
+  className={buttonVariants({variant: "outline"})}>
+  Go to Dashboard
+</a>;
 ```
+
+A link rendered through `Button` would be announced as a button, missing from the page's list of links and activated by Space. With
+`variant: "link"`, a real anchor stays underlined at rest, while `<Button variant="link">` underlines only on hover. `buttonVariants` is
+exported from a client module, so call it from a Client Component.
 
 ```css
 /* my-component.module.css */
@@ -74,8 +87,9 @@ import {Button} from "@arolariu/components";
 ### Canonical manager notifications and explicit Command root
 
 Canonical toast is not callable and has no `.success()`/`.dismiss()` helpers. Manager fields use `title`/`timeout`/`type`/`actionProps`;
-provider configuration uses `timeout`/`limit`. Scoped `createToastManager<T>()` managers can be passed via `toastManager`;
-`useToastManager<T>()` sees only the nearest provider.
+provider configuration uses `timeout`/`limit`. `timeout` defaults to `0`, so notifications persist until closed; the example below passes
+`timeout={5000}` for auto-dismissal. Scoped `createToastManager<T>()` managers can be passed via `toastManager`; `useToastManager<T>()` sees
+only the nearest provider.
 
 ```tsx
 "use client";
@@ -165,8 +179,9 @@ export function ActionsPalette() {
 ```
 
 Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. The automatic-root adapter is
-removed; always include the explicit Command root. For explicit before/after examples, nullable Select/Combobox, async AlertDialog
-completion and exact Skeleton caps, see [MIGRATION.md](./MIGRATION.md).
+removed; always include the explicit Command root. The placeholder names the search input here; CommandInput's localizable `fallbackLabel`
+(default `"Search commands"`) applies only when no label, `aria-label`, `aria-labelledby`, `title` or placeholder names it. For explicit
+before/after examples, nullable Select/Combobox, async AlertDialog completion and exact Skeleton caps, see [MIGRATION.md](./MIGRATION.md).
 
 ### Simple Card Layout
 
@@ -280,7 +295,10 @@ export function Dashboard() {
                 <CardTitle>Project Progress</CardTitle>
               </CardHeader>
               <CardContent className={styles.stack}>
-                <Progress value={75} />
+                <Progress
+                  value={75}
+                  aria-label='Project progress'
+                />
                 <p className={styles.mutedText}>75% complete</p>
               </CardContent>
             </Card>
@@ -292,11 +310,17 @@ export function Dashboard() {
               <CardContent>
                 <div className={styles.avatarRow}>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src='/avatar1.jpg' />
+                    <AvatarImage
+                      src='/avatar1.jpg'
+                      alt='Jane Doe'
+                    />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src='/avatar2.jpg' />
+                    <AvatarImage
+                      src='/avatar2.jpg'
+                      alt='Sam Miller'
+                    />
                     <AvatarFallback>SM</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
@@ -576,7 +600,7 @@ export function ProfileForm() {
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@arolariu/components/dropdown-menu";
 import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
-import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {Sheet, SheetContent, SheetTitle, SheetTrigger} from "@arolariu/components/sheet";
 import {LogOut, MenuIcon, Settings, User} from "lucide-react";
 import styles from "./app-header.module.css";
 
@@ -608,6 +632,7 @@ export function AppHeader() {
 
         <Sheet>
           <SheetTrigger
+            aria-label='Open navigation'
             render={
               <button
                 type='button'
@@ -617,6 +642,7 @@ export function AppHeader() {
             <MenuIcon />
           </SheetTrigger>
           <SheetContent side='left'>
+            <SheetTitle>Navigation</SheetTitle>
             <nav className={styles.mobileNav}>
               <a href='/dashboard'>Dashboard</a>
               <a href='/projects'>Projects</a>
@@ -628,6 +654,7 @@ export function AppHeader() {
         <div className={styles.actions}>
           <DropdownMenu>
             <DropdownMenuTrigger
+              aria-label='Open account menu'
               render={
                 <button
                   type='button'
@@ -750,6 +777,7 @@ export function UsersTable() {
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger
+                      aria-label={`Actions for ${user.name}`}
                       render={
                         <button
                           type='button'
@@ -767,7 +795,7 @@ export function UsersTable() {
                         <Edit />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className={styles.dangerItem}>
+                      <DropdownMenuItem variant='destructive'>
                         <Trash />
                         Delete
                       </DropdownMenuItem>
@@ -942,7 +970,7 @@ export function SettingsDialog() {
             <div className={styles.field}>
               <Label htmlFor='timezone'>Timezone</Label>
               <Select defaultValue='utc'>
-                <SelectTrigger>
+                <SelectTrigger id='timezone'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -959,17 +987,31 @@ export function SettingsDialog() {
             className={styles.panel}>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
-                <Label>Email Notifications</Label>
-                <div className={styles.mutedText}>Receive emails about your account activity.</div>
+                <Label htmlFor='email-notifications'>Email Notifications</Label>
+                <div
+                  id='email-notifications-description'
+                  className={styles.mutedText}>
+                  Receive emails about your account activity.
+                </div>
               </div>
-              <Switch />
+              <Switch
+                id='email-notifications'
+                aria-describedby='email-notifications-description'
+              />
             </div>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
-                <Label>Push Notifications</Label>
-                <div className={styles.mutedText}>Receive push notifications on your devices.</div>
+                <Label htmlFor='push-notifications'>Push Notifications</Label>
+                <div
+                  id='push-notifications-description'
+                  className={styles.mutedText}>
+                  Receive push notifications on your devices.
+                </div>
               </div>
-              <Switch />
+              <Switch
+                id='push-notifications'
+                aria-describedby='push-notifications-description'
+              />
             </div>
           </TabsContent>
 
@@ -1018,7 +1060,8 @@ export function SettingsDialog() {
 
 ```css
 :root {
-  --ac-primary: oklch(0.6 0.2 250);
+  --ac-primary: oklch(0.5 0.14 250);
+  /* Overriding --ac-primary: also override --ac-primary-emphasis in every theme (4.5:1 on --ac-background, 3:1 on --ac-secondary). */
   --ac-radius: 0.5rem;
 }
 ```
@@ -1026,8 +1069,9 @@ export function SettingsDialog() {
 ```css
 /* app-theme.module.css */
 .themeScope {
-  --ac-primary: oklch(0.68 0.2 258);
-  --ac-primary-foreground: oklch(0.98 0.01 258);
+  --ac-primary: oklch(0.5 0.18 258);
+  --ac-primary-foreground: oklch(0.98 0.009 258);
+  --ac-primary-emphasis: oklch(0.5 0.18 258);
   --ac-secondary: oklch(0.95 0.02 286);
   --ac-background: oklch(0.99 0 0);
   --ac-radius-md: 0.75rem;
@@ -1038,6 +1082,8 @@ export function SettingsDialog() {
   --ac-background: oklch(0.17 0.01 286);
   --ac-foreground: oklch(0.98 0 0);
   --ac-card: oklch(0.2 0.01 286);
+  --ac-secondary: oklch(0.27 0.01 286);
+  --ac-primary-emphasis: oklch(0.72 0.14 258);
 }
 ```
 
@@ -1102,6 +1148,7 @@ export function MobileAddForm() {
   return (
     <Sheet>
       <SheetTrigger
+        aria-label='Add new item'
         render={
           <button
             type='button'
@@ -1426,7 +1473,7 @@ export function LoginForm() {
 }
 
 .link {
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
   text-decoration: none;
 }
 
@@ -1552,6 +1599,7 @@ export function DataTableWithSorting() {
       cell: ({row}) => (
         <DropdownMenu>
           <DropdownMenuTrigger
+            aria-label={`Actions for ${row.original.name}`}
             render={
               <button
                 type='button'
@@ -1979,6 +2027,7 @@ export function CreateProjectModal() {
 ### Recipe 4: Toast Notifications (canonical manager)
 
 Mount the canonical Toaster before using its manager. Keep important feedback in persistent application content as well as notifications.
+This Toaster sets no `timeout`, so its notifications stay until closed (`timeout` defaults to `0`); the loading example sets one explicitly.
 
 ```tsx
 import {CheckCircle2, Info, Loader2, XCircle} from "lucide-react";
@@ -2211,7 +2260,7 @@ export function ToastDemo() {
   flex-shrink: 0;
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
 }
 
 .customContent {
@@ -2311,7 +2360,14 @@ export function AppSidebar() {
                           key={item.title}
                           defaultOpen={isActive}>
                           <SidebarMenuItem>
-                            <CollapsibleTrigger render={<SidebarMenuButton isActive={isActive} />}>
+                            {/* A section trigger is not a destination: keep its active styling without aria-current="page". */}
+                            <CollapsibleTrigger
+                              render={
+                                <SidebarMenuButton
+                                  isActive={isActive}
+                                  aria-current={undefined}
+                                />
+                              }>
                               <item.icon aria-hidden='true' />
                               <span>{item.title}</span>
                               <ChevronDown
@@ -2324,8 +2380,13 @@ export function AppSidebar() {
                                 {item.submenu.map((subitem) => (
                                   <SidebarMenuSubItem key={subitem.title}>
                                     <SidebarMenuSubButton
+                                      href={subitem.url}
                                       isActive={activeItem === subitem.url}
-                                      onClick={() => setActiveItem(subitem.url)}>
+                                      onClick={(event) => {
+                                        // Demo routing only: a real app lets its router navigate.
+                                        event.preventDefault();
+                                        setActiveItem(subitem.url);
+                                      }}>
                                       {subitem.title}
                                     </SidebarMenuSubButton>
                                   </SidebarMenuSubItem>
@@ -2341,7 +2402,12 @@ export function AppSidebar() {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => setActiveItem(item.url)}>
+                          render={<a href={item.url} />}
+                          onClick={(event) => {
+                            // Demo routing only: a real app lets its router navigate.
+                            event.preventDefault();
+                            setActiveItem(item.url);
+                          }}>
                           <item.icon />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
@@ -2492,8 +2558,8 @@ export function AccessibleDropdownMenu() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => handleAction("Delete")}
-            className={styles.dangerItem}>
+            variant='destructive'
+            onClick={() => handleAction("Delete")}>
             <Trash2 />
             <span>Delete</span>
             <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
@@ -2545,10 +2611,6 @@ export function AccessibleDropdownMenu() {
   min-width: 14rem;
 }
 
-.dangerItem {
-  color: var(--ac-destructive);
-}
-
 .instructions {
   display: grid;
   gap: 0.5rem;
@@ -2589,7 +2651,7 @@ export function AccessibleDropdownMenu() {
 ```tsx
 import {format} from "date-fns";
 import {Calendar as CalendarIcon} from "lucide-react";
-import {useState} from "react";
+import {useId, useState} from "react";
 
 import {Button} from "@arolariu/components/button";
 import {Calendar} from "@arolariu/components/calendar";
@@ -2599,13 +2661,22 @@ import styles from "./date-picker.module.css";
 
 export function DatePicker() {
   const [date, setDate] = useState<Date | undefined>();
+  const labelId = useId();
+  const triggerId = useId();
 
   return (
     <div className={styles.container}>
       <div className={styles.field}>
-        <label className={styles.label}>Select Date</label>
+        {/* Visible label for the trigger; the trigger's own text adds the selected date to its name. */}
+        <span
+          id={labelId}
+          className={styles.label}>
+          Select Date
+        </span>
         <Popover>
           <PopoverTrigger
+            id={triggerId}
+            aria-labelledby={`${labelId} ${triggerId}`}
             render={
               <Button
                 variant='outline'
@@ -2636,13 +2707,21 @@ export function DateRangePicker() {
     from: undefined,
     to: undefined,
   });
+  const labelId = useId();
+  const triggerId = useId();
 
   return (
     <div className={styles.container}>
       <div className={styles.field}>
-        <label className={styles.label}>Select Date Range</label>
+        <span
+          id={labelId}
+          className={styles.label}>
+          Select Date Range
+        </span>
         <Popover>
           <PopoverTrigger
+            id={triggerId}
+            aria-labelledby={`${labelId} ${triggerId}`}
             render={
               <Button
                 variant='outline'
@@ -2820,6 +2899,7 @@ export function FileUploadArea() {
             <input
               type='file'
               multiple
+              aria-label='Upload files'
               className={styles.fileInput}
               onChange={handleFileInput}
             />
@@ -2839,6 +2919,7 @@ export function FileUploadArea() {
                   <div className={styles.uploadProgress}>
                     <Progress
                       value={upload.progress}
+                      aria-label={`Upload progress for ${upload.file.name}`}
                       className={styles.progressBar}
                     />
                     <span className={styles.uploadPercent}>{upload.progress}%</span>
@@ -2848,6 +2929,7 @@ export function FileUploadArea() {
                     <Button
                       variant='ghost'
                       size='icon'
+                      aria-label={`Remove ${upload.file.name}`}
                       onClick={() => removeUpload(upload.id)}
                       className={styles.removeButton}>
                       <X />
@@ -2905,6 +2987,12 @@ export function FileUploadArea() {
 .dropZoneActive {
   border-color: var(--ac-primary);
   background-color: color-mix(in oklch, var(--ac-primary) 10%, var(--ac-muted));
+}
+
+/* The transparent file input covers the zone, so show its keyboard focus on the zone itself. */
+.dropZone:focus-within {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
 }
 
 .uploadIcon {
@@ -3378,7 +3466,9 @@ export function SettingsPage() {
 
 The caller supplies a stable initial promise started in server data loading or a client event. The client retry factory starts a replacement
 request only when Retry is activated. Do not create a new suspending promise on each render or share user-specific resources in
-module-global state.
+module-global state. The custom `loadingFallback` below replaces AsyncBoundary's default spinner together with its persistent loading
+announcement: omit it (optionally setting `loadingLabel`) to keep that announcement, or announce loading through your own status region
+mounted before loading starts.
 
 ```tsx
 "use client";
@@ -3655,7 +3745,8 @@ export function ErrorHandlingDemo({
 
 1. **Form Validation**: Always use `zod` + `react-hook-form` for type-safe validation
 2. **Error Handling**: Combine boundaries, inline errors, and toast notifications
-3. **Loading States**: Use `Skeleton` components and `AsyncBoundary` for async data
+3. **Loading States**: Use `Skeleton` components and `AsyncBoundary` for async data. AsyncBoundary's default fallback announces loading
+   through a persistent status region; a custom fallback, such as Recipe 10's skeleton, needs its own region mounted before loading starts
 4. **Accessibility**: Keyboard navigation, ARIA attributes, and semantic HTML
 5. **Responsive Design**: CSS Modules with container queries and media queries
 6. **Type Safety**: Leverage namespace types (`Component.Props`, `Component.State`)

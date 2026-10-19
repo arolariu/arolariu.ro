@@ -162,6 +162,10 @@ application style objects or a styling dependency.
 - The callable toast facade and all `Legacy*` components/subpaths are removed. No Sonner export/dependency is introduced.
 - `CommandDialog` is a modal shell containing exactly one explicit `Command`. Command is native substring/custom-score matching, not cmdk.
 - `AlertDialogAction` does not close automatically. Close explicitly after success and retain pending/rejection behavior.
+- Button's icon sizes require `aria-label` or `aria-labelledby`, and `ButtonProps` is a union: extend it with `type X = ButtonProps & {…}`,
+  not an interface. Links stay native `<a>` elements styled with `buttonVariants()` rather than Button render targets.
+- Toasts persist until closed unless `timeout` is set (it defaults to `0`; v2.4 dismissed after 5000 ms), and visual effects settle five
+  seconds after mount unless `loop`. See MIGRATION for every changed default, removed toast option and generated control.
 - Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
   `Toast` versus `ToastData`; original `DirectionProvider`/`useDirection` with `TextDirection`.
 
@@ -235,14 +239,18 @@ import {Button, Card} from "@arolariu/components";
 ```css
 /* app-theme.css */
 :root {
-  --ac-primary: oklch(0.62 0.21 262);
-  --ac-primary-foreground: oklch(0.99 0.01 260);
+  --ac-primary: oklch(0.5 0.21 262);
+  --ac-primary-foreground: oklch(0.99 0.004 260);
+  /* Primary text/indicator hue: at least 4.5:1 on --ac-background and 3:1 on --ac-secondary. */
+  --ac-primary-emphasis: oklch(0.5 0.21 262);
   --ac-radius-md: 0.75rem;
 }
 
-.dark {
+.dark,
+[data-theme="dark"] {
   --ac-background: oklch(0.18 0.01 286);
   --ac-foreground: oklch(0.98 0 0);
+  --ac-primary-emphasis: oklch(0.72 0.14 262);
 }
 ```
 
@@ -331,7 +339,9 @@ These are domain-independent native/composed display APIs, not upload controls o
 
 Card/Form/List/Table skeleton layouts keep their native div refs and defaults. Every count is a finite nonnegative integer ≤ 10,000; table
 total cells **including its optional default-visible header** are also capped at 10,000. Invalid/over-limit inputs throw RangeError before
-allocation, without coercion/clamping. `animated={false}` is explicit static presentation; callers own one loading announcement.
+allocation, without coercion/clamping. Skeletons pulse twice and then stay static; `animated={false}` is explicit static presentation.
+Skeletons announce nothing: callers own one loading announcement through a status region mounted before loading starts (not `aria-busy` on
+that region).
 
 ### 🎪 Animated Backgrounds
 
@@ -352,7 +362,9 @@ allocation, without coercion/clamping. `animated={false}` is explicit static pre
 - `tailwindcss` is no longer a peer dependency.
 - `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
-- If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
+- Use component props such as `variant` and `size` to style package components. `buttonVariants()` remains the way to give a native link the
+  button appearance (`<a href='/docs' className={buttonVariants({variant: "outline"})}>`); call it from a Client Component, because it is
+  exported from a client module. `badgeVariants()` is likewise a client-module helper.
 - CSS custom properties now use the `--ac-*` prefix.
 
 ---
@@ -378,6 +390,10 @@ allocation, without coercion/clamping. `animated={false}` is explicit static pre
 - Design tokens live in `src/index.css`
 - Theme tokens use the `--ac-` prefix, for example:
   - `--ac-primary`
+  - `--ac-primary-emphasis` — the primary hue for text, icons and value indicators drawn directly on neutral surfaces (Badge `link` text,
+    the active Stepper number, Accordion hover text, Progress/Meter/Slider fills, NumberField scrubbing text), kept at 4.5:1 on
+    `--ac-background` and 3:1 on `--ac-secondary`; `--ac-primary` stays the fill behind `--ac-primary-foreground`. Themes that override
+    `--ac-primary` must override this token too, in every theme they support, keeping both ratios.
   - `--ac-background`
   - `--ac-radius-md`
   - `--ac-chart-1`
@@ -493,7 +509,10 @@ export function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className={styles.stack}>
-          <Progress value={75} />
+          <Progress
+            value={75}
+            aria-label='Monthly sales goal'
+          />
           <p className={styles.mutedText}>75% of monthly goal</p>
         </CardContent>
       </Card>
@@ -516,7 +535,7 @@ export function Dashboard() {
 
 ```tsx
 import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
-import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {Sheet, SheetContent, SheetTitle, SheetTrigger} from "@arolariu/components/sheet";
 import {MenuIcon} from "lucide-react";
 import styles from "./app-header.module.css";
 
@@ -539,6 +558,7 @@ export function AppHeader() {
 
         <Sheet>
           <SheetTrigger
+            aria-label='Open navigation'
             render={
               <button
                 type='button'
@@ -548,6 +568,7 @@ export function AppHeader() {
             <MenuIcon />
           </SheetTrigger>
           <SheetContent>
+            <SheetTitle>Navigation</SheetTitle>
             <nav className={styles.mobileNav}>
               <a href='/'>Home</a>
               <a href='/about'>About</a>
@@ -592,9 +613,10 @@ import {Button, type ButtonProps} from "@arolariu/components/button";
 import {cn} from "@arolariu/components/utilities";
 import styles from "./custom-button.module.css";
 
-interface CustomButtonProps extends ButtonProps {
+// ButtonProps is a union (icon sizes require aria-label or aria-labelledby), so extend it with an intersection type, not an interface.
+type CustomButtonProps = ButtonProps & {
   icon?: React.ReactNode;
-}
+};
 
 export function CustomButton({icon, children, className, ...props}: CustomButtonProps) {
   return (
@@ -633,10 +655,12 @@ export default function HomePage() {
 Built around **OKLCH CSS custom properties** and **CSS Modules**.
 
 ```css
-/* theme-overrides.module.css */
+/* theme-overrides.module.css: a light-theme scope */
 .themeScope {
-  --ac-primary: oklch(0.7 0.19 250);
-  --ac-primary-foreground: oklch(0.99 0.01 250);
+  --ac-primary: oklch(0.5 0.14 250);
+  --ac-primary-foreground: oklch(0.99 0.004 250);
+  /* Light value; a scope used in a dark theme needs its own (4.5:1 on its background, 3:1 on its secondary). */
+  --ac-primary-emphasis: oklch(0.5 0.14 250);
   --ac-muted: oklch(0.96 0.01 286);
   --ac-radius-md: 0.875rem;
 }

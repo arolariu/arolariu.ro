@@ -3,6 +3,7 @@
 import {Separator as BaseSeparator} from "@base-ui/react/separator";
 import {Search} from "lucide-react";
 import * as React from "react";
+import {createPortal} from "react-dom";
 
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
@@ -72,12 +73,17 @@ export type CommandInputProps = Readonly<
     defaultValue?: string;
     /** Search proposal, after a non-cancelled native onChange. */
     onValueChange?: (search: string) => void;
+    /**
+     * Localizable accessible name applied only when no `aria-label`, `aria-labelledby`, associated `<label>`, `title` or
+     * `placeholder` names the input; decided after mount, so server and client markup match. @default "Search commands"
+     */
+    fallbackLabel?: string;
   }
 >;
 
 /** Native listbox props. Its effective id is linked to the combobox. */
 export type CommandListProps = Readonly<React.ComponentPropsWithRef<"div"> & {label?: string}>;
-/** Native live status props; mounted only while there are no visible options. */
+/** Native polite status props; the status stays mounted outside the listbox, showing children only with no visible options. */
 export type CommandEmptyProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Registered, labelled group. Hidden descendants stay mounted and searchable. */
 export type CommandGroupProps = Readonly<
@@ -162,6 +168,8 @@ interface CommandContextValue {
 
 const CommandContext = React.createContext<CommandContextValue | null>(null);
 const CommandGroupContext = React.createContext<Readonly<{id: string; forceMount: boolean; hidden: boolean}> | null>(null);
+/** CommandList's empty-status slot beside its listbox: `undefined` outside a list, `null` until the slot mounts. */
+const CommandEmptySlotContext = React.createContext<HTMLElement | null | undefined>(undefined);
 
 function useCommandContext(componentName: string): CommandContextValue {
   const context = React.useContext(CommandContext);
@@ -589,10 +597,11 @@ const CommandDialog = ({
 );
 CommandDialog.displayName = "CommandDialog";
 
-/** Search combobox composed with the real InputGroup chrome and native form input. */
+/** Search combobox composed with the real InputGroup chrome and native form input; see `fallbackLabel` for naming. */
 const CommandInput = ({
   ref,
   className,
+  fallbackLabel = "Search commands",
   onChange,
   onValueChange,
   value,
@@ -602,18 +611,28 @@ const CommandInput = ({
   const {activeItemId, listId, setSearch} = useCommandContext("CommandInput");
   const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
   const inputValue = value ?? uncontrolledValue;
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const mergedRef = useMergedRefs(inputRef, ref);
+  const [unnamed, setUnnamed] = React.useState(false);
+  const namedByProps = [props["aria-label"], props["aria-labelledby"], props.title, props.placeholder].some((source) =>
+    Boolean(source?.trim()),
+  );
   React.useLayoutEffect(() => {
     setSearch(inputValue);
   }, [inputValue, setSearch]);
+  // An associated <label> exists only in the DOM, so the fallback name is decided after commit, never during render.
+  React.useLayoutEffect(() => {
+    setUnnamed(!namedByProps && !inputRef.current?.labels?.length);
+  }, [namedByProps, props.id]);
   return (
     <div
       data-slot='command-input-wrapper'
       className={styles.inputWrapper}>
       <InputGroup className={styles.inputGroup}>
         <input
-          ref={ref}
+          ref={mergedRef}
           data-slot='command-input'
-          aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : "Search commands")}
+          aria-label={unnamed && fallbackLabel ? fallbackLabel : undefined}
           aria-activedescendant={activeItemId ?? undefined}
           aria-autocomplete='list'
           aria-controls={listId}
@@ -643,12 +662,13 @@ const CommandInput = ({
 };
 CommandInput.displayName = "CommandInput";
 
-/** Labelled listbox; a custom id is committed back to the input's aria-controls. */
-const CommandList = ({ref, className, label, id, ...props}: Readonly<CommandListProps>): React.JSX.Element => {
+/** Labelled listbox; a custom id is committed back to the input's aria-controls. Hosts CommandEmpty beside the listbox. */
+const CommandList = ({ref, children, className, label, id, ...props}: Readonly<CommandListProps>): React.JSX.Element => {
   const {listId, listRef, observeOrder, setListId, label: rootLabel} = useCommandContext("CommandList");
   const mergedRef = useMergedRefs(listRef, ref);
   const generatedId = React.useId();
   const effectiveId = id ?? generatedId;
+  const [emptySlot, setEmptySlot] = React.useState<HTMLDivElement | null>(null);
   React.useLayoutEffect(() => {
     setListId(effectiveId);
   }, [effectiveId, setListId]);
@@ -657,33 +677,49 @@ const CommandList = ({ref, className, label, id, ...props}: Readonly<CommandList
     return list ? observeOrder(list) : undefined;
   }, [listRef, observeOrder]);
   return (
-    <div
-      ref={mergedRef}
-      data-slot='command-list'
-      aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : (label ?? rootLabel))}
-      className={cn(styles.list, className)}
-      id={listId}
-      role='listbox'
-      {...props}
-    />
+    <>
+      <div
+        ref={setEmptySlot}
+        data-slot='command-empty-slot'
+        className={styles.emptySlot}
+      />
+      <div
+        ref={mergedRef}
+        data-slot='command-list'
+        aria-label={props["aria-label"] ?? (props["aria-labelledby"] ? undefined : (label ?? rootLabel))}
+        className={cn(styles.list, className)}
+        id={listId}
+        role='listbox'
+        {...props}>
+        <CommandEmptySlotContext.Provider value={emptySlot}>{children}</CommandEmptySlotContext.Provider>
+      </div>
+    </>
   );
 };
 CommandList.displayName = "CommandList";
 
-/** Live empty status. Force-mounted and disabled options still count as visible. */
-const CommandEmpty = ({ref, className, ...props}: Readonly<CommandEmptyProps>): React.JSX.Element | null => {
+/**
+ * Polite status whose region stays mounted for the Command's lifetime, outside the listbox (portaled beside it from inside
+ * CommandList); only its children toggle when no options are visible. Force-mounted and disabled options count as visible.
+ */
+const CommandEmpty = ({ref, children, className, ...props}: Readonly<CommandEmptyProps>): React.JSX.Element | null => {
   const {visibleItemCount} = useCommandContext("CommandEmpty");
-  if (visibleItemCount > 0) return null;
-  return (
+  const slot = React.useContext(CommandEmptySlotContext);
+  const status = (
     <div
       ref={ref}
       data-slot='command-empty'
       className={cn(styles.empty, className)}
       role='status'
       aria-live='polite'
-      {...props}
-    />
+      aria-atomic='true'
+      {...props}>
+      {visibleItemCount === 0 ? children : null}
+    </div>
   );
+  // Outside a list the region already sits outside the listbox; inside one it waits for the client-only slot.
+  if (slot === undefined) return status;
+  return slot ? createPortal(status, slot) : null;
 };
 CommandEmpty.displayName = "CommandEmpty";
 

@@ -1,5 +1,9 @@
 import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {createRef} from "react";
+import {hydrateRoot, type Root} from "react-dom/client";
+import {renderToString} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {
@@ -11,12 +15,69 @@ import {
   ScrollAreaViewport,
   ScrollBar,
 } from "./scroll-area";
+import styles from "./scroll-area.module.css";
 
 const platformDescriptors = new Map<string, PropertyDescriptor | undefined>();
 const platformMethods = ["getAnimations", "setPointerCapture", "hasPointerCapture", "releasePointerCapture"] as const;
+// Lets one viewport switch between fitting and overflowing content within a test.
+let resizingContentOverflows = false;
+let moduleStylesheet: HTMLStyleElement | undefined;
+
+/** Applies the real stylesheet against the CSS Module class names emitted by Vitest. */
+function mountModuleStylesheet(): void {
+  moduleStylesheet = document.createElement("style");
+  moduleStylesheet.textContent = readFileSync(join(import.meta.dirname, "scroll-area.module.css"), "utf8").replace(
+    /\.([a-zA-Z][\w-]*)/gu,
+    (_match, name: string) => `.${styles[name] ?? name}`,
+  );
+  document.head.append(moduleStylesheet);
+}
+
+function cssPixels(value: string): number {
+  const match = /^(-?\d*\.?\d+)(px|rem)$/u.exec(value.trim());
+  if (!match) throw new Error(`Unsupported CSS length "${value}"`);
+  return Number(match[1]) * (match[2] === "rem" ? 16 : 1);
+}
+
+function mountedScrollbar(root: HTMLElement, orientation: "vertical" | "horizontal"): HTMLElement | undefined {
+  return Array.from(root.children).find(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement
+      && child.getAttribute("data-slot") === "scroll-area-scrollbar"
+      && child.getAttribute("data-orientation") === orientation,
+  );
+}
+
+function reservedInlineEnd(viewport: HTMLElement): number {
+  const gutter = getComputedStyle(viewport).getPropertyValue("padding-inline-end");
+  return gutter === "" ? 0 : cssPixels(gutter);
+}
+
+// Captures the primitive's resize observers so a test can deliver resize observations on demand.
+const resizeDeliveries = new Set<() => void>();
+class CapturingResizeObserver implements ResizeObserver {
+  private readonly deliver: () => void;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.deliver = (): void => callback([], this);
+  }
+
+  observe(): void {
+    resizeDeliveries.add(this.deliver);
+  }
+
+  unobserve(): void {
+    resizeDeliveries.delete(this.deliver);
+  }
+
+  disconnect(): void {
+    resizeDeliveries.delete(this.deliver);
+  }
+}
 
 describe("ScrollArea", () => {
   beforeEach(() => {
+    resizingContentOverflows = false;
     for (const name of platformMethods) {
       platformDescriptors.set(name, Object.getOwnPropertyDescriptor(HTMLElement.prototype, name));
     }
@@ -45,6 +106,14 @@ describe("ScrollArea", () => {
           if (property === "scrollWidth") return 300;
           return 100;
         }
+        if (testId === "resizing-viewport") {
+          return property === "scrollHeight" && resizingContentOverflows ? 400 : 100;
+        }
+        if (this.id === "aspect-viewport") {
+          // Width-proportional media: 101px tall at the full 100px width, 77px once a 24px gutter narrows it.
+          if (property !== "scrollHeight") return 100;
+          return reservedInlineEnd(this) > 0 ? 77 : 101;
+        }
         if (testId === "scroll-bar" || testId === "horizontal-bar") return 100;
         if (this.getAttribute("data-slot") === "scroll-area-thumb") return 25;
         return 0;
@@ -57,7 +126,11 @@ describe("ScrollArea", () => {
 
   afterEach(() => {
     cleanup();
+    moduleStylesheet?.remove();
+    moduleStylesheet = undefined;
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    resizeDeliveries.clear();
     for (const name of platformMethods) {
       const descriptor = platformDescriptors.get(name);
       if (descriptor) Object.defineProperty(HTMLElement.prototype, name, descriptor);
@@ -257,9 +330,195 @@ describe("ScrollArea", () => {
     fireEvent.pointerMove(thumb, {buttons: 1, pointerId: 2, clientY: 50});
     expect(viewport.scrollTop).toBe(100);
   });
+
+  it("reserves an inline-end gutter matching the mounted 24px vertical track and no block-end gutter without a horizontal track", async () => {
+    mountModuleStylesheet();
+    const rootRef = createRef<HTMLDivElement>();
+    const viewportRef = createRef<HTMLDivElement>();
+    render(
+      <ScrollArea
+        ref={rootRef}
+        viewportProps={{ref: viewportRef, id: "scroll-viewport", "aria-label": "Notes"}}>
+        <p>Scrollable notes</p>
+      </ScrollArea>,
+    );
+    await waitFor(() => expect(rootRef.current).toHaveAttribute("data-has-overflow-y"));
+    const root = rootRef.current;
+    const viewport = viewportRef.current;
+    if (!root || !viewport) throw new Error("Missing scroll area refs");
+    const verticalTrack = mountedScrollbar(root, "vertical");
+    if (!verticalTrack) throw new Error("Missing mounted vertical track");
+    const viewportStyle = getComputedStyle(viewport);
+
+    // The overlaid track keeps its 24px target, and the viewport reserves exactly that band.
+    expect(cssPixels(getComputedStyle(verticalTrack).width)).toBe(24);
+    expect(viewportStyle.boxSizing).toBe("border-box");
+    expect(cssPixels(viewportStyle.getPropertyValue("padding-inline-end"))).toBe(24);
+    expect(cssPixels(viewportStyle.getPropertyValue("scroll-padding-inline-end"))).toBe(24);
+    // Base UI also reports x overflow, but this convenience root mounts no horizontal track to reserve space for.
+    expect(root).toHaveAttribute("data-has-overflow-x");
+    expect(mountedScrollbar(root, "horizontal")).toBeUndefined();
+    expect(viewportStyle.getPropertyValue("padding-block-end")).toBe("");
+    expect(viewportStyle.getPropertyValue("scroll-padding-block-end")).toBe("");
+  });
+
+  it("reserves a block-end gutter matching the mounted 24px horizontal track and no inline-end gutter without a vertical track", async () => {
+    mountModuleStylesheet();
+    render(
+      <ScrollAreaRoot data-testid='scroll-root'>
+        <ScrollAreaViewport
+          data-testid='scroll-viewport'
+          aria-label='Wide notes'>
+          <ScrollAreaContent>Wide notes</ScrollAreaContent>
+        </ScrollAreaViewport>
+        <ScrollBar orientation='horizontal' />
+        <ScrollAreaCorner />
+      </ScrollAreaRoot>,
+    );
+    const root = screen.getByTestId("scroll-root");
+    await waitFor(() => expect(root).toHaveAttribute("data-has-overflow-x"));
+    const horizontalTrack = mountedScrollbar(root, "horizontal");
+    if (!horizontalTrack) throw new Error("Missing mounted horizontal track");
+    const viewportStyle = getComputedStyle(screen.getByTestId("scroll-viewport"));
+
+    expect(root).toHaveAttribute("data-has-overflow-x");
+    expect(cssPixels(getComputedStyle(horizontalTrack).height)).toBe(24);
+    expect(cssPixels(viewportStyle.getPropertyValue("padding-block-end"))).toBe(24);
+    expect(cssPixels(viewportStyle.getPropertyValue("scroll-padding-block-end"))).toBe(24);
+    // y overflows as well, but without a mounted vertical track there is no inline-end band to reserve.
+    expect(root).toHaveAttribute("data-has-overflow-y");
+    expect(viewportStyle.getPropertyValue("padding-inline-end")).toBe("");
+  });
+
+  it("keeps the gutter stable while Base UI toggles overflow, hiding the kept-mounted track while its axis fits", async () => {
+    mountModuleStylesheet();
+    render(
+      <ScrollAreaRoot data-testid='scroll-root'>
+        <ScrollAreaViewport
+          data-testid='resizing-viewport'
+          aria-label='Notes'>
+          <ScrollAreaContent>Notes</ScrollAreaContent>
+        </ScrollAreaViewport>
+        <ScrollBar />
+      </ScrollAreaRoot>,
+    );
+    const root = screen.getByTestId("scroll-root");
+    const viewport = screen.getByTestId("resizing-viewport");
+    // Base UI publishes its overflow edge variables only after measuring real content.
+    await waitFor(() => expect(viewport.style.getPropertyValue("--scroll-area-overflow-y-end")).toBe("0px"));
+    // A composed ScrollBar stays mounted by default: the gutter is reserved although nothing overflows, and the idle
+    // track is hidden, so it paints nothing and is no pointer target.
+    const track = mountedScrollbar(root, "vertical");
+    if (!track) throw new Error("Missing kept-mounted vertical track");
+    expect(root).not.toHaveAttribute("data-has-overflow-y");
+    expect(getComputedStyle(track).visibility).toBe("hidden");
+    expect(reservedInlineEnd(viewport)).toBe(24);
+
+    resizingContentOverflows = true;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    await waitFor(() => expect(root).toHaveAttribute("data-has-overflow-y"));
+    expect(mountedScrollbar(root, "vertical")).toBe(track);
+    expect(getComputedStyle(track).visibility).not.toBe("hidden");
+    expect(reservedInlineEnd(viewport)).toBe(24);
+
+    resizingContentOverflows = false;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    await waitFor(() => expect(root).not.toHaveAttribute("data-has-overflow-y"));
+    expect(mountedScrollbar(root, "vertical")).toBe(track);
+    expect(getComputedStyle(track).visibility).toBe("hidden");
+    expect(reservedInlineEnd(viewport)).toBe(24);
+  });
+
+  it("settles width-dependent content instead of flip-flopping Base UI's overflow measurement", async () => {
+    mountModuleStylesheet();
+    vi.stubGlobal("ResizeObserver", CapturingResizeObserver);
+    render(
+      <ScrollArea
+        data-testid='aspect-root'
+        viewportProps={{id: "aspect-viewport", "aria-label": "Media"}}>
+        <p>Aspect-ratio media</p>
+      </ScrollArea>,
+    );
+    const root = screen.getByTestId("aspect-root");
+    const viewport = document.getElementById("aspect-viewport");
+    if (!viewport) throw new Error("Missing aspect viewport");
+    let attributeChanges = 0;
+    const mutations = new MutationObserver((records) => {
+      attributeChanges += records.length;
+    });
+    mutations.observe(root, {attributes: true, attributeFilter: ["data-has-overflow-y"]});
+    const observed: boolean[] = [];
+    for (let observation = 0; observation < 6; observation++) {
+      act(() => {
+        for (const deliver of resizeDeliveries) deliver();
+      });
+      // Let re-measurements the primitive schedules after a state change run (outside act, like later frames).
+      await waitFor(() => undefined);
+      observed.push(root.hasAttribute("data-has-overflow-y"));
+    }
+    mutations.disconnect();
+
+    expect(new Set(observed).size, `overflow per observation: ${observed.join(", ")}`).toBe(1);
+    expect(attributeChanges).toBeLessThanOrEqual(1);
+    expect(reservedInlineEnd(viewport)).toBe(24);
+  });
+
+  it("server-renders the convenience ScrollArea with its gutter reserved and hydrates without a mismatch", async () => {
+    mountModuleStylesheet();
+    const ui = (
+      <ScrollArea viewportProps={{id: "ssr-viewport", "aria-label": "Server notes"}}>
+        <p>Server notes</p>
+      </ScrollArea>
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(ui);
+    document.body.append(container);
+    const viewport = container.querySelector<HTMLElement>("#ssr-viewport");
+    const serverRoot = viewport?.parentElement;
+    if (!viewport || !serverRoot) throw new Error("Missing server-rendered scroll area");
+    // Before any client code runs, the server markup carries the hidden track and therefore the gutter.
+    const serverTrack = mountedScrollbar(serverRoot, "vertical");
+    expect(serverTrack).toBeDefined();
+    if (serverTrack) expect(getComputedStyle(serverTrack).visibility).toBe("hidden");
+    expect(reservedInlineEnd(viewport)).toBe(24);
+
+    const consoleError = vi.spyOn(console, "error");
+    const onRecoverableError = vi.fn();
+    let hydrated: Root | undefined;
+    await act(async () => {
+      hydrated = hydrateRoot(container, ui, {onRecoverableError});
+    });
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(container.querySelector("#ssr-viewport")).toBe(viewport);
+    expect(mountedScrollbar(serverRoot, "vertical")).toBe(serverTrack);
+    expect(reservedInlineEnd(viewport)).toBe(24);
+    act(() => hydrated?.unmount());
+    container.remove();
+  });
+
+  it("lets a composed track opt out with keepMounted={false}, leaving no track or gutter while its axis fits", async () => {
+    mountModuleStylesheet();
+    render(
+      <ScrollAreaRoot data-testid='scroll-root'>
+        <ScrollAreaViewport
+          data-testid='resizing-viewport'
+          aria-label='Notes'>
+          <ScrollAreaContent>Notes</ScrollAreaContent>
+        </ScrollAreaViewport>
+        <ScrollBar keepMounted={false} />
+      </ScrollAreaRoot>,
+    );
+    const viewport = screen.getByTestId("resizing-viewport");
+    await waitFor(() => expect(viewport.style.getPropertyValue("--scroll-area-overflow-y-end")).toBe("0px"));
+    expect(mountedScrollbar(screen.getByTestId("scroll-root"), "vertical")).toBeUndefined();
+    expect(reservedInlineEnd(viewport)).toBe(0);
+  });
 });
-import {readFileSync} from "node:fs";
-import {join} from "node:path";
 it("refresh accessibility: authors 24px custom scroll targets and a contrasting thumb", () => {
   const css = readFileSync(join(import.meta.dirname, "scroll-area.module.css"), "utf8");
   expect(css).toMatch(/\.vertical\s*\{[^}]*width:\s*1\.5rem/u);

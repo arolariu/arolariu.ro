@@ -194,14 +194,16 @@ DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
 /**
  * Portals and positions the role-bearing Popup.
  * Popup ARIA, event handlers, render state, class callbacks, ref and finalFocus
- * never land on the positioning container. Defaults: bottom/start, offsets 4/0.
+ * never land on the positioning container. Defaults: start alignment, offsets 4/0.
+ * `side` stays unset unless provided, so Base UI opens root menus below the trigger
+ * and Menubar menus below a horizontal or toward the inline end of a vertical Menubar.
  */
 const DropdownMenuContent = ({ref, ...props}: Readonly<DropdownMenuContent.Props>): React.ReactElement => {
   const direction = useDirection();
   const {
     align = "start",
     alignOffset = 0,
-    side = "bottom",
+    side,
     sideOffset = 4,
     anchor,
     positionMethod,

@@ -42,6 +42,12 @@
   outline-offset: 2px;
 }
 
+/* Unavailable (reduced motion, motionPaused, hidden document) but still focusable: activation is ignored. */
+.launch[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @media (forced-colors: active) {
   .launch {
     background: ButtonFace;
@@ -50,5 +56,10 @@
   }
   .launch:focus-visible {
     outline-color: Highlight;
+  }
+  .launch[aria-disabled="true"] {
+    border-color: GrayText;
+    color: GrayText;
+    opacity: 1;
   }
 }

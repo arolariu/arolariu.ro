@@ -1,7 +1,7 @@
-import {useId, useState} from "react";
+import {useId, useRef, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "./dialog";
-import {FocusScope} from "./focus-scope";
+import {FocusScope, type FocusScopeProps} from "./focus-scope";
 const storyStyles = `
 .ac-story-focus-scope-button:focus-visible,
 .ac-story-focus-scope-input:focus-visible {
@@ -64,6 +64,46 @@ const storyClasses = {
   hidden: "ac-story-focus-scope-hidden",
 } as const;
 
+type EscapeExitScopeProps = Omit<FocusScopeProps, "aria-describedby" | "onKeyDown"> & {
+  /** Visible name of the control outside the scope that receives focus on Escape. */
+  readonly exitLabel: string;
+  /** Story explanation rendered before the announced exit instructions. */
+  readonly description?: React.ReactNode;
+};
+
+/**
+ * Story-only consumer pattern for a contained scope: visible instructions referenced by
+ * `aria-describedby` announce the exit, and Escape moves focus to a named outside control.
+ * Escape pressed inside a nested scope bubbles to this handler as well.
+ */
+function EscapeExitScope({exitLabel, description, ...scopeProps}: Readonly<EscapeExitScopeProps>): React.JSX.Element {
+  const instructionsId = useId();
+  const exitRef = useRef<HTMLButtonElement>(null);
+  return (
+    <section className={storyClasses.demo}>
+      {description}
+      <p id={instructionsId}>
+        Press Escape to leave this scope and move focus to <q>{exitLabel}</q>.
+      </p>
+      <FocusScope
+        {...scopeProps}
+        aria-describedby={instructionsId}
+        onKeyDown={(event) => {
+          if (event.key !== "Escape" || event.defaultPrevented) return;
+          event.preventDefault();
+          exitRef.current?.focus();
+        }}
+      />
+      <button
+        type='button'
+        ref={exitRef}
+        className={storyClasses.button}>
+        {exitLabel}
+      </button>
+    </section>
+  );
+}
+
 const meta = {
   decorators: [
     (Story) => (
@@ -81,7 +121,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "A local Tab controller for visible enabled non-inert descendants, not a modal. Base UI dialogs own their focus; never layer this trap over a modal popup.",
+          "A local Tab controller for visible, natively enabled, non-inert tab stops (focusable aria-disabled controls included), not a modal. Containment has no built-in exit: like every contained story here, consumers must provide and announce a keyboard exit. Base UI dialogs own their focus; never layer this trap over a modal popup.",
       },
     },
   },
@@ -95,7 +135,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Both Tab directions wrap across the available controls, not the hidden final button. */
+/** Both Tab directions wrap across the available controls, not the hidden final button; Escape leaves the scope. */
 export const Default: Story = {
   args: {
     contain: true,
@@ -124,19 +164,13 @@ export const Default: Story = {
     ),
   },
   render: (args) => (
-    <section className={storyClasses.demo}>
-      <p>Tab from the final visible action returns to the first field.</p>
-      <FocusScope
-        {...args}
-        aria-label='Local workbench'
-        className={storyClasses.panel}
-      />
-      <button
-        type='button'
-        className={storyClasses.button}>
-        Outside the scope
-      </button>
-    </section>
+    <EscapeExitScope
+      {...args}
+      aria-label='Local workbench'
+      className={storyClasses.panel}
+      description={<p>Tab from the final visible action returns to the first field.</p>}
+      exitLabel='Outside the scope'
+    />
   ),
 };
 
@@ -146,10 +180,11 @@ export const NoContain: Story = {...Default, args: {...Default.args, contain: fa
 /** Hidden, inert, disabled and negative-tab-index descendants do not become edge targets. */
 export const UnavailableControls: Story = {
   render: () => (
-    <FocusScope
+    <EscapeExitScope
       autoFocus
       aria-label='Available controls'
-      className={storyClasses.panel}>
+      className={storyClasses.panel}
+      exitLabel='After the available controls'>
       <div className={storyClasses.controls}>
         <div hidden>
           <button type='button'>Hidden ancestor</button>
@@ -179,27 +214,30 @@ export const UnavailableControls: Story = {
           <button type='button'>CSS-hidden final action</button>
         </div>
       </div>
-    </FocusScope>
+    </EscapeExitScope>
   ),
 };
 
-/** With no tabbable descendants, the container is the focus entry and Tab fallback. */
+/** With no tabbable descendants, the container is the focus entry and Tab fallback; Escape still leaves it. */
 export const EmptyScope: Story = {
-  args: {autoFocus: true, contain: true, children: <p>No available controls; focus stays on this scope.</p>},
+  args: {autoFocus: true, contain: true, children: <p>No available controls; Tab stays on this scope until Escape leaves it.</p>},
   render: (args) => (
-    <FocusScope
+    <EscapeExitScope
       {...args}
       aria-label='Empty workbench'
       className={storyClasses.panel}
+      exitLabel='After the empty workbench'
     />
   ),
 };
 
 function RestoreFocusDemo(): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const instructionsId = useId();
   return (
     <section className={storyClasses.demo}>
       <p>The draft's native autofocus takes entry focus. Closing the inline scope still returns focus to its original trigger.</p>
+      <p id={instructionsId}>Press Escape or choose Close workbench to leave the inline workbench.</p>
       <button
         type='button'
         className={storyClasses.button}
@@ -209,7 +247,13 @@ function RestoreFocusDemo(): React.JSX.Element {
       {open && (
         <FocusScope
           aria-label='Inline workbench'
-          className={storyClasses.panel}>
+          aria-describedby={instructionsId}
+          className={storyClasses.panel}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || event.defaultPrevented) return;
+            event.preventDefault();
+            setOpen(false);
+          }}>
           <div className={storyClasses.controls}>
             <label>
               Draft
@@ -231,50 +275,46 @@ function RestoreFocusDemo(): React.JSX.Element {
   );
 }
 
-/** Native descendant autofocus does not replace the inline scope's original restoration owner. */
+/** Escape or the close action unmounts the scope; native descendant autofocus does not replace its restoration owner. */
 export const WithRestoreFocus: Story = {render: () => <RestoreFocusDemo />};
 
 function UncheckedRadioGroupDemo(): React.JSX.Element {
   const groupName = useId();
   return (
-    <section className={storyClasses.demo}>
-      <p>
-        Until a choice is checked, this controller uses the first locally eligible radio as one logical stop. Tab from that stop wraps to
-        the first action. Reverse wrapping uses the same representative; a different peer reached by native navigation resolves to that
-        logical group stop.
-      </p>
-      <FocusScope
-        autoFocus
-        aria-label='Unchecked radio workbench'
-        className={storyClasses.panel}>
-        <div className={storyClasses.controls}>
-          <button
-            type='button'
-            className={storyClasses.button}>
-            First workbench action
-          </button>
-          <label>
-            <input
-              type='radio'
-              name={groupName}
-            />
-            First unchecked choice
-          </label>
-          <label>
-            <input
-              type='radio'
-              name={groupName}
-            />
-            Second unchecked choice
-          </label>
-        </div>
-      </FocusScope>
-      <button
-        type='button'
-        className={storyClasses.button}>
-        Outside the workbench
-      </button>
-    </section>
+    <EscapeExitScope
+      autoFocus
+      aria-label='Unchecked radio workbench'
+      className={storyClasses.panel}
+      description={
+        <p>
+          Until a choice is checked, this controller uses the first locally eligible radio as one logical stop. Tab from that stop wraps to
+          the first action. Reverse wrapping uses the same representative; a different peer reached by native navigation resolves to that
+          logical group stop.
+        </p>
+      }
+      exitLabel='Outside the workbench'>
+      <div className={storyClasses.controls}>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          First workbench action
+        </button>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          First unchecked choice
+        </label>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          Second unchecked choice
+        </label>
+      </div>
+    </EscapeExitScope>
   );
 }
 
@@ -284,50 +324,51 @@ export const UncheckedRadioGroup: Story = {render: () => <UncheckedRadioGroupDem
 function NestedScopeOwnershipDemo(): React.JSX.Element {
   const groupName = useId();
   return (
-    <section className={storyClasses.demo}>
-      <p>
-        These radios share one native group across two local scopes. Once focus enters the contained child, its native interior Tab and
-        Shift+Tab transitions belong to that child, not the ancestor's radio alias sequence. Pointer focus remains available outside because
-        these are local controllers, not modals.
-      </p>
-      <FocusScope
-        autoFocus
-        aria-label='Outer local scope'
-        className={storyClasses.panel}>
-        <div className={storyClasses.controls}>
-          <label>
-            <input
-              type='radio'
-              name={groupName}
-            />
-            Outer unchecked choice
-          </label>
-          <button
-            type='button'
-            className={storyClasses.button}>
-            Outer intervening action
-          </button>
-          <FocusScope
-            aria-label='Contained child scope'
-            className={storyClasses.panel}>
-            <div className={storyClasses.controls}>
-              <label>
-                <input
-                  type='radio'
-                  name={groupName}
-                />
-                Inner unchecked choice
-              </label>
-              <button
-                type='button'
-                className={storyClasses.button}>
-                Inner next action
-              </button>
-            </div>
-          </FocusScope>
-        </div>
-      </FocusScope>
-    </section>
+    <EscapeExitScope
+      autoFocus
+      aria-label='Outer local scope'
+      className={storyClasses.panel}
+      description={
+        <p>
+          These radios share one native group across two local scopes. Once focus enters the contained child, its native interior Tab and
+          Shift+Tab transitions belong to that child, not the ancestor's radio alias sequence. Pointer focus remains available outside
+          because these are local controllers, not modals. Escape inside the contained child bubbles to the outer scope's exit.
+        </p>
+      }
+      exitLabel='Outside both scopes'>
+      <div className={storyClasses.controls}>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          Outer unchecked choice
+        </label>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          Outer intervening action
+        </button>
+        <FocusScope
+          aria-label='Contained child scope'
+          className={storyClasses.panel}>
+          <div className={storyClasses.controls}>
+            <label>
+              <input
+                type='radio'
+                name={groupName}
+              />
+              Inner unchecked choice
+            </label>
+            <button
+              type='button'
+              className={storyClasses.button}>
+              Inner next action
+            </button>
+          </div>
+        </FocusScope>
+      </div>
+    </EscapeExitScope>
   );
 }
 

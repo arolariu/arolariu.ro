@@ -172,6 +172,19 @@
   flex-direction: column;
 }
 
+/* The Sheet's automatic close stays last in DOM order (after the navigation); pin it to the logical
+   top inline-end corner and reserve that row so it never covers sidebar content. */
+.mobilePanel[data-slot="sheet-content"] > [data-slot="sheet-close"] {
+  top: var(--ac-space-2);
+  right: auto;
+  inset-inline-end: var(--ac-space-2);
+}
+
+.mobileContentWithClose {
+  box-sizing: border-box;
+  padding-block-start: calc(var(--ac-space-2) + var(--ac-size-md));
+}
+
 .trigger {
   width: 1.75rem;
   height: 1.75rem;
@@ -639,6 +652,13 @@
   color: var(--ac-sidebar-accent-foreground);
 }
 
+/* The current nested destination needs a non-colour cue that hover and focus never show. */
+.menuSubButton[data-active="true"] {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+
 .menuSubButton > svg {
   width: 1rem;
   height: 1rem;
@@ -682,6 +702,15 @@
   .menuAction:focus-visible,
   .menuSubButton:focus-visible {
     outline-color: Highlight;
+  }
+
+  /* Forced colors replace the active background with Canvas; restore a system-colour current cue
+     that coexists with the outside focus ring. Disabled items keep the platform GrayText treatment. */
+  .menuButton[data-active="true"]:not(:disabled, [aria-disabled="true"]),
+  .menuSubButton[data-active="true"] {
+    background-color: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
   }
 
   .groupAction[aria-disabled="true"],

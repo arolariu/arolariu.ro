@@ -28,11 +28,17 @@ export interface SkeletonProps extends Readonly<React.ComponentPropsWithRef<"div
  * Renders a styled `<div>` with the library's skeleton animation. Size it with layout
  * classes to mimic the eventual content and reduce perceived loading jank.
  * Reduced motion and `animated={false}` keep the visible loading surface static.
- * Set loading announcements on the containing region or supply a localized role/label.
+ * The placeholder is decorative and announces nothing: mark it `aria-hidden="true"` and do not
+ * give it a role or label. Announce loading through a status region that is mounted before
+ * loading starts and receives localized text when loading begins, such as a persistent
+ * `VisuallyHidden` status or `useAnnounce`: a status element inserted already populated, or
+ * named only through `aria-label`, is not reliably announced, and `aria-busy` on a live region
+ * defers its announcements.
  *
  * @example
  * ```tsx
- * <Skeleton className="account-name-placeholder" aria-hidden="true" />
+ * <VisuallyHidden role="status">{loading ? "Loading account" : null}</VisuallyHidden>
+ * {loading ? <Skeleton className="account-name-placeholder" aria-hidden="true" /> : <AccountName />}
  * ```
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}

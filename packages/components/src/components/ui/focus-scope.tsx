@@ -3,7 +3,7 @@
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-import {isFocusAvailable as isAvailable, isFocusSubtreeAvailable} from "@/lib/_focus-availability";
+import {isFocusAvailable, isFocusSubtreeAvailable} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
 
 import styles from "./focus-scope.module.css";
@@ -13,21 +13,28 @@ import styles from "./focus-scope.module.css";
  */
 interface FocusScopeProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
-   * Whether focus should be trapped within the scope.
+   * Whether `Tab` and `Shift+Tab` wrap at the scope's edges instead of leaving it.
    *
-   * @defaultValue true
+   * @remarks
+   * Containment has no built-in exit. Whenever this is `true`, the consumer must
+   * provide a keyboard exit, such as an `Escape` handler or a reachable close or done
+   * control that moves focus out of the scope or unmounts it, and must announce that
+   * exit, for example with visible instructions referenced by `aria-describedby`.
+   * Without one, a contained scope is a keyboard trap (WCAG 2.1.2 No Keyboard Trap).
+   *
+   * @default true
    */
   readonly contain?: boolean;
   /**
    * Whether to restore focus to the previously focused element on unmount.
    *
-   * @defaultValue true
+   * @default true
    */
   readonly restoreFocus?: boolean;
   /**
    * Whether to auto-focus the first focusable element on mount.
    *
-   * @defaultValue false
+   * @default false
    */
   readonly autoFocus?: boolean;
   /**
@@ -52,6 +59,12 @@ const FOCUSABLE_SELECTOR = [
 
 const ownedTabEvents = new WeakSet<KeyboardEvent>();
 
+// Natively focusable `aria-disabled` controls (Base UI `focusableWhenDisabled`, disabled
+// toolbar roving stops) stay in native sequential order, so they remain scope tab stops.
+function isAvailable(element: HTMLElement): boolean {
+  return isFocusAvailable(element, true);
+}
+
 function getActiveElement(owner: HTMLElement): Element | null {
   const Shadow = owner.ownerDocument.defaultView?.ShadowRoot ?? ShadowRoot;
   const root = owner.getRootNode();
@@ -63,7 +76,8 @@ function getActiveElement(owner: HTMLElement): Element | null {
 function getTabIndex(element: HTMLElement): number {
   if (element.hasAttribute("tabindex")) return element.tabIndex;
   if (element.isContentEditable && !element.parentElement?.isContentEditable) return 0;
-  if (element.tagName === "SUMMARY" && element.parentElement instanceof HTMLDetailsElement) {
+  const Details = element.ownerDocument.defaultView?.HTMLDetailsElement ?? HTMLDetailsElement;
+  if (element.tagName === "SUMMARY" && element.parentElement instanceof Details) {
     const firstSummary = [...element.parentElement.children].find((child) => child.tagName === "SUMMARY");
     if (firstSummary === element) return 0;
   }
@@ -125,7 +139,7 @@ function getScopeCandidates(elements: readonly Element[]): HTMLElement[] {
     if (shadow || slot) {
       // A shadow/slot scope stays at its owner's position. A negative owner
       // removes its entire scope from sequential navigation, not just itself.
-      if ((element.hasAttribute("tabindex") && getTabIndex(element) < 0) || !isFocusSubtreeAvailable(element)) return;
+      if ((element.hasAttribute("tabindex") && getTabIndex(element) < 0) || !isFocusSubtreeAvailable(element, true)) return;
       const contents = shadow ? [...shadow.children] : getSlotChildren(slot);
       entries.push({element, contents: getScopeCandidates(contents)});
     } else {
@@ -172,11 +186,17 @@ function resolveActiveTarget(
  *
  * @remarks
  * Renders a `<div>` and cycles `Tab` and `Shift+Tab` navigation through its focusable
- * visible, enabled, non-inert tabbable descendants. An empty scope uses the container
- * as its programmatic focus fallback. Focus restoration targets the original connected,
- * available focus owner on unmount, not on option changes.
+ * visible, natively enabled, non-inert tabbable descendants. Natively focusable
+ * `aria-disabled` controls, such as Base UI `focusableWhenDisabled` buttons and disabled
+ * toolbar items that remain roving tab stops, stay tab stops: navigation continues past
+ * them, wrapping includes them, `autoFocus` can enter them and focus can be restored to them.
+ * An empty scope uses the container as its programmatic focus fallback. Focus restoration
+ * targets the original connected, available focus owner on unmount, not on option changes.
  * A hidden, scope-owned entry marker captures that owner during commit before descendant
  * native `autoFocus` runs; connected Strict Mode effect replay is not treated as an exit.
+ * Element checks use the constructors of the element's own window, so a scope rendered
+ * into a same-origin iframe document filters closed `<details>` and disabled `<fieldset>`
+ * content and restores focus like a scope in the parent document.
  * Native radio groups are selected by name, form owner and tree before intersecting
  * their eligible targets with this scope, including checked peers outside the scope.
  * An unchecked group uses its first locally eligible target in controller order as a
@@ -194,6 +214,12 @@ function resolveActiveTarget(
  * navigation. Ancestor controllers defer, but consumer handlers still bubble and may
  * cancel that transition. Non-contained descendants do not claim keyboard ownership.
  *
+ * Containment (`contain`, on by default) has no built-in exit. Whenever it is enabled,
+ * the consumer must provide a keyboard exit, such as an `Escape` handler or a reachable
+ * close or done control that moves focus out of the scope or unmounts it, and must
+ * announce that exit, for example with visible instructions referenced by
+ * `aria-describedby`. Without one, the scope is a keyboard trap (WCAG 2.1.2).
+ *
  * This is a local Tab controller, not a modal manager: it does not inert siblings,
  * dismiss on Escape, intercept pointer focus, or control portaled descendants.
  * Base UI dialog-style primitives already own modal focus; do not add a competing
@@ -202,11 +228,24 @@ function resolveActiveTarget(
  *
  * @example
  * ```tsx
- * <FocusScope contain autoFocus>
- *   <input placeholder='First' />
- *   <input placeholder='Second' />
- *   <button type='submit'>Submit</button>
- * </FocusScope>
+ * // Escape or Done unmounts the scope; `restoreFocus` then returns focus to the opener.
+ * function InlineEditor({onDone}: Readonly<{onDone: () => void}>): React.JSX.Element {
+ *   const exitHintId = React.useId();
+ *   return (
+ *     <FocusScope
+ *       contain
+ *       autoFocus
+ *       aria-label='Inline editor'
+ *       aria-describedby={exitHintId}
+ *       onKeyDown={(event) => {
+ *         if (event.key === "Escape") onDone();
+ *       }}>
+ *       <p id={exitHintId}>Press Escape or choose Done to leave the editor.</p>
+ *       <input aria-label='Title' />
+ *       <button type='button' onClick={onDone}>Done</button>
+ *     </FocusScope>
+ *   );
+ * }
  * ```
  */
 const FocusScope = ({
@@ -238,7 +277,8 @@ const FocusScope = ({
     const container = containerRef.current;
     return () => {
       const previousFocus = entryFocusRef.current;
-      if (!container?.isConnected && restoreFocusRef.current && previousFocus instanceof HTMLElement && isAvailable(previousFocus)) {
+      const Html = previousFocus?.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
+      if (!container?.isConnected && restoreFocusRef.current && previousFocus instanceof Html && isAvailable(previousFocus)) {
         previousFocus.focus();
       }
     };

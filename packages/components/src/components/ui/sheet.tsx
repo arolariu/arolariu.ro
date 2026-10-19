@@ -30,6 +30,12 @@ export type SheetContentProps = Readonly<
     showCloseButton?: boolean;
     /** Caller-localizable accessible name for the automatic close. @default "Close" */
     closeLabel?: string;
+    /**
+     * Props for the internal Portal, for example `keepMounted` (keep the closed sheet and its form state mounted
+     * but hidden) or `container` (portal into a theme-scoped element, shadow root or another document). Content
+     * always supplies the portal's children.
+     */
+    portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Portal>, "children">>;
   }
 >;
 /** Layout props use the actual Base UI polymorphic render contract. */
@@ -48,6 +54,9 @@ export type SheetDescriptionProps = Readonly<
 >;
 
 type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
+
+/** Base UI keeps root modality private, so the styled Content reads the value its `Sheet` received. */
+const SheetModalityContext = React.createContext<NonNullable<BaseDialog.Root.Props["modal"]>>(true);
 
 function DecoratedSheetElement({
   render,
@@ -77,9 +86,35 @@ function DecoratedSheetElement({
   return useRender({render: decorated, props: {...elementProps}});
 }
 
-/** Coordinates a sheet using the real modal Dialog primitive, without an extra DOM wrapper. */
-function Sheet<Payload = unknown>(props: Readonly<Sheet.Props<Payload>>): React.ReactElement {
-  return <BaseDialog.Root {...props} />;
+/**
+ * Coordinates a sheet using the real Base UI Dialog primitive, without an extra DOM wrapper.
+ *
+ * @remarks
+ * - Base UI owns open state, focus, dismissal, trigger payloads and modality.
+ * - `modal` defaults to `true`. `SheetContent` renders its page-blocking backdrop only for `modal={true}`;
+ *   `false` and `"trap-focus"` keep the rest of the page visible and pressable, as Base UI documents (an outside
+ *   press still dismisses the sheet unless `disablePointerDismissal` is set).
+ * - Focus-trapping modes need a close control inside the sheet so touch screen-reader users can leave it.
+ *
+ * @example
+ * ```tsx
+ * <Sheet modal={false}>
+ *   <SheetTrigger>Open filters</SheetTrigger>
+ *   <SheetContent side='left'>
+ *     <SheetTitle>Filters</SheetTitle>
+ *   </SheetContent>
+ * </Sheet>
+ * ```
+ */
+function Sheet<Payload = unknown>({modal = true, ...props}: Readonly<Sheet.Props<Payload>>): React.ReactElement {
+  return (
+    <SheetModalityContext.Provider value={modal}>
+      <BaseDialog.Root
+        modal={modal}
+        {...props}
+      />
+    </SheetModalityContext.Provider>
+  );
 }
 Sheet.displayName = "Sheet";
 
@@ -135,8 +170,27 @@ function SheetOverlay({className, ...props}: Readonly<SheetOverlay.Props>): Reac
 SheetOverlay.displayName = "SheetOverlay";
 
 /**
- * Portals a sheet from one of four edges. Base UI owns focus and modal behavior.
- * The automatic close is last in DOM order and can be disabled.
+ * Portals a sheet from one of four edges, above a page-blocking backdrop when the sheet is fully modal.
+ *
+ * @remarks
+ * - Base UI owns focus, dismissal and modal behavior. The backdrop renders only when the enclosing `Sheet` has
+ *   `modal={true}` (its default); under a raw Base UI root the backdrop is always rendered.
+ * - The automatic close is last in DOM order; opt out with `showCloseButton={false}` only when another close
+ *   control remains inside the sheet.
+ * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed sheet mounted with `hidden`,
+ *   preserving form state, and `container` chooses the element or shadow root that receives the portal.
+ *
+ * @example
+ * ```tsx
+ * <Sheet>
+ *   <SheetTrigger>Edit filters</SheetTrigger>
+ *   <SheetContent
+ *     side='left'
+ *     portalProps={{keepMounted: true}}>
+ *     <SheetTitle>Filters</SheetTitle>
+ *   </SheetContent>
+ * </Sheet>
+ * ```
  */
 const SheetContent = ({
   ref,
@@ -146,8 +200,10 @@ const SheetContent = ({
   side = "right",
   showCloseButton = true,
   closeLabel = "Close",
+  portalProps,
   ...props
 }: Readonly<SheetContent.Props>): React.ReactElement => {
+  const modal = React.useContext(SheetModalityContext);
   const closeControl = showCloseButton ? (
     <SheetClose
       aria-label={closeLabel}
@@ -167,8 +223,8 @@ const SheetContent = ({
   ) : null;
   const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
   return (
-    <SheetPortal>
-      <SheetOverlay />
+    <SheetPortal {...portalProps}>
+      {modal === true ? <SheetOverlay /> : null}
       <BaseDialog.Popup
         data-slot='sheet-content'
         data-side={side}

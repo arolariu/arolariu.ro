@@ -1,8 +1,10 @@
 import * as React from "react";
 
 import {Field as BaseField} from "@base-ui/react/field";
-import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {hydrateRoot, type Root} from "react-dom/client";
+import {renderToString} from "react-dom/server";
 import {Controller as RHFController, FormProvider, useForm as rhfUseForm, type Resolver} from "react-hook-form";
 import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
@@ -1834,5 +1836,308 @@ describe("Form diagnostics and error styling", () => {
     expect(() => render(<InvalidComponent />)).toThrow("useFormField should be used within <FormItem>");
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+interface ServerFieldProps {
+  readonly itemId?: string;
+  readonly controlId?: string;
+  readonly childId?: string;
+  readonly labelTarget?: string;
+  readonly descriptions?: readonly FormDescriptionProps[];
+  readonly messages?: readonly FormMessageProps[];
+  readonly serverError?: string;
+  readonly children?: React.ReactNode;
+}
+
+/** Server-renderable field: RHF's `errors` option makes a field error known during the server render. */
+function ServerField({
+  itemId,
+  controlId,
+  childId,
+  labelTarget,
+  descriptions = [],
+  messages = [],
+  serverError,
+  children,
+}: Readonly<ServerFieldProps>): React.JSX.Element {
+  const errors = React.useMemo(
+    () => (serverError === undefined ? undefined : {email: {type: "server", message: serverError}}),
+    [serverError],
+  );
+  const methods = useForm<CompositionValues>({defaultValues: {email: ""}, errors});
+  return (
+    <Form {...methods}>
+      <form aria-label='Server form'>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={({field}) => (
+            <FormItem id={itemId}>
+              <FormLabel htmlFor={labelTarget}>Contact email</FormLabel>
+              <FormControl id={controlId}>
+                <input
+                  {...field}
+                  id={childId}
+                />
+              </FormControl>
+              {descriptions.map((description, index) => (
+                <FormDescription
+                  // eslint-disable-next-line react/no-array-index-key -- static fixture order
+                  key={`description-${index}`}
+                  {...description}
+                />
+              ))}
+              {messages.map((message, index) => (
+                <FormMessage
+                  // eslint-disable-next-line react/no-array-index-key -- static fixture order
+                  key={`message-${index}`}
+                  {...message}
+                />
+              ))}
+              {children}
+            </FormItem>
+          )}
+        />
+        <button
+          type='button'
+          onClick={() => methods.clearErrors("email")}>
+          Clear server error
+        </button>
+      </form>
+    </Form>
+  );
+}
+
+/** Renders parts into nothing, so a static scan over-approximates what reaches the DOM. */
+function Discarded(_props: Readonly<{children?: React.ReactNode}>): null {
+  return null;
+}
+
+/** Renders a description from inside another component, invisible to a static scan of FormItem children. */
+function WrappedDescription(): React.JSX.Element {
+  return <FormDescription>Wrapped help.</FormDescription>;
+}
+
+function idTokens(value: string | null): string[] {
+  return value?.split(/\s+/u).filter((token) => token.length > 0) ?? [];
+}
+
+function renderServerHtml(ui: React.ReactElement): HTMLDivElement {
+  const container = document.createElement("div");
+  container.innerHTML = renderToString(ui);
+  document.body.append(container);
+  return container;
+}
+
+function expectResolvedReferences(container: HTMLElement): void {
+  for (const element of container.querySelectorAll("[aria-describedby]")) {
+    for (const token of idTokens(element.getAttribute("aria-describedby"))) {
+      expect(document.getElementById(token), `aria-describedby token ${token}`).not.toBeNull();
+    }
+  }
+  for (const label of container.querySelectorAll("label[for]")) {
+    const target = label.getAttribute("for") ?? "";
+    expect(document.getElementById(target), `label for ${target}`).not.toBeNull();
+  }
+}
+
+function expectUniqueIds(container: HTMLElement): void {
+  const ids = [...container.querySelectorAll("[id]")].map((element) => element.id);
+  expect(new Set(ids).size).toBe(ids.length);
+}
+
+/** Hydrates server HTML, failing on any recoverable hydration error or console error, then runs post-hydration checks. */
+async function hydrateServerHtml(
+  ui: React.ReactElement,
+  assertions: Readonly<{server?: (container: HTMLElement) => void; hydrated: (container: HTMLElement) => void | Promise<void>}>,
+): Promise<void> {
+  const container = renderServerHtml(ui);
+  const consoleError = vi.spyOn(console, "error");
+  const recoverableError = vi.fn();
+  let root: Root | undefined;
+  try {
+    assertions.server?.(container);
+    await act(async () => {
+      root = hydrateRoot(container, ui, {onRecoverableError: recoverableError});
+    });
+    expect(recoverableError).not.toHaveBeenCalled();
+    expect(consoleError).not.toHaveBeenCalled();
+    await assertions.hydrated(container);
+  } finally {
+    await act(async () => root?.unmount());
+    container.remove();
+    consoleError.mockRestore();
+  }
+}
+
+describe("Form server HTML and hydration associations", () => {
+  it("links the label, a generated description, and a server-known error in server HTML and through hydration", async () => {
+    const ui = (
+      <ServerField
+        descriptions={[{children: "We only send requested updates."}]}
+        messages={[{}]}
+        serverError='Email is required'
+      />
+    );
+    const expectLinked = (container: HTMLElement): void => {
+      const input = within(container).getByRole("textbox", {name: "Contact email"});
+      expect(input).toHaveAccessibleDescription("We only send requested updates. Email is required");
+      expect(input).toHaveAttribute("aria-invalid", "true");
+      expectResolvedReferences(container);
+      expectUniqueIds(container);
+    };
+    await hydrateServerHtml(ui, {
+      server: expectLinked,
+      hydrated: async (container) => {
+        expectLinked(container);
+        const input = within(container).getByRole("textbox", {name: "Contact email"});
+        await userEvent.setup().click(within(container).getByRole("button", {name: "Clear server error"}));
+        expect(input).toHaveAccessibleDescription("We only send requested updates.");
+        expect(input).toHaveAttribute("aria-invalid", "false");
+        expectResolvedReferences(container);
+      },
+    });
+  });
+
+  it.each([
+    {name: "wrapper control ID", props: {controlId: "contact-email"}, expected: "contact-email"},
+    {name: "child control ID", props: {childId: "native-email"}, expected: "native-email"},
+    {name: "label-only target", props: {labelTarget: "label-email"}, expected: "label-email"},
+    {
+      name: "wrapper ID over child ID and label target",
+      props: {controlId: "wrapper-email", childId: "ignored-child", labelTarget: "ignored-label"},
+      expected: "wrapper-email",
+    },
+  ])("associates the label with an explicit $name in server HTML and after hydration", async ({props, expected}) => {
+    const ui = <ServerField {...props} />;
+    const expectAssociated = (container: HTMLElement): void => {
+      const input = within(container).getByRole("textbox", {name: "Contact email"});
+      expect(input).toHaveAttribute("id", expected);
+      expect(container.querySelector("label")).toHaveAttribute("for", expected);
+      expectResolvedReferences(container);
+    };
+    await hydrateServerHtml(ui, {server: expectAssociated, hydrated: expectAssociated});
+  });
+
+  it("links explicit description and message IDs, fallback message children, and native HTML in server HTML", async () => {
+    const ui = (
+      <ServerField
+        itemId='contact'
+        descriptions={[
+          {id: "contact-help", children: "Help."},
+          {id: "contact-native", dangerouslySetInnerHTML: {__html: "<b>Native.</b>"}},
+        ]}
+        messages={[{id: "contact-error"}, {id: "contact-fallback", children: "Fallback."}]}
+      />
+    );
+    const expectLinked = (container: HTMLElement): void => {
+      const input = within(container).getByRole("textbox", {name: "Contact email"});
+      expect(idTokens(input.getAttribute("aria-describedby"))).toEqual(["contact-help", "contact-native", "contact-fallback"]);
+      expect(input).toHaveAccessibleDescription("Help. Native. Fallback.");
+      expect(document.getElementById("contact-error")).toBeNull();
+      expectResolvedReferences(container);
+    };
+    await hydrateServerHtml(ui, {server: expectLinked, hydrated: expectLinked});
+  });
+
+  it.each([
+    {name: "an error-free message without children", props: {messages: [{}]}},
+    {name: "a blank description", props: {descriptions: [{children: " "}]}},
+    {name: "empty native description markup", props: {descriptions: [{dangerouslySetInnerHTML: {__html: "<span></span>"}}]}},
+    {
+      name: "a part discarded by its owner",
+      props: {
+        children: (
+          <Discarded>
+            <FormDescription>Never rendered.</FormDescription>
+          </Discarded>
+        ),
+      },
+    },
+  ])("leaves no dangling description reference after hydration for $name", async ({props}) => {
+    await hydrateServerHtml(<ServerField {...props} />, {
+      hydrated: (container) => {
+        expect(within(container).getByRole("textbox", {name: "Contact email"})).not.toHaveAttribute("aria-describedby");
+        expectResolvedReferences(container);
+        expectUniqueIds(container);
+      },
+    });
+  });
+
+  it("keeps several generated parts unique in server HTML and links every mounted part after hydration", async () => {
+    const ui = (
+      <ServerField
+        descriptions={[{children: "First help."}, {children: "Second help."}]}
+        messages={[{}, {}]}
+        serverError='Taken.'>
+        <WrappedDescription />
+      </ServerField>
+    );
+    await hydrateServerHtml(ui, {
+      server: (container) => {
+        expectUniqueIds(container);
+        expectResolvedReferences(container);
+      },
+      hydrated: (container) => {
+        const input = within(container).getByRole("textbox", {name: "Contact email"});
+        expect(input).toHaveAccessibleDescription("First help. Second help. Wrapped help. Taken. Taken.");
+        expectUniqueIds(container);
+        expectResolvedReferences(container);
+      },
+    });
+  });
+
+  it("links a description rendered by another component once it mounts after hydration", async () => {
+    await hydrateServerHtml(
+      <ServerField>
+        <WrappedDescription />
+      </ServerField>,
+      {
+        hydrated: (container) => {
+          expect(within(container).getByRole("textbox", {name: "Contact email"})).toHaveAccessibleDescription("Wrapped help.");
+          expectResolvedReferences(container);
+          expectUniqueIds(container);
+        },
+      },
+    );
+  });
+
+  it("does not let an outer control claim a nested item's parts in server HTML or after hydration", async () => {
+    const expectOuterUnlinked = (container: HTMLElement): void => {
+      const [outer] = within(container).getAllByRole("textbox");
+      expect(outer).not.toHaveAttribute("aria-describedby");
+      expect(container.querySelector("#nested-help")).toHaveTextContent("Nested help.");
+      expectResolvedReferences(container);
+    };
+    await hydrateServerHtml(
+      <ServerField>
+        <FormItem>
+          <FormDescription id='nested-help'>Nested help.</FormDescription>
+        </FormItem>
+      </ServerField>,
+      {server: expectOuterUnlinked, hydrated: expectOuterUnlinked},
+    );
+  });
+
+  it("hydrates under Strict Mode effect replay without mismatches and keeps explicit and generated links", async () => {
+    const ui = (
+      <React.StrictMode>
+        <ServerField
+          controlId='strict-email'
+          descriptions={[{children: "Strict help."}]}
+          messages={[{id: "strict-error"}]}
+          serverError='Strict error.'
+        />
+      </React.StrictMode>
+    );
+    const expectLinked = (container: HTMLElement): void => {
+      const input = within(container).getByRole("textbox", {name: "Contact email"});
+      expect(input).toHaveAttribute("id", "strict-email");
+      expect(input).toHaveAccessibleDescription("Strict help. Strict error.");
+      expectResolvedReferences(container);
+      expectUniqueIds(container);
+    };
+    await hydrateServerHtml(ui, {server: expectLinked, hydrated: expectLinked});
   });
 });

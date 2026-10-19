@@ -1,10 +1,14 @@
 import {fireEvent, render, screen} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, {type UserEvent} from "@testing-library/user-event";
 import {createRef, StrictMode, useCallback, useState} from "react";
 import {createPortal} from "react-dom";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
+import {Button} from "./button";
 import {FocusScope} from "./focus-scope";
+import * as stories from "./focus-scope.stories";
+import {Toolbar, ToolbarButton} from "./toolbar";
 
 function ShadowWidget({
   tabIndex,
@@ -80,6 +84,71 @@ function withIframeShadowConstructor(run: (ownerDocument: Document, owningConstr
     iframe.remove();
   }
   expect(ShadowRoot).toBe(originalConstructor);
+}
+
+interface ElementRealmConstructors {
+  readonly HTMLElement: typeof HTMLElement;
+  readonly HTMLDetailsElement: typeof HTMLDetailsElement;
+  readonly HTMLFieldSetElement: typeof HTMLFieldSetElement;
+  readonly HTMLLegendElement: typeof HTMLLegendElement;
+}
+
+const ELEMENT_REALM_CONSTRUCTORS = ["HTMLElement", "HTMLDetailsElement", "HTMLFieldSetElement", "HTMLLegendElement"] as const;
+
+function withIframeElementConstructors(
+  run: (ownerDocument: Document, container: HTMLDivElement, owning: ElementRealmConstructors) => void,
+): void {
+  const ambient: ElementRealmConstructors = {HTMLElement, HTMLDetailsElement, HTMLFieldSetElement, HTMLLegendElement};
+  const iframe = document.createElement("iframe");
+  iframe.title = "FocusScope element realm";
+  document.body.append(iframe);
+  try {
+    const ownerDocument = iframe.contentDocument;
+    const owningWindow = ownerDocument?.defaultView;
+    if (!ownerDocument || !owningWindow) throw new TypeError("Expected a same-origin iframe document and window.");
+    const owning: ElementRealmConstructors = {
+      HTMLElement: owningWindow.HTMLElement,
+      HTMLDetailsElement: owningWindow.HTMLDetailsElement,
+      HTMLFieldSetElement: owningWindow.HTMLFieldSetElement,
+      HTMLLegendElement: owningWindow.HTMLLegendElement,
+    };
+    // Happy DOM shares element constructors across frames. Model native parent/child
+    // identity by replacing only the ambient constructors, never iframe DOM/APIs.
+    vi.stubGlobal("HTMLElement", class AmbientHTMLElement extends ambient.HTMLElement {});
+    vi.stubGlobal("HTMLDetailsElement", class AmbientHTMLDetailsElement extends ambient.HTMLDetailsElement {});
+    vi.stubGlobal("HTMLFieldSetElement", class AmbientHTMLFieldSetElement extends ambient.HTMLFieldSetElement {});
+    vi.stubGlobal("HTMLLegendElement", class AmbientHTMLLegendElement extends ambient.HTMLLegendElement {});
+    for (const name of ELEMENT_REALM_CONSTRUCTORS) {
+      expect(globalThis[name]).not.toBe(ambient[name]);
+      expect(owningWindow[name]).toBe(owning[name]);
+      expect(owningWindow[name]).not.toBe(globalThis[name]);
+    }
+    const container = ownerDocument.createElement("div");
+    ownerDocument.body.append(container);
+
+    run(ownerDocument, container, owning);
+
+    for (const name of ELEMENT_REALM_CONSTRUCTORS) expect(owningWindow[name]).toBe(owning[name]);
+  } finally {
+    vi.unstubAllGlobals();
+    iframe.remove();
+  }
+  for (const name of ELEMENT_REALM_CONSTRUCTORS) expect(globalThis[name]).toBe(ambient[name]);
+}
+
+/** Walks forward through `order` and back again, including both wrap transitions. */
+async function expectTabCycle(user: UserEvent, order: readonly HTMLElement[]): Promise<void> {
+  const [first] = order;
+  if (!first) throw new TypeError("Expected at least one tab stop.");
+  first.focus();
+  for (const expected of [...order.slice(1), first]) {
+    await user.tab();
+    expect(expected).toHaveFocus();
+  }
+  for (const expected of order.toReversed()) {
+    await user.tab({shift: true});
+    expect(expected).toHaveFocus();
+  }
 }
 
 function renderVisibilityBoundary(kind: "shadow-host" | "slot-fallback"): {
@@ -549,6 +618,145 @@ describe("FocusScope", () => {
         expect(shadow.activeElement).toBe(first);
         expect(fireEvent.keyDown(first, {key: "Tab", shiftKey: true, composed: true})).toBe(false);
         expect(shadow.activeElement).toBe(last);
+      } finally {
+        unmount();
+      }
+    });
+  });
+
+  it("restores an iframe-owned entry focus owner with that document's HTMLElement constructor", () => {
+    withIframeElementConstructors((ownerDocument, container, owning) => {
+      const triggerRef = createRef<HTMLButtonElement>();
+      const actionRef = createRef<HTMLButtonElement>();
+      const tree = (open: boolean): React.ReactElement => (
+        <>
+          <button
+            type='button'
+            ref={triggerRef}>
+            Foreign trigger
+          </button>
+          {open && (
+            <FocusScope autoFocus>
+              <button
+                type='button'
+                ref={actionRef}>
+                Foreign scope action
+              </button>
+            </FocusScope>
+          )}
+        </>
+      );
+      const {rerender, unmount} = render(tree(false), {container, baseElement: ownerDocument.body});
+      try {
+        const trigger = triggerRef.current;
+        if (!trigger) throw new TypeError("Expected the iframe's trigger.");
+        expect(trigger).toBeInstanceOf(owning.HTMLElement);
+        expect(trigger).not.toBeInstanceOf(HTMLElement);
+        trigger.focus();
+        expect(ownerDocument.activeElement).toBe(trigger);
+        rerender(tree(true));
+        expect(ownerDocument.activeElement).toBe(actionRef.current);
+
+        rerender(tree(false));
+
+        expect(ownerDocument.activeElement).toBe(trigger);
+      } finally {
+        unmount();
+      }
+    });
+  });
+
+  it("uses the iframe's details constructor for its first summary stop and closed content", () => {
+    withIframeElementConstructors((ownerDocument, container, owning) => {
+      const firstRef = createRef<HTMLButtonElement>();
+      const detailsRef = createRef<HTMLDetailsElement>();
+      const summaryRef = createRef<HTMLElement>();
+      const closedRef = createRef<HTMLButtonElement>();
+      const {unmount} = render(
+        <FocusScope
+          autoFocus
+          restoreFocus={false}>
+          <button
+            type='button'
+            ref={firstRef}>
+            Foreign first available
+          </button>
+          <details ref={detailsRef}>
+            <summary ref={summaryRef}>Foreign summary</summary>
+            <button
+              type='button'
+              ref={closedRef}>
+              Foreign closed final action
+            </button>
+          </details>
+        </FocusScope>,
+        {container, baseElement: ownerDocument.body},
+      );
+      try {
+        const first = firstRef.current;
+        const details = detailsRef.current;
+        const summary = summaryRef.current;
+        if (!first || !details || !summary || !closedRef.current) throw new TypeError("Expected the iframe's details controls.");
+        expect(details).toBeInstanceOf(owning.HTMLDetailsElement);
+        expect(details).not.toBeInstanceOf(HTMLDetailsElement);
+        expect(details.open).toBe(false);
+        expect(ownerDocument.activeElement).toBe(first);
+
+        // The summary is the final stop; the closed details' content never becomes an edge.
+        expect(fireEvent.keyDown(first, {key: "Tab", shiftKey: true})).toBe(false);
+        expect(ownerDocument.activeElement).toBe(summary);
+        expect(fireEvent.keyDown(summary, {key: "Tab"})).toBe(false);
+        expect(ownerDocument.activeElement).toBe(first);
+      } finally {
+        unmount();
+      }
+    });
+  });
+
+  it("uses the iframe's fieldset and legend constructors for disabled-fieldset exclusion", () => {
+    withIframeElementConstructors((ownerDocument, container, owning) => {
+      const fieldsetRef = createRef<HTMLFieldSetElement>();
+      const legendRef = createRef<HTMLLegendElement>();
+      const firstRef = createRef<HTMLButtonElement>();
+      const legendActionRef = createRef<HTMLButtonElement>();
+      const {unmount} = render(
+        <FocusScope restoreFocus={false}>
+          <button
+            type='button'
+            ref={firstRef}>
+            Foreign first
+          </button>
+          <fieldset
+            disabled
+            ref={fieldsetRef}>
+            <legend ref={legendRef}>
+              <button
+                type='button'
+                ref={legendActionRef}>
+                Foreign legend exception
+              </button>
+            </legend>
+            <button type='button'>Foreign disabled fieldset content</button>
+          </fieldset>
+        </FocusScope>,
+        {container, baseElement: ownerDocument.body},
+      );
+      try {
+        const fieldset = fieldsetRef.current;
+        const legend = legendRef.current;
+        const first = firstRef.current;
+        const legendAction = legendActionRef.current;
+        if (!fieldset || !legend || !first || !legendAction) throw new TypeError("Expected the iframe's fieldset controls.");
+        expect(fieldset).toBeInstanceOf(owning.HTMLFieldSetElement);
+        expect(fieldset).not.toBeInstanceOf(HTMLFieldSetElement);
+        expect(legend).toBeInstanceOf(owning.HTMLLegendElement);
+        expect(legend).not.toBeInstanceOf(HTMLLegendElement);
+
+        first.focus();
+        expect(fireEvent.keyDown(first, {key: "Tab", shiftKey: true})).toBe(false);
+        expect(ownerDocument.activeElement).toBe(legendAction);
+        expect(fireEvent.keyDown(legendAction, {key: "Tab"})).toBe(false);
+        expect(ownerDocument.activeElement).toBe(first);
       } finally {
         unmount();
       }
@@ -2283,6 +2491,141 @@ describe("FocusScope", () => {
     expect(screen.getByRole("button", {name: "Legend exception"})).toHaveFocus();
   });
 
+  describe("natively focusable aria-disabled tab stops", () => {
+    it.each(["middle", "final"] as const)(
+      "continues past and wraps through a focusableWhenDisabled Button in the %s position",
+      async (position) => {
+        const user = userEvent.setup();
+        const unavailable = (
+          <Button
+            disabled
+            focusableWhenDisabled>
+            Delete
+          </Button>
+        );
+        render(
+          <>
+            <FocusScope restoreFocus={false}>
+              <Button>Save</Button>
+              {position === "middle" && unavailable}
+              <Button>Cancel</Button>
+              {position === "final" && unavailable}
+            </FocusScope>
+            <button type='button'>Outside</button>
+          </>,
+        );
+        const save = screen.getByRole("button", {name: "Save"});
+        const unavailableButton = screen.getByRole("button", {name: "Delete"});
+        const cancel = screen.getByRole("button", {name: "Cancel"});
+        expect(unavailableButton).toHaveAttribute("aria-disabled", "true");
+        expect(unavailableButton).not.toBeDisabled();
+        expect(unavailableButton.tabIndex).toBe(0);
+
+        await expectTabCycle(user, position === "middle" ? [save, unavailableButton, cancel] : [save, cancel, unavailableButton]);
+      },
+    );
+
+    it.each(["between", "final"] as const)(
+      "treats a Toolbar's focusable disabled roving stop as a scope tab stop (%s)",
+      async (position) => {
+        const user = userEvent.setup();
+        render(
+          <>
+            <FocusScope restoreFocus={false}>
+              <button type='button'>Before toolbar</button>
+              <Toolbar aria-label='Formatting'>
+                <ToolbarButton disabled>Strikethrough</ToolbarButton>
+                <ToolbarButton>Bold</ToolbarButton>
+              </Toolbar>
+              {position === "between" && <button type='button'>After toolbar</button>}
+            </FocusScope>
+            <button type='button'>Outside</button>
+          </>,
+        );
+        const before = screen.getByRole("button", {name: "Before toolbar"});
+        const strikethrough = screen.getByRole("button", {name: "Strikethrough"});
+        expect(strikethrough).toHaveAttribute("aria-disabled", "true");
+        expect(strikethrough).toHaveAttribute("tabindex", "0");
+        expect(screen.getByRole("button", {name: "Bold"})).toHaveAttribute("tabindex", "-1");
+
+        await expectTabCycle(
+          user,
+          position === "between" ? [before, strikethrough, screen.getByRole("button", {name: "After toolbar"})] : [before, strikethrough],
+        );
+      },
+    );
+
+    it("keeps an aria-disabled shadow host's natively reachable shadow controls in scope order", () => {
+      render(
+        <FocusScope restoreFocus={false}>
+          <ShadowWidget label='Unavailable shadow widget'>
+            <button type='button'>Shadow first</button>
+            <button type='button'>Shadow middle</button>
+            <button type='button'>Shadow last</button>
+          </ShadowWidget>
+          <button type='button'>After shadow widget</button>
+        </FocusScope>,
+      );
+      const host = screen.getByRole("group", {name: "Unavailable shadow widget"});
+      host.setAttribute("aria-disabled", "true");
+      const {first, last} = getShadowButtons(host);
+      const after = screen.getByRole("button", {name: "After shadow widget"});
+      after.focus();
+
+      expect(fireEvent.keyDown(after, {key: "Tab", composed: true})).toBe(false);
+      expectTreeFocus(first);
+      last.focus();
+      expect(fireEvent.keyDown(last, {key: "Tab", composed: true})).toBe(true);
+      first.focus();
+      expect(fireEvent.keyDown(first, {key: "Tab", shiftKey: true, composed: true})).toBe(false);
+      expectTreeFocus(after);
+    });
+
+    it("autofocuses a focusable aria-disabled first tab stop, matching native order", () => {
+      render(
+        <FocusScope
+          autoFocus
+          restoreFocus={false}>
+          <Button
+            disabled
+            focusableWhenDisabled>
+            Archive
+          </Button>
+          <Button>Edit</Button>
+        </FocusScope>,
+      );
+
+      expect(screen.getByRole("button", {name: "Archive"})).toHaveFocus();
+    });
+
+    it("restores an entry owner that became focusable-disabled while the scope was open", () => {
+      const tree = (open: boolean, disabled: boolean): React.ReactElement => (
+        <>
+          <Button
+            disabled={disabled}
+            focusableWhenDisabled>
+            Edit entry
+          </Button>
+          {open && (
+            <FocusScope autoFocus>
+              <button type='button'>Inline editor action</button>
+            </FocusScope>
+          )}
+        </>
+      );
+      const {rerender} = render(tree(false, false));
+      const trigger = screen.getByRole("button", {name: "Edit entry"});
+      trigger.focus();
+      rerender(tree(true, true));
+      expect(screen.getByRole("button", {name: "Inline editor action"})).toHaveFocus();
+      expect(trigger).toHaveAttribute("aria-disabled", "true");
+
+      rerender(tree(false, true));
+
+      expect(trigger).toHaveFocus();
+    });
+  });
+
   it("honors React callback ref cleanup on unmount", () => {
     let connected: HTMLDivElement | null = null;
     let cleanups = 0;
@@ -2709,5 +3052,33 @@ describe("FocusScope", () => {
     await user.tab();
 
     expect(screen.getByText("No focusable elements")).toBeInTheDocument();
+  });
+});
+
+describe("FocusScope stories", () => {
+  // Base UI Dialog owns the SDK comparison story's Escape dismissal and focus return.
+  const scopeStories = Object.entries(composeStories(stories)).filter(([name]) => name !== "SdkOwnedModal");
+
+  it.each(scopeStories)("%s gives every scope an announced keyboard exit", async (_name, Story) => {
+    const user = userEvent.setup();
+    const {container} = render(<Story />);
+    const opener = screen.queryByRole("button", {name: "Open inline workbench"});
+    if (opener) await user.click(opener);
+    const scopes = [...container.querySelectorAll<HTMLElement>('[role="group"][tabindex="-1"]')];
+    expect(scopes.length).toBeGreaterThan(0);
+
+    for (const scope of scopes) {
+      const describedOwner = scope.closest<HTMLElement>("[aria-describedby]");
+      const instructions = container.ownerDocument.getElementById(describedOwner?.getAttribute("aria-describedby") ?? "");
+      expect(instructions).toHaveTextContent(/Escape/u);
+      scope.focus();
+      expect(scope).toHaveFocus();
+
+      await user.keyboard("{Escape}");
+
+      const active = container.ownerDocument.activeElement;
+      expect(active).not.toBe(container.ownerDocument.body);
+      expect(scopes.some((candidate) => candidate.isConnected && candidate.contains(active))).toBe(false);
+    }
   });
 });

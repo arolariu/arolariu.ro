@@ -67,7 +67,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "react-resizable-panels v4 Group/Panel/Separator composition. Drag a separator or focus it and use the arrow keys, Home or End. Percentage sizes use strings; numeric sizes use pixels. DOM refs use elementRef; imperative refs use groupRef/panelRef.",
+          "react-resizable-panels v4 Group/Panel/Separator composition. Drag a separator or focus it and use the arrow keys, Home or End. Each handle also renders −/+ step buttons after the separator (two extra tab stops) as the single-pointer alternative to dragging; withControls={false} omits them. Percentage sizes use strings; numeric sizes use pixels. DOM refs use elementRef; imperative refs use groupRef/panelRef.",
       },
     },
   },
@@ -75,7 +75,10 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-/** Native click controls are a dragging alternative; separator arrow/Home/End keys remain SDK-owned. */
+/**
+ * Native −/+ step buttons are the single-pointer alternative to dragging and add two tab stops per handle; they sit
+ * clear of the separator's drag area. Separator arrow/Home/End keys remain SDK-owned.
+ */
 export const LocalizedClickControls: Story = {
   render: () => (
     <div className={storyClasses.storyFrame}>

@@ -24,6 +24,13 @@
   --ac-popover-foreground: oklch(0.145 0.004 285.823);
   --ac-primary: oklch(0.488 0.243 264.376);
   --ac-primary-foreground: oklch(0.97 0.014 254.604);
+  /*
+   * Primary hue for text, icons and value indicators drawn directly on neutral surfaces (link text,
+   * current-step numbers, hover text, progress/meter fills). `--ac-primary` stays the fill behind
+   * `--ac-primary-foreground`. Keep this token at 4.5:1 on --ac-background and 3:1 on --ac-secondary
+   * in every theme; when overriding --ac-primary, override this token too.
+   */
+  --ac-primary-emphasis: oklch(0.488 0.243 264.376);
   --ac-secondary: oklch(0.967 0.001 286.375);
   --ac-secondary-foreground: oklch(0.21 0.006 285.885);
   --ac-muted: oklch(0.967 0.001 286.375);
@@ -98,6 +105,8 @@
   --ac-popover-foreground: oklch(0.985 0 0);
   --ac-primary: oklch(0.424 0.199 265.638);
   --ac-primary-foreground: oklch(0.97 0.014 254.604);
+  /* Lighter than the dark --ac-primary fill so primary text and indicators stay legible on dark surfaces. */
+  --ac-primary-emphasis: oklch(0.7 0.14 265.638);
   --ac-secondary: oklch(0.269 0.006 285.885);
   --ac-secondary-foreground: oklch(0.985 0 0);
   --ac-muted: oklch(0.269 0.006 285.885);

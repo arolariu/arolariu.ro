@@ -6,6 +6,7 @@ import {describe, expect, it} from "vitest";
 import {CardSkeleton as RootCardSkeleton} from "../../index";
 import {CardSkeleton} from "./card-skeleton";
 import styles from "./card-skeleton.module.css";
+import {VisuallyHidden} from "./visually-hidden";
 
 describe("CardSkeleton", () => {
   it("has the same identity at the actual package root", () => {
@@ -68,20 +69,31 @@ describe("CardSkeleton", () => {
     expect(clicks).toBe(1);
   });
 
-  it("keeps every placeholder decorative with one caller-owned loading announcement", () => {
-    const {container} = render(
-      <CardSkeleton
-        role='status'
-        aria-label='Loading summary'
-        aria-busy
-        aria-live='polite'
-        animated={false}
-      />,
+  it("keeps every placeholder decorative while a persistent caller-owned region announces loading", () => {
+    const view = (loading: boolean): React.JSX.Element => (
+      <>
+        <VisuallyHidden role='status'>{loading ? "Loading summary" : null}</VisuallyHidden>
+        {loading ? (
+          <CardSkeleton
+            data-testid='skeleton'
+            animated={false}
+          />
+        ) : (
+          <p>Summary ready</p>
+        )}
+      </>
     );
+    const {container, rerender} = render(view(false));
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
 
+    rerender(view(true));
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(screen.getByRole("status", {name: "Loading summary"})).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Loading summary");
+    expect(status).not.toHaveAttribute("aria-busy");
+    expect(screen.getByTestId("skeleton")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("skeleton")).not.toContainElement(status);
     const placeholders = container.querySelectorAll('[data-slot="skeleton"]');
     expect(placeholders).toHaveLength(6);
     for (const placeholder of placeholders) {

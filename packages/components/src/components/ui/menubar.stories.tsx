@@ -168,6 +168,42 @@ export const Compact: Story = {
   ),
 };
 
+/** Vertical menus open toward the inline end (right in LTR, left in RTL) rather than covering the next trigger. */
+export const Vertical: Story = {
+  render: () => (
+    <Menubar
+      aria-label='Workspace menus'
+      orientation='vertical'>
+      <MenubarMenu>
+        <MenubarTrigger>File</MenubarTrigger>
+        <MenubarContent aria-label='File actions'>
+          <MenubarItem>New document</MenubarItem>
+          <MenubarItem>Open</MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem variant='destructive'>Close document</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      <MenubarMenu>
+        <MenubarTrigger>Edit</MenubarTrigger>
+        <MenubarContent aria-label='Edit actions'>
+          <MenubarItem>Undo</MenubarItem>
+          <MenubarItem>Redo</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      <MenubarMenu>
+        <MenubarTrigger>View</MenubarTrigger>
+        <MenubarContent aria-label='View options'>
+          <MenubarCheckboxItem
+            inset
+            defaultChecked>
+            Show toolbar
+          </MenubarCheckboxItem>
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
+  ),
+};
+
 /** Uses MenuShortcut rather than manually styled spans or keycap lookalikes. */
 export const WithShortcuts: Story = {
   render: () => (

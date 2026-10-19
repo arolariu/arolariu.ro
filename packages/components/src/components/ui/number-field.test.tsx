@@ -1,5 +1,9 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse} from "postcss";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
@@ -12,7 +16,254 @@ import {
   NumberFieldInput,
   NumberFieldScrubArea,
 } from "./number-field";
+import styles from "./number-field.module.css";
 import * as stories from "./number-field.stories";
+
+type Theme = "light" | "dark";
+type Oklch = readonly [lightness: number, chroma: number, hue: number];
+type ModelPaint = Readonly<{color: Oklch; alpha: number}>;
+type EncodedRgb = readonly [red: number, green: number, blue: number];
+type Specificity = readonly [ids: number, classes: number, types: number];
+
+const themeTokens: Record<Theme, Map<string, string>> = {light: new Map(), dark: new Map()};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  if (rule.selector !== ":root" && !rule.selector.includes('[data-theme="dark"]')) return;
+  const tokens = rule.selector === ":root" ? themeTokens.light : themeTokens.dark;
+  rule.walkDecls((declaration) => {
+    tokens.set(declaration.prop, declaration.value);
+  });
+});
+
+// Lower real native CSS nesting so every compiled rule carries its effective selector and media.
+const compiledNumberFieldCss = parse(
+  transform({
+    filename: "number-field.module.css",
+    code: readFileSync(join(import.meta.dirname, "number-field.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+  }).code.toString(),
+);
+
+/** Splits a selector list at top-level commas; commas inside `:is()` arguments stay together. */
+function selectorList(list: string): string[] {
+  const selectors: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (const [index, character] of [...list].entries()) {
+    if (character === "(" || character === "[") depth += 1;
+    else if (character === ")" || character === "]") depth -= 1;
+    else if (character === "," && depth === 0) {
+      selectors.push(list.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  selectors.push(list.slice(start).trim());
+  return selectors;
+}
+
+function compareSpecificity(first: Specificity, second: Specificity): number {
+  return first[0] - second[0] || first[1] - second[1] || first[2] - second[2];
+}
+
+/** Selectors Level 4 specificity for the selector forms this stylesheet uses. */
+function specificity(selector: string): Specificity {
+  const counts: [number, number, number] = [0, 0, 0];
+  const nameEnd = (from: number): number => {
+    let end = from;
+    while (end < selector.length && /[\w-]/u.test(selector.charAt(end))) end += 1;
+    return end;
+  };
+  let index = 0;
+  while (index < selector.length) {
+    const character = selector.charAt(index);
+    if (character === "#" || character === ".") {
+      counts[character === "#" ? 0 : 1] += 1;
+      index = nameEnd(index + 1);
+    } else if (character === "[") {
+      const close = selector.indexOf("]", index);
+      if (close < 0) throw new Error(`Unterminated attribute selector: ${selector}`);
+      counts[1] += 1;
+      index = close + 1;
+    } else if (selector.startsWith("::", index)) {
+      counts[2] += 1;
+      index = nameEnd(index + 2);
+    } else if (character === ":") {
+      const end = nameEnd(index + 1);
+      const name = selector.slice(index + 1, end);
+      if (selector.charAt(end) !== "(") {
+        counts[1] += 1;
+        index = end;
+        continue;
+      }
+      let depth = 0;
+      let close = end;
+      do {
+        if (selector.charAt(close) === "(") depth += 1;
+        if (selector.charAt(close) === ")") depth -= 1;
+        close += 1;
+      } while (depth > 0 && close < selector.length);
+      // :is()/:not()/:has() take their most specific argument, :where() adds nothing, other functions count once.
+      if (name === "is" || name === "not" || name === "has") {
+        const strongest = selectorList(selector.slice(end + 1, close - 1))
+          .map(specificity)
+          .sort(compareSpecificity)
+          .at(-1);
+        counts[0] += strongest?.[0] ?? 0;
+        counts[1] += strongest?.[1] ?? 0;
+        counts[2] += strongest?.[2] ?? 0;
+      } else if (name !== "where") counts[1] += 1;
+      index = close;
+    } else if (/[a-z]/iu.test(character)) {
+      counts[2] += 1;
+      index = nameEnd(index);
+    } else {
+      index += 1; // Whitespace, combinators and the universal selector add nothing.
+    }
+  }
+  return counts;
+}
+
+/**
+ * Cascaded compiled declarations: specificity, then source order, decide each property. `(hover: hover)` rules apply only
+ * to a hovering fine pointer; forced-colors and reduced-motion overrides are separate contracts.
+ */
+function cascadedPaint(element: HTMLElement, hover: boolean): Record<string, string> {
+  const winners = new Map<string, Readonly<{value: string; specificity: Specificity}>>();
+  compiledNumberFieldCss.walkRules((rule) => {
+    const media = rule.parent instanceof AtRule ? rule.parent : undefined;
+    if (media && !(hover && media.name === "media" && media.params === "(hover: hover)")) return;
+    const strongest = selectorList(rule.selector)
+      // Pseudo-elements never match an element.
+      .filter((selector) => !selector.includes("::"))
+      .filter((selector) =>
+        element.matches(
+          selector
+            .replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+              const className = styles[name];
+              if (!className) throw new Error(`Missing number field class: ${name}`);
+              return `.${CSS.escape(className)}`;
+            })
+            .replace(/:hover\b/gu, hover ? "" : ":not(*)"),
+        ),
+      )
+      .map(specificity)
+      .sort(compareSpecificity)
+      .at(-1);
+    if (!strongest) return;
+    rule.walkDecls((declaration) => {
+      const current = winners.get(declaration.prop);
+      if (!current || compareSpecificity(strongest, current.specificity) >= 0) {
+        winners.set(declaration.prop, {value: declaration.value, specificity: strongest});
+      }
+    });
+  });
+  return Object.fromEntries([...winners].map(([property, {value}]) => [property, value]));
+}
+
+function oklchToken(theme: Theme, token: string): Oklch {
+  const value = themeTokens[theme].get(token);
+  const match = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/u.exec(value ?? "");
+  if (!match) throw new Error(`Missing opaque ${theme} token ${token}: ${value}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+// `color-mix(in oklch, …)` of opaque colours: shorter-arc hue, and an achromatic hue (C = 0) is powerless.
+function mixOklch(first: Oklch, second: Oklch, firstWeight: number): Oklch {
+  let firstHue = first[1] === 0 ? second[2] : first[2];
+  let secondHue = second[1] === 0 ? first[2] : second[2];
+  if (secondHue - firstHue > 180) firstHue += 360;
+  else if (firstHue - secondHue > 180) secondHue += 360;
+  const mix = (a: number, b: number): number => a * firstWeight + b * (1 - firstWeight);
+  return [mix(first[0], second[0]), mix(first[1], second[1]), mix(firstHue, secondHue) % 360];
+}
+
+/** Resolves compiled paint: a token, `transparent`, or a two-operand `color-mix(in oklch, …)`. */
+function modelPaint(value: string | undefined, theme: Theme): ModelPaint {
+  if (!value) throw new Error("Missing compiled NumberField paint");
+  const operand = (text: string): ModelPaint => {
+    if (text === "transparent" || text === "#0000") return {color: [0, 0, 0], alpha: 0};
+    const token = /^var\((--ac-[\w-]+)\)$/u.exec(text)?.[1];
+    if (!token) throw new Error(`Unmodelled NumberField paint: ${text}`);
+    return {color: oklchToken(theme, token), alpha: 1};
+  };
+  const mixed = /^color-mix\(in oklch, (.+?)(?: (\d+)%)?, (.+?)(?: (\d+)%)?\)$/u.exec(value);
+  if (!mixed?.[1] || !mixed[3]) return operand(value);
+  if (mixed[2] && mixed[4] && Number(mixed[2]) + Number(mixed[4]) !== 100) throw new Error(`Unmodelled color-mix weights: ${value}`);
+  const firstWeight = (mixed[2] ? Number(mixed[2]) : mixed[4] ? 100 - Number(mixed[4]) : 50) / 100;
+  const first = operand(mixed[1]);
+  const second = operand(mixed[3]);
+  // Premultiplied interpolation with `transparent` keeps the colour and scales its alpha.
+  if (second.alpha === 0) return {color: first.color, alpha: firstWeight * first.alpha};
+  if (first.alpha !== 1 || second.alpha !== 1) throw new Error(`Unmodelled translucent color-mix: ${value}`);
+  return {color: mixOklch(first.color, second.color, firstWeight), alpha: 1};
+}
+
+// Same default-token model as `src/styles.test.ts`: OKLCH → clipped linear sRGB → WCAG luminance. Translucent
+// paint composites in gamma-encoded sRGB, as browsers paint it; gamut mapping and consumer themes stay browser work.
+function linearRgb([lightness, chroma, hueDegrees]: Oklch): EncodedRgb {
+  const hue = (hueDegrees * Math.PI) / 180;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const clip = (channel: number): number => Math.max(0, Math.min(1, channel));
+  return [
+    clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
+
+const encodeSrgb = (channel: number): number => (channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055);
+const decodeSrgb = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+
+function paintOver(paint: ModelPaint, backdrop: EncodedRgb): EncodedRgb {
+  const [red = 0, green = 0, blue = 0] = linearRgb(paint.color).map(encodeSrgb);
+  const blend = (channel: number, under: number): number => channel * paint.alpha + under * (1 - paint.alpha);
+  return [blend(red, backdrop[0]), blend(green, backdrop[1]), blend(blue, backdrop[2])];
+}
+
+function modelContrast(first: EncodedRgb, second: EncodedRgb): number {
+  const luminance = (rgb: EncodedRgb): number => {
+    const [red = 0, green = 0, blue = 0] = rgb.map(decodeSrgb);
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("review correction: NumberField scrub paint in %s defaults (token luminance model)", (theme) => {
+  it("keeps the cascaded idle and scrubbing handle text at 4.5:1 on its compiled surface", async () => {
+    const user = userEvent.setup();
+    render(
+      <NumberField defaultValue={2}>
+        <NumberFieldInput aria-label='Quantity' />
+        <NumberFieldScrubArea data-testid='scrub' />
+      </NumberField>,
+    );
+    const scrub = screen.getByTestId("scrub");
+    const page = paintOver(modelPaint("var(--ac-background)", theme), [0, 0, 0]);
+    const contrastOf = (state: Record<string, string>): number => {
+      const surface = paintOver(modelPaint(state["background-color"], theme), page);
+      return modelContrast(paintOver(modelPaint(state["color"], theme), surface), surface);
+    };
+
+    const idle = cascadedPaint(scrub, false);
+    expect(idle["color"]).toBe("var(--ac-muted-foreground)");
+    expect(contrastOf(idle)).toBeGreaterThanOrEqual(4.5);
+
+    await user.pointer({target: scrub, keys: "[MouseLeft>]"});
+    expect(scrub).toHaveAttribute("data-scrubbing");
+    // Without a hovering fine pointer (touch scrubbing) the scrubbing rule paints the handle; a hovering pointer gets the
+    // accent/accent-foreground token pair gated in `styles.test.ts`.
+    expect(contrastOf(cascadedPaint(scrub, false))).toBeGreaterThanOrEqual(4.5);
+
+    await user.pointer({keys: "[/MouseLeft]"});
+    expect(scrub).not.toHaveAttribute("data-scrubbing");
+  });
+});
 
 describe("NumberField", () => {
   const {WithLimits, WithStep, Currency, WithCurrency, MinMax} = composeStories(stories);

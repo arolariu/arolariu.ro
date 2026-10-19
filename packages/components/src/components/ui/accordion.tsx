@@ -38,7 +38,31 @@ export interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<
   /** Additional CSS classes merged with the accordion trigger styles. @default undefined */
   // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
   className?: string | undefined;
+  /**
+   * Props for the heading that wraps the trigger: Base UI `Accordion.Header`, an `<h3>` by default.
+   *
+   * Set `render` to a childless heading element, for example `render={<h2 />}`, so the level follows the surrounding
+   * document outline. `className` merges with the header styles; `ref` and every other prop apply after the wrapper
+   * defaults, including `data-slot="accordion-header"`.
+   * @default undefined
+   */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes caller compatibility
+  headerProps?: AccordionHeaderProps | undefined;
 }
+
+type AccordionDataAttributes = {readonly [key: `data-${string}`]: string | number | boolean | undefined};
+
+/**
+ * Props for the heading that wraps an accordion trigger: Base UI `Accordion.Header` props without `children`.
+ *
+ * @remarks
+ * `className` accepts a string or a header-state callback and merges with the header styles. `render` replaces the
+ * default `<h3>` with another heading level; an element must be childless because the trigger renders as its child,
+ * and a callback must spread the received props (including `children`) onto the heading it returns.
+ */
+export type AccordionHeaderProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Header>, "children"> & AccordionDataAttributes
+>;
 
 /**
  * Props for an accordion content wrapper.
@@ -59,6 +83,8 @@ export interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<
  * - Uses Base UI array values and the native `multiple` flag
  * - `collapsible={false}` cancels last-panel closing without replacing primitive state
  * - Callbacks receive `string[]` and the original `Accordion.ChangeEventDetails`
+ * - Item headings render as `<h3>` by default; set `AccordionTrigger`'s `headerProps.render` to fit the page's heading
+ *   outline
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage
@@ -132,9 +158,13 @@ AccordionItem.displayName = "AccordionItem";
  * Toggles an accordion item while rendering the chevron affordance.
  *
  * @remarks
- * - Renders a `<button>` element by default
+ * - Renders a `<button>` element inside Base UI's `Accordion.Header`, an `<h3>` by default
  * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
- * - Supports the `render` prop for element composition
+ * - Supports the `render` prop for trigger composition; `headerProps` customizes the heading (merged `className`,
+ *   heading `ref`, `render` and other props applied after `data-slot="accordion-header"`)
+ * - Applications own the heading level: accordion headings must continue the surrounding outline without skipping or
+ *   inverting levels (WCAG 1.3.1), so pass a childless heading such as `headerProps={{render: <h2 />}}` when `<h3>`
+ *   does not fit
  * - Includes a built-in chevron icon; use the `render` prop for full custom trigger rendering or wrap
  *   the component when you need a different icon treatment
  * - Styling via CSS Modules with `--ac-*` custom properties
@@ -144,13 +174,28 @@ AccordionItem.displayName = "AccordionItem";
  * <AccordionTrigger>Section</AccordionTrigger>
  * ```
  *
+ * @example Heading level under a page `h1`
+ * ```tsx
+ * <h1>Help center</h1>
+ * <Accordion>
+ *   <AccordionItem value="shipping">
+ *     <AccordionTrigger headerProps={{render: <h2 />}}>Shipping</AccordionTrigger>
+ *     <AccordionContent>Orders ship in three to five business days.</AccordionContent>
+ *   </AccordionItem>
+ * </Accordion>
+ * ```
+ *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
 const AccordionTrigger = (props: Readonly<AccordionTrigger.Props>): React.ReactElement => {
-  const {ref, className, children, render, ...otherProps} = props;
+  const {ref, className, children, render, headerProps, ...otherProps} = props;
+  const {className: headerClassName, ...headerNativeProps} = headerProps ?? {};
 
   return (
-    <BaseAccordion.Header className={styles.header}>
+    <BaseAccordion.Header
+      data-slot='accordion-header'
+      className={(state) => cn(styles.header, typeof headerClassName === "function" ? headerClassName(state) : headerClassName)}
+      {...headerNativeProps}>
       <BaseAccordion.Trigger
         data-slot='accordion-trigger'
         ref={ref}
@@ -223,6 +268,9 @@ namespace AccordionItem {
 namespace AccordionTrigger {
   export type Props = AccordionTriggerProps;
   export type State = BaseAccordion.Trigger.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- preserve the named and AccordionTrigger.HeaderProps namespace typing
+  export type HeaderProps = AccordionHeaderProps;
+  export type HeaderState = BaseAccordion.Header.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

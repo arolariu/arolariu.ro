@@ -1,5 +1,7 @@
+import {useEffect, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {ListSkeleton} from "./list-skeleton";
+import {VisuallyHidden} from "./visually-hidden";
 const storyStyles = `
 .ac-story-list-skeleton-storyPreview {
   width: 36rem;
@@ -27,15 +29,57 @@ const storyClasses = {
   storyHeading: "ac-story-list-skeleton-storyHeading",
 } as const;
 
+/**
+ * Caller-owned announcement: a persistent visually hidden status region is mounted empty and receives the localized
+ * `loadingAnnouncement` story parameter (in `loadingAnnouncementLang`, when set) once loading begins. The skeleton
+ * itself stays decorative.
+ */
+function LoadingAnnouncement({
+  message,
+  lang,
+  children,
+}: Readonly<{message: string; lang: string | undefined; children: React.ReactNode}>): React.JSX.Element {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+  return (
+    <>
+      <VisuallyHidden
+        role='status'
+        lang={lang}>
+        {loading ? message : null}
+      </VisuallyHidden>
+      {children}
+    </>
+  );
+}
+
 const meta = {
   title: "Components/Feedback/ListSkeleton",
   component: ListSkeleton,
   tags: ["autodocs"],
-  args: {
-    role: "status",
-    "aria-label": "Loading results",
+  parameters: {
+    loadingAnnouncement: "Loading results",
+    docs: {
+      description: {
+        component:
+          "Decorative list placeholders. Each story writes its localized loading message into a persistent visually hidden status region after that region mounts; the skeleton never carries a role or label.",
+      },
+    },
   },
   decorators: [
+    (Story, {parameters}) => {
+      const {loadingAnnouncement, loadingAnnouncementLang}: Readonly<Record<string, unknown>> = parameters;
+      return (
+        <LoadingAnnouncement
+          message={typeof loadingAnnouncement === "string" ? loadingAnnouncement : ""}
+          lang={typeof loadingAnnouncementLang === "string" ? loadingAnnouncementLang : undefined}>
+          <Story />
+        </LoadingAnnouncement>
+      );
+    },
+
     (Story) => (
       <div className={storyClasses.storyPreview}>
         <Story />
@@ -95,7 +139,7 @@ export const LongList: Story = {
   },
 };
 
-/** Zero items render an empty layout with caller-owned loading semantics. */
+/** Zero items render an empty layout; the caller-owned status region still carries the loading message. */
 export const Empty: Story = {
   args: {items: 0},
 };
@@ -105,20 +149,19 @@ export const Static: Story = {
   args: {animated: false},
 };
 
+/** The announcement is caller-owned text, so it follows the page language. */
+export const LocalizedAnnouncement: Story = {
+  args: {items: 5},
+  parameters: {loadingAnnouncement: "Se încarcă rezultatele", loadingAnnouncementLang: "ro"},
+};
+
 /**
- * List skeleton in a container.
+ * List skeleton in a container; the visible heading is ordinary text, not the announcement.
  */
 export const InContainer: Story = {
   render: () => (
-    <section
-      className={storyClasses.storyPanel}
-      role='status'
-      aria-labelledby='list-skeleton-heading'>
-      <h2
-        id='list-skeleton-heading'
-        className={storyClasses.storyHeading}>
-        Loading results
-      </h2>
+    <section className={storyClasses.storyPanel}>
+      <h2 className={storyClasses.storyHeading}>Loading results</h2>
       <ListSkeleton
         items={6}
         showAvatar

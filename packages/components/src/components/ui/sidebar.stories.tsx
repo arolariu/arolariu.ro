@@ -39,7 +39,10 @@ function SidebarStatus(): React.JSX.Element {
   return <p role='status'>{isMobile ? `Mobile sheet ${openMobile ? "open" : "closed"}` : `Desktop sidebar ${state}`}</p>;
 }
 
-function Navigation(): React.JSX.Element {
+type CurrentDestination = "home" | "overview";
+
+/** Marks only the current destination with `isActive`, which also exposes `aria-current="page"`. */
+function Navigation({current = "home"}: Readonly<{current?: CurrentDestination}>): React.JSX.Element {
   return (
     <>
       <SidebarHeader>
@@ -60,7 +63,7 @@ function Navigation(): React.JSX.Element {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive
+                  isActive={current === "home"}
                   tooltip='Home'
                   render={
                     <a href='#home'>
@@ -101,7 +104,7 @@ function Navigation(): React.JSX.Element {
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton
                       href='#overview'
-                      isActive>
+                      isActive={current === "overview"}>
                       Overview
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
@@ -142,7 +145,10 @@ function SidebarDemo({
   variant = "sidebar",
   collapsible = "offcanvas",
   dir,
-}: Readonly<Pick<Sidebar.Props, "side" | "variant" | "collapsible" | "dir"> & {defaultOpen?: boolean}>): React.JSX.Element {
+  current = "home",
+}: Readonly<
+  Pick<Sidebar.Props, "side" | "variant" | "collapsible" | "dir"> & {defaultOpen?: boolean; current?: CurrentDestination}
+>): React.JSX.Element {
   const inheritedDirection = useDirection();
   const sidebarFirst = (side === "left") !== ((dir ?? inheritedDirection) === "rtl");
   const sidebar = (
@@ -152,7 +158,7 @@ function SidebarDemo({
       variant={variant}
       collapsible={collapsible}
       dir={dir}>
-      <Navigation />
+      <Navigation current={current} />
     </Sidebar>
   );
   const main = (
@@ -277,16 +283,18 @@ export const Floating: Story = {args: {variant: "floating", collapsible: "icon"}
 export const Inset: Story = {args: {variant: "inset", collapsible: "icon"}};
 /** Logical sidebar placement and nested-list borders follow RTL direction. */
 export const RightToLeft: Story = {args: {dir: "rtl", side: "right", variant: "floating", collapsible: "icon"}};
-/** Narrow the viewport below 768px, open, Tab/Shift+Tab, Escape, and try the actual backdrop. No hook is mocked. */
+/** Narrow the viewport below 768px, open, Tab/Shift+Tab, Escape, the named close control, and the actual backdrop. No hook is mocked. */
 export const MobileFocus: Story = {
   parameters: {
     docs: {
       description: {
         story:
-          "Use a viewport below 768px. Verify focus entry/containment/return, outside inertness, Escape, and backdrop dismissal in the real Sheet.",
+          "Use a viewport below 768px. Verify focus entry/containment/return, outside inertness, Escape, the localizable “Close sidebar” control after the navigation (shown at the top inline-end corner), and backdrop dismissal in the real Sheet.",
       },
     },
   },
 };
 /** Noncollapsible navigation is intentionally nonmodal at every viewport. */
 export const Static: Story = {args: {collapsible: "none"}};
+/** A nested link is the current page: only it sets `isActive` (`aria-current="page"`) and it is underlined, not only coloured. */
+export const NestedCurrentPage: Story = {render: () => <SidebarDemo current='overview' />};

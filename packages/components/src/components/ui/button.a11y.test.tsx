@@ -283,3 +283,47 @@ describe("Controls accessibility CSS contracts", () => {
     expect(rule.get("min-block-size")).toBeDefined();
   });
 });
+
+/** Compiled CSS contract for native `<a className={buttonVariants()}>` links; UA link styles themselves are browser-owned. */
+describe("Native links styled with buttonVariants", () => {
+  it("resets the user-agent link underline on the shared button base", () => {
+    expect(declarations("button", ".button").get("text-decoration")).toBe("none");
+    expect(declarations("button", ".button:any-link").size).toBe(0);
+  });
+
+  it.each([".default", ".destructive", ".outline", ".secondary", ".ghost"])(
+    "%s adds no underline at rest, as a real link, or on hover, so styled links match the button preset",
+    (variant) => {
+      expect(declarations("button", variant).has("text-decoration")).toBe(false);
+      expect(declarations("button", `${variant}:any-link`).size).toBe(0);
+      expect(declarations("button", `${variant}:hover:not([data-disabled])`, "(hover: hover)").has("text-decoration")).toBe(false);
+    },
+  );
+
+  it("underlines real links with the link preset at rest (WCAG 1.4.1) at the hover underline's offset", () => {
+    const preset = declarations("button", ".link");
+    // A <button> never matches :any-link, so <Button variant="link"> keeps no rest underline.
+    expect(preset.has("text-decoration")).toBe(false);
+    expect(preset.get("text-underline-offset")).toBe("4px");
+    // Unconditional (root-level, not hover-gated) and above the single-class base reset in specificity.
+    const realLink = declarations("button", ".link:any-link");
+    expect(realLink.get("text-decoration")).toBe("underline");
+    expect(realLink.has("text-underline-offset")).toBe(false);
+    expect(declarations("button", ".link:hover:not([data-disabled])", "(hover: hover)").get("text-decoration")).toBe("underline");
+  });
+
+  it("leaves focus-visible and forced-colors presentation unchanged", () => {
+    const focus = declarations("button", ".button:focus-visible");
+    expect(focus.get("outline")).toBe("2px solid var(--ac-ring)");
+    expect(focus.get("outline-offset")).toBe("-1px");
+    const forcedFocus = declarations("button", ".button:focus-visible", "(forced-colors: active)");
+    expect(forcedFocus.get("outline-color")?.toLowerCase()).toBe("highlight");
+    expect(forcedFocus.get("outline-offset")).toBe("2px");
+    const forced = declarations("button", ".button", "(forced-colors: active)");
+    expect(forced.get("border")?.toLowerCase()).toBe("1px solid buttontext");
+    expect(forced.get("color")?.toLowerCase()).toBe("buttontext");
+    expect(forced.get("background-color")?.toLowerCase()).toBe("buttonface");
+    expect(forced.get("box-shadow")).toBe("none");
+    for (const rule of [focus, forcedFocus, forced]) expect(rule.has("text-decoration")).toBe(false);
+  });
+});

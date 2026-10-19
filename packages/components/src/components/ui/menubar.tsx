@@ -102,7 +102,10 @@ function MenubarTrigger<Payload = unknown>({ref, ...props}: Readonly<MenubarTrig
 }
 MenubarTrigger.displayName = "MenubarTrigger";
 
-/** Portaled Menu Popup with canonical bottom/start placement and offsets 8/-4. */
+/**
+ * Portaled Menu Popup with start alignment and offsets 8/-4. Unless `side` is set, Base UI opens it
+ * below a horizontal Menubar and toward the inline end of a vertical one.
+ */
 const MenubarContent = ({ref, ...props}: Readonly<MenubarContent.Props>): React.ReactElement => {
   const {align = "start", alignOffset = -4, sideOffset = 8, className, ...otherProps} = props;
   return (

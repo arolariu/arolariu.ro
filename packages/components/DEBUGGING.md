@@ -207,7 +207,8 @@ export function MyComponent() {
 ```css
 /* Scope theme changes intentionally */
 .themeScope {
-  --ac-primary: oklch(0.65 0.2 255);
+  --ac-primary: oklch(0.5 0.16 255);
+  /* Overriding --ac-primary: also override --ac-primary-emphasis in every theme (4.5:1 on --ac-background, 3:1 on --ac-secondary). */
   --ac-radius-md: 0.75rem;
 }
 
@@ -252,7 +253,7 @@ Use the package `Form*` or `Field*` primitives when you need grouped field seman
 **Symptoms**
 
 - Console warning when rendering a non-`button` element through a trigger or button primitive
-- Events or semantics behave unexpectedly when using links or custom elements
+- Events or semantics behave unexpectedly when a custom element replaces the native button
 
 **Cause**
 
@@ -260,24 +261,46 @@ Base UI button-like primitives assume a native `<button>` unless told otherwise.
 
 **Solution**
 
-When rendering a non-button element, set `nativeButton={false}` on the underlying primitive. The removed `asChild` shim no longer infers
-this for you.
+When a button-like primitive renders a non-link element that takes button semantics, such as a `<div>` or `<span>`, set
+`nativeButton={false}` on the underlying primitive. Base UI then adds `role="button"`, focusability and Enter/Space activation. The removed
+`asChild` shim no longer infers this for you.
 
 ```tsx
 import {Button as BaseButton} from "@base-ui/react/button";
 
-export function DocsLink() {
+export function RunTask() {
   return (
     <BaseButton
       nativeButton={false}
-      render={<a href='/docs' />}>
-      Documentation
+      render={<div />}>
+      Run task
     </BaseButton>
   );
 }
 ```
 
-If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the rendered element is not a real `<button>`.
+If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the element that takes button semantics is not a
+real `<button>`.
+
+Do not use `nativeButton={false}` to render links. A link rendered through a button primitive is announced as a button, is missing from the
+page's list of links and activates on Space. Keep navigation as a native `<a href>` and give it the button appearance with
+`buttonVariants()` from a Client Component:
+
+```tsx
+"use client";
+
+import {buttonVariants} from "@arolariu/components/button";
+
+export function DocsLink() {
+  return (
+    <a
+      href='/docs'
+      className={buttonVariants({variant: "outline"})}>
+      Documentation
+    </a>
+  );
+}
+```
 
 ### Issue: Removed `asChild` API
 

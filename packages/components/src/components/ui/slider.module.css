@@ -58,7 +58,7 @@
 
 .indicator {
   border-radius: inherit;
-  background-color: var(--ac-primary);
+  background-color: var(--ac-primary-emphasis);
 }
 
 .indicator[data-orientation="horizontal"] {

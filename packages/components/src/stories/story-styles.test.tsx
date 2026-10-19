@@ -232,15 +232,33 @@ describe("story-owned style lifecycle", () => {
     expect(document.querySelector("style")?.textContent ?? "").not.toContain("ac-story-native-select-example");
   });
 
-  it("keeps the existing skeleton decorator and its controlled args inside the style-only fragment", () => {
-    const {Default} = composeStories(cardSkeletonStories);
-    const {container} = render(<Default lines={5} />);
+  it("keeps the skeleton decorators and controlled args inside the style-only fragment with a persistent text status region", () => {
+    const {Default, LocalizedAnnouncement} = composeStories(cardSkeletonStories);
+    // The region exists before any loading text: the server/first render emits it empty.
+    expect(renderToStaticMarkup(<Default lines={5} />)).toMatch(/<span[^>]*role="status"[^>]*><\/span>/u);
+    const {container, unmount} = render(<Default lines={5} />);
     const preview = container.querySelector(".ac-story-card-skeleton-storyPreview");
     expect(preview).not.toBeNull();
     expect(preview?.parentElement).toBe(container);
-    expect(screen.getByRole("status", {name: "Loading summary"})).not.toHaveAttribute("aria-busy");
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("Loading summary");
+    expect(status).not.toHaveAccessibleName();
+    expect(status).not.toHaveAttribute("aria-busy");
+    expect(status.parentElement).toBe(preview);
+    const skeleton = status.nextElementSibling;
+    expect(skeleton).not.toHaveAttribute("role");
+    expect(skeleton).not.toHaveAttribute("aria-label");
+    const placeholders = skeleton?.querySelectorAll('[data-slot="skeleton"]') ?? [];
+    expect(placeholders).toHaveLength(8);
+    for (const placeholder of placeholders) expect(placeholder).toHaveAttribute("aria-hidden", "true");
     expect(getComputedStyle(preview as HTMLElement).width).toBe("768px");
     expect([...container.children].map((child) => child.tagName)).toEqual(["STYLE", "DIV"]);
+    unmount();
+
+    render(<LocalizedAnnouncement />);
+    expect(screen.getByRole("status").textContent).toBe("Se încarcă rezumatul");
+    expect(screen.getByRole("status")).toHaveAttribute("lang", "ro");
   });
 
   it("keeps calendar demo presentation independent of DayPicker's production class map", () => {

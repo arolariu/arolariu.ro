@@ -26,7 +26,7 @@
 
   @media (hover: hover) {
     &:hover {
-      color: var(--ac-primary);
+      color: var(--ac-primary-emphasis);
     }
   }
 

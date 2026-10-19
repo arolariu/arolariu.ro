@@ -67,6 +67,42 @@ describe("Stepper", () => {
     expect((Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)).toBeGreaterThanOrEqual(3);
   });
 
+  it.each(["light", "dark"] as const)(
+    "review correction: the active step number keeps 4.5:1 text contrast on the default %s surface",
+    (theme) => {
+      render(
+        <Stepper
+          steps={["Start", "Review"]}
+          activeStep={1}
+        />,
+      );
+      const indicator = screen.getAllByRole("listitem")[1]?.querySelector('[aria-hidden="true"]');
+      if (!(indicator instanceof HTMLElement)) throw new Error("Missing active-step indicator");
+      expect(indicator).toHaveTextContent("2");
+      const paint: Record<string, string> = {};
+      stepperCss.walkRules((rule) => {
+        if (rule.parent?.type !== "root") return;
+        const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+          const className = styles[name];
+          if (!className) throw new Error(`Missing stepper class: ${name}`);
+          return `.${CSS.escape(className)}`;
+        });
+        if (indicator.matches(selector))
+          rule.walkDecls((decl) => {
+            paint[decl.prop] = decl.value;
+          });
+      });
+      // The active indicator paints no surface of its own, so its number sits on the page background.
+      expect(paint["background-color"]).toBeUndefined();
+      const text = /^var\((--ac-[\w-]+)\)$/u.exec(paint["color"] ?? "")?.[1];
+      if (!text) throw new Error(`Missing token-backed active number colour: ${paint["color"]}`);
+      const foreground = tokenLuminance(theme, text);
+      const background = tokenLuminance(theme, "--ac-background");
+      expect((Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)).toBeGreaterThanOrEqual(4.5);
+      expect(text).toBe("--ac-primary-emphasis");
+    },
+  );
+
   it("React 19 refresh: authors reduced-motion, forced-colors and wrapping progress styles", () => {
     const css = readFileSync(join(import.meta.dirname, "stepper.module.css"), "utf8");
     expect(css).toContain("prefers-reduced-motion: reduce");

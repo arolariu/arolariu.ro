@@ -74,13 +74,14 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visual status overlay by default: pointer and keyboard input remain available. Blocking requires a caller-owned busy container, inert background content, native disabled controls and focus management.",
+          "Visual overlay plus a persistent, visually hidden status region: keep it mounted and toggle `visible` so `loadingLabel` is written into the already-present region. Pointer and keyboard input remain available. Blocking requires a caller-owned busy container, inert background content, native disabled controls and focus management.",
       },
     },
   },
   argTypes: {
     visible: {control: "boolean"},
     blur: {control: "boolean"},
+    loadingLabel: {control: "text", description: "Localizable text written into the persistent status region while visible"},
   },
 } satisfies Meta<typeof LoadingOverlay>;
 
@@ -107,18 +108,21 @@ function VisualOwner(props: Readonly<LoadingOverlayProps>): React.JSX.Element {
   );
 }
 
-/** The default Spinner announces loading without inerting or disabling background content. */
+/**
+ * Toggle `visible` to write `loadingLabel` into the persistent status region; the spinner is decorative and background
+ * content is not inerted or disabled.
+ */
 export const Default: Story = {args: {visible: true, blur: false}, render: (args) => <VisualOwner {...args} />};
 
 /** Blur is a visual option, never a keyboard-blocking mechanism. */
 export const WithBlur: Story = {...Default, args: {visible: true, blur: true}};
 
-/** Hiding the status does not mutate the owner or its content. */
+/** While hidden, only the empty status region stays mounted; the owner and its content are unchanged. */
 export const Hidden: Story = {...Default, args: {visible: false}};
 
-/** Custom informative content retains the same status semantics. */
+/** Custom informative content replaces the decorative spinner visually; `loadingLabel` carries the announcement. */
 export const WithProgress: Story = {
-  args: {visible: true, blur: true, "aria-label": "Upload progress"},
+  args: {visible: true, blur: true, loadingLabel: "Uploading three of ten items"},
   render: (args) => (
     <VisualOwner {...args}>
       <div className={storyClasses.progress}>
@@ -177,7 +181,7 @@ function BlockingOwner(): React.JSX.Element {
         </section>
         <LoadingOverlay
           visible={busy}
-          aria-label='Working'>
+          loadingLabel='Working'>
           Working; finish loading using the control outside this busy owner.
         </LoadingOverlay>
       </div>

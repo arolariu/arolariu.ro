@@ -383,6 +383,18 @@ export type SidebarProps = Readonly<
     mobileTitle?: React.ReactNode;
     /** Caller-localizable mobile dialog description. @default "Displays the mobile sidebar." */
     mobileDescription?: React.ReactNode;
+    /**
+     * Whether the mobile sheet renders its close control after the sidebar content. Keep it unless
+     * the content provides another named, reachable dismiss control: touch screen-reader users
+     * cannot rely on Escape, and the backdrop is not a named control.
+     * @default true
+     */
+    showCloseButton?: boolean;
+    /**
+     * Caller-localizable accessible name of the mobile sheet's close control.
+     * @default "Close sidebar"
+     */
+    closeLabel?: string;
   }
 >;
 
@@ -392,10 +404,13 @@ export type SidebarProps = Readonly<
  * @remarks
  * - Renders a `<div>` element on desktop and a dialog portal on mobile
  * - Built on the shared sidebar context
+ * - Below the mobile breakpoint the modal sheet ends with a named close control
+ *   (`closeLabel`), positioned at the top inline-end corner above the content; dismissal
+ *   also remains available through Escape and the backdrop
  *
  * @example
  * ```tsx
- * <Sidebar>
+ * <Sidebar closeLabel='Close navigation'>
  *   <SidebarContent />
  * </Sidebar>
  * ```
@@ -409,6 +424,8 @@ const Sidebar = ({
   collapsible = "offcanvas",
   mobileTitle = "Sidebar",
   mobileDescription = "Displays the mobile sidebar.",
+  showCloseButton = true,
+  closeLabel = "Close sidebar",
   className,
   children,
   dir: dirProp,
@@ -446,12 +463,13 @@ const Sidebar = ({
             side={side}
             data-sidebar='sidebar'
             data-mobile='true'
-            showCloseButton={false}
+            showCloseButton={showCloseButton}
+            closeLabel={closeLabel}
             className={cn(styles.mobilePanel, className)}
             {...props}>
             <SheetTitle className={styles.srOnly}>{mobileTitle}</SheetTitle>
             <SheetDescription className={styles.srOnly}>{mobileDescription}</SheetDescription>
-            <div className={styles.mobileContent}>{children}</div>
+            <div className={cn(styles.mobileContent, showCloseButton && styles.mobileContentWithClose)}>{children}</div>
           </SheetContent>
         </Sheet>
       </DirectionProvider>
@@ -949,12 +967,18 @@ const sidebarMenuButtonSizeStyles = {
   lg: styles.menuButtonSizeLg,
 } as const;
 
+/** `isActive` semantics, merged before caller props so caller and render-element values (even `undefined`) win. */
+const currentPageProps = {"aria-current": "page"} as const;
+
 /**
  * Props for the sidebar menu button.
  */
 export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuButtonState> {
   /**
-   * Whether the menu item should be styled as active.
+   * Marks the item as the current destination: applies the active styling and sets
+   * `aria-current="page"`. Pass `aria-current` (for example `"location"` or `"true"`) for another
+   * kind of current item, or `aria-current={undefined}` when the active styling does not represent
+   * the current page; caller and render-element values always win.
    * @default false
    */
   readonly isActive?: boolean;
@@ -981,10 +1005,16 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
  * @remarks
  * - Renders a `<button>` element by default
  * - Supports `render` and contextual tooltips when collapsed
+ * - `isActive` exposes the current destination with `aria-current="page"`, an active
+ *   background and medium weight, and a system-colour highlight in forced-colors mode
  *
  * @example
  * ```tsx
- * <SidebarMenuButton isActive>Dashboard</SidebarMenuButton>
+ * <SidebarMenuButton
+ *   isActive
+ *   render={<a href='/dashboard' />}>
+ *   Dashboard
+ * </SidebarMenuButton>
  * ```
  *
  * Native anchors retain link semantics, including an empty href. Opaque
@@ -1027,7 +1057,10 @@ const SidebarMenuButton = ({
       "data-size": size,
       ...mergeProps<"button">(
         interactions.props,
-        {className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className)},
+        {
+          className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className),
+          ...(isActive ? currentPageProps : undefined),
+        },
         props,
         {children},
       ),
@@ -1248,8 +1281,11 @@ export interface SidebarMenuSubButtonProps extends Readonly<Omit<useRender.Compo
    */
   readonly size?: "sm" | "md";
   /**
-   * Whether the nested menu item should be styled as active.
-   * @default undefined
+   * Marks the nested link as the current destination: applies the active styling (including a
+   * non-colour underline) and sets `aria-current="page"`. Pass `aria-current` for another kind of
+   * current item, or `aria-current={undefined}` to keep only the styling; caller and
+   * render-element values always win.
+   * @default false
    */
   readonly isActive?: boolean;
 }
@@ -1260,10 +1296,16 @@ export interface SidebarMenuSubButtonProps extends Readonly<Omit<useRender.Compo
  * @remarks
  * - Renders an `<a>` element by default
  * - Supports `render` composition for custom link components
+ * - `isActive` exposes the current destination with `aria-current="page"`, an underline that
+ *   hover and focus never show, and a system-colour highlight in forced-colors mode
  *
  * @example
  * ```tsx
- * <SidebarMenuSubButton href='/settings/profile'>Profile</SidebarMenuSubButton>
+ * <SidebarMenuSubButton
+ *   href='/settings/profile'
+ *   isActive>
+ *   Profile
+ * </SidebarMenuSubButton>
  * ```
  *
  * @see {@link https://base-ui.com/react/utils/use-render | Base UI composition}
@@ -1287,7 +1329,10 @@ const SidebarMenuSubButton = ({
       "data-sidebar": "menu-sub-button",
       "data-size": size,
       ...mergeProps<"a">(
-        {className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className)},
+        {
+          className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className),
+          ...(isActive ? currentPageProps : undefined),
+        },
         props,
         {children},
       ),

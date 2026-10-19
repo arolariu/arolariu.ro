@@ -54,7 +54,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Native DPR-aware canvas physics. Click positions are element-local, not viewport coordinates. Timers/trails/particles are bounded. Reduced motion/offscreen policy keeps a static starburst.",
+          "Native DPR-aware canvas physics behind a native launch button. Automatic launches settle after five seconds unless `loop`; the launch button keeps working afterwards (and in click-only `population={0}`) and is `aria-disabled` under reduced motion, `motionPaused` or a hidden document. Pointer launches aim at element-local positions, not viewport coordinates. Timers/trails/particles are bounded; reduced motion/offscreen keeps a static starburst.",
       },
     },
   },
@@ -68,7 +68,10 @@ const meta = {
 } satisfies Meta<typeof FireworksBackground>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-/** Continued launches have a keyboard-operable pause control; defaults stop within five seconds. */
+/**
+ * Continued automatic launches need a keyboard-operable pause control; while paused the launch button is `aria-disabled`.
+ * Without `loop`, automatic launches settle within five seconds and the launch button keeps working.
+ */
 export const ControlledLoop: Story = {
   render: function ControlledLoop(args) {
     const [paused, setPaused] = useState(false);
@@ -89,13 +92,16 @@ export const ControlledLoop: Story = {
 export const Default: Story = {};
 export const HighFrequency: Story = {args: {population: 3}};
 export const CustomColors: Story = {args: {color: ["#ff0080", "#00ff80", "#0080ff"], population: 1.5}};
-/** Click-only launches in an offset, element-resizable container. */
+/**
+ * Click-only (`population={0}`) launches from the launch button, which keeps working after the five-second settle, in an
+ * offset, element-resizable container.
+ */
 export const ElementResize: Story = {
   args: {population: 0},
   render: (args) => (
     <div className={storyClasses.resizableDemo}>
       <FireworksBackground {...args}>
-        <p className={storyClasses.demoContent}>Resize, then click</p>
+        <p className={storyClasses.demoContent}>Resize, then use the launch button</p>
       </FireworksBackground>
     </div>
   ),

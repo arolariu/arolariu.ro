@@ -1,4 +1,5 @@
 import {ContextMenu as BaseContextMenu} from "@base-ui/react/context-menu";
+import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
@@ -922,5 +923,39 @@ describe("ContextMenu", () => {
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");
     });
+  });
+});
+
+describe("ContextMenu final review M7: logical popup side", () => {
+  it.each(["ltr", "rtl"] as const)("opens root content toward the logical inline end in %s", (direction) => {
+    render(
+      <DirectionProvider direction={direction}>
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Context target</ContextMenuTrigger>
+          <ContextMenuContent aria-label='Context actions'>
+            <ContextMenuItem>Copy</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </DirectionProvider>,
+    );
+    // Base UI reports inline-end only for a logical request; in RTL that is the physical left side.
+    const popup = screen.getByRole("menu", {name: "Context actions"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    expect(popup).toHaveAttribute("dir", direction);
+  });
+
+  it("keeps an explicit caller side", () => {
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Context target</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Context actions'
+          side='bottom'
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <ContextMenuItem>Copy</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    expect(screen.getByRole("menu", {name: "Context actions"})).toHaveAttribute("data-side", "bottom");
   });
 });

@@ -123,9 +123,18 @@
 }
 
 .link:hover,
-.link[data-active] {
+.link[data-active],
+.link[aria-current="page"] {
   background-color: var(--ac-accent);
   color: var(--ac-accent-foreground);
+}
+
+/* The current page also needs a non-colour cue that hover never shows; text decorations survive forced colors. */
+.link[data-active],
+.link[aria-current="page"] {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
 }
 
 .link:focus-visible {

@@ -1,5 +1,7 @@
+import {useEffect, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {FormSkeleton} from "./form-skeleton";
+import {VisuallyHidden} from "./visually-hidden";
 const storyStyles = `
 .ac-story-form-skeleton-storyPreview {
   width: 32rem;
@@ -27,15 +29,57 @@ const storyClasses = {
   storyHeading: "ac-story-form-skeleton-storyHeading",
 } as const;
 
+/**
+ * Caller-owned announcement: a persistent visually hidden status region is mounted empty and receives the localized
+ * `loadingAnnouncement` story parameter (in `loadingAnnouncementLang`, when set) once loading begins. The skeleton
+ * itself stays decorative.
+ */
+function LoadingAnnouncement({
+  message,
+  lang,
+  children,
+}: Readonly<{message: string; lang: string | undefined; children: React.ReactNode}>): React.JSX.Element {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+  return (
+    <>
+      <VisuallyHidden
+        role='status'
+        lang={lang}>
+        {loading ? message : null}
+      </VisuallyHidden>
+      {children}
+    </>
+  );
+}
+
 const meta = {
   title: "Components/Feedback/FormSkeleton",
   component: FormSkeleton,
   tags: ["autodocs"],
-  args: {
-    role: "status",
-    "aria-label": "Loading form",
+  parameters: {
+    loadingAnnouncement: "Loading form",
+    docs: {
+      description: {
+        component:
+          "Decorative form placeholders. Each story writes its localized loading message into a persistent visually hidden status region after that region mounts; the skeleton never carries a role or label.",
+      },
+    },
   },
   decorators: [
+    (Story, {parameters}) => {
+      const {loadingAnnouncement, loadingAnnouncementLang}: Readonly<Record<string, unknown>> = parameters;
+      return (
+        <LoadingAnnouncement
+          message={typeof loadingAnnouncement === "string" ? loadingAnnouncement : ""}
+          lang={typeof loadingAnnouncementLang === "string" ? loadingAnnouncementLang : undefined}>
+          <Story />
+        </LoadingAnnouncement>
+      );
+    },
+
     (Story) => (
       <div className={storyClasses.storyPreview}>
         <Story />
@@ -98,20 +142,19 @@ export const Static: Story = {
   args: {animated: false},
 };
 
+/** The announcement is caller-owned text, so it follows the page language. */
+export const LocalizedAnnouncement: Story = {
+  args: {fields: 4},
+  parameters: {loadingAnnouncement: "Se încarcă formularul", loadingAnnouncementLang: "ro"},
+};
+
 /**
- * Form skeleton in a card container.
+ * Form skeleton in a card container; the visible heading is ordinary text, not the announcement.
  */
 export const InCard: Story = {
   render: () => (
-    <section
-      className={storyClasses.storyPanel}
-      role='status'
-      aria-labelledby='form-skeleton-heading'>
-      <h2
-        id='form-skeleton-heading'
-        className={storyClasses.storyHeading}>
-        Loading form
-      </h2>
+    <section className={storyClasses.storyPanel}>
+      <h2 className={storyClasses.storyHeading}>Loading form</h2>
       <FormSkeleton fields={5} />
     </section>
   ),

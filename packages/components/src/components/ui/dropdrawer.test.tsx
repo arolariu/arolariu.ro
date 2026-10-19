@@ -2,9 +2,14 @@ import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse, type Node as CssNode} from "postcss";
 import * as React from "react";
 import {hydrateRoot, type Root} from "react-dom/client";
 import {renderToString} from "react-dom/server";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {Button} from "./button";
@@ -21,6 +26,10 @@ import {
   DropDrawerSubTrigger,
   DropDrawerTrigger,
 } from "./dropdrawer";
+import styles from "./dropdrawer.module.css";
+import * as stories from "./dropdrawer.stories";
+
+const {SubmenuTitles: SubmenuTitlesStory} = composeStories(stories);
 
 /** Only matchMedia is replaced: both responsive hooks and both SDK owners remain real. */
 function installMediaQuery(initialMobile = false): {change: (mobile: boolean) => void; restore: () => void} {
@@ -2077,4 +2086,344 @@ describe("DropDrawer review fix round 2", () => {
       expect(errors).not.toHaveBeenCalled();
     },
   );
+});
+
+function RelabelledSubmenu({label}: Readonly<{label: React.ReactNode}>): React.ReactElement {
+  return (
+    <DropDrawer
+      defaultOpen
+      mobileTitle='Actions'>
+      <DropDrawerTrigger>Open relabelled actions</DropDrawerTrigger>
+      <DropDrawerContent>
+        <DropDrawerItem closeOnClick={false}>Main action</DropDrawerItem>
+        <DropDrawerSub>
+          <DropDrawerSubTrigger data-testid='relabelled-trigger'>{label}</DropDrawerSubTrigger>
+          <DropDrawerSubContent>
+            <DropDrawerItem closeOnClick={false}>Nested action</DropDrawerItem>
+          </DropDrawerSubContent>
+        </DropDrawerSub>
+      </DropDrawerContent>
+    </DropDrawer>
+  );
+}
+
+function IdentifiedSubmenu({id}: Readonly<{id: string}>): React.ReactElement {
+  return (
+    <DropDrawer
+      defaultOpen
+      mobileTitle='Actions'>
+      <DropDrawerTrigger>Open identified actions</DropDrawerTrigger>
+      <DropDrawerContent>
+        <DropDrawerItem closeOnClick={false}>Main action</DropDrawerItem>
+        <DropDrawerSub id={id}>
+          <DropDrawerSubTrigger>Identified submenu</DropDrawerSubTrigger>
+          <DropDrawerSubContent>
+            <DropDrawerItem closeOnClick={false}>Nested action</DropDrawerItem>
+          </DropDrawerSubContent>
+        </DropDrawerSub>
+      </DropDrawerContent>
+    </DropDrawer>
+  );
+}
+
+interface SubmenuTitleCase {
+  readonly source: string;
+  readonly title?: string;
+  readonly label?: string;
+  readonly ariaLabel?: string;
+  readonly children: React.ReactNode;
+  readonly expected: string;
+}
+
+const submenuTitleCases: readonly SubmenuTitleCase[] = [
+  {
+    source: "a localized Sub title over an icon-only aria-label trigger",
+    title: "Paramètres",
+    ariaLabel: "Paramètres",
+    children: <svg aria-hidden='true' />,
+    expected: "Paramètres",
+  },
+  {
+    source: "a Sub title over trigger badge text",
+    title: "Inbox",
+    children: (
+      <>
+        Inbox <span>3</span>
+      </>
+    ),
+    expected: "Inbox",
+  },
+  {
+    source: "the trigger label over trigger badge text",
+    label: "Notifications",
+    children: (
+      <>
+        Notifications <span>12</span>
+      </>
+    ),
+    expected: "Notifications",
+  },
+  {
+    source: "visible trigger text without aria-hidden decoration",
+    children: (
+      <>
+        <span aria-hidden='true'>★</span> Favourites
+      </>
+    ),
+    expected: "Favourites",
+  },
+  {
+    source: "the root mobileTitle for an untitled icon-only trigger",
+    ariaLabel: "Settings",
+    children: <svg aria-hidden='true' />,
+    expected: "Actions",
+  },
+];
+
+describe("DropDrawer final review M1: mobile submenu titles", () => {
+  it.each([false, true])(
+    "names the dialog after each active submenu and restores focus and the root title on back (Strict Mode=%s)",
+    async (strict) => {
+      media.change(true);
+      const user = userEvent.setup();
+      const Mode = strict ? React.StrictMode : React.Fragment;
+      render(
+        <Mode>
+          <Fixture defaultOpen />
+        </Mode>,
+      );
+      expect(await screen.findByRole("dialog", {name: "Actions"})).toBeInTheDocument();
+      const security = await screen.findByRole("button", {name: "Security"});
+      await user.click(security);
+      expect(await screen.findByRole("dialog", {name: "Security"})).toBeInTheDocument();
+      expect(screen.getByRole("heading", {name: "Security"})).toBeVisible();
+      await waitFor(() => expect(screen.getByRole("button", {name: "Passkeys"})).toHaveFocus());
+      const advanced = screen.getByRole("button", {name: "Advanced"});
+      await user.click(advanced);
+      expect(await screen.findByRole("dialog", {name: "Advanced"})).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByRole("button", {name: "Recovery"})).toHaveFocus());
+      await user.click(screen.getByRole("button", {name: "Go back"}));
+      expect(await screen.findByRole("dialog", {name: "Security"})).toBeInTheDocument();
+      await waitFor(() => expect(advanced).toHaveFocus());
+      await user.click(screen.getByRole("button", {name: "Go back"}));
+      expect(await screen.findByRole("dialog", {name: "Actions"})).toBeInTheDocument();
+      await waitFor(() => expect(security).toHaveFocus());
+    },
+  );
+
+  it("follows a relabelled active trigger in the panel heading and dialog name", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const view = render(<RelabelledSubmenu label='Security' />);
+    await user.click(await screen.findByTestId("relabelled-trigger"));
+    expect(await screen.findByRole("dialog", {name: "Security"})).toBeInTheDocument();
+    view.rerender(<RelabelledSubmenu label='Privacy' />);
+    expect(await screen.findByRole("dialog", {name: "Privacy"})).toBeInTheDocument();
+    expect(screen.getByRole("heading", {name: "Privacy"})).toBeVisible();
+  });
+
+  it("follows trigger text owned by an independently rendering descendant", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    let current = "Security";
+    const listeners = new Set<() => void>();
+    const subscribe = (listener: () => void): (() => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    };
+    function LiveLabel(): React.ReactElement {
+      return <>{React.useSyncExternalStore(subscribe, () => current)}</>;
+    }
+    render(<RelabelledSubmenu label={<LiveLabel />} />);
+    await user.click(await screen.findByTestId("relabelled-trigger"));
+    expect(await screen.findByRole("dialog", {name: "Security"})).toBeInTheDocument();
+    act(() => {
+      current = "Privacy";
+      for (const listener of listeners) listener();
+    });
+    expect(await screen.findByRole("dialog", {name: "Privacy"})).toBeInTheDocument();
+    expect(screen.getByRole("heading", {name: "Privacy"})).toBeVisible();
+  });
+
+  it.each(submenuTitleCases)("names the active panel from $source", async ({title, label, ariaLabel, children, expected}) => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(
+      <DropDrawer
+        defaultOpen
+        mobileTitle='Actions'>
+        <DropDrawerTrigger>Open titled actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub title={title}>
+            <DropDrawerSubTrigger
+              data-testid='titled-trigger'
+              label={label}
+              aria-label={ariaLabel}>
+              {children}
+            </DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem closeOnClick={false}>Titled action</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    await user.click(await screen.findByTestId("titled-trigger"));
+    expect(await screen.findByRole("button", {name: "Titled action"})).toBeVisible();
+    expect(await screen.findByRole("dialog", {name: expected})).toBeInTheDocument();
+    expect(screen.getByRole("heading", {name: expected})).toBeVisible();
+  });
+
+  it("names the SubmenuTitles story panels from their localized titles", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(<SubmenuTitlesStory />);
+    await user.click(screen.getByRole("button", {name: "Actions du document"}));
+    await user.click(await screen.findByRole("button", {name: "Paramètres"}));
+    expect(await screen.findByRole("dialog", {name: "Paramètres"})).toBeInTheDocument();
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    await user.click(await screen.findByRole("button", {name: "Corbeille 12"}));
+    expect(await screen.findByRole("dialog", {name: "Corbeille"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Vider la corbeille"})).toHaveAttribute("data-variant", "destructive");
+  });
+
+  it.each([false, true])(
+    "returns focus to a re-identified active submenu trigger independently of Strict Mode replay (Strict Mode=%s)",
+    async (strict) => {
+      media.change(true);
+      const user = userEvent.setup();
+      const Mode = strict ? React.StrictMode : React.Fragment;
+      const view = render(
+        <Mode>
+          <IdentifiedSubmenu id='first-identity' />
+        </Mode>,
+      );
+      const trigger = await screen.findByRole("button", {name: "Identified submenu"});
+      await user.click(trigger);
+      await waitFor(() => expect(screen.getByRole("button", {name: "Nested action"})).toHaveFocus());
+      view.rerender(
+        <Mode>
+          <IdentifiedSubmenu id='second-identity' />
+        </Mode>,
+      );
+      await waitFor(() => expect(trigger).toHaveFocus());
+      expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+      expect(screen.getByRole("dialog", {name: "Actions"})).toBeInTheDocument();
+    },
+  );
+});
+
+type Theme = "light" | "dark";
+type Rgba = readonly [number, number, number, number];
+
+// Lower native nesting, then match emitted selectors against the real rendered nodes.
+const compiledDropDrawerCss = parse(
+  transform({
+    filename: "dropdrawer.module.css",
+    code: readFileSync(join(import.meta.dirname, "dropdrawer.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+    pseudoClasses: {focusVisible: "review-focus-visible"},
+  }).code.toString(),
+);
+const themeTokens: Record<Theme, Record<string, string>> = {light: {}, dark: {}};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  const theme = rule.selector === ":root" ? "light" : rule.selector.includes('[data-theme="dark"]') ? "dark" : undefined;
+  if (theme) rule.walkDecls((declaration) => void (themeTokens[theme][declaration.prop] = declaration.value));
+});
+
+/** Default-state compiled declarations (no hover, forced colors or reduced motion) that apply to the real element. */
+function compiledDropDrawerPaint(element: Element): Map<string, string> {
+  const declarations = new Map<string, string>();
+  compiledDropDrawerCss.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (ancestor instanceof AtRule) return;
+    }
+    const selectors = rule.selectors.map((selector) =>
+      selector
+        .replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+          const local = styles[name];
+          return local ? `.${CSS.escape(local)}` : match;
+        })
+        .replaceAll(/:hover\b/gu, ":not(*)"),
+    );
+    if (!selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => void declarations.set(declaration.prop, declaration.value));
+  });
+  return declarations;
+}
+
+// The real compiler evaluates authored OKLCH mixes with the default tokens; its
+// sRGB fallback is a deterministic model, not native pixel proof.
+function tokenPaint(value: string | undefined, theme: Theme): Rgba {
+  if (!value) throw new Error("Missing authored DropDrawer paint");
+  const resolved = value.replaceAll(/var\((--ac-[\w-]+)\)/gu, (_: string, token: string): string => {
+    const color = themeTokens[theme][token];
+    if (!color) throw new Error(`Missing ${theme} token ${token}`);
+    return color;
+  });
+  const output = transform({
+    filename: "dropdrawer-contrast.css",
+    code: Buffer.from(`.paint { color: ${resolved}; }`),
+    targets: {chrome: 100 << 16},
+  }).code.toString();
+  const hex = /color:\s*#([\da-f]+);/iu.exec(output)?.[1];
+  if (!hex) throw new Error(`Missing compiled sRGB paint: ${output}`);
+  const expanded = hex.length <= 4 ? [...hex].map((digit) => digit.repeat(2)).join("") : hex;
+  if (expanded.length !== 6 && expanded.length !== 8) throw new Error(`Unexpected sRGB paint: ${hex}`);
+  const channel = (offset: number): number => Number.parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+  return [channel(0), channel(2), channel(4), expanded.length === 8 ? channel(6) : 1];
+}
+
+function composite(paint: Rgba, canvas: Rgba): Rgba {
+  const alpha = paint[3];
+  return [
+    paint[0] * alpha + canvas[0] * (1 - alpha),
+    paint[1] * alpha + canvas[1] * (1 - alpha),
+    paint[2] * alpha + canvas[2] * (1 - alpha),
+    1,
+  ];
+}
+
+function contrastRatio(first: Rgba, second: Rgba): number {
+  const luminance = ([red, green, blue]: Rgba): number => {
+    const linear = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("DropDrawer final review M2: destructive mobile text in %s defaults", (theme) => {
+  it.each([true, false])("keeps destructive mobile item text at 4.5:1 with grouped=%s", async (grouped) => {
+    media.change(true);
+    const destructive = <DropDrawerItem variant='destructive'>Delete project</DropDrawerItem>;
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open project actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          {grouped ? (
+            <DropDrawerGroup>
+              <DropDrawerLabel>Danger zone</DropDrawerLabel>
+              {destructive}
+            </DropDrawerGroup>
+          ) : (
+            destructive
+          )}
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const item = await screen.findByRole("button", {name: "Delete project"});
+    expect(item).toHaveAttribute("data-variant", "destructive");
+    // The Drawer popup paints --ac-background; a mobile group paints its own muted surface over it.
+    const canvas = tokenPaint("var(--ac-background)", theme);
+    const surface = grouped
+      ? composite(tokenPaint(compiledDropDrawerPaint(screen.getByRole("group", {name: "Danger zone"})).get("background"), theme), canvas)
+      : canvas;
+    const text = composite(tokenPaint(compiledDropDrawerPaint(item).get("color"), theme), surface);
+    expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5);
+  });
 });

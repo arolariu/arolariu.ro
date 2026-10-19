@@ -121,7 +121,7 @@ const ContextMenuTrigger = ({ref, ...props}: Readonly<ContextMenuTrigger.Props>)
 ContextMenuTrigger.displayName = "ContextMenuTrigger";
 
 /**
- * Portals the role-bearing Popup with canonical right/start placement and offsets 0/4.
+ * Portals the role-bearing Popup with logical inline-end/start placement (right in LTR, left in RTL) and offsets 0/4.
  * Popup names, events, ref, finalFocus and render/class callbacks remain on Popup.
  */
 const ContextMenuContent = ({ref, ...props}: Readonly<ContextMenuContent.Props>): React.ReactElement => {
@@ -129,7 +129,7 @@ const ContextMenuContent = ({ref, ...props}: Readonly<ContextMenuContent.Props>)
   const {
     align = "start",
     alignOffset = 4,
-    side = "right",
+    side = "inline-end",
     sideOffset = 0,
     anchor,
     collisionBoundary,

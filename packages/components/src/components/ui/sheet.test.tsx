@@ -77,6 +77,90 @@ describe("Sheet", () => {
     expect(screen.getByRole("button", {name: "Închide"})).toBeInTheDocument();
   });
 
+  it.each([
+    {modal: true, blocking: true},
+    {modal: false, blocking: false},
+    {modal: "trap-focus", blocking: false},
+  ] as const)("renders the page-blocking backdrop only for a fully modal root (modal=$modal)", ({modal, blocking}) => {
+    render(
+      <Sheet
+        defaultOpen
+        modal={modal}>
+        <SheetContent>
+          <SheetTitle>Modality sheet</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    expect(screen.getByRole("dialog", {name: "Modality sheet"})).toBeVisible();
+    expect(Boolean(document.querySelector('[data-slot="sheet-overlay"]'))).toBe(blocking);
+  });
+
+  it.each([false, "trap-focus"] as const)("leaves outside controls usable without a dimming backdrop for modal=%s", async (modal) => {
+    const user = userEvent.setup();
+    const outsidePress = vi.fn<() => void>();
+    render(
+      <>
+        <button
+          type='button'
+          onClick={outsidePress}>
+          Outside control
+        </button>
+        <Sheet
+          defaultOpen
+          modal={modal}
+          disablePointerDismissal>
+          <SheetContent side='left'>
+            <SheetTitle>Nonblocking sheet</SheetTitle>
+          </SheetContent>
+        </Sheet>
+      </>,
+    );
+    expect(document.querySelector(`.${requiredStyle("backdrop")}`)).not.toBeInTheDocument();
+    await user.click(screen.getByText("Outside control"));
+    expect(outsidePress).toHaveBeenCalledOnce();
+    expect(screen.getByRole("dialog", {name: "Nonblocking sheet"})).toBeVisible();
+  });
+
+  it("keeps the styled sheet and its form state mounted through portalProps.keepMounted", async () => {
+    const user = userEvent.setup();
+    render(
+      <Sheet defaultOpen>
+        <SheetTrigger>Reopen kept sheet</SheetTrigger>
+        <SheetContent portalProps={{keepMounted: true}}>
+          <SheetTitle>Kept sheet</SheetTitle>
+          <input aria-label='Draft filter' />
+        </SheetContent>
+      </Sheet>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Kept sheet"});
+    await user.type(screen.getByRole("textbox", {name: "Draft filter"}), "pending");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(popup).toHaveAttribute("hidden"));
+    expect(popup).toBeInTheDocument();
+    expect(popup).toHaveClass(requiredStyle("popup"), requiredStyle("right"));
+    await user.click(screen.getByRole("button", {name: "Reopen kept sheet"}));
+    expect(screen.getByRole("dialog", {name: "Kept sheet"})).toBe(popup);
+    expect(screen.getByRole("textbox", {name: "Draft filter"})).toHaveValue("pending");
+  });
+
+  it("portals the styled sheet and backdrop into portalProps.container with the remaining Portal props", () => {
+    const host = document.createElement("section");
+    document.body.append(host);
+    const view = render(
+      <Sheet defaultOpen>
+        <SheetContent portalProps={{container: host, className: "caller-portal"}}>
+          <SheetTitle>Contained sheet</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Contained sheet"});
+    expect(host).toContainElement(popup);
+    expect(host).toContainElement(document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]'));
+    expect(popup.closest(".caller-portal")?.parentElement).toBe(host);
+    view.unmount();
+    host.remove();
+  });
+
   it("keeps React 19 Close ref disposers current across replacement and unmount", () => {
     const firstCleanup = vi.fn();
     const nextCleanup = vi.fn();

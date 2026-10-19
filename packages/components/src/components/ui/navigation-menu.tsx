@@ -200,7 +200,19 @@ const NavigationMenuContent = ({ref, ...props}: Readonly<NavigationMenuContent.P
   );
 };
 
-/** Renders a native anchor, retaining link attributes, active-page state, handlers, cancellation and refs. */
+/**
+ * Renders a native anchor, retaining link attributes, active-page state, handlers, cancellation and refs.
+ *
+ * @remarks
+ * Mark the link to the current page with `active`: Base UI adds `aria-current="page"`, and the link draws a 2px
+ * underline in addition to the hover tint, so the current page is not identified by colour alone and stays marked
+ * under forced colors. A caller-supplied `aria-current="page"` receives the same indicator.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenuLink href='/docs' active>Docs</NavigationMenuLink>
+ * ```
+ */
 const NavigationMenuLink = ({ref, ...props}: Readonly<NavigationMenuLink.Props>): React.ReactElement => {
   const {className, ...otherProps} = props;
   return (

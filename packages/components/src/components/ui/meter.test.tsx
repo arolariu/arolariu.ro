@@ -1,12 +1,135 @@
 import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
 import {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./meter";
+import styles from "./meter.module.css";
 import * as stories from "./meter.stories";
 
 const {WithLabel} = composeStories(stories);
+
+type Theme = "light" | "dark";
+type Oklch = readonly [lightness: number, chroma: number, hue: number];
+const meterCss = parse(readFileSync(join(import.meta.dirname, "meter.module.css"), "utf8"));
+const themeTokens: Record<Theme, Map<string, string>> = {light: new Map(), dark: new Map()};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  if (rule.selector !== ":root" && !rule.selector.includes('[data-theme="dark"]')) return;
+  const tokens = rule.selector === ":root" ? themeTokens.light : themeTokens.dark;
+  rule.walkDecls((declaration) => {
+    tokens.set(declaration.prop, declaration.value);
+  });
+});
+
+function authoredPaint(element: HTMLElement): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  meterCss.walkRules((rule) => {
+    // Forced-colors and reduced-motion overrides are separate contracts.
+    if (rule.parent?.type !== "root") return;
+    const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+      const className = styles[name];
+      if (!className) throw new Error(`Missing meter class: ${name}`);
+      return `.${CSS.escape(className)}`;
+    });
+    if (element.matches(selector))
+      rule.walkDecls((declaration) => {
+        declarations[declaration.prop] = declaration.value;
+      });
+  });
+  return declarations;
+}
+
+function oklchToken(theme: Theme, token: string): Oklch {
+  const value = themeTokens[theme].get(token);
+  const match = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/u.exec(value ?? "");
+  if (!match) throw new Error(`Missing opaque ${theme} token ${token}: ${value}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+// `color-mix(in oklch, …)` of opaque colours: shorter-arc hue, and an achromatic hue (C = 0) is powerless.
+function mixOklch(first: Oklch, second: Oklch, firstWeight: number): Oklch {
+  let firstHue = first[1] === 0 ? second[2] : first[2];
+  let secondHue = second[1] === 0 ? first[2] : second[2];
+  if (secondHue - firstHue > 180) firstHue += 360;
+  else if (firstHue - secondHue > 180) secondHue += 360;
+  const mix = (a: number, b: number): number => a * firstWeight + b * (1 - firstWeight);
+  return [mix(first[0], second[0]), mix(first[1], second[1]), mix(firstHue, secondHue) % 360];
+}
+
+function stopColor(theme: Theme, stop: string): Oklch {
+  const token = /^var\((--ac-[\w-]+)\)$/u.exec(stop)?.[1];
+  if (token) return oklchToken(theme, token);
+  const mixed = /^color-mix\(in oklch, var\((--ac-[\w-]+)\), white (\d+)%\)$/u.exec(stop);
+  if (mixed?.[1] && mixed[2]) return mixOklch(oklchToken(theme, mixed[1]), [1, 0, 0], 1 - Number(mixed[2]) / 100);
+  throw new Error(`Unmodelled meter gradient stop: ${stop}`);
+}
+
+function gradientStops(background: string | undefined): string[] {
+  const body = /^linear-gradient\((.*)\)$/u.exec(background ?? "")?.[1];
+  if (!body) throw new Error(`Expected a linear-gradient fill: ${background}`);
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (const [index, character] of [...body].entries()) {
+    if (character === "(") depth += 1;
+    if (character === ")") depth -= 1;
+    if (character === "," && depth === 0) {
+      parts.push(body.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  parts.push(body.slice(start).trim());
+  // Drop the direction and each stop position, keeping only the colours.
+  return parts.slice(1).map((stop) => stop.replace(/\s+[\d.]+%$/u, ""));
+}
+
+// Same default-token model as `src/styles.test.ts`: opaque OKLCH in clipped linear sRGB.
+// Gamut mapping, consumer themes and actual painted pixels still need browser evaluation.
+function luminance([lightness, chroma, hueDegrees]: Oklch): number {
+  const hue = (hueDegrees * Math.PI) / 180;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const clip = (channel: number): number => Math.max(0, Math.min(1, channel));
+  return (
+    0.2126 * clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s)
+    + 0.7152 * clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s)
+    + 0.0722 * clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)
+  );
+}
+
+function contrast(first: Oklch, second: Oklch): number {
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("review correction: Meter fill in %s defaults", (theme) => {
+  it("keeps every gradient stop of the value indicator at 3:1 against the secondary track", () => {
+    render(
+      <Meter
+        aria-label='Storage usage'
+        value={70}>
+        <MeterTrack data-testid='track'>
+          <MeterIndicator data-testid='indicator' />
+        </MeterTrack>
+      </Meter>,
+    );
+    const track = authoredPaint(screen.getByTestId("track"))["background-color"];
+    const stops = gradientStops(authoredPaint(screen.getByTestId("indicator"))["background"]);
+    expect(track).toBe("var(--ac-secondary)");
+    expect(stops).toHaveLength(2);
+    for (const stop of stops) {
+      expect(contrast(stopColor(theme, stop), oklchToken(theme, "--ac-secondary"))).toBeGreaterThanOrEqual(3);
+      expect(stop).toContain("var(--ac-primary-emphasis)");
+    }
+  });
+});
 
 describe("Meter", () => {
   it.each(["root", "track", "indicator", "label"])("supplies owning props and the real empty Meter state to %s", (part) => {

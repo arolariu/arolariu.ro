@@ -158,7 +158,7 @@ export const Default: Story = {
   ),
 };
 
-/** Native direct links require no popup; the active link retains aria-current="page". */
+/** Native direct links require no popup; the current link keeps aria-current="page" and an underline that hover never shows. */
 export const SimpleLinks: Story = {
   render: (args) => (
     <NavigationMenu {...args}>

@@ -7,7 +7,15 @@ import type {BaseUIEvent, ComponentRenderFn, HTMLProps} from "@base-ui/react/typ
 import {useRender} from "@base-ui/react/use-render";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import * as React from "react";
-import {useSubmenuCompletion} from "./_dropdrawer";
+import {
+  getLivePath,
+  requestSubmenuChange,
+  usePanelTitles,
+  usePathFocusIntent,
+  usePublishedPanelTitle,
+  useSubmenuCompletion,
+  useTriggerText,
+} from "./_dropdrawer";
 import {createPortal} from "react-dom";
 
 import {useIsMobile} from "@/hooks/useIsMobile";
@@ -110,7 +118,17 @@ export type DropDrawerSeparatorProps = Readonly<React.ComponentPropsWithRef<type
 /** Native footer layout composition and ref. */
 export type DropDrawerFooterProps = Readonly<Omit<useRender.ComponentProps<"div">, "ref"> & {ref?: React.Ref<HTMLElement>}>;
 /** SDK submenu options apply on desktop; mobile open/disabled/callback props coordinate local live panels. */
-export type DropDrawerSubProps = Readonly<BaseMenu.SubmenuRoot.Props & {id?: string}>;
+export type DropDrawerSubProps = Readonly<
+  BaseMenu.SubmenuRoot.Props & {
+    id?: string;
+    /**
+     * Localizable heading of this submenu's mobile panel, which also names the drawer dialog while the panel is active.
+     * Falls back to the trigger's `label`, then its visible text (excluding `aria-hidden` and `hidden` content), then the
+     * root `mobileTitle`; set it for icon-only, `aria-label`-named or badge/count triggers. Desktop menus ignore it.
+     */
+    title?: string;
+  }
+>;
 /** Mobile uses the Button state; desktop uses the actual SubmenuTrigger state. */
 export type DropDrawerSubTriggerState = BaseMenu.SubmenuTrigger.State | BaseButton.State;
 /** Cancellable activation callbacks precede mobile drill-down navigation. */
@@ -160,18 +178,6 @@ interface SubmenuRegistration {
   readonly panelRef: React.RefObject<HTMLElement | null>;
   readonly optionsRef: React.RefObject<DropDrawerSubProps>;
 }
-function getLivePath(id: string, entries: ReadonlyMap<string, SubmenuRegistration>): readonly string[] | null {
-  const path: string[] = [];
-  let entry = entries.get(id);
-  while (entry) {
-    if (!entry.panelRef.current?.isConnected || entry.optionsRef.current.open === false) return null;
-    if (path.includes(entry.id)) throw new Error(`Duplicate DropDrawerSub id: ${entry.id}`);
-    path.unshift(entry.id);
-    if (entry.parentId === null) return path;
-    entry = entries.get(entry.parentId);
-  }
-  return null;
-}
 interface NavigationContextValue {
   readonly activeId: string | null;
   readonly path: readonly string[];
@@ -180,12 +186,14 @@ interface NavigationContextValue {
   readonly navigate: (id: string, event: MouseEvent) => void;
   readonly synchronize: (id: string, open: boolean) => void;
   readonly panelAvailabilityChanged: (id: string) => void;
+  readonly setPanelTitle: (id: string, title: string | undefined) => void;
 }
 const NavigationContext = React.createContext<NavigationContextValue | null>(null);
 type SubmenuContextValue = SubmenuRegistration & {
   readonly disabled: boolean;
   readonly panelId: string;
   readonly setPanelId: (id: string) => void;
+  readonly setTriggerText: (text: string) => void;
 };
 const SubContext = React.createContext<SubmenuContextValue | null>(null);
 function useNavigation(): NavigationContextValue {
@@ -270,27 +278,6 @@ function ActivationBoundary({
       {children}
     </Element>
   );
-}
-/** Mobile panels stay mounted; preventing their unmount is already guaranteed by that owner. */
-function requestSubmenuChange(entry: SubmenuRegistration, open: boolean, event: MouseEvent): boolean {
-  const details: BaseMenu.SubmenuRoot.ChangeEventDetails = {
-    reason: open ? "trigger-press" : "close-press",
-    event,
-    trigger: entry.triggerRef.current ?? undefined,
-    isCanceled: false,
-    isPropagationAllowed: false,
-    cancel() {
-      this.isCanceled = true;
-    },
-    allowPropagation() {
-      this.isPropagationAllowed = true;
-    },
-    preventUnmountOnClose() {
-      // Local panels are retained until the enclosing Drawer unmounts.
-    },
-  };
-  entry.optionsRef.current.onOpenChange?.(open, details);
-  return !details.isCanceled && (entry.optionsRef.current.open === undefined || entry.optionsRef.current.open === open);
 }
 
 /**
@@ -447,18 +434,18 @@ const MobileContent = ({
     if (!root.open) setPath([]);
   }
   const [panelHost, setPanelHost] = React.useState<HTMLDivElement | null>(null);
+  const [panelTitles, setPanelTitle] = usePanelTitles();
   const mainRef = React.useRef<HTMLDivElement>(null);
   const entriesRef = React.useRef(new Map<string, SubmenuRegistration>());
   const openingRequestsRef = React.useRef(new Set<string>());
   const pendingFocusRef = React.useRef<"entry" | HTMLElement | null>(null);
+  usePathFocusIntent(root.open, path, entriesRef, pendingFocusRef);
   const activeId = useMobilePanelFocusRecovery(root.open, path, mainRef, entriesRef, pendingFocusRef);
-  const active = activeId === null ? undefined : entriesRef.current.get(activeId);
+  const activeTitle = activeId === null ? undefined : panelTitles.get(activeId);
   const closePath = React.useCallback((id: string): void => {
     setPath((previous) => {
       const index = previous.indexOf(id);
-      if (index === -1) return previous;
-      pendingFocusRef.current = entriesRef.current.get(id)?.triggerRef.current ?? "entry";
-      return previous.slice(0, index);
+      return index === -1 ? previous : previous.slice(0, index);
     });
   }, []);
   const activateRequestedPath = React.useCallback((): void => {
@@ -469,11 +456,9 @@ const MobileContent = ({
       if (livePath && livePath.length >= candidate.length) candidate = livePath;
     }
     if (candidate.length === 0) return;
-    setPath((previous) => {
-      if (previous.length === candidate.length && previous.every((value, index) => value === candidate[index])) return previous;
-      pendingFocusRef.current = "entry";
-      return candidate;
-    });
+    setPath((previous) =>
+      previous.length === candidate.length && previous.every((value, index) => value === candidate[index]) ? previous : candidate,
+    );
   }, [root.open]);
   const synchronize = React.useCallback(
     (id: string, nextOpen: boolean): void => {
@@ -532,12 +517,13 @@ const MobileContent = ({
     [synchronize],
   );
   const goBack = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    const active = activeId === null ? undefined : entriesRef.current.get(activeId);
     if (!active || !requestSubmenuChange(active, false, event.nativeEvent)) return;
     synchronize(active.id, false);
   };
   const navigation = React.useMemo(
-    () => ({activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged}),
-    [activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged],
+    () => ({activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged, setPanelTitle}),
+    [activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged, setPanelTitle],
   );
   const {
     align,
@@ -587,7 +573,7 @@ const MobileContent = ({
               />
             </button>
           )}
-          <DrawerTitle>{active?.triggerRef.current?.textContent || root.mobileTitle}</DrawerTitle>
+          <DrawerTitle>{activeTitle || root.mobileTitle}</DrawerTitle>
         </div>
         <div
           ref={mainRef}
@@ -765,8 +751,23 @@ const DropDrawerGroup = ({ref, className, ...props}: Readonly<DropDrawerGroupPro
     />
   );
 };
-/** Maintains a stable submenu identity and live registration, including wrapped/nested children. */
-function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
+/**
+ * Maintains a stable submenu identity and live registration, including wrapped/nested children.
+ *
+ * @remarks
+ * Desktop renders a real Base UI submenu. On mobile, the drill-down panel heading (the drawer dialog's name while the
+ * panel is active) follows `title`, else the trigger's `label`, else its visible text (excluding `aria-hidden` and
+ * `hidden` content), else the root `mobileTitle`.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSub title='Paramètres'>
+ *   <DropDrawerSubTrigger aria-label='Paramètres'><Settings aria-hidden='true' /></DropDrawerSubTrigger>
+ *   <DropDrawerSubContent><DropDrawerItem>Langue</DropDrawerItem></DropDrawerSubContent>
+ * </DropDrawerSub>
+ * ```
+ */
+function DropDrawerSub({id, title, ...props}: DropDrawerSubProps): React.JSX.Element {
   const root = useRoot();
   const parent = React.useContext(SubContext);
   const navigation = React.useContext(NavigationContext);
@@ -776,12 +777,13 @@ function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
   const triggerRef = React.useRef<HTMLElement>(null);
   const panelRef = React.useRef<HTMLElement>(null);
   const [panelId, setPanelId] = React.useState(`${submenuId}-panel`);
+  const [triggerText, setTriggerText] = React.useState("");
   const entry = React.useMemo(
     () => ({id: submenuId, parentId: parent?.id ?? null, triggerRef, panelRef, optionsRef}),
     [submenuId, parent?.id],
   );
   const context = React.useMemo(
-    () => ({...entry, disabled: props.disabled ?? false, panelId, setPanelId}),
+    () => ({...entry, disabled: props.disabled ?? false, panelId, setPanelId, setTriggerText}),
     [entry, props.disabled, panelId],
   );
   const register = navigation?.register;
@@ -794,6 +796,7 @@ function DropDrawerSub({id, ...props}: DropDrawerSubProps): React.JSX.Element {
     if (root.isMobile) return register?.(entry);
     return undefined;
   }, [entry, register, root.isMobile]);
+  usePublishedPanelTitle(root.isMobile, submenuId, title?.trim() || triggerText, navigation?.setPanelTitle);
   React.useLayoutEffect(() => {
     if (root.isMobile && root.open && (props.open !== undefined || props.defaultOpen)) {
       synchronize?.(submenuId, props.open ?? Boolean(props.defaultOpen));
@@ -846,6 +849,7 @@ const DropDrawerSubTrigger = ({
     else onKeyDown?.(event);
   };
   const {delay, closeDelay, openOnHover, label, ...buttonProps} = props;
+  useTriggerText(root.isMobile, controlRef, label, entry.setTriggerText);
   const trigger = root.isMobile ? (
     <BaseButton
       data-slot='drop-drawer-sub-trigger'

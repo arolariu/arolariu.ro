@@ -41,8 +41,11 @@ interface TableSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">
  *
  * Simulates a tabular layout with a muted header row and repeated body rows so pages can
  * preserve data-table rhythm while async records are loading.
- * This flex layout is decorative, not an accessible table with rows and cells.
- * Set one loading role/label/busy announcement on this root or a containing region.
+ * This flex layout is decorative, not an accessible table with rows and cells, and the
+ * skeleton announces nothing. Announce loading through a status region that is mounted
+ * before loading starts and receives its text when loading begins, such as a persistent
+ * `VisuallyHidden` status or `useAnnounce`: a status element inserted already populated is
+ * not reliably announced, and `aria-busy` on a live region defers its announcements.
  * `animated={false}` and the shared reduced-motion policy keep placeholders static.
  *
  * Counts must each be nonnegative finite integers at most 10,000. Total placeholder
@@ -54,7 +57,8 @@ interface TableSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">
  *
  * @example
  * ```tsx
- * <TableSkeleton rows={8} columns={5} role="status" aria-label="Loading records" aria-busy />
+ * <VisuallyHidden role="status">{loading ? "Loading records" : null}</VisuallyHidden>
+ * {loading ? <TableSkeleton rows={8} columns={5} /> : <RecordsTable />}
  * ```
  *
  * @see {@link TableSkeletonProps} for available props

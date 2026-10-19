@@ -76,6 +76,7 @@ export type ButtonProps = Readonly<
       className?: string;
       /**
        * Custom element or render callback used to replace the default `<button>`.
+       * The target must be able to take button semantics; do not render links (`<a href>`) through Button.
        * @default undefined
        */
       render?: React.ReactElement | ((props: Parameters<PrimitiveRenderCallback>[0], state: ButtonState) => React.ReactElement);
@@ -84,6 +85,25 @@ export type ButtonProps = Readonly<
 
 /**
  * Builds the composed class list for the shared button component.
+ *
+ * @remarks
+ * Use this helper to give a native link the button appearance. A link must stay an `<a href>`
+ * element so assistive technology announces it as a link and lists it with the page's links,
+ * and so it follows only on Enter (not Space); style the anchor directly instead of rendering
+ * it through {@link Button}. With `variant: "link"`, a real link keeps an underline at rest as a
+ * non-colour cue (WCAG 1.4.1), while `<Button variant="link">` underlines only on hover; the other
+ * variants never underline. The helper is exported from this client module, so call it from a
+ * Client Component; Server Components cannot invoke it.
+ *
+ * @param options - Variant, size and extra classes used to derive the class string.
+ * @returns The merged class name string for the requested variant and size.
+ *
+ * @example
+ * ```tsx
+ * <a href="/dashboard" className={buttonVariants({variant: "outline", size: "sm"})}>
+ *   Go to dashboard
+ * </a>
+ * ```
  */
 function buttonVariants({variant = "default", size = "default", className}: Readonly<ButtonVariantOptions> = {}): string {
   return cn(styles.button, variantStyles[variant], sizeStyles[size], className);
@@ -98,14 +118,21 @@ function buttonVariants({variant = "default", size = "default", className}: Read
  * button styles and shared behavior with other elements or components.
  * Icon-only content must have an action-specific accessible name supplied
  * through `aria-label` or `aria-labelledby`.
- * Set `nativeButton={false}` when canonical `render` replaces the button with
- * a non-button element, including links. The public ref targets `HTMLElement`
- * so non-native render targets are represented accurately.
+ *
+ * Button always exposes button semantics, so it is for actions, not navigation.
+ * Render a link as a native `<a href>` styled with {@link buttonVariants} instead:
+ * rendered through Button, a link is announced as a button, is missing from the
+ * page's list of links, and activates on Space.
+ * Set `nativeButton={false}` only when canonical `render` replaces the button with a
+ * non-link element that can take button semantics (for example a `<div>` or `<span>`);
+ * Base UI then adds `role="button"`, focusability and Enter/Space activation. The
+ * public ref targets `HTMLElement` so non-native render targets are represented accurately.
  *
  * @example
  * ```tsx
  * <Button variant="default" size="sm">Click me</Button>
- * <Button nativeButton={false} render={<a href="/dashboard" />}>Go to dashboard</Button>
+ * <Button nativeButton={false} render={<div />}>Run task</Button>
+ * <a href="/dashboard" className={buttonVariants({variant: "outline"})}>Go to dashboard</a>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/button | Base UI Button}

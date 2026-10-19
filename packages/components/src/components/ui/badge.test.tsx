@@ -133,6 +133,121 @@ describe.each(["light", "dark"] as const)("authored destructive Badge in %s defa
   });
 });
 
+describe("review correction: compiled Badge link text", () => {
+  it.each([false, true])("paints the contrast-verified primary emphasis token on a transparent surface with hover=%s", (hover) => {
+    render(
+      <Badge
+        variant='link'
+        render={<a href='#release-notes' />}>
+        Release notes
+      </Badge>,
+    );
+    const state = compiledDeclarations(screen.getByRole("link", {name: "Release notes"}), hover, false);
+    // The link badge paints no surface, so its 12px text sits on the page background; `styles.test.ts`
+    // keeps `--ac-primary-emphasis` at 4.5:1 on `--ac-background` in both default themes.
+    expect(state["color"]).toBe("var(--ac-primary-emphasis)");
+    expect(recipeColor(state["background-color"], "light")[3]).toBe(0);
+  });
+});
+
+type Oklch = readonly [lightness: number, chroma: number, hue: number];
+type ModelPaint = Readonly<{color: Oklch; alpha: number}>;
+type EncodedRgb = readonly [red: number, green: number, blue: number];
+
+function oklchToken(theme: Theme, token: string): Oklch {
+  const value = themeTokens[theme][token];
+  const match = /^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/u.exec(value ?? "");
+  if (!match) throw new Error(`Missing opaque ${theme} token ${token}: ${value}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+// `color-mix(in oklch, …)` of opaque colours: shorter-arc hue, and an achromatic hue (C = 0) is powerless.
+function mixOklch(first: Oklch, second: Oklch, firstWeight: number): Oklch {
+  let firstHue = first[1] === 0 ? second[2] : first[2];
+  let secondHue = second[1] === 0 ? first[2] : second[2];
+  if (secondHue - firstHue > 180) firstHue += 360;
+  else if (firstHue - secondHue > 180) secondHue += 360;
+  const mix = (a: number, b: number): number => a * firstWeight + b * (1 - firstWeight);
+  return [mix(first[0], second[0]), mix(first[1], second[1]), mix(firstHue, secondHue) % 360];
+}
+
+/** Resolves compiled paint: a token, `transparent`, or a two-operand `color-mix(in oklch, …)`. */
+function modelPaint(value: string | undefined, theme: Theme): ModelPaint {
+  if (!value) throw new Error("Missing compiled Badge paint");
+  const operand = (text: string): ModelPaint => {
+    if (text === "transparent" || text === "#0000") return {color: [0, 0, 0], alpha: 0};
+    const token = /^var\((--ac-[\w-]+)\)$/u.exec(text)?.[1];
+    if (!token) throw new Error(`Unmodelled Badge paint: ${text}`);
+    return {color: oklchToken(theme, token), alpha: 1};
+  };
+  const mixed = /^color-mix\(in oklch, (.+?)(?: (\d+)%)?, (.+?)(?: (\d+)%)?\)$/u.exec(value);
+  if (!mixed?.[1] || !mixed[3]) return operand(value);
+  if (mixed[2] && mixed[4] && Number(mixed[2]) + Number(mixed[4]) !== 100) throw new Error(`Unmodelled color-mix weights: ${value}`);
+  const firstWeight = (mixed[2] ? Number(mixed[2]) : mixed[4] ? 100 - Number(mixed[4]) : 50) / 100;
+  const first = operand(mixed[1]);
+  const second = operand(mixed[3]);
+  // Premultiplied interpolation with `transparent` keeps the colour and scales its alpha.
+  if (second.alpha === 0) return {color: first.color, alpha: firstWeight * first.alpha};
+  if (first.alpha !== 1 || second.alpha !== 1) throw new Error(`Unmodelled translucent color-mix: ${value}`);
+  return {color: mixOklch(first.color, second.color, firstWeight), alpha: 1};
+}
+
+// Same default-token model as `src/styles.test.ts`: OKLCH → clipped linear sRGB → WCAG luminance. Translucent
+// paint composites in gamma-encoded sRGB, as browsers paint it; gamut mapping and consumer themes stay browser work.
+function linearRgb([lightness, chroma, hueDegrees]: Oklch): EncodedRgb {
+  const hue = (hueDegrees * Math.PI) / 180;
+  const a = chroma * Math.cos(hue);
+  const b = chroma * Math.sin(hue);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const clip = (channel: number): number => Math.max(0, Math.min(1, channel));
+  return [
+    clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
+
+const encodeSrgb = (channel: number): number => (channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055);
+const decodeSrgb = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+
+function paintOver(paint: ModelPaint, backdrop: EncodedRgb): EncodedRgb {
+  const [red = 0, green = 0, blue = 0] = linearRgb(paint.color).map(encodeSrgb);
+  const blend = (channel: number, under: number): number => channel * paint.alpha + under * (1 - paint.alpha);
+  return [blend(red, backdrop[0]), blend(green, backdrop[1]), blend(blue, backdrop[2])];
+}
+
+function modelContrast(first: EncodedRgb, second: EncodedRgb): number {
+  const luminance = (rgb: EncodedRgb): number => {
+    const [red = 0, green = 0, blue = 0] = rgb.map(decodeSrgb);
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("review correction: compiled Badge text in %s defaults (token luminance model)", (theme) => {
+  it.each(badgeVariantsUnderReview.flatMap((variant) => [[variant, false] as const, [variant, true] as const]))(
+    "keeps %s text at 4.5:1 on its compiled surface with hover=%s",
+    (variant, hover) => {
+      render(
+        <Badge
+          variant={variant}
+          render={<button type='button' />}>
+          {variant}
+        </Badge>,
+      );
+      const state = compiledDeclarations(screen.getByRole("button", {name: variant}), hover, false);
+      const page = paintOver(modelPaint("var(--ac-background)", theme), [0, 0, 0]);
+      const surface = paintOver(modelPaint(state["background-color"], theme), page);
+      const text = paintOver(modelPaint(state["color"], theme), surface);
+      expect(modelContrast(text, surface)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+});
+
 describe.each([
   ["button", false],
   ["button", true],

@@ -46,7 +46,7 @@
 
   @media (hover: hover) {
     &:hover {
-      background-color: color-mix(in oklch, var(--ac-primary), transparent 20%);
+      background-color: color-mix(in oklch, var(--ac-primary) 90%, var(--ac-foreground));
     }
   }
 }
@@ -101,7 +101,7 @@
 
 .link {
   background-color: transparent;
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
   border: 1px solid transparent;
   text-decoration: none;
   text-underline-offset: 4px;

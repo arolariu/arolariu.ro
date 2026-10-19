@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import {Window} from "happy-dom";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
+import {parse} from "postcss";
 import * as React from "react";
 import {describe, expect, expectTypeOf, it} from "vitest";
 
@@ -770,5 +771,40 @@ describe("Progress", () => {
     expectTypeOf<ProgressValueProps>().toEqualTypeOf<BaseProgress.Value.Props>();
     expectTypeOf<ProgressValue.State>().toEqualTypeOf<ProgressValueState>();
     expectTypeOf<ProgressValueState>().toEqualTypeOf<BaseProgress.Value.State>();
+  });
+
+  it.each([40, undefined])("review correction: fills the secondary track with the primary emphasis token for value %s", (value) => {
+    const {container} = render(
+      <Progress
+        aria-label='Upload'
+        value={value}
+      />,
+    );
+    const track = container.querySelector<HTMLElement>('[data-slot="progress-track"]');
+    const indicator = container.querySelector<HTMLElement>('[data-slot="progress-indicator"]');
+    if (!track || !indicator) throw new Error("Progress must render its default track and indicator.");
+    const stylesheet = parse(readFileSync(join(import.meta.dirname, "progress.module.css"), "utf8"));
+    const paint = (element: HTMLElement): Record<string, string> => {
+      const declarations: Record<string, string> = {};
+      stylesheet.walkRules((rule) => {
+        // Forced-colors and reduced-motion overrides are separate, already-asserted contracts.
+        if (rule.parent?.type !== "root") return;
+        const selector = rule.selector.replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+          const className = styles[name];
+          if (!className) throw new Error(`Missing progress class: ${name}`);
+          return `.${CSS.escape(className)}`;
+        });
+        if (element.matches(selector))
+          rule.walkDecls((declaration) => {
+            declarations[declaration.prop] = declaration.value;
+          });
+      });
+      return declarations;
+    };
+
+    // The fill is the only carrier of the value; `styles.test.ts` keeps `--ac-primary-emphasis` at 3:1 on
+    // `--ac-secondary` in both default themes.
+    expect(paint(track)["background-color"]).toBe("var(--ac-secondary)");
+    expect(paint(indicator)["background-color"]).toBe("var(--ac-primary-emphasis)");
   });
 });

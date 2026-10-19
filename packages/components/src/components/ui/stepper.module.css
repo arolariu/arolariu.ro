@@ -46,7 +46,7 @@
   outline: 2px solid var(--ac-ring);
   outline-offset: 2px;
   border-color: var(--ac-primary);
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
 }
 
 .step[data-state="upcoming"] .indicator {

@@ -148,3 +148,37 @@ export const Controlled: Story = {
     />
   ),
 };
+
+/** Localized submenu titles name the mobile panel heading and drawer dialog, including for icon-only triggers. */
+export const SubmenuTitles: Story = {
+  globals: {viewport: {value: "mobile1", isRotated: false}},
+  render: () => (
+    <div className={storyClasses.storyContainer}>
+      <DropDrawer mobileTitle='Actions du document'>
+        <DropDrawerTrigger render={<Button variant='outline'>Actions du document</Button>} />
+        <DropDrawerContent>
+          <DropDrawerGroup>
+            <DropDrawerSub title='Paramètres'>
+              <DropDrawerSubTrigger aria-label='Paramètres'>
+                <Settings aria-hidden='true' />
+              </DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem closeOnClick={false}>Langue</DropDrawerItem>
+                <DropDrawerItem closeOnClick={false}>Notifications</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+            <DropDrawerSub title='Corbeille'>
+              <DropDrawerSubTrigger>
+                Corbeille <span>12</span>
+              </DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem closeOnClick={false}>Restaurer tout</DropDrawerItem>
+                <DropDrawerItem variant='destructive'>Vider la corbeille</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerGroup>
+        </DropDrawerContent>
+      </DropDrawer>
+    </div>
+  ),
+};

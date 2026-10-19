@@ -32,8 +32,11 @@ interface FormSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * Uses stacked label and input placeholders plus a trailing submit action placeholder to
  * preserve form layout during async initialization or schema-driven rendering.
- * Labels, inputs and the submit shape are decorative, not actual form controls.
- * Set one loading role/label/busy announcement on this root or a containing region.
+ * Labels, inputs and the submit shape are decorative, not actual form controls, and the
+ * skeleton announces nothing. Announce loading through a status region that is mounted
+ * before loading starts and receives its text when loading begins, such as a persistent
+ * `VisuallyHidden` status or `useAnnounce`: a status element inserted already populated is
+ * not reliably announced, and `aria-busy` on a live region defers its announcements.
  * `animated={false}` and the shared reduced-motion policy keep placeholders static.
  *
  * @throws {RangeError} Before allocation when fields is not a nonnegative finite
@@ -41,7 +44,8 @@ interface FormSkeletonProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * @example
  * ```tsx
- * <FormSkeleton fields={5} role="status" aria-label="Loading form" aria-busy />
+ * <VisuallyHidden role="status">{loading ? "Loading form" : null}</VisuallyHidden>
+ * {loading ? <FormSkeleton fields={5} /> : <ProfileForm />}
  * ```
  *
  * @see {@link FormSkeletonProps} for available props

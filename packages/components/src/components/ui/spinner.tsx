@@ -20,9 +20,21 @@ export interface SpinnerProps extends Readonly<React.ComponentPropsWithRef<"svg"
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Reduced motion or `animated={false}` retains the visible indicator and accessible status
  *
+ * The `<svg>` has `role="status"` and an accessible name (`aria-label`, `"Loading"` when
+ * omitted), so assistive technology can identify the indicator while it is present. That is
+ * not a reliable announcement: a status element inserted already populated is not reliably
+ * announced, and live regions announce content changes, not accessible names. To announce
+ * loading, write text into a status region that is mounted before loading starts, such as
+ * `LoadingOverlay`'s `loadingLabel`, `AsyncBoundary`'s default fallback or `useAnnounce`, and
+ * mark the spinner decorative with `aria-hidden="true"`.
+ *
  * @example
  * ```tsx
- * <Spinner aria-label='Loading data' />
+ * // Named indicator that stays in the accessibility tree:
+ * <Spinner aria-label="Loading data" />
+ *
+ * // Decorative indicator while a persistent status region announces loading:
+ * <Spinner aria-hidden="true" />
  * ```
  *
  * @see {@link SpinnerProps} for available props

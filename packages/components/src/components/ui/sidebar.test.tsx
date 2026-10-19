@@ -1510,6 +1510,80 @@ describe("Sidebar real responsive modal controller (not native inert/paint proof
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expectState({open: false, state: "collapsed", isMobile: true, openMobile: false});
   });
+
+  it("renders a named close control after the mobile content that dismisses the sheet and restores focus", async () => {
+    changeMobile(true);
+    const user = userEvent.setup();
+    renderNavigation();
+    const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
+    await user.click(trigger);
+    const dialog = await screen.findByRole("dialog", {name: "Sidebar"});
+    const close = within(dialog).getByRole("button", {name: "Close sidebar"});
+    expect(close).toHaveAttribute("data-slot", "sheet-close");
+    // The reserved-row CSS targets `.mobilePanel[data-slot="sheet-content"] > [data-slot="sheet-close"]`.
+    expect(close.parentElement).toBe(dialog);
+    expect(dialog).toHaveClass(styles["mobilePanel"] ?? "missing-mobile-panel");
+    expect(
+      within(dialog).getByRole("button", {name: "Help"}).compareDocumentPosition(close) & close.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(dialog.querySelector(`.${styles["mobileContent"]}`)).toHaveClass(styles["mobileContentWithClose"] ?? "missing-reserved-row");
+    await user.click(close);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expectState({open: true, state: "expanded", isMobile: true, openMobile: false});
+  });
+
+  it("localizes the mobile close control", async () => {
+    changeMobile(true);
+    const user = userEvent.setup();
+    render(
+      <SidebarProvider>
+        <Sidebar
+          mobileTitle='Navigation principale'
+          closeLabel='Fermer la navigation'>
+          <SidebarMenuButton>Accueil</SidebarMenuButton>
+        </Sidebar>
+        <SidebarTrigger aria-label='Ouvrir la navigation' />
+      </SidebarProvider>,
+    );
+    await user.click(screen.getByRole("button", {name: "Ouvrir la navigation"}));
+    const dialog = await screen.findByRole("dialog", {name: "Navigation principale"});
+    expect(within(dialog).queryByRole("button", {name: "Close sidebar"})).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", {name: "Fermer la navigation"}));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("lets callers opt out of the mobile close control without leaking either option into desktop markup", async () => {
+    const consoleError = vi.spyOn(console, "error");
+    changeMobile(true);
+    const user = userEvent.setup();
+    const {container} = render(
+      <SidebarProvider>
+        <Sidebar
+          showCloseButton={false}
+          closeLabel='Unused close'>
+          <SidebarMenuButton>Inside</SidebarMenuButton>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    const dialog = await screen.findByRole("dialog", {name: "Sidebar"});
+    expect(dialog.querySelector('[data-slot="sheet-close"]')).toBeNull();
+    expect(within(dialog).queryByRole("button", {name: "Unused close"})).not.toBeInTheDocument();
+    expect(dialog.querySelector(`.${styles["mobileContent"]}`)).not.toHaveClass(styles["mobileContentWithClose"] ?? "missing-reserved-row");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    changeMobile(false);
+    expect(container.querySelector("[data-sidebar='sidebar']")).toBeInTheDocument();
+    expect(container.querySelector("[closelabel], [showclosebutton]")).toBeNull();
+    expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/closeLabel|showCloseButton/u);
+  });
+
+  it("reserves a logical top row so the mobile close control never covers sidebar content", () => {
+    expect(stylesheet).toMatch(/\.mobilePanel\[data-slot="sheet-content"\]\s*>\s*\[data-slot="sheet-close"\]\s*\{[^}]*inset-inline-end:/u);
+    expect(stylesheet).toMatch(/\.mobileContentWithClose\s*\{[^}]*padding-block-start:/u);
+  });
 });
 
 describe("Sidebar real Tooltip and portaled action composition", () => {
@@ -1617,5 +1691,142 @@ describe("Sidebar real Tooltip and portaled action composition", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
     expect(action).not.toHaveAttribute("data-popup-open");
+  });
+});
+
+/** Merges every declaration whose rule lists `selector`, optionally only inside one `@media` prelude. */
+function declarationsFor(selector: string, media?: string): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  parse(stylesheet).walkRules((rule) => {
+    const parentMedia = rule.parent instanceof AtRule && rule.parent.name === "media" ? rule.parent.params : undefined;
+    if (parentMedia !== media || !rule.selectors.includes(selector)) return;
+    rule.walkDecls((declaration) => {
+      declarations[declaration.prop] = declaration.value;
+    });
+  });
+  return declarations;
+}
+
+describe("Sidebar current destination", () => {
+  it("exposes isActive as aria-current=page on primary and nested items, including composed and tooltip targets", () => {
+    render(
+      <SidebarProvider>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive
+              tooltip='Home details'
+              render={<a href='#home' />}>
+              Home
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton render={<a href='#projects' />}>Projects</SidebarMenuButton>
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton
+                  href='#overview'
+                  isActive>
+                  Overview
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton render={<a href='#activity' />}>Activity</SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive>Inbox view</SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarProvider>,
+    );
+    expect(screen.getByRole("link", {name: "Home"})).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", {name: "Overview"})).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", {name: "Inbox view"})).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", {name: "Projects"})).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", {name: "Activity"})).not.toHaveAttribute("aria-current");
+  });
+
+  it("lets caller and render-element aria-current values win, including an explicit undefined", () => {
+    render(
+      <SidebarProvider>
+        <SidebarMenuButton
+          isActive
+          aria-current='location'
+          render={<a href='#map' />}>
+          Map
+        </SidebarMenuButton>
+        <SidebarMenuButton
+          isActive
+          aria-current={undefined}>
+          Filters
+        </SidebarMenuButton>
+        <SidebarMenuButton
+          isActive
+          render={
+            <a
+              href='#step'
+              aria-current='step'
+            />
+          }>
+          Step
+        </SidebarMenuButton>
+        <SidebarMenuSubButton
+          isActive
+          href='#today'
+          aria-current='date'>
+          Today
+        </SidebarMenuSubButton>
+        <SidebarMenuSubButton
+          isActive
+          href='#section'
+          aria-current={undefined}>
+          Section
+        </SidebarMenuSubButton>
+        <SidebarMenuSubButton
+          isActive
+          render={
+            <a
+              href='#nested'
+              aria-current={undefined}
+            />
+          }>
+          Nested
+        </SidebarMenuSubButton>
+      </SidebarProvider>,
+    );
+    expect(screen.getByRole("link", {name: "Map"})).toHaveAttribute("aria-current", "location");
+    expect(screen.getByRole("button", {name: "Filters"})).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", {name: "Step"})).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("link", {name: "Today"})).toHaveAttribute("aria-current", "date");
+    expect(screen.getByRole("link", {name: "Section"})).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", {name: "Nested"})).not.toHaveAttribute("aria-current");
+    for (const name of ["Map", "Step", "Today", "Section", "Nested"]) {
+      expect(screen.getByRole("link", {name})).toHaveAttribute("data-active", "true");
+    }
+  });
+
+  it("authors a non-colour nested current cue distinct from hover and a forced-colors cue for every current item", () => {
+    const nestedCurrent = declarationsFor('.menuSubButton[data-active="true"]');
+    expect(nestedCurrent["text-decoration-line"]).toBe("underline");
+    expect(nestedCurrent["text-decoration-thickness"]).toBe("2px");
+    expect(nestedCurrent["text-underline-offset"]).toBeDefined();
+    expect(declarationsFor(".menuSubButton:hover")["text-decoration-line"]).toBeUndefined();
+    for (const selector of [
+      '.menuButton[data-active="true"]:not(:disabled, [aria-disabled="true"])',
+      '.menuSubButton[data-active="true"]',
+    ]) {
+      expect(declarationsFor(selector, "(forced-colors: active)")).toMatchObject({
+        "background-color": "Highlight",
+        color: "HighlightText",
+        "forced-color-adjust": "none",
+      });
+    }
+  });
+
+  it.each(Object.entries(composeStories(stories)))("marks exactly one current page in the %s story", (_name, Story) => {
+    const {container} = render(<Story />);
+    expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
   });
 });

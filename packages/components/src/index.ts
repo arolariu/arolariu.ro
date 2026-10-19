@@ -684,7 +684,13 @@ export type {
 } from "./components/ui/message";
 
 // Namespace-free public types accompany the preserved Component.Props/State APIs.
-export type {AccordionProps, AccordionItemProps, AccordionTriggerProps, AccordionContentProps} from "./components/ui/accordion";
+export type {
+  AccordionProps,
+  AccordionItemProps,
+  AccordionTriggerProps,
+  AccordionHeaderProps,
+  AccordionContentProps,
+} from "./components/ui/accordion";
 export type {
   AlertDialogProps,
   AlertDialogTriggerProps,

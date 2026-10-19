@@ -12,12 +12,19 @@ const storyStyles = `
   align-items: center;
   gap: var(--ac-space-3);
 }
+
+.ac-story-accordion-pageTitle {
+  margin: 0 0 var(--ac-space-2);
+  font-size: var(--ac-text-xl);
+  font-weight: 600;
+}
 `;
 
 const storyClasses = {
   demo: "ac-story-accordion-demo",
   demoActions: "ac-story-accordion-demoActions",
   label: "ac-story-accordion-label",
+  pageTitle: "ac-story-accordion-pageTitle",
 } as const;
 
 const meta = {
@@ -182,6 +189,28 @@ export const EmptyStringIdentifier: Story = {
         <AccordionContent>Canonical arrays distinguish this item from no selection.</AccordionContent>
       </AccordionItem>
     </Accordion>
+  ),
+};
+
+/**
+ * Item headings default to `<h3>`. Under this page's `<h1>`, `headerProps.render` makes each item heading an `<h2>` so
+ * the outline does not skip a level.
+ */
+export const HeadingLevels: Story = {
+  render: () => (
+    <section className={storyClasses.demo}>
+      <h1 className={storyClasses.pageTitle}>Help center</h1>
+      <Accordion>
+        <AccordionItem value='shipping'>
+          <AccordionTrigger headerProps={{render: <h2 />}}>Shipping</AccordionTrigger>
+          <AccordionContent>Orders ship in three to five business days.</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='returns'>
+          <AccordionTrigger headerProps={{render: <h2 />}}>Returns</AccordionTrigger>
+          <AccordionContent>Unused items can be returned within thirty days.</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </section>
   ),
 };
 

@@ -99,6 +99,16 @@
   font-size: var(--ac-text-sm);
 }
 
+/* CommandEmpty's live region stays mounted; it collapses while it holds no message. */
+.empty:empty {
+  padding-block: 0;
+}
+
+/* Hosts CommandEmpty beside the listbox without adding a layout box. */
+.emptySlot {
+  display: contents;
+}
+
 .group {
   overflow: hidden;
   padding: 2px 0;
@@ -154,6 +164,8 @@
 .item[data-selected="true"] {
   background-color: var(--ac-accent);
   color: var(--ac-accent-foreground);
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
 }
 
 .item[data-disabled="true"] {
@@ -180,7 +192,8 @@
   }
 
   .item[data-selected="true"] {
-    outline: 1px solid Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
   }
 }
 

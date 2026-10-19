@@ -1,9 +1,51 @@
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse} from "postcss";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
-import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger, type AccordionHeaderProps} from "./accordion";
+import styles from "./accordion.module.css";
+import * as stories from "./accordion.stories";
+
+const {HeadingLevels} = composeStories(stories);
+
+function requiredClass(name: string): string {
+  const className = styles[name];
+  if (typeof className !== "string" || className.trim().length === 0) throw new Error(`Missing CSS Module class: ${name}`);
+  return className;
+}
+
+// Lower real native CSS nesting before matching against the rendered CSS Module classes.
+const compiledAccordionCss = parse(
+  transform({
+    filename: "accordion.module.css",
+    code: readFileSync(join(import.meta.dirname, "accordion.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+  }).code.toString(),
+);
+
+/** Declarations a hovering fine pointer applies, outside forced-colors and reduced-motion conditions. */
+function hoverDeclarations(target: HTMLElement): Record<string, string> {
+  const declarations: Record<string, string> = {};
+  compiledAccordionCss.walkRules((rule) => {
+    if (rule.parent?.type === "rule") throw new Error("Nesting compiler left a nested selector");
+    if (rule.parent instanceof AtRule && !(rule.parent.name === "media" && rule.parent.params === "(hover: hover)")) return;
+    const selector = rule.selector
+      .replace(/\.([a-z][\w-]*)/giu, (_, name: string) => `.${CSS.escape(requiredClass(name))}`)
+      .replace(/:hover\b/gu, "");
+    if (target.matches(selector))
+      rule.walkDecls((declaration) => {
+        declarations[declaration.prop] = declaration.value;
+      });
+  });
+  return declarations;
+}
 
 function renderAccordion(): {
   firstTrigger: HTMLElement;
@@ -827,5 +869,162 @@ describe("Accordion", () => {
     expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Panel two content")).toBeVisible();
+  });
+
+  it("review correction: hover text uses the contrast-verified primary emphasis token on the transparent trigger", () => {
+    const {firstTrigger} = renderAccordion();
+    const hover = hoverDeclarations(firstTrigger);
+    // The trigger paints no surface, so hover text sits on the page background; `styles.test.ts` keeps
+    // `--ac-primary-emphasis` at 4.5:1 on `--ac-background` in both default themes.
+    expect(hover["color"]).toBe("var(--ac-primary-emphasis)");
+    expect(["none", "transparent"]).toContain(hover["background"]);
+  });
+});
+
+describe("AccordionTrigger headerProps", () => {
+  function renderSingleItem(trigger: React.ReactElement): void {
+    render(
+      <Accordion>
+        <AccordionItem value='shipping'>
+          {trigger}
+          <AccordionContent>Orders ship in three to five business days.</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+  }
+
+  it("types header props from Base UI's Accordion.Header and applies a typed props object to the rendered heading", async () => {
+    expectTypeOf<NonNullable<AccordionTrigger.Props["headerProps"]>>().toEqualTypeOf<AccordionHeaderProps>();
+    expectTypeOf<AccordionTrigger.HeaderProps>().toEqualTypeOf<AccordionHeaderProps>();
+    const user = userEvent.setup();
+    const headerProps: AccordionHeaderProps = {
+      className: (state) => (state.open ? "open-heading" : undefined),
+      render: <h2 />,
+      "data-testid": "faq-heading",
+    };
+    renderSingleItem(<AccordionTrigger headerProps={headerProps}>Shipping</AccordionTrigger>);
+    const heading = screen.getByTestId("faq-heading");
+    expect(heading).toBe(screen.getByRole("heading", {level: 2, name: "Shipping"}));
+    expect(heading).toHaveClass(requiredClass("header"));
+    expect(heading).not.toHaveClass("open-heading");
+
+    await user.click(screen.getByRole("button", {name: "Shipping"}));
+    expect(heading).toHaveClass(requiredClass("header"), "open-heading");
+  });
+
+  it("keeps the default h3 heading around the trigger with the header slot and styles", () => {
+    renderSingleItem(<AccordionTrigger>Shipping</AccordionTrigger>);
+    const heading = screen.getByRole("heading", {level: 3, name: "Shipping"});
+    expect(heading.tagName).toBe("H3");
+    expect(heading).toHaveAttribute("data-slot", "accordion-header");
+    expect(heading).toHaveClass(requiredClass("header"));
+    expect(heading).toContainElement(screen.getByRole("button", {name: "Shipping"}));
+  });
+
+  it.each(["element", "callback"] as const)("renders the heading level supplied by a %s headerProps.render", async (mode) => {
+    const user = userEvent.setup();
+    renderSingleItem(
+      <AccordionTrigger
+        headerProps={{
+          render:
+            mode === "element" ? (
+              <h2 />
+            ) : (
+              (props, state) => (
+                <h2
+                  {...props}
+                  data-state-open={String(state.open)}
+                />
+              )
+            ),
+        }}>
+        Shipping
+      </AccordionTrigger>,
+    );
+    const heading = screen.getByRole("heading", {level: 2, name: "Shipping"});
+    const trigger = screen.getByRole("button", {name: "Shipping"});
+    expect(heading.tagName).toBe("H2");
+    expect(screen.queryByRole("heading", {level: 3})).not.toBeInTheDocument();
+    expect(heading).toContainElement(trigger);
+    expect(heading).toHaveAttribute("data-slot", "accordion-header");
+    expect(heading).toHaveClass(requiredClass("header"));
+    expect(trigger).not.toHaveAttribute("headerProps");
+    expect(trigger).not.toHaveAttribute("headerprops");
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(heading).toHaveAttribute("data-open");
+    if (mode === "callback") expect(heading).toHaveAttribute("data-state-open", "true");
+  });
+
+  it("merges string and state-callback header classes with the header styles", async () => {
+    const user = userEvent.setup();
+    render(
+      <Accordion>
+        <AccordionItem value='shipping'>
+          <AccordionTrigger headerProps={{className: "faq-heading"}}>Shipping</AccordionTrigger>
+          <AccordionContent>Orders ship in three to five business days.</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value='returns'>
+          <AccordionTrigger headerProps={{className: (state) => (state.open ? "open-heading" : "closed-heading")}}>
+            Returns
+          </AccordionTrigger>
+          <AccordionContent>Returns are accepted for thirty days.</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+    expect(screen.getByRole("heading", {name: "Shipping"})).toHaveClass(requiredClass("header"), "faq-heading");
+    const returns = screen.getByRole("heading", {name: "Returns"});
+    expect(returns).toHaveClass(requiredClass("header"), "closed-heading");
+    expect(returns.className).not.toContain("=>");
+
+    await user.click(screen.getByRole("button", {name: "Returns"}));
+    expect(returns).toHaveClass(requiredClass("header"), "open-heading");
+    expect(returns).not.toHaveClass("closed-heading");
+  });
+
+  it("attaches header and render-element refs, applies caller props after wrapper defaults and cleans refs up", () => {
+    const headerRef = React.createRef<HTMLHeadingElement>();
+    const renderRef = React.createRef<HTMLHeadingElement>();
+    const {unmount} = render(
+      <Accordion>
+        <AccordionItem value='shipping'>
+          <AccordionTrigger
+            headerProps={{
+              ref: headerRef,
+              id: "faq-shipping-heading",
+              "data-slot": "faq-heading",
+              render: (
+                <h4
+                  ref={renderRef}
+                  className='render-heading'
+                />
+              ),
+            }}>
+            Shipping
+          </AccordionTrigger>
+          <AccordionContent>Orders ship in three to five business days.</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+    const heading = screen.getByRole("heading", {level: 4, name: "Shipping"});
+    expect(headerRef.current).toBe(heading);
+    expect(renderRef.current).toBe(heading);
+    expect(heading).toHaveAttribute("id", "faq-shipping-heading");
+    expect(heading).toHaveAttribute("data-slot", "faq-heading");
+    expect(heading).toHaveClass(requiredClass("header"), "render-heading");
+    expect(screen.getByRole("button", {name: "Shipping"})).toHaveAttribute("data-slot", "accordion-trigger");
+
+    unmount();
+    expect(headerRef.current).toBeNull();
+    expect(renderRef.current).toBeNull();
+  });
+
+  it("renders the HeadingLevels story as h2 item headings beneath its h1 page title", () => {
+    const {container} = render(<HeadingLevels />);
+    expect(container.querySelector("style")?.textContent).toContain(".ac-story-accordion-pageTitle");
+    expect(screen.getByRole("heading", {level: 1, name: "Help center"})).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", {level: 2}).map((heading) => heading.textContent)).toEqual(["Shipping", "Returns"]);
+    expect(screen.queryByRole("heading", {level: 3})).not.toBeInTheDocument();
   });
 });

@@ -145,6 +145,7 @@ const tokenGroups = {
     {name: "--ac-foreground", label: "Foreground"},
     {name: "--ac-primary", label: "Primary"},
     {name: "--ac-primary-foreground", label: "Primary Foreground"},
+    {name: "--ac-primary-emphasis", label: "Primary Emphasis"},
     {name: "--ac-secondary", label: "Secondary"},
     {name: "--ac-secondary-foreground", label: "Secondary Foreground"},
     {name: "--ac-muted", label: "Muted"},

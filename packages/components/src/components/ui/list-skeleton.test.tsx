@@ -6,6 +6,7 @@ import {describe, expect, it} from "vitest";
 import {ListSkeleton as RootListSkeleton} from "../../index";
 import {ListSkeleton} from "./list-skeleton";
 import styles from "./list-skeleton.module.css";
+import {VisuallyHidden} from "./visually-hidden";
 
 describe("ListSkeleton", () => {
   it("has the same identity at the actual package root", () => {
@@ -86,20 +87,31 @@ describe("ListSkeleton", () => {
     expect(clicks).toBe(1);
   });
 
-  it("keeps avatars and text decorative with one caller-owned loading announcement", () => {
-    const {container} = render(
-      <ListSkeleton
-        role='status'
-        aria-label='Loading results'
-        aria-busy
-        aria-live='polite'
-        animated={false}
-      />,
+  it("keeps avatars and text decorative while a persistent caller-owned region announces loading", () => {
+    const view = (loading: boolean): React.JSX.Element => (
+      <>
+        <VisuallyHidden role='status'>{loading ? "Loading results" : null}</VisuallyHidden>
+        {loading ? (
+          <ListSkeleton
+            data-testid='skeleton'
+            animated={false}
+          />
+        ) : (
+          <p>Results ready</p>
+        )}
+      </>
     );
+    const {container, rerender} = render(view(false));
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
 
+    rerender(view(true));
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(screen.getByRole("status", {name: "Loading results"})).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Loading results");
+    expect(status).not.toHaveAttribute("aria-busy");
+    expect(screen.getByTestId("skeleton")).not.toHaveAttribute("role");
+    expect(screen.getByTestId("skeleton")).not.toContainElement(status);
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     const placeholders = container.querySelectorAll('[data-slot="skeleton"]');
     expect(placeholders).toHaveLength(15);

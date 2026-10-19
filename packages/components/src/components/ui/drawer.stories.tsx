@@ -350,7 +350,9 @@ function SnapPointsDemo(): React.ReactElement {
       <DrawerTrigger render={<Button />}>Open snapping drawer</DrawerTrigger>
       <DrawerContent>
         <DrawerTitle>Snap points</DrawerTitle>
-        <DrawerDescription>This demo explicitly supplies three snap heights; the component has no snap-point defaults.</DrawerDescription>
+        <DrawerDescription>
+          Opens at 35%. Tab to Close, below the visible height: the drawer requests its largest snap point and this owner applies it.
+        </DrawerDescription>
         <output>Active snap: {snapPoint}</output>
         <div className={storyClasses.storyActions}>
           <Button onClick={() => setSnapPoint(0.35)}>35%</Button>
@@ -365,7 +367,10 @@ function SnapPointsDemo(): React.ReactElement {
   );
 }
 
-/** Consumer-controlled snap state; Base UI resolves heights and swipe requests. */
+/**
+ * Consumer-controlled snap state. Base UI resolves heights and swipes; keyboard focus that lands beyond the
+ * visible snap height requests the largest snap point (`1`), which a controlled owner must apply.
+ */
 export const SnapPoints: Story = {
   render: () => <SnapPointsDemo />,
 };

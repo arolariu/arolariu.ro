@@ -111,6 +111,90 @@ describe("Dialog", () => {
   });
 
   it.each([
+    {modal: true, blocking: true},
+    {modal: false, blocking: false},
+    {modal: "trap-focus", blocking: false},
+  ] as const)("renders the page-blocking backdrop only for a fully modal root (modal=$modal)", ({modal, blocking}) => {
+    render(
+      <Dialog
+        defaultOpen
+        modal={modal}>
+        <DialogContent>
+          <DialogTitle>Modality dialog</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole("dialog", {name: "Modality dialog"})).toBeVisible();
+    expect(Boolean(document.querySelector('[data-slot="dialog-overlay"]'))).toBe(blocking);
+  });
+
+  it.each([false, "trap-focus"] as const)("leaves outside controls usable without a dimming backdrop for modal=%s", async (modal) => {
+    const user = userEvent.setup();
+    const outsidePress = vi.fn<() => void>();
+    render(
+      <>
+        <button
+          type='button'
+          onClick={outsidePress}>
+          Outside control
+        </button>
+        <Dialog
+          defaultOpen
+          modal={modal}
+          disablePointerDismissal>
+          <DialogContent>
+            <DialogTitle>Nonblocking dialog</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      </>,
+    );
+    expect(document.querySelector(`.${requiredStyle("backdrop")}`)).not.toBeInTheDocument();
+    await user.click(screen.getByText("Outside control"));
+    expect(outsidePress).toHaveBeenCalledOnce();
+    expect(screen.getByRole("dialog", {name: "Nonblocking dialog"})).toBeVisible();
+  });
+
+  it("keeps the styled popup and its form state mounted through portalProps.keepMounted", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog defaultOpen>
+        <DialogTrigger>Reopen kept dialog</DialogTrigger>
+        <DialogContent portalProps={{keepMounted: true}}>
+          <DialogTitle>Kept dialog</DialogTitle>
+          <input aria-label='Draft note' />
+        </DialogContent>
+      </Dialog>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Kept dialog"});
+    await user.type(screen.getByRole("textbox", {name: "Draft note"}), "unsaved");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(popup).toHaveAttribute("hidden"));
+    expect(popup).toBeInTheDocument();
+    expect(popup).toHaveClass(requiredStyle("popup"));
+    await user.click(screen.getByRole("button", {name: "Reopen kept dialog"}));
+    expect(screen.getByRole("dialog", {name: "Kept dialog"})).toBe(popup);
+    expect(screen.getByRole("textbox", {name: "Draft note"})).toHaveValue("unsaved");
+  });
+
+  it("portals the styled popup and backdrop into portalProps.container with the remaining Portal props", () => {
+    const host = document.createElement("section");
+    document.body.append(host);
+    const view = render(
+      <Dialog defaultOpen>
+        <DialogContent portalProps={{container: host, className: "caller-portal"}}>
+          <DialogTitle>Contained dialog</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    const popup = screen.getByRole("dialog", {name: "Contained dialog"});
+    expect(host).toContainElement(popup);
+    expect(host).toContainElement(document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]'));
+    expect(popup.closest(".caller-portal")?.parentElement).toBe(host);
+    view.unmount();
+    host.remove();
+  });
+
+  it.each([
     ["element", true],
     ["element", false],
     ["resolved lazy", true],

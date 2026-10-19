@@ -4,10 +4,29 @@
 }
 
 .viewport {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   border-radius: inherit;
   outline: none;
+}
+
+/*
+ * Base UI overlays each scrollbar on the viewport edge (position: absolute); its 24px track jump-scrolls on press,
+ * prevents mousedown and disables touch panning. Reserve a gutter of the same 1.5rem whenever a package-styled track is
+ * mounted on that axis, never because Base UI reports overflow: the gutter changes that very measurement (content that
+ * shrinks with width could toggle it forever) and server markup carries no overflow attributes. ScrollBar keeps its track
+ * mounted by default, so the reservation is stable, like `scrollbar-gutter: stable`, and present in server HTML. The scroll
+ * padding keeps scrolled-into-view (focused) content out of the band.
+ */
+.root:has(> .vertical) > .viewport {
+  padding-inline-end: 1.5rem;
+  scroll-padding-inline-end: 1.5rem;
+}
+
+.root:has(> .horizontal) > .viewport {
+  padding-block-end: 1.5rem;
+  scroll-padding-block-end: 1.5rem;
 }
 
 .viewport:focus-visible {
@@ -34,6 +53,12 @@
 .horizontal {
   flex-direction: column;
   height: 1.5rem;
+}
+
+/* A kept-mounted track over an axis that does not overflow paints nothing and is not a pointer target. */
+.vertical:not([data-has-overflow-y]),
+.horizontal:not([data-has-overflow-x]) {
+  visibility: hidden;
 }
 
 .thumb {

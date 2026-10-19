@@ -224,11 +224,18 @@ const getColor = (color: string | ReadonlyArray<string> | undefined): string => 
 
 /** Props accepted by {@link FireworksBackground}. */
 export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithRef<"div">, "color">, VisualEffectOptions {
-  /** Localizable native launch control. Hidden when paused. @default "Launch fireworks" */
+  /**
+   * Localizable accessible name of the native launch control. User launches stay available after automatic motion settles;
+   * the control is `aria-disabled` (still focusable, activation ignored) only under reduced motion, `motionPaused` or a hidden
+   * document. @default "Launch fireworks"
+   */
   readonly launchLabel?: string;
   /** HTML attributes forwarded to the internal `<canvas>` element. @default undefined */
   readonly canvasProps?: React.HTMLAttributes<HTMLCanvasElement>;
-  /** Nonnegative finite launch frequency; zero enables click-only launches. Timers are bounded to at least 100ms. @default 1 */
+  /**
+   * Nonnegative finite automatic launch frequency; `0` is click-only mode, where only the launch control fires. Timers are
+   * bounded to at least 100ms. @default 1
+   */
   readonly population?: number;
   /** Fixed color or palette used for generated fireworks and particles. @default undefined */
   readonly color?: string | ReadonlyArray<string>;
@@ -248,6 +255,10 @@ export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithR
  * @remarks
  * - Native canvas physics, capped at 16 trails and 2048 particles
  * - Element-sized DPR backing bitmap, with a static starburst when motion is paused
+ * - Automatic launches settle after five seconds unless `loop`; the native launch control stays available afterwards (and in
+ *   `population={0}` click-only mode): each user launch animates until its fireworks and particles finish, then returns to the
+ *   static frame without restarting automatic launches. Under reduced motion, `motionPaused` or a hidden document the control
+ *   is `aria-disabled` (it keeps focus) and activation is ignored
  * - A box-less canvas (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not
  *   an error: it stays idle (no sizing, drawing, launch timer or frame loop) and ignores launch presses until a positive
  *   `ResizeObserver` or window resize measurement, which resizes it and resumes it under the motion policy
@@ -288,7 +299,10 @@ function FireworksBackground({
   validatePalette(color);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const {paused} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
+  const {paused, reducedMotion, documentHidden} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
+  // User launches are not automatic motion (WCAG 2.2.2): they outlive the five-second settle and offscreen pausing, and are
+  // unavailable only under reduced motion, an explicit `motionPaused` or a hidden document.
+  const launchAvailable = !(motionPaused || reducedMotion || documentHidden);
   const setRefs = useMergedRefs(containerRef, ref);
 
   React.useEffect(() => {
@@ -356,7 +370,14 @@ function FireworksBackground({
     };
 
     const animate = (): void => {
-      if (!active || paused) return;
+      animationFrameId = null;
+      if (!active) return;
+      // While automatic motion is paused (settled or offscreen), frames run only until user-launched fireworks and their
+      // particles finish; the static frame then returns and the loop idles without restarting automatic launches.
+      if (paused && fireworks.length === 0 && explosions.length === 0) {
+        drawStatic();
+        return;
+      }
       context.clearRect(0, 0, maxX, maxY);
 
       for (let index = fireworks.length - 1; index >= 0; index -= 1) {
@@ -427,7 +448,7 @@ function FireworksBackground({
     globalThis.window.addEventListener("resize", resize);
 
     const handleClick = (event: MouseEvent): void => {
-      if (!active || paused || event.defaultPrevented || fireworks.length >= 16 || performance.now() - lastLaunch < 1000) return;
+      if (!active || !launchAvailable || event.defaultPrevented || fireworks.length >= 16 || performance.now() - lastLaunch < 1000) return;
       const rect = canvas.getBoundingClientRect();
       // Presses on a box-less surface are ignored: they neither throw nor spend the one-launch-per-second budget.
       if (!drawable || ![rect.width, rect.height].every((entry) => Number.isFinite(entry)) || rect.width <= 0 || rect.height <= 0) return;
@@ -438,6 +459,8 @@ function FireworksBackground({
       const speed = getValueByRange(fireworkSpeed);
       const size = getValueByRange(fireworkSize);
       fireworks.push(createFirework(x, maxY, y, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
+      // A running loop picks the launch up; an idle (paused) one runs frames until this launch finishes.
+      if (animationFrameId === null) animationFrameId = globalThis.requestAnimationFrame(animate);
     };
 
     // Decorative canvas: no implicit clickable div. Native descendant buttons
@@ -458,7 +481,7 @@ function FireworksBackground({
       fireworks.length = 0;
       explosions.length = 0;
     };
-  }, [color, fireworkSize, fireworkSpeed, particleSize, particleSpeed, population, paused]);
+  }, [color, fireworkSize, fireworkSpeed, particleSize, particleSpeed, population, paused, launchAvailable]);
 
   return (
     <div
@@ -477,7 +500,7 @@ function FireworksBackground({
       <button
         type='button'
         data-fireworks-launch=''
-        disabled={paused}
+        aria-disabled={launchAvailable ? undefined : true}
         className={styles.launch}>
         {launchLabel}
       </button>

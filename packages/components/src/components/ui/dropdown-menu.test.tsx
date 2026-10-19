@@ -2,6 +2,8 @@ import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Features, transform} from "lightningcss";
+import {AtRule, parse, type Node as CssNode} from "postcss";
 import * as React from "react";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -25,6 +27,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
+import styles from "./dropdown-menu.module.css";
 
 function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
   return <button {...props} />;
@@ -1469,5 +1472,147 @@ describe("DropdownMenu", () => {
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");
     });
+  });
+});
+
+type Theme = "light" | "dark";
+type Rgba = readonly [number, number, number, number];
+
+// Lower native nesting, then match emitted selectors against the real rendered nodes.
+const compiledMenuCss = parse(
+  transform({
+    filename: "dropdown-menu.module.css",
+    code: readFileSync(join(import.meta.dirname, "dropdown-menu.module.css")),
+    include: Features.Nesting,
+    targets: {chrome: 100 << 16},
+    pseudoClasses: {focusVisible: "review-focus-visible"},
+  }).code.toString(),
+);
+const themeTokens: Record<Theme, Record<string, string>> = {light: {}, dark: {}};
+parse(readFileSync(join(import.meta.dirname, "../../index.css"), "utf8")).walkRules((rule) => {
+  const theme = rule.selector === ":root" ? "light" : rule.selector.includes('[data-theme="dark"]') ? "dark" : undefined;
+  if (theme) rule.walkDecls((declaration) => void (themeTokens[theme][declaration.prop] = declaration.value));
+});
+
+/** Default-state compiled declarations (no forced colors or reduced motion) that apply to the real element. */
+function compiledMenuPaint(element: Element): Map<string, string> {
+  const declarations = new Map<string, string>();
+  compiledMenuCss.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (ancestor instanceof AtRule) return;
+    }
+    const selectors = rule.selectors
+      // Direction-only icon rules lower :dir() to language lists that do not paint menu text.
+      .filter((selector) => !selector.includes(":lang("))
+      .map((selector) =>
+        selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+          const local = styles[name];
+          return local ? `.${CSS.escape(local)}` : match;
+        }),
+      );
+    if (!selectors.some((selector) => element.matches(selector))) return;
+    rule.walkDecls((declaration) => void declarations.set(declaration.prop, declaration.value));
+  });
+  return declarations;
+}
+
+// The real compiler evaluates authored OKLCH mixes with the default tokens; its
+// sRGB fallback is a deterministic model, not native pixel proof.
+function tokenPaint(value: string | undefined, theme: Theme): Rgba {
+  if (!value) throw new Error("Missing authored menu paint");
+  const resolved = value.replaceAll(/var\((--ac-[\w-]+)\)/gu, (_: string, token: string): string => {
+    const color = themeTokens[theme][token];
+    if (!color) throw new Error(`Missing ${theme} token ${token}`);
+    return color;
+  });
+  const output = transform({
+    filename: "menu-contrast.css",
+    code: Buffer.from(`.paint { color: ${resolved}; }`),
+    targets: {chrome: 100 << 16},
+  }).code.toString();
+  const hex = /color:\s*#([\da-f]+);/iu.exec(output)?.[1];
+  if (!hex) throw new Error(`Missing compiled sRGB paint: ${output}`);
+  const expanded = hex.length <= 4 ? [...hex].map((digit) => digit.repeat(2)).join("") : hex;
+  if (expanded.length !== 6 && expanded.length !== 8) throw new Error(`Unexpected sRGB paint: ${hex}`);
+  const channel = (offset: number): number => Number.parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+  return [channel(0), channel(2), channel(4), expanded.length === 8 ? channel(6) : 1];
+}
+
+function composite(paint: Rgba, canvas: Rgba): Rgba {
+  const alpha = paint[3];
+  return [
+    paint[0] * alpha + canvas[0] * (1 - alpha),
+    paint[1] * alpha + canvas[1] * (1 - alpha),
+    paint[2] * alpha + canvas[2] * (1 - alpha),
+    1,
+  ];
+}
+
+function contrastRatio(first: Rgba, second: Rgba): number {
+  const luminance = ([red, green, blue]: Rgba): number => {
+    const linear = (channel: number): number => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+  const a = luminance(first);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe.each(["light", "dark"] as const)("DropdownMenu final review M2: destructive item text in %s defaults", (theme) => {
+  it("keeps highlighted and resting destructive item text at 4.5:1 on the popover surface", async () => {
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Project actions</DropdownMenuTrigger>
+        <DropdownMenuContent aria-label='Project actions'>
+          <DropdownMenuItem variant='destructive'>Delete project</DropdownMenuItem>
+          <DropdownMenuItem variant='destructive'>Delete history</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    await act(async () => {
+      screen.getByRole("button", {name: "Project actions"}).focus();
+    });
+    await user.keyboard("{ArrowDown}");
+    const highlighted = await screen.findByRole("menuitem", {name: "Delete project"});
+    await waitFor(() => expect(highlighted).toHaveAttribute("data-highlighted"));
+    const resting = screen.getByRole("menuitem", {name: "Delete history"});
+    expect(resting).not.toHaveAttribute("data-highlighted");
+    const popover = composite(
+      tokenPaint(compiledMenuPaint(screen.getByRole("menu", {name: "Project actions"})).get("background-color"), theme),
+      tokenPaint("var(--ac-background)", theme),
+    );
+    for (const item of [highlighted, resting]) {
+      const paint = compiledMenuPaint(item);
+      const background = paint.has("background-color") ? composite(tokenPaint(paint.get("background-color"), theme), popover) : popover;
+      const text = composite(tokenPaint(paint.get("color"), theme), background);
+      expect(contrastRatio(text, background), item.textContent ?? "").toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+describe("DropdownMenu final review M7: SDK-owned popup side", () => {
+  it("leaves the root menu on Base UI's default bottom side unless the caller sets one", () => {
+    render(
+      <>
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger>Default side</DropdownMenuTrigger>
+          <DropdownMenuContent aria-label='Default side menu'>
+            <DropdownMenuItem>Rename</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu defaultOpen>
+          <DropdownMenuTrigger>Caller side</DropdownMenuTrigger>
+          <DropdownMenuContent
+            aria-label='Caller side menu'
+            side='inline-start'
+            collisionAvoidance={{side: "none", align: "none"}}>
+            <DropdownMenuItem>Archive</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </>,
+    );
+    expect(screen.getByRole("menu", {name: "Default side menu"})).toHaveAttribute("data-side", "bottom");
+    expect(screen.getByRole("menu", {name: "Caller side menu"})).toHaveAttribute("data-side", "inline-start");
   });
 });

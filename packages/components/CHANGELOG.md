@@ -24,6 +24,86 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   part: no reordering unless filtering, score order with rendered-order ties while filtering, and rendered order restored afterwards. Each
   CommandItem/CommandGroup renders a hidden, empty `data-command-anchor` span as its first DOM node; consumer
   `:first-child`/`:nth-child`/adjacent-sibling selectors over Command parts must account for it.
+- Button props are a naming union: icon sizes (`icon`, `icon-xs`, `icon-sm`, `icon-lg`) require a string `aria-label` or `aria-labelledby`,
+  and `interface X extends ButtonProps` (likewise `InputGroupButtonProps`, `AlertDialogActionProps` and `SidebarTriggerProps`) fails with
+  TS2312; use `type X = ButtonProps & {…}`. Links are native anchors styled with `buttonVariants()`, not Button render targets;
+  `nativeButton={false}` is for non-link targets such as a `<div>`. A real anchor with the `link` variant stays underlined at rest, while
+  `<Button variant="link">` underlines on hover.
+- Toast `timeout` defaults to `0` (persistent; v2.4's `duration` defaulted to 5000 ms), so pass `timeout` to keep auto-dismissal. The
+  ready-made close control is named by Toaster `closeLabel` (default `"Close toast"`, was `"Close notification"`). Facade options are
+  removed: `closeButton` (the control is always rendered; compose Toast parts to change it), `containerAriaLabel`
+  (`viewportProps["aria-label"]`), `toastOptions` (no default-options merge), `cancel` (compose Toast parts), `onDismiss`/`onAutoClose`
+  (per-toast `onClose`/`onRemove`, which report no cause), `toast.custom` (compound composition with typed `data`) and `toast.getHistory`
+  (no replacement). MIGRATION maps every v2.4 Toaster and per-toast option.
+- Automatic motion in the visual effects settles five seconds after mount unless `loop`, which requires a caller-supplied, localized pause
+  control that sets `motionPaused`. Skeleton pulses twice (four seconds) instead of indefinitely.
+- New generated, localizable controls: ResizableHandle renders native −/+ step buttons after each separator (two extra tab stops;
+  `decreaseLabel`, `increaseLabel`, `resizeStep`); FireworksBackground renders a native launch button (`launchLabel`) that stays available
+  after automatic launches settle and in `population={0}` click-only mode, and is `aria-disabled` (still focusable) under reduced motion,
+  `motionPaused` or a hidden document; Scratcher renders a reveal button and a completion status (`revealLabel`, `completedLabel`).
+  PaginationPrevious/PaginationNext are named by their visible `text` (`"Previous"`/`"Next"`), and SidebarProvider wraps its subtree in
+  `TooltipProvider delay={0}`.
+- `ResizableHandle` step buttons sit at least 11px clear of the 1px separator, so presses on them never start a drag while the group's
+  `resizeTargetMinimumSize` is at most 22px (the defaults are 10px fine / 20px coarse); keep that clearance through the `data-slot` hooks if
+  you widen the separator or the hit area. In vertical groups − sits above and + below the line. Their container is excluded from the
+  primitive's hit-region scan (`data-resize-preview`), so separator presses keep focus, the `active` state and double-click reset. New
+  `withControls` opt-out and `data-slot` hooks; pointerdown on the controls propagates normally. Scope consumer `[data-resize-preview]`
+  styles to the primitive's own preview overlays.
+- New `--ac-primary-emphasis` token (light `oklch(0.488 0.243 264.376)`, dark `oklch(0.7 0.14 265.638)`) for primary text, icons and value
+  indicators on neutral surfaces: Badge `link` text, the active Stepper number, Accordion hover text, the Progress/Meter fills, the Slider
+  range fill and NumberField scrubbing text use it. Themes that override `--ac-primary` must override it too. Destructive
+  DropdownMenu/ContextMenu/Menubar/DropDrawer items mix 20% foreground into their text. Default Badges and interactive default Bubbles hover
+  to `color-mix(in oklch, var(--ac-primary) 90%, var(--ac-foreground))`. Plain nested `<a>` links in Bubble content inherit the bubble's
+  text colour and are underlined. Class-styled anchors keep their own paint, so on the primary surface of the `default` variant (the Bubble
+  default) use an opaque-fill variant: Button `default`, `secondary`, `outline` or `destructive`, or Badge `default`, `secondary` or
+  `destructive` (Badge `outline` is transparent, unlike Button `outline`). Transparent-fill variants (Button `link`/`ghost`; Badge
+  `outline`/`ghost`/`link`) keep text colours meant for neutral surfaces and are not supported there. The current NavigationMenu link
+  (`active`/`aria-current="page"`) gets a 2px underline, and the active Command option a 2px `--ac-ring` outline.
+- DropdownMenuContent and MenubarContent leave `side` to Base UI unless provided (below the trigger; toward the inline end of a vertical
+  Menubar). ContextMenuContent defaults to the logical `side="inline-end"`, which mirrors in RTL and is reported as
+  `data-side="inline-end"`; v2.4 passed no placement, so Base UI's context-menu default applied (with Base UI 1.9: `data-side="bottom"`,
+  side offset −5, align offset 2). `DropDrawerSub.title` sets the localizable mobile panel heading and drawer dialog name (fallbacks:
+  trigger `label`, visible trigger text, root `mobileTitle`).
+- `AccordionTrigger.headerProps` (`AccordionHeaderProps`, also `AccordionTrigger.HeaderProps`/`HeaderState`) customizes the heading, an
+  `<h3>` by default that now carries `data-slot="accordion-header"`; applications set the level with `headerProps.render`.
+- LoadingOverlay keeps a persistent, visually hidden status region, empty while hidden, and writes `loadingLabel` (default `"Loading"`) into
+  it while `visible`; the overlay element itself has no role, live-region attributes or default name. AsyncBoundary is a Client Component;
+  with the default (decorative spinner) fallback it renders a new visually hidden `<span role="status">` sibling after its content for the
+  boundary's whole lifetime and writes `loadingLabel` into it while suspended. In list or table contexts pass a fitting `loadingFallback`,
+  which renders no region; custom or `null` fallbacks own their announcement. Spinner and skeleton guidance now points to a status region
+  mounted before loading starts, without `aria-busy` on it. This supersedes the historical "LoadingOverlay stays visual; blocking and
+  announcements are caller-owned" note below.
+- CommandInput's name is the localizable `fallbackLabel` (default `"Search commands"`) only when no `aria-label`, `aria-labelledby`,
+  associated `<label>`, `title` or `placeholder` names it, and never in server HTML. CommandEmpty is a polite status region
+  (`aria-atomic="true"`) that only toggles its children and stays mounted while its CommandList is mounted on the client (in place, when
+  outside a list), so later "no results" text is written into an existing region; an empty state present when the list first mounts appears
+  together with the region. Inside CommandList it is portaled into a `display: contents` `data-slot="command-empty-slot"` element rendered
+  before the listbox, so it is no longer a listbox child.
+- Form: server HTML and the hydration render carry the label/control association (including explicit control/label IDs) and
+  `aria-describedby` for written descriptions and messages (including server-known errors) that have explicit IDs or are the item's single
+  generated part of their kind. Generated IDs become unique after hydration; parts rendered internally by other components link once they
+  mount.
+- Sidebar: `SidebarMenuButton`/`SidebarMenuSubButton` `isActive` now sets `aria-current="page"` (overridable, including
+  `aria-current={undefined}`), with a forced-colors current cue and an underline on sub-buttons. The mobile sheet renders a visible, named
+  close control by default, pinned to the top inline-end corner (`showCloseButton`, `closeLabel` default `"Close sidebar"`); in v2.4 that
+  name belonged to a full-screen overlay button.
+- FocusScope: natively focusable `aria-disabled` controls (Base UI `focusableWhenDisabled`, disabled toolbar roving stops) are tab stops —
+  Tab continues past them, and wrapping, `autoFocus` and focus restoration include them. A scope in a same-origin iframe document looks up
+  `HTMLElement`/`HTMLDetailsElement`/`HTMLFieldSetElement`/`HTMLLegendElement` from the element's own window. `contain` documents the
+  consumer's obligation to provide and announce a keyboard exit (WCAG 2.1.2).
+- DialogContent and SheetContent render the dimming, pointer-blocking backdrop only when the root has `modal={true}` (the default); code
+  that relied on it with `modal={false}` or `"trap-focus"` must use `modal={true}`. DialogContent, SheetContent, AlertDialogContent and
+  DrawerContent accept `portalProps` (`keepMounted`, `container` and the other Portal props). With vertical `snapPoints`, Drawer requests
+  its largest snap point through `onSnapPointChange` (`reason: "none"`) when keyboard or programmatic focus lands beyond the visible snap
+  height: uncontrolled drawers expand, and controlled owners apply or cancel the request.
+- `ChartLegendContent.inactiveSuffix` localizes or suppresses the inactive-series suffix.
+- ScrollArea reserves a stable 1.5rem gutter plus scroll padding (inline-end for the vertical track, block-end for the horizontal one)
+  whenever a package-styled track is mounted, like `scrollbar-gutter: stable`. `ScrollBar` now keeps its track mounted by default
+  (`keepMounted` defaults to `true`; the idle track stays in the DOM, hidden, and paints nothing), so the gutter is in server HTML, never
+  depends on Base UI's overflow measurement, and cannot flip-flop or reflow after hydration. The content box is 1.5rem narrower (or shorter,
+  for a horizontal track) even without overflow. The viewport is `box-sizing: border-box`, and the gutter overrides its own end padding on
+  that axis. The convenience `ScrollArea` always reserves the vertical gutter; compose `ScrollAreaRoot` with `ScrollBar keepMounted={false}`
+  to opt out, which restores mount-on-overflow (the gutter then appears after hydration and can oscillate for width-dependent content).
 - Retain CSS Modules and story-mounted demonstration styles. No alternate test runner, new dependency, publication or website adoption.
 
 **Current verification:** complete component workspace passed **127 files / 3,319 tests / zero skips**, including all four genuine packed

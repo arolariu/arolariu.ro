@@ -37,6 +37,14 @@ export interface ResizableHandleProps extends ResizablePrimitive.SeparatorProps 
    * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
    */
   withHandle?: boolean;
+  /**
+   * Renders the native decrease/increase step buttons after the separator: the single-pointer alternative to dragging
+   * (WCAG 2.5.7). They add two tab stops per handle. Pass `false` only when the application provides another
+   * single-pointer way to resize these panels; the separator's keyboard support does not replace it.
+   *
+   * @default true
+   */
+  readonly withControls?: boolean;
   /** Localizable native single-click alternative to dragging. @default "Decrease previous panel" */
   readonly decreaseLabel?: string;
   /** Localizable native single-click alternative to dragging. @default "Increase previous panel" */
@@ -236,6 +244,13 @@ function serverResizeTargets(): ResizeTargets {
   return emptyTargets;
 }
 
+/** Handles without step controls neither observe geometry nor read layout while rendering. */
+const unsubscribeNothing = (): void => undefined;
+const inertResizeTargetStore: ReturnType<typeof createResizeTargetStore> = {
+  snapshot: serverResizeTargets,
+  subscribe: (): (() => void) => unsubscribeNothing,
+};
+
 /**
  * Wraps `react-resizable-panels` panel groups with shared styles.
  *
@@ -356,10 +371,20 @@ function ResizablePanel({
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Vertical groups emit a horizontal separator; the stylesheet rotates only the optional visual grip.
  * - `elementRef`, consumer children and primitive keyboard/pointer handlers are preserved.
+ * - By default renders native step buttons right after the separator — the single-pointer alternative to dragging
+ *   (WCAG 2.5.7) — adding two tab stops per handle: `data-slot="resizable-controls"` wraps
+ *   `data-slot="resizable-decrease"` and `data-slot="resizable-increase"`. `withControls={false}` omits them; supply
+ *   another single-pointer resize alternative when you do.
+ * - The step buttons sit at least 11px clear of the 1px separator line, outside the primitive's widened pointer hit area
+ *   (10px fine / 20px coarse by default, centred on the line), so pressing them never starts a drag. Keep that clearance
+ *   through the data-slot hooks if you widen the separator or raise the group's `resizeTargetMinimumSize` above 22px.
+ * - The controls container carries the primitive's `data-resize-preview` marker so it is left out of separator hit
+ *   regions; scope any `[data-resize-preview]` styling to the primitive's own preview overlays.
  *
  * @example
  * ```tsx
  * <ResizableHandle withHandle />
+ * <ResizableHandle withControls={false} /> // only alongside another single-pointer resize alternative
  * ```
  *
  * @see {@link ResizableHandleProps} for available props
@@ -367,6 +392,7 @@ function ResizablePanel({
  */
 function ResizableHandle({
   withHandle = false,
+  withControls = true,
   className,
   children,
   elementRef,
@@ -381,8 +407,8 @@ function ResizableHandle({
   const mergedRef = useMergedRefs(setSeparator, elementRef);
   const disabled = Boolean(props.disabled || context?.disabled);
   const store = React.useMemo(
-    () => createResizeTargetStore(separator, context, resizeStep, disabled),
-    [separator, context, resizeStep, disabled],
+    () => (withControls ? createResizeTargetStore(separator, context, resizeStep, disabled) : inertResizeTargetStore),
+    [withControls, separator, context, resizeStep, disabled],
   );
   const targets = React.useSyncExternalStore(store.subscribe, store.snapshot, serverResizeTargets);
   const resize = (direction: -1 | 1): void => {
@@ -413,25 +439,37 @@ function ResizableHandle({
         )}
         {children}
       </ResizablePrimitive.Separator>
-      <div
-        className={styles.resizeControls}
-        data-orientation={context?.orientation}
-        onPointerDown={(event) => event.stopPropagation()}>
-        <button
-          type='button'
-          disabled={disabled || targets.decrease === undefined}
-          aria-label={decreaseLabel}
-          onClick={() => resize(-1)}>
-          −
-        </button>
-        <button
-          type='button'
-          disabled={disabled || targets.increase === undefined}
-          aria-label={increaseLabel}
-          onClick={() => resize(1)}>
-          +
-        </button>
-      </div>
+      {withControls ? (
+        <div
+          // react-resizable-panels builds pointer hit regions from the Group's element children, skipping only
+          // `[data-resize-preview]` (its own preview-overlay marker; v4.14.4 calculateHitRegions). Unmarked, this 0×0
+          // container counts as interleaved static content and adds a separator-less region that wins separator
+          // presses: no focus, no `active` state, no double-click reset. Guarded in resizable.test.tsx by "forwards
+          // $orientation drag updates…" and "restores the default sizes on a %s separator double-click…".
+          data-resize-preview
+          data-slot='resizable-controls'
+          className={styles.resizeControls}
+          data-orientation={context?.orientation}>
+          <button
+            type='button'
+            data-slot='resizable-decrease'
+            className={styles.resizeDecrease}
+            disabled={disabled || targets.decrease === undefined}
+            aria-label={decreaseLabel}
+            onClick={() => resize(-1)}>
+            −
+          </button>
+          <button
+            type='button'
+            data-slot='resizable-increase'
+            className={styles.resizeIncrease}
+            disabled={disabled || targets.increase === undefined}
+            aria-label={increaseLabel}
+            onClick={() => resize(1)}>
+            +
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
