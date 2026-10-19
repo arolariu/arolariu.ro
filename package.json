@@ -97,7 +97,7 @@
   },
   "devDependencies": {
     "@arolariu/components": "2.4.0",
-    "@azure/identity": "4.13.3",
+    "@azure/identity": "4.14.0",
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.46",
     "@azure/storage-blob": "12.34.0",
     "@base-ui/react": "1.9.0",
