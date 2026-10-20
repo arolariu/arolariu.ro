@@ -84,5 +84,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const CustomGradient: Story = {args: {gradientColors: ["#ff0080", "#ff8c00", "#40e0d0"]}};
 export const Large: Story = {args: {width: 400, height: 250, minScratchPercentage: 30}};
-/** Tab to the reveal button and activate it; completion remains equivalent to pointer scratching. */
+/**
+ * Tab to the reveal button and activate it: completion is equivalent to pointer scratching, and focus stays on the button,
+ * which becomes `aria-disabled` (still focusable, activation ignored) until the card resets.
+ */
 export const KeyboardReveal: Story = {args: {revealLabel: "Reveal the card", completedLabel: "Card revealed"}};

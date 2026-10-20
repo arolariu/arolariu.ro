@@ -29,11 +29,27 @@ const storyStyles = `
   height: var(--ac-space-4);
   accent-color: var(--ac-primary);
 }
+
+.ac-story-item-storyTruncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The doubled class outranks the module's single-class \`display: block\` in any stylesheet order. */
+.ac-story-item-storyClamp.ac-story-item-storyClamp {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 `;
 
 const storyClasses = {
   storyStack: "ac-story-item-storyStack",
   storyCheckbox: "ac-story-item-storyCheckbox",
+  storyTruncate: "ac-story-item-storyTruncate",
+  storyClamp: "ac-story-item-storyClamp",
 } as const;
 
 const meta = {
@@ -294,7 +310,10 @@ export const ExtraSmall: Story = {
   ),
 };
 
-/** Title and rich description clamp to one and two lines; full content remains accessible. */
+/**
+ * Titles and rich descriptions wrap instead of clamping, so every line stays visible. Truncation is an opt-in caller
+ * class; the truncated example links to a detail view, because hidden text is unavailable to sighted users.
+ */
 export const RichOverflow: Story = {
   render: (): React.JSX.Element => (
     <div className={storyClasses.storyStack}>
@@ -303,10 +322,28 @@ export const RichOverflow: Story = {
           <Folder />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>A very long collection title that should wrap, clamp and remain inside the item without expanding the row</ItemTitle>
+          <ItemTitle>
+            A very long collection title that wraps onto further lines and stays inside the item without expanding the row
+          </ItemTitle>
           <ItemDescription>
-            This <strong>rich description</strong> includes <a href='#documentation'>documentation</a> and enough additional text to
-            demonstrate the two-line limit. All of this content stays in the DOM and is not removed from the accessibility tree.
+            This <strong>rich description</strong> includes <a href='#documentation'>documentation</a> and enough additional text to show
+            that every line stays visible: nothing is clamped, hidden or removed from the accessibility tree.
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+      <Item
+        variant='outline'
+        render={<a href='#collection-details' />}>
+        <ItemMedia variant='icon'>
+          <Folder />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle className={storyClasses.storyTruncate}>
+            A very long collection title truncated to one line by an opt-in caller class
+          </ItemTitle>
+          <ItemDescription className={storyClasses.storyClamp}>
+            An opt-in caller class clamps this description to two lines. The item links to a detail view that shows the complete title and
+            description, since clamped text stays in the accessibility tree but is hidden from sighted users.
           </ItemDescription>
         </ItemContent>
       </Item>

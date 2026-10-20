@@ -1015,3 +1015,90 @@ describe("Menubar final review M7: orientation-aware popup placement", () => {
     expect(await screen.findByRole("menu", {name: "File actions"})).toHaveAttribute("data-side", "inline-end");
   });
 });
+
+describe("Menubar final review L25: documented placement defaults", () => {
+  const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+
+  it("places content start-aligned 8px below and 4px before its anchor in a horizontal menubar", async () => {
+    render(
+      <Menubar aria-label='Placement menus'>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent
+            aria-label='File placement'
+            anchor={anchor}
+            collisionAvoidance={{side: "none", align: "none"}}>
+            <MenubarItem>New file</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    const popup = await screen.findByRole("menu", {name: "File placement"});
+    expect(popup).toHaveAttribute("data-side", "bottom");
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(196px, 128px)"}));
+  });
+
+  it("keeps the DropdownMenuSubContent defaults, not the MenubarContent offsets, for submenus", async () => {
+    render(
+      <Menubar aria-label='Placement menus'>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent aria-label='File actions'>
+            <MenubarSub defaultOpen>
+              <MenubarSubTrigger>Open recent</MenubarSubTrigger>
+              <MenubarSubContent
+                aria-label='Submenu placement'
+                anchor={anchor}
+                collisionAvoidance={{side: "none", align: "none"}}>
+                <MenubarItem>report.pdf</MenubarItem>
+              </MenubarSubContent>
+            </MenubarSub>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Submenu placement"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 97px)"}));
+  });
+});
+
+describe("Menubar final-review fix: content dir through DropdownMenuContent", () => {
+  function DirectionalMenubar(): React.ReactElement {
+    return (
+      <Menubar aria-label='Direction menus'>
+        <MenubarMenu defaultOpen>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent aria-label='File actions'>
+            <MenubarItem>New file</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+    );
+  }
+
+  it("lets menubar content inherit a document dir=rtl when no provider is present", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<DirectionalMenubar />);
+      const popup = await screen.findByRole("menu", {name: "File actions"});
+      expect(popup).not.toHaveAttribute("dir");
+      expect(popup.closest("[dir]")).toBe(html);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("writes dir=rtl on menubar content under an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalMenubar />
+      </DirectionProvider>,
+    );
+    expect(await screen.findByRole("menu", {name: "File actions"})).toHaveAttribute("dir", "rtl");
+  });
+});

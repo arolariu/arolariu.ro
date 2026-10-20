@@ -6,6 +6,7 @@ import {resolve} from "node:path";
 import postcss, {type Container} from "postcss";
 import selectorParser from "postcss-selector-parser";
 import * as React from "react";
+import {renderToString} from "react-dom/server";
 import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
@@ -954,6 +955,81 @@ describe("TabsList variants and indicator", () => {
     expect(screen.getByRole("tabpanel")).toHaveTextContent("Panel two");
     expect(authoredDeclaration(indicator, "background-color", media)).toBe("Highlight");
     expect(authoredDeclaration(two, "color", media)).toBe(variant === "default" ? "HighlightText" : "CanvasText");
+  });
+
+  it.each(["horizontal", "vertical"] as const)(
+    "keeps the selected %s default tab on system colours while the indicator is unmeasured and hidden in forced colors",
+    async (orientation) => {
+      // Without supplied geometry Base UI cannot measure the active tab, so it keeps the indicator `hidden`.
+      const user = userEvent.setup();
+      const media = ["(forced-colors: active)"];
+      render(
+        <Tabs
+          defaultValue='one'
+          orientation={orientation}>
+          <TabsList>
+            <TabsTrigger value='one'>One</TabsTrigger>
+            <TabsTrigger value='two'>Two</TabsTrigger>
+          </TabsList>
+        </Tabs>,
+      );
+      const indicator = screen.getByRole("presentation", {hidden: true});
+      const one = screen.getByRole("tab", {name: "One"});
+      const two = screen.getByRole("tab", {name: "Two"});
+      expect(indicator).toHaveAttribute("hidden");
+      expect(one).toHaveAttribute("data-active");
+      // HighlightText without its Highlight backplate would sit on Canvas; leave the system colours in charge instead.
+      expect(authoredDeclaration(one, "color", media)).not.toBe("HighlightText");
+      expect(authoredDeclaration(one, "forced-color-adjust", media)).toBeUndefined();
+      await user.click(two);
+      expect(two).toHaveAttribute("data-active");
+      expect(indicator).toHaveAttribute("hidden");
+      expect(authoredDeclaration(two, "color", media)).not.toBe("HighlightText");
+      expect(authoredDeclaration(two, "forced-color-adjust", media)).toBeUndefined();
+    },
+  );
+
+  it("keeps the selected default tab on system colours in server HTML, before the indicator is measured", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(
+      <Tabs defaultValue='one'>
+        <TabsList>
+          <TabsTrigger value='one'>One</TabsTrigger>
+          <TabsTrigger value='two'>Two</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    document.body.append(container);
+    try {
+      const media = ["(forced-colors: active)"];
+      const indicator = container.querySelector<HTMLElement>('[data-slot="tabs-indicator"]');
+      const one = container.querySelector<HTMLElement>('[data-slot="tabs-trigger"][data-active]');
+      if (!indicator || !one) throw new Error("Missing server-rendered indicator or active tab");
+      expect(indicator).toHaveAttribute("hidden");
+      expect(one).toHaveTextContent("One");
+      expect(authoredDeclaration(one, "color", media)).not.toBe("HighlightText");
+      expect(authoredDeclaration(one, "forced-color-adjust", media)).toBeUndefined();
+    } finally {
+      container.remove();
+    }
+  });
+
+  it("snaps the forced-colors backplate under the newly selected tab instead of sliding it", () => {
+    supplyTabGeometry();
+    render(
+      <Tabs defaultValue='one'>
+        <TabsList data-geometry='list'>
+          <TabsTrigger
+            value='one'
+            data-geometry='one'>
+            One
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    const indicator = screen.getByRole("presentation");
+    expect(authoredDeclaration(indicator, "transition-duration")).toBe("200ms");
+    expect(authoredDeclaration(indicator, "transition", ["(forced-colors: active)"])).toBe("none");
   });
 
   it("uses the existing semantic foreground token for the default indicator shadow", () => {

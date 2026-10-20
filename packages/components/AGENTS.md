@@ -5,10 +5,10 @@ Root `AGENTS.md` owns repository-wide versions, safety, React, TypeScript, testi
 
 ## Boundaries
 
-- Components are domain-agnostic UI primitives.
-- Do not import from `sites/**`.
+- `.github/instructions/components.instructions.md` owns the component-code rules, including domain independence, the `sites/**` import ban,
+  `render`-only composition, the React 19 `ref` contract, `cn()` class composition, colocated CSS Modules, tests and stories, the
+  `src/index.ts` export rule and `ACCESSIBILITY.md`.
 - Do not add invoice, merchant, account, or other product business logic.
-- Prefer Base UI composition and preserve accessibility behavior.
 
 ## File Shape
 
@@ -19,14 +19,6 @@ src/components/ui/<name>.test.tsx
 src/components/ui/<name>.stories.tsx
 src/index.ts
 ```
-
-- Colocate implementation, test, Storybook story, and a CSS Module when the component owns visual styling. Intentional style-free
-  composition primitives may omit the CSS file.
-- Export every public component and public type from `src/index.ts`.
-- Use `cn()` from `src/lib/utilities.ts` for class composition.
-- Use Base UI `render` composition; do not restore removed `asChild` or legacy public adapters.
-- The package is React 19-only. Receive a typed `ref` prop and preserve callback cleanup and object-ref ownership.
-- Apply the component/consumer accessibility contract in `ACCESSIBILITY.md`; emulated tests do not establish full WCAG conformance.
 
 ## Local Verification
 

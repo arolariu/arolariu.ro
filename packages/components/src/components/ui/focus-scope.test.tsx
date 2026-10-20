@@ -5,6 +5,7 @@ import {createPortal} from "react-dom";
 import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it, vi} from "vitest";
 
+import {isFocusAvailable} from "../../lib/_focus-availability";
 import {Button} from "./button";
 import {FocusScope} from "./focus-scope";
 import * as stories from "./focus-scope.stories";
@@ -2623,6 +2624,177 @@ describe("FocusScope", () => {
       rerender(tree(false, true));
 
       expect(trigger).toHaveFocus();
+    });
+  });
+
+  describe("per-pass DOM evaluation", () => {
+    it.each(["Tab keydown", "autoFocus mount"] as const)(
+      "reads each element's computed style once per %s pass, sharing ancestors across many candidates",
+      (pass) => {
+        const view = document.defaultView;
+        if (!view) throw new TypeError("Expected the test document's own window.");
+        // Role queries read computed styles too, so elements come from refs and selectors, never from role queries.
+        const styleReads = vi.spyOn(view, "getComputedStyle");
+        const firstRef = createRef<HTMLButtonElement>();
+        const sectionRef = createRef<HTMLElement>();
+        const listRef = createRef<HTMLUListElement>();
+        const lastRef = createRef<HTMLButtonElement>();
+        const {container} = render(
+          <FocusScope
+            autoFocus={pass === "autoFocus mount"}
+            restoreFocus={false}>
+            <button
+              type='button'
+              ref={firstRef}>
+              First pass stop
+            </button>
+            <section ref={sectionRef}>
+              <ul ref={listRef}>
+                {Array.from({length: 8}, (_, index) => `Shared ancestor stop ${String(index + 1)}`).map((label) => (
+                  <li key={label}>
+                    <button type='button'>{label}</button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <ShadowWidget
+              label='Pass shadow host'
+              tabIndex={0}>
+              <button type='button'>Shadow pass stop</button>
+            </ShadowWidget>
+            <button
+              type='button'
+              ref={lastRef}>
+              Last pass stop
+            </button>
+          </FocusScope>,
+        );
+        const first = firstRef.current;
+        const section = sectionRef.current;
+        const list = listRef.current;
+        const last = lastRef.current;
+        const host = container.querySelector<HTMLElement>('[aria-label="Pass shadow host"]');
+        const scope = first?.parentElement;
+        if (!first || !section || !list || !last || !host || !scope) {
+          throw new TypeError("Expected the pass candidates and their shared ancestors.");
+        }
+        if (pass === "Tab keydown") {
+          last.focus();
+          styleReads.mockClear();
+          expect(fireEvent.keyDown(last, {key: "Tab"})).toBe(false);
+        }
+        expect(first).toHaveFocus();
+        const reads = new Map<Element, number>();
+        for (const [target] of styleReads.mock.calls) reads.set(target, (reads.get(target) ?? 0) + 1);
+        const sharedAncestors = [list, section, scope, container, document.body, document.documentElement];
+        const candidates = [first, ...list.querySelectorAll("button"), host, last];
+
+        expect(sharedAncestors.map((element) => reads.get(element))).toEqual(sharedAncestors.map(() => 1));
+        expect(candidates.map((element) => reads.get(element))).toEqual(candidates.map(() => 1));
+        expect(Math.max(...reads.values())).toBe(1);
+      },
+    );
+
+    it("observes ancestor and candidate style changes made between Tab presses", () => {
+      render(
+        <FocusScope restoreFocus={false}>
+          <div>
+            <button type='button'>Leading pass stop</button>
+          </div>
+          <button type='button'>Middle pass stop</button>
+          <button type='button'>Trailing pass stop</button>
+        </FocusScope>,
+      );
+      const leading = screen.getByRole("button", {name: "Leading pass stop"});
+      const middle = screen.getByRole("button", {name: "Middle pass stop"});
+      const trailing = screen.getByRole("button", {name: "Trailing pass stop"});
+      const leadingGroup = leading.parentElement;
+      if (!leadingGroup) throw new TypeError("Expected the leading stop's own ancestor.");
+      trailing.focus();
+      expect(fireEvent.keyDown(trailing, {key: "Tab"})).toBe(false);
+      expect(leading).toHaveFocus();
+
+      // An ancestor hidden after the first press removes its stop from the next pass.
+      leadingGroup.style.display = "none";
+      trailing.focus();
+      expect(fireEvent.keyDown(trailing, {key: "Tab"})).toBe(false);
+      expect(middle).toHaveFocus();
+
+      // The restored ancestor and the newly invisible final candidate are both read afresh.
+      leadingGroup.style.display = "";
+      trailing.style.visibility = "hidden";
+      expect(fireEvent.keyDown(middle, {key: "Tab"})).toBe(false);
+      expect(leading).toHaveFocus();
+    });
+
+    it("leaves uncached availability callers reading every computed style on every call", () => {
+      const stopRef = createRef<HTMLButtonElement>();
+      render(
+        <ul>
+          <li>
+            <button
+              type='button'
+              ref={stopRef}>
+              Uncached stop
+            </button>
+          </li>
+        </ul>,
+      );
+      const stop = stopRef.current;
+      const list = stop?.closest("ul");
+      const view = document.defaultView;
+      if (!stop || !list || !view) throw new TypeError("Expected the uncached stop, its list and the document window.");
+      const styleReads = vi.spyOn(view, "getComputedStyle");
+      const readsOf = (element: Element): number => styleReads.mock.calls.filter(([target]) => target === element).length;
+
+      // useFocusManager and mobile DropDrawer focus recovery pass no cache: each call walks every ancestor's
+      // `display` and then reads the element's own `visibility`, exactly as before per-pass caching existed.
+      expect(isFocusAvailable(stop, true)).toBe(true);
+      expect(isFocusAvailable(stop)).toBe(true);
+
+      expect([stop, list, document.documentElement].map(readsOf)).toEqual([4, 2, 2]);
+    });
+
+    it("resolves native radio groups with one owner-tree input query per Tab keydown", () => {
+      render(
+        <FocusScope restoreFocus={false}>
+          <button type='button'>Before radio groups</button>
+          {["Small", "Medium", "Large"].map((size) => (
+            <label key={size}>
+              <input
+                type='radio'
+                name='pass-size'
+              />
+              {size}
+            </label>
+          ))}
+          <label>
+            <input
+              type='radio'
+              name='pass-color'
+              defaultChecked
+            />
+            Red
+          </label>
+          <label>
+            <input
+              type='radio'
+              name='pass-color'
+            />
+            Blue
+          </label>
+          <button type='button'>After radio groups</button>
+        </FocusScope>,
+      );
+      const before = screen.getByRole("button", {name: "Before radio groups"});
+      const after = screen.getByRole("button", {name: "After radio groups"});
+      after.focus();
+      const ownerTreeQueries = vi.spyOn(document, "querySelectorAll");
+
+      expect(fireEvent.keyDown(after, {key: "Tab"})).toBe(false);
+
+      expect(before).toHaveFocus();
+      expect(ownerTreeQueries.mock.calls.filter(([selector]) => selector === "input")).toHaveLength(1);
     });
   });
 

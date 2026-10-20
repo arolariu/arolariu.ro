@@ -21,14 +21,16 @@ Owns constraints unique to `@arolariu/components`.
 
 - Keep public components domain-agnostic.
 - Do not import from `sites/**`.
-- Prefer Base UI `render` composition.
-- Expose canonical `render` composition only; do not reintroduce removed deprecated props, aliases or legacy adapters.
-- Use the package's React 19 ref-as-prop contract with precise DOM types and callback cleanup.
+- Prefer Base UI composition; expose canonical `render` composition only; do not reintroduce `asChild`, removed deprecated props or aliases,
+  and do not add legacy adapters.
+- The package is React 19-only: receive DOM refs as typed `ref` props with precise DOM types, and preserve callback-ref cleanup and
+  object-ref ownership.
 - Compose classes with the existing `cn()` helper.
 - Style-owning components use a colocated CSS Module; intentional style-free composition primitives may omit one. Do not use inline style
   objects.
 - Preserve keyboard, focus, disabled, and ARIA behavior.
-- Follow `packages/components/ACCESSIBILITY.md` for applicable WCAG 2.2 A/AA criteria and component/consumer verification boundaries.
+- Follow `packages/components/ACCESSIBILITY.md` for applicable WCAG 2.2 A/AA criteria and component/consumer verification boundaries;
+  emulated tests do not establish full WCAG conformance.
 - Colocate a focused test and Storybook story.
 - Export every public component and public type from `src/index.ts`.
 

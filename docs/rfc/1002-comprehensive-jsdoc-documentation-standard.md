@@ -36,27 +36,36 @@ not describe a polymorphic ref as a fixed button/div, a nullable generic value a
 standalone prop/state names accompany supported namespaces through explicit package exports; collision aliases such as `RHFFieldError`,
 `RechartsLabel` and `ToastData` must be deliberate and explained.
 
-Version-scoped MIGRATION/README/EXAMPLES/CHANGELOG entries must distinguish canonical APIs from explicit legacy adapters, with exact
-before/after imports and composition. Preserve historical guides rather than overwriting old-version instructions. Document breaking
-defaults, native tags, error/count limits, value/nullability, callback/render ownership, retained extensions and intentional no-ops. Private
-underscore helpers must not appear as advertised package APIs.
+Version-scoped MIGRATION/README/EXAMPLES/CHANGELOG entries must distinguish canonical APIs from removed ones, with exact before/after
+imports and composition. Preserve historical guides rather than overwriting old-version instructions. Document breaking defaults, native
+tags, error/count limits, value/nullability, callback/render ownership, retained extensions and intentional no-ops. Private underscore
+helpers must not appear as advertised package APIs.
 
-Release preparation is not publication or evidence that producer gates passed. Source tests/types, built/packed declarations/modules/CSS,
-React-floor source evidence, React-floor packed evidence and physical-browser limits are different claims. Website migration examples remain
-follow-up instructions until an approved artifact is actually published and its adoption separately authorized.
+Source tests/types, built/packed declarations/modules/CSS, React-floor source evidence, React-floor packed evidence and physical-browser
+limits are different claims; attribute each to its own evidence. Shipped documentation and RFCs state the verification commands and what
+they cover, not dated run logs, test or file counts, or review identifiers, which go stale with every change.
 
-The parent-reported **2026-10-14 final post-wave component validation checkpoint** is a distinct, scoped claim:
-`AROLARIU_COMPONENTS_PACKED_ROOT` identified the actual extracted artifact, and
-`npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot` exited **0** with **126 files / 3,043 tests / no
-skips**, including the three actual packed contracts. Start **10:50:17 local**, duration **333.64 seconds**. Coverage was statements
-**98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)** and lines **99.25% (3573/3600)**, with unchanged
-thresholds/exclusions. Actual isolated React18 source and packed lanes each passed **18 fixtures**.
+#### Package prop documentation
 
-The parent also reported a clear final scoped review (`a3e8b0b6`): I1/I2 and M1–M10 all addressed, zero remaining and zero new Important
-regressions. Configured ESLint and Prettier for all **383 changed files** passed; those results must remain separately attributed.
-Documentation must preserve that attribution and scope: this is not an all-monorepo pass or publication approval. Known 15 baseline
-hook/story strong-type diagnostics, website fixture/build-environment blocks, physical-browser acceptance and publication/adoption approval
-remain separate. Expected Motion/npm notices remain visible; fixture-only changes removed React Tabs act warnings without changing dist.
+Every public prop that an `@arolariu/components` component declares or re-declares carries its own JSDoc description, whether the prop is
+declared in an interface, a type alias or an intersection member. An optional prop with a default states it with `@default`, matching the
+implementation, and the tag changes whenever the default does; required props have no `@default`. A wrapper that overrides an inherited
+default (for example Base UI placement) re-declares that prop with its own description and `@default` instead of inheriting the primitive's
+documentation. Props passed through unchanged may rely on the primitive's documentation.
+
+```typescript
+export type ExampleTriggerProps = Readonly<{
+  /**
+   * Accessible name for the icon-only trigger. Localize it.
+   */
+  label: string;
+  /**
+   * Side of the trigger the popup opens on.
+   * @default "bottom"
+   */
+  side?: "top" | "bottom";
+}>;
+```
 
 ---
 
@@ -1536,7 +1545,9 @@ Use this checklist when documenting new code:
 
 - [ ] Component purpose documented
 - [ ] Rendering context specified (Server/Client/Edge)
-- [ ] Props documented (if not using TypeScript interface)
+- [ ] Props documented: application components may rely on a TypeScript props interface; `@arolariu/components` props follow
+      [Package prop documentation](#package-prop-documentation) (a description on every public prop the package declares or re-declares and
+      `@default` on every such defaulted optional prop, whether in an interface or a type alias; pass-through props excepted)
 - [ ] Dependencies documented (context providers, hooks required)
 - [ ] Performance considerations (memoization, dynamic imports)
 - [ ] `@example` showing typical usage in JSX

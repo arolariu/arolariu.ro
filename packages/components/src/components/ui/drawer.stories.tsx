@@ -184,7 +184,8 @@ export const WithScrollableContent: Story = {
 };
 
 /**
- * Drawer without footer for read-only content.
+ * Drawer without a footer for read-only content. A modal drawer still needs a close control inside its popup:
+ * touch screen-reader users cannot press Escape or perform the swipe gesture.
  */
 export const WithoutFooter: Story = {
   render: () => (
@@ -197,6 +198,7 @@ export const WithoutFooter: Story = {
         </DrawerHeader>
         <div className={storyClasses.storyContent}>
           <p>We're excited to have you here. Explore the features and let us know if you need any help getting started.</p>
+          <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
         </div>
       </DrawerContent>
     </Drawer>
@@ -383,7 +385,7 @@ export const SeparateSwipeHandle: Story = {
       <DrawerContent
         render={(props) => (
           <section {...props}>
-            <DrawerSwipeHandle aria-label='Decorative drag handle' />
+            <DrawerSwipeHandle />
             {props.children}
           </section>
         )}>

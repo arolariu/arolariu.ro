@@ -207,6 +207,7 @@ describe("Controls accessibility CSS contracts", () => {
     "progress",
     "collapsible",
     "tabs",
+    "error-boundary",
   ])("%s keeps accessibility media independent of hover and motion preferences", (family) => {
     const authored = parse(readFileSync(join(import.meta.dirname, `${family}.module.css`), "utf8"));
     authored.walkAtRules("media", (query) => {

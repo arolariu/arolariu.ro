@@ -50,7 +50,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Native registry engine, not cmdk. Search uses case-insensitive substrings by default. Rendered order is kept and navigated; while searching, positive custom scores reorder groups/items with rendered-order ties, and clearing restores rendered order. Root value controls selection; CommandInput value controls search. Home/End, arrows, Meta endpoints, Alt groups and default Ctrl+n/j/p/k navigate.",
+          "Native registry engine, not cmdk. Search uses case-insensitive substrings by default. Rendered order is kept and navigated; while searching, positive custom scores reorder groups/items with rendered-order ties, and clearing restores rendered order. Root value controls selection (keep option values unique); CommandInput value controls search. Home/End, arrows, Meta endpoints, Alt+arrow group boundaries in visual order and default Ctrl+n/j/p/k navigate.",
       },
     },
   },
@@ -122,7 +122,7 @@ export const WithIcons: Story = {
   ),
 };
 
-/** Alt+arrows jump between registered groups; the pinned group inherits forceMount. */
+/** Alt+arrows jump to the next/previous group boundary in visual order; the pinned group inherits forceMount. */
 export const WithMultipleGroups: Story = {
   render: () => (
     <Command

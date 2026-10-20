@@ -74,7 +74,7 @@ export const RichContent: Story = {
         <EmptyTitle>
           <h2>Your library is empty</h2>
         </EmptyTitle>
-        <EmptyDescription as='div'>
+        <EmptyDescription render={<div />}>
           <p>There are several ways to get started:</p>
           <ul>
             <li>Create an item.</li>

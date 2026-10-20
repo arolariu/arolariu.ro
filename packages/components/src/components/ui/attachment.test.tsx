@@ -18,7 +18,7 @@ import {
   AttachmentTrigger,
 } from "./attachment";
 import styles from "./attachment.module.css";
-import type {Button} from "./button";
+import type {Button, ButtonProps} from "./button";
 
 const css = parse(readFileSync(join(import.meta.dirname, "attachment.module.css"), "utf8"));
 
@@ -385,6 +385,55 @@ describe("Attachment", () => {
     expect(calls).toEqual(["remove"]);
     expect(screen.getByRole("button", {name: "Remove"})).toHaveAttribute("data-size", "icon-sm");
     expect(screen.getByRole("button", {name: "Remove"})).toHaveAttribute("data-variant", "destructive");
+  });
+
+  it("review correction: re-documents the ghost/icon-xs action presets without loosening the required name", () => {
+    type InheritedActionProps = Readonly<ButtonProps & ({readonly "aria-label": string} | {readonly "aria-labelledby": string})>;
+    // The re-documented union stays interchangeable with the Button-inherited props it replaces.
+    expectTypeOf<AttachmentAction.Props>().toExtend<InheritedActionProps>();
+    expectTypeOf<InheritedActionProps>().toExtend<AttachmentAction.Props>();
+    // Every action is a valid Button, but a Button without a name is not a valid action.
+    expectTypeOf<AttachmentAction.Props>().toExtend<ButtonProps>();
+    expectTypeOf<ButtonProps>().not.toExtend<AttachmentAction.Props>();
+    expectTypeOf<NonNullable<AttachmentAction.Props["variant"]>>().toEqualTypeOf<NonNullable<ButtonProps["variant"]>>();
+    expectTypeOf<NonNullable<AttachmentAction.Props["size"]>>().toEqualTypeOf<NonNullable<ButtonProps["size"]>>();
+
+    // @ts-expect-error The default icon-xs action needs a caller-localized name.
+    const unnamed = <AttachmentAction />;
+    // @ts-expect-error A text-size action still needs its own name, unlike a plain text Button.
+    const unnamedText = <AttachmentAction size='sm'>Remove</AttachmentAction>;
+    const unknownVariant = (
+      <AttachmentAction
+        aria-label='Remove Budget.xlsx'
+        // @ts-expect-error Re-documenting `variant` keeps Button's variant vocabulary.
+        variant='primary'
+      />
+    );
+    expect([unnamed, unnamedText, unknownVariant]).toHaveLength(3);
+
+    render(
+      <>
+        <AttachmentAction
+          aria-label='Remove Budget.xlsx'
+          variant={undefined}
+          size={undefined}>
+          ×
+        </AttachmentAction>
+        <span id='budget-title'>Budget.xlsx</span>
+        <AttachmentAction
+          aria-labelledby='budget-title'
+          variant='destructive'
+          size='icon-sm'>
+          ×
+        </AttachmentAction>
+      </>,
+    );
+    const presets = screen.getByRole("button", {name: "Remove Budget.xlsx"});
+    expect(presets).toHaveAttribute("data-variant", "ghost");
+    expect(presets).toHaveAttribute("data-size", "icon-xs");
+    const overridden = screen.getByRole("button", {name: "Budget.xlsx"});
+    expect(overridden).toHaveAttribute("data-variant", "destructive");
+    expect(overridden).toHaveAttribute("data-size", "icon-sm");
   });
 
   it("retains navigation and cancellation through the action's real Button render path", () => {

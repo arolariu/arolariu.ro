@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
-import {cleanup, render, screen, waitFor} from "@testing-library/react";
+import {act, cleanup, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -133,5 +133,85 @@ describe("FlipButton with real Motion", () => {
     );
     await user.click(screen.getByRole("button"));
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
+describe("FlipButton reduced-motion subscription", () => {
+  let reduced = false;
+  let media: MediaQueryList;
+  const constructedObservers = vi.fn();
+  class CountingObserver {
+    constructor() {
+      constructedObservers();
+    }
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  beforeEach(() => {
+    reduced = false;
+    constructedObservers.mockClear();
+    media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+    vi.spyOn(window, "matchMedia").mockReturnValue(media);
+    vi.stubGlobal("IntersectionObserver", CountingObserver);
+  });
+  afterEach(() => {
+    vi.mocked(window.matchMedia).mockRestore();
+  });
+
+  it("subscribes to the reduced-motion preference only: no per-button IntersectionObserver or visibility listener", () => {
+    const addDocumentListener = vi.spyOn(document, "addEventListener");
+    const addMediaListener = vi.spyOn(media, "addEventListener");
+    const removeMediaListener = vi.spyOn(media, "removeEventListener");
+    try {
+      const {unmount} = render(
+        <>
+          <FlipButton
+            frontText='Show details'
+            backText='Open details'
+          />
+          <FlipButton
+            frontText='Show more'
+            backText='Open more'
+          />
+        </>,
+      );
+      expect(constructedObservers).not.toHaveBeenCalled();
+      expect(addDocumentListener.mock.calls.filter(([type]) => type === "visibilitychange")).toHaveLength(0);
+      expect(addMediaListener).toHaveBeenCalledWith("change", expect.any(Function));
+      unmount();
+      expect(removeMediaListener).toHaveBeenCalledWith("change", expect.any(Function));
+    } finally {
+      addDocumentListener.mockRestore();
+    }
+  });
+
+  it("flips instantly once a live reduced-motion preference applies, whatever the caller transition", async () => {
+    const user = userEvent.setup();
+    render(
+      <FlipButton
+        frontText='Show details'
+        backText='Open details'
+        transition={{duration: 10, ease: "linear"}}
+      />,
+    );
+    const button = screen.getByRole("button", {name: "Show details / Open details"});
+    const [front, back] = button.querySelectorAll("span");
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    await user.hover(button);
+    await waitFor(
+      () => {
+        expect(front).toHaveStyle({opacity: "0"});
+        expect(back).toHaveStyle({opacity: "1"});
+      },
+      {timeout: 500},
+    );
   });
 });

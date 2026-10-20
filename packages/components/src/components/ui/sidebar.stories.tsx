@@ -186,7 +186,8 @@ function ControlledDemo(): React.JSX.Element {
   return (
     <SidebarProvider
       open={open}
-      onOpenChange={setOpen}>
+      onOpenChange={setOpen}
+      persistState={false}>
       <Sidebar collapsible='icon'>
         <Navigation />
       </Sidebar>
@@ -275,7 +276,7 @@ export const Collapsible: Story = {
     />
   ),
 };
-/** Both the sidebar trigger and an owning control use controlled state. */
+/** Both the sidebar trigger and an owning control use controlled state; the owner keeps the state, so `persistState={false}` writes no cookie. */
 export const Controlled: Story = {render: () => <ControlledDemo />};
 /** Floating panels reserve full expanded space and icon-only collapsed space. */
 export const Floating: Story = {args: {variant: "floating", collapsible: "icon"}};

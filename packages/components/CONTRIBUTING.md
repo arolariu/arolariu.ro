@@ -31,8 +31,7 @@ Please align new contributions with the current source architecture in:
 
 ### Prerequisites
 
-- Node.js 22+
-- npm
+- Node.js and npm versions accepted by the `engines` field of the repository root `package.json`
 - Git
 
 ### Setup
@@ -190,8 +189,8 @@ That usually means:
 
 ### Canonical React 19 APIs
 
-The package is React 19-only. Receive `ref` as a typed prop and preserve object/callback cleanup behavior. Do not restore removed `asChild`,
-`Legacy*`, deprecated aliases or no-op props.
+The package is React 19-only. Receive `ref` as a typed prop and preserve object/callback cleanup behavior. Do not reintroduce `asChild`,
+deprecated aliases or no-op props, and do not add legacy adapters.
 
 Use Base UI's `render` model and exercise the applicable criteria in [ACCESSIBILITY.md](./ACCESSIBILITY.md).
 

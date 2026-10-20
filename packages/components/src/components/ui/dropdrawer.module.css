@@ -135,6 +135,13 @@
   flex-shrink: 0;
 }
 
+/* Mobile drill-down panels follow the DOM direction, so these chevrons also mirror with an inherited dir="rtl"; desktop
+   submenu chevrons belong to DropdownMenuSubTrigger, which mirrors only with Base UI's direction (data-direction). */
+.mobileContent .chevron:dir(rtl),
+.chevron[data-direction="rtl"] {
+  transform: rotate(180deg);
+}
+
 .inset {
   padding-inline-start: 2rem;
 }

@@ -41,8 +41,10 @@
   outline-offset: 2px;
 }
 
-.reveal:disabled {
-  cursor: default;
+/* Revealed but still focusable (never natively disabled under the keyboard user): activation is ignored. */
+.reveal[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .status {
@@ -66,5 +68,10 @@
     border-color: ButtonText;
     color: ButtonText;
     background: ButtonFace;
+  }
+  .reveal[aria-disabled="true"] {
+    border-color: GrayText;
+    color: GrayText;
+    opacity: 1;
   }
 }

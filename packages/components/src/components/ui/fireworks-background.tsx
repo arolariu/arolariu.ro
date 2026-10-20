@@ -11,6 +11,7 @@ const rand = (min: number, max: number): number => Math.random() * (max - min) +
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min) + min);
 const randColor = (): string => `hsl(${randInt(0, 360)}, 100%, 50%)`;
 type ValueRange = number | Readonly<{min: number; max: number}>;
+type Palette = string | ReadonlyArray<string>;
 const defaultFireworkSpeed: ValueRange = {min: 4, max: 8};
 const defaultFireworkSize: ValueRange = {min: 2, max: 5};
 const defaultParticleSpeed: ValueRange = {min: 2, max: 7};
@@ -24,7 +25,7 @@ function validateRange(value: ValueRange): void {
   }
 }
 
-function validatePalette(color: string | ReadonlyArray<string> | undefined): void {
+function validatePalette(color: Palette | undefined): void {
   if (color === undefined) return;
   const palette = typeof color === "string" ? [color] : color;
   if (palette.length === 0) throw new RangeError("FireworksBackground palette must contain colors.");
@@ -206,7 +207,7 @@ const getValueByRange = (range: ValueRange): number => {
   return rand(range.min, range.max);
 };
 
-const getColor = (color: string | ReadonlyArray<string> | undefined): string => {
+const getColor = (color: Palette | undefined): string => {
   if (Array.isArray(color)) {
     const selected = color[randInt(0, color.length)];
     if (typeof selected !== "string" || selected.trim().length === 0) {
@@ -222,6 +223,23 @@ const getColor = (color: string | ReadonlyArray<string> | undefined): string => 
   return randColor();
 };
 
+/** Keys a validated speed/size range on its bounds: a new-but-equal inline `{min, max}` object keeps one identity. */
+function useStableRange(range: ValueRange): ValueRange {
+  const min = typeof range === "number" ? range : range.min;
+  const max = typeof range === "number" ? range : range.max;
+  return React.useMemo((): ValueRange => (min === max ? min : {min, max}), [min, max]);
+}
+
+/** Keys a validated palette on its colors: a new-but-equal inline array keeps one identity. */
+function useStablePalette(color: Palette | undefined): Palette | undefined {
+  const paletteKey = typeof color === "object" ? JSON.stringify(color) : undefined;
+  const palette = React.useMemo(
+    (): ReadonlyArray<string> | undefined => (paletteKey === undefined ? undefined : (JSON.parse(paletteKey) as string[])),
+    [paletteKey],
+  );
+  return palette ?? color;
+}
+
 /** Props accepted by {@link FireworksBackground}. */
 export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithRef<"div">, "color">, VisualEffectOptions {
   /**
@@ -233,28 +251,42 @@ export interface FireworksBackgroundProps extends Omit<React.ComponentPropsWithR
   /** HTML attributes forwarded to the internal `<canvas>` element. @default undefined */
   readonly canvasProps?: React.HTMLAttributes<HTMLCanvasElement>;
   /**
-   * Nonnegative finite automatic launch frequency; `0` is click-only mode, where only the launch control fires. Timers are
-   * bounded to at least 100ms. @default 1
+   * Nonnegative finite automatic launch frequency; `0` is click-only mode, where only the launch control fires. The first
+   * automatic launch fires when motion starts; each later one waits 1000–1800 ms divided by `population`, clamped to
+   * 1000 ms–60 s, so a higher population never launches more than once per second. User launches are also limited to one per
+   * second. @default 1
    */
   readonly population?: number;
-  /** Fixed color or palette used for generated fireworks and particles. @default undefined */
+  /**
+   * Fixed color or palette used for generated fireworks and particles; the static frame uses the fixed color or the first
+   * palette entry. Compared by value: a new-but-equal inline array does not restart the canvas. @default undefined
+   */
   readonly color?: string | ReadonlyArray<string>;
-  /** Launch velocity or range used for ascending fireworks. @default {min: 4, max: 8} */
+  /** Launch velocity or range used for ascending fireworks; ranges are compared by value. @default {min: 4, max: 8} */
   readonly fireworkSpeed?: ValueRange;
-  /** Stroke width or range used for the ascending firework trail. @default {min: 2, max: 5} */
+  /** Stroke width or range used for the ascending firework trail; ranges are compared by value. @default {min: 2, max: 5} */
   readonly fireworkSize?: ValueRange;
-  /** Velocity or range used for explosion particles. @default {min: 2, max: 7} */
+  /** Velocity or range used for explosion particles; ranges are compared by value. @default {min: 2, max: 7} */
   readonly particleSpeed?: ValueRange;
-  /** Size or range used for explosion particles. @default {min: 1, max: 5} */
+  /**
+   * Size or range used for explosion particles; the static frame uses the range midpoint. Ranges are compared by value.
+   * @default {min: 1, max: 5}
+   */
   readonly particleSize?: ValueRange;
 }
 
 /**
- * Renders an auto-launching fireworks display inside a clickable background canvas.
+ * Renders an auto-launching fireworks display on a decorative canvas with a native launch control.
  *
  * @remarks
  * - Native canvas physics, capped at 16 trails and 2048 particles
- * - Element-sized DPR backing bitmap, with a static starburst when motion is paused
+ * - The canvas is decorative (`aria-hidden`) and background clicks do nothing: only the native launch button, rendered after
+ *   any children, launches fireworks, with the keyboard or a pointer
+ * - Element-sized DPR backing bitmap, with a deterministic static starburst when motion is paused: the fixed color or the
+ *   first palette entry (default purple) at the `particleSize` midpoint, identical on every repaint
+ * - Palette and range props are compared by value, so new-but-equal inline arrays and objects (for example
+ *   `fireworkSpeed={{min: 4, max: 8}}`) do not restart the canvas, clear fireworks in flight or force a layout read on a
+ *   parent re-render; a changed value restarts it with the new physics
  * - Automatic launches settle after five seconds unless `loop`; the native launch control stays available afterwards (and in
  *   `population={0}` click-only mode): each user launch animates until its fireworks and particles finish, then returns to the
  *   static frame without restarting automatic launches. Under reduced motion, `motionPaused` or a hidden document the control
@@ -285,18 +317,25 @@ function FireworksBackground({
   children,
   canvasProps,
   population = 1,
-  color,
-  fireworkSpeed = defaultFireworkSpeed,
-  fireworkSize = defaultFireworkSize,
-  particleSpeed = defaultParticleSpeed,
-  particleSize = defaultParticleSize,
+  color: colorProp,
+  fireworkSpeed: fireworkSpeedProp = defaultFireworkSpeed,
+  fireworkSize: fireworkSizeProp = defaultFireworkSize,
+  particleSpeed: particleSpeedProp = defaultParticleSpeed,
+  particleSize: particleSizeProp = defaultParticleSize,
   ...props
 }: Readonly<FireworksBackgroundProps>): React.JSX.Element {
   const {className: canvasClassName, ...canvasNativeProps} = canvasProps ?? {};
   if (!Number.isFinite(population) || population < 0)
     throw new RangeError("FireworksBackground population must be finite and nonnegative.");
-  for (const range of [fireworkSpeed, fireworkSize, particleSpeed, particleSize]) validateRange(range);
-  validatePalette(color);
+  for (const range of [fireworkSpeedProp, fireworkSizeProp, particleSpeedProp, particleSizeProp]) validateRange(range);
+  validatePalette(colorProp);
+  // Value-keyed physics: new-but-equal inline palettes and ranges keep one identity, so a parent re-render neither restarts
+  // the canvas effect below (forced layout, cleared fireworks, repainted static frame) nor reschedules its timers.
+  const color = useStablePalette(colorProp);
+  const fireworkSpeed = useStableRange(fireworkSpeedProp);
+  const fireworkSize = useStableRange(fireworkSizeProp);
+  const particleSpeed = useStableRange(particleSpeedProp);
+  const particleSize = useStableRange(particleSizeProp);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const {paused, reducedMotion, documentHidden} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
@@ -404,7 +443,9 @@ function FireworksBackground({
 
     const drawStatic = (): void => {
       context.clearRect(0, 0, maxX, maxY);
-      const staticColor = getColor(color ?? "#a855f7");
+      // Deterministic: the same props repaint the same starburst (no random palette pick or particle size per repaint).
+      const staticColor = typeof color === "string" ? color : (color?.[0] ?? "#a855f7");
+      const staticSize = typeof particleSize === "number" ? particleSize : (particleSize.min + particleSize.max) / 2;
       for (let index = 0; index < 24; index += 1) {
         const angle = (index / 24) * Math.PI * 2;
         const radius = Math.min(maxX, maxY) * 0.25;
@@ -416,7 +457,7 @@ function FireworksBackground({
           angle,
           0,
           1,
-          getValueByRange(particleSize),
+          staticSize,
         );
         particle.draw(context);
       }

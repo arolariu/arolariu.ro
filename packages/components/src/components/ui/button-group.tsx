@@ -7,12 +7,13 @@ import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
+import {buttonGroupVariants} from "./_button-group-variants";
 import styles from "./button-group.module.css";
 
 /** Supported layout directions for {@link ButtonGroup}. */
 export type ButtonGroupOrientation = "horizontal" | "vertical";
 
-/** Options for generating {@link ButtonGroup} layout classes. */
+/** Options for generating {@link ButtonGroup} layout classes with {@link buttonGroupVariants}. */
 export interface ButtonGroupVariantOptions {
   /** Orientation used to resolve the root style classes. @default "horizontal" */
   readonly orientation?: ButtonGroupOrientation;
@@ -54,21 +55,6 @@ export type ButtonGroupTextProps = Readonly<
  * Props for the {@link ButtonGroupSeparator} component.
  */
 export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
-
-/**
- * Returns the CSS class list for a button group root.
- *
- * @param options - Variant options used to derive the generated class string.
- * @returns The merged class name string for the requested orientation.
- *
- * @example
- * ```tsx
- * const className = buttonGroupVariants({orientation: "vertical"});
- * ```
- */
-function buttonGroupVariants({orientation = "horizontal", className}: Readonly<ButtonGroupVariantOptions> = {}): string {
-  return cn(styles.root, orientation === "vertical" ? styles.vertical : styles.horizontal, className);
-}
 
 /**
  * Aligns related buttons into a single visual control group.
@@ -129,8 +115,8 @@ const ButtonGroupText = ({ref, className, render, children, ...props}: Readonly<
  * Inserts a separator between grouped controls.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a wrapped `Separator` component
+ * - Renders the package `Separator` (Base UI Separator), vertical by default for a horizontal group
+ * - `className` may be a string or a Base UI state callback; its result is merged after the group separator class
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -150,7 +136,7 @@ const ButtonGroupSeparator = ({
     ref={ref}
     data-slot='button-group-separator'
     orientation={orientation}
-    className={cn(styles.separator, className)}
+    className={(state) => cn(styles.separator, typeof className === "function" ? className(state) : className)}
     {...props}
   />
 );

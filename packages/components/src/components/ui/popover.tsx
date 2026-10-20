@@ -14,14 +14,13 @@ export type PopoverTriggerProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BasePopover.Trigger>, "ref"> & React.RefAttributes<HTMLElement>
 >;
 
-/** Popup semantics/focus plus explicit Positioner and Portal options. `sideOffset` defaults to 4. */
+/** Popup semantics/focus plus explicit Positioner and Portal options. */
 export type PopoverContentProps = Readonly<
   React.ComponentPropsWithRef<typeof BasePopover.Popup>
     & Pick<
       React.ComponentPropsWithRef<typeof BasePopover.Positioner>,
       | "side"
       | "align"
-      | "sideOffset"
       | "alignOffset"
       | "anchor"
       | "positionMethod"
@@ -32,7 +31,10 @@ export type PopoverContentProps = Readonly<
       | "arrowPadding"
       | "disableAnchorTracking"
     >
-    & Pick<React.ComponentPropsWithRef<typeof BasePopover.Portal>, "keepMounted" | "container">
+    & Pick<React.ComponentPropsWithRef<typeof BasePopover.Portal>, "keepMounted" | "container"> & {
+      /** Distance in pixels between the trigger and the popup, or a function of their sizes, side and alignment. @default 4 */
+      sideOffset?: BasePopover.Positioner.Props["sideOffset"];
+    }
 >;
 
 /** Native structural header; does not register a name or description. */
@@ -46,13 +48,22 @@ export type PopoverDescriptionProps = Readonly<React.ComponentPropsWithRef<typeo
  * Coordinates popover state and accessibility behavior.
  *
  * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/popover | Base UI Popover}
- * - Preserves the underlying primitive API for advanced composition
+ * - Client-only (`"use client"`); renders no DOM element. Compose a `PopoverTrigger` and a `PopoverContent` inside it.
+ * - Built on {@link https://base-ui.com/react/components/popover | Base UI Popover}, which owns open state, focus
+ *   management, dismissal and `modal` behavior.
+ * - Name the `role="dialog"` popup with a `PopoverTitle` (or an `aria-label` on `PopoverContent`).
  *
  * @example
  * ```tsx
- * <Popover>Content</Popover>
+ * <Popover>
+ *   <PopoverTrigger render={<Button variant='outline' />}>Share</PopoverTrigger>
+ *   <PopoverContent>
+ *     <PopoverHeader>
+ *       <PopoverTitle>Share document</PopoverTitle>
+ *       <PopoverDescription>Anyone with the link can view it.</PopoverDescription>
+ *     </PopoverHeader>
+ *   </PopoverContent>
+ * </Popover>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
@@ -65,13 +76,15 @@ function Popover(props: Readonly<Popover.Props>): React.ReactElement {
  * Renders the popover trigger.
  *
  * @remarks
- * - Renders a `<button>` element by default
+ * - Client-only; renders a `<button>` element by default with `aria-haspopup="dialog"` and `aria-expanded`.
  * - Built on {@link https://base-ui.com/react/components/popover | Base UI Popover}
- * - Supports the `render` prop for element composition
+ * - Supports the `render` prop for element composition; set `nativeButton={false}` for non-button targets.
  *
  * @example
  * ```tsx
- * <PopoverTrigger>Content</PopoverTrigger>
+ * <PopoverTrigger render={<Button variant='ghost' size='icon' aria-label='Filters' />}>
+ *   <SlidersHorizontal aria-hidden='true' />
+ * </PopoverTrigger>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
@@ -102,13 +115,17 @@ const PopoverTrigger = ({ref, ...props}: Readonly<PopoverTrigger.Props>): React.
  * Renders the popover content.
  *
  * @remarks
- * - Renders a `<div>` element by default
+ * - Client-only; render inside `Popover`. Renders Portal → Positioner → a `role="dialog"` `<div>` Popup.
  * - Built on {@link https://base-ui.com/react/components/popover | Base UI Popover}
- * - Supports the `render` prop for element composition
+ * - Placement props reach the Positioner: `side="bottom"`, `align="center"`, `sideOffset={4}` and `alignOffset={0}` by
+ *   default. `keepMounted` and `container` reach the Portal; popup props, `render` and `ref` stay on the Popup.
  *
  * @example
  * ```tsx
- * <PopoverContent>Content</PopoverContent>
+ * <PopoverContent side='top' align='start'>
+ *   <PopoverTitle>Display density</PopoverTitle>
+ *   <DensityOptions />
+ * </PopoverContent>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
@@ -161,7 +178,21 @@ const PopoverContent = ({ref, ...props}: Readonly<PopoverContent.Props>): React.
   );
 };
 
-/** Groups the title and description in a native div, preserving native props and refs. */
+/**
+ * Groups the title and description in a native div, preserving native props and refs.
+ *
+ * @remarks
+ * - Exported from this `"use client"` module; structurally a plain `<div>` that registers no name or description.
+ *   Place `PopoverTitle` and `PopoverDescription` inside it, within `PopoverContent`.
+ *
+ * @example
+ * ```tsx
+ * <PopoverHeader>
+ *   <PopoverTitle>Notifications</PopoverTitle>
+ *   <PopoverDescription>Choose what we email you about.</PopoverDescription>
+ * </PopoverHeader>
+ * ```
+ */
 const PopoverHeader = ({ref, className, ...props}: Readonly<PopoverHeader.Props>): React.ReactElement => (
   <div
     ref={ref}
@@ -170,7 +201,18 @@ const PopoverHeader = ({ref, className, ...props}: Readonly<PopoverHeader.Props>
   />
 );
 
-/** Labels the popup through the actual Base UI Title primitive. */
+/**
+ * Labels the popup through the actual Base UI Title primitive.
+ *
+ * @remarks
+ * - Client-only; render inside `PopoverContent`. Renders an `<h2>` whose ID Base UI sets as the popup's
+ *   `aria-labelledby`. Use one title per popup; change the heading level with `render={<h3 />}` to fit the page outline.
+ *
+ * @example
+ * ```tsx
+ * <PopoverTitle render={<h3 />}>Notifications</PopoverTitle>
+ * ```
+ */
 const PopoverTitle = ({ref, className, ...props}: Readonly<PopoverTitle.Props>): React.ReactElement => (
   <BasePopover.Title
     ref={ref}
@@ -179,7 +221,18 @@ const PopoverTitle = ({ref, className, ...props}: Readonly<PopoverTitle.Props>):
   />
 );
 
-/** Describes the popup through the actual Base UI Description primitive. */
+/**
+ * Describes the popup through the actual Base UI Description primitive.
+ *
+ * @remarks
+ * - Client-only; render inside `PopoverContent`. Renders a `<p>` whose ID Base UI sets as the popup's
+ *   `aria-describedby`, so keep it short: assistive technology announces it with the popup's name.
+ *
+ * @example
+ * ```tsx
+ * <PopoverDescription>Changes apply to every project in this workspace.</PopoverDescription>
+ * ```
+ */
 const PopoverDescription = ({ref, className, ...props}: Readonly<PopoverDescription.Props>): React.ReactElement => (
   <BasePopover.Description
     ref={ref}

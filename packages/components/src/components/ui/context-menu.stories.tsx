@@ -1,5 +1,7 @@
-import {FilePlus, FolderPlus, Trash2} from "lucide-react";
+import {FilePlus, FolderPlus, MoreHorizontal, Trash2} from "lucide-react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -16,6 +18,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./context-menu";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "./dropdown-menu";
 const storyStyles = `
 .ac-story-context-menu-storyTarget {
   display: grid;
@@ -28,10 +31,31 @@ const storyStyles = `
   color: var(--ac-foreground);
   font-size: var(--ac-text-sm);
 }
+
+.ac-story-context-menu-storyFile {
+  background: transparent;
+  font: inherit;
+}
+
+.ac-story-context-menu-storyRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+
+.ac-story-context-menu-storyStatus {
+  flex-basis: 100%;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+}
 `;
 
 const storyClasses = {
   storyTarget: "ac-story-context-menu-storyTarget",
+  storyFile: "ac-story-context-menu-storyFile",
+  storyRow: "ac-story-context-menu-storyRow",
+  storyStatus: "ac-story-context-menu-storyStatus",
 } as const;
 
 const meta = {
@@ -46,12 +70,20 @@ const meta = {
   title: "Components/Navigation/ContextMenu",
   component: ContextMenu,
   tags: ["autodocs"],
-  parameters: {layout: "centered"},
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Base UI opens the menu on right click, long press, or a keyboard `contextmenu` event (the context-menu key or Shift+F10 where the browser dispatches one) on a focused trigger. The default trigger is a non-focusable `<div>`, so most stories here are pointer-only demonstrations. In production, render the trigger as a focusable, named control and duplicate essential actions in keyboard-reachable controls, as the KeyboardPath story does.",
+      },
+    },
+  },
 } satisfies Meta<typeof ContextMenu>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The real context trigger owns right-click/long-press behavior. */
+/** The real context trigger owns right-click/long-press behavior; a pointer-only demonstration (see KeyboardPath). */
 export const Default: Story = {
   render: () => (
     <ContextMenu>
@@ -255,4 +287,80 @@ export const StateAwareRender: Story = {
       </ContextMenuContent>
     </ContextMenu>
   ),
+};
+
+const reportActions = ["Rename", "Duplicate", "Move to trash"] as const;
+
+function KeyboardPathExample(): React.ReactElement {
+  const [status, setStatus] = React.useState("No action chosen");
+  const choose = (action: string) => (): void => setStatus(`${action}: Quarterly report.pdf`);
+  return (
+    <div className={storyClasses.storyRow}>
+      <ContextMenu>
+        <ContextMenuTrigger
+          className={`${storyClasses.storyTarget} ${storyClasses.storyFile}`}
+          render={
+            <button
+              type='button'
+              onClick={choose("Open")}
+            />
+          }>
+          Quarterly report.pdf
+        </ContextMenuTrigger>
+        <ContextMenuContent aria-label='Quarterly report actions'>
+          {reportActions.map((action) => (
+            <ContextMenuItem
+              key={action}
+              variant={action === "Move to trash" ? "destructive" : "default"}
+              onClick={choose(action)}>
+              {action}
+            </ContextMenuItem>
+          ))}
+        </ContextMenuContent>
+      </ContextMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant='outline'
+              size='icon'
+              aria-label='More actions for Quarterly report.pdf'
+            />
+          }>
+          <MoreHorizontal aria-hidden='true' />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent aria-label='Quarterly report actions'>
+          {reportActions.map((action) => (
+            <DropdownMenuItem
+              key={action}
+              variant={action === "Move to trash" ? "destructive" : "default"}
+              onClick={choose(action)}>
+              {action}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <p
+        role='status'
+        className={storyClasses.storyStatus}>
+        {status}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Keyboard path: the trigger is a focusable, named button (Enter opens the file; the context-menu key or Shift+F10
+ * opens the menu), and a visible "More actions" menu duplicates every context action for keyboards without that key.
+ */
+export const KeyboardPath: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tab to the file button and press the context-menu key or Shift+F10 to open its menu, or Tab once more to the More actions button, which offers the same actions from any keyboard.",
+      },
+    },
+  },
+  render: () => <KeyboardPathExample />,
 };

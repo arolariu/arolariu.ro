@@ -485,6 +485,7 @@ function ObserverCompositionDemo(): React.JSX.Element {
   const wrapperRef = React.useRef<HTMLInputElement>(null);
   const [observedValue, setObservedValue] = React.useState("");
   const [observedChanges, setObservedChanges] = React.useState(0);
+  const [wrapperTarget, setWrapperTarget] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
   return (
     <Form {...form}>
@@ -504,6 +505,8 @@ function ObserverCompositionDemo(): React.JSX.Element {
                 onChange={(event) => {
                   setObservedValue(event.currentTarget.value);
                   setObservedChanges((count) => count + 1);
+                  // Refs are read in event handlers, never during render.
+                  setWrapperTarget(wrapperRef.current?.tagName ?? "unmounted");
                 }}>
                 <Input
                   {...field}
@@ -524,7 +527,7 @@ function ObserverCompositionDemo(): React.JSX.Element {
         />
         <div className={storyClasses.demoOutput}>
           RHF: {nickname || "empty"} · Observer: {observedValue || "empty"} · Changes: {observedChanges}
-          {observedChanges > 0 ? ` · Wrapper ref: ${wrapperRef.current?.tagName ?? "unmounted"}` : ""}
+          {wrapperTarget === null ? "" : ` · Wrapper ref: ${wrapperTarget}`}
         </div>
         <Button type='submit'>Save nickname</Button>
         <output

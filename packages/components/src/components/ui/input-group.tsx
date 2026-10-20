@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import {Button, type ButtonSize} from "@/components/ui/button";
+import {Button, type ButtonSize, type ButtonVariant} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {cn} from "@/lib/utilities";
@@ -27,10 +27,29 @@ export interface InputGroupAddonProps extends React.ComponentPropsWithRef<"div">
   readonly align?: InputGroupAddonAlign;
 }
 
+/** Re-documents Button's presets per naming-union member, so icon sizes still require a string name. */
+type InputGroupButtonPropsOf<Props> = Props extends Button.Props
+  ? Readonly<
+      Omit<Props, "variant" | "size"> & {
+        /**
+         * Visual style variant; compact group actions default to the transparent `ghost` treatment.
+         * @default "ghost"
+         */
+        variant?: ButtonVariant;
+        /**
+         * Size preset; icon sizes (`icon`, `icon-xs`, `icon-sm`, `icon-lg`) require a string `aria-label`
+         * or `aria-labelledby`.
+         * @default "xs"
+         */
+        size?: Props["size"];
+      }
+    >
+  : never;
+
 /**
- * Props for the {@link InputGroupButton} component.
+ * Props for the {@link InputGroupButton} component: {@link Button} props with compact group defaults.
  */
-export type InputGroupButtonProps = Button.Props;
+export type InputGroupButtonProps = InputGroupButtonPropsOf<Button.Props>;
 
 /**
  * Props for the {@link InputGroupText} component.
@@ -142,6 +161,11 @@ const InputGroupAddon = ({
  *
  * @remarks
  * - Composes the real Base UI-backed `Button`, including its render state and sizes
+ * - Defaults to `variant="ghost"` and `size="xs"` (Button defaults both to `"default"`); an explicit
+ *   `undefined` keeps these presets
+ * - `type` defaults to `"button"`, as on a native Button, and stays `"button"` even for an explicit
+ *   `type={undefined}`, which would leave a plain Button without a `type` (a submit button in a form)
+ * - A caller or composing primitive `className` is merged with the group button class
  * - Ref targets `HTMLElement` for native and composed controls
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
@@ -152,9 +176,14 @@ const InputGroupAddon = ({
  *
  * @see {@link InputGroupButtonProps} for available props
  */
-const InputGroupButton = (props: Readonly<InputGroupButtonProps>): React.JSX.Element => {
-  const {className, type = "button", variant = "ghost", size} = props;
-  const buttonProps: Button.Props = size === undefined ? {...props, size: "xs"} : props;
+const InputGroupButton = ({
+  className,
+  type = "button",
+  variant = "ghost",
+  ...props
+}: Readonly<InputGroupButtonProps>): React.JSX.Element => {
+  // Defaulting `size` inside the naming-union member keeps icon sizes requiring an accessible name.
+  const buttonProps = props.size === undefined ? {...props, size: "xs" as const} : props;
   return (
     <Button
       type={type}

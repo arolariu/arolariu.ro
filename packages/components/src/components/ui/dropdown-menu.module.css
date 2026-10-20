@@ -93,7 +93,8 @@
   flex-shrink: 0;
 }
 
-.subTriggerIcon:dir(rtl),
+/* Base UI opens submenus (placement and arrow keys) from its own direction context, not the DOM, so the chevron mirrors
+   only with that context: an inherited dir="rtl" without an RTL DirectionProvider still opens the submenu to the right. */
 .subTriggerIcon[data-direction="rtl"] {
   transform: rotate(180deg);
 }

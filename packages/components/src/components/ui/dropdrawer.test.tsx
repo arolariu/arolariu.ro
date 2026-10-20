@@ -1,3 +1,4 @@
+import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
@@ -28,8 +29,9 @@ import {
 } from "./dropdrawer";
 import styles from "./dropdrawer.module.css";
 import * as stories from "./dropdrawer.stories";
+import dropdownMenuStyles from "./dropdown-menu.module.css";
 
-const {SubmenuTitles: SubmenuTitlesStory} = composeStories(stories);
+const {SubmenuTitles: SubmenuTitlesStory, ForcedDrawer: ForcedDrawerStory} = composeStories(stories);
 
 /** Only matchMedia is replaced: both responsive hooks and both SDK owners remain real. */
 function installMediaQuery(initialMobile = false): {change: (mobile: boolean) => void; restore: () => void} {
@@ -2425,5 +2427,429 @@ describe.each(["light", "dark"] as const)("DropDrawer final review M2: destructi
       : canvas;
     const text = composite(tokenPaint(compiledDropDrawerPaint(item).get("color"), theme), surface);
     expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("DropDrawer final review L1: mobile submenu change details", () => {
+  it("honors destructured cancel() and allowPropagation() on mobile drill-down and Back, like Base UI details", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const errors: unknown[] = [];
+    const observed: {open: boolean; reason: string; before: readonly boolean[]; after: readonly boolean[]}[] = [];
+    let decline = true;
+    render(
+      <DropDrawer
+        defaultOpen
+        mobileTitle='Actions'>
+        <DropDrawerTrigger>Open actions</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem closeOnClick={false}>Main action</DropDrawerItem>
+          <DropDrawerSub
+            onOpenChange={(open, details) => {
+              const {allowPropagation, cancel, reason} = details;
+              const before = [details.isCanceled, details.isPropagationAllowed];
+              try {
+                allowPropagation();
+                if (decline) cancel();
+              } catch (error) {
+                errors.push(error);
+              }
+              observed.push({open, reason, before, after: [details.isCanceled, details.isPropagationAllowed]});
+            }}>
+            <DropDrawerSubTrigger>Security</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem closeOnClick={false}>Passkeys</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const trigger = await screen.findByRole("button", {name: "Security"});
+    await user.click(trigger);
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", {name: "Actions"})).toBeInTheDocument();
+    decline = false;
+    await user.click(trigger);
+    expect(await screen.findByRole("button", {name: "Passkeys"})).toBeVisible();
+    decline = true;
+    await user.click(screen.getByRole("button", {name: "Go back"}));
+    expect(screen.getByRole("button", {name: "Passkeys"})).toBeVisible();
+    expect(screen.getByRole("dialog", {name: "Security"})).toBeInTheDocument();
+    expect(errors).toEqual([]);
+    expect(observed).toEqual([
+      {open: true, reason: "trigger-press", before: [false, false], after: [true, true]},
+      {open: true, reason: "trigger-press", before: [false, false], after: [false, true]},
+      {open: false, reason: "close-press", before: [false, false], after: [true, true]},
+    ]);
+  });
+});
+
+describe("DropDrawer final review L2: presentation", () => {
+  it.each([
+    {viewport: "desktop", presentation: undefined, owner: "menu"},
+    {viewport: "mobile", presentation: undefined, owner: "dialog"},
+    {viewport: "desktop", presentation: "responsive", owner: "menu"},
+    {viewport: "mobile", presentation: "responsive", owner: "dialog"},
+    {viewport: "desktop", presentation: "drawer", owner: "dialog"},
+    {viewport: "mobile", presentation: "drawer", owner: "dialog"},
+    {viewport: "desktop", presentation: "menu", owner: "menu"},
+    {viewport: "mobile", presentation: "menu", owner: "menu"},
+  ] as const)(
+    "renders the $owner owner for presentation=$presentation on a $viewport viewport",
+    async ({viewport, presentation, owner}) => {
+      media.change(viewport === "mobile");
+      render(
+        <Fixture
+          defaultOpen
+          presentation={presentation}
+        />,
+      );
+      expect(await screen.findByRole(owner, {name: "Actions"})).toBeVisible();
+      expect(screen.queryByRole(owner === "menu" ? "dialog" : "menu")).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(["menu", "drawer"] as const)("keeps presentation=%s across viewport changes", async (presentation) => {
+    const owner = presentation === "menu" ? "menu" : "dialog";
+    render(
+      <Fixture
+        defaultOpen
+        presentation={presentation}
+      />,
+    );
+    expect(await screen.findByRole(owner)).toBeVisible();
+    media.change(true);
+    expect(screen.getByRole(owner)).toBeVisible();
+    media.change(false);
+    expect(screen.getByRole(owner)).toBeVisible();
+  });
+
+  it("migrates an open DropDrawer when presentation changes, without an open-change request", async () => {
+    const requests: boolean[] = [];
+    const view = render(
+      <Fixture
+        defaultOpen
+        presentation='menu'
+        onOpenChange={(open) => requests.push(open)}
+      />,
+    );
+    expect(await screen.findByRole("menu")).toBeVisible();
+    view.rerender(
+      <Fixture
+        defaultOpen
+        presentation='drawer'
+        onOpenChange={(open) => requests.push(open)}
+      />,
+    );
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    view.rerender(
+      <Fixture
+        defaultOpen
+        presentation='menu'
+        onOpenChange={(open) => requests.push(open)}
+      />,
+    );
+    expect(await screen.findByRole("menu")).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(requests).toEqual([]);
+  });
+
+  it("opens the ForcedDrawer story as a drawer on a desktop viewport", async () => {
+    const user = userEvent.setup();
+    render(<ForcedDrawerStory />);
+    await user.click(screen.getByRole("button", {name: "Document actions"}));
+    expect(await screen.findByRole("dialog", {name: "Document actions"})).toBeVisible();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {presentation: undefined, server: "menu", client: "dialog"},
+    {presentation: "responsive", server: "menu", client: "dialog"},
+    {presentation: "drawer", server: "dialog", client: "dialog"},
+    {presentation: "menu", server: "menu", client: "menu"},
+  ] as const)(
+    "server-renders a $server trigger for presentation=$presentation and hydrates a mobile client to $client",
+    async ({presentation, server, client}) => {
+      const errors = vi.spyOn(console, "error");
+      const recoverable: unknown[] = [];
+      const markup = <Fixture presentation={presentation} />;
+      media.change(true);
+      const html = renderToString(markup);
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      expect(container.querySelector("button")).toHaveAttribute("aria-haspopup", server);
+      document.body.append(container);
+      let root: Root | undefined;
+      try {
+        await act(async () => {
+          root = hydrateRoot(container, markup, {onRecoverableError: (error) => recoverable.push(error)});
+        });
+        expect(within(container).getByRole("button", {name: "Open actions"})).toHaveAttribute("aria-haspopup", client);
+        expect(recoverable).toEqual([]);
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        act(() => root?.unmount());
+        container.remove();
+      }
+    },
+  );
+});
+
+describe("DropDrawer final review L3: mobile chevrons in RTL", () => {
+  it.each(["ltr", "rtl"] as const)("mirrors the mobile drill-down and Back chevrons in %s", async (direction) => {
+    media.change(true);
+    const user = userEvent.setup();
+    render(
+      <DirectionProvider direction={direction}>
+        <Fixture defaultOpen />
+      </DirectionProvider>,
+    );
+    const mirrored = direction === "rtl" ? "rotate(180deg)" : undefined;
+    const security = await screen.findByRole("button", {name: "Security"});
+    const drillDown = security.querySelector("svg");
+    if (!drillDown) throw new Error("Missing drill-down chevron");
+    expect(drillDown).toHaveAttribute("aria-hidden", "true");
+    expect(drillDown).toHaveAttribute("data-direction", direction);
+    expect(compiledDropDrawerPaint(drillDown).get("transform")).toBe(mirrored);
+    await user.click(security);
+    const back = await screen.findByRole("button", {name: "Go back"});
+    const backChevron = back.querySelector("svg");
+    if (!backChevron) throw new Error("Missing Back chevron");
+    expect(backChevron).toHaveAttribute("aria-hidden", "true");
+    expect(backChevron).toHaveAttribute("data-direction", direction);
+    expect(compiledDropDrawerPaint(backChevron).get("transform")).toBe(mirrored);
+  });
+
+  it("mirrors desktop sub-trigger chevrons only on Base UI's direction and the mobile drawer's also on the DOM direction", () => {
+    const mirrorSelectors = (file: string): readonly string[] => {
+      const selectors: string[] = [];
+      parse(readFileSync(join(import.meta.dirname, file), "utf8")).walkRules((rule) => {
+        let rotates = false;
+        rule.walkDecls("transform", (declaration) => {
+          rotates ||= declaration.value === "rotate(180deg)";
+        });
+        if (rotates) selectors.push(...rule.selectors);
+      });
+      return selectors;
+    };
+    // Base UI opens desktop submenus from its own direction context, so their chevron mirrors only with that context.
+    expect(mirrorSelectors("dropdown-menu.module.css")).toEqual(['.subTriggerIcon[data-direction="rtl"]']);
+    // Mobile drill-down panels follow the DOM direction, so the drawer's chevrons also mirror on an inherited dir="rtl".
+    expect(mirrorSelectors("dropdrawer.module.css")).toEqual([".mobileContent .chevron:dir(rtl)", '.chevron[data-direction="rtl"]']);
+  });
+});
+
+describe("DropDrawer final review L25: documented desktop placement defaults", () => {
+  const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+
+  it("end-aligns the desktop menu 4px below its anchor", async () => {
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open aligned actions</DropDrawerTrigger>
+        <DropDrawerContent
+          aria-label='Aligned actions'
+          anchor={anchor}
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <DropDrawerItem>Rename</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Aligned actions"});
+    expect(popup).toHaveAttribute("data-align", "end");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 124px)"}));
+  });
+
+  it("gives desktop submenu content the DropdownMenuSubContent defaults", async () => {
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open nested actions</DropDrawerTrigger>
+        <DropDrawerContent aria-label='Nested actions'>
+          <DropDrawerSub defaultOpen>
+            <DropDrawerSubTrigger>Sharing</DropDrawerSubTrigger>
+            <DropDrawerSubContent
+              aria-label='Sharing placement'
+              anchor={anchor}
+              collisionAvoidance={{side: "none", align: "none"}}>
+              <DropDrawerItem>Copy link</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Sharing placement"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 97px)"}));
+  });
+});
+
+describe("DropDrawer final review: mobile drawer direction", () => {
+  it("applies an RTL DirectionProvider to the portaled mobile drawer popup", async () => {
+    media.change(true);
+    render(
+      <DirectionProvider direction='rtl'>
+        <Fixture defaultOpen />
+      </DirectionProvider>,
+    );
+    expect(await screen.findByRole("dialog", {name: "Actions"})).toHaveAttribute("dir", "rtl");
+  });
+
+  it("does not contradict an inherited document dir=rtl when no provider is present", async () => {
+    media.change(true);
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<Fixture defaultOpen />);
+      const dialog = await screen.findByRole("dialog", {name: "Actions"});
+      expect(dialog).not.toHaveAttribute("dir");
+      expect(dialog.closest("[dir]")).toBe(html);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it.each([
+    {source: "DropDrawerContent dir", content: {dir: "ltr"}},
+    {source: "drawerProps.dir", content: {drawerProps: {dir: "ltr"}}},
+  ] as const)("lets a caller's $source win over an RTL provider", async ({content}) => {
+    media.change(true);
+    render(
+      <DirectionProvider direction='rtl'>
+        <DropDrawer
+          defaultOpen
+          mobileTitle='Actions'>
+          <DropDrawerTrigger>Open actions</DropDrawerTrigger>
+          <DropDrawerContent {...content}>
+            <DropDrawerItem>Profile</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>
+      </DirectionProvider>,
+    );
+    expect(await screen.findByRole("dialog", {name: "Actions"})).toHaveAttribute("dir", "ltr");
+  });
+});
+
+describe("DropDrawer final-review fix: desktop menu dir through DropdownMenuContent", () => {
+  it("lets the desktop menu inherit a document dir=rtl when no provider is present", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<Fixture defaultOpen />);
+      const menu = await screen.findByRole("menu", {name: "Actions"});
+      expect(menu).not.toHaveAttribute("dir");
+      expect(menu.closest("[dir]")).toBe(html);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("writes dir=rtl on the desktop menu under an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <Fixture defaultOpen />
+      </DirectionProvider>,
+    );
+    expect(await screen.findByRole("menu", {name: "Actions"})).toHaveAttribute("dir", "rtl");
+  });
+});
+
+/** The README browser floor keeps `:dir()` native, as the real build output does. */
+const browserFloor = {chrome: 120 << 16, firefox: 121 << 16, safari: (16 << 16) | (5 << 8)};
+
+/**
+ * Whether the shipped stylesheet mirrors `element` (`transform: rotate(180deg)`). happy-dom cannot evaluate `:dir()`, so
+ * it is resolved from the element's nearest `dir` attribute, as a browser does; in these rules it sits on the subject.
+ */
+function mirroredByStylesheet(element: Element, file: string, classes: Readonly<Record<string, string | undefined>>): boolean {
+  const compiled = parse(
+    transform({
+      filename: file,
+      code: readFileSync(join(import.meta.dirname, file)),
+      include: Features.Nesting,
+      targets: browserFloor,
+    }).code.toString(),
+  );
+  const direction = element.closest("[dir]")?.getAttribute("dir") === "rtl" ? "rtl" : "ltr";
+  let mirrored = false;
+  compiled.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (ancestor instanceof AtRule) return;
+    }
+    let rotates = false;
+    rule.walkDecls("transform", (declaration) => {
+      rotates ||= declaration.value === "rotate(180deg)";
+    });
+    if (!rotates) return;
+    for (const selector of rule.selectors) {
+      const local = selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+        const hashed = classes[name];
+        return hashed ? `.${CSS.escape(hashed)}` : match;
+      });
+      const required = [...local.matchAll(/:dir\((ltr|rtl)\)/gu)].map(([, value]) => value);
+      if (required.every((value) => value === direction) && element.matches(local.replaceAll(/:dir\((?:ltr|rtl)\)/gu, ""))) {
+        mirrored = true;
+      }
+    }
+  });
+  return mirrored;
+}
+
+describe("DropDrawer final-review fix: chevrons in a document-RTL app without a provider", () => {
+  it("mirrors the mobile drill-down and Back chevrons, whose panels follow the DOM direction", async () => {
+    media.change(true);
+    const user = userEvent.setup();
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<Fixture defaultOpen />);
+      const security = await screen.findByRole("button", {name: "Security"});
+      const drillDown = security.querySelector("svg");
+      if (!drillDown) throw new Error("Missing drill-down chevron");
+      expect(drillDown).toHaveAttribute("data-direction", "ltr");
+      expect(drillDown.closest("[dir]")).toBe(html);
+      expect(mirroredByStylesheet(drillDown, "dropdrawer.module.css", styles)).toBe(true);
+      await user.click(security);
+      const backChevron = (await screen.findByRole("button", {name: "Go back"})).querySelector("svg");
+      if (!backChevron) throw new Error("Missing Back chevron");
+      expect(mirroredByStylesheet(backChevron, "dropdrawer.module.css", styles)).toBe(true);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("keeps the desktop sub-trigger chevron unmirrored, because Base UI still opens the submenu LTR", async () => {
+    const user = userEvent.setup();
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<Fixture />);
+      const trigger = screen.getByRole("button", {name: "Open actions"});
+      await act(async () => {
+        trigger.focus();
+      });
+      await user.keyboard("{ArrowDown}");
+      const menu = await screen.findByRole("menu", {name: "Actions"});
+      const security = within(menu).getByRole("menuitem", {name: "Security"});
+      await act(async () => {
+        security.focus();
+      });
+      await user.keyboard("{ArrowRight}");
+      expect(await screen.findByRole("menuitem", {name: "Passkeys"})).toBeVisible();
+      const chevron = security.querySelector("svg");
+      if (!chevron) throw new Error("Missing desktop sub-trigger chevron");
+      expect(chevron.closest("[dir]")).toBe(html);
+      expect(mirroredByStylesheet(chevron, "dropdown-menu.module.css", dropdownMenuStyles)).toBe(false);
+      expect(mirroredByStylesheet(chevron, "dropdrawer.module.css", styles)).toBe(false);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
   });
 });

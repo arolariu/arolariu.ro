@@ -1,5 +1,5 @@
 import * as React from "react";
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
 
 import {cn} from "@/lib/utilities";
 
@@ -103,7 +103,8 @@ const storyClasses = {
 
 const meta = {
   decorators: [
-    (Story) => (
+    // An annotated decorator keeps Storybook from intersecting the members of the required-name union.
+    (Story: Parameters<Decorator>[0]) => (
       <>
         <style>{storyStyles}</style>
         <Story />
@@ -113,6 +114,8 @@ const meta = {
   title: "Components/Data Display/Carousel",
   component: Carousel,
   tags: ["autodocs"],
+  // The region name is required; each story below still supplies its own distinct name.
+  args: {"aria-label": "Featured slides"},
   parameters: {layout: "centered"},
 } satisfies Meta<typeof Carousel>;
 
@@ -161,16 +164,19 @@ function Slides({
 }
 
 function Demo({
+  label = "Featured slides",
   count = 5,
   multiple = false,
   pictures = false,
   ...props
-}: Readonly<CarouselProps & {count?: number; multiple?: boolean; pictures?: boolean}>): React.ReactElement {
+}: Readonly<
+  Omit<CarouselProps, "aria-label" | "aria-labelledby"> & {label?: string; count?: number; multiple?: boolean; pictures?: boolean}
+>): React.ReactElement {
   return (
     <div className={storyClasses.storyFrame}>
       <Carousel
-        aria-label='Featured slides'
-        {...props}>
+        {...props}
+        aria-label={label}>
         <Slides
           count={count}
           multiple={multiple}
@@ -183,13 +189,31 @@ function Demo({
   );
 }
 
-/** Focus a slide button and use Left/Right; omitted orientation is horizontal. */
+/** Focus a slide button and use Left/Right; omitted orientation is horizontal. Each story names its own region. */
 export const Default: Story = {render: () => <Demo />};
+
+/**
+ * Every carousel is a named region landmark and the package supplies no name: prefer `aria-labelledby` when a visible
+ * heading exists, otherwise pass a localized `aria-label`. Distinct names keep several carousels distinguishable.
+ */
+export const LabelledByHeading: Story = {
+  render: () => (
+    <div className={storyClasses.storyFrame}>
+      <h2 id='carousel-story-heading'>Spring collection</h2>
+      <Carousel aria-labelledby='carousel-story-heading'>
+        <Slides count={3} />
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>
+    </div>
+  ),
+};
 
 /** Slide sizing belongs to mounted story CSS rather than utility class strings. */
 export const MultipleItems: Story = {
   render: () => (
     <Demo
+      label='Two slides per view'
       multiple
       opts={{align: "start"}}
     />
@@ -197,12 +221,20 @@ export const MultipleItems: Story = {
 };
 
 /** Self-contained illustrations avoid remote image requests in the example. */
-export const WithImages: Story = {render: () => <Demo pictures />};
+export const WithImages: Story = {
+  render: () => (
+    <Demo
+      label='Illustrated landscapes'
+      pictures
+    />
+  ),
+};
 
 /** The vertical track has a definite height; use Up/Down to navigate. */
 export const Vertical: Story = {
   render: () => (
     <Demo
+      label='Vertical slides'
       orientation='vertical'
       opts={{align: "start"}}
     />
@@ -210,12 +242,20 @@ export const Vertical: Story = {
 };
 
 /** Omitted orientation resolves from the actual Embla axis option. */
-export const AxisFromOptions: Story = {render: () => <Demo opts={{axis: "y", align: "start"}} />};
+export const AxisFromOptions: Story = {
+  render: () => (
+    <Demo
+      label='Slides on the options axis'
+      opts={{axis: "y", align: "start"}}
+    />
+  ),
+};
 
 /** Explicit horizontal orientation wins over a contradictory options axis. */
 export const OrientationOverride: Story = {
   render: () => (
     <Demo
+      label='Horizontal override slides'
       orientation='horizontal'
       opts={{axis: "y"}}
     />
@@ -223,10 +263,24 @@ export const OrientationOverride: Story = {
 };
 
 /** A looping engine keeps both navigation controls available at every snap. */
-export const Looping: Story = {render: () => <Demo opts={{loop: true}} />};
+export const Looping: Story = {
+  render: () => (
+    <Demo
+      label='Looping slides'
+      opts={{loop: true}}
+    />
+  ),
+};
 
 /** A single slide keeps both controls disabled, not hidden. */
-export const SingleSlide: Story = {render: () => <Demo count={1} />};
+export const SingleSlide: Story = {
+  render: () => (
+    <Demo
+      label='Single slide'
+      count={1}
+    />
+  ),
+};
 
 function SelectionControls(): React.ReactElement {
   const {api} = useCarousel();
@@ -381,6 +435,7 @@ export const ComposedControls: Story = {
 export const KeyboardCancellation: Story = {
   render: () => (
     <Demo
+      label='Slides with consumer arrow keys'
       onKeyDownCapture={(event) => {
         if (event.key.startsWith("Arrow")) event.preventDefault();
       }}

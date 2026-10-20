@@ -1,7 +1,126 @@
 "use client";
 
 import type {Menu as BaseMenu} from "@base-ui/react/menu";
-import {useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject} from "react";
+import type {ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
+import {
+  Children,
+  cloneElement,
+  createContext,
+  isValidElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+  type SyntheticEvent,
+} from "react";
+
+import {useIsMobile} from "@/hooks/useIsMobile";
+
+/** Root state shared by every responsive part. */
+export interface RootContextValue {
+  readonly isMobile: boolean;
+  readonly open: boolean;
+  readonly disabled: boolean;
+  readonly mobileTitle: string;
+  readonly backLabel: string;
+}
+export const RootContext = createContext<RootContextValue | null>(null);
+/** Reads the enclosing DropDrawer root state. */
+export function useRoot(): RootContextValue {
+  const value = useContext(RootContext);
+  if (!value) throw new Error("DropDrawer components must be rendered within DropDrawer.");
+  return value;
+}
+/** A live mobile submenu: its actual trigger and panel nodes and its latest submenu props. */
+export interface SubmenuRegistration {
+  readonly id: string;
+  readonly parentId: string | null;
+  readonly triggerRef: RefObject<HTMLElement | null>;
+  readonly panelRef: RefObject<HTMLElement | null>;
+  readonly optionsRef: RefObject<Readonly<BaseMenu.SubmenuRoot.Props>>;
+}
+/** The local mobile navigation owner published by the mobile DropDrawerContent. */
+export interface NavigationContextValue {
+  readonly activeId: string | null;
+  readonly path: readonly string[];
+  readonly panelHost: HTMLDivElement | null;
+  readonly register: (entry: SubmenuRegistration) => () => void;
+  readonly navigate: (id: string, event: MouseEvent) => void;
+  readonly synchronize: (id: string, open: boolean) => void;
+  readonly panelAvailabilityChanged: (id: string) => void;
+  readonly setPanelTitle: (id: string, title: string | undefined) => void;
+}
+export const NavigationContext = createContext<NavigationContextValue | null>(null);
+/** The enclosing DropDrawerSub registration and its panel/trigger coordination. */
+export type SubmenuContextValue = SubmenuRegistration & {
+  readonly disabled: boolean;
+  readonly panelId: string;
+  readonly setPanelId: (id: string) => void;
+  readonly setTriggerText: (text: string) => void;
+};
+export const SubContext = createContext<SubmenuContextValue | null>(null);
+/** Reads the mobile navigation owner; mobile submenu panels require mobile DropDrawerContent. */
+export function useNavigation(): NavigationContextValue {
+  const value = useContext(NavigationContext);
+  if (!value) throw new Error("Mobile DropDrawer submenus must be rendered within DropDrawerContent.");
+  return value;
+}
+/** Reads the enclosing DropDrawerSub. */
+export function useSubmenu(): SubmenuContextValue {
+  const value = useContext(SubContext);
+  if (!value) throw new Error("DropDrawerSubTrigger and DropDrawerSubContent require DropDrawerSub.");
+  return value;
+}
+
+/**
+ * Resolves which SDK owner renders a DropDrawer.
+ *
+ * @param presentation - `"menu"` and `"drawer"` force an owner; `"responsive"` (or omitted) follows `useIsMobile`'s
+ *   `(max-width: 767px)` query, which reports `false` during server rendering and hydration.
+ * @returns `true` when the mobile Drawer owns the DropDrawer, `false` for the desktop Menu.
+ */
+export function useDrawerPresentation(presentation: "responsive" | "menu" | "drawer" | undefined): boolean {
+  const narrowViewport = useIsMobile();
+  if (presentation === "menu") return false;
+  return presentation === "drawer" || narrowViewport;
+}
+
+type RenderProp<State> = ReactElement | ComponentRenderFn<HTMLProps, State>;
+/** Resolves an element render slot through React's public normalization; render functions have no element. */
+export function elementOf<State>(render: RenderProp<State> | undefined): ReactElement<{children?: ReactNode; id?: string}> | undefined {
+  if (render === undefined || typeof render === "function") return undefined;
+  // eslint-disable-next-line react-x/no-children-to-array -- only mounted render owners resolve opaque slots through public React normalization.
+  const [element] = Children.toArray(render);
+  return isValidElement<{children?: ReactNode; id?: string}>(element) ? element : undefined;
+}
+/** Explicit children win; otherwise an element render slot supplies its own children. */
+export function contentOf<State>(children: ReactNode, render: RenderProp<State> | undefined): ReactNode {
+  return children === undefined ? elementOf(render)?.props.children : children;
+}
+/** Supplies compound children to an element render slot; render functions are returned unchanged. */
+export function withChildren<State>(render: RenderProp<State> | undefined, children: ReactNode): RenderProp<State> | undefined {
+  const element = elementOf(render);
+  // eslint-disable-next-line react-x/no-clone-element -- only supply compound children; SDK retains render state, handlers and refs.
+  return element ? cloneElement(element, {children}) : render;
+}
+/** Cancels the DOM default and, for Base UI events, the SDK's own handler. */
+export function cancelActivation(event: SyntheticEvent): void {
+  event.preventDefault();
+  if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
+}
+/** Whether a caller handler cancelled the DOM default or the Base UI handler. */
+export function isActivationCancelled(event: SyntheticEvent): boolean {
+  return (
+    event.defaultPrevented
+    || event.nativeEvent.defaultPrevented
+    || ("baseUIHandlerPrevented" in event && event.baseUIHandlerPrevented === true)
+  );
+}
 
 /** The registration fields that local mobile submenu navigation reads. */
 interface MobileSubmenuEntry {
@@ -26,24 +145,42 @@ export function getLivePath(id: string, entries: ReadonlyMap<string, MobileSubme
   return null;
 }
 
-/** Mobile panels stay mounted; preventing their unmount is already guaranteed by that owner. */
-export function requestSubmenuChange(entry: MobileSubmenuEntry, open: boolean, event: MouseEvent): boolean {
-  const details: BaseMenu.SubmenuRoot.ChangeEventDetails = {
+/**
+ * Creates mobile submenu change details like Base UI's own: `cancel()` and `allowPropagation()` are closures and the
+ * `isCanceled`/`isPropagationAllowed` flags are getters, so destructured calls work and the flags reflect them.
+ */
+function createSubmenuChangeDetails(
+  open: boolean,
+  event: MouseEvent,
+  trigger: Element | undefined,
+): BaseMenu.SubmenuRoot.ChangeEventDetails {
+  let canceled = false;
+  let propagationAllowed = false;
+  return {
     reason: open ? "trigger-press" : "close-press",
     event,
-    trigger: entry.triggerRef.current ?? undefined,
-    isCanceled: false,
-    isPropagationAllowed: false,
+    trigger,
     cancel() {
-      this.isCanceled = true;
+      canceled = true;
     },
     allowPropagation() {
-      this.isPropagationAllowed = true;
+      propagationAllowed = true;
+    },
+    get isCanceled() {
+      return canceled;
+    },
+    get isPropagationAllowed() {
+      return propagationAllowed;
     },
     preventUnmountOnClose() {
       // Local panels are retained until the enclosing Drawer unmounts.
     },
   };
+}
+
+/** Mobile panels stay mounted; preventing their unmount is already guaranteed by that owner. */
+export function requestSubmenuChange(entry: MobileSubmenuEntry, open: boolean, event: MouseEvent): boolean {
+  const details = createSubmenuChangeDetails(open, event, entry.triggerRef.current ?? undefined);
   entry.optionsRef.current.onOpenChange?.(open, details);
   return !details.isCanceled && (entry.optionsRef.current.open === undefined || entry.optionsRef.current.open === open);
 }

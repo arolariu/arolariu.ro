@@ -40,10 +40,14 @@ function getMotionState(completed: boolean | undefined, paused: boolean, wordCou
  * animated characters and the cursor are decorative. Reduced motion displays
  * completed text without a cursor. Changed word text restarts the entire
  * decorative phrase without replacing the root or accessible text node.
+ * The root is a generic `<div>`, which cannot be named: to label it, pair
+ * `aria-label` with a role that supports naming, such as `role="group"`
+ * (never `aria-label` alone).
  *
  * @example
  * ```tsx
- * <TypewriterText words={[{text: "Hello"}, {text: "world"}]} aria-label="Greeting" />
+ * <TypewriterText words={[{text: "Hello"}, {text: "world"}]} />
+ * <TypewriterText role="group" aria-label="Greeting" words={[{text: "Hello"}, {text: "world"}]} />
  * ```
  */
 function TypewriterText({
@@ -134,6 +138,8 @@ TypewriterText.displayName = "TypewriterText";
  * Client component. The complete accessible phrase is present before reveal.
  * Reduced motion completes the visual text and removes the cursor immediately.
  * New words restart the sweep; root native attributes and refs are preserved.
+ * Like {@link TypewriterText}, the generic `<div>` root is named only through a
+ * role that supports naming (`role="group"` with `aria-label`).
  *
  * @example
  * ```tsx

@@ -1,11 +1,13 @@
 import fs from "node:fs";
-import {execFileSync} from "node:child_process";
+import {execFileSync, spawnSync} from "node:child_process";
+import os from "node:os";
 import path from "node:path";
+import {pathToFileURL} from "node:url";
 import ts from "typescript";
 
 import {afterEach, describe, expect, it} from "vitest";
 
-import {collectExportsFromDirectory, createExportEntry} from "./generate-exports";
+import {collectExportsFromDirectory, createExportEntry, isEntryModule} from "./generate-exports";
 
 const temporaryDirectories: string[] = [];
 
@@ -207,5 +209,91 @@ describe("generate-exports helpers", () => {
       ts.sys,
     );
     expect(resolved.resolvedModule).toBeUndefined();
+  });
+});
+
+const packageDirectory = path.resolve(import.meta.dirname, "..");
+const linkedFixtureRoots: string[] = [];
+
+/** Recreates file and folder names with empty files: the generator reads directory entries only. */
+function mirrorEntryNames(source: string, target: string): void {
+  fs.mkdirSync(target, {recursive: true});
+  for (const entry of fs.readdirSync(source, {withFileTypes: true})) {
+    if (entry.isDirectory()) mirrorEntryNames(path.join(source, entry.name), path.join(target, entry.name));
+    else fs.writeFileSync(path.join(target, entry.name), "");
+  }
+}
+
+/**
+ * Copies the generator into `<root>/real/package/scripts` and links `<root>/link` to `<root>/real` (a junction on Windows, a
+ * symlink elsewhere). With `withSources`, the copy also gets the real source entry names and the committed manifest with its
+ * `exports` value cleared in place, so only a generator run can restore the committed bytes.
+ */
+function createLinkedGeneratorCopy(withSources: boolean) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "generate-exports-entry-"));
+  linkedFixtureRoots.push(root);
+  const packageCopy = path.join(root, "real", "package");
+  fs.mkdirSync(path.join(packageCopy, "scripts"), {recursive: true});
+  fs.copyFileSync(path.resolve(import.meta.dirname, "generate-exports.ts"), path.join(packageCopy, "scripts", "generate-exports.ts"));
+  if (withSources) {
+    for (const directory of ["components/ui", "hooks", "lib"]) {
+      mirrorEntryNames(path.join(packageDirectory, "src", directory), path.join(packageCopy, "src", directory));
+    }
+    const manifest = JSON.parse(fs.readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
+    manifest.exports = {};
+    fs.writeFileSync(path.join(packageCopy, "package.json"), JSON.stringify(manifest, null, 2));
+  }
+  fs.symlinkSync(path.join(root, "real"), path.join(root, "link"), "junction");
+  return {
+    root,
+    packageCopy,
+    real: path.join(packageCopy, "scripts", "generate-exports.ts"),
+    linked: path.join(root, "link", "package", "scripts", "generate-exports.ts"),
+  } as const;
+}
+
+describe("generate-exports entry detection", () => {
+  afterEach(() => {
+    for (const root of linkedFixtureRoots.splice(0)) {
+      const link = path.join(root, "link");
+      // Remove the link itself first so the recursive removal below never traverses it.
+      if (fs.lstatSync(link, {throwIfNoEntry: false})) fs.unlinkSync(link);
+      fs.rmSync(root, {force: true, recursive: true});
+    }
+  });
+
+  it.each(["real", "linked"] as const)(
+    "regenerates the committed manifest byte for byte when started through the %s script path",
+    (variant) => {
+      const fixture = createLinkedGeneratorCopy(true);
+
+      const result = spawnSync(process.execPath, [fixture[variant]], {encoding: "utf8"});
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("Successfully generated");
+      expect(fs.readFileSync(path.join(fixture.packageCopy, "package.json"), "utf8")).toBe(
+        fs.readFileSync(path.join(packageDirectory, "package.json"), "utf8"),
+      );
+      expect(fs.readFileSync(path.join(fixture.packageCopy, "dist", "styles.d.ts"), "utf8")).toBe("export {};\r\n");
+    },
+  );
+
+  it("compares real paths and ignores entries that name no file or another module", () => {
+    const fixture = createLinkedGeneratorCopy(false);
+    const moduleUrl = pathToFileURL(fixture.real).href;
+
+    expect(isEntryModule(fixture.real, moduleUrl)).toBe(true);
+    expect(isEntryModule(fixture.linked, moduleUrl)).toBe(true);
+    expect(isEntryModule(undefined, moduleUrl)).toBe(false);
+    expect(isEntryModule("-", moduleUrl)).toBe(false);
+    expect(isEntryModule(path.resolve(import.meta.dirname, "generate-exports.test.ts"), moduleUrl)).toBe(false);
+  });
+
+  it("fails loudly when an entry named like the generator resolves to a different file", () => {
+    const fixture = createLinkedGeneratorCopy(false);
+    const impostor = path.join(fixture.root, "generate-exports.ts");
+    fs.writeFileSync(impostor, "");
+
+    expect(() => isEntryModule(impostor, pathToFileURL(fixture.real).href)).toThrow(/does not resolve to/u);
   });
 });

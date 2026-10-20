@@ -3,7 +3,7 @@
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-import {isFocusAvailable, isFocusSubtreeAvailable} from "@/lib/_focus-availability";
+import {isFocusAvailable, isFocusSubtreeAvailable, readFocusStyle, type FocusStyleCache} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
 
 import styles from "./focus-scope.module.css";
@@ -59,10 +59,36 @@ const FOCUSABLE_SELECTOR = [
 
 const ownedTabEvents = new WeakSet<KeyboardEvent>();
 
+/**
+ * Memoized reads for one synchronous controller pass: a Tab keydown or the mount autofocus. A pass reads the DOM and
+ * mutates nothing before its final `focus()` call, so each element's computed style, tab index and tabbability and each
+ * native radio group are resolved at most once per pass; candidates share their ancestors' computed styles. A pass is
+ * never reused across events, so every keydown observes the current DOM and styles.
+ */
+interface FocusPass {
+  readonly styles: FocusStyleCache;
+  readonly tabIndices: Map<HTMLElement, number>;
+  readonly tabbable: Map<HTMLElement, boolean>;
+  readonly radioInputs: Map<Document | DocumentFragment, readonly HTMLInputElement[]>;
+  readonly radioGroups: Map<HTMLInputElement, readonly HTMLInputElement[]>;
+}
+
+function createFocusPass(): FocusPass {
+  return {styles: new Map(), tabIndices: new Map(), tabbable: new Map(), radioInputs: new Map(), radioGroups: new Map()};
+}
+
+function memoize<Key, Value extends boolean | number>(cache: Map<Key, Value>, key: Key, read: () => Value): Value {
+  const cached = cache.get(key);
+  if (cached !== undefined) return cached;
+  const value = read();
+  cache.set(key, value);
+  return value;
+}
+
 // Natively focusable `aria-disabled` controls (Base UI `focusableWhenDisabled`, disabled
 // toolbar roving stops) stay in native sequential order, so they remain scope tab stops.
-function isAvailable(element: HTMLElement): boolean {
-  return isFocusAvailable(element, true);
+function isAvailable(element: HTMLElement, styles?: FocusStyleCache): boolean {
+  return isFocusAvailable(element, true, styles);
 }
 
 function getActiveElement(owner: HTMLElement): Element | null {
@@ -73,7 +99,7 @@ function getActiveElement(owner: HTMLElement): Element | null {
   return active;
 }
 
-function getTabIndex(element: HTMLElement): number {
+function readTabIndex(element: HTMLElement): number {
   if (element.hasAttribute("tabindex")) return element.tabIndex;
   if (element.isContentEditable && !element.parentElement?.isContentEditable) return 0;
   const Details = element.ownerDocument.defaultView?.HTMLDetailsElement ?? HTMLDetailsElement;
@@ -84,36 +110,50 @@ function getTabIndex(element: HTMLElement): number {
   return element.tabIndex;
 }
 
+function getTabIndex(element: HTMLElement, pass: FocusPass): number {
+  return memoize(pass.tabIndices, element, () => readTabIndex(element));
+}
+
 function isRadioGroupRoot(root: Node): root is Document | DocumentFragment {
   return root.nodeType === Node.DOCUMENT_NODE || root.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 }
 
-function getRadioGroup(element: HTMLElement): readonly HTMLInputElement[] | null {
+function getRadioGroup(element: HTMLElement, pass: FocusPass): readonly HTMLInputElement[] | null {
   const Input = element.ownerDocument.defaultView?.HTMLInputElement ?? HTMLInputElement;
   if (!(element instanceof Input) || element.type !== "radio" || !element.name) return null;
+  const cached = pass.radioGroups.get(element);
+  if (cached) return cached;
   const root = element.getRootNode();
   if (!isRadioGroupRoot(root)) return [];
-  return [...root.querySelectorAll<HTMLInputElement>("input")].filter(
-    (candidate) => candidate.type === "radio" && candidate.name === element.name && candidate.form === element.form,
-  );
+  let radios = pass.radioInputs.get(root);
+  if (!radios) {
+    radios = [...root.querySelectorAll<HTMLInputElement>("input")].filter((candidate) => candidate.type === "radio");
+    pass.radioInputs.set(root, radios);
+  }
+  const group = radios.filter((candidate) => candidate.name === element.name && candidate.form === element.form);
+  // Membership is symmetric (same tree, name and form owner), so every member shares this resolution.
+  for (const member of group) pass.radioGroups.set(member, group);
+  return group;
 }
 
-function isRadioTabStop(element: HTMLElement, candidates: readonly HTMLElement[]): boolean {
-  const group = getRadioGroup(element);
-  if (!group) return true;
+/** A native group's single sequential stop: its checked radio, else its first eligible member in controller order. */
+function getRadioStop(group: readonly HTMLInputElement[], candidates: readonly HTMLElement[]): HTMLElement | undefined {
   const selected = group.find((candidate) => candidate.checked);
-  if (selected) return element === selected;
+  if (selected) return selected;
   const members = new Set<HTMLElement>(group);
-  return element === candidates.find((candidate) => members.has(candidate));
+  return candidates.find((candidate) => members.has(candidate));
 }
 
-function isTabbableElement(element: HTMLElement): boolean {
-  if (!element.matches(FOCUSABLE_SELECTOR) || getTabIndex(element) < 0 || !isAvailable(element)) return false;
-  const view = element.ownerDocument.defaultView;
-  const Slot = view?.HTMLSlotElement ?? HTMLSlotElement;
+function readTabbable(element: HTMLElement, pass: FocusPass): boolean {
+  if (!element.matches(FOCUSABLE_SELECTOR) || getTabIndex(element, pass) < 0 || !isAvailable(element, pass.styles)) return false;
+  const Slot = element.ownerDocument.defaultView?.HTMLSlotElement ?? HTMLSlotElement;
   // A contents slot remains an ordering boundary, but has no self focus box.
   // Explicitly box-rendered slots retain their configured tabindex target.
-  return !(element instanceof Slot && view?.getComputedStyle(element).display === "contents");
+  return !(element instanceof Slot && readFocusStyle(element, pass.styles)?.display === "contents");
+}
+
+function isTabbableElement(element: HTMLElement, pass: FocusPass): boolean {
+  return memoize(pass.tabbable, element, () => readTabbable(element, pass));
 }
 
 function getSlotChildren(slot: HTMLSlotElement | null): Element[] {
@@ -124,7 +164,7 @@ function getSlotChildren(slot: HTMLSlotElement | null): Element[] {
   return assigned.length === 0 ? [...slot.children] : assigned.filter((node): node is Element => node.nodeType === Node.ELEMENT_NODE);
 }
 
-function getScopeCandidates(elements: readonly Element[]): HTMLElement[] {
+function getScopeCandidates(elements: readonly Element[], pass: FocusPass): HTMLElement[] {
   const entries: {element: HTMLElement; contents: HTMLElement[]}[] = [];
   const visit = (element: Element): void => {
     const Html = element.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
@@ -139,43 +179,57 @@ function getScopeCandidates(elements: readonly Element[]): HTMLElement[] {
     if (shadow || slot) {
       // A shadow/slot scope stays at its owner's position. A negative owner
       // removes its entire scope from sequential navigation, not just itself.
-      if ((element.hasAttribute("tabindex") && getTabIndex(element) < 0) || !isFocusSubtreeAvailable(element, true)) return;
+      // A tabbable owner is non-negative and available, so its subtree needs no second walk.
+      if (
+        !isTabbableElement(element, pass)
+        && ((element.hasAttribute("tabindex") && getTabIndex(element, pass) < 0) || !isFocusSubtreeAvailable(element, true, pass.styles))
+      ) {
+        return;
+      }
       const contents = shadow ? [...shadow.children] : getSlotChildren(slot);
-      entries.push({element, contents: getScopeCandidates(contents)});
+      entries.push({element, contents: getScopeCandidates(contents, pass)});
     } else {
-      if (isTabbableElement(element)) entries.push({element, contents: []});
+      if (isTabbableElement(element, pass)) entries.push({element, contents: []});
       [...element.children].forEach((child) => visit(child));
     }
   };
   elements.forEach((element) => visit(element));
   const ordered = entries.toSorted((left, right) => {
-    const leftIndex = getTabIndex(left.element);
-    const rightIndex = getTabIndex(right.element);
+    const leftIndex = getTabIndex(left.element, pass);
+    const rightIndex = getTabIndex(right.element, pass);
     const leftOrder = leftIndex > 0 ? leftIndex : Number.POSITIVE_INFINITY;
     const rightOrder = rightIndex > 0 ? rightIndex : Number.POSITIVE_INFINITY;
     return leftOrder === rightOrder ? 0 : leftOrder - rightOrder;
   });
   return ordered.flatMap(({element, contents}) =>
-    isTabbableElement(element) && !element.shadowRoot?.delegatesFocus ? [element, ...contents] : contents,
+    isTabbableElement(element, pass) && !element.shadowRoot?.delegatesFocus ? [element, ...contents] : contents,
   );
 }
 
-function getFocusableElements(eligible: readonly HTMLElement[]): HTMLElement[] {
-  return eligible.filter((element) => isRadioTabStop(element, eligible));
+function getFocusableElements(eligible: readonly HTMLElement[], pass: FocusPass): HTMLElement[] {
+  const stops = new Map<readonly HTMLInputElement[], HTMLElement | undefined>();
+  return eligible.filter((element) => {
+    const group = getRadioGroup(element, pass);
+    if (!group) return true;
+    if (!stops.has(group)) stops.set(group, getRadioStop(group, eligible));
+    return element === stops.get(group);
+  });
 }
 
 function resolveActiveTarget(
   active: Element | null,
   eligible: readonly HTMLElement[],
   candidates: readonly HTMLElement[],
+  pass: FocusPass,
 ): HTMLElement | undefined {
   const Html = active?.ownerDocument.defaultView?.HTMLElement ?? HTMLElement;
   // Membership comes from the same shadow/slot-aware traversal as ordering,
   // before radio normalization removes eligible unchecked aliases.
   if (!(active instanceof Html) || !eligible.includes(active)) return undefined;
   if (candidates.includes(active)) return active;
-  if (getTabIndex(active) < 0 || !isAvailable(active)) return undefined;
-  const group = getRadioGroup(active);
+  // Eligible members were proven tabbable earlier in this pass, so this guard reads the memo.
+  if (!isTabbableElement(active, pass)) return undefined;
+  const group = getRadioGroup(active, pass);
   if (!group || group.some((candidate) => candidate.checked)) return undefined;
   const members = new Set<HTMLElement>(group);
   return candidates.find((candidate) => members.has(candidate));
@@ -286,9 +340,13 @@ const FocusScope = ({
 
   React.useEffect(() => {
     const container = containerRef.current;
-    if (autoFocus && container && isAvailable(container)) {
-      const eligible = getScopeCandidates([...container.children]);
-      (getFocusableElements(eligible)[0] ?? container).focus();
+    if (autoFocus && container) {
+      // The container check and every candidate share one pass, so common ancestors are read once.
+      const pass = createFocusPass();
+      if (isAvailable(container, pass.styles)) {
+        const eligible = getScopeCandidates([...container.children], pass);
+        (getFocusableElements(eligible, pass)[0] ?? container).focus();
+      }
     }
   }, [autoFocus]);
 
@@ -298,12 +356,13 @@ const FocusScope = ({
     ownedTabEvents.add(event.nativeEvent);
 
     const container = event.currentTarget;
-    const eligible = getScopeCandidates([...container.children]);
-    const focusable = getFocusableElements(eligible);
+    const pass = createFocusPass();
+    const eligible = getScopeCandidates([...container.children], pass);
+    const focusable = getFocusableElements(eligible, pass);
     const [first] = focusable;
     const last = focusable.at(-1);
     const activeElement = getActiveElement(container);
-    const active = resolveActiveTarget(activeElement, eligible, focusable);
+    const active = resolveActiveTarget(activeElement, eligible, focusable, pass);
     if (!first || !last) {
       event.preventDefault();
       container.focus();

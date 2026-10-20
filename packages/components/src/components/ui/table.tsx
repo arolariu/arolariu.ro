@@ -8,7 +8,16 @@ import styles from "./table.module.css";
  */
 export type TableProps = Readonly<
   React.ComponentPropsWithRef<"table"> & {
-    /** Native scroll-viewport attributes/ref. Name it when supplying a region role. */
+    /**
+     * Native props and `ref` for the scroll viewport `<div data-slot="table-container">`
+     * that wraps the table. The viewport is a tab stop by default (`tabIndex={0}`)
+     * so keyboard users can scroll a table wider than its container, and it shows
+     * a focus ring. It has no role or name of its own: pass `role: "region"` with
+     * `aria-labelledby` (for example the caption's `id`) or a localized
+     * `aria-label` so the stop is announced. Opt out with `tabIndex: -1` only when
+     * the table can never overflow. Caller values override these defaults and
+     * `className` merges with the viewport class.
+     */
     containerProps?: Omit<React.ComponentPropsWithRef<"div">, "children" | "dangerouslySetInnerHTML">;
   }
 >;
@@ -53,13 +62,34 @@ export type TableCaptionProps = Readonly<React.ComponentPropsWithRef<"caption">>
  *
  * @remarks
  * - Pure CSS component (no Base UI primitive)
- * - Renders a `<table>` element inside a `<div>` container
+ * - Renders a `<table>` element inside a `<div data-slot="table-container">`
+ *   scroll viewport; `ref` targets the table, `containerProps.ref` the viewport.
+ * - The viewport is a tab stop by default (`tabIndex={0}`, WCAG 2.1.1) so
+ *   keyboard users can scroll overflowing columns; it shows a focus ring. Without
+ *   a role it is an unnamed stop, so give it `role="region"` and a name through
+ *   `containerProps` (usually `aria-labelledby` pointing at the caption).
+ * - Opt out with `containerProps={{tabIndex: -1}}` only when the table can never
+ *   overflow its container.
+ * - Name the table itself with {@link TableCaption}, `aria-label` or
+ *   `aria-labelledby`.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <Table>
- *   <TableHeader />
+ * <Table containerProps={{role: "region", "aria-labelledby": "invoices-caption"}}>
+ *   <TableCaption id='invoices-caption'>Recent invoices</TableCaption>
+ *   <TableHeader>
+ *     <TableRow>
+ *       <TableHead scope='col'>Invoice</TableHead>
+ *       <TableHead scope='col'>Amount</TableHead>
+ *     </TableRow>
+ *   </TableHeader>
+ *   <TableBody>
+ *     <TableRow>
+ *       <TableCell>INV-001</TableCell>
+ *       <TableCell>$250.00</TableCell>
+ *     </TableRow>
+ *   </TableBody>
  * </Table>
  * ```
  *

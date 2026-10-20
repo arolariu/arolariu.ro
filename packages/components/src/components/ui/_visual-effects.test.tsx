@@ -1,6 +1,7 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
 import {renderToString} from "react-dom/server";
+import {hydrateRoot} from "react-dom/client";
 import postcss from "postcss";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -13,10 +14,12 @@ import {BackgroundBeams} from "./background-beams";
 import {BubbleBackground} from "./bubble-background";
 import {DotBackground} from "./dot-background";
 import {FireworksBackground} from "./fireworks-background";
+import {FlipButton} from "./flip-button";
 import {GradientBackground} from "./gradient-background";
 import {GradientText} from "./gradient-text";
 import {HighlightText} from "./highlight-text";
 import {HoleBackground} from "./hole-background";
+import {RippleButton} from "./ripple-button";
 import {Scratcher} from "./scratcher";
 import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
 import {CountingNumber} from "./counting-number";
@@ -29,7 +32,7 @@ import * as gradientBackgroundStories from "./gradient-background.stories";
 import * as highlightStories from "./highlight-text.stories";
 import * as holeStories from "./hole-background.stories";
 import * as scratcherStories from "./scratcher.stories";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useReducedMotionPreference, useVisualEffectPolicy} from "./_visual-effects";
 
 describe("motion option declaration contract", () => {
   it("retains the type required by public motion props when internal declarations are stripped", () => {
@@ -202,6 +205,30 @@ const motionRoots = [
         </Scratcher>
       )),
   },
+  {
+    name: "ripple-button",
+    objects: (): void => checkObjectRefs<HTMLButtonElement>((ref) => <RippleButton ref={ref}>Activate</RippleButton>),
+    callbacks: (): void => checkCallbackRefs<HTMLButtonElement>((ref) => <RippleButton ref={ref}>Activate</RippleButton>),
+  },
+  {
+    name: "flip-button",
+    objects: (): void =>
+      checkObjectRefs<HTMLButtonElement>((ref) => (
+        <FlipButton
+          ref={ref}
+          frontText='Show details'
+          backText='Open details'
+        />
+      )),
+    callbacks: (): void =>
+      checkCallbackRefs<HTMLButtonElement>((ref) => (
+        <FlipButton
+          ref={ref}
+          frontText='Show details'
+          backText='Open details'
+        />
+      )),
+  },
 ] as const;
 
 function PolicyProbe(): React.JSX.Element {
@@ -215,6 +242,16 @@ function PolicyProbe(): React.JSX.Element {
       data-visible={visible}
       data-reduced={reducedMotion}
       data-hidden={documentHidden}
+    />
+  );
+}
+
+function ReducedMotionProbe(): React.JSX.Element {
+  const reducedMotion = useReducedMotionPreference();
+  return (
+    <div
+      data-preference='reduced-motion'
+      data-reduced={reducedMotion}
     />
   );
 }
@@ -442,6 +479,55 @@ describe("visual effect policy consumer contracts", () => {
       expect(html).toContain('data-reduced="true"');
       expect(observers).toHaveLength(0);
       expect(timers).toHaveLength(0);
+    });
+  });
+
+  describe("private reduced-motion-only preference", () => {
+    it("tracks the live preference without a viewport observer, visibility listener or settle timer, and unsubscribes", () => {
+      const addDocumentListener = vi.spyOn(document, "addEventListener");
+      const removeMediaListener = vi.spyOn(media, "removeEventListener");
+      try {
+        const {container, unmount} = render(<ReducedMotionProbe />);
+        const probe = container.querySelector("[data-preference]");
+        expect(probe).toHaveAttribute("data-reduced", "false");
+        act(() => {
+          reduced = true;
+          media.dispatchEvent(new Event("change"));
+        });
+        expect(probe).toHaveAttribute("data-reduced", "true");
+        expect(observers).toHaveLength(0);
+        expect(timers.filter((callback) => typeof callback === "function" && callback.name === "settleMotion")).toHaveLength(0);
+        expect(addDocumentListener.mock.calls.filter(([type]) => type === "visibilitychange")).toHaveLength(0);
+        unmount();
+        expect(removeMediaListener).toHaveBeenCalledWith("change", expect.any(Function));
+      } finally {
+        addDocumentListener.mockRestore();
+      }
+    });
+    it("hydrates from the conservative server snapshot without a mismatch, then applies the live preference", async () => {
+      const html = renderToString(<ReducedMotionProbe />);
+      expect(html).toContain('data-reduced="true"');
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      document.body.append(container);
+      const consoleErrors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const recoverableErrors = vi.fn();
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      try {
+        await act(async () => {
+          root = hydrateRoot(container, <ReducedMotionProbe />, {onRecoverableError: recoverableErrors});
+        });
+        expect(container.querySelector("[data-preference]")).toHaveAttribute("data-reduced", "false");
+        expect(recoverableErrors).not.toHaveBeenCalled();
+        expect(consoleErrors).not.toHaveBeenCalled();
+        expect(observers).toHaveLength(0);
+      } finally {
+        act(() => {
+          root?.unmount();
+        });
+        container.remove();
+        consoleErrors.mockRestore();
+      }
     });
   });
 

@@ -54,7 +54,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function ActionExample({nested = false, controlled = false}: Readonly<{nested?: boolean; controlled?: boolean}>): React.ReactElement {
+function ActionExample({
+  nested = false,
+  controlled = false,
+  presentation,
+}: Readonly<{nested?: boolean; controlled?: boolean; presentation?: "responsive" | "menu" | "drawer"}>): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const [selection, setSelection] = React.useState("No action selected");
   return (
@@ -62,6 +66,7 @@ function ActionExample({nested = false, controlled = false}: Readonly<{nested?: 
       <DropDrawer
         open={controlled ? open : undefined}
         onOpenChange={(nextOpen) => setOpen(nextOpen)}
+        presentation={presentation}
         mobileTitle='Document actions'>
         <DropDrawerTrigger render={<Button variant='outline'>Document actions</Button>} />
         <DropDrawerContent aria-label='Document actions'>
@@ -126,8 +131,21 @@ function ActionExample({nested = false, controlled = false}: Readonly<{nested?: 
   );
 }
 
-/** Resize the real viewport; the real media hook decides which SDK owner renders. */
+/**
+ * Resize the real viewport: the default `"responsive"` presentation renders the desktop menu and switches to the
+ * drawer while `(max-width: 767px)` matches. Server rendering and hydration always start with the desktop menu.
+ */
 export const Overview: Story = {render: () => <ActionExample />};
+
+/** `presentation` forces one owner at every viewport width, including during server rendering. */
+export const ForcedDrawer: Story = {
+  render: () => (
+    <ActionExample
+      nested
+      presentation='drawer'
+    />
+  ),
+};
 
 export const DesktopView: Story = {
   globals: {viewport: {value: "desktop", isRotated: false}},

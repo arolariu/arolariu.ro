@@ -7,35 +7,40 @@ import {createPortal} from "react-dom";
 
 import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
+import {isNestedControl, navigationRequest, stepTarget} from "./_command-navigation";
+import {orderRegisteredNodes, restoreRegisteredFocus, type RankedNode} from "./_command-order";
 import {
-  isAnchorInOrder,
-  measureRenderedOrder,
-  orderRegisteredNodes,
-  restoreRegisteredFocus,
-  sameRanks,
-  type RankedNode,
-} from "./_command-order";
+  defaultCommandFilter,
+  useCommandRegistry,
+  useRenderedOrder,
+  useVisualOrder,
+  type RegisteredGroup,
+  type RegisteredItem,
+} from "./_command-state";
 import {Dialog, DialogContent, DialogDescription, DialogTitle, type DialogProps} from "./dialog";
 import {InputGroup, InputGroupAddon} from "./input-group";
 import styles from "./command.module.css";
 
-/** Positive scores match and sort descending; keywords are a per-call mutable snapshot. */
+/**
+ * Scores an option against the search: a finite positive score matches and higher scores sort first (equal scores keep
+ * rendered order); `0`, negative and non-finite scores hide it. `keywords` is a per-call copy.
+ */
 export type CommandFilter = (value: string, search: string, keywords?: string[]) => number;
 
-/** Native command registry options. Selected value is distinct from input search. */
+/** Command root props. The selected option value is distinct from the CommandInput search. */
 export type CommandProps = Readonly<
   React.ComponentPropsWithRef<"div"> & {
-    /** Accessible command/list label. @default "Commands" */
+    /** Localizable name of the root, and CommandList's fallback name. @default "Commands" */
     label?: string;
     /** Apply the local substring or supplied scoring filter. @default true */
     shouldFilter?: boolean;
-    /** Custom item scoring; no cmdk fuzzy-ranking algorithm is implied. */
+    /** Custom option scoring; no cmdk fuzzy ranking is implied. Defaults to a case-insensitive substring match (`1`/`0`). */
     filter?: CommandFilter;
-    /** Initial selected item value (not initial search). */
+    /** Initial selected option value (not the initial search). @default "" */
     defaultValue?: string;
-    /** Committed selected item value; rejected proposals never change selection. */
+    /** Controlled selected option value, authoritative even while no visible option matches it; rejected proposals never change it. */
     value?: string;
-    /** Selection proposal from pointer, focus or keyboard interaction. */
+    /** Selection proposal from pointer, focus or keyboard interaction; never called for the automatic uncontrolled fallback. */
     onValueChange?: (value: string) => void;
     /** Wrap arrow navigation at the endpoints. @default false */
     loop?: boolean;
@@ -82,12 +87,18 @@ export type CommandInputProps = Readonly<
 >;
 
 /** Native listbox props. Its effective id is linked to the combobox. */
-export type CommandListProps = Readonly<React.ComponentPropsWithRef<"div"> & {label?: string}>;
+export type CommandListProps = Readonly<
+  React.ComponentPropsWithRef<"div"> & {
+    /** Localizable listbox name used when neither `aria-label` nor `aria-labelledby` is set. Defaults to Command's `label`. */
+    label?: string;
+  }
+>;
 /** Native polite status props; the status stays mounted outside the listbox, showing children only with no visible options. */
 export type CommandEmptyProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Registered, labelled group. Hidden descendants stay mounted and searchable. */
 export type CommandGroupProps = Readonly<
   React.ComponentPropsWithRef<"div"> & {
+    /** Visible heading that names the group through `aria-labelledby` (heading id `${id}-heading`). */
     heading?: React.ReactNode;
     /** Optional group metadata; identity is the group's stable DOM id. */
     value?: string;
@@ -109,7 +120,7 @@ export type CommandItemProps = Readonly<
     disabled?: boolean;
     /** Activation callback (distinct from the root's selected-value proposal). */
     onSelect?: (value: string) => void;
-    /** Filtering/selection value; defaults to trimmed rendered text. */
+    /** Filtering/selection value, unique within its Command; defaults to the trimmed text content, CommandShortcut text included. */
     value?: string;
     /** Additional substring/custom-filter search terms. @default [] */
     keywords?: readonly string[];
@@ -119,29 +130,6 @@ export type CommandItemProps = Readonly<
 >;
 /** Native shortcut text props with a forwarded span ref. */
 export type CommandShortcutProps = Readonly<React.ComponentPropsWithRef<"span">>;
-
-interface RegisteredItem {
-  readonly disabled: boolean;
-  readonly forceMount: boolean;
-  readonly hidden: boolean;
-  readonly groupId: string | null;
-  readonly id: string;
-  readonly keywords: readonly string[];
-  readonly ref: React.RefObject<HTMLDivElement | null>;
-  readonly value: string;
-}
-
-interface RegisteredGroup {
-  readonly id: string;
-  readonly parentId: string | null;
-  readonly ref: React.RefObject<HTMLDivElement | null>;
-}
-
-interface Registry {
-  readonly items: ReadonlyMap<string, RegisteredItem>;
-  readonly groups: ReadonlyMap<string, RegisteredGroup>;
-  readonly revision: number;
-}
 
 interface CommandContextValue {
   readonly activeItemId: string | null;
@@ -177,79 +165,49 @@ function useCommandContext(componentName: string): CommandContextValue {
   return context;
 }
 
-function defaultCommandFilter(value: string, search: string, keywords: readonly string[] = []): number {
-  const haystack = [value, ...keywords].join(" ").trim().toLowerCase();
-  return haystack.includes(search.trim().toLowerCase()) ? 1 : 0;
-}
-
 interface NavigationFocusRequest {
   readonly origin: HTMLElement;
   readonly originId: string;
   readonly targetId: string;
 }
 
-type NavigationRequest =
-  | Readonly<{kind: "step"; direction: 1 | -1; group: boolean}>
-  | Readonly<{kind: "endpoint"; direction: 1 | -1}>
-  | Readonly<{kind: "activate"}>;
-
-function vimNavigationRequest(key: string): NavigationRequest | null {
-  if (key === "n" || key === "j") return {kind: "step", direction: 1, group: false};
-  if (key === "p" || key === "k") return {kind: "step", direction: -1, group: false};
-  return null;
-}
-
-function navigationRequest(event: React.KeyboardEvent<HTMLDivElement>, vimBindings: boolean): NavigationRequest | null {
-  if (event.nativeEvent.isComposing || event.shiftKey) return null;
-  if (event.ctrlKey) {
-    if (!vimBindings || event.altKey || event.metaKey) return null;
-    return vimNavigationRequest(event.key);
-  }
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    const direction = event.key === "ArrowDown" ? 1 : -1;
-    return event.metaKey ? {kind: "endpoint", direction} : {kind: "step", direction, group: event.altKey};
-  }
-  if (event.altKey || event.metaKey) return null;
-  if (event.key === "Home") return {kind: "endpoint", direction: -1};
-  if (event.key === "End") return {kind: "endpoint", direction: 1};
-  return event.key === "Enter" ? {kind: "activate"} : null;
-}
-
-function nextGroupIndex(items: readonly RegisteredItem[], index: number, direction: 1 | -1): number {
-  const current = items[index];
-  if (!current) return 0;
-  const groupKey = (item: RegisteredItem): string => item.groupId ?? item.id;
-  const candidates = direction > 0 ? items.slice(index + 1) : items.slice(0, index).toReversed();
-  const target = candidates.find((item) => groupKey(item) !== groupKey(current));
-  return target ? items.findIndex((item) => groupKey(item) === groupKey(target)) : direction > 0 ? items.length : -1;
-}
-
-function nextItem(
-  items: readonly RegisteredItem[],
-  activeId: string | null,
-  request: Extract<NavigationRequest, {kind: "step"}>,
-  loop: boolean,
-): RegisteredItem | undefined {
-  const index = items.findIndex((item) => item.id === activeId);
-  const next = request.group ? nextGroupIndex(items, index, request.direction) : index === -1 ? 0 : index + request.direction;
-  if (next >= 0 && next < items.length) return items[next];
-  return loop ? (request.direction > 0 ? items[0] : items.at(-1)) : undefined;
-}
-
-function isNestedControl(target: EventTarget): boolean {
-  if (!(target instanceof Element)) return false;
-  const control = target.closest("button, a, input, textarea, select");
-  return control !== null && control.getAttribute("data-slot") !== "command-input";
-}
-
 /**
- * Native, context-scoped command controller; not a cmdk package emulation.
- * Filtering retains registrations, score order, rendered-order ties and committed control; unfiltered DOM and keyboard
- * order always follow the consumer's rendered order inside CommandList, including keyed reorders by memoized rows that
- * re-render no Command part (a list MutationObserver re-reads them) and late mounts.
- * Home/End, arrows, Meta endpoints, Alt groups and optional Ctrl Vim keys navigate.
- * Option-origin navigation transfers focus only after selection commits; input focus stays put.
- * Place registered groups/items directly beneath CommandList/CommandGroup for score ordering.
+ * Searchable command menu root: a native, context-scoped controller for one search input, listbox and its options.
+ *
+ * @remarks
+ * - Client Component; not a cmdk emulation. Renders a `role="toolbar"` div named by `label`, and every other Command part
+ *   must render inside it (`CommandDialog` adds no root of its own).
+ * - The root's `value`/`defaultValue`/`onValueChange` select an option; `CommandInput` owns the separate search text.
+ *   Uncontrolled selection falls back to the first selectable visible option without calling `onValueChange`.
+ * - Selection is by value, so give every option a unique `value` within one Command: a duplicate resolves to the first
+ *   matching option in visual order, and arrow keys cannot step past it. A missing `value` defaults to the option's trimmed
+ *   text (CommandShortcut text included), so set stable explicit values for translated content. Option, group and list ids
+ *   default to generated `useId()` ids.
+ * - Order: without a search, DOM and keyboard order follow the consumer's rendered order inside CommandList, including
+ *   late mounts and keyed reorders. While filtering, matching options sort by descending score with rendered-order ties;
+ *   a group ranks by its best visible descendant and keeps its subtree together. Clearing the search restores rendered
+ *   order. Keep registered groups/items directly beneath CommandList or CommandGroup so they can be reordered.
+ * - A keyed move that re-renders no Command part (memoized rows) is observed by CommandList: DOM placement is corrected in
+ *   the observer's microtask and keyboard order in the commit it schedules, so a key handled in that brief, normally
+ *   sub-frame window still uses the previous order.
+ * - Keys: ArrowUp/ArrowDown step (wrapping with `loop`); Home/End and Meta+arrows reach the ends; Alt+arrows move to the
+ *   next/previous group boundary in visual order (entering or leaving a nested group counts; never backwards); Enter
+ *   activates; Ctrl+n/j and Ctrl+p/k step while `vimBindings` is on. Nested native controls keep their own keys, and DOM
+ *   focus follows the selection only when the key press started on an option.
+ *
+ * @example
+ * ```tsx
+ * <Command label='Workspace commands'>
+ *   <CommandInput aria-label='Search commands' placeholder='Type a command…' />
+ *   <CommandList>
+ *     <CommandEmpty>No commands found.</CommandEmpty>
+ *     <CommandGroup heading='Files'>
+ *       <CommandItem value='new-file' onSelect={createFile}>New file</CommandItem>
+ *       <CommandItem value='open-recent' keywords={["history"]} onSelect={openRecent}>Open recent</CommandItem>
+ *     </CommandGroup>
+ *   </CommandList>
+ * </Command>
+ * ```
  */
 const Command = ({
   ref,
@@ -277,141 +235,10 @@ const Command = ({
     const restoring = restoringFocusRef.current;
     return restoring !== null && element.contains(restoring);
   }, []);
-  const [registry, setRegistry] = React.useState<Registry>(() => ({items: new Map(), groups: new Map(), revision: 0}));
-  const listRef = React.useRef<HTMLDivElement | null>(null);
-  const observerRef = React.useRef<MutationObserver | null>(null);
-  const reconcileRef = React.useRef<() => void>(() => undefined);
-  const naturalRef = React.useRef<ReadonlyMap<string, number>>(new Map());
-  // Sibling-relative rendered rank of each anchored id, measured after commit; placement moves never change it.
-  const [natural, setNatural] = React.useState<ReadonlyMap<string, number>>(() => new Map());
-  const measureOrder = React.useCallback((): void => {
-    const ranks = listRef.current ? measureRenderedOrder(listRef.current) : new Map<string, number>();
-    if (sameRanks(ranks, naturalRef.current)) return;
-    naturalRef.current = ranks;
-    setNatural(ranks);
-  }, []);
-  // O(1) local check per committed anchor; only an out-of-order or unmeasured anchor pays for a full measure.
-  const verifyOrder = React.useCallback(
-    (anchor: Element | null): void => {
-      if (anchor && listRef.current?.contains(anchor) && !isAnchorInOrder(anchor, naturalRef.current)) measureOrder();
-    },
-    [measureOrder],
-  );
-  // Commits that move memoized rows re-render no Command part; the list's observer still re-reads their order.
-  const observeOrder = React.useCallback((list: HTMLElement): (() => void) => {
-    const observer = new MutationObserver(() => {
-      reconcileRef.current();
-    });
-    observer.observe(list, {childList: true, subtree: true});
-    observerRef.current = observer;
-    return () => {
-      observer.disconnect();
-      if (observerRef.current === observer) observerRef.current = null;
-    };
-  }, []);
-
-  const registerItem = React.useCallback((item: RegisteredItem): void => {
-    setRegistry((current) => {
-      const existing = current.items.get(item.id);
-      if (
-        existing
-        && existing.disabled === item.disabled
-        && existing.forceMount === item.forceMount
-        && existing.hidden === item.hidden
-        && existing.groupId === item.groupId
-        && existing.ref === item.ref
-        && existing.value === item.value
-        && existing.keywords.length === item.keywords.length
-        && existing.keywords.every((keyword, index) => keyword === item.keywords[index])
-      )
-        return current;
-      const items = new Map(current.items);
-      items.set(item.id, {...item, keywords: [...item.keywords]});
-      return {...current, items, revision: current.revision + 1};
-    });
-  }, []);
-  const unregisterItem = React.useCallback((id: string): void => {
-    setRegistry((current) => {
-      if (!current.items.has(id)) return current;
-      const items = new Map(current.items);
-      items.delete(id);
-      return {...current, items, revision: current.revision + 1};
-    });
-  }, []);
-  const registerGroup = React.useCallback((group: RegisteredGroup): void => {
-    setRegistry((current) => {
-      const existing = current.groups.get(group.id);
-      if (existing?.ref === group.ref && existing.parentId === group.parentId) return current;
-      const groups = new Map(current.groups);
-      groups.set(group.id, group);
-      return {...current, groups, revision: current.revision + 1};
-    });
-  }, []);
-  const unregisterGroup = React.useCallback((id: string): void => {
-    setRegistry((current) => {
-      if (!current.groups.has(id)) return current;
-      const groups = new Map(current.groups);
-      groups.delete(id);
-      return {...current, groups, revision: current.revision + 1};
-    });
-  }, []);
-
+  const {registry, registerItem, unregisterItem, registerGroup, unregisterGroup} = useCommandRegistry();
+  const {listRef, natural, measureOrder, verifyOrder, observeOrder, drainObservedMoves, reconcileRef} = useRenderedOrder();
   const isFiltering = shouldFilter && search.trim().length > 0;
-  const rankedItems = React.useMemo(
-    () =>
-      [...registry.items.values()].map((item) => {
-        const result = isFiltering ? filter(item.value, search, [...item.keywords]) : 1;
-        const score = Number.isFinite(result) && result > 0 ? result : 0;
-        return {item, score, visible: !item.hidden && (item.forceMount || !isFiltering || score > 0)};
-      }),
-    [filter, isFiltering, registry.items, search],
-  );
-  const groupRanks = React.useMemo(() => {
-    const ranks = new Map<string, {score: number; order: number}>();
-    for (const {item, score, visible} of rankedItems) {
-      let groupId = visible ? item.groupId : null;
-      const visited = new Set<string>();
-      while (groupId && !visited.has(groupId)) {
-        visited.add(groupId);
-        const existing = ranks.get(groupId);
-        ranks.set(groupId, {
-          score: Math.max(existing?.score ?? 0, score),
-          order: natural.get(groupId) ?? Number.MAX_SAFE_INTEGER,
-        });
-        groupId = registry.groups.get(groupId)?.parentId ?? null;
-      }
-    }
-    return ranks;
-  }, [natural, rankedItems, registry.groups]);
-  const visibleItems = React.useMemo(() => {
-    const paths = rankedItems
-      .filter(({visible}) => visible)
-      .map(({item, score}) => {
-        const path = [{id: item.id, score, order: natural.get(item.id) ?? Number.MAX_SAFE_INTEGER}];
-        let {groupId} = item;
-        const visited = new Set<string>();
-        while (groupId && !visited.has(groupId)) {
-          visited.add(groupId);
-          const rank = groupRanks.get(groupId);
-          if (!rank) break;
-          path.unshift({id: groupId, ...rank});
-          groupId = registry.groups.get(groupId)?.parentId ?? null;
-        }
-        return {item, path};
-      });
-    return paths
-      .toSorted((a, b) => {
-        // Compare the first diverging siblings, keeping each ancestor's subtree together like the DOM.
-        for (let index = 0; index < Math.min(a.path.length, b.path.length); index++) {
-          const first = a.path[index];
-          const second = b.path[index];
-          if (first && second && first.id !== second.id)
-            return (isFiltering ? second.score - first.score : 0) || first.order - second.order;
-        }
-        return 0;
-      })
-      .map(({item}) => item);
-  }, [groupRanks, isFiltering, natural, rankedItems, registry.groups]);
+  const {rankedItems, groupRanks, visibleItems, visibleIds} = useVisualOrder({registry, natural, filter, search, isFiltering});
   const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
   const selectedValue = value ?? selection;
   const activeItem = selectableItems.find((item) => item.value === selectedValue) ?? (value === undefined ? selectableItems[0] : undefined);
@@ -442,7 +269,7 @@ const Command = ({
         restoringFocusRef.current = null;
       }
     });
-    observerRef.current?.takeRecords();
+    drainObservedMoves();
   };
   React.useLayoutEffect(() => {
     reconcileRef.current = reconcileOrder;
@@ -492,7 +319,7 @@ const Command = ({
       activeItemId,
       disablePointerSelection,
       isFiltering,
-      isItemVisible: (id) => visibleItems.some((item) => item.id === id),
+      isItemVisible: (id) => visibleIds.has(id),
       isRestoringFocus,
       hasVisibleItemsInGroup: (id) => groupRanks.has(id),
       label,
@@ -508,7 +335,7 @@ const Command = ({
       setListId,
       selectItem,
       verifyOrder,
-      visibleItemCount: visibleItems.length,
+      visibleItemCount: visibleIds.size,
     }),
     [
       activeItemId,
@@ -518,6 +345,7 @@ const Command = ({
       groupRanks,
       label,
       listId,
+      listRef,
       registerGroup,
       registerItem,
       observeOrder,
@@ -526,7 +354,7 @@ const Command = ({
       unregisterGroup,
       unregisterItem,
       verifyOrder,
-      visibleItems,
+      visibleIds,
     ],
   );
 
@@ -555,7 +383,7 @@ const Command = ({
               ? request.direction > 0
                 ? selectableItems.at(-1)
                 : selectableItems[0]
-              : nextItem(selectableItems, activeItemId, request, loop);
+              : stepTarget(visibleItems, activeItemId, request, loop);
           if (item) {
             event.preventDefault();
             navigateToItem(item, event.currentTarget.ownerDocument);
@@ -570,8 +398,27 @@ const Command = ({
 Command.displayName = "Command";
 
 /**
- * Shared Dialog modal with real title/description and no implicit Command root.
- * Use `<CommandDialog><Command>…</Command></CommandDialog>` for canonical composition.
+ * Modal shell for a command palette: the shared Dialog with a real, visually hidden title and description.
+ *
+ * @remarks
+ * - Client Component built on the package `Dialog`; root props (`open`, `onOpenChange`, `modal`, …) pass through and `ref`
+ *   targets the popup. It adds no Command root: place exactly one `Command` inside.
+ * - `title` (default "Command menu") and `description` (default "Search for a command to run...") name and describe the
+ *   dialog; localize both.
+ * - The modal dialog traps focus, so keep a close control inside it for touch screen-reader users: `showCloseButton`
+ *   (off by default, named by `closeLabel`) or an option that closes the dialog. Escape still dismisses it.
+ *
+ * @example
+ * ```tsx
+ * <CommandDialog open={open} onOpenChange={setOpen} title='Command palette' showCloseButton closeLabel='Close palette'>
+ *   <Command>
+ *     <CommandInput aria-label='Search commands' placeholder='Type a command…' />
+ *     <CommandList>
+ *       <CommandItem value='settings' onSelect={openSettings}>Settings</CommandItem>
+ *     </CommandList>
+ *   </Command>
+ * </CommandDialog>
+ * ```
  */
 const CommandDialog = ({
   ref,
@@ -597,7 +444,29 @@ const CommandDialog = ({
 );
 CommandDialog.displayName = "CommandDialog";
 
-/** Search combobox composed with the real InputGroup chrome and native form input; see `fallbackLabel` for naming. */
+/**
+ * Search field of a Command: a native text input with combobox semantics inside the shared InputGroup chrome.
+ *
+ * @remarks
+ * - Client Component; must render inside `Command`. Focus stays here while arrow keys move the active option, exposed
+ *   through `aria-activedescendant`; `aria-controls` points at CommandList's id.
+ * - `value`/`defaultValue`/`onValueChange` own the search text, separately from the root's selected value. Your `onChange`
+ *   runs first, and `preventDefault()` there cancels the change.
+ * - Name it with a `<label>`, `aria-label`, `aria-labelledby`, `title` or `placeholder`. Only when nothing names it after
+ *   mount does `fallbackLabel` (default "Search commands") apply, so server and client markup match; localize it.
+ * - Native `name`, `form`, `disabled` and `id` are kept; the search icon is decorative.
+ *
+ * @example
+ * ```tsx
+ * <Command>
+ *   <label htmlFor='palette-search'>Search commands</label>
+ *   <CommandInput id='palette-search' placeholder='Type a command…' />
+ *   <CommandList>
+ *     <CommandItem value='rename'>Rename</CommandItem>
+ *   </CommandList>
+ * </Command>
+ * ```
+ */
 const CommandInput = ({
   ref,
   className,
@@ -662,7 +531,29 @@ const CommandInput = ({
 };
 CommandInput.displayName = "CommandInput";
 
-/** Labelled listbox; a custom id is committed back to the input's aria-controls. Hosts CommandEmpty beside the listbox. */
+/**
+ * Listbox of a Command that holds its options and groups and hosts the slot for CommandEmpty's status.
+ *
+ * @remarks
+ * - Client Component; render one inside `Command`. Its id (yours or a generated one) is committed back to the input's
+ *   `aria-controls`. Named by `aria-label`, `aria-labelledby`, `label`, or else Command's `label`.
+ * - CommandEmpty rendered inside it is portaled into a slot just before the listbox, so the listbox owns only options and
+ *   groups. The active option is scrolled into view.
+ * - It observes its subtree for keyed moves that re-render no Command part and re-reads their order; content, text and
+ *   attribute changes inside options never trigger a re-read.
+ *
+ * @example
+ * ```tsx
+ * <CommandList label='Results'>
+ *   <CommandEmpty>No results.</CommandEmpty>
+ *   {results.map((result) => (
+ *     <CommandItem key={result.id} value={result.id}>
+ *       {result.title}
+ *     </CommandItem>
+ *   ))}
+ * </CommandList>
+ * ```
+ */
 const CommandList = ({ref, children, className, label, id, ...props}: Readonly<CommandListProps>): React.JSX.Element => {
   const {listId, listRef, observeOrder, setListId, label: rootLabel} = useCommandContext("CommandList");
   const mergedRef = useMergedRefs(listRef, ref);
@@ -699,8 +590,23 @@ const CommandList = ({ref, children, className, label, id, ...props}: Readonly<C
 CommandList.displayName = "CommandList";
 
 /**
- * Polite status whose region stays mounted for the Command's lifetime, outside the listbox (portaled beside it from inside
- * CommandList); only its children toggle when no options are visible. Force-mounted and disabled options count as visible.
+ * Polite "no results" status of a Command; its children show only while no option is visible.
+ *
+ * @remarks
+ * - Client Component; must render inside `Command`. The `role="status"` region (`aria-live="polite"`, `aria-atomic`) stays
+ *   mounted while it is rendered and only its children toggle, so the message is announced as a content change. It takes
+ *   no space while empty. Do not hide or conditionally render it; change its children instead.
+ * - Inside CommandList it is portaled into a slot just before the listbox after mount (server HTML has no region); outside
+ *   a list it renders in place from the first render.
+ * - Force-mounted and disabled options count as visible; options or groups hidden with `hidden` do not.
+ *
+ * @example
+ * ```tsx
+ * <CommandList>
+ *   <CommandEmpty>No matching commands.</CommandEmpty>
+ *   <CommandItem value='rename'>Rename</CommandItem>
+ * </CommandList>
+ * ```
  */
 const CommandEmpty = ({ref, children, className, ...props}: Readonly<CommandEmptyProps>): React.JSX.Element | null => {
   const {visibleItemCount} = useCommandContext("CommandEmpty");
@@ -741,7 +647,29 @@ function CommandOrderAnchor({id}: Readonly<{id: string}>): React.JSX.Element {
   );
 }
 
-/** Retains child registrations while hidden; the heading supplies the group's name; a hidden position anchor precedes it. */
+/**
+ * Labelled group of options, or of nested groups, inside a CommandList.
+ *
+ * @remarks
+ * - Client Component; must render inside `Command`, directly beneath CommandList or another CommandGroup. Renders
+ *   `role="group"` named by `heading` unless you pass `aria-labelledby`; name a headingless group with `aria-label`.
+ * - While filtering, a group ranks by its best visible descendant, keeps its subtree together and is hidden when nothing
+ *   in it matches; `forceMount` keeps it and its descendants visible. `hidden` removes it and its descendants from
+ *   navigation and empty counts while keeping their registrations and state.
+ * - `id` defaults to a generated id; `value` is optional metadata exposed as `data-value`.
+ * - A hidden, empty position anchor renders right before it; consumer `:first-child`, `:nth-child` and adjacent-sibling
+ *   selectors must account for it.
+ *
+ * @example
+ * ```tsx
+ * <CommandGroup heading='Recent'>
+ *   <CommandItem value='q3-report'>Q3 report</CommandItem>
+ *   <CommandGroup heading='Pinned'>
+ *     <CommandItem value='roadmap'>Roadmap</CommandItem>
+ *   </CommandGroup>
+ * </CommandGroup>
+ * ```
+ */
 const CommandGroup = ({
   ref,
   children,
@@ -800,7 +728,27 @@ const CommandGroup = ({
 };
 CommandGroup.displayName = "CommandGroup";
 
-/** Primitive separator; native path retains orientation/render/state semantics. */
+/**
+ * Divider between Command groups, built on Base UI Separator.
+ *
+ * @remarks
+ * - Client Component; must render inside `Command`. Not rendered while a search filters the list, because filtered groups
+ *   move, unless `alwaysRender` is set.
+ * - `orientation` defaults to `"horizontal"`; `render`, refs and `className` callbacks keep Base UI Separator state.
+ *
+ * @example
+ * ```tsx
+ * <CommandList>
+ *   <CommandGroup heading='Edit'>
+ *     <CommandItem value='copy'>Copy</CommandItem>
+ *   </CommandGroup>
+ *   <CommandSeparator />
+ *   <CommandGroup heading='View'>
+ *     <CommandItem value='zoom-in'>Zoom in</CommandItem>
+ *   </CommandGroup>
+ * </CommandList>
+ * ```
+ */
 const CommandSeparator = ({
   ref,
   alwaysRender = false,
@@ -824,7 +772,31 @@ CommandSeparator.displayName = "CommandSeparator";
 
 const EMPTY_KEYWORDS: readonly string[] = [];
 
-/** Native option with one activation path and caller-first cancellable handlers; a hidden position anchor precedes it. */
+/**
+ * Selectable option of a Command: a native, focusable `role="option"` element.
+ *
+ * @remarks
+ * - Client Component; must render inside `Command`, directly beneath CommandList or CommandGroup for score ordering.
+ * - `value` selects and filters it and must be unique within its Command; it defaults to the trimmed text content,
+ *   CommandShortcut text included. `keywords` add search terms; `id` defaults to a generated id used by
+ *   `aria-activedescendant`.
+ * - Click, Enter and Space select it and call `onSelect(value)` after your handlers, unless they call `preventDefault()`.
+ *   Hover (unless `disablePointerSelection`) and focus propose it as the selected value. Nested buttons, links and fields
+ *   keep their own keys and clicks.
+ * - `disabled` keeps it visible but skips it in navigation and activation; `hidden` removes it from navigation and empty
+ *   counts while keeping its registration and state; `forceMount` (also inherited from a group) keeps it visible while
+ *   filtering.
+ * - A hidden, empty position anchor renders right before it.
+ *
+ * @example
+ * ```tsx
+ * <CommandItem value='open-settings' keywords={["preferences"]} onSelect={openSettings}>
+ *   <Settings aria-hidden='true' />
+ *   Settings
+ *   <CommandShortcut>⌘,</CommandShortcut>
+ * </CommandItem>
+ * ```
+ */
 const CommandItem = ({
   ref,
   children,
@@ -930,7 +902,22 @@ const CommandItem = ({
 };
 CommandItem.displayName = "CommandItem";
 
-/** Shortcut presentation with native span semantics and a React 19 ref prop. */
+/**
+ * Keyboard-shortcut hint shown at the end of a CommandItem.
+ *
+ * @remarks
+ * - Presentational `<span>` only: it registers no key binding. Wire the shortcut yourself, and expose it with
+ *   `aria-keyshortcuts` on the item when it works.
+ * - Its text becomes part of the option's accessible name and of an inferred `value`, so give the item an explicit `value`.
+ *
+ * @example
+ * ```tsx
+ * <CommandItem value='save' aria-keyshortcuts='Control+S'>
+ *   Save
+ *   <CommandShortcut>Ctrl+S</CommandShortcut>
+ * </CommandItem>
+ * ```
+ */
 const CommandShortcut = ({ref, className, ...props}: Readonly<CommandShortcutProps>): React.JSX.Element => (
   <span
     ref={ref}

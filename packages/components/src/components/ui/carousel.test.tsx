@@ -23,7 +23,10 @@ type Controls = Readonly<{
   previous?: React.ComponentPropsWithRef<typeof CarouselPrevious>;
   next?: React.ComponentPropsWithRef<typeof CarouselNext>;
 }>;
-type FixtureProps = Readonly<React.ComponentPropsWithRef<typeof Carousel>>;
+// The fixture names every carousel unless a test supplies its own `aria-label`.
+type FixtureProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof Carousel>, "aria-label" | "aria-labelledby"> & {readonly "aria-label"?: string}
+>;
 
 function fixtureOffset(element: HTMLElement, property: "offsetWidth" | "offsetHeight" | "offsetLeft" | "offsetTop"): number | undefined {
   const isTrack = element.dataset["testid"] === "carousel-track";
@@ -62,6 +65,7 @@ function renderCarousel(
   const content = (currentProps: FixtureProps, currentControls: Controls): React.ReactElement => (
     <Carousel
       {...currentProps}
+      aria-label={currentProps["aria-label"] ?? "Featured slides"}
       setApi={(api) => {
         initializedApi = api;
         currentProps.setApi?.(api);
@@ -281,7 +285,7 @@ describe("Carousel with the installed Embla engine", () => {
     },
   ] satisfies ReadonlyArray<{
     name: string;
-    props: CarouselProps;
+    props: FixtureProps;
     axis: string;
     orientation: string;
     next: string;
@@ -365,7 +369,7 @@ describe("Carousel with the installed Embla engine", () => {
 
   it("exposes safe pending context without a viewport and enforces the provider guard", () => {
     const {unmount} = render(
-      <Carousel>
+      <Carousel aria-label='Pending slides'>
         <ContextControls />
         <CarouselPrevious />
         <CarouselNext />
@@ -506,6 +510,7 @@ describe("Carousel with the installed Embla engine", () => {
     const options: CarouselOptions = {align: "start"};
     const content = (showViewport: boolean): React.ReactElement => (
       <Carousel
+        aria-label='Replaceable slides'
         opts={options}
         setApi={(api) => {
           observedApis.push(api);
@@ -579,7 +584,9 @@ describe("Carousel with the installed Embla engine", () => {
 
   it("renders the stable server snapshot with disabled navigation before viewport hydration", () => {
     const html = renderToString(
-      <Carousel opts={{axis: "y"}}>
+      <Carousel
+        aria-label='Vertical slides'
+        opts={{axis: "y"}}>
         <CarouselContent>{measuredSlides()}</CarouselContent>
         <CarouselPrevious />
         <CarouselNext />
@@ -588,6 +595,7 @@ describe("Carousel with the installed Embla engine", () => {
     const container = document.createElement("div");
     container.innerHTML = html;
     expect(container.querySelector("[data-slot='carousel']")).toHaveAttribute("data-orientation", "vertical");
+    expect(container.querySelector("[data-slot='carousel']")).toHaveAttribute("aria-label", "Vertical slides");
     expect(container.querySelector("[data-slot='carousel-previous']")).toBeDisabled();
     expect(container.querySelector("[data-slot='carousel-next']")).toBeDisabled();
   });
@@ -673,7 +681,7 @@ describe("Carousel with the installed Embla engine", () => {
 
   it("disables both controls for a single measured slide", () => {
     render(
-      <Carousel>
+      <Carousel aria-label='Single slide'>
         <CarouselContent data-testid='carousel-track'>{measuredSlides(1)}</CarouselContent>
         <CarouselPrevious />
         <CarouselNext />
@@ -681,5 +689,136 @@ describe("Carousel with the installed Embla engine", () => {
     );
     expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
     expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+  });
+
+  it("review correction: ships no generic English region name and exposes each caller-supplied name", () => {
+    // @ts-expect-error The public props type requires a string `aria-label` or `aria-labelledby`.
+    const unnamedProps: CarouselProps = {orientation: "vertical"};
+    expect(unnamedProps).not.toHaveProperty("aria-label");
+    const slides = <CarouselContent>{measuredSlides(1)}</CarouselContent>;
+    // @ts-expect-error A carousel region needs a caller-localized, distinct name.
+    const unnamed = <Carousel>{slides}</Carousel>;
+    const {unmount} = render(unnamed);
+    const region = screen.getByRole("region");
+    expect(region).toHaveAttribute("aria-roledescription", "carousel");
+    expect(region).not.toHaveAttribute("aria-label");
+    expect(region).toHaveAccessibleName("");
+    unmount();
+
+    render(
+      <>
+        <Carousel aria-label='Featured products'>{slides}</Carousel>
+        <h2 id='spring-heading'>Spring collection</h2>
+        <Carousel aria-labelledby='spring-heading'>{slides}</Carousel>
+      </>,
+    );
+    const named = screen.getByRole("region", {name: "Featured products"});
+    const labelled = screen.getByRole("region", {name: "Spring collection"});
+    for (const carousel of [named, labelled]) expect(carousel).toHaveAttribute("aria-roledescription", "carousel");
+    expect(named).toHaveAttribute("aria-label", "Featured products");
+    expect(labelled).toHaveAttribute("aria-labelledby", "spring-heading");
+    expect(labelled).not.toHaveAttribute("aria-label");
+  });
+
+  it("review correction: the documented localized example translates the name and both role descriptions", () => {
+    render(
+      <Carousel
+        aria-label='Produits en vedette'
+        aria-roledescription='carrousel'
+        opts={{loop: true}}>
+        <CarouselContent>
+          <CarouselItem aria-roledescription='diapositive'>Diapositive 1</CarouselItem>
+          <CarouselItem aria-roledescription='diapositive'>Diapositive 2</CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious label='Diapositive précédente' />
+        <CarouselNext label='Diapositive suivante' />
+      </Carousel>,
+    );
+    expect(screen.getByRole("region", {name: "Produits en vedette"})).toHaveAttribute("aria-roledescription", "carrousel");
+    const slides = screen.getAllByRole("group");
+    expect(slides).toHaveLength(2);
+    for (const slide of slides) expect(slide).toHaveAttribute("aria-roledescription", "diapositive");
+    expect(screen.getByRole("button", {name: "Diapositive précédente"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Diapositive suivante"})).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/carousel|slide/iu);
+  });
+
+  describe("review correction: reduced-motion duration", () => {
+    const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
+    /** Replaces only the platform preference; Embla, React and the carousel stay real. */
+    function controlReducedMotion(initial: boolean): (reduced: boolean) => void {
+      let reduced = initial;
+      const media = window.matchMedia(reducedMotionQuery);
+      Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+      const platformMatchMedia = window.matchMedia.bind(window);
+      vi.spyOn(window, "matchMedia").mockImplementation((query) => (query === reducedMotionQuery ? media : platformMatchMedia(query)));
+      return (next) => {
+        reduced = next;
+        act(() => {
+          media.dispatchEvent(new Event("change"));
+        });
+      };
+    }
+
+    // Embla 8's own default transition duration, used when the caller supplies none.
+    it.each([
+      {source: "caller", opts: {duration: 40}, expected: 40},
+      {source: "Embla default", opts: undefined, expected: 25},
+    ])("restores the $source duration each time the preference clears", ({opts, expected}) => {
+      const setReduced = controlReducedMotion(false);
+      const {api} = renderCarousel({opts});
+      const duration = (): number => api().internalEngine().options.duration;
+      expect(duration()).toBe(expected);
+
+      setReduced(true);
+      expect(duration()).toBe(0);
+      fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+      expect(api().selectedScrollSnap()).toBe(1);
+
+      setReduced(false);
+      expect(duration()).toBe(expected);
+      expect(api().selectedScrollSnap()).toBe(1);
+
+      setReduced(true);
+      expect(duration()).toBe(0);
+      setReduced(false);
+      expect(duration()).toBe(expected);
+    });
+
+    it.each([
+      {source: "caller", opts: {duration: 40, startIndex: 1}, expected: 40},
+      {source: "Embla default", opts: {startIndex: 1}, expected: 25},
+    ])("starts instant under a reduced-motion preference and then restores the $source duration", ({opts, expected}) => {
+      const setReduced = controlReducedMotion(true);
+      const {api} = renderCarousel({opts});
+      expect(api().internalEngine().options.duration).toBe(0);
+      expect(api().selectedScrollSnap()).toBe(1);
+
+      setReduced(false);
+      expect(api().internalEngine().options.duration).toBe(expected);
+      expect(api().selectedScrollSnap()).toBe(1);
+    });
+
+    it("keeps caller breakpoints while its own reduced-motion duration wins over every matching caller entry", () => {
+      const setReduced = controlReducedMotion(false);
+      const {api} = renderCarousel({
+        opts: {
+          breakpoints: {
+            [reducedMotionQuery]: {duration: 99, dragFree: true},
+            "(min-width: 1px)": {duration: 60},
+          },
+        },
+      });
+      const options = (): Readonly<{duration: number; dragFree: boolean}> => api().internalEngine().options;
+      expect(window.matchMedia("(min-width: 1px)").matches).toBe(true);
+      expect(options()).toMatchObject({duration: 60, dragFree: false});
+
+      setReduced(true);
+      expect(options()).toMatchObject({duration: 0, dragFree: true});
+
+      setReduced(false);
+      expect(options()).toMatchObject({duration: 60, dragFree: false});
+    });
   });
 });

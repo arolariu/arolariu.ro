@@ -4,6 +4,7 @@ import {Tabs as BaseTabs} from "@base-ui/react/tabs";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {tabsListVariants} from "./_tabs-list-variants";
 import styles from "./tabs.module.css";
 
 /** Readonly Base UI root props, including orientation and controlled selection. */
@@ -24,10 +25,11 @@ export type TabsListVariant = "default" | "line";
 
 /** Primitive-owned list state augmented with its visual presentation. */
 export interface TabsListState extends Readonly<BaseTabs.List.State> {
+  /** The list's presentation: TabsList's `variant` prop, or `"default"` when omitted; also rendered as `data-variant`. */
   readonly variant: TabsListVariant;
 }
 
-/** Options for generating tab list classes without rendering a component. */
+/** Options for generating tab list classes with {@link tabsListVariants} without rendering a component. */
 export interface TabsListVariantOptions {
   /** Visual presentation. @default "default" */
   // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
@@ -54,16 +56,6 @@ export type TabsListProps = Readonly<
       React.ReactElement | ((props: Parameters<PrimitiveListRenderCallback>[0], state: TabsListState) => React.ReactElement) | undefined;
   }
 >;
-
-const listVariantStyles = {
-  default: styles.default,
-  line: styles.line,
-} satisfies Record<TabsListVariant, string | undefined>;
-
-/** Returns the CSS Module classes for a tab list presentation. */
-function tabsListVariants({variant = "default", className}: Readonly<TabsListVariantOptions> = {}): string {
-  return cn(styles.list, listVariantStyles[variant], className);
-}
 
 /**
  * Coordinates a tabbed interface for switching between related panels.

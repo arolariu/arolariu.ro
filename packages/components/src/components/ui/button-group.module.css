@@ -75,3 +75,14 @@
 .separator[data-orientation="vertical"] {
   height: auto;
 }
+
+@media (forced-colors: active) {
+  /*
+   * The same system colour as Separator's own forced-colors rule. Both stylesheets paint a `.separator` class at (0,1,0),
+   * so without this rule whichever loads later would decide, and forced colors replace a non-system background with
+   * Canvas, hiding the rule. Root imports load this stylesheet first; the `button-group` subpath loads it last.
+   */
+  .separator {
+    background-color: CanvasText;
+  }
+}

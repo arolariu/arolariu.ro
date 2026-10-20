@@ -12,15 +12,13 @@ export type HoverCardProps = Readonly<React.ComponentPropsWithRef<typeof BasePre
 export type HoverCardTriggerProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BasePreviewCard.Trigger>, "ref"> & React.RefAttributes<HTMLElement>
 >;
-/** Popup semantics plus explicit Positioner and Portal options. Offsets default to 4. */
+/** Popup semantics plus explicit Positioner and Portal options. */
 export type HoverCardContentProps = Readonly<
   React.ComponentPropsWithRef<typeof BasePreviewCard.Popup>
     & Pick<
       React.ComponentPropsWithRef<typeof BasePreviewCard.Positioner>,
       | "side"
       | "align"
-      | "sideOffset"
-      | "alignOffset"
       | "anchor"
       | "positionMethod"
       | "collisionBoundary"
@@ -30,20 +28,30 @@ export type HoverCardContentProps = Readonly<
       | "arrowPadding"
       | "disableAnchorTracking"
     >
-    & Pick<React.ComponentPropsWithRef<typeof BasePreviewCard.Portal>, "keepMounted" | "container">
+    & Pick<React.ComponentPropsWithRef<typeof BasePreviewCard.Portal>, "keepMounted" | "container"> & {
+      /** Distance in pixels between the trigger and the card, or a function of their sizes, side and alignment. @default 4 */
+      sideOffset?: BasePreviewCard.Positioner.Props["sideOffset"];
+      /** Offset in pixels along the alignment axis, or a function of the trigger and card sizes. @default 4 */
+      alignOffset?: BasePreviewCard.Positioner.Props["alignOffset"];
+    }
 >;
 
 /**
  * Coordinates hover card state and accessibility behavior.
  *
  * @remarks
- * - Delegates structure and state to the underlying Base UI primitive
- * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
- * - Preserves the underlying primitive API for advanced composition
+ * - Client-only (`"use client"`); renders no DOM element. Compose a `HoverCardTrigger` link and a `HoverCardContent`.
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}, which opens the card on
+ *   hover or keyboard focus of the trigger after its delay.
+ * - The card is supplementary: touch users cannot hover, so the link must make sense on its own and the card must not
+ *   hold the only copy of essential information or actions.
  *
  * @example
  * ```tsx
- * <HoverCard>Content</HoverCard>
+ * <HoverCard>
+ *   <HoverCardTrigger href='/users/ada'>@ada</HoverCardTrigger>
+ *   <HoverCardContent>Ada Lovelace · Joined in 2019</HoverCardContent>
+ * </HoverCard>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
@@ -56,13 +64,14 @@ function HoverCard(props: Readonly<HoverCard.Props>): React.ReactElement {
  * Renders the hover card trigger.
  *
  * @remarks
- * - Renders a `<a>` element by default
- * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Client-only; renders an `<a>` element by default, so give it an `href` that works without the card.
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}; `delay` (600 ms) and
+ *   `closeDelay` (300 ms) tune hover and focus timing.
  * - Supports the `render` prop for element composition
  *
  * @example
  * ```tsx
- * <HoverCardTrigger>Content</HoverCardTrigger>
+ * <HoverCardTrigger href='/users/ada' delay={400}>@ada</HoverCardTrigger>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
@@ -89,13 +98,16 @@ const HoverCardTrigger = ({ref, className, ...props}: Readonly<HoverCardTrigger.
  * Renders the hover card content.
  *
  * @remarks
- * - Renders a `<div>` element by default
+ * - Client-only; render inside `HoverCard`. Renders Portal → Positioner → a `<div>` Popup.
  * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
- * - Supports the `render` prop for element composition
+ * - Placement props reach the Positioner: `side="bottom"`, `align="center"`, `sideOffset={4}` and `alignOffset={4}` by
+ *   default. `keepMounted` and `container` reach the Portal; popup props, `render` and `ref` stay on the Popup.
  *
  * @example
  * ```tsx
- * <HoverCardContent>Content</HoverCardContent>
+ * <HoverCardContent side='right' align='start'>
+ *   <ProfileSummary userId='ada' />
+ * </HoverCardContent>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}

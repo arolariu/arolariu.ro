@@ -91,6 +91,10 @@ sites/arolariu.ro/licenses.json
 sites/arolariu.ro/next-env.d.ts
 **/e2e-storage-state.json
 
+# --- @arolariu/components packed-archive gate (`npm test`): the extraction is
+#     removed on exit, SIGINT and SIGTERM; a forced kill cannot clean up ---
+packages/components/.packed-contract-*/
+
 # --- exp local config (may contain secrets for local development) ---
 sites/exp.arolariu.ro/config.json
 sites/exp.arolariu.ro/config.docker.json

@@ -1,14 +1,43 @@
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {parse} from "postcss";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {ErrorBoundary} from "./error-boundary";
+import styles from "./error-boundary.module.css";
 
 function ThrowingComponent(): never {
   throw new Error("Test error");
 }
 
 describe("ErrorBoundary", () => {
+  it("review correction: applies the retry button's forced-colors styling at the stylesheet root, independent of reduced motion", () => {
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent />
+      </ErrorBoundary>,
+    );
+    const retryClass = styles.retry;
+    if (!retryClass) throw new Error("Missing ErrorBoundary retry CSS Module class");
+    expect(screen.getByRole("button", {name: "Try again"})).toHaveClass(retryClass);
+
+    const forced: Record<string, Record<string, string>> = {};
+    parse(readFileSync(join(import.meta.dirname, "error-boundary.module.css"), "utf8")).walkAtRules("media", (media) => {
+      if (media.params !== "(forced-colors: active)") return;
+      // A nested block would apply only when reduced motion is also requested.
+      expect(media.parent?.type).toBe("root");
+      media.walkRules((rule) => {
+        rule.walkDecls((declaration) => {
+          forced[rule.selector] = {...forced[rule.selector], [declaration.prop]: declaration.value};
+        });
+      });
+    });
+    expect(forced[".retry"]).toEqual({"border-color": "ButtonText", "background-color": "ButtonFace", color: "ButtonText"});
+    expect(forced[".retry:focus-visible"]).toEqual({"outline-color": "Highlight"});
+  });
+
   it("React 19 refresh: localizes built-in error and retry copy, including updates while failed", () => {
     function Failure(): never {
       throw new Error("Network unavailable");

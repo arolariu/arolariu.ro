@@ -116,6 +116,32 @@ export function isAnchorInOrder(anchor: Element, ranks: ReadonlyMap<string, numb
   return rank !== undefined && previousRank !== undefined && previousRank < rank;
 }
 
+/** `Node.ELEMENT_NODE`, compared by value so nodes from another realm (an iframe portal) still qualify. */
+const ELEMENT_NODE = 1;
+
+function isElementNode(node: Node): node is Element {
+  return node.nodeType === ELEMENT_NODE;
+}
+
+function carriesAnchor(node: Node): boolean {
+  return isElementNode(node) && (node.hasAttribute(ANCHOR) || node.querySelector(ANCHOR_SELECTOR) !== null);
+}
+
+/**
+ * Tells whether observed child-list records can change the rendered order.
+ *
+ * @remarks
+ * Ranks come only from anchors, and React moves, mounts or unmounts an anchor together with its option or group, so only
+ * records that add or remove an anchor, or an element containing one, matter. Content changes inside an option or heading
+ * (child nodes, text or attributes) never re-rank.
+ *
+ * @param records - Records delivered to CommandList's observer.
+ * @returns Whether Command must re-read the rendered order.
+ */
+export function affectsRenderedOrder(records: readonly MutationRecord[]): boolean {
+  return records.some((record) => [...record.addedNodes, ...record.removedNodes].some((node) => carriesAnchor(node)));
+}
+
 /** Registered entries placed directly in `parent`, in the rendered order of their React-placed, never-moved anchors. */
 function anchoredEntries(parent: HTMLElement, entries: ReadonlyMap<string, RankedNode>): Array<readonly [Element, RankedNode]> {
   const slots: Array<readonly [Element, RankedNode]> = [];

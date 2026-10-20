@@ -304,6 +304,73 @@ describe("FireworksBackground", () => {
     expect(timers.size).toBe(launches);
   });
 
+  it("keys the canvas on prop values: new-but-equal inline palettes and ranges neither restart, measure nor clear it", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const inline = (title: string, fireworkSpeed = {min: 4, max: 8}): React.JSX.Element => (
+      <FireworksBackground
+        ref={ref}
+        title={title}
+        loop
+        population={0}
+        color={["#ff0080", "#00ff80"]}
+        fireworkSpeed={fireworkSpeed}
+        fireworkSize={{min: 2, max: 5}}
+        particleSpeed={{min: 2, max: 7}}
+        particleSize={{min: 1, max: 5}}
+      />
+    );
+    const {rerender} = render(inline("first"));
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    fireEvent.click(screen.getByRole("button", {name: "Launch fireworks"}), {detail: 0});
+    const measure = vi.mocked(HTMLElement.prototype.getBoundingClientRect);
+    const measurements = measure.mock.calls.length;
+    const clears = context.clearRect.mock.calls.length;
+    const runningFrames = [...frames.keys()];
+    const liveObservers = observers.length;
+    const liveObserver = observers.at(-1);
+    expect(runningFrames).toHaveLength(1);
+    rerender(inline("second"));
+    expect(ref.current).toHaveAttribute("title", "second");
+    expect(observers).toHaveLength(liveObservers);
+    expect(liveObserver?.disconnect).not.toHaveBeenCalled();
+    expect(measure).toHaveBeenCalledTimes(measurements);
+    expect(context.clearRect).toHaveBeenCalledTimes(clears);
+    expect([...frames.keys()]).toEqual(runningFrames);
+    context.moveTo.mockClear();
+    frame();
+    // The launch that was in flight before the re-render is still drawn.
+    expect(context.moveTo).toHaveBeenCalled();
+    // A changed value still restarts the canvas with the new physics.
+    rerender(inline("second", {min: 150, max: 160}));
+    expect(observers).toHaveLength(liveObservers + 1);
+    expect(liveObserver?.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it("paints a deterministic static frame: the first palette color at the mid-range particle size, on every repaint", () => {
+    reduced = true;
+    const random = vi.mocked(Math.random);
+    random.mockReturnValue(0.1);
+    render(
+      <FireworksBackground
+        color={["#ff0080", "#00ff80", "#0080ff"]}
+        particleSize={{min: 1, max: 5}}
+      />,
+    );
+    const first = context.arc.mock.calls.slice(-24);
+    expect(first).toHaveLength(24);
+    expect(context.fillStyle).toBe("#ff0080");
+    expect(first.every((call) => call[2] === 3)).toBe(true);
+    random.mockReturnValue(0.9);
+    context.arc.mockClear();
+    act(() => {
+      observers[0]?.resize();
+    });
+    expect(context.arc.mock.calls).toEqual(first);
+    expect(context.fillStyle).toBe("#ff0080");
+  });
+
   it("bounds click-created trails and paints real explosion particles", () => {
     const ref = React.createRef<HTMLDivElement>();
     const {rerender} = render(

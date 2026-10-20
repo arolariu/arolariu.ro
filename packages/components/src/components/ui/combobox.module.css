@@ -121,6 +121,11 @@
   text-align: center;
 }
 
+/* Base UI keeps ComboboxEmpty's live region mounted; it collapses while it holds no message. */
+.empty:empty {
+  padding: 0;
+}
+
 .separator {
   height: 1px;
   margin-block: var(--ac-space-1);

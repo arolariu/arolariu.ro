@@ -1,3 +1,8 @@
+"use client";
+
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -30,14 +35,25 @@ export interface EmptyMediaProps extends Readonly<React.ComponentPropsWithRef<"d
 export type EmptyTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
- * Props for the {@link EmptyDescription} component.
+ * State owned by the {@link EmptyDescription} renderer and passed to its `render` callback.
  */
-export type EmptyDescriptionProps =
-  | (Readonly<React.ComponentPropsWithoutRef<"p">> & {readonly as?: "p"; readonly ref?: React.Ref<HTMLParagraphElement | HTMLDivElement>})
-  | (Readonly<React.ComponentPropsWithoutRef<"div">> & {
-      readonly as: "div";
-      readonly ref?: React.Ref<HTMLParagraphElement | HTMLDivElement>;
-    });
+export type EmptyDescriptionState = Readonly<{slot: "empty-description"}>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type EmptyDescriptionRenderProps = Readonly<Omit<HTMLProps<HTMLElement>, "ref"> & {ref?: React.RefCallback<HTMLElement> | null}>;
+
+/**
+ * Props for the {@link EmptyDescription} component.
+ *
+ * @remarks
+ * Native paragraph attributes plus Base UI `render` composition. The ref targets the actual rendered element.
+ */
+export type EmptyDescriptionProps = Readonly<
+  Omit<useRender.ComponentProps<"p", EmptyDescriptionState, EmptyDescriptionRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a `<p>`. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 /**
  * Props for the {@link EmptyContent} component.
@@ -50,6 +66,8 @@ export type EmptyContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - The `empty` module is a client module (`"use client"`) because {@link EmptyDescription} composes through Base UI
+ *   `useRender`; Server Components can still render every part
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -147,24 +165,36 @@ const EmptyTitle = ({ref, className, ...props}: Readonly<EmptyTitleProps>): Reac
  * Renders supporting copy for an empty state.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a `<p>` by default; use `as="div"` for paragraphs, lists, or other rich block content
- * - Props and the forwarded ref correspond to the selected native element
+ * - **Rendering Context**: client boundary for Base UI render/ref composition
+ * - Renders a `<p>` by default. For paragraphs, lists or other block content, compose a block element with
+ *   `render={<div />}`; Base UI merges that element's props, class names, child-first event handlers and both refs
+ * - A `render` callback receives the merged props and {@link EmptyDescriptionState}
+ * - Caller props, including `data-slot`, are applied last
+ * - Plain nested links inherit the description colour and are underlined; class-styled anchors such as
+ *   `buttonVariants()` keep their own paint, hover colour and focus ring
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
  * <EmptyDescription>Try adjusting your filters.</EmptyDescription>
+ *
+ * <EmptyDescription render={<div />}>
+ *   <p>There are several ways to get started:</p>
+ *   <ul>
+ *     <li>Create an item.</li>
+ *   </ul>
+ * </EmptyDescription>
  * ```
  *
  * @see {@link EmptyDescriptionProps} for available props
  */
-const EmptyDescription = ({ref, className, as: tagName = "p", ...props}: Readonly<EmptyDescriptionProps>): React.JSX.Element =>
-  React.createElement(tagName, {
-    ...props,
+const EmptyDescription = ({ref, className, render, ...props}: Readonly<EmptyDescriptionProps>): React.ReactElement =>
+  useRender<EmptyDescriptionState, HTMLElement>({
+    defaultTagName: "p",
     ref,
-    "data-slot": "empty-description",
-    className: cn(styles.description, className),
+    render,
+    state: {slot: "empty-description"},
+    props: mergeProps<"p">({className: cn(styles.description, className)}, props),
   });
 
 /**
@@ -219,6 +249,8 @@ namespace EmptyTitle {
 // eslint-disable-next-line no-redeclare -- public component namespace
 namespace EmptyDescription {
   export type Props = Readonly<EmptyDescriptionProps>;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- named and namespace public typing
+  export type State = EmptyDescriptionState;
 }
 // eslint-disable-next-line no-redeclare -- public component namespace
 namespace EmptyContent {

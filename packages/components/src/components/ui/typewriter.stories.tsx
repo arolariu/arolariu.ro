@@ -48,10 +48,12 @@ export const Default: Story = {};
 export const StyledWords: Story = {
   args: {words: [{text: "Build"}, {text: "accessible", className: cn(storyClasses.storyAccent)}, {text: "interfaces"}]},
 };
+/** A generic `<div>` cannot be named: the label is paired with `role="group"`, never put on the root alone. */
 export const Smooth: Story = {
   render: (args) => (
     <TypewriterTextSmooth
       {...args}
+      role='group'
       aria-label='Smooth greeting'
     />
   ),

@@ -1040,3 +1040,23 @@ describe("Tooltip", () => {
     expect(tooltip).toHaveAttribute("data-side", "top");
   });
 });
+
+describe("Tooltip final review L25: documented offset", () => {
+  it("places content 4px above its anchor by default", async () => {
+    const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+    render(
+      <Tooltip defaultOpen>
+        <TooltipTrigger>Save</TooltipTrigger>
+        <TooltipContent
+          anchor={anchor}
+          align='start'
+          collisionAvoidance={{side: "none", align: "none"}}>
+          Save changes
+        </TooltipContent>
+      </Tooltip>,
+    );
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveAttribute("data-side", "top");
+    await waitFor(() => expect(tooltip.parentElement).toHaveStyle({transform: "translate(200px, 96px)"}));
+  });
+});

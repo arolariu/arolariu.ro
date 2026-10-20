@@ -50,18 +50,22 @@ describe("Message", () => {
               render={
                 <button
                   type='button'
-                  aria-label='Open Alex profile'
+                  aria-label='Open Alex profile, online'
                 />
               }>
               <AvatarFallback>AL</AvatarFallback>
-              <AvatarBadge aria-label='Online' />
+              <AvatarBadge aria-hidden='true' />
             </Avatar>
           </MessageAvatar>
         </Message>
       </>,
     );
-    const profile = screen.getByRole("button", {name: "Open Alex profile"});
-    const badge = screen.getByLabelText("Online");
+    // A button's content is presentational, so the presence status belongs in its computed name; the badge is decorative.
+    const profile = screen.getByRole("button", {name: "Open Alex profile, online"});
+    const badge = profile.querySelector('[data-slot="avatar-badge"]');
+    if (!(badge instanceof HTMLElement)) throw new Error("Missing composed AvatarBadge");
+    expect(badge).toHaveAttribute("aria-hidden", "true");
+    expect(badge).not.toHaveAttribute("aria-label");
     expect(avatar.current).toBe(profile);
     expect(profile.parentElement).toBe(wrapper.current);
     expect(wrapper.current).toHaveAttribute("data-slot", "message-avatar");

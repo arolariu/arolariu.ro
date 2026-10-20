@@ -1,7 +1,7 @@
 import {ChevronLeft, ChevronRight, Ellipsis} from "lucide-react";
 import * as React from "react";
 
-import type {ButtonProps} from "@/components/ui/button";
+import type {ButtonSize} from "@/components/ui/button";
 import {cn} from "@/lib/utilities";
 import buttonStyles from "./button.module.css";
 import styles from "./pagination.module.css";
@@ -24,25 +24,34 @@ export type PaginationItemProps = Readonly<React.ComponentPropsWithRef<"li">>;
 /**
  * Props for the {@link PaginationLink} component.
  */
-export interface PaginationLinkProps extends Readonly<Pick<ButtonProps, "size">>, Readonly<React.ComponentPropsWithRef<"a">> {
+export interface PaginationLinkProps extends Readonly<React.ComponentPropsWithRef<"a">> {
   /** Marks the link as the current active page. @default false */
   readonly isActive?: boolean;
+  /**
+   * Button size preset applied to the anchor; page-number links default to the square `icon` size.
+   * @default "icon"
+   */
+  readonly size?: ButtonSize;
 }
 
 /**
  * Props for the {@link PaginationPrevious} component.
  */
-export interface PaginationPreviousProps extends Omit<PaginationLinkProps, "children"> {
+export interface PaginationPreviousProps extends Omit<PaginationLinkProps, "children" | "size"> {
   /** Visible navigation copy and default accessible name. @default "Previous" */
   readonly text?: string;
+  /** Button size preset applied to the anchor, sized for its icon and visible text. @default "default" */
+  readonly size?: ButtonSize;
 }
 
 /**
  * Props for the {@link PaginationNext} component.
  */
-export interface PaginationNextProps extends Omit<PaginationLinkProps, "children"> {
+export interface PaginationNextProps extends Omit<PaginationLinkProps, "children" | "size"> {
   /** Visible navigation copy and default accessible name. @default "Next" */
   readonly text?: string;
+  /** Button size preset applied to the anchor, sized for its visible text and icon. @default "default" */
+  readonly size?: ButtonSize;
 }
 
 /**
@@ -50,7 +59,7 @@ export interface PaginationNextProps extends Omit<PaginationLinkProps, "children
  */
 export type PaginationEllipsisProps = Readonly<Omit<React.ComponentPropsWithRef<"span">, "children">>;
 
-const buttonSizeStyles: Readonly<Record<NonNullable<ButtonProps["size"]>, string | undefined>> = {
+const buttonSizeStyles: Readonly<Record<ButtonSize, string | undefined>> = {
   default: buttonStyles.sizeDefault,
   xs: buttonStyles.sizeXs,
   icon: buttonStyles.sizeIcon,

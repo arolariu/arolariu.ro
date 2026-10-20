@@ -55,6 +55,20 @@ describe("Pagination", () => {
     expect(screen.getByRole("link", {name: "4"})).not.toHaveAttribute("type");
   });
 
+  it("applies the documented size defaults: icon for page links, default for previous and next", () => {
+    render(
+      <>
+        <PaginationLink href='?page=4'>4</PaginationLink>
+        <PaginationPrevious href='?page=3' />
+        <PaginationNext href='?page=5' />
+      </>,
+    );
+    expect(screen.getByRole("link", {name: "4"})).toHaveClass(buttonStyles.sizeIcon!);
+    expect(screen.getByRole("link", {name: "Previous"})).toHaveClass(buttonStyles.sizeDefault!);
+    expect(screen.getByRole("link", {name: "Next"})).toHaveClass(buttonStyles.sizeDefault!);
+    expect(screen.getByRole("link", {name: "Next"})).not.toHaveClass(buttonStyles.sizeIcon!);
+  });
+
   it("keeps all native refs, active state, and caller cancellation on the actual navigation elements", () => {
     const root = createRef<HTMLElement>();
     const content = createRef<HTMLUListElement>();

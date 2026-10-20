@@ -527,3 +527,24 @@ describe("Popover", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 });
+
+describe("Popover final review L25: documented offset", () => {
+  it("places content 4px below its anchor by default", async () => {
+    const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Share</PopoverTrigger>
+        <PopoverContent
+          aria-label='Share settings'
+          anchor={anchor}
+          align='start'
+          collisionAvoidance={{side: "none", align: "none"}}>
+          Share settings
+        </PopoverContent>
+      </Popover>,
+    );
+    const popup = await screen.findByRole("dialog", {name: "Share settings"});
+    expect(popup).toHaveAttribute("data-side", "bottom");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(200px, 124px)"}));
+  });
+});

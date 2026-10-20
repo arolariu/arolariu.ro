@@ -35,10 +35,30 @@ function isDecorativeSvg(children: React.ReactNode): boolean {
 /**
  * Renders a decorative element-sized dot grid, capped at 4096 dots.
  *
- * @remarks Dense requests are evenly downsampled. Glow has a static reduced-motion/offscreen alternative. A box-less SVG (for
- * example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not an error: it renders no dots before
- * its first positive measurement and otherwise keeps its last grid until a positive `ResizeObserver` or window resize
- * measurement regenerates it.
+ * @remarks
+ * - `width`/`height` are dot spacing, not SVG dimensions: the absolutely positioned SVG fills its positioned ancestor and is
+ *   measured with a `ResizeObserver` and window resize; dense requests are evenly downsampled to at most 4096 dots
+ * - Decorative by default: `aria-hidden` while it has no children. Meaningful SVG children (for example `<text>`) stay exposed and
+ *   must carry their own accessible text
+ * - Dots paint with `currentColor` (muted foreground; `CanvasText` in forced colors). `glow` pulses them while visible and motion
+ *   is permitted, settling to a static frame five seconds after mount unless `loop`, which needs a caller-owned, localized pause
+ *   control that sets `motionPaused` (WCAG 2.2.2). Reduced motion, a hidden document and offscreen instances show the static frame
+ * - A box-less SVG (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not an error: it
+ *   renders no dots before its first positive measurement and otherwise keeps its last grid until a positive `ResizeObserver` or
+ *   window resize measurement regenerates it
+ * - Animated component using the `motion` library; renders an `<svg>` element with `pointer-events: none`
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <section className={styles.hero}>
+ *   <DotBackground glow width={24} height={24} />
+ *   <h2>Launch week</h2>
+ * </section>
+ * ```
+ *
+ * @see {@link DotBackgroundProps} for available props
  * @throws {RangeError} Only for invalid props: spacing, radius or offsets. Measured geometry never throws.
  */
 function DotBackground({

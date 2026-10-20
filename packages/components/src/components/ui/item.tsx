@@ -72,12 +72,12 @@ export type ItemMediaProps = Readonly<
 export type ItemContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
- * Props for the {@link ItemTitle} component.
+ * Props for the {@link ItemTitle} component. Titles wrap by default; truncation is an opt-in caller class.
  */
 export type ItemTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
- * Props for the {@link ItemDescription} component.
+ * Props for the {@link ItemDescription} component. Descriptions wrap by default; a line clamp is an opt-in caller class.
  */
 export type ItemDescriptionProps = Readonly<React.ComponentPropsWithRef<"p">>;
 
@@ -255,13 +255,24 @@ const ItemContent = ({ref, className, ...props}: Readonly<ItemContentProps>): Re
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
- * - Visually clamps to one line with ellipsis while keeping all content in the DOM.
- *   Inline text/icons remain supported; use `className` to override the clamp.
+ * - Wraps long titles onto as many lines as they need (`overflow-wrap: anywhere`,
+ *   no clamp), so the full text stays visible at narrow widths, high zoom and
+ *   increased text spacing. Inline text/icons remain supported.
+ * - Truncation is opt-in: pass a caller class through `className` (for example
+ *   `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`) and keep the
+ *   full title reachable elsewhere, such as a linked detail view. Truncated text
+ *   stays in the accessibility tree but is hidden from sighted users.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemTitle>Title</ItemTitle>
+ * <ItemTitle>Quarterly report.pdf</ItemTitle>
+ * ```
+ *
+ * @example Opt-in single-line truncation
+ * ```tsx
+ * // .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ * <ItemTitle className='truncate'>A long collection title</ItemTitle>
  * ```
  *
  * @see {@link ItemTitleProps} for available props
@@ -282,13 +293,22 @@ const ItemTitle = ({ref, className, ...props}: Readonly<ItemTitleProps>): React.
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<p>` element
  * - Accepts rich phrasing content, including inline links, not nested block markup.
- * - Visually clamps to two lines without removing accessible content; override
- *   the CSS Module treatment through `className` when full expansion is needed.
+ *   Plain nested links inherit the description colour, stay underlined and take
+ *   the foreground colour on hover; class-styled anchors such as
+ *   `buttonVariants()` keep their own paint.
+ * - Wraps onto as many lines as it needs (no clamp), keeping all content visible.
+ *   To clamp, opt in through `className` with a `-webkit-line-clamp` rule
+ *   (`display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden`) whose
+ *   selector also wins over the module's `display: block`, and keep the full text
+ *   reachable elsewhere: clamped text stays in the accessibility tree but is
+ *   hidden from sighted users.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemDescription>Support text</ItemDescription>
+ * <ItemDescription>
+ *   Shared with 4 people. <a href='/files/report/sharing'>Manage access</a>
+ * </ItemDescription>
  * ```
  *
  * @see {@link ItemDescriptionProps} for available props

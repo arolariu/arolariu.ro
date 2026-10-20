@@ -3,8 +3,85 @@ import userEvent from "@testing-library/user-event";
 import {createRef} from "react";
 import {describe, expect, it, vi as vitest} from "vitest";
 
+import buttonStyles from "./button.module.css";
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea} from "./input-group";
+import styles from "./input-group.module.css";
 import {Switch} from "./switch";
+
+function moduleClass(module: Readonly<Record<string, string | undefined>>, name: string): string {
+  const className = module[name];
+  if (!className) throw new Error(`Missing CSS Module class: ${name}`);
+  return className;
+}
+
+describe("InputGroupButton class and default precedence", () => {
+  it("merges a caller className with the group button class instead of replacing it", () => {
+    render(
+      <InputGroup>
+        <InputGroupInput aria-label='Query' />
+        <InputGroupAddon align='inline-end'>
+          <InputGroupButton className='consumer-action'>Search</InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>,
+    );
+    const button = screen.getByRole("button", {name: "Search"});
+    expect(button).toHaveClass(
+      moduleClass(styles, "button"),
+      "consumer-action",
+      moduleClass(buttonStyles, "ghost"),
+      moduleClass(buttonStyles, "sizeXs"),
+    );
+  });
+
+  it("keeps the group button class when a composed primitive supplies the className", () => {
+    render(
+      <InputGroupButton
+        className='primitive-trigger'
+        variant='outline'
+        size='icon-xs'
+        aria-label='Show suggestions'
+      />,
+    );
+    const button = screen.getByRole("button", {name: "Show suggestions"});
+    expect(button).toHaveClass(moduleClass(styles, "button"), "primitive-trigger", moduleClass(buttonStyles, "outline"));
+    expect(button).toHaveAttribute("data-size", "icon-xs");
+  });
+
+  it("keeps the documented ghost, xs and button-type defaults when those props are explicitly undefined", () => {
+    render(
+      <form>
+        <InputGroupButton
+          variant={undefined}
+          size={undefined}
+          type={undefined}>
+          Clear
+        </InputGroupButton>
+      </form>,
+    );
+    const button = screen.getByRole("button", {name: "Clear"});
+    expect(button).toHaveAttribute("data-variant", "ghost");
+    expect(button).toHaveAttribute("data-size", "xs");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).toHaveClass(moduleClass(styles, "button"), moduleClass(buttonStyles, "ghost"), moduleClass(buttonStyles, "sizeXs"));
+  });
+
+  it("still lets caller rest props override wrapper-owned attributes", () => {
+    render(
+      <InputGroupButton
+        data-slot='custom-slot'
+        type='submit'
+        variant='default'
+        size='sm'>
+        Send
+      </InputGroupButton>,
+    );
+    const button = screen.getByRole("button", {name: "Send"});
+    expect(button).toHaveAttribute("data-slot", "custom-slot");
+    expect(button).toHaveAttribute("type", "submit");
+    expect(button).toHaveAttribute("data-variant", "default");
+    expect(button).toHaveAttribute("data-size", "sm");
+  });
+});
 
 describe("InputGroup", () => {
   it("does not steal focus from a non-button interactive addon after pointer activation", async () => {

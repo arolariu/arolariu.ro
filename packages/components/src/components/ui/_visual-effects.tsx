@@ -24,6 +24,33 @@ export interface VisualEffectOptions {
 }
 
 const serverPreferences: MotionPreferences = {reducedMotion: true, documentHidden: false};
+const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+const serverReducedMotion = (): boolean => true;
+
+/**
+ * Subscribes to the live `prefers-reduced-motion` preference only.
+ *
+ * @remarks
+ * For controls whose motion is user-initiated (RippleButton, FlipButton): unlike {@link useVisualEffectPolicy}, it creates no
+ * IntersectionObserver, document visibility listener or settle timer per instance. The server and hydration snapshot is
+ * conservatively `true` (reduced), like the policy's; the live preference applies after hydration.
+ *
+ * @returns Whether reduced motion is currently preferred.
+ * @internal
+ */
+export function useReducedMotionPreference(): boolean {
+  const preference = React.useMemo(() => {
+    const media = typeof window === "undefined" ? null : globalThis.matchMedia(reducedMotionQuery);
+    return {
+      subscribe(notify: () => void): () => void {
+        media?.addEventListener("change", notify);
+        return (): void => media?.removeEventListener("change", notify);
+      },
+      snapshot: (): boolean => media?.matches ?? true,
+    };
+  }, []);
+  return React.useSyncExternalStore(preference.subscribe, preference.snapshot, serverReducedMotion);
+}
 
 /**
  * Observes per-instance visibility and live platform motion preferences.
@@ -50,7 +77,7 @@ export function useVisualEffectPolicy<TElement extends Element>(
   }, [loop, settled]);
   const initialReducedMotion = useReducedMotion();
   const preferences = React.useMemo(() => {
-    const media = typeof window === "undefined" ? null : globalThis.matchMedia("(prefers-reduced-motion: reduce)");
+    const media = typeof window === "undefined" ? null : globalThis.matchMedia(reducedMotionQuery);
     let previous = serverPreferences;
     return {
       subscribe(notify: () => void): () => void {

@@ -9,14 +9,13 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./navigation-menu.module.css";
 
+// The pure trigger-class helper lives in a directive-free module so the package root can hand it to Server Components;
+// this subpath keeps re-exporting it (as a client reference under React Server Components).
+export {navigationMenuTriggerStyle} from "./_navigation-menu-trigger-style";
+
 type PartProps<Part extends React.ElementType> = Readonly<
   React.ComponentPropsWithRef<Part> & {[attribute: `data-${string}`]: string | number | boolean | undefined}
 >;
-
-/** Returns the CSS classes used by a navigation trigger or a trigger-styled link. */
-export function navigationMenuTriggerStyle(className?: string): string {
-  return cn(styles.trigger, className);
-}
 
 /** Readonly primitive root options with automatic popup placement. */
 export type NavigationMenuProps<Value = unknown> = Readonly<
@@ -44,7 +43,13 @@ export type NavigationMenuLinkProps = Readonly<React.ComponentPropsWithRef<typeo
 
 /** Readonly positioning options with independently owned Portal, Popup and Viewport props. */
 export type NavigationMenuPositionerProps = Readonly<
-  PartProps<typeof BaseNavigationMenu.Positioner> & {
+  Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Positioner>, "align" | "sideOffset"> & {
+    [attribute: `data-${string}`]: string | number | boolean | undefined;
+  } & {
+    /** How to align the popup relative to `side`; collision handling may adjust it. @default "start" */
+    align?: BaseNavigationMenu.Positioner.Props["align"];
+    /** Distance in pixels between the active trigger and the popup, or a function of their sizes. @default 8 */
+    sideOffset?: BaseNavigationMenu.Positioner.Props["sideOffset"];
     /** Portal mounting/container options and extra children; render and ref belong to the Portal. */
     portalProps?: PartProps<typeof BaseNavigationMenu.Portal>;
     /** Popup naming, render/class state and ref belong to the actual `<nav>` popup. */
@@ -104,7 +109,31 @@ function withDecoration<State>(
 
 /**
  * Coordinates native navigation semantics and one automatic portaled popup.
- * Set `positionerProps={false}` for explicit Positioner composition.
+ *
+ * @remarks
+ * - Client-only; renders a `<nav>` landmark (a `<div>` when nested). Name it with `aria-label` when the page has more
+ *   than one navigation landmark.
+ * - Compose `NavigationMenuList` → `NavigationMenuItem` → `NavigationMenuTrigger` + `NavigationMenuContent`, or a
+ *   direct `NavigationMenuLink`. One `NavigationMenuPositioner` is rendered automatically; configure it with
+ *   `positionerProps`, or set `positionerProps={false}` for explicit Positioner composition.
+ * - Base UI owns the open `value`, hover `delay`/`closeDelay` (50 ms each) and keyboard navigation.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenu aria-label='Main'>
+ *   <NavigationMenuList>
+ *     <NavigationMenuItem value='products'>
+ *       <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+ *       <NavigationMenuContent>
+ *         <NavigationMenuLink href='/analytics'>Analytics</NavigationMenuLink>
+ *       </NavigationMenuContent>
+ *     </NavigationMenuItem>
+ *     <NavigationMenuItem>
+ *       <NavigationMenuLink href='/pricing' className={navigationMenuTriggerStyle()}>Pricing</NavigationMenuLink>
+ *     </NavigationMenuItem>
+ *   </NavigationMenuList>
+ * </NavigationMenu>
+ * ```
  */
 function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenuProps<Value>>): React.ReactElement {
   const {className, children, render, ref, align = "start", orientation = "horizontal", positionerProps, ...otherProps} = props;
@@ -135,7 +164,21 @@ function NavigationMenu<Value = unknown>(props: Readonly<NavigationMenuProps<Val
   );
 }
 
-/** Renders the primitive list and preserves its open-state callbacks, native orientation and ref. */
+/**
+ * Renders the primitive list and preserves its open-state callbacks, native orientation and ref.
+ *
+ * @remarks
+ * - Client-only; renders a native `<ul>` inside `NavigationMenu`. Its children are `NavigationMenuItem` list items.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenuList>
+ *   <NavigationMenuItem>
+ *     <NavigationMenuLink href='/blog' className={navigationMenuTriggerStyle()}>Blog</NavigationMenuLink>
+ *   </NavigationMenuItem>
+ * </NavigationMenuList>
+ * ```
+ */
 const NavigationMenuList = ({ref, ...props}: Readonly<NavigationMenuList.Props>): React.ReactElement => {
   const {className, ...otherProps} = props;
   return (
@@ -148,7 +191,23 @@ const NavigationMenuList = ({ref, ...props}: Readonly<NavigationMenuList.Props>)
   );
 };
 
-/** Renders a native list item with Base UI's value and render composition contracts. */
+/**
+ * Renders a native list item with Base UI's value and render composition contracts.
+ *
+ * @remarks
+ * - Client-only; a native `<li>` inside `NavigationMenuList`. Give items with a trigger a stable `value` so a
+ *   controlled `NavigationMenu` `value` (or `defaultValue`) can open them.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenuItem value='resources'>
+ *   <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
+ *   <NavigationMenuContent>
+ *     <NavigationMenuLink href='/guides'>Guides</NavigationMenuLink>
+ *   </NavigationMenuContent>
+ * </NavigationMenuItem>
+ * ```
+ */
 const NavigationMenuItem = ({ref, ...props}: Readonly<NavigationMenuItem.Props>): React.ReactElement => {
   const {className, ...otherProps} = props;
   return (
@@ -161,7 +220,19 @@ const NavigationMenuItem = ({ref, ...props}: Readonly<NavigationMenuItem.Props>)
   );
 };
 
-/** Opens item content with a native button and an associated primitive-owned decorative icon. */
+/**
+ * Opens item content with a native button and an associated primitive-owned decorative icon.
+ *
+ * @remarks
+ * - Client-only; render inside a `NavigationMenuItem` next to its `NavigationMenuContent`. Base UI renders a native
+ *   `<button>` with `aria-expanded` and, while open, `aria-controls`; it opens on click, Enter, Space or hover.
+ * - The trailing chevron is `aria-hidden`. Use a direct `NavigationMenuLink` instead for destinations with no panel.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+ * ```
+ */
 const NavigationMenuTrigger = ({ref, ...props}: Readonly<NavigationMenuTrigger.Props>): React.ReactElement => {
   const {className, children, render, ...otherProps} = props;
   const icon = (
@@ -187,7 +258,23 @@ const NavigationMenuTrigger = ({ref, ...props}: Readonly<NavigationMenuTrigger.P
   );
 };
 
-/** Moves active item content into the viewport, preserving activation direction and enter/exit callbacks. */
+/**
+ * Moves active item content into the viewport, preserving activation direction and enter/exit callbacks.
+ *
+ * @remarks
+ * - Client-only; render inside a `NavigationMenuItem` after its trigger. Base UI moves the active item's content into
+ *   the portaled viewport and exposes `data-activation-direction` for directional transitions.
+ * - Put `NavigationMenuLink` destinations inside; keep the panel's content in reading order.
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenuContent>
+ *   <ul>
+ *     <li><NavigationMenuLink href='/docs/install'>Installation</NavigationMenuLink></li>
+ *   </ul>
+ * </NavigationMenuContent>
+ * ```
+ */
 const NavigationMenuContent = ({ref, ...props}: Readonly<NavigationMenuContent.Props>): React.ReactElement => {
   const {className, ...otherProps} = props;
   return (
@@ -229,10 +316,19 @@ const NavigationMenuLink = ({ref, ...props}: Readonly<NavigationMenuLink.Props>)
  * Positions a portaled Popup/Viewport against the active trigger.
  *
  * @remarks
- * Defaults to bottom/start, sideOffset 8 and alignOffset 0. Base UI owns
- * measurements, positioning, instant state and all render/class callbacks.
- * Positioner children precede the popup; popupProps children precede its viewport.
- * Keep callback/ref/class props on their named primitive owner.
+ * - Client-only. `NavigationMenu` renders one automatically; render it yourself only with `positionerProps={false}`.
+ * - Defaults to `side="bottom"`, `align="start"`, `sideOffset={8}` and `alignOffset={0}`. Base UI owns
+ *   measurements, positioning, instant state and all render/class callbacks.
+ * - Positioner children precede the popup; popupProps children precede its viewport.
+ *   Keep callback/ref/class props on their named primitive owner (`portalProps`, `popupProps`, `viewportProps`).
+ *
+ * @example
+ * ```tsx
+ * <NavigationMenu positionerProps={false}>
+ *   <NavigationMenuList>…</NavigationMenuList>
+ *   <NavigationMenuPositioner sideOffset={12} popupProps={{"aria-label": "Site sections"}} />
+ * </NavigationMenu>
+ * ```
  */
 const NavigationMenuPositioner = ({ref, ...props}: Readonly<NavigationMenuPositioner.Props>): React.ReactElement => {
   const {

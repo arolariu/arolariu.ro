@@ -13,7 +13,7 @@ import {Input} from "@/components/ui/input";
 import {Separator} from "@/components/ui/separator";
 import {Skeleton} from "@/components/ui/skeleton";
 import {Sheet, SheetContent, SheetDescription, SheetTitle} from "@/components/ui/sheet";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useIsMobile} from "@/hooks/useIsMobile";
 import {cn} from "@/lib/utilities";
 
@@ -196,29 +196,48 @@ function useSidebarControlInteractions(
   };
 }
 
-/** Desktop and mobile state owned by one provider subtree. */
+/** Desktop and mobile state owned by one {@link SidebarProvider} subtree, as returned by {@link useSidebar}. */
 export type SidebarContextProps = Readonly<{
+  /** Desktop presentation derived from `open`; the desktop sidebar root mirrors it as `data-state`. */
   state: "expanded" | "collapsed";
+  /** Desktop open state: the controlled `open` prop when provided, otherwise internal state seeded by `defaultOpen`. */
   open: boolean;
+  /**
+   * Proposes a desktop open state (a value or an updater of the current `open`). Each call reports the value through
+   * `onOpenChange` and, unless `persistState` is `false`, writes the `sidebar_state` cookie; an uncontrolled provider also
+   * applies it, while a controlled provider changes only when its owner updates `open`.
+   */
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Whether the mobile sheet is open; independent of `open`, never persisted and not reported through `onOpenChange`. */
   openMobile: boolean;
+  /** Opens or closes the mobile sheet (a value or an updater). */
   setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Whether the viewport matches `(max-width: 767px)`; `false` on the server and during hydration. */
   isMobile: boolean;
+  /** Toggles the mobile sheet while `isMobile`, otherwise the desktop state through `setOpen`; Ctrl/Cmd+B calls it. */
   toggleSidebar: () => void;
 }>;
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
 /**
- * Returns the active sidebar context and enforces provider usage.
+ * Returns the state and actions of the nearest {@link SidebarProvider}.
  *
  * @remarks
- * Must be called from within {@link SidebarProvider}. Exposes desktop and mobile
- * open state along with the shared toggle helper used by sidebar primitives.
+ * Client-only hook for custom triggers, status text and layout that depends on the sidebar. Every
+ * sidebar part reads the same context, so a value changed here is reflected by all of them.
+ *
+ * @returns The provider's {@link SidebarContextProps}: desktop `state`, `open` and `setOpen`, mobile
+ * `openMobile` and `setOpenMobile`, the `isMobile` breakpoint match and `toggleSidebar`.
+ * @throws {Error} When called outside a {@link SidebarProvider}
+ * (`"useSidebar must be used within a SidebarProvider."`).
  *
  * @example
  * ```tsx
- * const {open, toggleSidebar} = useSidebar();
+ * function SidebarStatus(): React.JSX.Element {
+ *   const {state, isMobile, openMobile} = useSidebar();
+ *   return <p>{isMobile ? `Menu ${openMobile ? "open" : "closed"}` : `Sidebar ${state}`}</p>;
+ * }
  * ```
  *
  * @see {@link https://react.dev/reference/react/useContext | React useContext Docs}
@@ -252,19 +271,45 @@ export interface SidebarProviderProps extends Readonly<React.ComponentPropsWithR
    * @default undefined
    */
   readonly onOpenChange?: (open: boolean) => void;
+  /**
+   * Whether each desktop open-state change writes the `sidebar_state` cookie: `sidebar_state=true` or `false`, with
+   * `path=/` and `max-age=604800` (seven days) and no `domain`, `Secure` or `SameSite` attribute, so browser defaults
+   * apply. It is written for every proposal, including controlled ones the owner declines; mobile sheet changes are
+   * never written. The provider never reads the cookie: read it where the provider renders (for example on the
+   * server) and pass `defaultOpen`. Set `false` when the caller owns persistence (for example through `onOpenChange`),
+   * when cookies need consent, or when several providers share a page.
+   * @default true
+   */
+  readonly persistState?: boolean;
 }
 
 /**
  * Provides shared sidebar state, keyboard shortcuts, and responsive behavior.
  *
  * @remarks
- * - Renders a `<div>` element
- * - Built on shared React context and tooltip primitives
- * - Persists desktop collapse state to a cookie for cross-page continuity
+ * - Renders a `<div>` element and provides the context read by {@link useSidebar}
+ * - Desktop state is controlled (`open` + `onOpenChange`) or uncontrolled (`defaultOpen`); the mobile
+ *   sheet keeps separate state that is never persisted
+ * - Writes the `sidebar_state` cookie on desktop changes unless `persistState={false}`; it never reads
+ *   it, so seed `defaultOpen` from the cookie to restore the state across page loads
+ * - While mounted, Ctrl+B or Cmd+B (either modifier with the `b` key) anywhere in the window calls
+ *   `toggleSidebar` and prevents the browser's default for that shortcut. A `keydown` handler that calls
+ *   `event.preventDefault()` first (for example an editor's bold command) keeps the shortcut for itself
+ * - Only collapsed {@link SidebarMenuButton} tooltips open without delay; other tooltips in this subtree
+ *   keep the surrounding `TooltipProvider` timing (Base UI's default 600 ms without one)
  *
  * @example
  * ```tsx
- * <SidebarProvider>
+ * // Restore the last desktop state from the cookie the provider writes, e.g. in a Next.js Server Component.
+ * const defaultOpen = (await cookies()).get("sidebar_state")?.value !== "false";
+ *
+ * <SidebarProvider defaultOpen={defaultOpen}>
+ *   <Sidebar />
+ *   <SidebarInset />
+ * </SidebarProvider>
+ *
+ * // Caller-owned persistence: no cookie is written; the owner stores `open` where it keeps preferences.
+ * <SidebarProvider open={open} onOpenChange={setOpenAndStore} persistState={false}>
  *   <Sidebar />
  * </SidebarProvider>
  * ```
@@ -276,6 +321,7 @@ const SidebarProvider = ({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
+  persistState = true,
   className,
   children,
   dir,
@@ -295,10 +341,12 @@ const SidebarProvider = ({
       if (openProp === undefined) setInternalOpen(nextValue);
       setOpenProp?.(nextValue);
 
-      // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      if (persistState) {
+        // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      }
     },
-    [open, openProp, setOpenProp],
+    [open, openProp, persistState, setOpenProp],
   );
 
   const toggleSidebar = React.useCallback(() => {
@@ -343,16 +391,14 @@ const SidebarProvider = ({
   return (
     <DirectionProvider direction={direction}>
       <SidebarContext.Provider value={contextValue}>
-        <TooltipProvider delay={0}>
-          <div
-            ref={ref}
-            dir={dir}
-            data-slot='sidebar-wrapper'
-            className={cn(styles.wrapper, className)}
-            {...props}>
-            {children}
-          </div>
-        </TooltipProvider>
+        <div
+          ref={ref}
+          dir={dir}
+          data-slot='sidebar-wrapper'
+          className={cn(styles.wrapper, className)}
+          {...props}>
+          {children}
+        </div>
       </SidebarContext.Provider>
     </DirectionProvider>
   );
@@ -407,6 +453,13 @@ export type SidebarProps = Readonly<
  * - Below the mobile breakpoint the modal sheet ends with a named close control
  *   (`closeLabel`), positioned at the top inline-end corner above the content; dismissal
  *   also remains available through Escape and the backdrop
+ * - Writes `dir="rtl"` on its root (the sheet popup on mobile) only under an RTL `DirectionProvider`, including
+ *   `SidebarProvider dir="rtl"`; otherwise it writes no `dir` and inherits the surrounding direction, so the
+ *   `:dir(rtl)` layout rules follow a document-level `dir="rtl"`. Base UI's `useDirection()` also reports `"ltr"`
+ *   without a provider, so an explicit LTR provider (or `SidebarProvider dir="ltr"`) inside an RTL document needs
+ *   `dir="ltr"` here for the portaled mobile sheet; a caller's `dir` always wins. Without an RTL `DirectionProvider`,
+ *   Base UI parts inside it keep LTR placement and arrow keys, so RTL apps should wrap in
+ *   `DirectionProvider direction="rtl"` (or set `SidebarProvider dir="rtl"`).
  *
  * @example
  * ```tsx
@@ -433,7 +486,9 @@ const Sidebar = ({
 }: Readonly<SidebarProps>): React.JSX.Element => {
   const {isMobile, openMobile, setOpenMobile, state} = useSidebar();
   const direction = useDirection();
-  const dir = dirProp ?? direction;
+  // Only an RTL provider is written: Base UI also reports "ltr" without any provider, and a forced dir="ltr" would
+  // override a document-level dir="rtl" (and disable the .desktopRoot:dir(rtl) rules) for apps without a provider.
+  const dir = dirProp ?? (direction === "rtl" ? "rtl" : undefined);
   const localDirection = dir === "rtl" || dir === "ltr" ? dir : direction;
 
   if (collapsible === "none") {
@@ -983,7 +1038,9 @@ export interface SidebarMenuButtonProps extends SidebarControlProps<SidebarMenuB
    */
   readonly isActive?: boolean;
   /**
-   * Tooltip content displayed when the sidebar is collapsed on desktop.
+   * Tooltip content displayed when the sidebar is collapsed on desktop (disabled while expanded and on mobile).
+   * It opens without delay (`delay={0}` on its trigger) whatever the surrounding `TooltipProvider` sets; other
+   * tooltips keep their own timing. For different timing, omit `tooltip` and compose `Tooltip` around the button.
    * @default undefined
    */
   readonly tooltip?: string | React.ComponentProps<typeof TooltipContent>;
@@ -1075,7 +1132,10 @@ const SidebarMenuButton = ({
 
   return (
     <Tooltip disabled={state !== "collapsed" || isMobile}>
-      <TooltipTrigger render={button} />
+      <TooltipTrigger
+        render={button}
+        delay={0}
+      />
       <TooltipContent
         side='right'
         align='center'

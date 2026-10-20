@@ -46,8 +46,14 @@ export type ComboboxPositionerProps = Readonly<
 /** Popup props plus anchor/measurement options and separate portal/positioner customization. */
 export type ComboboxContentProps = Readonly<
   React.ComponentPropsWithRef<typeof ComboboxPrimitive.Popup>
-    & ComboboxPositioningProps & {
+    & Omit<ComboboxPositioningProps, "align" | "sideOffset"> & {
+      /** How to align the popup relative to `side`; this wrapper starts it at the input's start edge. @default "start" */
+      align?: ComboboxPositioningProps["align"];
+      /** Distance between the anchor and the popup in px, or an offset function. @default 6 */
+      sideOffset?: ComboboxPositioningProps["sideOffset"];
+      /** Props for the measured positioner, including its `ref` and `className` callback. */
       positionerProps?: ComboboxPositionerProps;
+      /** Props for the portal, such as `container` and `keepMounted`. */
       portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof ComboboxPrimitive.Portal>, "children">>;
     }
 >;
@@ -61,7 +67,7 @@ export type ComboboxGroupProps = Readonly<React.ComponentPropsWithRef<typeof Com
 export type ComboboxLabelProps = Readonly<React.ComponentPropsWithRef<typeof ComboboxPrimitive.GroupLabel>>;
 /** Props for the DOM-less filtered collection renderer. */
 export type ComboboxCollectionProps = Readonly<ComboboxPrimitive.Collection.Props>;
-/** Props for the explicitly composed no-results block. */
+/** Props for the explicitly composed no-results status, whose root stays mounted while only its children toggle. */
 export type ComboboxEmptyProps = Readonly<React.ComponentPropsWithRef<typeof ComboboxPrimitive.Empty>>;
 /** Props for a separator between groups. */
 export type ComboboxSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof ComboboxPrimitive.Separator>>;
@@ -108,19 +114,78 @@ function withChildren<State>(render: ComboboxRender<State>, children: React.Reac
 }
 
 /**
- * Coordinates editable single/multiple selection and filtering.
- * The direct alias retains every installed Root generic and cancellable change contract.
- * Supply `items` metadata to display selected labels before popup items mount.
+ * Editable combobox root: coordinates single or multiple selection, the input text, filtering and the popup.
+ *
+ * @remarks
+ * - Client Component; a direct alias of Base UI `Combobox.Root` that keeps every installed generic (`Value`, `Multiple`,
+ *   `Item`) and cancellable change details, and renders no DOM element.
+ * - Pass `items` so Base UI filters them for `ComboboxList`/`ComboboxCollection` function children, drives
+ *   `ComboboxEmpty` and labels the selection before the popup mounts. Object items need `itemToStringLabel` (and
+ *   `itemToStringValue` for forms) unless they carry `label` and `value` fields, and are compared with `Object.is` unless
+ *   you pass `isItemEqualToValue`.
+ * - `value`, `inputValue` and `open` are independent controlled/uncontrolled pairs; `multiple` switches to array values
+ *   shown as chips, and `name` submits the selection with a native form.
+ *
+ * @example
+ * ```tsx
+ * <Combobox items={fruits} value={fruit} onValueChange={setFruit}>
+ *   <ComboboxInput aria-label='Fruit' placeholder='Choose a fruit' />
+ *   <ComboboxContent>
+ *     <ComboboxList>
+ *       {(item: Fruit) => (
+ *         <ComboboxItem key={item.value} value={item}>
+ *           {item.label}
+ *         </ComboboxItem>
+ *       )}
+ *     </ComboboxList>
+ *     <ComboboxEmpty>No fruit found.</ComboboxEmpty>
+ *   </ComboboxContent>
+ * </Combobox>
+ * ```
  */
 const Combobox = ComboboxPrimitive.Root;
 
-/** Displays the selected value from Root metadata without rendering an extra DOM node. */
+/**
+ * Renders the selected value's label, or a function child's output, without adding a DOM element.
+ *
+ * @remarks
+ * - Client Component; a direct alias of Base UI `Combobox.Value`. With root `items` the label is available before the popup
+ *   mounts; `placeholder` shows while nothing is selected, and a function child receives the selection (an array with
+ *   `multiple`, to be treated as read-only).
+ *
+ * @example
+ * ```tsx
+ * <ComboboxChips ref={anchor}>
+ *   <ComboboxValue>
+ *     {(selected: readonly Fruit[]) => selected.map((item) => <ComboboxChip key={item.value}>{item.label}</ComboboxChip>)}
+ *   </ComboboxValue>
+ *   <ComboboxChipsInput aria-label='Fruits' />
+ * </ComboboxChips>
+ * ```
+ */
 const ComboboxValue = ComboboxPrimitive.Value;
 
 /**
- * Opens suggestions; caller content is retained alongside the decorative chevron.
- * The built-in icon has a localizable "Show suggestions" name. Custom icon-only
- * content/render callbacks must supply their own aria-label or aria-labelledby.
+ * Button that opens the suggestions popup, keeping caller content beside a decorative chevron.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Trigger`, a native `<button>`; `render`/`className` callbacks receive its
+ *   state.
+ * - Without visible content it is named "Show suggestions"; pass `aria-label` to localize it. Custom icon-only `render`
+ *   callbacks must supply their own `aria-label` or `aria-labelledby`.
+ * - ComboboxInput already renders one (`showTrigger`); use this part on its own beside an input rendered with
+ *   `showTrigger={false}` or beside ComboboxChips.
+ *
+ * @example
+ * ```tsx
+ * <Combobox items={fruits}>
+ *   <ComboboxInput aria-label='Fruit' showTrigger={false} />
+ *   <ComboboxTrigger aria-label='Afficher les suggestions' />
+ *   <ComboboxContent>
+ *     <ComboboxList>{(item: Fruit) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxList>
+ *   </ComboboxContent>
+ * </Combobox>
+ * ```
  */
 const ComboboxTrigger = ({ref, className, children, render, ...props}: Readonly<ComboboxTriggerProps>): React.JSX.Element => {
   const content = (
@@ -146,6 +211,7 @@ const ComboboxTrigger = ({ref, className, children, render, ...props}: Readonly<
   );
 };
 
+/** Internal clear control for ComboboxInput; named "Clear selection" unless the caller names it or supplies visible content. */
 const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<ComboboxClearProps>): React.JSX.Element => {
   const resolvedChildren = getChildren(children, render);
   const defaultLabel = typeof render !== "function" && !hasCustomContent(resolvedChildren) ? "Clear selection" : undefined;
@@ -188,9 +254,26 @@ const ComboboxClear = ({ref, className, children, render, ...props}: Readonly<Co
 };
 
 /**
- * Renders an editable primitive input inside the shared InputGroup chrome.
- * Input render/class callbacks receive Combobox.Input state, not InputGroup/Input state.
- * Children are optional group adornments; trigger/clear content belongs in their own props.
+ * Editable combobox input in the shared InputGroup chrome, with optional trigger and clear buttons.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Input` rendered as InputGroupInput; `className`/`render` callbacks receive
+ *   `Combobox.Input` state, while `groupClassName` styles the InputGroup shell.
+ * - Name the input with a `<label>`, `aria-label` or `aria-labelledby`.
+ * - `showTrigger` adds a "Show suggestions" button. `showClear` adds a "Clear selection" button that Base UI mounts only
+ *   while a value is selected (single) or chips exist (`multiple`); typed text alone does not mount it. Localize both
+ *   names through `triggerProps`/`clearProps` (`aria-label` or visible children); both follow `disabled`.
+ * - `children` are extra InputGroup adornments rendered after the input and its buttons.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxInput
+ *   aria-label='Country'
+ *   placeholder='Search countries'
+ *   showClear
+ *   clearProps={{"aria-label": "Clear country"}}
+ * />
+ * ```
  */
 const ComboboxInput = ({
   ref,
@@ -250,9 +333,30 @@ const ComboboxInput = ({
 );
 
 /**
- * Portals and positions the popup without adding an implicit list, input or empty block.
- * The forwarded ref targets Popup; `positionerProps.ref` targets the measured positioner.
- * `anchor` accepts elements, refs, virtual DOMRect providers and callbacks.
+ * Portals and positions the suggestions popup without adding a list, input or empty block of its own.
+ *
+ * @remarks
+ * - Client Component composing Base UI `Combobox.Portal`, `Combobox.Positioner` and `Combobox.Popup`. `ref`, `className`
+ *   and the remaining props target the popup; `positionerProps` (its `ref` included) target the positioner and
+ *   `portalProps` the portal.
+ * - Placement defaults differ from Base UI's: `side="bottom"`, `sideOffset={6}`, `align="start"`, `alignOffset={0}`.
+ * - `anchor` accepts an element, a ref, a virtual element or a callback; pass the `useComboboxAnchor` ref shared with
+ *   ComboboxChips so the popup is positioned against, and as wide as, the whole chips container.
+ * - Compose ComboboxList and ComboboxEmpty inside it.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxContent align='end' sideOffset={8} portalProps={{container: dialogBody}}>
+ *   <ComboboxList>
+ *     {(item: Fruit) => (
+ *       <ComboboxItem key={item.value} value={item}>
+ *         {item.label}
+ *       </ComboboxItem>
+ *     )}
+ *   </ComboboxList>
+ *   <ComboboxEmpty>No fruit found.</ComboboxEmpty>
+ * </ComboboxContent>
+ * ```
  */
 const ComboboxContent = ({
   ref,
@@ -305,7 +409,25 @@ const ComboboxContent = ({
   );
 };
 
-/** Renders the real listbox; function children consume Base UI's filtered items. */
+/**
+ * The suggestions listbox; a function child renders each of Base UI's filtered `items`.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.List`, which the input's `aria-controls` references while the popup is
+ *   open; `className` callbacks receive its state (such as `empty`).
+ * - For grouped data, return ComboboxGroup elements whose ComboboxCollection renders each group's items.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxList>
+ *   {(item: Fruit) => (
+ *     <ComboboxItem key={item.value} value={item}>
+ *       {item.label}
+ *     </ComboboxItem>
+ *   )}
+ * </ComboboxList>
+ * ```
+ */
 const ComboboxList = ({ref, className, ...props}: Readonly<ComboboxListProps>): React.JSX.Element => (
   <ComboboxPrimitive.List
     data-slot='combobox-list'
@@ -315,7 +437,23 @@ const ComboboxList = ({ref, className, ...props}: Readonly<ComboboxListProps>): 
   />
 );
 
-/** Renders an option with a persistent primitive-owned selected state and check indicator. */
+/**
+ * Selectable option with a check indicator that Base UI shows while it is selected.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Item` (`role="option"`, `aria-selected` while selected). `value` reaches
+ *   Base UI unchanged and is compared with the selection through `Object.is` (or the root's `isItemEqualToValue`), so pass
+ *   the item objects from root `items`.
+ * - Highlight (`data-highlighted`) follows the keyboard and pointer; `disabled` options can be highlighted but not
+ *   selected. The check icon is decorative.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxItem value={item} disabled={item.soldOut}>
+ *   {item.label}
+ * </ComboboxItem>
+ * ```
+ */
 const ComboboxItem = ({ref, className, children, render, ...props}: Readonly<ComboboxItemProps>): React.JSX.Element => {
   const content = (
     <>
@@ -342,7 +480,28 @@ const ComboboxItem = ({ref, className, children, render, ...props}: Readonly<Com
   );
 };
 
-/** Groups options and associates them with a ComboboxLabel. */
+/**
+ * Group of options named by its ComboboxLabel.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Group` (`role="group"`). Pass the group's `items` so its
+ *   ComboboxCollection renders only the group's filtered items; Base UI drops groups without matches from the filtered
+ *   root `items` that ComboboxList's function child receives.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxGroup items={group.items}>
+ *   <ComboboxLabel>{group.label}</ComboboxLabel>
+ *   <ComboboxCollection>
+ *     {(item: Fruit) => (
+ *       <ComboboxItem key={item.value} value={item}>
+ *         {item.label}
+ *       </ComboboxItem>
+ *     )}
+ *   </ComboboxCollection>
+ * </ComboboxGroup>
+ * ```
+ */
 const ComboboxGroup = ({ref, className, ...props}: Readonly<ComboboxGroupProps>): React.JSX.Element => (
   <ComboboxPrimitive.Group
     data-slot='combobox-group'
@@ -352,7 +511,21 @@ const ComboboxGroup = ({ref, className, ...props}: Readonly<ComboboxGroupProps>)
   />
 );
 
-/** Provides the accessible label for a ComboboxGroup. */
+/**
+ * Visible label that names its ComboboxGroup (not the combobox input).
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.GroupLabel`, which links itself to the enclosing group through
+ *   `aria-labelledby`. Name the input separately with a `<label>` or `aria-label`.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxGroup items={citrus}>
+ *   <ComboboxLabel>Citrus</ComboboxLabel>
+ *   <ComboboxCollection>{(item: Fruit) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxCollection>
+ * </ComboboxGroup>
+ * ```
+ */
 const ComboboxLabel = ({ref, className, ...props}: Readonly<ComboboxLabelProps>): React.JSX.Element => (
   <ComboboxPrimitive.GroupLabel
     data-slot='combobox-label'
@@ -362,12 +535,46 @@ const ComboboxLabel = ({ref, className, ...props}: Readonly<ComboboxLabelProps>)
   />
 );
 
-/** Renders the filtered collection inside a grouped list; adds no DOM wrapper. */
+/**
+ * Renders a group's filtered items through a function child, adding no DOM element.
+ *
+ * @remarks
+ * - Client Component; a thin wrapper of Base UI `Combobox.Collection` for grouped lists, placed inside a ComboboxGroup
+ *   that received `items`. For a flat list, pass the function child to ComboboxList instead.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxCollection>
+ *   {(item: Fruit) => (
+ *     <ComboboxItem key={item.value} value={item}>
+ *       {item.label}
+ *     </ComboboxItem>
+ *   )}
+ * </ComboboxCollection>
+ * ```
+ */
 function ComboboxCollection(props: ComboboxCollectionProps): React.JSX.Element {
   return <ComboboxPrimitive.Collection {...props} />;
 }
 
-/** Renders one caller-composed empty block only when the primitive list is empty. */
+/**
+ * Polite "no results" status whose children render only while the filtered list is empty.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Empty`. Its `role="status"` root (`aria-live="polite"`, `aria-atomic`)
+ *   stays mounted whenever it is rendered and only its children toggle against the root's filtered `items` (so the root
+ *   needs `items`); the message is announced as a content change, and the root takes no space while empty.
+ * - Keep it mounted: do not hide it with `hidden`, `display: none` or `aria-hidden`, or render it conditionally; change
+ *   its children instead.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxContent>
+ *   <ComboboxList>{(item: Fruit) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxList>
+ *   <ComboboxEmpty>No fruit found.</ComboboxEmpty>
+ * </ComboboxContent>
+ * ```
+ */
 const ComboboxEmpty = ({ref, className, ...props}: Readonly<ComboboxEmptyProps>): React.JSX.Element => (
   <ComboboxPrimitive.Empty
     data-slot='combobox-empty'
@@ -377,7 +584,30 @@ const ComboboxEmpty = ({ref, className, ...props}: Readonly<ComboboxEmptyProps>)
   />
 );
 
-/** Separates related groups visually and semantically. */
+/**
+ * Divider between groups of a combobox list.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Separator` (`role="separator"`); `className` callbacks receive its state.
+ *   Render it between groups from ComboboxList's function child so it follows filtering.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxList>
+ *   {(group: FruitGroup, index: number) => (
+ *     <React.Fragment key={group.value}>
+ *       {index > 0 && <ComboboxSeparator />}
+ *       <ComboboxGroup items={group.items}>
+ *         <ComboboxLabel>{group.label}</ComboboxLabel>
+ *         <ComboboxCollection>
+ *           {(item: Fruit) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}
+ *         </ComboboxCollection>
+ *       </ComboboxGroup>
+ *     </React.Fragment>
+ *   )}
+ * </ComboboxList>
+ * ```
+ */
 const ComboboxSeparator = ({ref, className, ...props}: Readonly<ComboboxSeparatorProps>): React.JSX.Element => (
   <ComboboxPrimitive.Separator
     data-slot='combobox-separator'
@@ -387,7 +617,29 @@ const ComboboxSeparator = ({ref, className, ...props}: Readonly<ComboboxSeparato
   />
 );
 
-/** Contains selected chips and the editable input; can serve as an explicit popup anchor. */
+/**
+ * Field-like container for the selected chips and the chips input of a `multiple` combobox.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Chips`. Share a `useComboboxAnchor` ref with `ComboboxContent anchor` so
+ *   the popup positions against the whole container.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxChips ref={anchor}>
+ *   <ComboboxValue>
+ *     {(selected: readonly Fruit[]) =>
+ *       selected.map((item) => (
+ *         <ComboboxChip key={item.value} removeProps={{"aria-label": `Remove ${item.label}`}}>
+ *           {item.label}
+ *         </ComboboxChip>
+ *       ))
+ *     }
+ *   </ComboboxValue>
+ *   <ComboboxChipsInput aria-label='Fruits' />
+ * </ComboboxChips>
+ * ```
+ */
 const ComboboxChips = ({ref, className, ...props}: Readonly<ComboboxChipsProps>): React.JSX.Element => (
   <ComboboxPrimitive.Chips
     data-slot='combobox-chips'
@@ -397,7 +649,20 @@ const ComboboxChips = ({ref, className, ...props}: Readonly<ComboboxChipsProps>)
   />
 );
 
-/** Displays a selected chip and delegates cancellable removal/focus management to Base UI. */
+/**
+ * One selected value of a `multiple` combobox, with an optional remove button.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Chip`. Left/Right arrows move between chips (mirrored in RTL) and
+ *   Backspace/Delete removes the focused chip; Base UI owns cancellable removal and the focus move after it.
+ * - `showRemove` (default `true`) adds a button named "Remove selection"; give it a specific, localized name through
+ *   `removeProps` (`aria-label` or visible children). Custom icon-only `removeProps.render` callbacks must name it.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxChip removeProps={{"aria-label": `Remove ${item.label}`}}>{item.label}</ComboboxChip>
+ * ```
+ */
 const ComboboxChip = ({
   ref,
   className,
@@ -463,7 +728,20 @@ const ComboboxChip = ({
   );
 };
 
-/** Renders the flexible editable primitive input inside a multiple-selection chip container. */
+/**
+ * Editable input inside ComboboxChips, growing to fill the space after the chips.
+ *
+ * @remarks
+ * - Client Component wrapping Base UI `Combobox.Input` without InputGroup chrome; `className` callbacks receive its state.
+ *   Name it with a `<label>`, `aria-label` or `aria-labelledby`.
+ *
+ * @example
+ * ```tsx
+ * <ComboboxChips ref={anchor}>
+ *   <ComboboxChipsInput aria-label='Fruits' placeholder='Add fruit' />
+ * </ComboboxChips>
+ * ```
+ */
 const ComboboxChipsInput = ({ref, className, ...props}: Readonly<ComboboxChipsInputProps>): React.JSX.Element => (
   <ComboboxPrimitive.Input
     data-slot='combobox-chip-input'
@@ -473,7 +751,32 @@ const ComboboxChipsInput = ({ref, className, ...props}: Readonly<ComboboxChipsIn
   />
 );
 
-/** Returns a stable div ref to share between ComboboxChips and ComboboxContent.anchor. */
+/**
+ * Creates the ref that ComboboxChips and `ComboboxContent anchor` share.
+ *
+ * @remarks
+ * Client-only hook; a plain `useRef`, so it is stable across renders and `current` is `null` until ComboboxChips mounts.
+ * Call it in the component that renders both parts, never conditionally.
+ *
+ * @returns A stable ref object for the chips container element.
+ *
+ * @example
+ * ```tsx
+ * function FruitTags(): React.JSX.Element {
+ *   const anchor = useComboboxAnchor();
+ *   return (
+ *     <Combobox multiple items={fruits}>
+ *       <ComboboxChips ref={anchor}>
+ *         <ComboboxChipsInput aria-label='Fruits' />
+ *       </ComboboxChips>
+ *       <ComboboxContent anchor={anchor}>
+ *         <ComboboxList>{(item: Fruit) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxList>
+ *       </ComboboxContent>
+ *     </Combobox>
+ *   );
+ * }
+ * ```
+ */
 function useComboboxAnchor(): React.RefObject<HTMLDivElement | null> {
   return React.useRef<HTMLDivElement | null>(null);
 }

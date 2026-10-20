@@ -1,6 +1,8 @@
 import {Combobox as BaseCombobox} from "@base-ui/react/combobox";
 import {cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {parse} from "postcss";
 import * as React from "react";
 import {composeStories} from "storybook-react-rsbuild";
@@ -24,7 +26,29 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from "./combobox";
+import styles from "./combobox.module.css";
 import * as stories from "./combobox.stories";
+
+/**
+ * Authored top-level declarations of the empty block's rules that apply to `element`, in source order. `:empty` is resolved
+ * per Selectors (no child nodes but comments) because Happy DOM also matches it on elements that only contain text.
+ */
+function emptyBlockDeclarations(element: Element): Map<string, string> {
+  expect(element).toHaveClass(styles.empty ?? "empty");
+  const isEmpty = [...element.childNodes].every((node) => node.nodeType === Node.COMMENT_NODE);
+  const declarations = new Map<string, string>();
+  parse(readFileSync(join(import.meta.dirname, "combobox.module.css"), "utf8")).walkRules((rule) => {
+    if (
+      rule.parent?.type !== "root"
+      || !rule.selectors.some((selector) => selector === ".empty" || (selector === ".empty:empty" && isEmpty))
+    )
+      return;
+    rule.walkDecls((declaration) => {
+      declarations.set(declaration.prop, declaration.value);
+    });
+  });
+  return declarations;
+}
 
 describe("Combobox responsive story", () => {
   it("caps the Default demo width by the viewport after centered-canvas and theme gutters", () => {
@@ -522,6 +546,30 @@ describe("Combobox", () => {
     await user.type(screen.getByRole("combobox"), "pea");
     expect(await screen.findByRole("option", {name: "Pear"})).toBeVisible();
     expect(screen.queryByText("No results")).not.toBeInTheDocument();
+  });
+
+  it("keeps ComboboxEmpty's polite status root mounted, toggling only its children, with no padding while it is empty", async () => {
+    const user = userEvent.setup();
+    render(<FruitPicker />);
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    expect(await screen.findByRole("option", {name: "Apple"})).toBeVisible();
+    // Base UI keeps the live region mounted while results exist, so the later message is a content change.
+    const status = screen.getByRole("status");
+    expect(status).toHaveAttribute("data-slot", "combobox-empty");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-atomic", "true");
+    expect(status).toBeEmptyDOMElement();
+    // The always-mounted root must not add a blank band below the results.
+    expect(emptyBlockDeclarations(status).get("padding")).toBe("0");
+    await user.type(input, "xyz");
+    expect(await screen.findByText("No results")).toBe(status);
+    expect(screen.getByRole("status")).toBe(status);
+    expect(emptyBlockDeclarations(status).get("padding")).toBe("var(--ac-space-6) var(--ac-space-4)");
+    await user.clear(input);
+    expect(await screen.findByRole("option", {name: "Apple"})).toBeVisible();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toBeEmptyDOMElement();
   });
 
   it("delegates grouped filtering to Collection and recovers the group labels", async () => {

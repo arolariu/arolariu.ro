@@ -36,9 +36,28 @@ Some component defaults leave a specific obligation with the application:
   reachable Done control.
 - With vertical Drawer `snapPoints`, include a snap point tall enough to show every focusable control or keep focusable controls within the
   smallest snap height; controlled snap points must apply or cancel Drawer's focus-driven expansion request.
+- Give modal and `"trap-focus"` Dialog, Sheet and Drawer popups a reachable close control inside the popup: touch screen-reader users cannot
+  press Escape or perform swipe gestures. Dialog and Sheet render one by default (`showCloseButton`); Drawer does not, so add a
+  `DrawerClose`.
+- Name scroll viewports that can overflow, because they become unnamed tab stops: Base UI makes an overflowing ScrollArea viewport a tab
+  stop (`viewportProps={{role: "region", "aria-label": "…"}}`), and Table's viewport is one by default
+  (`containerProps={{role: "region", "aria-labelledby": captionId}}`; opt out with `tabIndex: -1` only when the table can never overflow).
+- Localize Toast's region name (`viewportProps={{"aria-label": "…"}}`, default `"Notifications"`) along with `closeLabel`, and give each
+  mounted viewport a distinct name.
 - Set accordion heading levels with AccordionTrigger's `headerProps.render` so they continue the page outline.
 - Mark only real destinations as current: Sidebar `isActive` sets `aria-current="page"`, so pass `aria-current={undefined}` to section or
   disclosure triggers that only show active styling.
+- SidebarProvider toggles the sidebar on Ctrl+B / Cmd+B anywhere in the window. Widgets that use that shortcut, such as a rich-text editor's
+  bold command, must call `event.preventDefault()` in their own `keydown` handler to keep it.
+- ContextMenuTrigger renders a non-focusable `<div>` that opens on right click or long press. Render it as a focusable, named control so the
+  context-menu key or Shift+F10 can open it, and duplicate essential actions in keyboard-reachable controls such as a "More actions"
+  DropdownMenu (see the ContextMenu `KeyboardPath` story).
+- Name every Carousel with a distinct, localized `aria-label` or `aria-labelledby` (its props type requires one; there is no default), and
+  localize `aria-roledescription` on Carousel and CarouselItem for non-English pages.
+- Calendar day buttons are named by DayPicker's `labels.labelDayButton`; carry custom day content in that label, not in DayButton children,
+  and mark visual-only content `aria-hidden`.
+- Name AvatarBadge and AvatarGroupCount with `role="img"` plus `aria-label` or with visually hidden text, and hide decorative badges with
+  `aria-hidden="true"`; `aria-label` alone on their default generic elements is not a name.
 
 ## Required criteria and evidence
 
@@ -79,7 +98,7 @@ instructions, errors and required actions must not exist only in an automaticall
 
 Colocated Vitest/Testing Library tests exercise the real components and primitives, including names/roles, public keyboard interactions, ref
 disposal, cancellation and state transitions. Source and genuinely packed declaration/export contracts exercise the supported React 19 API.
-No React 18 compatibility lane or Playwright runner is part of this package.
+No Playwright runner is part of this package.
 
 `src/styles.test.ts` checks the default opaque OKLCH token pairs against WCAG thresholds using clipped linear-sRGB luminance. It cannot
 validate browser gamut mapping, transparency, shadows, overlays, consumer token overrides or actual adjacent pixels.

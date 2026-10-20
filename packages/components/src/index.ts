@@ -41,7 +41,17 @@ export type {AsyncBoundaryProps} from "./components/ui/async-boundary";
 
 export {Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage} from "./components/ui/avatar";
 
-export {Badge, badgeVariants} from "./components/ui/badge";
+// Pure class helpers are re-exported from directive-free private modules, so a Server Component can call them through
+// this root. Their component subpaths re-export the same functions from "use client" modules (client references there).
+export {badgeVariants} from "./components/ui/_badge-variants";
+export {buttonGroupVariants} from "./components/ui/_button-group-variants";
+export {buttonVariants} from "./components/ui/_button-variants";
+export {markerVariants} from "./components/ui/_marker-variants";
+export {navigationMenuTriggerStyle} from "./components/ui/_navigation-menu-trigger-style";
+export {tabsListVariants} from "./components/ui/_tabs-list-variants";
+export {toggleVariants} from "./components/ui/_toggle-variants";
+
+export {Badge} from "./components/ui/badge";
 export type {BadgeProps, BadgeVariant} from "./components/ui/badge";
 
 export {
@@ -54,10 +64,10 @@ export {
   BreadcrumbSeparator,
 } from "./components/ui/breadcrumb";
 
-export {Button, buttonVariants} from "./components/ui/button";
+export {Button} from "./components/ui/button";
 export type {ButtonProps, ButtonSize, ButtonState, ButtonVariant} from "./components/ui/button";
 
-export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./components/ui/button-group";
+export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText} from "./components/ui/button-group";
 
 export {Calendar, CalendarDayButton} from "./components/ui/calendar";
 export type {CalendarProps, DateRange, DayPickerProps, Matcher} from "./components/ui/calendar";
@@ -402,7 +412,6 @@ export {
   NavigationMenuList,
   NavigationMenuPositioner,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "./components/ui/navigation-menu";
 
 export {
@@ -533,7 +542,7 @@ export {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Table
 export {TableSkeleton} from "./components/ui/table-skeleton";
 export type {TableSkeletonProps} from "./components/ui/table-skeleton";
 
-export {Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants} from "./components/ui/tabs";
+export {Tabs, TabsContent, TabsList, TabsTrigger} from "./components/ui/tabs";
 
 export {Textarea} from "./components/ui/textarea";
 
@@ -542,7 +551,7 @@ export {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} fro
 export {ToggleGroup, ToggleGroupItem} from "./components/ui/toggle-group";
 export type {ToggleGroupItemProps, ToggleGroupProps} from "./components/ui/toggle-group";
 
-export {Toggle, toggleVariants} from "./components/ui/toggle";
+export {Toggle} from "./components/ui/toggle";
 export type {ToggleProps, ToggleSize, ToggleVariant} from "./components/ui/toggle";
 
 export {Tooltip, TooltipArrow, TooltipContent, TooltipProvider, TooltipTrigger} from "./components/ui/tooltip";
@@ -561,14 +570,14 @@ export {
 } from "./components/ui/timeline";
 export {VisuallyHidden, type VisuallyHiddenProps} from "./components/ui/visually-hidden";
 
-export {useAnnounce} from "./hooks/useAnnounce";
+export {useAnnounce, type Politeness} from "./hooks/useAnnounce";
 export {useBreakpoint, type Breakpoint} from "./hooks/useBreakpoint";
 export {useClipboard, type UseClipboardOptions, type UseClipboardReturn} from "./hooks/useClipboard";
 export {useColorScheme, type ColorScheme} from "./hooks/useColorScheme";
 export {useControllableState, type UseControllableStateOptions} from "./hooks/useControllableState";
 export {useDebounce} from "./hooks/useDebounce";
 export {useEventCallback} from "./hooks/useEventCallback";
-export {useFocusManager} from "./hooks/useFocusManager";
+export {useFocusManager, type FocusManager} from "./hooks/useFocusManager";
 export {useFocusVisible} from "./hooks/useFocusVisible";
 export {useId} from "./hooks/useId";
 export {useIntersectionObserver} from "./hooks/useIntersectionObserver";
@@ -663,7 +672,7 @@ export type {
   BubbleContentProps,
   BubbleReactionsProps,
 } from "./components/ui/bubble";
-export {Marker, MarkerContent, MarkerIcon, markerVariants} from "./components/ui/marker";
+export {Marker, MarkerContent, MarkerIcon} from "./components/ui/marker";
 export type {
   MarkerVariant,
   MarkerState,
@@ -777,6 +786,7 @@ export type {
   EmptyHeaderProps,
   EmptyMediaProps,
   EmptyTitleProps,
+  EmptyDescriptionState,
   EmptyDescriptionProps,
   EmptyContentProps,
 } from "./components/ui/empty";

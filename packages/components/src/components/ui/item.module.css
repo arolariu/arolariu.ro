@@ -169,14 +169,22 @@ a.item {
   line-height: 1.5;
 }
 
-.description a {
+/*
+ * Plain links inside a description inherit its text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so these rules beat
+ * element-only link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled
+ * anchor (for example `buttonVariants()`) keeps its own paint. The hover colour stays (0,0,2) through `:where(:hover)`
+ * so it never repaints a class-styled anchor's text either; an element-plus-pseudo-class reset such as
+ * `a:hover { … }` (0,1,1) still overrides it.
+ */
+:where(.description) a:is(a) {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: var(--ac-space-1);
 }
 
 @media (hover: hover) {
-  .description a:hover {
+  :where(.description) a:is(a):where(:hover) {
     color: var(--ac-foreground);
   }
 }

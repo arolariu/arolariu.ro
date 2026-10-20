@@ -132,7 +132,30 @@ function Dialog<Payload = unknown>({modal = true, ...props}: Readonly<Dialog.Pro
 }
 Dialog.displayName = "Dialog";
 
-/** Opens a dialog. Canonical `render` callers specify `nativeButton={false}` for non-buttons. */
+/**
+ * Opens a dialog. Canonical `render` callers specify `nativeButton={false}` for non-buttons.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; Base UI sets `aria-haspopup="dialog"` and `aria-expanded` and returns focus
+ *   to the trigger when the dialog closes, unless `DialogContent`'s `finalFocus` chooses another target
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - `render` composes another element, such as the package `Button`. Set `nativeButton={false}` only for a non-button
+ *   target that takes button semantics, such as a `<div>`; navigation belongs in a link, not a dialog trigger
+ * - `className` may be a string or a callback that receives the trigger's live state
+ * - An icon-only trigger needs an accessible name, such as `aria-label`
+ *
+ * @example
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger render={<Button variant='outline' />}>Edit profile</DialogTrigger>
+ *   <DialogContent>
+ *     <DialogTitle>Edit profile</DialogTitle>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const DialogTrigger = ({ref, children, render, nativeButton, className, ...props}: Readonly<DialogTrigger.Props>): React.ReactElement => {
   const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
     (element) => {
@@ -156,10 +179,56 @@ const DialogTrigger = ({ref, children, render, nativeButton, className, ...props
 };
 DialogTrigger.displayName = "DialogTrigger";
 
-/** Mounts dialog parts outside their local DOM hierarchy; supports `keepMounted`. */
+/**
+ * Mounts dialog parts outside their local DOM hierarchy; supports `keepMounted`.
+ *
+ * @remarks
+ * - Base UI's Portal, re-exported unchanged: it renders a `<div>` portal element, appended to `<body>` by default
+ * - {@link DialogContent} already renders its own portal; configure that one through `portalProps`. Compose
+ *   DialogPortal directly only for manual primitive compositions around Base UI's `Dialog.Popup`
+ * - `keepMounted` keeps closed content mounted but hidden; `container` chooses the element or shadow root that
+ *   receives the portal
+ *
+ * @example
+ * ```tsx
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <Dialog>
+ *   <DialogTrigger>Open</DialogTrigger>
+ *   <DialogPortal>
+ *     <DialogOverlay />
+ *     <BaseDialog.Popup>
+ *       <DialogTitle>Custom composition</DialogTitle>
+ *       <DialogClose>Close</DialogClose>
+ *     </BaseDialog.Popup>
+ *   </DialogPortal>
+ * </Dialog>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const DialogPortal = BaseDialog.Portal;
 
-/** Closes a dialog without imposing the automatic icon's positioning or styling. */
+/**
+ * Closes a dialog without imposing the automatic icon's positioning or styling.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; `render` adopts another presentation, such as the package `Button`
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - `DialogContent`'s automatic icon close and `DialogFooter`'s `showCloseButton` are built on this part. A popup that
+ *   opts out of both must still contain a close control: touch screen-reader users cannot press Escape
+ * - An icon-only close needs an accessible name, such as `aria-label`
+ *
+ * @example
+ * ```tsx
+ * <DialogFooter>
+ *   <DialogClose render={<Button variant='outline' />}>Cancel</DialogClose>
+ *   <Button type='submit'>Save</Button>
+ * </DialogFooter>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function DialogClose({className, ...props}: Readonly<DialogClose.Props>): React.ReactElement {
   return (
     <BaseDialog.Close
@@ -171,7 +240,32 @@ function DialogClose({className, ...props}: Readonly<DialogClose.Props>): React.
 }
 DialogClose.displayName = "DialogClose";
 
-/** Renders the styled backdrop while forwarding render state and refs directly to Base UI. */
+/**
+ * Renders the styled backdrop while forwarding render state and refs directly to Base UI.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - {@link DialogContent} already renders this backdrop when the enclosing `Dialog` is fully modal (`modal={true}`).
+ *   Compose DialogOverlay only inside a manual {@link DialogPortal} composition
+ * - The backdrop is presentational (`role="presentation"`) and sits outside the popup, so it takes no content or
+ *   controls. Base UI omits it for nested dialogs unless `forceRender` is set
+ *
+ * @example
+ * ```tsx
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <DialogPortal>
+ *   <DialogOverlay className='blurred-backdrop' />
+ *   <BaseDialog.Popup>
+ *     <DialogTitle>Custom composition</DialogTitle>
+ *     <DialogClose>Close</DialogClose>
+ *   </BaseDialog.Popup>
+ * </DialogPortal>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function DialogOverlay({className, ...props}: Readonly<DialogOverlay.Props>): React.ReactElement {
   return (
     <BaseDialog.Backdrop
@@ -191,6 +285,8 @@ DialogOverlay.displayName = "DialogOverlay";
  *   `modal={true}` (its default); under a raw Base UI root the backdrop is always rendered.
  * - The automatic icon close is last in DOM order; opt out with `showCloseButton={false}` only when another
  *   close control remains inside the popup.
+ * - Name the popup with a {@link DialogTitle}; Base UI wires it, and any {@link DialogDescription}, to the dialog.
+ *   Localize the automatic close's accessible name with `closeLabel`.
  * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed popup mounted with `hidden`,
  *   preserving form state, and `container` chooses the element or shadow root that receives the portal.
  *
@@ -266,7 +362,22 @@ const DialogContent = ({
 };
 DialogContent.displayName = "DialogContent";
 
-/** Composes the dialog heading layout without discarding children, events or refs. */
+/**
+ * Composes the dialog heading layout without discarding children, events or refs.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: it adds no role or accessible name. Place {@link DialogTitle} and {@link DialogDescription} inside;
+ *   Base UI wires them to the popup wherever they render
+ *
+ * @example
+ * ```tsx
+ * <DialogHeader>
+ *   <DialogTitle>Edit profile</DialogTitle>
+ *   <DialogDescription>Changes apply after you save.</DialogDescription>
+ * </DialogHeader>
+ * ```
+ */
 const DialogHeader = ({ref, children, className, render, ...props}: Readonly<DialogHeader.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
@@ -282,7 +393,24 @@ const DialogHeader = ({ref, children, className, render, ...props}: Readonly<Dia
 };
 DialogHeader.displayName = "DialogHeader";
 
-/** Composes footer actions; `showCloseButton` adds a separate outline dismissal control. */
+/**
+ * Composes footer actions; `showCloseButton` adds a separate outline dismissal control.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: actions keep their own semantics and the footer adds no role
+ * - `showCloseButton` appends an outline {@link DialogClose} after the supplied actions; localize its visible text,
+ *   which is also its accessible name, with `closeLabel`
+ *
+ * @example
+ * ```tsx
+ * <DialogFooter
+ *   showCloseButton
+ *   closeLabel='Cancel'>
+ *   <Button type='submit'>Save</Button>
+ * </DialogFooter>
+ * ```
+ */
 const DialogFooter = ({
   ref,
   children,
@@ -324,7 +452,22 @@ const DialogFooter = ({
 };
 DialogFooter.displayName = "DialogFooter";
 
-/** Renders the dialog's accessible heading with primitive-owned composition. */
+/**
+ * Renders the dialog's accessible heading with primitive-owned composition.
+ *
+ * @remarks
+ * - Renders an `<h2>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Base UI references it from the popup's `aria-labelledby`, so it names the dialog. Every dialog needs a title, or
+ *   an `aria-label` on {@link DialogContent} when no visible heading fits
+ *
+ * @example
+ * ```tsx
+ * <DialogTitle>Delete project</DialogTitle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function DialogTitle({className, ...props}: Readonly<DialogTitle.Props>): React.ReactElement {
   return (
     <BaseDialog.Title
@@ -336,7 +479,22 @@ function DialogTitle({className, ...props}: Readonly<DialogTitle.Props>): React.
 }
 DialogTitle.displayName = "DialogTitle";
 
-/** Renders the dialog's accessible description with primitive-owned composition. */
+/**
+ * Renders the dialog's accessible description with primitive-owned composition.
+ *
+ * @remarks
+ * - Renders a `<p>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Base UI references it from the popup's `aria-describedby`, so screen readers announce it when the dialog opens;
+ *   keep it brief and put longer content in the dialog body
+ *
+ * @example
+ * ```tsx
+ * <DialogDescription>This permanently removes the project and its files.</DialogDescription>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function DialogDescription({className, ...props}: Readonly<DialogDescription.Props>): React.ReactElement {
   return (
     <BaseDialog.Description

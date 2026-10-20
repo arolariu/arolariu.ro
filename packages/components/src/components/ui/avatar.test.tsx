@@ -12,6 +12,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage} from "./avatar";
 import styles from "./avatar.module.css";
 import * as stories from "./avatar.stories";
+import {VisuallyHidden} from "./visually-hidden";
 
 const {AvatarStack, BadgeSizes, DarkTheme, Group, GroupCount, GroupSizes, RenderState, RightToLeft, Sizes, WithDelay, WithStatus} =
   composeStories(stories);
@@ -485,6 +486,7 @@ describe("Avatar", () => {
         </Avatar>
         <AvatarGroupCount
           ref={countRef}
+          role='img'
           aria-label='3 more contributors'
           className='consumer-count'>
           +3
@@ -493,7 +495,7 @@ describe("Avatar", () => {
     );
 
     const group = screen.getByRole("group", {name: "Contributors"});
-    const count = screen.getByText("+3");
+    const count = screen.getByRole("img", {name: "3 more contributors"});
     expect(groupRef.current).toBe(group);
     expect(countRef.current).toBe(count);
     expect(group.tagName).toBe("DIV");
@@ -502,7 +504,7 @@ describe("Avatar", () => {
     expect(count).toHaveAttribute("data-slot", "avatar-group-count");
     expect(group).toHaveClass(requiredClass("group"), "consumer-group");
     expect(count).toHaveClass(requiredClass("groupCount"), "consumer-count");
-    expect(count).toHaveAttribute("aria-label", "3 more contributors");
+    expect(count).toHaveTextContent("+3");
     expect(group.children).toHaveLength(3);
     expect(group.lastElementChild).toBe(count);
     expect(screen.getByText("AO").parentElement?.parentElement).toBe(group);
@@ -673,12 +675,16 @@ describe("Avatar", () => {
           size='sm'
           data-testid='avatar'>
           <AvatarFallback>AO</AvatarFallback>
-          <AvatarBadge aria-label='Online' />
+          <AvatarBadge
+            role='img'
+            aria-label='Online'
+          />
         </Avatar>
         <AvatarGroupCount>+3</AvatarGroupCount>
       </AvatarGroup>,
     );
     expect(screen.getByTestId("avatar")).toHaveAttribute("data-size", "sm");
+    expect(screen.getByRole("img", {name: "Online"}).parentElement).toBe(screen.getByTestId("avatar"));
     expect(cssDeclaration(".sm", "--ac-avatar-badge-size")).toBe("var(--ac-space-2)");
     expect(cssDeclaration(".default", "--ac-avatar-badge-size")).toBe("0.625rem");
     expect(cssDeclaration(".lg", "--ac-avatar-badge-size")).toBe("var(--ac-space-3)");
@@ -695,7 +701,7 @@ describe("Avatar", () => {
 
   it("documents the real public badge rather than a manual positioned span", () => {
     render(<WithStatus />);
-    const badge = screen.getByLabelText("Online");
+    const badge = screen.getByRole("img", {name: "Online"});
     expect(badge).toHaveAttribute("data-slot", "avatar-badge");
     expect(badge.parentElement).toHaveAttribute("data-slot", "avatar");
   });
@@ -718,7 +724,7 @@ describe("Avatar", () => {
       ["Default avatar", "default"],
       ["Large avatar", "lg"],
     ] as const) {
-      const avatar = screen.getByLabelText(label);
+      const avatar = screen.getByRole("img", {name: label});
       expect(avatar).toHaveAttribute("data-size", size);
       expect(avatar).not.toHaveAttribute("style");
     }
@@ -860,7 +866,10 @@ describe("Avatar", () => {
           alt='Current portrait'
         />
         <AvatarFallback ref={captureFallback}>AO</AvatarFallback>
-        <AvatarBadge aria-label='Available' />
+        <AvatarBadge
+          role='img'
+          aria-label='Available'
+        />
       </Avatar>
     );
     try {
@@ -885,7 +894,7 @@ describe("Avatar", () => {
       expect(exit.rootHeight).toBe("40px");
       expect(exit.rootOverflow).toBe("visible");
       expect(screen.getByText("AO")).toBe(exit.fallback);
-      expect(screen.getByLabelText("Available").parentElement).toBe(screen.getByTestId("switch-avatar"));
+      expect(screen.getByRole("img", {name: "Available"}).parentElement).toBe(screen.getByTestId("switch-avatar"));
       expect(cssDeclaration(".image", "border-radius")).toBe("inherit");
       expect(cssDeclaration(".fallback", "border-radius")).toBe("inherit");
       expect(cssDeclaration(".badge", "box-shadow")).toBe("0 0 0 2px var(--ac-background)");
@@ -893,10 +902,55 @@ describe("Avatar", () => {
       act(() => fireEvent.load(loader.latest()));
       expect(screen.getByRole("img", {name: "Current portrait"})).toHaveAttribute("src", "/second.png");
       expect(screen.queryByText("AO")).not.toBeInTheDocument();
-      expect(screen.getByLabelText("Available").parentElement).toBe(screen.getByTestId("switch-avatar"));
+      expect(screen.getByRole("img", {name: "Available"}).parentElement).toBe(screen.getByTestId("switch-avatar"));
     } finally {
       cleanup();
       removeStyles();
+    }
+  });
+
+  it("review correction: badges and counts use valid naming techniques, verified by computed role and name", () => {
+    render(
+      <>
+        <a href='#profile'>
+          <Avatar>
+            <AvatarFallback>AO</AvatarFallback>
+            <AvatarBadge data-testid='hidden-text-badge'>
+              <VisuallyHidden>, online</VisuallyHidden>
+            </AvatarBadge>
+          </Avatar>
+        </a>
+        <Avatar>
+          <AvatarFallback>JD</AvatarFallback>
+          <AvatarBadge
+            aria-hidden='true'
+            data-testid='decorative-badge'
+          />
+        </Avatar>
+        <AvatarGroup
+          role='group'
+          aria-label='Reviewers'>
+          <Avatar>
+            <AvatarFallback>KL</AvatarFallback>
+          </Avatar>
+          <AvatarGroupCount data-testid='hidden-text-count'>
+            +2<VisuallyHidden> more reviewers</VisuallyHidden>
+          </AvatarGroupCount>
+        </AvatarGroup>
+      </>,
+    );
+
+    // Visually hidden badge text joins the name of the link that contains the avatar (box boundaries may add a space).
+    const profile = screen.getByRole("link", {name: /^AO ?, online$/u});
+    expect(profile).toContainElement(screen.getByTestId("hidden-text-badge"));
+    // A decorative badge is removed from the accessibility tree, and no generic element carries an unusable label.
+    expect(screen.getByTestId("decorative-badge")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    const group = screen.getByRole("group", {name: "Reviewers"});
+    expect(group).toContainElement(screen.getByTestId("hidden-text-count"));
+    expect(group).toHaveTextContent("KL+2 more reviewers");
+    for (const part of document.querySelectorAll('[data-slot="avatar-badge"], [data-slot="avatar-group-count"]')) {
+      expect(part).not.toHaveAttribute("aria-label");
     }
   });
 

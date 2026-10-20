@@ -5,10 +5,12 @@ import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {parse} from "postcss";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, it} from "vitest";
 
 import {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "./table";
 import styles from "./table.module.css";
+import * as tableStories from "./table.stories";
 
 type Theme = "light" | "dark";
 type LinearRgb = readonly [number, number, number];
@@ -119,6 +121,18 @@ describe("Table", () => {
     expect(viewport).toHaveClass("caller-scroll");
     expect(viewport).not.toHaveAttribute("role");
     expect(viewport).not.toHaveAttribute("aria-label");
+  });
+
+  it("review correction: the documented story names the default focusable viewport from its caption", async () => {
+    const user = userEvent.setup();
+    const {NamedScrollViewport} = composeStories(tableStories);
+    render(<NamedScrollViewport />);
+    const viewport = screen.getByRole("region", {name: "Stock by warehouse"});
+    expect(viewport).toHaveAttribute("data-slot", "table-container");
+    expect(viewport).toHaveAttribute("tabindex", "0");
+    expect(viewport).toContainElement(screen.getByRole("table", {name: "Stock by warehouse"}));
+    await user.tab();
+    expect(viewport).toHaveFocus();
   });
 
   describe.each(["light", "dark"] as const)("%s review correction", (theme) => {

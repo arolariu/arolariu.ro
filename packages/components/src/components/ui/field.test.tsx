@@ -1,7 +1,13 @@
 import {render, screen} from "@testing-library/react";
+import {Features, transform} from "lightningcss";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse, type Root} from "postcss";
 import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
+import {buttonVariants} from "./button";
+import buttonStyles from "./button.module.css";
 import {
   Field,
   FieldContent,
@@ -14,6 +20,199 @@ import {
   FieldSet,
   FieldTitle,
 } from "./field";
+import styles from "./field.module.css";
+
+type Specificity = readonly [ids: number, classes: number, types: number];
+type CompiledSheet = Readonly<{root: Root; classes: Readonly<Record<string, string>>}>;
+
+// Lower real native CSS nesting so every compiled rule carries its effective selector and media.
+function compileSheet(filename: string, code: Buffer | string, classes: Readonly<Record<string, string>>): CompiledSheet {
+  return {
+    root: parse(transform({filename, code: Buffer.from(code), include: Features.Nesting, targets: {chrome: 100 << 16}}).code.toString()),
+    classes,
+  };
+}
+
+const compiledField = compileSheet("field.module.css", readFileSync(join(import.meta.dirname, "field.module.css")), styles);
+const compiledButton = compileSheet("button.module.css", readFileSync(join(import.meta.dirname, "button.module.css")), buttonStyles);
+// An element-only consumer reset, as in `sites/arolariu.ro/src/styles/base/_reset.scss:90-92`, plus a competing link colour.
+const elementReset = compileSheet("element-reset.css", "a { color: #0000ee; text-decoration: none; }", {});
+
+/** Splits a selector list at top-level commas; commas inside `:is()` arguments stay together. */
+function selectorList(list: string): string[] {
+  const selectors: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (const [index, character] of [...list].entries()) {
+    if (character === "(" || character === "[") depth += 1;
+    else if (character === ")" || character === "]") depth -= 1;
+    else if (character === "," && depth === 0) {
+      selectors.push(list.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  selectors.push(list.slice(start).trim());
+  return selectors;
+}
+
+function compareSpecificity(first: Specificity, second: Specificity): number {
+  return first[0] - second[0] || first[1] - second[1] || first[2] - second[2];
+}
+
+/** Selectors Level 4 specificity for the selector forms these stylesheets use. */
+function specificity(selector: string): Specificity {
+  const counts: [number, number, number] = [0, 0, 0];
+  const nameEnd = (from: number): number => {
+    let end = from;
+    while (end < selector.length && /[\w-]/u.test(selector.charAt(end))) end += 1;
+    return end;
+  };
+  let index = 0;
+  while (index < selector.length) {
+    const character = selector.charAt(index);
+    if (character === "#" || character === ".") {
+      counts[character === "#" ? 0 : 1] += 1;
+      index = nameEnd(index + 1);
+    } else if (character === "[") {
+      counts[1] += 1;
+      index = selector.indexOf("]", index) + 1;
+    } else if (selector.startsWith("::", index)) {
+      counts[2] += 1;
+      index = nameEnd(index + 2);
+    } else if (character === ":") {
+      const end = nameEnd(index + 1);
+      const name = selector.slice(index + 1, end);
+      if (selector.charAt(end) !== "(") {
+        counts[1] += 1;
+        index = end;
+        continue;
+      }
+      let depth = 0;
+      let close = end;
+      do {
+        if (selector.charAt(close) === "(") depth += 1;
+        if (selector.charAt(close) === ")") depth -= 1;
+        close += 1;
+      } while (depth > 0 && close < selector.length);
+      // :is()/:not()/:has() take their most specific argument, :where() adds nothing, other functions count once.
+      if (name === "is" || name === "not" || name === "has") {
+        const strongest = selectorList(selector.slice(end + 1, close - 1))
+          .map(specificity)
+          .sort(compareSpecificity)
+          .at(-1);
+        counts[0] += strongest?.[0] ?? 0;
+        counts[1] += strongest?.[1] ?? 0;
+        counts[2] += strongest?.[2] ?? 0;
+      } else if (name !== "where") counts[1] += 1;
+      index = close;
+    } else if (/[a-z]/iu.test(character)) {
+      counts[2] += 1;
+      index = nameEnd(index);
+    } else {
+      index += 1; // Whitespace, combinators and the universal selector add nothing.
+    }
+  }
+  return counts;
+}
+
+/**
+ * Declarations cascaded across compiled stylesheets in the given order: specificity, then order, decide each property.
+ * At rest only unconditional rules apply; `hovered` adds `@media (hover: hover)` rules and matches `:hover` on the
+ * element and its ancestors. Forced-colors, reduced-motion and container rules are separate contracts.
+ */
+function cascadedPaint(element: Element, sheets: readonly CompiledSheet[], hovered = false): Record<string, string> {
+  const winners = new Map<string, Readonly<{value: string; specificity: Specificity}>>();
+  for (const sheet of sheets) {
+    sheet.root.walkRules((rule) => {
+      const condition = rule.parent instanceof AtRule ? rule.parent : undefined;
+      if (condition && !(hovered && condition.name === "media" && condition.params === "(hover: hover)")) return;
+      const strongest = selectorList(rule.selector)
+        .filter((selector) => !selector.includes("::") && (hovered || !selector.includes(":hover")))
+        .filter((selector) =>
+          element.matches(
+            selector.replaceAll(":hover", ":is(*)").replace(/\.([a-z][\w-]*)/giu, (_, name: string) => {
+              const className = sheet.classes[name];
+              if (!className) throw new Error(`Missing CSS Module class: ${name}`);
+              return `.${CSS.escape(className)}`;
+            }),
+          ),
+        )
+        .map(specificity)
+        .sort(compareSpecificity)
+        .at(-1);
+      if (!strongest) return;
+      rule.walkDecls((declaration) => {
+        const current = winners.get(declaration.prop);
+        if (!current || compareSpecificity(strongest, current.specificity) >= 0) {
+          winners.set(declaration.prop, {value: declaration.value, specificity: strongest});
+        }
+      });
+    });
+  }
+  return Object.fromEntries([...winners].map(([property, {value}]) => [property, value]));
+}
+
+/** The used text colour: an `inherit` or unset cascaded colour resolves through the ancestors. */
+function usedColor(element: Element, sheets: readonly CompiledSheet[], hovered = false): string {
+  for (let current: Element | null = element; current; current = current.parentElement) {
+    const color = cascadedPaint(current, sheets, hovered)["color"];
+    if (color && color !== "inherit") return color;
+  }
+  throw new Error("No cascaded text colour");
+}
+
+describe.each([
+  ["reset, Field, Button", [elementReset, compiledField, compiledButton]],
+  ["reset, Button, Field", [elementReset, compiledButton, compiledField]],
+  ["Field, Button, reset", [compiledField, compiledButton, elementReset]],
+  ["Button, Field, reset", [compiledButton, compiledField, elementReset]],
+] as const)("FieldDescription nested links with %s stylesheet order", (_, sheets) => {
+  it("underlines plain links in the description colour over an element-only reset while class-styled anchors keep their paint", () => {
+    render(
+      <FieldDescription>
+        Read the <a href='#terms'>terms</a> or{" "}
+        <a
+          href='#plans'
+          className={buttonVariants({variant: "outline", size: "sm"})}>
+          compare plans
+        </a>
+        .
+      </FieldDescription>,
+    );
+    const plain = screen.getByRole("link", {name: "terms"});
+    const styled = screen.getByRole("link", {name: "compare plans"});
+    expect(plain.parentElement).toHaveClass(styles["description"]!);
+
+    expect(cascadedPaint(plain, sheets)).toMatchObject({color: "inherit", "text-decoration": "underline", "text-underline-offset": "4px"});
+    expect(usedColor(plain, sheets)).toBe("var(--ac-muted-foreground)");
+    expect(cascadedPaint(styled, sheets)).toMatchObject({
+      color: "var(--ac-foreground)",
+      "background-color": "var(--ac-background)",
+      "text-decoration": "none",
+    });
+  });
+
+  it("darkens only plain links on hover; a class-styled anchor keeps its own hover paint", () => {
+    render(
+      <FieldDescription>
+        Read the <a href='#terms'>terms</a> or{" "}
+        <a
+          href='#upgrade'
+          className={buttonVariants()}>
+          upgrade
+        </a>
+        .
+      </FieldDescription>,
+    );
+    const plain = screen.getByRole("link", {name: "terms"});
+    const styled = screen.getByRole("link", {name: "upgrade"});
+
+    expect(cascadedPaint(plain, sheets, true)).toMatchObject({color: "var(--ac-foreground)", "text-decoration": "underline"});
+    // The default variant only changes its background on hover; its primary-foreground text must survive.
+    expect(usedColor(styled, sheets, true)).toBe("var(--ac-primary-foreground)");
+    expect(cascadedPaint(styled, sheets, true)).toMatchObject({"text-decoration": "none"});
+  });
+});
 
 describe("Field", () => {
   it("renders HTML-only errors and preserves children/error precedence across native content transitions", () => {

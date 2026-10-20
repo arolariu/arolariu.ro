@@ -54,7 +54,11 @@ function CalendarRoot({className, rootRef, ...props}: Readonly<CalendarRootProps
 /** DayPicker overrides, additionally accepting ref-forwarding day components. */
 type CalendarComponents = Readonly<
   Omit<Partial<CustomComponents>, "DayButton"> & {
-    /** Replaces the default day button; may compose {@link CalendarDayButton}. */
+    /**
+     * Replaces the default day button; may compose {@link CalendarDayButton}.
+     * DayPicker names each day button through `labels.labelDayButton`, so its
+     * children are presentational: carry meaningful day content in that label.
+     */
     DayButton?: React.ComponentType<DayButtonProps>;
   }
 >;
@@ -131,6 +135,14 @@ function CalendarDayButtonAdapter(props: Readonly<DayButtonProps>): React.JSX.El
  * attach it to its root div. Custom day content can compose CalendarDayButton
  * without losing the calendar locale, native handlers, or modifier metadata.
  *
+ * DayPicker names every day button with an `aria-label` from
+ * `labels.labelDayButton`, so custom day content (event dots, counts, prices)
+ * never reaches the accessible name. Put meaningful day content into that label:
+ * it receives the day's modifiers, including custom ones, and DayPicker's date
+ * library as its fourth argument. A custom label replaces DayPicker's default and
+ * locale labels, which also announce today and selection, so keep those states.
+ * Mark the visual-only content `aria-hidden`.
+ *
  * @example
  * ```tsx
  * <Calendar
@@ -140,7 +152,35 @@ function CalendarDayButtonAdapter(props: Readonly<DayButtonProps>): React.JSX.El
  * />
  * ```
  *
+ * @example Day content announced through the day button's label
+ * ```tsx
+ * function EventDayButton(props: CalendarDayButtonProps) {
+ *   return (
+ *     <CalendarDayButton {...props}>
+ *       {props.children}
+ *       {props.modifiers["event"] ? <span className='event-dot' aria-hidden='true' /> : null}
+ *     </CalendarDayButton>
+ *   );
+ * }
+ *
+ * <Calendar
+ *   mode='single'
+ *   modifiers={{event: [new Date(2024, 0, 5)]}}
+ *   components={{DayButton: EventDayButton}}
+ *   labels={{
+ *     labelDayButton: (date, modifiers, _options, dateLib) => {
+ *       const day = dateLib?.format(date, "PPPP") ?? date.toDateString();
+ *       const parts = [modifiers["today"] ? `Today, ${day}` : day];
+ *       if (modifiers["event"]) parts.push("event scheduled");
+ *       if (modifiers["selected"]) parts.push("selected");
+ *       return parts.join(", ");
+ *     },
+ *   }}
+ * />;
+ * ```
+ *
  * @see {@link https://daypicker.dev | React Day Picker Docs}
+ * @see {@link https://daypicker.dev/docs/translation#aria-labels | DayPicker ARIA labels}
  */
 function Calendar({
   ref: forwardedRef,
@@ -250,6 +290,25 @@ function CalendarWeekNumber({week, children, ...tdProps}: Readonly<CalendarWeekN
  * the explicit/surrounding locale; selected/range/outside/today/focused data
  * attributes expose day state without leaking `day`, `modifiers` or `locale`
  * to the DOM. Defaults to `type="button"` to avoid accidental form submission.
+ *
+ * Inside {@link Calendar}, DayPicker's `aria-label` (from `labels.labelDayButton`)
+ * names the button and its children are presentational, so added children never
+ * change what assistive technology announces; carry meaningful day content in
+ * that label and mark visual-only children `aria-hidden`. Standalone, pass an
+ * `aria-label`; otherwise the full date in the button's locale names it.
+ *
+ * @example
+ * ```tsx
+ * // Announce the holiday through Calendar's `labels.labelDayButton`; the star is visual only.
+ * function HolidayDayButton(props: CalendarDayButtonProps) {
+ *   return (
+ *     <CalendarDayButton {...props}>
+ *       {props.children}
+ *       {props.modifiers["holiday"] ? <span aria-hidden='true'>★</span> : null}
+ *     </CalendarDayButton>
+ *   );
+ * }
+ * ```
  */
 function CalendarDayButton({
   ref: forwardedRef,

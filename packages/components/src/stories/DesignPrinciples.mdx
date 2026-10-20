@@ -47,11 +47,12 @@ Components follow the **compound component** pattern:
 
 ## 📐 Consistent API
 
-Every component follows these conventions:
+Components follow these conventions; each part's props are the source of truth for what it accepts:
 
 - `className` prop for custom styling
 - Typed React 19 `ref` props for DOM access and callback cleanup
-- Canonical `render` composition, without deprecated child slots or legacy adapters
+- Canonical `render` composition on the parts that declare it (Base UI-backed parts and `useRender`-based package parts), without deprecated
+  child slots or legacy adapters; decorative effects, charts, providers and many layout parts do not accept `render`
 - `displayName` for debugging
 - JSDoc for API documentation
 - Co-located tests and stories

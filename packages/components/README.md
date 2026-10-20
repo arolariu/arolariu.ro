@@ -39,24 +39,17 @@ for modern applications that demand both beauty and performance._
 
 The current package version is owned by [`package.json`](./package.json).
 
-### Upcoming major: preparation, not publication
+### Version 3
 
-This workspace prepares **3.0.0**; passing validation does not mean v3 is available on npm or authorize publication. Read
-[MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes, exact Toast and Command examples,
-retained extensions and historical v0 → v1 guide. Website adoption remains a separate task: the repository website must keep its official
-published **2.4 tarball and runtime calls** until a new artifact is published and its adoption authorized.
+**3.0.0** is a breaking release. Read [MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes,
+exact Toast and Command examples, retained extensions and historical v0 → v1 guide.
 
-The upcoming Base UI minimum remains **`^1.9`**. React and ReactDOM peers are now **`^19`**. Package-owned components receive DOM refs as
-ordinary React 19 props. React 18, `asChild`, deprecated aliases and explicit legacy facades are no longer supported. Existing consumers
-must migrate rather than select a compatibility entrypoint.
+The Base UI peer minimum becomes **`^1.9`** (2.4 accepted `^1`). React and ReactDOM peers are now **`^19`**. Package-owned components
+receive DOM refs as ordinary React 19 props. React 18, `asChild`, deprecated aliases and the callable toast facade are no longer supported.
+Existing consumers must migrate rather than select a compatibility entrypoint.
 
 The accessibility target is applicable **WCAG 2.2 A/AA**, with the component/application ownership and manual verification requirements
 documented in [ACCESSIBILITY.md](./ACCESSIBILITY.md). An emulated test pass is not full-page conformance.
-
-The earlier React 19-only build, complete workspace coverage, genuine packed contracts, minimum-runtime lanes, configured source lint and
-story graph checks are recorded in [the current verification checkpoint](./MIGRATION.md#react-19-only-verification). The older checkpoints
-below describe earlier preparation artifacts. Private helpers remain blocked public imports; publication, website adoption and complete
-native/assistive acceptance remain separate.
 
 ### Required package verification
 
@@ -69,16 +62,18 @@ npm test
 The default command builds the package, creates and extracts a real local npm archive, and runs the complete Vitest suite with
 `AROLARIU_COMPONENTS_PACKED_ROOT` set to that extraction. Packed ESM/declaration/style and private-import contracts therefore run in the
 existing release workflow's `npm test` step instead of silently skipping. The command uses the already-installed real peers, performs no
-dependency installation or publication, and removes only its own temporary extraction afterward. Public declarations and story-only payload
-exclusion are checked against actual archive files, not source aliases.
+dependency installation or publication, and removes only its own temporary extraction when the run finishes or is interrupted
+(Ctrl+C/`SIGINT` or `SIGTERM` is forwarded to the running step and the command exits `130`/`143`). A forced kill cannot clean up, so the
+root `.gitignore` ignores `packages/components/.packed-contract-*/`. Public declarations and story-only payload exclusion are checked
+against actual archive files, not source aliases.
 
 The strict packed-declaration compiler check uses the same deadline as the complete source compiler check, separate from runtime test
 deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
 
 For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
-reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs can skip the four archive contracts when no extraction is
-supplied; they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story
-TypeScript graph, including negative API assertions.
+reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs skip the archive contracts when no extraction is supplied;
+they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story TypeScript
+graph, including negative API assertions.
 
 ### Caller attribute escape hatch
 
@@ -90,67 +85,6 @@ Props consumed for composition still retain that contract: `className` is merged
 caller-first cancellable event handlers preserve primitive behavior unless cancelled. Use the documented `render` API for deeper element
 composition. Applications own the resulting accessibility and behavior when overriding native semantics or component state markers.
 
-### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
-
-This checkpoint predates the React 19-only API removal and accessibility changes. Its React 18 results describe the old preparation artifact
-and are not a current support promise.
-
-With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
-
-```bash
-npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
-```
-
-**Exit 0: 127 files / 3,147 tests / no skips**, including all **four actual packed contracts** and **93 story-style mount tests**. Start
-**15:21:14 local**, duration **335.46 seconds**. Thresholds and exclusions remain unchanged:
-
-| Metric     | Coverage | Covered / total | Unchanged threshold |
-| ---------- | -------- | --------------- | ------------------- |
-| Statements | 98.35%   | 3765 / 3828     | 95%                 |
-| Branches   | 95.32%   | 2996 / 3143     | 80%                 |
-| Functions  | 99.41%   | 1022 / 1028     | 95%                 |
-| Lines      | 99.24%   | 3571 / 3598     | 95%                 |
-
-The separate real React18 source and packed lanes passed **28 fixtures** each. Story ownership moved **224 classes from 74 production CSS
-Modules** into **80 story-owned style mounts**: actual packed legacy selector occurrences fell **432 → 0**, and uncompressed production
-`dist` CSS decreased **26,551 bytes**. Parent's **74 style graphs / 3,611 preserved declarations** and **97-story TypeScript graph** checks
-passed with zero diagnostics.
-
-Independent review (`328aa289`) reported no findings: all four original review items were addressed and the story-style boundary approved.
-Parent's configured full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo
-error reporting and the chart zero-geometry warning remained visible; this is not a warning-free claim.
-
-This is not an all-monorepo or whole-project type pass. The historical 15 hook/story strong-type diagnostic baseline, website
-fixture/build-environment limits, physical-browser acceptance, publication and website adoption are not cleared by this checkpoint.
-
-### Historical initial v3 validation checkpoint — 2026-10-14
-
-The following **3,043-test checkpoint is historical**, preceding the review/style follow-up above; it is not the latest validation.
-
-The parent ran the exact component workspace coverage command with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the real extracted npm artifact,
-not a source proxy:
-
-```bash
-npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
-```
-
-**Exit 0: 126 files / 3,043 tests / no skips**, including all three actual packed contracts. The run started at **10:50:17 local** and
-completed in **333.64 seconds**. Thresholds and exclusions were unchanged:
-
-| Metric     | Coverage | Covered / total | Unchanged threshold |
-| ---------- | -------- | --------------- | ------------------- |
-| Statements | 98.35%   | 3769 / 3832     | 95%                 |
-| Branches   | 95.32%   | 2997 / 3144     | 80%                 |
-| Functions  | 99.41%   | 1025 / 1031     | 95%                 |
-| Lines      | 99.25%   | 3573 / 3600     | 95%                 |
-
-The final scoped review (`a3e8b0b6`) found both Important and all ten Minor findings addressed, zero remaining and zero new Important
-regressions. Parent-reported configured ESLint and Prettier for all **383 changed files** passed; the independent source and actual packed
-React18 lanes each passed **18 fixtures**. This is a component workspace checkpoint, **not an all-monorepo pass**: the known 15 baseline
-hook/story strong-type diagnostics, website unit-fixture/build-environment blocks and physical-browser acceptance remain separate. Expected
-Motion reduced-motion notices and npm configuration warnings are not suppressed; earlier fixture-only corrections resolved React Tabs act
-warnings.
-
 ### Canonical APIs only
 
 Storybook-only layout and demo styling is owned and mounted by the corresponding `.stories.tsx` file. Production CSS Modules contain only
@@ -159,7 +93,7 @@ application style objects or a styling dependency.
 
 - Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
   `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
-- The callable toast facade and all `Legacy*` components/subpaths are removed. No Sonner export/dependency is introduced.
+- The callable toast facade is removed. No Sonner export/dependency is introduced.
 - `CommandDialog` is a modal shell containing exactly one explicit `Command`. Command is native substring/custom-score matching, not cmdk.
 - `AlertDialogAction` does not close automatically. Close explicitly after success and retain pending/rejection behavior.
 - Button's icon sizes require `aria-label` or `aria-labelledby`, and `ButtonProps` is a union: extend it with `type X = ButtonProps & {…}`,
@@ -185,9 +119,6 @@ npm install @arolariu/components
 # Peer dependencies (install if not already in your project)
 npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
-
-Install an **actually published** package version. The upcoming v3 examples below are migration preparation, not authorization to install an
-unpublished artifact or replace the website's published dependency.
 
 ### Basic Setup
 
@@ -293,13 +224,13 @@ Explore representative components below. The live public inventory is owned by `
 
 ### 📦 Overlays & Dialogs
 
-| Component      | Description                        | Import                            |
-| -------------- | ---------------------------------- | --------------------------------- |
-| **Dialog**     | Modal dialogs and confirmations    | `@arolariu/components/dialog`     |
-| **Sheet**      | Slide-out panels from screen edges | `@arolariu/components/sheet`      |
-| **Popover**    | Floating content containers        | `@arolariu/components/popover`    |
-| **Tooltip**    | Contextual information on hover    | `@arolariu/components/tooltip`    |
-| **DropDrawer** | Advanced drawer with drop zones    | `@arolariu/components/dropdrawer` |
+| Component      | Description                                                                             | Import                            |
+| -------------- | --------------------------------------------------------------------------------------- | --------------------------------- |
+| **Dialog**     | Modal dialogs and confirmations                                                         | `@arolariu/components/dialog`     |
+| **Sheet**      | Slide-out panels from screen edges                                                      | `@arolariu/components/sheet`      |
+| **Popover**    | Floating content containers                                                             | `@arolariu/components/popover`    |
+| **Tooltip**    | Contextual information on hover                                                         | `@arolariu/components/tooltip`    |
+| **DropDrawer** | Responsive menu that becomes a drawer on narrow viewports (`presentation` overrides it) | `@arolariu/components/dropdrawer` |
 
 ### 📊 Data Display
 
@@ -311,7 +242,7 @@ Explore representative components below. The live public inventory is owned by `
 | **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
 | **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
 
-Upcoming additive families also include `NativeSelect`, exact Base UI direction context, `Attachment`, `Bubble`, `Marker` and `Message`.
+Version 3 also adds the `NativeSelect`, `Attachment`, `Bubble`, `Marker` and `Message` families and exposes Base UI's direction context.
 These are domain-independent native/composed display APIs, not upload controls or an AI/chat SDK. Callers supply text, data and policy.
 
 ### 🎛️ Form Controls
@@ -363,8 +294,10 @@ that region).
 - `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
 - Use component props such as `variant` and `size` to style package components. `buttonVariants()` remains the way to give a native link the
-  button appearance (`<a href='/docs' className={buttonVariants({variant: "outline"})}>`); call it from a Client Component, because it is
-  exported from a client module. `badgeVariants()` is likewise a client-module helper.
+  button appearance (`<a href='/docs' className={buttonVariants({variant: "outline"})}>`); import it from the package root to call it in a
+  Server Component (`import {buttonVariants} from "@arolariu/components"`); the `@arolariu/components/button` subpath is a client module, so
+  its re-export is callable only from Client Components. `badgeVariants()` and the other class helpers (`buttonGroupVariants`,
+  `markerVariants`, `navigationMenuTriggerStyle`, `tabsListVariants`, `toggleVariants`) follow the same rule.
 - CSS custom properties now use the `--ac-*` prefix.
 
 ---
@@ -598,6 +531,10 @@ import {Card} from "@arolariu/components/card";
 import {Button, Card} from "@arolariu/components";
 ```
 
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path; bundlers
+that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js `optimizePackageImports`, still load only the
+modules you use.
+
 **Bundle Impact**
 
 - Individual components: typically a few KB gzipped
@@ -710,21 +647,34 @@ Inspect generated class names, Base UI data attributes, and source-mapped module
 
 ## 🌐 Browser Support
 
-**Modern browsers only** for optimal performance.
+**Modern browsers only.** The package's CSS is built for current engines: it is not lowered for older ones, and the build drops
+vendor-prefixed fallbacks that current engines no longer need. These are the minimum versions:
 
-| Browser            | Version     |
-| ------------------ | ----------- |
-| 🌟 **Chrome/Edge** | 90+ (2021+) |
-| 🦊 **Firefox**     | 88+ (2021+) |
-| 🧭 **Safari**      | 14+ (2020+) |
+| Browser                       | Minimum version |
+| ----------------------------- | --------------- |
+| 🌟 **Chrome/Edge**            | 120+            |
+| 🦊 **Firefox**                | 121+            |
+| 🧭 **Safari** (macOS and iOS) | 16.5+           |
 
-**Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and
-better performance.
+**Why these versions?** The component and token stylesheets use, without fallbacks:
 
-These browser targets are not fresh physical-engine validation for the upcoming major. Vitest/Happy DOM and CSS parsing do not prove native
-focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech. Packed ESM/types/CSS/client directive
-checks, Storybook/build results and the passing component coverage/review/lint checkpoints are not physical-engine proof. Physical-engine
-risk acceptance, publication and website adoption remain separate release work.
+- the `:dir()` pseudo-class (Chrome/Edge 120, Firefox 49, Safari 16.4) for right-to-left adjustments and for the inset Sidebar's margins in
+  both directions. Engines without it drop each of those rules entirely, left-to-right branches included.
+- unprefixed `background-clip: text` in GradientText (Chrome/Edge 120, Firefox 49, Safari 15.5)
+- the `:has()` selector (Chrome/Edge 105, Firefox 121, Safari 15.4)
+- native CSS nesting (Chrome/Edge 112, Firefox 117, Safari 16.5); every nested selector starts with `&` or another symbol, as those first
+  releases require
+- `oklch()` design tokens and `color-mix()` derived colors (Chrome/Edge 111, Firefox 113, Safari 16.2)
+- media-query range syntax, container queries and dynamic viewport units such as `dvh` (all supported by Safari 16.4 and the Chrome/Edge and
+  Firefox versions above)
+
+LoadingOverlay's translucent backdrop also uses relative color syntax (`rgb(from …)`), which Firefox supports from 128: earlier Firefox
+drops that declaration and shows the overlay without its tint. Its optional `blur` uses the unprefixed `backdrop-filter`, which Safari
+supports from 18, so earlier Safari shows no blur. `field-sizing`, `interpolate-size` and `text-wrap` are progressive enhancements.
+
+These minimums follow from the shipped CSS features; they are not the result of testing every listed engine. Vitest/Happy DOM and CSS
+parsing do not prove native focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech; see
+[ACCESSIBILITY.md](./ACCESSIBILITY.md#verification-boundary) for the manual browser and assistive-technology checks.
 
 ---
 

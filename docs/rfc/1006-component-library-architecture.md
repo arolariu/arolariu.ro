@@ -68,7 +68,10 @@ list.
 
 ## Base UI composition
 
-Interactive wrappers prefer Base UI's `useRender` and `mergeProps` pattern. Preserve:
+Wrappers delegate to the Base UI primitive when one exists, passing the caller's `render`, ref, state-aware callbacks and remaining props
+through it. Package-owned parts that offer `render` without a primitive use Base UI's `useRender` and `mergeProps`, and their modules carry
+`"use client"`. Parts that do not offer `render`, such as Card, Table, Kbd, Alert and Field, render their native elements directly.
+Preserve:
 
 - native element behavior by default;
 - Base UI state/data attributes;
@@ -76,8 +79,8 @@ Interactive wrappers prefer Base UI's `useRender` and `mergeProps` pattern. Pres
 - forwarded DOM refs where the public contract requires them;
 - current `render` composition.
 
-The upcoming major supports React 19 only. Public DOM refs are ordinary typed props, including cleanup-returning callbacks. `render` is the
-composition API; `asChild`, deprecated aliases, no-op props and explicitly named legacy adapters are removed.
+The library supports React 19 only. Public DOM refs are ordinary typed props, including cleanup-returning callbacks. `render` is the
+composition API; `asChild`, deprecated aliases and no-op props are removed, and legacy adapters must not be added.
 
 When a component can use a native element directly, preserve its native keyboard, focus, form, and disabled semantics. A composed non-native
 control must provide the equivalent role, keyboard behavior, `aria-disabled`, and activation suppression.
@@ -142,6 +145,9 @@ announcements or complete-page conformance.
 Components without Hooks, handlers, browser APIs, or client Context can remain server-compatible. Add `"use client"` only to the smallest
 module that requires client execution.
 
+Public pure helpers exported beside client components, such as class-name builders, live in directive-free private modules that the root
+re-exports, so Server Components can call them from the package root; the component subpath re-exports them as client references.
+
 A directive-free component imported beneath a client boundary must still be client-safe. Conversely, a server-compatible package primitive
 must not import `server-only` code or application configuration.
 
@@ -170,10 +176,8 @@ An ordinary semver dependency or npm alias can be linked to a matching local wor
 boundary. The explicit registry artifact avoids that implicit link. Website build/dev targets, test resolution, and container builders must
 not require local component compilation. Library tests, Storybook, and release builds continue to validate the workspace independently.
 
-Shared API/type/docs/contract-test preparation may proceed under an explicit controller ruling while scoped producer corrections continue.
-That ruling is not evidence that all producer gates passed. Root dependency restoration/lock evidence must remain intact until the
-integration controller releases the next phase. Source typing and focused Vitest are not substitutes for the actual built/packed
-ESM/declaration/CSS/client-boundary contract.
+Source typing and focused Vitest are not substitutes for the actual built/packed ESM/declaration/CSS/client-boundary contract; the package's
+`npm test` verifies that contract against a real packed archive.
 
 Publishing a new library version and adopting it in the website are separate operations. A website upgrade must reference an already
 published artifact. The shared lock domain still couples dependency installation and cache invalidation; it does not couple the website to
@@ -193,62 +197,14 @@ Colocated Vitest and Testing Library tests should cover the public interaction:
 Do not replace the component or Base UI behavior being asserted with a repository mock. Storybook stories provide interactive documentation
 and visual/a11y scenarios but do not replace focused tests.
 
-### Historical pre-hard-cut review-followup validation checkpoint — 2026-10-14
-
-These results predate the React 19-only API removal and accessibility changes. They are not current React 18 support or new-artifact proof.
-
-With `AROLARIU_COMPONENTS_PACKED_ROOT` set to the genuine new extraction, the parent ran:
-
-```bash
-npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
-```
-
-Exit **0**: **127 files / 3,147 tests / no skips**, including all **four packed ESM/type/subpath/style contracts** and **93 story-style
-mount tests**. Start **15:21:14 local**, duration **335.46 seconds**. Statements **98.35% (3765/3828)**, branches **95.32% (2996/3143)**,
-functions **99.41% (1022/1028)**, lines **99.24% (3571/3598)**. The existing thresholds/exclusions remain unchanged: 80% branches; 95%
-functions, lines and statements.
-
-Component/Storybook builds and the separate real React18 source and actual packed lanes are verified, with **28 fixtures** in each React18
-lane. Story ownership moved **224 classes from 74 production CSS Modules** into **80 story-owned style mounts**: actual packed legacy
-selectors fell **432 → 0**, and uncompressed production CSS decreased **26,551 bytes**. Parent's **74 style graphs / 3,611 preserved
-declarations** and **97-story TypeScript graph** checks passed with zero diagnostics.
-
-Independent review (`328aa289`) reported no findings: all four original items addressed, story-style boundary approved. Parent's configured
-full ESLint and **177-changed-file** format checks passed. Expected Motion/npm notices, intentional ErrorBoundary demo error reporting and
-the chart zero-geometry warning remained visible; no warning-free result is claimed.
-
-This is not an all-monorepo or whole-project type pass and does not clear the historical 15 hook/story strong-type baseline, website
-fixture/build-environment limits, physical-browser acceptance or publication/adoption gates.
-
-### Historical initial v3 validation checkpoint — 2026-10-14
-
-The following **3,043-test checkpoint is historical**, before the latest review/style follow-up above.
-
-The parent verified the component workspace with `AROLARIU_COMPONENTS_PACKED_ROOT` set to the actual extracted npm artifact:
-
-```bash
-npm run test:unit --workspace=@arolariu/components -- --maxWorkers=2 --reporter=dot
-```
-
-Exit **0**: **126 files / 3,043 tests / no skips**, including all three actual packed ESM/type/subpath contracts. Start **10:50:17 local**,
-duration **333.64 seconds**. Coverage: statements **98.35% (3769/3832)**, branches **95.32% (2997/3144)**, functions **99.41% (1025/1031)**,
-lines **99.25% (3573/3600)**. Existing 80% branch / 95% function-line-statement thresholds and exclusions were unchanged.
-Component/Storybook builds and the isolated 18-fixture React 18 packed lane are separately verified.
-
-Final scoped review (`a3e8b0b6`) found I1/I2 and M1–M10 all addressed, zero remaining and zero new Important regressions. Parent-reported
-configured ESLint and Prettier for all **383 changed files** passed; the direct React18 source lane also passed **18 fixtures**. Expected
-Motion reduced notices/npm configuration warnings remain visible; fixture-only corrections removed React Tabs act warnings without changing
-production/dist. This dated component checkpoint does not clear the known 15 hook/story strong-type baseline, website
-fixture/build-environment blocks, physical-browser limits or publication/adoption gates.
-
 ## Migration boundary
 
 The current architecture uses Base UI rather than Radix packages and CSS Modules rather than Tailwind-based component implementation. The
 former `sonner` wrapper is not a current public component; use the live toast surface.
 
-Removed compatibility such as `asChild`, `Legacy*` adapters and deprecated aliases must not be reintroduced. Toast is the Base UI
-manager/compound surface. CommandDialog is a modal shell requiring one explicit native Command root. AlertDialogAction does not close
-automatically; the caller owns asynchronous success, failure and pending behavior.
+Removed compatibility such as `asChild` and deprecated aliases must not be reintroduced, and legacy adapters must not be added. Toast is the
+Base UI manager/compound surface. CommandDialog is a modal shell requiring one explicit native Command root. AlertDialogAction does not
+close automatically; the caller owns asynchronous success, failure and pending behavior.
 
 Ship MIGRATION alongside README/EXAMPLES/CHANGELOG. Preserve historical guides and add version-scoped sections for newly breaking defaults,
 DOM refs/tags, values/nullability, render ownership, primitive callback details and explicit error policies. Document retained local

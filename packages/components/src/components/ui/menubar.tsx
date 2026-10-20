@@ -37,8 +37,15 @@ export type MenubarRadioGroupProps = DropdownMenuRadioGroup.Props;
 export type MenubarSubProps = DropdownMenuSub.Props;
 /** Native Menu trigger props and accurate polymorphic refs. */
 export type MenubarTriggerProps<Payload = unknown> = DropdownMenuTrigger.Props<Payload>;
-/** Popup props with separate primitive positioning and portal options. */
-export type MenubarContentProps = DropdownMenuContent.Props;
+/** Popup props with separate primitive positioning and portal options, and Menubar offset defaults. */
+export type MenubarContentProps = Readonly<
+  Omit<DropdownMenuContent.Props, "alignOffset" | "sideOffset"> & {
+    /** Offset in pixels along the alignment axis, or a function of the trigger and popup sizes. @default -4 */
+    alignOffset?: DropdownMenuContent.Props["alignOffset"];
+    /** Distance in pixels between the trigger and the popup, or a function of their sizes, side and alignment. @default 8 */
+    sideOffset?: DropdownMenuContent.Props["sideOffset"];
+  }
+>;
 /** Menu item props with optional destructive presentation and inset. */
 export type MenubarItemProps = DropdownMenuItem.Props;
 /** Native checkbox item props with optional inset. */
@@ -54,18 +61,115 @@ export type MenubarSeparatorProps = DropdownMenuSeparator.Props;
 /** Presentation-only shortcut props. */
 export type MenubarShortcutProps = DropdownMenuShortcut.Props;
 
-/** Menu root and payload contract shared with the corrected DropdownMenu. */
+/**
+ * Menu root and payload contract shared with the corrected DropdownMenu.
+ *
+ * @remarks
+ * - Client-only; render one per top-level menu inside `Menubar`, wrapping a `MenubarTrigger` and a `MenubarContent`.
+ *   Base UI joins it to the menubar's roving focus and keyboard navigation between menus.
+ *
+ * @example
+ * ```tsx
+ * <MenubarMenu>
+ *   <MenubarTrigger>Edit</MenubarTrigger>
+ *   <MenubarContent>
+ *     <MenubarItem onClick={undo}>Undo</MenubarItem>
+ *   </MenubarContent>
+ * </MenubarMenu>
+ * ```
+ */
 const MenubarMenu = DropdownMenu;
-/** Accessible Menu group shared with DropdownMenu. */
+/**
+ * Accessible Menu group shared with DropdownMenu.
+ *
+ * @remarks
+ * - Client-only; a `role="group"` inside menubar content, named by a `MenubarLabel` child.
+ *
+ * @example
+ * ```tsx
+ * <MenubarGroup>
+ *   <MenubarLabel>Recent</MenubarLabel>
+ *   <MenubarItem onClick={openReport}>report.pdf</MenubarItem>
+ * </MenubarGroup>
+ * ```
+ */
 const MenubarGroup = DropdownMenuGroup;
-/** Real Menu portal shared with DropdownMenu. */
+/**
+ * Real Menu portal shared with DropdownMenu.
+ *
+ * @remarks
+ * - Client-only. `MenubarContent` already renders this Portal (configure it with `portalProps`); use this part only
+ *   when composing raw Base UI `Menu.Positioner`/`Menu.Popup` parts.
+ *
+ * @example
+ * ```tsx
+ * <MenubarPortal container={shadowRoot}>
+ *   <Menu.Positioner>
+ *     <Menu.Popup aria-label='File'>…</Menu.Popup>
+ *   </Menu.Positioner>
+ * </MenubarPortal>
+ * ```
+ */
 const MenubarPortal = DropdownMenuPortal;
-/** Native Menu radio group values and event details. */
+/**
+ * Native Menu radio group values and event details.
+ *
+ * @remarks
+ * - Client-only; a `role="group"` owning the single choice of its `MenubarRadioItem` children, named by a
+ *   `MenubarLabel` child. Values (including `null`) and cancellable change details are Base UI's.
+ *
+ * @example
+ * ```tsx
+ * <MenubarRadioGroup value={zoom} onValueChange={setZoom}>
+ *   <MenubarLabel>Zoom</MenubarLabel>
+ *   <MenubarRadioItem value='fit'>Fit to window</MenubarRadioItem>
+ *   <MenubarRadioItem value='100'>100%</MenubarRadioItem>
+ * </MenubarRadioGroup>
+ * ```
+ */
 const MenubarRadioGroup = DropdownMenuRadioGroup;
-/** Real nested Menu root, preserving keyboard behavior. */
+/**
+ * Real nested Menu root, preserving keyboard behavior.
+ *
+ * @remarks
+ * - Client-only; wrap one `MenubarSubTrigger` and one `MenubarSubContent`. Opens on hover, click, Enter, Space or the
+ *   inline-end arrow key; Escape closes only the submenu unless `closeParentOnEsc` is set.
+ *
+ * @example
+ * ```tsx
+ * <MenubarSub>
+ *   <MenubarSubTrigger>Open recent</MenubarSubTrigger>
+ *   <MenubarSubContent aria-label='Recent files'>
+ *     <MenubarItem onClick={openReport}>report.pdf</MenubarItem>
+ *   </MenubarSubContent>
+ * </MenubarSub>
+ * ```
+ */
 const MenubarSub = DropdownMenuSub;
 
-/** Coordinates real menubar roving focus, orientation and accessible naming. */
+/**
+ * Coordinates real menubar roving focus, orientation and accessible naming.
+ *
+ * @remarks
+ * - Client-only; renders a `role="menubar"` element with `aria-orientation`. Compose `MenubarMenu` children and name
+ *   the bar with `aria-label` or `aria-labelledby`.
+ * - Base UI owns roving focus (arrow keys follow `orientation`, wrapping while `loopFocus` is `true`), modality
+ *   (`modal`, default `true`) and `disabled`.
+ *
+ * @example
+ * ```tsx
+ * <Menubar aria-label='Editor'>
+ *   <MenubarMenu>
+ *     <MenubarTrigger>File</MenubarTrigger>
+ *     <MenubarContent>
+ *       <MenubarItem onClick={createFile}>
+ *         New file <MenubarShortcut>Ctrl+N</MenubarShortcut>
+ *       </MenubarItem>
+ *     </MenubarContent>
+ *   </MenubarMenu>
+ * </Menubar>
+ * ```
+ */
 const Menubar = ({ref, ...props}: Readonly<Menubar.Props>): React.ReactElement => {
   const {className, render, children, ...otherProps} = props;
   let renderProp = render;
@@ -88,7 +192,18 @@ const Menubar = ({ref, ...props}: Readonly<Menubar.Props>): React.ReactElement =
 };
 Menubar.displayName = "Menubar";
 
-/** Uses the corrected Menu trigger; Base UI supplies menubar role and navigation state. */
+/**
+ * Uses the corrected Menu trigger; Base UI supplies menubar role and navigation state.
+ *
+ * @remarks
+ * - Client-only; render inside `MenubarMenu`. Within a menubar Base UI renders it as a `role="menuitem"` in the roving
+ *   tab sequence with `aria-haspopup="menu"` and `aria-expanded`; click, Enter or Space opens its menu.
+ *
+ * @example
+ * ```tsx
+ * <MenubarTrigger>View</MenubarTrigger>
+ * ```
+ */
 function MenubarTrigger<Payload = unknown>({ref, ...props}: Readonly<MenubarTrigger.Props<Payload>>): React.ReactElement {
   const {className, ...otherProps} = props;
   return (
@@ -103,8 +218,20 @@ function MenubarTrigger<Payload = unknown>({ref, ...props}: Readonly<MenubarTrig
 MenubarTrigger.displayName = "MenubarTrigger";
 
 /**
- * Portaled Menu Popup with start alignment and offsets 8/-4. Unless `side` is set, Base UI opens it
- * below a horizontal Menubar and toward the inline end of a vertical one.
+ * Portaled Menu Popup with Menubar placement defaults.
+ *
+ * @remarks
+ * - Client-only; render inside `MenubarMenu`. Accepts every `DropdownMenuContent` prop with `align="start"`,
+ *   `sideOffset={8}` and `alignOffset={-4}`. Unless `side` is set, Base UI opens it below a horizontal Menubar and
+ *   toward the inline end of a vertical one.
+ * - Base UI labels the `role="menu"` popup by its trigger unless an `aria-label` is given.
+ *
+ * @example
+ * ```tsx
+ * <MenubarContent>
+ *   <MenubarItem onClick={save}>Save</MenubarItem>
+ * </MenubarContent>
+ * ```
  */
 const MenubarContent = ({ref, ...props}: Readonly<MenubarContent.Props>): React.ReactElement => {
   const {align = "start", alignOffset = -4, sideOffset = 8, className, ...otherProps} = props;
@@ -122,7 +249,20 @@ const MenubarContent = ({ref, ...props}: Readonly<MenubarContent.Props>): React.
 };
 MenubarContent.displayName = "MenubarContent";
 
-/** Portaled submenu with the shared inline-end/start placement and offsets 0/-3. */
+/**
+ * Portaled submenu with the shared inline-end/start placement and offsets 0/-3.
+ *
+ * @remarks
+ * - Client-only; render inside `MenubarSub`. Accepts every `DropdownMenuSubContent` prop and default:
+ *   `side="inline-end"` (right in LTR), `align="start"`, `sideOffset={0}` and `alignOffset={-3}`.
+ *
+ * @example
+ * ```tsx
+ * <MenubarSubContent aria-label='Recent files'>
+ *   <MenubarItem onClick={openReport}>report.pdf</MenubarItem>
+ * </MenubarSubContent>
+ * ```
+ */
 const MenubarSubContent = ({ref, ...props}: Readonly<MenubarSubContent.Props>): React.ReactElement => {
   const {className, ...otherProps} = props;
   return (
@@ -136,7 +276,18 @@ const MenubarSubContent = ({ref, ...props}: Readonly<MenubarSubContent.Props>): 
 };
 MenubarSubContent.displayName = "MenubarSubContent";
 
-/** Native Menu activation with the shared destructive/inset contract. */
+/**
+ * Native Menu activation with the shared destructive/inset contract.
+ *
+ * @remarks
+ * - Client-only; a `role="menuitem"` whose `onClick` runs for pointer, Enter and Space activation, then closes the menu
+ *   unless `closeOnClick={false}`. Supports `inset`, `variant="destructive"` and link `render` targets.
+ *
+ * @example
+ * ```tsx
+ * <MenubarItem onClick={print}>Print…</MenubarItem>
+ * ```
+ */
 const MenubarItem = ({ref, ...props}: Readonly<MenubarItem.Props>): React.ReactElement => {
   return (
     <DropdownMenuItem
@@ -147,7 +298,20 @@ const MenubarItem = ({ref, ...props}: Readonly<MenubarItem.Props>): React.ReactE
   );
 };
 MenubarItem.displayName = "MenubarItem";
-/** Native Menu checkbox with primitive checked state and cancellation details. */
+/**
+ * Native Menu checkbox with primitive checked state and cancellation details.
+ *
+ * @remarks
+ * - Client-only; a `role="menuitemcheckbox"` with `aria-checked` and an `aria-hidden` check. The menu stays open
+ *   after toggling unless `closeOnClick` is set.
+ *
+ * @example
+ * ```tsx
+ * <MenubarCheckboxItem checked={wordWrap} onCheckedChange={setWordWrap}>
+ *   Word wrap
+ * </MenubarCheckboxItem>
+ * ```
+ */
 const MenubarCheckboxItem = ({ref, ...props}: Readonly<MenubarCheckboxItem.Props>): React.ReactElement => {
   return (
     <DropdownMenuCheckboxItem
@@ -158,7 +322,22 @@ const MenubarCheckboxItem = ({ref, ...props}: Readonly<MenubarCheckboxItem.Props
   );
 };
 MenubarCheckboxItem.displayName = "MenubarCheckboxItem";
-/** Native Menu radio value with the shared relative indicator. */
+/**
+ * Native Menu radio value with the shared relative indicator.
+ *
+ * @remarks
+ * - Client-only; render inside `MenubarRadioGroup`. A `role="menuitemradio"` with `aria-checked` and an `aria-hidden`
+ *   dot; the menu stays open after selection unless `closeOnClick` is set.
+ *
+ * @example
+ * ```tsx
+ * <MenubarRadioGroup defaultValue='light'>
+ *   <MenubarLabel>Theme</MenubarLabel>
+ *   <MenubarRadioItem value='light'>Light</MenubarRadioItem>
+ *   <MenubarRadioItem value='dark'>Dark</MenubarRadioItem>
+ * </MenubarRadioGroup>
+ * ```
+ */
 const MenubarRadioItem = ({ref, ...props}: Readonly<MenubarRadioItem.Props>): React.ReactElement => {
   return (
     <DropdownMenuRadioItem
@@ -169,7 +348,24 @@ const MenubarRadioItem = ({ref, ...props}: Readonly<MenubarRadioItem.Props>): Re
   );
 };
 MenubarRadioItem.displayName = "MenubarRadioItem";
-/** Native submenu trigger with the shared direction-aware arrow. */
+/**
+ * Native submenu trigger with the shared direction-aware arrow.
+ *
+ * @remarks
+ * - Client-only; render inside `MenubarSub`. A `role="menuitem"` with `aria-haspopup="menu"` whose `aria-hidden`
+ *   chevron mirrors under an RTL `DirectionProvider`, where Base UI opens the submenu toward the left; `inset` aligns it
+ *   with indicator rows.
+ *
+ * @example
+ * ```tsx
+ * <MenubarSub>
+ *   <MenubarSubTrigger>Share</MenubarSubTrigger>
+ *   <MenubarSubContent aria-label='Share options'>
+ *     <MenubarItem onClick={copyLink}>Copy link</MenubarItem>
+ *   </MenubarSubContent>
+ * </MenubarSub>
+ * ```
+ */
 const MenubarSubTrigger = ({ref, ...props}: Readonly<MenubarSubTrigger.Props>): React.ReactElement => {
   return (
     <DropdownMenuSubTrigger
@@ -180,7 +376,21 @@ const MenubarSubTrigger = ({ref, ...props}: Readonly<MenubarSubTrigger.Props>): 
   );
 };
 MenubarSubTrigger.displayName = "MenubarSubTrigger";
-/** Names the surrounding Menu group using primitive relationships. */
+/**
+ * Names the surrounding Menu group using primitive relationships.
+ *
+ * @remarks
+ * - Client-only; render as a child of `MenubarGroup` or `MenubarRadioGroup`, which Base UI labels with it. It is not
+ *   focusable and does not name the popup.
+ *
+ * @example
+ * ```tsx
+ * <MenubarGroup>
+ *   <MenubarLabel inset>Panels</MenubarLabel>
+ *   <MenubarCheckboxItem inset>Terminal</MenubarCheckboxItem>
+ * </MenubarGroup>
+ * ```
+ */
 const MenubarLabel = ({ref, ...props}: Readonly<MenubarLabel.Props>): React.ReactElement => {
   return (
     <DropdownMenuLabel
@@ -191,7 +401,21 @@ const MenubarLabel = ({ref, ...props}: Readonly<MenubarLabel.Props>): React.Reac
   );
 };
 MenubarLabel.displayName = "MenubarLabel";
-/** Separates sections with the shared real Menu separator. */
+/**
+ * Separates sections with the shared real Menu separator.
+ *
+ * @remarks
+ * - Client-only; a non-focusable `role="separator"` between groups of items.
+ *
+ * @example
+ * ```tsx
+ * <MenubarContent>
+ *   <MenubarItem onClick={save}>Save</MenubarItem>
+ *   <MenubarSeparator />
+ *   <MenubarItem onClick={closeWindow}>Close window</MenubarItem>
+ * </MenubarContent>
+ * ```
+ */
 const MenubarSeparator = ({ref, ...props}: Readonly<MenubarSeparator.Props>): React.ReactElement => {
   return (
     <DropdownMenuSeparator
@@ -202,7 +426,20 @@ const MenubarSeparator = ({ref, ...props}: Readonly<MenubarSeparator.Props>): Re
   );
 };
 MenubarSeparator.displayName = "MenubarSeparator";
-/** Displays a trailing shortcut hint rather than a separately styled lookalike. */
+/**
+ * Displays a trailing shortcut hint rather than a separately styled lookalike.
+ *
+ * @remarks
+ * - Presentation only: its text joins the item's accessible name and no keyboard handler is registered. Register the
+ *   real shortcut yourself and expose it with `aria-keyshortcuts` on the item.
+ *
+ * @example
+ * ```tsx
+ * <MenubarItem onClick={save} aria-keyshortcuts='Control+S'>
+ *   Save <MenubarShortcut>Ctrl+S</MenubarShortcut>
+ * </MenubarItem>
+ * ```
+ */
 const MenubarShortcut = ({ref, ...props}: Readonly<MenubarShortcut.Props>): React.ReactElement => {
   return (
     <DropdownMenuShortcut
@@ -263,7 +500,7 @@ namespace MenubarContent {
 // eslint-disable-next-line no-redeclare -- public component namespace API
 namespace MenubarSubContent {
   // eslint-disable-next-line sonarjs/redundant-type-aliases -- canonical namespace alias is a supported public typing API
-  export type Props = MenubarContentProps;
+  export type Props = DropdownMenuSubContent.Props;
   export type State = DropdownMenuSubContent.State;
 }
 // eslint-disable-next-line no-redeclare -- public component namespace API

@@ -540,6 +540,173 @@ describe("Command", () => {
     }
   });
 
+  it("re-reads the rendered order for an observed keyed move but never for content, text or attribute changes inside an option", async () => {
+    let order: readonly string[] = ["Alpha", "Beta", "Gamma"];
+    let syncing = false;
+    const listeners = new Set<() => void>();
+    const subscribe = (listener: () => void): (() => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    };
+    const notify = (): void => {
+      for (const listener of listeners) listener();
+    };
+    // Only this store reader re-renders: no Command part does, so CommandList's observer alone sees its DOM changes.
+    function SyncStatus(): React.JSX.Element {
+      const active = React.useSyncExternalStore(subscribe, () => syncing);
+      return (
+        <span data-state={active ? "syncing" : "idle"}>
+          {active ? (
+            <svg
+              aria-hidden='true'
+              data-testid='sync-icon'
+            />
+          ) : null}
+          <span>{active ? "Syncing" : "Idle"}</span>
+        </span>
+      );
+    }
+    const MemoizedRow = React.memo(function MemoizedRow({name}: Readonly<{name: string}>): React.JSX.Element {
+      return (
+        <CommandItem value={name.toLowerCase()}>
+          {name}
+          {name === "Alpha" ? <SyncStatus /> : null}
+        </CommandItem>
+      );
+    });
+    function StoreRows(): React.JSX.Element {
+      const names = React.useSyncExternalStore(subscribe, () => order);
+      return (
+        <>
+          {names.map((name) => (
+            <MemoizedRow
+              key={name}
+              name={name}
+            />
+          ))}
+        </>
+      );
+    }
+    render(
+      <Command>
+        <CommandInput aria-label='Content search' />
+        <CommandList>
+          <StoreRows />
+        </CommandList>
+      </Command>,
+    );
+    const listbox = screen.getByRole("listbox");
+    // Every re-rank starts by reading the list's position anchors; content-only changes must not pay for one.
+    const reads = vi.spyOn(listbox, "querySelectorAll");
+    const anchorReads = (): number => reads.mock.calls.filter(([selector]) => selector === "[data-command-anchor]").length;
+    const alpha = screen.getByRole("option", {name: /Alpha/u});
+    await act(async () => {
+      syncing = true;
+      notify();
+    });
+    // An inserted icon (child list), a text update (character data) and an attribute change, all inside one option.
+    expect(within(alpha).getByTestId("sync-icon")).toBeInTheDocument();
+    expect(alpha).toHaveTextContent("AlphaSyncing");
+    expect(alpha.querySelector("[data-state]")).toHaveAttribute("data-state", "syncing");
+    await act(async () => {
+      syncing = false;
+      notify();
+    });
+    expect(within(alpha).queryByTestId("sync-icon")).not.toBeInTheDocument();
+    expect(anchorReads()).toBe(0);
+    await act(async () => {
+      order = ["Gamma", "Beta", "Alpha"];
+      notify();
+    });
+    expect(anchorReads()).toBeGreaterThan(0);
+    expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Gamma", "Beta", "AlphaIdle"]);
+    const input = screen.getByRole("combobox", {name: "Content search"});
+    fireEvent.keyDown(input, {key: "Home"});
+    fireEvent.keyDown(input, {key: "ArrowDown"});
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Beta"}).id);
+    reads.mockRestore();
+  });
+
+  it("connects exactly one list observer under StrictMode, re-ranks once after a keyed move and disconnects on unmount", async () => {
+    const NativeObserver = globalThis.MutationObserver;
+    const connected = new Set<MutationObserver>();
+    let created = 0;
+    let deliveries = 0;
+    vi.stubGlobal("MutationObserver", function TrackingObserver(callback: MutationCallback): MutationObserver {
+      const observer = new NativeObserver((records, self) => {
+        if (connected.has(self)) deliveries += 1;
+        callback(records, self);
+      });
+      const observe = observer.observe.bind(observer);
+      const disconnect = observer.disconnect.bind(observer);
+      observer.observe = (target, options): void => {
+        if (target instanceof Element && target.getAttribute("role") === "listbox") {
+          created += 1;
+          connected.add(observer);
+        }
+        observe(target, options);
+      };
+      observer.disconnect = (): void => {
+        connected.delete(observer);
+        disconnect();
+      };
+      return observer;
+    });
+    try {
+      let order: readonly string[] = ["First", "Second", "Third"];
+      const listeners = new Set<() => void>();
+      const subscribe = (listener: () => void): (() => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      };
+      const MemoizedRow = React.memo(function MemoizedRow({name}: Readonly<{name: string}>): React.JSX.Element {
+        return <CommandItem value={name.toLowerCase()}>{name}</CommandItem>;
+      });
+      function StoreRows(): React.JSX.Element {
+        const names = React.useSyncExternalStore(subscribe, () => order);
+        return (
+          <>
+            {names.map((name) => (
+              <MemoizedRow
+                key={name}
+                name={name}
+              />
+            ))}
+          </>
+        );
+      }
+      const {unmount} = render(
+        <React.StrictMode>
+          <Command>
+            <CommandInput aria-label='Strict search' />
+            <CommandList>
+              <StoreRows />
+            </CommandList>
+          </Command>
+        </React.StrictMode>,
+      );
+      // Strict Mode replayed the list's layout effect: the first observer was disconnected, leaving exactly one.
+      expect(created).toBeGreaterThan(1);
+      expect(connected.size).toBe(1);
+      expect(deliveries).toBe(0);
+      await act(async () => {
+        order = ["Third", "Second", "First"];
+        for (const listener of listeners) listener();
+      });
+      expect(deliveries).toBe(1);
+      expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(["Third", "Second", "First"]);
+      const input = screen.getByRole("combobox", {name: "Strict search"});
+      fireEvent.keyDown(input, {key: "Home"});
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Third"}).id);
+      fireEvent.keyDown(input, {key: "ArrowDown"});
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name: "Second"}).id);
+      unmount();
+      expect(connected.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("returns DOM and keyboard order to the rendered order after filtering across mounts and keyed reorders", async () => {
     const user = userEvent.setup();
     const fixture = (names: readonly string[], search: string): React.JSX.Element => (
@@ -2268,6 +2435,105 @@ describe("Command", () => {
     expect(screen.getByRole("option", {name: "Fourth"})).toHaveAttribute("aria-selected", "true");
     fireEvent.keyDown(input, {key: "ArrowUp", metaKey: true});
     expect(screen.getByRole("option", {name: "First"})).toHaveAttribute("aria-selected", "true");
+  });
+
+  it.each([
+    {mode: "rendered", search: "", visual: ["Root", "A", "B", "B2", "C", "D"], down: ["A", "B", "C", "D"], up: ["C", "B", "A", "Root"]},
+    {mode: "ranked", search: "query", visual: ["C", "B", "B2", "A", "D", "Root"], down: ["B", "A", "D", "Root"], up: ["D", "A", "B", "C"]},
+  ])(
+    "moves Alt+arrows to the next or previous nested group boundary in $mode visual order, never reversing or cycling",
+    ({search, visual, down, up}) => {
+      render(
+        <Command filter={(value) => ({root: 0.1, a: 0.3, b: 0.6, b2: 0.5, c: 0.9, d: 0.2})[value] ?? 0}>
+          <CommandInput
+            aria-label='Group jumps'
+            defaultValue={search}
+          />
+          <CommandList>
+            <CommandItem value='root'>Root</CommandItem>
+            <CommandGroup heading='Outer'>
+              <CommandItem value='a'>A</CommandItem>
+              <CommandGroup heading='Inner'>
+                <CommandItem value='b'>B</CommandItem>
+                <CommandItem value='b2'>B2</CommandItem>
+              </CommandGroup>
+              <CommandItem value='c'>C</CommandItem>
+            </CommandGroup>
+            <CommandGroup heading='Sibling'>
+              <CommandItem value='d'>D</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>,
+      );
+      const input = screen.getByRole("combobox", {name: "Group jumps"});
+      const expectActive = (name: string): void => {
+        expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+      };
+      // Leaving the inner group back into its outer group is a boundary too, so C is reached between B and D.
+      expect(screen.getAllByRole("option").map((item) => item.textContent)).toEqual(visual);
+      fireEvent.keyDown(input, {key: "Home"});
+      expectActive(visual[0] ?? "");
+      for (const name of down) {
+        fireEvent.keyDown(input, {key: "ArrowDown", altKey: true});
+        expectActive(name);
+      }
+      fireEvent.keyDown(input, {key: "ArrowDown", altKey: true});
+      expectActive(down.at(-1) ?? "");
+      for (const name of up) {
+        fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+        expectActive(name);
+      }
+      fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+      expectActive(up.at(-1) ?? "");
+    },
+  );
+
+  it("skips nested group runs without selectable options and moves Alt+ArrowUp to the previous run's first option", () => {
+    render(
+      <Command>
+        <CommandInput aria-label='Disabled group jumps' />
+        <CommandList>
+          <CommandGroup heading='Outer'>
+            <CommandItem value='a'>A</CommandItem>
+            <CommandGroup heading='Archived'>
+              <CommandItem
+                value='archived'
+                disabled>
+                Archived
+              </CommandItem>
+            </CommandGroup>
+            <CommandItem value='c'>C</CommandItem>
+            <CommandGroup heading='Inner'>
+              <CommandItem value='b'>B</CommandItem>
+              <CommandItem value='b2'>B2</CommandItem>
+            </CommandGroup>
+          </CommandGroup>
+          <CommandGroup heading='Sibling'>
+            <CommandItem value='d'>D</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>,
+    );
+    const input = screen.getByRole("combobox", {name: "Disabled group jumps"});
+    const expectActive = (name: string): void => {
+      expect(input).toHaveAttribute("aria-activedescendant", screen.getByRole("option", {name}).id);
+    };
+    expectActive("A");
+    // The Archived run offers nothing selectable, so the jump lands on C, the first option after that boundary.
+    fireEvent.keyDown(input, {key: "ArrowDown", altKey: true});
+    expectActive("C");
+    fireEvent.keyDown(input, {key: "ArrowDown", altKey: true});
+    expectActive("B");
+    fireEvent.keyDown(input, {key: "ArrowDown"});
+    expectActive("B2");
+    // From inside a run, Alt+ArrowUp moves to the first option of the previous run, not back to this run's start.
+    fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+    expectActive("C");
+    fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+    expectActive("A");
+    fireEvent.keyDown(input, {key: "End"});
+    fireEvent.keyDown(input, {key: "ArrowUp", altKey: true});
+    expectActive("B");
   });
 
   it("does not activate twice when an option receives Enter or Space and suppresses disabled handlers", () => {

@@ -289,11 +289,15 @@ const FieldTitle = ({ref, className, ...props}: Readonly<FieldTitleProps>): Reac
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<p>` element
+ * - Plain nested `<a>` links inherit the description colour and stay underlined, a non-colour cue that
+ *   survives element-only `a` resets; class-styled anchors (for example `buttonVariants()`) keep their own paint
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <FieldDescription>Used for account recovery.</FieldDescription>
+ * <FieldDescription>
+ *   Used for account recovery. <a href='/privacy'>Read the privacy policy</a>.
+ * </FieldDescription>
  * ```
  *
  * @see {@link FieldDescriptionProps} for available props

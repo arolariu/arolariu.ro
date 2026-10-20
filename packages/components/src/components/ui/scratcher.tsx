@@ -10,23 +10,26 @@ import {useVisualEffectPolicy} from "./_visual-effects";
 
 /** Props accepted by {@link Scratcher}. */
 export interface ScratcherProps {
-  /** React 19 ref to the root div. */
+  /** React 19 ref to the root `<div>`; object refs and callback refs (with cleanup) are supported. @default undefined */
   readonly ref?: React.Ref<HTMLDivElement>;
-  /** Always-mounted content. This visual reveal is not a security or accessibility gate. */
+  /** Required, always-mounted content under the overlay. This visual reveal is not a security or accessibility gate. */
   readonly children: React.ReactNode;
-  /** Positive finite surface width in CSS pixels. */
+  /** Required positive finite surface width in CSS pixels; changing it resets the card. */
   readonly width: number;
-  /** Positive finite surface height in CSS pixels. */
+  /** Required positive finite surface height in CSS pixels; changing it resets the card. */
   readonly height: number;
   /** Cleared-pixel completion threshold in 0–100. @default 50 */
   readonly minScratchPercentage?: number;
-  /** Additional root classes. */
+  /** Additional classes merged onto the root `<div>`. @default undefined */
   readonly className?: string;
-  /** Called once per card after feedback completes, or immediately when motion is paused. */
+  /** Called once per card after the completion feedback finishes, or immediately when motion is paused. @default undefined */
   readonly onComplete?: () => void;
-  /** Overlay gradient stops; changing their values resets the card. */
+  /** Overlay gradient stops; changing their values resets the card. @default ["#A97CF8", "#F38CB8", "#FDCC92"] */
   readonly gradientColors?: readonly [string, string, string];
-  /** Accessible native reveal button label; callers may localize it. @default "Reveal content" */
+  /**
+   * Accessible native reveal button label; callers may localize it. After the reveal the button keeps focus and its tab stop
+   * as `aria-disabled` (activation ignored) until the card resets. @default "Reveal content"
+   */
   readonly revealLabel?: string;
   /** Accessible completion announcement; callers may localize it. @default "Content revealed" */
   readonly completedLabel?: string;
@@ -262,10 +265,12 @@ function ScratcherSurface({
         }}
       />
       {children}
+      {/* Revealed, the button keeps keyboard focus and its tab stop (never natively disabled under the user): it becomes
+          aria-disabled and `reveal` ignores further activation until the card resets. */}
       <button
         type='button'
         className={styles.reveal}
-        disabled={complete}
+        aria-disabled={complete ? true : undefined}
         onClick={reveal}>
         {revealLabel}
       </button>
@@ -282,12 +287,39 @@ ScratcherSurface.displayName = "ScratcherSurface";
 /**
  * Renders a pointer scratch-card with an equivalent keyboard reveal path.
  *
- * @remarks Dimensions/gradient changes reset the card. Children are always mounted and accessible;
- * do not put secrets or authorization gates behind this purely visual overlay. A box-less surface (for example `display: none`,
- * an inactive kept-mounted tab panel or a collapsed section) is not an error: it ignores pointer input and keeps its current
- * bitmap, including scratch progress, until a positive `ResizeObserver` or window resize measurement; only a changed bitmap size
- * repaints it. A non-finite or non-positive `devicePixelRatio` falls back to 1.
+ * @remarks
+ * - Pointer scratching clears a decorative canvas overlay. When `minScratchPercentage` of its pixels are clear, or the native
+ *   reveal button is activated (keyboard or pointer), the card completes: `onComplete` fires once and a visually hidden
+ *   `role="status"` region announces `completedLabel`
+ * - After the reveal the button keeps keyboard focus and its tab stop: it is `aria-disabled` (activation ignored), never natively
+ *   disabled, so focus does not drop to the document body. Changing `width`, `height` or the `gradientColors` values resets the
+ *   card and re-enables it
+ * - Children are always mounted and accessible; do not put secrets or authorization gates behind this purely visual overlay
+ * - The half-second completion feedback follows a deliberate activation; reduced motion, a hidden document or an offscreen card
+ *   skips it and completes at once
+ * - A box-less surface (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not an error:
+ *   it ignores pointer input and keeps its current bitmap, including scratch progress, until a positive `ResizeObserver` or window
+ *   resize measurement; only a changed bitmap size repaints it. A non-finite or non-positive `devicePixelRatio` falls back to 1
+ * - Renders a `<div>` with the `<canvas>`, the children, the reveal `<button>` and the status region; forced colors hide the
+ *   overlay and use system button colors
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <Scratcher
+ *   width={320}
+ *   height={180}
+ *   revealLabel="Reveal your prize"
+ *   completedLabel="Prize revealed"
+ *   onComplete={handleReveal}>
+ *   <p>You won a free coffee</p>
+ * </Scratcher>
+ * ```
+ *
+ * @see {@link ScratcherProps} for available props
  * @throws {RangeError} Only for invalid props: dimensions or the completion threshold. Measured geometry never throws.
+ * @throws {Error} If a 2D canvas context is unavailable, reading the completion pixels fails or the completion animation fails.
  */
 export function Scratcher(props: Readonly<ScratcherProps>): React.JSX.Element {
   const {width, height, minScratchPercentage = 50} = props;

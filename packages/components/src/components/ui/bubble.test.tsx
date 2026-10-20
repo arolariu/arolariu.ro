@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from "@testing-library/react";
+import {fireEvent, getRoles, render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {Features, transform} from "lightningcss";
 import {readFileSync} from "node:fs";
@@ -671,5 +671,48 @@ describe("Bubble", () => {
     expect(declarations('.reactions[data-align="end"]')).toHaveProperty("inset-inline-end", "var(--ac-space-3)");
     expect(declarations('.reactions[data-side="top"]')).toMatchObject({top: "0", transform: "translateY(-75%)"});
     expect(declarations('.reactions[data-side="bottom"]')).toMatchObject({bottom: "0", transform: "translateY(75%)"});
+  });
+});
+
+/** ARIA 1.2 prohibits naming these roles, so assistive technologies ignore an `aria-label` on them. */
+const namingProhibitedRoles = new Set([
+  "caption",
+  "code",
+  "deletion",
+  "emphasis",
+  "generic",
+  "insertion",
+  "none",
+  "paragraph",
+  "presentation",
+  "strong",
+  "subscript",
+  "superscript",
+]);
+const composedBubbleStories: Readonly<Record<string, React.ComponentType>> = composeStories(stories);
+
+describe("review correction (L26): Bubble stories name elements only through roles that support naming", () => {
+  it.each(Object.entries(composedBubbleStories))("%s labels no generic element and exposes every label as a computed name", (_, Story) => {
+    const {container} = render(<Story />);
+    const roles = new Map<Element, string>();
+    for (const [role, elements] of Object.entries(getRoles(container))) {
+      for (const element of elements) roles.set(element, role);
+    }
+    for (const element of container.querySelectorAll("[aria-label]")) {
+      // Elements without an exposed role, or hidden from the accessibility tree, count as generic and fail.
+      const role = roles.get(element) ?? "generic";
+      // A name on a generic div or span is ignored: name a group or an image, or let visible text carry the meaning.
+      expect(namingProhibitedRoles.has(role), `${role}: ${element.outerHTML}`).toBe(false);
+      expect(within(container).getAllByRole(role, {name: element.getAttribute("aria-label") ?? ""})).toContain(element);
+    }
+  });
+
+  it("names the reaction summary and the empty content as images", () => {
+    const {Default, EmptyErrorLongContentAndRTL} = composeStories(stories);
+    const {unmount} = render(<Default />);
+    expect(screen.getByRole("img", {name: "2 thumbs-up reactions"})).toHaveTextContent("👍 2");
+    unmount();
+    render(<EmptyErrorLongContentAndRTL />);
+    expect(screen.getByRole("img", {name: "Empty message"})).toBeEmptyDOMElement();
   });
 });

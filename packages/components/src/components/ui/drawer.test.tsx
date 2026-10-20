@@ -1,4 +1,4 @@
-import {act, cleanup, fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -23,7 +23,7 @@ import {
 import styles from "./drawer.module.css";
 import * as stories from "./drawer.stories";
 
-const {SnapPoints: SnapPointsStory} = composeStories(stories);
+const {SnapPoints: SnapPointsStory, WithoutFooter: WithoutFooterStory} = composeStories(stories);
 
 const originalBodyStyles = document.body.style.cssText;
 const originalHtmlStyles = document.documentElement.style.cssText;
@@ -818,6 +818,24 @@ describe("Drawer", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", {name: "Drawer title"})).not.toBeInTheDocument();
     });
+  });
+
+  it("gives the modal WithoutFooter story a close control inside its popup that returns focus", async () => {
+    // Arrange: touch screen-reader users cannot press Escape or perform the swipe gesture.
+    const user = userEvent.setup();
+    render(<WithoutFooterStory />);
+    const trigger = screen.getByRole("button", {name: "Show Information"});
+    await user.click(trigger);
+    const popup = await screen.findByRole("dialog", {name: "Welcome!"});
+
+    // Act
+    await user.click(within(popup).getByRole("button", {name: "Close"}));
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", {name: "Welcome!"})).not.toBeInTheDocument();
+    });
+    expect(trigger).toHaveFocus();
   });
 
   it("exposes modal drawer accessibility semantics", async () => {

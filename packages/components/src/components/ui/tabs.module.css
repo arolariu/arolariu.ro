@@ -195,9 +195,15 @@
     background-color: Highlight;
     box-shadow: none;
     forced-color-adjust: none;
+    /* Snap under the selected tab: a sliding backplate would leave its HighlightText on Canvas mid-move. */
+    transition: none;
   }
 
-  .default .tab[data-active] {
+  /*
+   * HighlightText only over its Highlight backplate. Base UI keeps the indicator `hidden` until it has measured the
+   * active tab (always in server HTML), and the system colours stay in charge until then.
+   */
+  .default:has(> .indicator:not([hidden])) .tab[data-active] {
     color: HighlightText;
     forced-color-adjust: none;
   }

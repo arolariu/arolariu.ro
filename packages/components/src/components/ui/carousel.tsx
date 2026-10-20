@@ -7,8 +7,6 @@ import * as React from "react";
 
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utilities";
-import {useMergedRefs} from "@/hooks/useMergedRefs";
-import {useVisualEffectPolicy} from "./_visual-effects";
 
 import styles from "./carousel.module.css";
 
@@ -25,7 +23,12 @@ export type CarouselPlugin = UseCarouselParameters[1];
  */
 type CarouselConfiguration = Readonly<{
   /**
-   * Embla carousel options forwarded to the underlying carousel instance.
+   * Embla carousel options forwarded to the underlying carousel instance. The
+   * carousel sets `axis` from the resolved orientation and adds `duration: 0` to
+   * the `(prefers-reduced-motion: reduce)` entry of `breakpoints`, keeping a
+   * caller entry's other options and outranking the `duration` of every other
+   * breakpoint. Transitions are instant while that preference matches, and the
+   * caller's (or Embla's default) `duration` returns when it clears.
    * @default undefined
    */
   opts?: CarouselOptions;
@@ -48,8 +51,27 @@ type CarouselConfiguration = Readonly<{
   setApi?: (api: CarouselApi) => void;
 }>;
 
-/** Native div props and readonly carousel configuration. */
-export type CarouselProps = Readonly<React.ComponentPropsWithRef<"div"> & CarouselConfiguration>;
+/**
+ * The carousel root is a `region` landmark, so every instance needs its own
+ * localized name; the package supplies none.
+ */
+type CarouselNamingProps =
+  | {
+      /** Localized name of the carousel region, such as "Featured products". */
+      readonly "aria-label": string;
+    }
+  | {
+      /** ID of the visible heading or text that names the carousel region. */
+      readonly "aria-labelledby": string;
+    };
+
+/**
+ * Native div props, readonly carousel configuration and a required region name:
+ * a string `aria-label` or `aria-labelledby`. Because the props are a union,
+ * extend them with an intersection type alias (`type X = CarouselProps & {…}`)
+ * rather than an `interface`.
+ */
+export type CarouselProps = Readonly<React.ComponentPropsWithRef<"div"> & CarouselConfiguration & CarouselNamingProps>;
 /** Native props for the slide track; the forwarded ref targets the inner div. */
 export type CarouselContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Native props for an orientation-aware slide div. */
@@ -89,6 +111,18 @@ export type CarouselContextProps = Readonly<
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
+const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
+/**
+ * Embla merges re-initialization options into its accumulated base, so a `duration: 0` merged while motion is reduced
+ * would outlive the preference. Breakpoint options are instead resolved from that untouched base on every media change,
+ * restoring the caller's (or Embla's default) duration. The entry goes last so it wins over caller breakpoints.
+ */
+function resolveEmblaOptions(opts: CarouselOptions, axis: "x" | "y"): NonNullable<CarouselOptions> {
+  const {[reducedMotionQuery]: callerReducedMotion, ...callerBreakpoints} = opts?.breakpoints ?? {};
+  return {...opts, axis, breakpoints: {...callerBreakpoints, [reducedMotionQuery]: {...callerReducedMotion, duration: 0}}};
+}
+
 /**
  * Reads the resolved orientation, Embla API, viewport ref and navigation state.
  *
@@ -110,22 +144,48 @@ function useCarousel(): CarouselContextProps {
  * Provides a compound carousel container powered by Embla.
  *
  * @remarks
- * - Renders a `<div>` element
+ * - Renders a `<div role="region" aria-roledescription="carousel">`; each
+ *   {@link CarouselItem} is a `group` with `aria-roledescription="slide"`. Pass
+ *   the native `aria-roledescription` attribute to localize either description.
+ * - Requires a distinct, localized region name through `aria-labelledby`
+ *   (preferred when a visible heading exists) or `aria-label`. The props type
+ *   enforces one of them and no default name is supplied, so carousels never
+ *   share a generic landmark name.
  * - Built on `embla-carousel-react`
  * - Exposes context for content, items, and navigation controls
  * - Explicit orientation overrides `opts.axis`; omitted orientation follows it
+ * - Under `prefers-reduced-motion: reduce`, slide transitions are instant; the
+ *   caller's (or Embla's default) `duration` returns when the preference clears.
  * - Matching arrow keys bubble; editable/nested widget keys and canceled events
  *   retain their native behavior. Always provide pointer navigation controls.
  *
- * @example
+ * @example Named by a visible heading
  * ```tsx
- * <Carousel>
+ * <>
+ *   <h2 id='featured-heading'>Featured products</h2>
+ *   <Carousel aria-labelledby='featured-heading'>
+ *     <CarouselContent>
+ *       <CarouselItem>Slide 1</CarouselItem>
+ *       <CarouselItem>Slide 2</CarouselItem>
+ *     </CarouselContent>
+ *     <CarouselPrevious />
+ *     <CarouselNext />
+ *   </Carousel>
+ * </>
+ * ```
+ *
+ * @example Named with a localized label
+ * ```tsx
+ * <Carousel
+ *   aria-label='Produits en vedette'
+ *   aria-roledescription='carrousel'
+ *   opts={{loop: true}}>
  *   <CarouselContent>
- *     <CarouselItem>Slide 1</CarouselItem>
- *     <CarouselItem>Slide 2</CarouselItem>
+ *     <CarouselItem aria-roledescription='diapositive'>Diapositive 1</CarouselItem>
+ *     <CarouselItem aria-roledescription='diapositive'>Diapositive 2</CarouselItem>
  *   </CarouselContent>
- *   <CarouselPrevious />
- *   <CarouselNext />
+ *   <CarouselPrevious label='Diapositive précédente' />
+ *   <CarouselNext label='Diapositive suivante' />
  * </Carousel>
  * ```
  *
@@ -146,21 +206,11 @@ function useCarousel(): CarouselContextProps {
  * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
  */
 function Carousel({ref, orientation, opts, setApi, plugins, className, children, ...props}: Readonly<Carousel.Props>): React.ReactElement {
-  const rootRef = React.useRef<HTMLDivElement>(null);
-  const setRefs = useMergedRefs(rootRef, ref);
-  const {reducedMotion} = useVisualEffectPolicy(rootRef, {loop: true});
   // Derive axis from orientation, or orientation from opts.axis, defaulting to horizontal.
   const resolvedOrientation = orientation ?? (opts?.axis === "y" ? "vertical" : "horizontal");
   const resolvedAxis = resolvedOrientation === "vertical" ? "y" : "x";
 
-  const [carouselRef, api] = useEmblaCarousel(
-    {
-      ...opts,
-      axis: resolvedAxis,
-      ...(reducedMotion ? {duration: 0} : {}),
-    },
-    plugins,
-  );
+  const [carouselRef, api] = useEmblaCarousel(resolveEmblaOptions(opts, resolvedAxis), plugins);
   const subscribe = React.useCallback(
     (onStoreChange: () => void): (() => void) => {
       api?.on("reInit", onStoreChange);
@@ -252,13 +302,12 @@ function Carousel({ref, orientation, opts, setApi, plugins, className, children,
         setApi,
       }}>
       <div
-        ref={setRefs}
+        ref={ref}
         data-slot='carousel'
         data-orientation={resolvedOrientation}
         className={cn(styles.carousel, className)}
         role='region'
         aria-roledescription='carousel'
-        aria-label='Carousel'
         {...rootProps}>
         {children}
       </div>

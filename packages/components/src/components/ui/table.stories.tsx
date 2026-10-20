@@ -14,11 +14,21 @@ const storyStyles = `
   height: auto;
   padding: var(--ac-space-1) var(--ac-space-2);
 }
+
+.ac-story-table-storyScrollFrame {
+  max-inline-size: 20rem;
+}
+
+.ac-story-table-storyWide {
+  min-inline-size: 36rem;
+}
 `;
 
 const storyClasses = {
   storyStriped: "ac-story-table-storyStriped",
   storyCompact: "ac-story-table-storyCompact",
+  storyScrollFrame: "ac-story-table-storyScrollFrame",
+  storyWide: "ac-story-table-storyWide",
 } as const;
 
 const meta = {
@@ -125,6 +135,43 @@ function ExpandableTable(): React.JSX.Element {
 }
 export const WithActions: Story = {render: (): React.JSX.Element => <ExpandableTable />};
 export const ExpandedRows: Story = WithActions;
+
+/**
+ * The scroll viewport is a tab stop by default so keyboard users can scroll the overflowing columns. A region role
+ * named from the caption makes that stop announceable; `containerProps={{tabIndex: -1}}` opts out for tables that
+ * can never overflow.
+ */
+export const NamedScrollViewport: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyScrollFrame}>
+      <Table
+        className={storyClasses.storyWide}
+        containerProps={{role: "region", "aria-labelledby": "table-story-stock-caption"}}>
+        <TableCaption id='table-story-stock-caption'>Stock by warehouse</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope='col'>Item</TableHead>
+            <TableHead scope='col'>Berlin</TableHead>
+            <TableHead scope='col'>Bucharest</TableHead>
+            <TableHead scope='col'>Lisbon</TableHead>
+            <TableHead scope='col'>Oslo</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.name}>
+              <TableHead scope='row'>{item.name}</TableHead>
+              <TableCell>{item.quantity}</TableCell>
+              <TableCell>{item.quantity * 2}</TableCell>
+              <TableCell>{item.quantity + 4}</TableCell>
+              <TableCell>{item.quantity * 3}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  ),
+};
 
 export const NativeAttributes: Story = {
   render: (): React.JSX.Element => (

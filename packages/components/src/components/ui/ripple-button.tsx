@@ -5,7 +5,7 @@ import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useReducedMotionPreference} from "./_visual-effects";
 import styles from "./ripple-button.module.css";
 
 interface Ripple {
@@ -18,7 +18,7 @@ const defaultTransition: Transition = {duration: 0.6, ease: "easeOut"};
 
 /** Props accepted by {@link RippleButton}. */
 export interface RippleButtonProps extends Readonly<HTMLMotionProps<"button">> {
-  /** Button contents rendered above the ripple layer. @default undefined */
+  /** Required button contents, rendered above the ripple layer; they name the button unless the caller supplies `aria-label`. */
   readonly children: React.ReactNode;
   /** Additional CSS classes merged with each generated ripple. @default undefined */
   readonly rippleClassName?: string;
@@ -33,6 +33,9 @@ export interface RippleButtonProps extends Readonly<HTMLMotionProps<"button">> {
  *
  * @remarks
  * - Animated component using the `motion` library
+ * - Ripples are user-initiated motion: under `prefers-reduced-motion: reduce` (tracked live after hydration) no ripple renders
+ *   and the hover/press scaling is off. The button observes only that preference: no viewport or document visibility
+ *   observer per instance
  * - Renders a `<button>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
@@ -55,9 +58,10 @@ function RippleButton({
   transition = defaultTransition,
   ...props
 }: Readonly<RippleButtonProps>): React.JSX.Element {
-  const localRef = React.useRef<HTMLButtonElement>(null);
-  const setRefs = useMergedRefs(localRef, ref);
-  const {reducedMotion} = useVisualEffectPolicy(localRef, {loop: true});
+  // Motion's DOM ref callback is stable and ignores a replaced `ref` prop; the merged ref re-synchronizes replacements and
+  // React 19 callback-ref cleanups.
+  const setRefs = useMergedRefs(ref);
+  const reducedMotion = useReducedMotionPreference();
   // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
   const {key: _ignoredKey, ...restProps} = props;
   const [ripples, setRipples] = React.useState<ReadonlyArray<Ripple>>([]);

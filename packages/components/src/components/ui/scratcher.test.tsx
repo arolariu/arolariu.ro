@@ -1,5 +1,8 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {AtRule, parse} from "postcss";
 import userEvent from "@testing-library/user-event";
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -163,22 +166,60 @@ describe("Scratcher", () => {
     expect(input).toHaveFocus();
     expect(ref.current).toHaveAttribute("data-state", "covered");
   });
-  it.each(["[Enter]", "[Space]"])("activates native reveal by actual keyboard %s", async (key) => {
-    const user = userEvent.setup();
-    const complete = vi.fn();
-    render(
-      <Scratcher
-        width={200}
-        height={100}
-        onComplete={complete}>
-        Content
-      </Scratcher>,
-    );
-    await user.tab();
-    expect(screen.getByRole("button", {name: "Reveal content"})).toHaveFocus();
-    await user.keyboard(key);
-    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeDisabled();
+  it.each(["[Enter]", "[Space]"])(
+    "activates native reveal by actual keyboard %s and keeps focus on the still-focusable reveal button",
+    async (key) => {
+      const user = userEvent.setup();
+      const complete = vi.fn();
+      render(
+        <>
+          <button type='button'>Before</button>
+          <Scratcher
+            width={200}
+            height={100}
+            onComplete={complete}>
+            Content
+          </Scratcher>
+        </>,
+      );
+      const reveal = screen.getByRole("button", {name: "Reveal content"});
+      await user.tab();
+      await user.tab();
+      expect(reveal).toHaveFocus();
+      await user.keyboard(key);
+      await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+      // Revealed, the button keeps keyboard focus and its tab stop: it is aria-disabled, never natively disabled under the user.
+      expect(reveal).toHaveFocus();
+      expect(reveal).toBeEnabled();
+      expect(reveal).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("status")).toHaveTextContent("Content revealed");
+      await user.keyboard(key);
+      expect(complete).toHaveBeenCalledOnce();
+      await user.tab({shift: true});
+      expect(screen.getByRole("button", {name: "Before"})).toHaveFocus();
+      await user.tab();
+      expect(reveal).toHaveFocus();
+    },
+  );
+  it("gives the revealed (aria-disabled) reveal button visible disabled styling, including in forced colors", () => {
+    const stylesheet = parse(readFileSync(join(import.meta.dirname, "scratcher.module.css"), "utf8"));
+    const revealedDeclarations = (scope: string): Map<string, string> => {
+      const declarations = new Map<string, string>();
+      stylesheet.walkRules('.reveal[aria-disabled="true"]', (rule) => {
+        if ((rule.parent instanceof AtRule ? rule.parent.params : "root") !== scope) return;
+        rule.walkDecls((declaration) => {
+          declarations.set(declaration.prop, declaration.value);
+        });
+      });
+      return declarations;
+    };
+    const base = revealedDeclarations("root");
+    expect(base.get("cursor")).toBe("not-allowed");
+    expect(base.get("opacity")).toBe("0.5");
+    const forced = revealedDeclarations("(forced-colors: active)");
+    expect(forced.get("color")).toBe("GrayText");
+    expect(forced.get("border-color")).toBe("GrayText");
+    expect(forced.get("opacity")).toBe("1");
   });
   it("uses the latest completion callback without resetting the painted surface", async () => {
     const original = vi.fn();
@@ -313,7 +354,7 @@ describe("Scratcher", () => {
     cleared = 40000;
     gesture();
     await waitFor(() => expect(complete).toHaveBeenCalledOnce());
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).toHaveAttribute("aria-disabled", "true");
     gesture();
     expect(complete).toHaveBeenCalledOnce();
   });
@@ -366,7 +407,7 @@ describe("Scratcher", () => {
         New prize
       </Scratcher>,
     );
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).not.toHaveAttribute("aria-disabled");
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 600);
     });
@@ -400,7 +441,7 @@ describe("Scratcher", () => {
       media.dispatchEvent(new Event("change"));
     });
     await waitFor(() => expect(complete).toHaveBeenCalledOnce());
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).toHaveAttribute("aria-disabled", "true");
   });
 
   it("mounts box-less without throwing or painting, then paints on the next positive observation", () => {
@@ -466,7 +507,7 @@ describe("Scratcher", () => {
     fireEvent.pointerMove(document, {clientX: 160, clientY: 75, pointerId: 1});
     expect(context.arc).toHaveBeenCalledOnce();
     fireEvent.pointerUp(document, {pointerId: 1});
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).not.toHaveAttribute("aria-disabled");
   });
 
   it("ignores presses on a box-less surface without reporting an error, scratching or completing", () => {
@@ -498,7 +539,7 @@ describe("Scratcher", () => {
     expect(context.arc).not.toHaveBeenCalled();
     expect(context.getImageData).not.toHaveBeenCalled();
     expect(complete).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", {name: "Reveal content"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Reveal content"})).not.toHaveAttribute("aria-disabled");
   });
 
   it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1])("falls back to a 1x bitmap for devicePixelRatio %s", (dpr) => {

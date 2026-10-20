@@ -70,14 +70,21 @@
   line-height: 1.6;
 }
 
-.description a {
+/*
+ * Links inside the description share its text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only
+ * link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for
+ * example `buttonVariants()`) still keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.description) a:is(a) {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 
 @media (hover: hover) {
-  .description a:hover {
+  /* `:where(:hover)` keeps (0,0,2), so the later rule wins over the rest colour but never over a class-styled anchor. */
+  :where(.description) a:is(a):where(:hover) {
     color: var(--ac-foreground);
   }
 }
@@ -98,7 +105,8 @@
   height: auto;
 }
 
-.description a:focus-visible {
+/* (0,1,2): beats element-only `a:focus-visible` resets, yields to a class-styled anchor's own `:focus-visible` (0,2,0). */
+:where(.description) a:is(a):focus-visible {
   outline: 2px solid var(--ac-ring);
   outline-offset: 2px;
 }
@@ -109,7 +117,7 @@
     border-color: CanvasText;
   }
 
-  .description a {
+  :where(.description) a:is(a) {
     color: LinkText;
   }
 }

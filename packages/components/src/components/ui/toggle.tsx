@@ -3,8 +3,7 @@
 import {Toggle as BaseToggle} from "@base-ui/react/toggle";
 import * as React from "react";
 
-import {cn} from "@/lib/utilities";
-import styles from "./toggle.module.css";
+import {toggleVariants} from "./_toggle-variants";
 
 /** Supported toggle visual treatments. */
 export type ToggleVariant = "default" | "outline";
@@ -13,7 +12,7 @@ export type ToggleSize = "default" | "sm" | "lg";
 /** Primitive-owned pressed and disabled state for render/class callbacks. */
 export type ToggleState = BaseToggle.State;
 
-/** Readonly visual options for generating toggle classes without rendering. */
+/** Readonly visual options for generating toggle classes with {@link toggleVariants} without rendering. */
 export type ToggleVariantOptions = Readonly<
   Partial<{
     /**
@@ -33,14 +32,6 @@ export type ToggleVariantOptions = Readonly<
     className: string | undefined;
   }>
 >;
-
-/** Returns the CSS module classes used by the toggle wrapper. */
-export function toggleVariants({variant = "default", size = "default", className}: Readonly<ToggleVariantOptions> = {}): string {
-  const variantClass = variant === "outline" ? styles.outline : styles.default;
-  const sizeClass = size === "sm" ? styles.sizeSm : size === "lg" ? styles.sizeLg : styles.sizeDefault;
-
-  return cn(styles.root, variantClass, sizeClass, className);
-}
 
 /** Readonly primitive toggle props with visual presets and a polymorphic DOM ref. */
 export type ToggleProps = Readonly<
@@ -105,4 +96,4 @@ namespace Toggle {
 
 Toggle.displayName = "Toggle";
 
-export {Toggle};
+export {Toggle, toggleVariants};

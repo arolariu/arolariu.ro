@@ -45,6 +45,16 @@ export const WithoutTitle: Story = {
   ),
 };
 
+/** Free-form children flow as written: without an AlertAction the alert is not a grid. */
+export const FreeFormContent: Story = {
+  render: (): React.JSX.Element => (
+    <Alert>
+      Your session expired. <a href='#sign-in'>Sign in again</a> to keep your unsaved changes.
+      <p>Drafts stay on this device for 24 hours.</p>
+    </Alert>
+  ),
+};
+
 export const Info: Story = {
   render: (): React.JSX.Element => (
     <Alert>

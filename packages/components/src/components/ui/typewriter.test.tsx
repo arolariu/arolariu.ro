@@ -1,9 +1,11 @@
 import * as React from "react";
 import {EventTarget as DOMEventTarget} from "happy-dom";
-import {act, cleanup, render, screen, waitFor} from "@testing-library/react";
+import {act, cleanup, render, screen, waitFor, within} from "@testing-library/react";
+import {composeStories} from "storybook-react-rsbuild";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
+import * as typewriterStories from "./typewriter.stories";
 
 let reduced = false;
 let media: MediaQueryList;
@@ -226,5 +228,25 @@ describe("Typewriter viewport lifecycle with real Motion", () => {
     expect(screen.getByText("Later", {selector: '[data-slot="typewriter-text"]'})).toBeInTheDocument();
     unmount();
     expect(observed.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
+  });
+});
+
+describe("Typewriter story naming", () => {
+  it.each(Object.entries(composeStories(typewriterStories)))(
+    "%s never puts aria-label on a generic element (the root needs a role that supports naming)",
+    (_name, Story) => {
+      const {container} = render(<Story />);
+      const unnameableLabels = [...container.querySelectorAll("div[aria-label], span[aria-label]")].filter(
+        (element) => !element.hasAttribute("role"),
+      );
+      expect(unnameableLabels.map((element) => element.outerHTML)).toEqual([]);
+    },
+  );
+
+  it("names the labelled Smooth story through role=group, around the complete readable phrase", () => {
+    const {Smooth} = composeStories(typewriterStories);
+    render(<Smooth />);
+    const group = screen.getByRole("group", {name: "Smooth greeting"});
+    expect(within(group).getByText("Welcome to the future", {selector: '[data-slot="typewriter-text"]'})).toBeInTheDocument();
   });
 });

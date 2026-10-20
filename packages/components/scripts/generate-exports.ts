@@ -206,6 +206,35 @@ export function main(): Record<string, ExportEntry> {
   return exports;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+/**
+ * Decides whether this module is the process entry point.
+ *
+ * @remarks
+ * Node expands `process.argv[1]` to an absolute path but keeps symlinks and junctions, while `import.meta.url` names the
+ * real file unless `--preserve-symlinks-main` is set. Both sides are compared as real paths, so a linked checkout
+ * regenerates the exports instead of exiting `0` without writing anything. For the same reason, an entry that names this
+ * script but resolves to another file throws. The script stays self-contained because its tests run a standalone copy.
+ *
+ * @param entry - The entry argument, `process.argv[1]`; absent for `--eval`.
+ * @param moduleUrl - The module's `import.meta.url`.
+ * @returns `true` when both resolve to the same real file.
+ */
+export function isEntryModule(entry: string | undefined, moduleUrl: string): boolean {
+  if (!entry) return false;
+  const modulePath = fs.realpathSync(fileURLToPath(moduleUrl));
+  let entryPath: string | undefined;
+  try {
+    entryPath = fs.realpathSync(path.resolve(entry));
+  } catch {
+    // An entry that names no file, such as `-` for standard input, is not this module.
+  }
+  if (entryPath === modulePath) return true;
+  if (path.basename(entry) === path.basename(modulePath)) {
+    throw new Error(`${entry} names the export generator but does not resolve to ${modulePath}`);
+  }
+  return false;
+}
+
+if (isEntryModule(process.argv[1], import.meta.url)) {
   main();
 }

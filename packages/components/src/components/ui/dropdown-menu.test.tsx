@@ -652,7 +652,8 @@ describe("DropdownMenu", () => {
     await user.keyboard(direction === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
     const submenu = await screen.findByRole("menu", {name: "Share options"});
     expect(popupRef.current).toBe(submenu);
-    expect(submenu).toHaveAttribute("dir", direction);
+    // Only an RTL provider writes `dir`; an LTR provider is indistinguishable from none, so the popup inherits instead.
+    expect(submenu.getAttribute("dir")).toBe(direction === "rtl" ? "rtl" : null);
     expect(subTrigger.querySelector("svg")).toHaveAttribute("data-direction", direction);
     expect(submenu).toHaveClass("nested-popup");
     expect(submenu).toHaveAttribute("data-nested", "true");
@@ -1614,5 +1615,214 @@ describe("DropdownMenu final review M7: SDK-owned popup side", () => {
     );
     expect(screen.getByRole("menu", {name: "Default side menu"})).toHaveAttribute("data-side", "bottom");
     expect(screen.getByRole("menu", {name: "Caller side menu"})).toHaveAttribute("data-side", "inline-start");
+  });
+});
+
+describe("DropdownMenu final review L25: documented placement defaults", () => {
+  const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+
+  it("places root content start-aligned 4px below its anchor", async () => {
+    render(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent
+          aria-label='Root placement'
+          anchor={anchor}
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <DropdownMenuItem>Rename</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Root placement"});
+    expect(popup).toHaveAttribute("data-side", "bottom");
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(200px, 124px)"}));
+  });
+
+  it("opens submenu content at the inline end, start-aligned with a -3px align offset and no side offset", async () => {
+    render(
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent aria-label='Root actions'>
+          <DropdownMenuSub defaultOpen>
+            <DropdownMenuSubTrigger>Share</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent
+              aria-label='Submenu placement'
+              anchor={anchor}
+              collisionAvoidance={{side: "none", align: "none"}}>
+              <DropdownMenuItem>Email</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Submenu placement"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 97px)"}));
+  });
+});
+
+describe("DropdownMenu final-review fix: popup dir only from an RTL provider", () => {
+  function DirectionalMenu({dir}: Readonly<{dir?: string}>): React.ReactElement {
+    return (
+      <DropdownMenu defaultOpen>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent
+          aria-label='Root actions'
+          dir={dir}>
+          <DropdownMenuSub defaultOpen>
+            <DropdownMenuSubTrigger>Share</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent
+              aria-label='Share options'
+              dir={dir}>
+              <DropdownMenuItem>Email</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  async function popups(): Promise<readonly HTMLElement[]> {
+    return [await screen.findByRole("menu", {name: "Root actions"}), await screen.findByRole("menu", {name: "Share options"})];
+  }
+
+  it("lets root and submenu popups inherit a document dir=rtl when no provider is present", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<DirectionalMenu />);
+      for (const popup of await popups()) {
+        expect(popup).not.toHaveAttribute("dir");
+        expect(popup.closest("[dir]")).toBe(html);
+      }
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("writes dir=rtl on root and submenu popups under an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalMenu />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "rtl");
+  });
+
+  it("lets a caller's dir win over an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalMenu dir='ltr' />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "ltr");
+  });
+});
+
+/** The README browser floor keeps `:dir()` native, as the real build output does. */
+const browserFloor = {chrome: 120 << 16, firefox: 121 << 16, safari: (16 << 16) | (5 << 8)};
+
+/**
+ * Whether the shipped stylesheet mirrors `element` (`transform: rotate(180deg)`). happy-dom cannot evaluate `:dir()`, so
+ * it is resolved from the element's nearest `dir` attribute, as a browser does; in these rules it sits on the subject.
+ */
+function mirroredByStylesheet(element: Element, file: string, classes: Readonly<Record<string, string | undefined>>): boolean {
+  const compiled = parse(
+    transform({
+      filename: file,
+      code: readFileSync(join(import.meta.dirname, file)),
+      include: Features.Nesting,
+      targets: browserFloor,
+    }).code.toString(),
+  );
+  const direction = element.closest("[dir]")?.getAttribute("dir") === "rtl" ? "rtl" : "ltr";
+  let mirrored = false;
+  compiled.walkRules((rule) => {
+    for (let ancestor: CssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+      if (ancestor instanceof AtRule) return;
+    }
+    let rotates = false;
+    rule.walkDecls("transform", (declaration) => {
+      rotates ||= declaration.value === "rotate(180deg)";
+    });
+    if (!rotates) return;
+    for (const selector of rule.selectors) {
+      const local = selector.replaceAll(/\.([a-zA-Z_][\w-]*)/gu, (match: string, name: string) => {
+        const hashed = classes[name];
+        return hashed ? `.${CSS.escape(hashed)}` : match;
+      });
+      const required = [...local.matchAll(/:dir\((ltr|rtl)\)/gu)].map(([, value]) => value);
+      if (required.every((value) => value === direction) && element.matches(local.replaceAll(/:dir\((?:ltr|rtl)\)/gu, ""))) {
+        mirrored = true;
+      }
+    }
+  });
+  return mirrored;
+}
+
+describe("DropdownMenu final-review fix: the sub-trigger chevron follows Base UI's direction", () => {
+  function SubmenuMenu(): React.ReactElement {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+        <DropdownMenuContent aria-label='Root actions'>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Share</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent aria-label='Share options'>
+              <DropdownMenuItem>Email</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  /** Opens the menu and its submenu from the keyboard, returning the sub-trigger's chevron. */
+  async function openSubmenu(openKey: "{ArrowLeft}" | "{ArrowRight}"): Promise<Element> {
+    const user = userEvent.setup();
+    const trigger = screen.getByRole("button", {name: "Actions"});
+    await act(async () => {
+      trigger.focus();
+    });
+    await user.keyboard("{ArrowDown}");
+    const subTrigger = screen.getByRole("menuitem", {name: "Share"});
+    await waitFor(() => expect(subTrigger).toHaveFocus());
+    await user.keyboard(openKey);
+    expect(await screen.findByRole("menu", {name: "Share options"})).toBeInTheDocument();
+    const chevron = subTrigger.querySelector("svg");
+    if (!chevron) throw new Error("Missing sub-trigger chevron");
+    return chevron;
+  }
+
+  it("keeps the chevron unmirrored in a document-RTL container without a provider, where Base UI still opens submenus LTR", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<SubmenuMenu />);
+      // Base UI resolves placement and arrow keys from its own (LTR) context: ArrowRight opens the submenu.
+      const chevron = await openSubmenu("{ArrowRight}");
+      expect(chevron.closest("[dir]")).toBe(html);
+      expect(chevron).toHaveAttribute("data-direction", "ltr");
+      expect(mirroredByStylesheet(chevron, "dropdown-menu.module.css", styles)).toBe(false);
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("mirrors the chevron under an RTL provider, where Base UI opens submenus toward the left", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <SubmenuMenu />
+      </DirectionProvider>,
+    );
+    const chevron = await openSubmenu("{ArrowLeft}");
+    expect(chevron).toHaveAttribute("data-direction", "rtl");
+    expect(mirroredByStylesheet(chevron, "dropdown-menu.module.css", styles)).toBe(true);
   });
 });

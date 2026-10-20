@@ -1,7 +1,7 @@
 import * as React from "react";
 import {act, cleanup, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from "vitest";
+import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 
 let RippleButton: typeof import("./ripple-button").RippleButton;
 const animateDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
@@ -185,5 +185,69 @@ describe("RippleButton with real Motion", () => {
       await vi.advanceTimersByTimeAsync(1300);
     });
     expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
+  });
+});
+
+describe("RippleButton reduced-motion subscription", () => {
+  let reduced = false;
+  let media: MediaQueryList;
+  const constructedObservers = vi.fn();
+  const observerDescriptor = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver");
+  class CountingObserver {
+    constructor() {
+      constructedObservers();
+    }
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  beforeEach(() => {
+    reduced = false;
+    constructedObservers.mockClear();
+    media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+    vi.spyOn(window, "matchMedia").mockReturnValue(media);
+    Object.defineProperty(globalThis, "IntersectionObserver", {configurable: true, writable: true, value: CountingObserver});
+  });
+  afterEach(() => {
+    vi.mocked(window.matchMedia).mockRestore();
+    if (observerDescriptor) Object.defineProperty(globalThis, "IntersectionObserver", observerDescriptor);
+    else Reflect.deleteProperty(globalThis, "IntersectionObserver");
+  });
+
+  it("subscribes to the live reduced-motion preference only: no per-button IntersectionObserver or visibility listener", () => {
+    const addDocumentListener = vi.spyOn(document, "addEventListener");
+    const addMediaListener = vi.spyOn(media, "addEventListener");
+    const removeMediaListener = vi.spyOn(media, "removeEventListener");
+    try {
+      const {unmount} = render(
+        <>
+          <RippleButton rippleClassName='test-ripple'>First</RippleButton>
+          <RippleButton rippleClassName='test-ripple'>Second</RippleButton>
+        </>,
+      );
+      expect(constructedObservers).not.toHaveBeenCalled();
+      expect(addDocumentListener.mock.calls.filter(([type]) => type === "visibilitychange")).toHaveLength(0);
+      expect(addMediaListener).toHaveBeenCalledWith("change", expect.any(Function));
+      act(() => {
+        reduced = true;
+        media.dispatchEvent(new Event("change"));
+      });
+      fireEvent.click(screen.getByRole("button", {name: "First"}));
+      expect(document.querySelectorAll(".test-ripple")).toHaveLength(0);
+      act(() => {
+        reduced = false;
+        media.dispatchEvent(new Event("change"));
+      });
+      fireEvent.click(screen.getByRole("button", {name: "First"}));
+      expect(document.querySelectorAll(".test-ripple")).toHaveLength(1);
+      unmount();
+      expect(removeMediaListener).toHaveBeenCalledWith("change", expect.any(Function));
+    } finally {
+      addDocumentListener.mockRestore();
+    }
   });
 });

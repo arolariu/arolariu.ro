@@ -5,7 +5,7 @@ import {useRef, useState} from "react";
 import {CalendarDay} from "react-day-picker";
 import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Calendar, CalendarDayButton, type DateRange as CalendarDateRange} from "./calendar";
+import {Calendar, CalendarDayButton, type DateRange as CalendarDateRange, type DayPickerProps} from "./calendar";
 const storyStyles = `
 .ac-story-calendar-storyFrame {
   border: 1px solid var(--ac-border);
@@ -171,6 +171,7 @@ function DisabledWeekendsDemo(): React.JSX.Element {
 /** A disabled matcher participates in keyboard focus movement and selection. */
 export const DisabledWeekends: Story = {render: () => <DisabledWeekendsDemo />};
 
+/** Decorative event dots; the event itself is announced through the day button's DayPicker label. */
 function EventDayButton(props: Readonly<CalendarDayButton.Props>): React.JSX.Element {
   return (
     <CalendarDayButton {...props}>
@@ -178,13 +179,27 @@ function EventDayButton(props: Readonly<CalendarDayButton.Props>): React.JSX.Ele
       {props.modifiers["event"] && (
         <span
           className={storyClasses.eventDot}
-          role='img'
-          aria-label='Event scheduled'
+          aria-hidden='true'
         />
       )}
     </CalendarDayButton>
   );
 }
+
+type LabelDayButton = NonNullable<NonNullable<DayPickerProps["labels"]>["labelDayButton"]>;
+
+/**
+ * DayPicker names every day button with `aria-label`, so custom children never reach the accessible name. Put the
+ * meaningful day content in the label instead; a custom label replaces DayPicker's default, so keep its today and
+ * selected states too.
+ */
+const labelEventDay: LabelDayButton = (date, modifiers, _options, dateLib) => {
+  const day = dateLib?.format(date, "PPPP") ?? date.toDateString();
+  const parts = [modifiers["today"] ? `Today, ${day}` : day];
+  if (modifiers["event"]) parts.push("event scheduled");
+  if (modifiers["selected"]) parts.push("selected");
+  return parts.join(", ");
+};
 
 function WithEventsDemo(): React.JSX.Element {
   const [date, setDate] = useState<Date | undefined>();
@@ -192,7 +207,7 @@ function WithEventsDemo(): React.JSX.Element {
     <section className={storyClasses.storyStack}>
       <h3 className={storyClasses.storyHeading}>Custom day content</h3>
       <p className={storyClasses.storyDescription}>
-        Dots mark custom event modifiers while date labels, locale and selection remain intact.
+        Dots mark custom event modifiers. The day button&apos;s label says &quot;event scheduled&quot;, so the dots stay decorative.
       </p>
       <Calendar
         mode='single'
@@ -200,6 +215,7 @@ function WithEventsDemo(): React.JSX.Element {
         selected={date}
         onSelect={setDate}
         modifiers={{event: [new Date(2024, 0, 5), new Date(2024, 0, 12), new Date(2024, 0, 20)]}}
+        labels={{labelDayButton: labelEventDay}}
         components={{DayButton: EventDayButton}}
         className={storyClasses.storyFrame}
       />
@@ -207,7 +223,7 @@ function WithEventsDemo(): React.JSX.Element {
   );
 }
 
-/** A real CalendarDayButton composition preserves primitive props and children. */
+/** Custom day content composes CalendarDayButton; meaningful content goes into DayPicker's `labels.labelDayButton`. */
 export const WithEvents: Story = {render: () => <WithEventsDemo />};
 
 /** Native month/year dropdowns with bounded navigation and ISO week numbers. */

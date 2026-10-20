@@ -1703,6 +1703,32 @@ describe("Form story announcement policy", () => {
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Nickname saved locally."));
   });
 
+  it("shows no wrapper-ref diagnostic before a change and the wrapper ref's INPUT target after one", async () => {
+    const user = userEvent.setup();
+    render(<ObserverStory />);
+    expect(screen.getByText(/Changes: 0/u)).not.toHaveTextContent("Wrapper ref");
+    await user.type(screen.getByRole("textbox", {name: "Nickname"}), "A");
+    expect(screen.getByText(/Changes: 1/u)).toHaveTextContent("RHF: A · Observer: A · Changes: 1 · Wrapper ref: INPUT");
+  });
+
+  it("keeps the captured wrapper-ref diagnostic when the story re-renders inside a hidden Activity with detached refs", async () => {
+    // A hidden Activity detaches host refs (the wrapper ref becomes null) yet still re-renders its content, so a
+    // diagnostic that read `wrapperRef.current` during render would print "unmounted" here; event-time state does not.
+    const user = userEvent.setup();
+    const view = (mode: "visible" | "hidden"): React.JSX.Element => (
+      <React.Activity mode={mode}>
+        <ObserverStory />
+      </React.Activity>
+    );
+    const {rerender} = render(view("visible"));
+    await user.type(screen.getByRole("textbox", {name: "Nickname"}), "A");
+    const diagnostic = screen.getByText(/Changes: 1/u);
+    expect(diagnostic).toHaveTextContent("Changes: 1 · Wrapper ref: INPUT");
+    rerender(view("hidden"));
+    rerender(view("hidden"));
+    expect(diagnostic).toHaveTextContent("RHF: A · Observer: A · Changes: 1 · Wrapper ref: INPUT");
+  });
+
   it("keeps real field-array watch diagnostics non-live and uses one submission announcement for validation", async () => {
     const user = userEvent.setup();
     render(<FieldArrayStory />);

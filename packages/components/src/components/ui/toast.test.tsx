@@ -25,6 +25,7 @@ import {
   type ToastData,
   type ToastProps,
   type ToastState,
+  type ToastViewportProps,
   type ToasterProps,
 } from "./toast";
 import styles from "./toast.module.css";
@@ -664,6 +665,8 @@ describe("canonical Toast", () => {
     expectTypeOf<ToastProps<{code: number}>["toast"]>().toEqualTypeOf<ToastData<{code: number}>>();
     expectTypeOf<ToastState["swipeDirection"]>().toEqualTypeOf<"up" | "down" | "left" | "right" | undefined>();
     expectTypeOf<"children" extends keyof NonNullable<ToasterProps["viewportProps"]> ? true : false>().toEqualTypeOf<false>();
+    // The documented `aria-label` default keeps the native, explicitly-undefinable attribute type.
+    expectTypeOf<ToastViewportProps["aria-label"]>().toEqualTypeOf<React.ComponentPropsWithRef<"div">["aria-label"]>();
   });
 
   it("emits real starting-style/ending-style props without wrapper-owned transition state", async () => {

@@ -66,13 +66,75 @@ export type AlertDialogCancelProps = Readonly<
   }
 >;
 
-/** Coordinates a confirmation modal. Base UI owns focus and dismissal; callers own work policy. */
+/**
+ * Coordinates a confirmation modal. Base UI owns focus and dismissal; callers own work policy.
+ *
+ * @remarks
+ * - Renders no element of its own; built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
+ * - Always modal: there is no `modal` or `disablePointerDismissal` prop. Base UI traps focus, gives the popup
+ *   `role="alertdialog"`, ignores outside presses and reports cancellable Escape requests through `onOpenChange`
+ * - {@link AlertDialogAction} never closes the confirmation on its own; close it when the work succeeds through
+ *   controlled `open` or `actionsRef.current?.close()`. {@link AlertDialogCancel} is the Close-backed dismissal and
+ *   the exit for touch screen-reader users, who cannot press Escape
+ * - Reserve it for interruptions that need a decision; use `Dialog` for ordinary tasks
+ *
+ * @example
+ * ```tsx
+ * function DeleteProject({onDelete}: Readonly<{onDelete: () => void}>): React.JSX.Element {
+ *   const [open, setOpen] = React.useState(false);
+ *   return (
+ *     <AlertDialog
+ *       open={open}
+ *       onOpenChange={setOpen}>
+ *       <AlertDialogTrigger render={<Button variant='destructive' />}>Delete project</AlertDialogTrigger>
+ *       <AlertDialogContent>
+ *         <AlertDialogHeader>
+ *           <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+ *           <AlertDialogDescription>This permanently removes the project and its files.</AlertDialogDescription>
+ *         </AlertDialogHeader>
+ *         <AlertDialogFooter>
+ *           <AlertDialogCancel>Cancel</AlertDialogCancel>
+ *           <AlertDialogAction
+ *             variant='destructive'
+ *             onClick={() => {
+ *               onDelete();
+ *               setOpen(false);
+ *             }}>
+ *             Delete
+ *           </AlertDialogAction>
+ *         </AlertDialogFooter>
+ *       </AlertDialogContent>
+ *     </AlertDialog>
+ *   );
+ * }
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 function AlertDialog<Payload = unknown>(props: Readonly<AlertDialog.Props<Payload>>): React.ReactElement {
   return <BaseAlertDialog.Root {...props} />;
 }
 AlertDialog.displayName = "AlertDialog";
 
-/** Opens a confirmation modal with primitive-owned state and ref merging. */
+/**
+ * Opens a confirmation modal with primitive-owned state and ref merging.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; Base UI sets `aria-haspopup="dialog"` and `aria-expanded` and returns focus
+ *   to the trigger when the confirmation closes, unless `AlertDialogContent`'s `finalFocus` chooses another target
+ * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
+ * - `render` composes another element, such as the package `Button`. Set `nativeButton={false}` only for a non-button
+ *   target that takes button semantics, such as a `<div>`
+ * - `className` may be a string or a callback that receives the trigger's live state
+ * - An icon-only trigger needs an accessible name, such as `aria-label`
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogTrigger render={<Button variant='destructive' />}>Delete project</AlertDialogTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 const AlertDialogTrigger = ({
   ref,
   children,
@@ -103,10 +165,65 @@ const AlertDialogTrigger = ({
 };
 AlertDialogTrigger.displayName = "AlertDialogTrigger";
 
-/** Portals confirmation parts; retains Base UI's `keepMounted` contract. */
+/**
+ * Portals confirmation parts; retains Base UI's `keepMounted` contract.
+ *
+ * @remarks
+ * - Base UI's Alert Dialog Portal, re-exported unchanged: it renders a `<div>` portal element, appended to `<body>` by
+ *   default
+ * - {@link AlertDialogContent} already renders its own portal and backdrop; configure that portal through
+ *   `portalProps`. Compose AlertDialogPortal directly only for manual primitive compositions around Base UI's
+ *   `AlertDialog.Popup`
+ * - `keepMounted` keeps closed content mounted but hidden; `container` chooses the element or shadow root that
+ *   receives the portal
+ *
+ * @example
+ * ```tsx
+ * import {AlertDialog as BaseAlertDialog} from "@base-ui/react/alert-dialog";
+ *
+ * <AlertDialog>
+ *   <AlertDialogTrigger>Discard draft</AlertDialogTrigger>
+ *   <AlertDialogPortal>
+ *     <AlertDialogOverlay />
+ *     <BaseAlertDialog.Popup>
+ *       <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
+ *       <AlertDialogCancel>Keep editing</AlertDialogCancel>
+ *     </BaseAlertDialog.Popup>
+ *   </AlertDialogPortal>
+ * </AlertDialog>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 const AlertDialogPortal = BaseAlertDialog.Portal;
 
-/** Renders the styled backdrop below the popup, with real primitive render state. */
+/**
+ * Renders the styled backdrop below the popup, with real primitive render state.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
+ * - {@link AlertDialogContent} always renders this backdrop, because alert dialogs are always modal. Compose
+ *   AlertDialogOverlay only inside a manual {@link AlertDialogPortal} composition
+ * - The backdrop is presentational (`role="presentation"`) and sits outside the popup, so it takes no content or
+ *   controls. Pressing it never dismisses the confirmation. Base UI omits it for nested alert dialogs unless
+ *   `forceRender` is set
+ *
+ * @example
+ * ```tsx
+ * import {AlertDialog as BaseAlertDialog} from "@base-ui/react/alert-dialog";
+ *
+ * <AlertDialogPortal>
+ *   <AlertDialogOverlay className='dimmed-backdrop' />
+ *   <BaseAlertDialog.Popup>
+ *     <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
+ *     <AlertDialogCancel>Keep editing</AlertDialogCancel>
+ *   </BaseAlertDialog.Popup>
+ * </AlertDialogPortal>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 function AlertDialogOverlay({className, ...props}: Readonly<AlertDialogOverlay.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Backdrop
@@ -159,7 +276,25 @@ const AlertDialogContent = ({
 );
 AlertDialogContent.displayName = "AlertDialogContent";
 
-/** Composes the title, description and optional media without discarding refs or children. */
+/**
+ * Composes the title, description and optional media without discarding refs or children.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: it adds no role or accessible name. Place {@link AlertDialogTitle}, {@link AlertDialogDescription}
+ *   and optional {@link AlertDialogMedia} inside; Base UI wires the title and description to the popup
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogHeader>
+ *   <AlertDialogMedia>
+ *     <TriangleAlert aria-hidden='true' />
+ *   </AlertDialogMedia>
+ *   <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
+ *   <AlertDialogDescription>Your unsaved changes will be lost.</AlertDialogDescription>
+ * </AlertDialogHeader>
+ * ```
+ */
 const AlertDialogHeader = ({ref, children, className, render, ...props}: Readonly<AlertDialogHeader.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
@@ -175,7 +310,26 @@ const AlertDialogHeader = ({ref, children, className, render, ...props}: Readonl
 };
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
-/** Lays out confirmation and explicit cancellation actions. */
+/**
+ * Lays out confirmation and explicit cancellation actions.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: actions keep their own semantics and the footer adds no role
+ * - Pair every {@link AlertDialogAction} with an {@link AlertDialogCancel}, the confirmation's dismissal control
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogFooter>
+ *   <AlertDialogCancel>Keep editing</AlertDialogCancel>
+ *   <AlertDialogAction
+ *     variant='destructive'
+ *     onClick={discardDraft}>
+ *     Discard
+ *   </AlertDialogAction>
+ * </AlertDialogFooter>
+ * ```
+ */
 const AlertDialogFooter = ({ref, children, className, render, ...props}: Readonly<AlertDialogFooter.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
@@ -191,7 +345,21 @@ const AlertDialogFooter = ({ref, children, className, render, ...props}: Readonl
 };
 AlertDialogFooter.displayName = "AlertDialogFooter";
 
-/** Renders optional visual media in either popup size; no dismissal or business behavior. */
+/**
+ * Renders optional visual media in either popup size; no dismissal or business behavior.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Hide decorative icons with `aria-hidden`; give meaningful images alternative text. The title and description,
+ *   not the media, must carry the confirmation's meaning
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogMedia>
+ *   <TriangleAlert aria-hidden='true' />
+ * </AlertDialogMedia>
+ * ```
+ */
 const AlertDialogMedia = ({ref, className, render, ...props}: Readonly<AlertDialogMedia.Props>): React.ReactElement =>
   useRender({
     defaultTagName: "div",
@@ -201,7 +369,22 @@ const AlertDialogMedia = ({ref, className, render, ...props}: Readonly<AlertDial
   });
 AlertDialogMedia.displayName = "AlertDialogMedia";
 
-/** Renders the accessible confirmation heading with primitive-owned composition. */
+/**
+ * Renders the accessible confirmation heading with primitive-owned composition.
+ *
+ * @remarks
+ * - Renders an `<h2>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
+ * - Base UI references it from the `alertdialog` popup's `aria-labelledby`, so it names the confirmation. Every
+ *   confirmation needs a title; phrase it as the decision being requested
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 function AlertDialogTitle({className, ...props}: Readonly<AlertDialogTitle.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Title
@@ -213,7 +396,22 @@ function AlertDialogTitle({className, ...props}: Readonly<AlertDialogTitle.Props
 }
 AlertDialogTitle.displayName = "AlertDialogTitle";
 
-/** Renders the accessible confirmation description with primitive-owned composition. */
+/**
+ * Renders the accessible confirmation description with primitive-owned composition.
+ *
+ * @remarks
+ * - Renders a `<p>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/alert-dialog | Base UI Alert Dialog}
+ * - Base UI references it from the popup's `aria-describedby`, so screen readers announce it with the title; state
+ *   the consequence of confirming briefly
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogDescription>This permanently removes the project and its files.</AlertDialogDescription>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 function AlertDialogDescription({className, ...props}: Readonly<AlertDialogDescription.Props>): React.ReactElement {
   return (
     <BaseAlertDialog.Description
@@ -228,6 +426,38 @@ AlertDialogDescription.displayName = "AlertDialogDescription";
 /**
  * An ordinary Button, not a Close primitive. Pending and rejected work do not close the modal.
  * Close explicitly on success using controlled `open` or the root's `actionsRef`.
+ *
+ * @remarks
+ * - Renders the package `Button` (a native `<button>` by default) with every Button prop, variant and size
+ * - Activation runs only the caller's handler: the confirmation stays open while the work is pending and after it
+ *   fails, so the caller can report the failure inside the popup
+ *
+ * @example
+ * ```tsx
+ * function ArchiveReport({
+ *   archive,
+ *   onFailure,
+ * }: Readonly<{archive: () => Promise<void>; onFailure: (error: unknown) => void}>): React.JSX.Element {
+ *   const actionsRef = React.useRef<AlertDialog.Actions>(null);
+ *   return (
+ *     <AlertDialog actionsRef={actionsRef}>
+ *       <AlertDialogTrigger>Archive report</AlertDialogTrigger>
+ *       <AlertDialogContent>
+ *         <AlertDialogTitle>Archive this report?</AlertDialogTitle>
+ *         <AlertDialogFooter>
+ *           <AlertDialogCancel>Cancel</AlertDialogCancel>
+ *           <AlertDialogAction
+ *             onClick={() => {
+ *               void archive().then(() => actionsRef.current?.close(), onFailure);
+ *             }}>
+ *             Archive
+ *           </AlertDialogAction>
+ *         </AlertDialogFooter>
+ *       </AlertDialogContent>
+ *     </AlertDialog>
+ *   );
+ * }
+ * ```
  */
 const AlertDialogAction = ({ref, ...props}: Readonly<AlertDialogAction.Props>): React.ReactElement => (
   <Button
@@ -238,7 +468,23 @@ const AlertDialogAction = ({ref, ...props}: Readonly<AlertDialogAction.Props>): 
 );
 AlertDialogAction.displayName = "AlertDialogAction";
 
-/** An explicit Close-backed cancel control, using the shared Button's size/variant vocabulary. */
+/**
+ * An explicit Close-backed cancel control, using the shared Button's size/variant vocabulary.
+ *
+ * @remarks
+ * - Renders a native `<button>` styled with `buttonVariants`; `variant` defaults to `"outline"` and `size` to
+ *   `"default"`, and `className` merges after those classes
+ * - Built on Base UI's Close: activation closes the confirmation, and Base UI returns focus to the trigger
+ * - Include one in every confirmation. It is the dismissal path for touch screen-reader users, who cannot press
+ *   Escape, and pressing the backdrop never dismisses an alert dialog
+ *
+ * @example
+ * ```tsx
+ * <AlertDialogCancel>Keep editing</AlertDialogCancel>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
+ */
 const AlertDialogCancel = ({
   ref,
   className,

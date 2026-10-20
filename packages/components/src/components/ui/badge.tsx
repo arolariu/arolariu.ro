@@ -5,8 +5,7 @@ import type {HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-import {cn} from "@/lib/utilities";
-import styles from "./badge.module.css";
+import {badgeVariants} from "./_badge-variants";
 
 /**
  * Defines the supported visual treatments for the Badge component.
@@ -27,7 +26,7 @@ type BadgeRenderProps = Readonly<
 >;
 
 /**
- * Represents the options accepted by the internal badge class generator.
+ * Represents the options accepted by the {@link badgeVariants} class generator.
  *
  * @remarks
  * This helper mirrors the public Badge styling API and exists so callers can derive
@@ -47,15 +46,6 @@ export interface BadgeVariantOptions {
    */
   readonly className?: string;
 }
-
-const variantStyles: Record<BadgeVariant, string> = {
-  default: styles.default!,
-  secondary: styles.secondary!,
-  destructive: styles.destructive!,
-  outline: styles.outline!,
-  ghost: styles.ghost!,
-  link: styles.link!,
-};
 
 /**
  * Represents the configurable props for the Badge component.
@@ -80,25 +70,6 @@ export type BadgeProps = Readonly<
 >;
 
 /**
- * Generates the CSS class list for a badge variant.
- *
- * @remarks
- * This utility is useful when another component needs badge styling but cannot render
- * the Badge component directly. It always includes the base badge classes.
- *
- * @example
- * ```tsx
- * <span className={badgeVariants({variant: "outline"})}>Beta</span>
- * ```
- *
- * @see {@link Badge}
- * @see {@link https://base-ui.com/react/overview Base UI documentation}
- */
-function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOptions> = {}): string {
-  return cn(styles.badge, variantStyles[variant], className);
-}
-
-/**
  * A compact status label for surfacing metadata, categories, or state.
  *
  * @remarks
@@ -116,7 +87,8 @@ function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOp
  * <Badge variant="secondary">New</Badge>
  * ```
  *
- * @see {@link badgeVariants} — Generates matching badge classes without rendering.
+ * @see {@link badgeVariants} — Generates matching badge classes without rendering; callable from Server Components when
+ * imported from the package root.
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
 const Badge = ({ref, className, variant = "default", render, ...props}: Readonly<BadgeProps>): React.ReactElement =>

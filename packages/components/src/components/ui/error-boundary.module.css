@@ -49,16 +49,17 @@
   .retry {
     transition: none;
   }
+}
 
-  @media (forced-colors: active) {
-    .retry {
-      border-color: ButtonText;
-      background-color: ButtonFace;
-      color: ButtonText;
-    }
+/* Root-level, so forced-colors styling never depends on a reduced-motion preference. */
+@media (forced-colors: active) {
+  .retry {
+    border-color: ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
 
-    .retry:focus-visible {
-      outline-color: Highlight;
-    }
+  .retry:focus-visible {
+    outline-color: Highlight;
   }
 }

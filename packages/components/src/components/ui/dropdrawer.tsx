@@ -1,28 +1,33 @@
 "use client";
 
 import {Button as BaseButton} from "@base-ui/react/button";
+import {useDirection} from "@base-ui/react/direction-provider";
 import type {Drawer as BaseDrawer} from "@base-ui/react/drawer";
 import type {Menu as BaseMenu} from "@base-ui/react/menu";
 import type {BaseUIEvent, ComponentRenderFn, HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
-import {ChevronLeft, ChevronRight} from "lucide-react";
+import {ChevronRight} from "lucide-react";
 import * as React from "react";
 import {
-  getLivePath,
-  requestSubmenuChange,
-  usePanelTitles,
-  usePathFocusIntent,
+  cancelActivation,
+  contentOf,
+  isActivationCancelled,
+  NavigationContext,
+  RootContext,
+  SubContext,
+  useDrawerPresentation,
   usePublishedPanelTitle,
+  useRoot,
+  useSubmenu,
   useSubmenuCompletion,
   useTriggerText,
+  withChildren,
 } from "./_dropdrawer";
-import {createPortal} from "react-dom";
+import {MobileContent, MobileSubContent} from "./_dropdrawer-mobile";
 
-import {useIsMobile} from "@/hooks/useIsMobile";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
-import {useMobilePanelFocusRecovery} from "@/lib/_focus-availability";
 import {cn} from "@/lib/utilities";
-import {Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger} from "./drawer";
+import {Drawer, DrawerClose, DrawerTrigger} from "./drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +60,7 @@ export type DropDrawerProps<Payload = unknown> = Readonly<
     & Omit<BaseDrawer.Root.Props<Payload>, keyof BaseMenu.Root.Props<Payload>> & {
       /** Drawer trap-focus maps to a modal desktop menu. @default true */
       modal?: BaseDrawer.Root.Props["modal"];
-      /** Cancellable SDK requests; a breakpoint change is not an open-change request. */
+      /** Cancellable SDK requests; a breakpoint or `presentation` change is not an open-change request. */
       onOpenChange?: (open: boolean, details: DropDrawerOpenChangeDetails) => void;
       /** Desktop-only SDK options, including detached handles. Shared open state takes precedence. */
       menuProps?: Readonly<Omit<BaseMenu.Root.Props<Payload>, "children" | "open" | "defaultOpen" | "onOpenChange">>;
@@ -65,6 +70,15 @@ export type DropDrawerProps<Payload = unknown> = Readonly<
       mobileTitle?: string;
       /** Accessible mobile back control label. @default "Go back" */
       backLabel?: string;
+      /**
+       * Chooses the SDK owner. `"responsive"` renders the desktop Menu and switches to the mobile Drawer while
+       * `(max-width: 767px)` matches (the `useIsMobile` breakpoint). That query reports `false` during server rendering
+       * and hydration, so `"responsive"` renders the Menu first and narrow viewports switch after hydration. `"menu"` and
+       * `"drawer"` always render that owner, on the server too. A change while open migrates like a breakpoint change:
+       * openness is kept, mobile submenu navigation resets and no `onOpenChange` request is emitted.
+       * @default "responsive"
+       */
+      presentation?: "responsive" | "menu" | "drawer";
     }
 >;
 /** The actual trigger state is structurally shared by Drawer and Menu. */
@@ -82,13 +96,15 @@ export type DropDrawerTriggerProps = Readonly<
 export type DropDrawerContentState = BaseMenu.Popup.State | BaseDrawer.Popup.State;
 /** Shared popup DOM props target the popup; placement targets the desktop Positioner. */
 export type DropDrawerContentProps = Readonly<
-  Omit<DropdownMenuContentProps, "ref" | "render" | "className" | "style">
+  Omit<DropdownMenuContentProps, "ref" | "render" | "className" | "style" | "align">
     & Pick<BaseDrawer.Popup.Props, "initialFocus"> & {
       ref?: React.Ref<HTMLElement>;
       render?: RenderProp<DropDrawerContentState>;
       className?: StateClassName<DropDrawerContentState>;
       /** State-aware caller styling is resolved by the actual SDK popup. */
       style?: React.CSSProperties | ((state: DropDrawerContentState) => React.CSSProperties | undefined);
+      /** How the desktop menu aligns to its trigger; the mobile Drawer ignores placement. @default "end" */
+      align?: DropdownMenuContentProps["align"];
       /** Additional mobile popup options, preserving actual Drawer state callbacks. */
       drawerProps?: Readonly<Omit<BaseDrawer.Popup.Props, "children" | "ref">>;
     }
@@ -149,97 +165,15 @@ export type DropDrawerPanelState = {
 };
 /** Desktop popup or local mobile panel state. */
 export type DropDrawerSubContentState = BaseMenu.Popup.State | DropDrawerPanelState;
-/** Desktop positioning plus state-aware composition of the live mobile panel. */
+/** Desktop submenu placement (DropdownMenuSubContent defaults) plus state-aware composition of the live mobile panel. */
 export type DropDrawerSubContentProps = Readonly<
-  Omit<DropdownMenuContentProps, "ref" | "render" | "className" | "style"> & {
+  Omit<DropdownMenuSubContent.Props, "ref" | "render" | "className" | "style"> & {
     ref?: React.Ref<HTMLElement>;
     render?: RenderProp<DropDrawerSubContentState>;
     className?: StateClassName<DropDrawerSubContentState>;
     style?: React.CSSProperties | ((state: DropDrawerSubContentState) => React.CSSProperties | undefined);
   }
 >;
-interface RootContextValue {
-  readonly isMobile: boolean;
-  readonly open: boolean;
-  readonly disabled: boolean;
-  readonly mobileTitle: string;
-  readonly backLabel: string;
-}
-const RootContext = React.createContext<RootContextValue | null>(null);
-function useRoot(): RootContextValue {
-  const value = React.useContext(RootContext);
-  if (!value) throw new Error("DropDrawer components must be rendered within DropDrawer.");
-  return value;
-}
-interface SubmenuRegistration {
-  readonly id: string;
-  readonly parentId: string | null;
-  readonly triggerRef: React.RefObject<HTMLElement | null>;
-  readonly panelRef: React.RefObject<HTMLElement | null>;
-  readonly optionsRef: React.RefObject<DropDrawerSubProps>;
-}
-interface NavigationContextValue {
-  readonly activeId: string | null;
-  readonly path: readonly string[];
-  readonly panelHost: HTMLDivElement | null;
-  readonly register: (entry: SubmenuRegistration) => () => void;
-  readonly navigate: (id: string, event: MouseEvent) => void;
-  readonly synchronize: (id: string, open: boolean) => void;
-  readonly panelAvailabilityChanged: (id: string) => void;
-  readonly setPanelTitle: (id: string, title: string | undefined) => void;
-}
-const NavigationContext = React.createContext<NavigationContextValue | null>(null);
-type SubmenuContextValue = SubmenuRegistration & {
-  readonly disabled: boolean;
-  readonly panelId: string;
-  readonly setPanelId: (id: string) => void;
-  readonly setTriggerText: (text: string) => void;
-};
-const SubContext = React.createContext<SubmenuContextValue | null>(null);
-function useNavigation(): NavigationContextValue {
-  const value = React.useContext(NavigationContext);
-  if (!value) throw new Error("Mobile DropDrawer submenus must be rendered within DropDrawerContent.");
-  return value;
-}
-function useSubmenu(): SubmenuContextValue {
-  const value = React.useContext(SubContext);
-  if (!value) throw new Error("DropDrawerSubTrigger and DropDrawerSubContent require DropDrawerSub.");
-  return value;
-}
-function withChildren<State>(render: RenderProp<State> | undefined, children: React.ReactNode): RenderProp<State> | undefined {
-  const element = elementOf(render);
-  // eslint-disable-next-line react-x/no-clone-element -- only supply compound children; SDK retains render state, handlers and refs.
-  return element ? React.cloneElement(element, {children}) : render;
-}
-function contentOf<State>(children: React.ReactNode, render: RenderProp<State> | undefined): React.ReactNode {
-  return children === undefined ? elementOf(render)?.props.children : children;
-}
-function elementOf<State>(
-  render: RenderProp<State> | undefined,
-): React.ReactElement<{children?: React.ReactNode; id?: string}> | undefined {
-  if (render === undefined || typeof render === "function") return undefined;
-  // eslint-disable-next-line react-x/no-children-to-array -- only mounted render owners resolve opaque slots through public React normalization.
-  const [element] = React.Children.toArray(render);
-  return React.isValidElement<{children?: React.ReactNode; id?: string}>(element) ? element : undefined;
-}
-/** A closed Drawer portal must not resolve the mobile popup's pending element children. */
-function MobileElementChildren({
-  children,
-  render,
-}: Readonly<{children: React.ReactNode; render: BaseDrawer.Popup.Props["render"]}>): React.ReactElement {
-  return <>{contentOf(children, render)}</>;
-}
-function cancelActivation(event: React.SyntheticEvent): void {
-  event.preventDefault();
-  if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") event.preventBaseUIHandler();
-}
-function isActivationCancelled(event: React.SyntheticEvent): boolean {
-  return (
-    event.defaultPrevented
-    || event.nativeEvent.defaultPrevented
-    || ("baseUIHandlerPrevented" in event && event.baseUIHandlerPrevented === true)
-  );
-}
 /** Capture precedes the rendered child's own capture/bubble handlers, without replacing SDK composition. */
 function ActivationBoundary({
   children,
@@ -282,8 +216,30 @@ function ActivationBoundary({
 
 /**
  * Responsive SDK Menu/Drawer root with one controlled or uncontrolled open contract.
- * Breakpoint migration preserves openness, resets submenu navigation and lets the new
- * primitive establish focus. Real SDK requests remain cancellable.
+ *
+ * @remarks
+ * - Client-only (`"use client"`); renders no DOM wrapper. Compose `DropDrawerTrigger` and `DropDrawerContent` inside it;
+ *   every other DropDrawer part must render within this root.
+ * - `presentation` picks the owner: the default `"responsive"` renders a desktop Base UI Menu and switches to a mobile
+ *   Base UI Drawer while `(max-width: 767px)` matches. That query is `false` during server rendering and hydration, so
+ *   the first render is always the desktop Menu and narrow viewports switch after hydration. Pass `"menu"` or
+ *   `"drawer"` to force an owner (including on the server), or derive it from your own breakpoint with `useMediaQuery`.
+ * - Switching owners while open (a breakpoint or `presentation` change) preserves openness, resets mobile submenu
+ *   navigation and lets the new primitive establish focus; it is not an `onOpenChange` request. Real SDK requests remain
+ *   cancellable.
+ * - Name the mobile dialog with `mobileTitle` and localize the Back control with `backLabel`.
+ *
+ * @example
+ * ```tsx
+ * const narrow = useMediaQuery("(max-width: 1023px)");
+ *
+ * <DropDrawer presentation={narrow ? "drawer" : "menu"} mobileTitle='Document actions'>
+ *   <DropDrawerTrigger render={<Button variant='outline' />}>Actions</DropDrawerTrigger>
+ *   <DropDrawerContent aria-label='Document actions'>
+ *     <DropDrawerItem onSelect={duplicate}>Duplicate</DropDrawerItem>
+ *   </DropDrawerContent>
+ * </DropDrawer>
+ * ```
  */
 function DropDrawer<Payload = unknown>({
   children,
@@ -308,9 +264,10 @@ function DropDrawer<Payload = unknown>({
   defaultSnapPoint,
   snapToSequentialPoints,
   onSnapPointChange,
+  presentation,
   ...sharedProps
 }: DropDrawerProps<Payload>): React.JSX.Element {
-  const isMobile = useIsMobile();
+  const isMobile = useDrawerPresentation(presentation);
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
   const open = controlledOpen ?? uncontrolledOpen;
   const handleOpenChange = (nextOpen: boolean, details: DropDrawerOpenChangeDetails): void => {
@@ -361,7 +318,22 @@ function DropDrawer<Payload = unknown>({
   );
 }
 
-/** Opens the current primitive, preserving native/custom composition and merged refs. */
+/**
+ * Opens the current primitive, preserving native/custom composition and merged refs.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawer`. Renders the Menu trigger on desktop and the Drawer trigger on mobile, a
+ *   native `<button>` by default; set `nativeButton={false}` for non-button `render` targets.
+ * - Branch-only options (such as detached `handle`s) go in `menuProps` or `drawerProps`. Disabled triggers swallow
+ *   activation before any caller handler runs.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerTrigger render={<Button variant='ghost' size='icon' aria-label='More actions' />}>
+ *   <MoreHorizontal aria-hidden='true' />
+ * </DropDrawerTrigger>
+ * ```
+ */
 const DropDrawerTrigger = ({
   ref,
   menuProps,
@@ -412,186 +384,32 @@ const DropDrawerTrigger = ({
   );
 };
 
-/** Live mobile navigation: register actual nodes, never copied/cached React children. */
-const MobileContent = ({
-  ref,
-  children,
-  className,
-  render,
-  drawerProps,
-  initialFocus,
-  finalFocus,
-  ...props
-}: Readonly<DropDrawerContentProps>): React.JSX.Element => {
-  const root = useRoot();
-  const popupRender = drawerProps?.render ?? render;
-  const {className: drawerClassName, ...drawerPopupProps} = drawerProps ?? {};
-  const [path, setPath] = React.useState<readonly string[]>([]);
-  const [previousOpen, setPreviousOpen] = React.useState(root.open);
-  // Reset navigation on the state transition without remounting the SDK popup or delaying reset until an effect.
-  if (previousOpen !== root.open) {
-    setPreviousOpen(root.open);
-    if (!root.open) setPath([]);
-  }
-  const [panelHost, setPanelHost] = React.useState<HTMLDivElement | null>(null);
-  const [panelTitles, setPanelTitle] = usePanelTitles();
-  const mainRef = React.useRef<HTMLDivElement>(null);
-  const entriesRef = React.useRef(new Map<string, SubmenuRegistration>());
-  const openingRequestsRef = React.useRef(new Set<string>());
-  const pendingFocusRef = React.useRef<"entry" | HTMLElement | null>(null);
-  usePathFocusIntent(root.open, path, entriesRef, pendingFocusRef);
-  const activeId = useMobilePanelFocusRecovery(root.open, path, mainRef, entriesRef, pendingFocusRef);
-  const activeTitle = activeId === null ? undefined : panelTitles.get(activeId);
-  const closePath = React.useCallback((id: string): void => {
-    setPath((previous) => {
-      const index = previous.indexOf(id);
-      return index === -1 ? previous : previous.slice(0, index);
-    });
-  }, []);
-  const activateRequestedPath = React.useCallback((): void => {
-    if (!root.open) return;
-    let candidate: readonly string[] = [];
-    for (const requestedId of openingRequestsRef.current) {
-      const livePath = getLivePath(requestedId, entriesRef.current);
-      if (livePath && livePath.length >= candidate.length) candidate = livePath;
-    }
-    if (candidate.length === 0) return;
-    setPath((previous) =>
-      previous.length === candidate.length && previous.every((value, index) => value === candidate[index]) ? previous : candidate,
-    );
-  }, [root.open]);
-  const synchronize = React.useCallback(
-    (id: string, nextOpen: boolean): void => {
-      if (!nextOpen) {
-        openingRequestsRef.current.delete(id);
-        for (const requestedId of openingRequestsRef.current) {
-          let ancestorId = entriesRef.current.get(requestedId)?.parentId;
-          while (ancestorId !== null && ancestorId !== undefined) {
-            if (ancestorId === id) {
-              openingRequestsRef.current.delete(requestedId);
-              break;
-            }
-            ancestorId = entriesRef.current.get(ancestorId)?.parentId;
-          }
-        }
-        closePath(id);
-        return;
-      }
-      openingRequestsRef.current.delete(id);
-      openingRequestsRef.current.add(id);
-      activateRequestedPath();
-    },
-    [activateRequestedPath, closePath],
-  );
-  const panelAvailabilityChanged = React.useCallback(
-    (id: string): void => {
-      if (!entriesRef.current.get(id)?.panelRef.current?.isConnected) closePath(id);
-      activateRequestedPath();
-    },
-    [activateRequestedPath, closePath],
-  );
-  const register = React.useCallback(
-    (entry: SubmenuRegistration): (() => void) => {
-      const registered = entriesRef.current.get(entry.id);
-      if (registered && registered !== entry) throw new Error(`Duplicate DropDrawerSub id: ${entry.id}`);
-      entriesRef.current.set(entry.id, entry);
-      activateRequestedPath();
-      return () => {
-        if (entriesRef.current.get(entry.id) !== entry) return;
-        closePath(entry.id);
-        entriesRef.current.delete(entry.id);
-        openingRequestsRef.current.delete(entry.id);
-      };
-    },
-    [activateRequestedPath, closePath],
-  );
-  React.useLayoutEffect(() => {
-    if (!root.open) openingRequestsRef.current.clear();
-  }, [root.open]);
-  const navigate = React.useCallback(
-    (id: string, event: MouseEvent): void => {
-      const entry = entriesRef.current.get(id);
-      if (!entry?.panelRef.current?.isConnected || entry.optionsRef.current.disabled || !requestSubmenuChange(entry, true, event)) return;
-      synchronize(id, true);
-    },
-    [synchronize],
-  );
-  const goBack = (event: React.MouseEvent<HTMLButtonElement>): void => {
-    const active = activeId === null ? undefined : entriesRef.current.get(activeId);
-    if (!active || !requestSubmenuChange(active, false, event.nativeEvent)) return;
-    synchronize(active.id, false);
-  };
-  const navigation = React.useMemo(
-    () => ({activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged, setPanelTitle}),
-    [activeId, path, panelHost, register, navigate, synchronize, panelAvailabilityChanged, setPanelTitle],
-  );
-  const {
-    align,
-    alignOffset,
-    side,
-    sideOffset,
-    anchor,
-    positionMethod,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    arrowPadding,
-    disableAnchorTracking,
-    collisionAvoidance,
-    positionerProps,
-    portalProps,
-    ...popupProps
-  } = props;
-
-  return (
-    <NavigationContext.Provider value={navigation}>
-      <DrawerContent
-        data-slot='drop-drawer-content'
-        ref={ref}
-        initialFocus={drawerProps?.initialFocus ?? initialFocus}
-        finalFocus={drawerProps?.finalFocus ?? finalFocus}
-        render={popupRender}
-        className={(state) =>
-          cn(
-            styles.mobileContent,
-            typeof className === "function" ? className(state) : className,
-            typeof drawerClassName === "function" ? drawerClassName(state) : drawerClassName,
-          )
-        }
-        {...popupProps}
-        {...drawerPopupProps}>
-        <div className={cn(styles.mobileHeader, activeId === null && styles.screenReaderOnlyHeader)}>
-          {activeId !== null && (
-            <button
-              type='button'
-              aria-label={root.backLabel}
-              className={styles.backButton}
-              onClick={goBack}>
-              <ChevronLeft
-                aria-hidden='true'
-                className={styles.chevron}
-              />
-            </button>
-          )}
-          <DrawerTitle>{activeTitle || root.mobileTitle}</DrawerTitle>
-        </div>
-        <div
-          ref={mainRef}
-          hidden={activeId !== null}
-          tabIndex={-1}
-          className={styles.mobilePanel}>
-          <MobileElementChildren render={popupRender}>{children}</MobileElementChildren>
-        </div>
-        <div
-          ref={setPanelHost}
-          className={styles.mobilePanelHost}
-        />
-      </DrawerContent>
-    </NavigationContext.Provider>
-  );
-};
-MobileContent.displayName = "DropDrawerMobileContent";
-/** Popup refs/events/render callbacks target the real role-bearing primitive in both branches. */
+/**
+ * Popup refs/events/render callbacks target the real role-bearing primitive in both branches.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawer`. Desktop renders a portaled `role="menu"` popup placed by the menu
+ *   Positioner (`align="end"`, `sideOffset={4}` by default); mobile renders the Drawer `role="dialog"` popup and ignores
+ *   placement props.
+ * - `drawerProps` reaches only the mobile popup; `initialFocus` applies to the Drawer and `finalFocus` to both owners.
+ * - Name the desktop menu with `aria-label`; the mobile dialog is named by its heading (`mobileTitle`, or the active
+ *   submenu's title).
+ * - Writes `dir="rtl"` on the desktop and mobile popups only under an RTL `DirectionProvider`; otherwise it writes no `dir`
+ *   and they inherit the document direction, because Base UI's `useDirection()` also reports `"ltr"` without a provider.
+ *   An explicit LTR provider inside an RTL document therefore needs `dir="ltr"` here; a caller's `dir` (or, on mobile,
+ *   `drawerProps.dir`) always wins. Without an RTL `DirectionProvider`, Base UI keeps LTR submenu placement and arrow
+ *   keys on desktop, so RTL apps should wrap in `DirectionProvider direction="rtl"`.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerContent aria-label='Document actions'>
+ *   <DropDrawerGroup>
+ *     <DropDrawerLabel>Document</DropDrawerLabel>
+ *     <DropDrawerItem onSelect={archive}>Archive</DropDrawerItem>
+ *   </DropDrawerGroup>
+ * </DropDrawerContent>
+ * ```
+ */
 const DropDrawerContent = ({ref, ...props}: Readonly<DropDrawerContentProps>): React.JSX.Element => {
   const root = useRoot();
   const {drawerProps, initialFocus, finalFocus, className, ...menuProps} = props;
@@ -614,7 +432,23 @@ const DropDrawerContent = ({ref, ...props}: Readonly<DropDrawerContentProps>): R
     />
   );
 };
-/** Action callbacks precede primitive closing; cancellation and disabled state suppress activation. */
+/**
+ * Action callbacks precede primitive closing; cancellation and disabled state suppress activation.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerContent` (or a group/submenu). Desktop renders a `role="menuitem"`; mobile
+ *   renders a native `<button>` that closes the Drawer unless `closeOnClick={false}`.
+ * - `onClick` runs first, and its `preventDefault()` cancels both `onSelect` and closing. `onSelect` then receives the
+ *   native event; its `preventDefault()` keeps the menu or drawer open. Disabled items run neither callback.
+ * - `icon` renders a trailing decorative affordance; mark it `aria-hidden`.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerItem icon={<Copy aria-hidden='true' />} onSelect={duplicate}>
+ *   Duplicate
+ * </DropDrawerItem>
+ * ```
+ */
 const DropDrawerItem = ({
   ref,
   children,
@@ -703,7 +537,22 @@ const DropDrawerItem = ({
     </ActivationBoundary>
   );
 };
-/** A real desktop menu separator; mobile groups use CSS boundaries rather than menu roles. */
+/**
+ * A real desktop menu separator; mobile groups use CSS boundaries rather than menu roles.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerContent`. Desktop renders a `role="separator"`; mobile renders nothing,
+ *   because each `DropDrawerGroup` already draws its own boundary.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerContent aria-label='Account'>
+ *   <DropDrawerItem onSelect={openProfile}>Profile</DropDrawerItem>
+ *   <DropDrawerSeparator />
+ *   <DropDrawerItem variant='destructive' onSelect={signOut}>Sign out</DropDrawerItem>
+ * </DropDrawerContent>
+ * ```
+ */
 const DropDrawerSeparator = ({ref, ...props}: Readonly<DropDrawerSeparatorProps>): React.JSX.Element | null => {
   return useRoot().isMobile ? null : (
     <DropdownMenuSeparator
@@ -713,7 +562,21 @@ const DropDrawerSeparator = ({ref, ...props}: Readonly<DropDrawerSeparatorProps>
     />
   );
 };
-/** Section labels use the group label owner and do not overwrite the mobile dialog title. */
+/**
+ * Section labels use the group label owner and do not overwrite the mobile dialog title.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerGroup`, before its items; it names the group in both owners. It never names
+ *   the menu popup or the mobile dialog; use `aria-label` and `mobileTitle` for those.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerGroup>
+ *   <DropDrawerLabel>Sharing</DropDrawerLabel>
+ *   <DropDrawerItem onSelect={copyLink}>Copy link</DropDrawerItem>
+ * </DropDrawerGroup>
+ * ```
+ */
 const DropDrawerLabel = ({ref, className, ...props}: Readonly<DropDrawerLabelProps>): React.JSX.Element => {
   const root = useRoot();
   return (
@@ -725,7 +588,20 @@ const DropDrawerLabel = ({ref, className, ...props}: Readonly<DropDrawerLabelPro
     />
   );
 };
-/** Native footer layout with state-free render composition. */
+/**
+ * Native footer layout with state-free render composition.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerContent`. A plain `<div>` (or `render` target) laid out as a padded block on
+ *   desktop and a stacked action area on mobile; it adds no role, so its items keep their own semantics.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerFooter>
+ *   <DropDrawerItem closeOnClick={false} onSelect={openPreferences}>Preferences</DropDrawerItem>
+ * </DropDrawerFooter>
+ * ```
+ */
 const DropDrawerFooter = ({ref, className, render, ...props}: Readonly<DropDrawerFooterProps>): React.ReactElement => {
   const root = useRoot();
   return useRender<Record<string, never>, HTMLElement>({
@@ -739,7 +615,22 @@ const DropDrawerFooter = ({ref, className, render, ...props}: Readonly<DropDrawe
     render,
   });
 };
-/** The real Group/GroupLabel relationship is valid for both menus and native action groups. */
+/**
+ * The real Group/GroupLabel relationship is valid for both menus and native action groups.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerContent` or `DropDrawerSubContent`. Both owners render a `role="group"`
+ *   named by its `DropDrawerLabel`; on mobile it also draws the rounded group surface.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerGroup>
+ *   <DropDrawerLabel>Document</DropDrawerLabel>
+ *   <DropDrawerItem onSelect={duplicate}>Duplicate</DropDrawerItem>
+ *   <DropDrawerItem disabled>Delete (unavailable)</DropDrawerItem>
+ * </DropDrawerGroup>
+ * ```
+ */
 const DropDrawerGroup = ({ref, className, ...props}: Readonly<DropDrawerGroupProps>): React.JSX.Element => {
   const root = useRoot();
   return (
@@ -755,9 +646,11 @@ const DropDrawerGroup = ({ref, className, ...props}: Readonly<DropDrawerGroupPro
  * Maintains a stable submenu identity and live registration, including wrapped/nested children.
  *
  * @remarks
- * Desktop renders a real Base UI submenu. On mobile, the drill-down panel heading (the drawer dialog's name while the
- * panel is active) follows `title`, else the trigger's `label`, else its visible text (excluding `aria-hidden` and
- * `hidden` content), else the root `mobileTitle`.
+ * - Client-only; wrap one `DropDrawerSubTrigger` and one `DropDrawerSubContent`. Desktop renders a real Base UI
+ *   submenu. On mobile the trigger drills down into a panel with a Back control; `onOpenChange` receives cancellable
+ *   details whose destructured `cancel()`/`allowPropagation()` work as in Base UI.
+ * - The mobile drill-down panel heading (the drawer dialog's name while the panel is active) follows `title`, else the
+ *   trigger's `label`, else its visible text (excluding `aria-hidden` and `hidden` content), else the root `mobileTitle`.
  *
  * @example
  * ```tsx
@@ -805,7 +698,25 @@ function DropDrawerSub({id, title, ...props}: DropDrawerSubProps): React.JSX.Ele
   useSubmenuCompletion(root.isMobile, committedOpen, props.onOpenChangeComplete);
   return <SubContext.Provider value={context}>{root.isMobile ? props.children : <DropdownMenuSub {...props} />}</SubContext.Provider>;
 }
-/** Disabled guards precede callbacks; enabled native buttons supply Enter/Space activation. */
+/**
+ * Disabled guards precede callbacks; enabled native buttons supply Enter/Space activation.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerSub`. Desktop renders the menu `DropdownMenuSubTrigger`; mobile renders a
+ *   native `<button>` with `aria-expanded`/`aria-controls` that opens the submenu panel unless `onClick` cancels it.
+ * - Its trailing chevron is `aria-hidden`. On mobile it mirrors under `dir="rtl"` or an RTL `DirectionProvider`, like the
+ *   Back control's; on desktop it mirrors only under an RTL `DirectionProvider`, where Base UI opens the submenu leftward.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSub>
+ *   <DropDrawerSubTrigger>Sharing</DropDrawerSubTrigger>
+ *   <DropDrawerSubContent aria-label='Sharing actions'>
+ *     <DropDrawerItem onSelect={copyLink}>Copy link</DropDrawerItem>
+ *   </DropDrawerSubContent>
+ * </DropDrawerSub>
+ * ```
+ */
 const DropDrawerSubTrigger = ({
   ref,
   children,
@@ -820,6 +731,7 @@ const DropDrawerSubTrigger = ({
   const root = useRoot();
   const entry = useSubmenu();
   const navigation = React.useContext(NavigationContext);
+  const direction = useDirection();
   const controlRef = React.useRef<HTMLElement>(null);
   const mergedRef = useMergedRefs(ref, entry.triggerRef, controlRef);
   const isDisabled = root.disabled || disabled || entry.disabled;
@@ -828,6 +740,7 @@ const DropDrawerSubTrigger = ({
       {contentOf(children, render)}
       <ChevronRight
         aria-hidden='true'
+        data-direction={direction}
         className={styles.chevron}
       />
     </>
@@ -887,66 +800,22 @@ const DropDrawerSubTrigger = ({
   );
 };
 
-/** Keeps mobile panel descendants mounted in a portal, so registration and child updates remain live. */
-const MobileSubContent = ({
-  ref,
-  children,
-  className,
-  render,
-  id,
-  ...props
-}: Readonly<DropDrawerSubContentProps>): React.ReactElement | null => {
-  const entry = useSubmenu();
-  const navigation = useNavigation();
-  const {panelAvailabilityChanged} = navigation;
-  const notifyPanelRef = React.useCallback(() => panelAvailabilityChanged(entry.id), [entry.id, panelAvailabilityChanged]);
-  const mergedRef = useMergedRefs(ref, entry.panelRef, notifyPanelRef);
-  const open = navigation.activeId === entry.id;
-  const renderElement = elementOf(render);
-  const panelId = renderElement?.props.id ?? id ?? `${entry.id}-panel`;
-  const {setPanelId} = entry;
-  React.useLayoutEffect(() => {
-    setPanelId(panelId);
-  }, [panelId, setPanelId]);
-  const {
-    align,
-    alignOffset,
-    side,
-    sideOffset,
-    anchor,
-    positionMethod,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    arrowPadding,
-    disableAnchorTracking,
-    collisionAvoidance,
-    positionerProps,
-    portalProps,
-    finalFocus,
-    style,
-    ...panelProps
-  } = props;
-  const panel = useRender<DropDrawerPanelState, HTMLElement>({
-    defaultTagName: "div",
-    ref: mergedRef,
-    render: withChildren(render, contentOf(children, render)),
-    state: {open},
-    props: {
-      "data-slot": "drop-drawer-sub-content",
-      id: panelId,
-      hidden: !open,
-      tabIndex: -1,
-      className: cn(styles.mobilePanel, typeof className === "function" ? className({open}) : className),
-      style: typeof style === "function" ? style({open}) : style,
-      children: contentOf(children, render),
-      ...panelProps,
-    },
-  });
-  return navigation.panelHost ? createPortal(panel, navigation.panelHost) : null;
-};
-MobileSubContent.displayName = "DropDrawerMobileSubContent";
-/** Desktop uses a real SDK submenu popup; mobile uses the local panel owner with precise open state. */
+/**
+ * Desktop uses a real SDK submenu popup; mobile uses the local panel owner with precise open state.
+ *
+ * @remarks
+ * - Client-only; render inside `DropDrawerSub` after its trigger. Desktop accepts every `DropdownMenuSubContent` prop
+ *   and default (`side="inline-end"`, `alignOffset={-3}`); mobile ignores placement and renders a live panel that
+ *   stays mounted, so its state and registered descendants persist while other panels are shown.
+ * - `className`, `style` and `render` callbacks receive the desktop popup state or the mobile `{open}` panel state.
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSubContent aria-label='Permissions'>
+ *   <DropDrawerItem onSelect={grantReadOnly}>Read-only access</DropDrawerItem>
+ * </DropDrawerSubContent>
+ * ```
+ */
 const DropDrawerSubContent = ({ref, ...props}: Readonly<DropDrawerSubContentProps>): React.JSX.Element | null => {
   const root = useRoot();
   const entry = useSubmenu();

@@ -45,6 +45,13 @@ export interface AlertProps extends Readonly<React.ComponentPropsWithRef<"div">>
  * content. Use {@link AlertTitle} and {@link AlertDescription} to build a clear,
  * accessible message structure.
  *
+ * Children lay out in normal flow, so free-form paragraphs, inline text and links
+ * read as written. A direct {@link AlertAction} switches the alert to a two-column
+ * grid: the action takes the trailing column and every other element child stays in
+ * the leading message column. Plain links in the title and description inherit its
+ * colour and are underlined; class-styled anchors such as `buttonVariants()` keep
+ * their own paint.
+ *
  * @example
  * ```tsx
  * <Alert variant="destructive">
@@ -55,6 +62,7 @@ export interface AlertProps extends Readonly<React.ComponentPropsWithRef<"div">>
  *
  * @see {@link AlertTitle}
  * @see {@link AlertDescription}
+ * @see {@link AlertAction}
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
 const Alert = ({ref, className, variant = "default", ...props}: Readonly<AlertProps>): React.JSX.Element => (
@@ -151,10 +159,48 @@ const AlertDescription = ({ref, className, ...props}: Readonly<AlertDescriptionP
 );
 AlertDescription.displayName = "AlertDescription";
 
-/** Native attributes for the alert's trailing action region. */
+/**
+ * Represents the configurable props for the AlertAction component.
+ *
+ * @remarks
+ * Native `<div>` attributes for the alert's trailing action region; buttons and links
+ * inside it keep their own props, names and behaviour.
+ */
 export type AlertActionProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
-/** Groups controls beside an alert's message without intercepting their native behavior. */
+/**
+ * Groups controls beside an alert's message without intercepting their native behavior.
+ *
+ * @remarks
+ * **Rendering Context**: Server- and client-compatible presentational component.
+ *
+ * Renders a `<div data-slot="alert-action">`. As a direct child it turns the
+ * {@link Alert} into a two-column grid: the action takes the trailing column beside
+ * the first two rows (title and description), aligned to the top inline-end corner
+ * and mirrored in RTL, while every other element child stays in the leading message
+ * column. When an action is present, wrap loose text in {@link AlertDescription},
+ * because a grid cannot flow bare text runs inline. The region adds no role or
+ * keyboard handling; when a dismiss control removes the alert, move focus to a
+ * sensible place.
+ *
+ * @example
+ * ```tsx
+ * <Alert>
+ *   <AlertTitle>Storage almost full</AlertTitle>
+ *   <AlertDescription>Remove unused files to keep syncing.</AlertDescription>
+ *   <AlertAction>
+ *     <Button
+ *       variant="outline"
+ *       size="sm"
+ *       onClick={openStorage}>
+ *       Review storage
+ *     </Button>
+ *   </AlertAction>
+ * </Alert>
+ * ```
+ *
+ * @see {@link Alert}
+ */
 const AlertAction = ({ref, className, ...props}: Readonly<AlertActionProps>): React.JSX.Element => (
   <div
     ref={ref}

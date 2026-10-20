@@ -96,8 +96,9 @@ export type FormControlProps<TElement extends HTMLElement = HTMLInputElement> = 
     /** React 19 ref to the actual composed control. */
     ref?: React.Ref<TElement>;
     /**
-     * Single form control element or fallback content to receive field accessibility attributes.
-     * @default undefined
+     * Required control: a single element (native input, textarea or select, or a component that forwards DOM
+     * props and its ref) that receives the field's ID, `aria-describedby` and `aria-invalid`. Other content
+     * (text, fragments or several elements) is wrapped in a `<div>` that receives them instead.
      */
     children: React.ReactNode;
   }
@@ -511,15 +512,31 @@ const FormField = <
   );
 };
 
-/** RHF field state and the current item's resolved/mounted accessibility IDs. */
+/**
+ * RHF field state and the current item's resolved/mounted accessibility IDs.
+ *
+ * @remarks
+ * Includes RHF's `ControllerFieldState` for the field: `invalid`, `isTouched`, `isDirty`, `isValidating` and
+ * `error`. Server HTML and the hydration render derive the IDs from the parts written in the FormItem's children.
+ */
 export type UseFormFieldReturn = Readonly<
   ControllerFieldState & {
+    /** The FormItem's base ID: its trimmed explicit `id`, otherwise a generated `React.useId()` value. */
     id: string;
+    /** The field path passed to the nearest {@link FormField}. */
     name: FieldPath<FieldValues>;
+    /**
+     * The control's ID, targeted by FormLabel's `htmlFor`: an explicit FormControl ID (or else its child's),
+     * otherwise a FormLabel `htmlFor`, otherwise `<id>-form-item`.
+     */
     formItemId: string;
+    /** The first linked description ID, or `<id>-form-item-description` when none is linked. */
     formDescriptionId: string;
+    /** The first linked message ID, or `<id>-form-item-message` when none is linked. */
     formMessageId: string;
+    /** IDs of descriptions with meaningful content, in registration order; FormControl references them first. */
     descriptionIds: readonly string[];
+    /** IDs of rendered messages (error text or fallback content); FormControl references them after descriptions. */
     messageIds: readonly string[];
   }
 >;
@@ -536,9 +553,18 @@ export type UseFormFieldReturn = Readonly<
  * first client render after hydration switches to mounted metadata.
  * Guards diagnose missing Form, FormField, and FormItem before reading their values.
  *
+ * @returns The field's RHF state and the item's resolved IDs (see {@link UseFormFieldReturn});
+ * the caller re-renders when this field's form state changes.
+ * @throws {Error} When an ancestor is missing, checked in this order: `"useFormField should be used within <Form>"`,
+ * `"useFormField should be used within <FormField>"` or `"useFormField should be used within <FormItem>"`.
+ *
  * @example
  * ```tsx
- * const field = useFormField();
+ * // A decorative status icon inside <FormItem>; FormMessage still announces the error text.
+ * function FieldStatusIcon(): React.JSX.Element | null {
+ *   const {invalid} = useFormField();
+ *   return invalid ? <CircleAlert aria-hidden='true' /> : null;
+ * }
  * ```
  *
  * @see {@link https://react-hook-form.com/docs/useformcontext | React Hook Form useFormContext Docs}
@@ -706,6 +732,24 @@ type FormControlTarget = React.ComponentType<React.HTMLAttributes<HTMLElement> &
  * remain caller-owned.
  * Blank explicit IDs fall back to generated IDs. Non-element/fragment content
  * retains the legacy div fallback; use `FormControl<HTMLDivElement>` for that target.
+ *
+ * @example
+ * ```tsx
+ * <FormField
+ *   control={form.control}
+ *   name='email'
+ *   render={({field}) => (
+ *     <FormItem>
+ *       <FormLabel>Email</FormLabel>
+ *       <FormControl>
+ *         <Input type='email' autoComplete='email' {...field} />
+ *       </FormControl>
+ *       <FormDescription>We only use it for receipts.</FormDescription>
+ *       <FormMessage />
+ *     </FormItem>
+ *   )}
+ * />
+ * ```
  */
 const FormControl = <TElement extends HTMLElement = HTMLInputElement>({
   ref,

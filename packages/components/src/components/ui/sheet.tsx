@@ -118,10 +118,56 @@ function Sheet<Payload = unknown>({modal = true, ...props}: Readonly<Sheet.Props
 }
 Sheet.displayName = "Sheet";
 
-/** Portals sheet parts; supports Base UI's `keepMounted` contract. */
+/**
+ * Portals sheet parts; supports Base UI's `keepMounted` contract.
+ *
+ * @remarks
+ * - Base UI's Dialog Portal, re-exported unchanged: it renders a `<div>` portal element, appended to `<body>` by
+ *   default
+ * - {@link SheetContent} already renders its own portal; configure that one through `portalProps`. Compose SheetPortal
+ *   directly only for manual primitive compositions around Base UI's `Dialog.Popup`
+ * - `keepMounted` keeps closed content mounted but hidden; `container` chooses the element or shadow root that
+ *   receives the portal
+ *
+ * @example
+ * ```tsx
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <Sheet>
+ *   <SheetTrigger>Open</SheetTrigger>
+ *   <SheetPortal>
+ *     <SheetOverlay />
+ *     <BaseDialog.Popup>
+ *       <SheetTitle>Custom composition</SheetTitle>
+ *       <SheetClose>Close</SheetClose>
+ *     </BaseDialog.Popup>
+ *   </SheetPortal>
+ * </Sheet>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const SheetPortal = BaseDialog.Portal;
 
-/** Closes a sheet without imposing the automatic close icon's styling. */
+/**
+ * Closes a sheet without imposing the automatic close icon's styling.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; `render` adopts another presentation, such as the package `Button`
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - `SheetContent`'s automatic icon close is built on this part. A sheet that opts out with `showCloseButton={false}`
+ *   must still contain a close control: touch screen-reader users cannot press Escape
+ * - An icon-only close needs an accessible name, such as `aria-label`
+ *
+ * @example
+ * ```tsx
+ * <SheetFooter>
+ *   <SheetClose render={<Button variant='outline' />}>Done</SheetClose>
+ * </SheetFooter>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetClose({className, ...props}: Readonly<SheetClose.Props>): React.ReactElement {
   return (
     <BaseDialog.Close
@@ -133,7 +179,30 @@ function SheetClose({className, ...props}: Readonly<SheetClose.Props>): React.Re
 }
 SheetClose.displayName = "SheetClose";
 
-/** Opens a sheet; render callbacks receive the primitive's live open/disabled state. */
+/**
+ * Opens a sheet; render callbacks receive the primitive's live open/disabled state.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; Base UI sets `aria-haspopup="dialog"` and `aria-expanded` and returns focus
+ *   to the trigger when the sheet closes, unless `SheetContent`'s `finalFocus` chooses another target
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - `render` composes another element, such as the package `Button`. Set `nativeButton={false}` only for a non-button
+ *   target that takes button semantics, such as a `<div>`
+ * - `className` may be a string or a callback that receives the trigger's live state
+ * - An icon-only trigger needs an accessible name, such as `aria-label`
+ *
+ * @example
+ * ```tsx
+ * <Sheet>
+ *   <SheetTrigger render={<Button variant='outline' />}>Filters</SheetTrigger>
+ *   <SheetContent side='left'>
+ *     <SheetTitle>Filters</SheetTitle>
+ *   </SheetContent>
+ * </Sheet>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const SheetTrigger = ({ref, children, render, nativeButton, className, ...props}: Readonly<SheetTrigger.Props>): React.ReactElement => {
   const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
     (element) => {
@@ -157,7 +226,32 @@ const SheetTrigger = ({ref, children, render, nativeButton, className, ...props}
 };
 SheetTrigger.displayName = "SheetTrigger";
 
-/** Renders the backdrop below the sheet, forwarding primitive-owned composition unchanged. */
+/**
+ * Renders the backdrop below the sheet, forwarding primitive-owned composition unchanged.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - {@link SheetContent} already renders this backdrop when the enclosing `Sheet` is fully modal (`modal={true}`).
+ *   Compose SheetOverlay only inside a manual {@link SheetPortal} composition
+ * - The backdrop is presentational (`role="presentation"`) and sits outside the popup, so it takes no content or
+ *   controls. Base UI omits it for nested sheets unless `forceRender` is set
+ *
+ * @example
+ * ```tsx
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <SheetPortal>
+ *   <SheetOverlay className='dimmed-backdrop' />
+ *   <BaseDialog.Popup>
+ *     <SheetTitle>Custom composition</SheetTitle>
+ *     <SheetClose>Close</SheetClose>
+ *   </BaseDialog.Popup>
+ * </SheetPortal>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetOverlay({className, ...props}: Readonly<SheetOverlay.Props>): React.ReactElement {
   return (
     <BaseDialog.Backdrop
@@ -177,6 +271,8 @@ SheetOverlay.displayName = "SheetOverlay";
  *   `modal={true}` (its default); under a raw Base UI root the backdrop is always rendered.
  * - The automatic close is last in DOM order; opt out with `showCloseButton={false}` only when another close
  *   control remains inside the sheet.
+ * - Name the popup with a {@link SheetTitle}; Base UI wires it, and any {@link SheetDescription}, to the dialog.
+ *   Localize the automatic close's accessible name with `closeLabel`.
  * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed sheet mounted with `hidden`,
  *   preserving form state, and `container` chooses the element or shadow root that receives the portal.
  *
@@ -256,7 +352,22 @@ const SheetContent = ({
 };
 SheetContent.displayName = "SheetContent";
 
-/** Composes the sheet heading layout while preserving child content, events and refs. */
+/**
+ * Composes the sheet heading layout while preserving child content, events and refs.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: it adds no role or accessible name. Place {@link SheetTitle} and {@link SheetDescription} inside;
+ *   Base UI wires them to the popup wherever they render
+ *
+ * @example
+ * ```tsx
+ * <SheetHeader>
+ *   <SheetTitle>Filters</SheetTitle>
+ *   <SheetDescription>Narrow the results by status and owner.</SheetDescription>
+ * </SheetHeader>
+ * ```
+ */
 const SheetHeader = ({ref, children, className, render, ...props}: Readonly<SheetHeader.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
@@ -272,7 +383,21 @@ const SheetHeader = ({ref, children, className, render, ...props}: Readonly<Shee
 };
 SheetHeader.displayName = "SheetHeader";
 
-/** Composes actions at the end of the sheet without creating a nested wrapper. */
+/**
+ * Composes actions at the end of the sheet without creating a nested wrapper.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: actions keep their own semantics and the footer adds no role
+ *
+ * @example
+ * ```tsx
+ * <SheetFooter>
+ *   <SheetClose render={<Button variant='outline' />}>Cancel</SheetClose>
+ *   <Button type='submit'>Apply filters</Button>
+ * </SheetFooter>
+ * ```
+ */
 const SheetFooter = ({ref, children, className, render, ...props}: Readonly<SheetFooter.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
@@ -288,7 +413,22 @@ const SheetFooter = ({ref, children, className, render, ...props}: Readonly<Shee
 };
 SheetFooter.displayName = "SheetFooter";
 
-/** Renders the accessible sheet heading using primitive-owned composition. */
+/**
+ * Renders the accessible sheet heading using primitive-owned composition.
+ *
+ * @remarks
+ * - Renders an `<h2>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Base UI references it from the popup's `aria-labelledby`, so it names the sheet. Every sheet needs a title, or an
+ *   `aria-label` on {@link SheetContent} when no visible heading fits
+ *
+ * @example
+ * ```tsx
+ * <SheetTitle>Notification settings</SheetTitle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetTitle({className, ...props}: Readonly<SheetTitle.Props>): React.ReactElement {
   return (
     <BaseDialog.Title
@@ -300,7 +440,22 @@ function SheetTitle({className, ...props}: Readonly<SheetTitle.Props>): React.Re
 }
 SheetTitle.displayName = "SheetTitle";
 
-/** Renders the accessible sheet description using primitive-owned composition. */
+/**
+ * Renders the accessible sheet description using primitive-owned composition.
+ *
+ * @remarks
+ * - Renders a `<p>` element by default and supports the `render` prop for element composition
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Base UI references it from the popup's `aria-describedby`, so screen readers announce it when the sheet opens;
+ *   keep it brief and put longer content in the sheet body
+ *
+ * @example
+ * ```tsx
+ * <SheetDescription>Choose which events send you an email.</SheetDescription>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetDescription({className, ...props}: Readonly<SheetDescription.Props>): React.ReactElement {
   return (
     <BaseDialog.Description

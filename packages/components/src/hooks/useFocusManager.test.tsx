@@ -7,6 +7,20 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+/** Appends a container built from labels: `X` is a focusable `aria-disabled` button, `N` a `tabindex="-1"` div, others buttons. */
+function createContainer(labels: readonly string[]): HTMLDivElement {
+  const container = document.createElement("div");
+  for (const label of labels) {
+    const element = document.createElement(label === "N" ? "div" : "button");
+    element.textContent = label;
+    if (label === "X") element.setAttribute("aria-disabled", "true");
+    if (label === "N") element.tabIndex = -1;
+    container.append(element);
+  }
+  document.body.append(container);
+  return container;
+}
+
 describe("useFocusManager", () => {
   it.each(["hidden", "inert", "display", "visibility", "fieldset", "details", "aria-disabled", "hidden-input"])(
     "skips unavailable %s candidates without changing DOM order",
@@ -38,6 +52,89 @@ describe("useFocusManager", () => {
       expect(document.activeElement).toBe(last);
     },
   );
+
+  it.each([
+    ["X", "a b X c d", "focusNext", "c"],
+    ["X", "a b X c d", "focusPrevious", "b"],
+    ["X", "X a b", "focusNext", "a"],
+    ["X", "X a b", "focusPrevious", "b"],
+    ["X", "a b X", "focusNext", "a"],
+    ["X", "a b X", "focusPrevious", "b"],
+    ["N", "a N b", "focusNext", "b"],
+    ["N", "a N b", "focusPrevious", "a"],
+  ] as const)(
+    "moves from focused non-candidate %s in [%s] with %s to %s by DOM order, wrapping at the ends",
+    (from, layout, move, expected) => {
+      const container = createContainer(layout.split(" "));
+      const start = [...container.children].find((element) => element.textContent === from) as HTMLElement;
+      const {result} = renderHook(() => useFocusManager({current: container}));
+
+      act(() => start.focus());
+      act(() => result.current[move]());
+
+      expect(document.activeElement?.textContent).toBe(expected);
+    },
+  );
+
+  it("moves from a focused non-candidate wrapper into its first candidate or to the candidate before it", () => {
+    const container = createContainer(["a"]);
+    const wrapper = document.createElement("div");
+    wrapper.tabIndex = -1;
+    wrapper.append(...["b", "c"].map((label) => Object.assign(document.createElement("button"), {textContent: label})));
+    container.append(wrapper, Object.assign(document.createElement("button"), {textContent: "d"}));
+    const {result} = renderHook(() => useFocusManager({current: container}));
+
+    act(() => wrapper.focus());
+    act(() => result.current.focusNext());
+    expect(document.activeElement?.textContent).toBe("b");
+
+    act(() => wrapper.focus());
+    act(() => result.current.focusPrevious());
+    expect(document.activeElement?.textContent).toBe("a");
+  });
+
+  it("moves from a non-candidate nested in a candidate back to that candidate or on to the next one", () => {
+    const container = createContainer(["a"]);
+    const parent = document.createElement("div");
+    parent.tabIndex = 0;
+    const nested = Object.assign(document.createElement("button"), {textContent: "X"});
+    nested.setAttribute("aria-disabled", "true");
+    parent.append(nested);
+    container.append(parent, Object.assign(document.createElement("button"), {textContent: "d"}));
+    const {result} = renderHook(() => useFocusManager({current: container}));
+
+    act(() => nested.focus());
+    act(() => result.current.focusPrevious());
+    expect(document.activeElement).toBe(parent);
+
+    act(() => nested.focus());
+    act(() => result.current.focusNext());
+    expect(document.activeElement?.textContent).toBe("d");
+  });
+
+  it("moves to the first or last candidate when focus is outside the container or on nothing", () => {
+    const before = document.createElement("button");
+    const after = document.createElement("button");
+    document.body.append(before);
+    const container = createContainer(["a", "b", "c"]);
+    document.body.append(after);
+    const {result} = renderHook(() => useFocusManager({current: container}));
+    const starts: readonly (() => void)[] = [
+      () => before.focus(),
+      () => after.focus(),
+      () => (document.activeElement as HTMLElement).blur(),
+    ];
+
+    for (const focusStart of starts) {
+      act(focusStart);
+      act(() => result.current.focusNext());
+      expect(document.activeElement?.textContent).toBe("a");
+
+      act(focusStart);
+      act(() => result.current.focusPrevious());
+      expect(document.activeElement?.textContent).toBe("c");
+    }
+  });
 
   it("returns focus management functions", () => {
     const ref = {current: document.createElement("div")};

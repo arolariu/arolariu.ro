@@ -191,10 +191,37 @@ AvatarFallback.displayName = "AvatarFallback";
  *
  * @remarks
  * Place directly inside {@link Avatar}; its size follows the root preset.
- * Icons are hidden at `sm`, leaving a compact dot. Supply an accessible label
- * for meaningful status, or `aria-hidden` for a purely decorative badge.
+ * Icons are hidden at `sm`, leaving a compact dot. The default `<span>` is a
+ * generic element that `aria-label` cannot name, so pick one technique: give a
+ * meaningful status `role="img"` plus an `aria-label`; put visually hidden text
+ * inside the badge so it is announced with the surrounding name (for example the
+ * profile link that contains the avatar); or set `aria-hidden="true"` when the
+ * badge is decorative or its status is already written out nearby.
  * Composed targets accept their corresponding DOM refs; callback props carry
  * Base UI's merged callback ref rather than a default-span object ref.
+ *
+ * @example Meaningful status image
+ * ```tsx
+ * <Avatar>
+ *   <AvatarFallback>AO</AvatarFallback>
+ *   <AvatarBadge
+ *     role='img'
+ *     aria-label='Online'
+ *   />
+ * </Avatar>
+ * ```
+ *
+ * @example Status announced as part of the profile link's name
+ * ```tsx
+ * <a href='/people/ao'>
+ *   <Avatar>
+ *     <AvatarFallback>AO</AvatarFallback>
+ *     <AvatarBadge>
+ *       <VisuallyHidden>, online</VisuallyHidden>
+ *     </AvatarBadge>
+ *   </Avatar>
+ * </a>
+ * ```
  */
 const AvatarBadge = ({ref, ...props}: Readonly<AvatarBadge.Props>): React.ReactElement => {
   const {className, render, ...otherProps} = props;
@@ -216,6 +243,23 @@ AvatarBadge.displayName = "AvatarBadge";
  * above unbadged peers. Supply `role="group"` and a label when the collection
  * needs a group name; the default native div adds no redundant ARIA.
  * The common `HTMLElement` ref boundary supports the actual composed target.
+ *
+ * @example
+ * ```tsx
+ * <AvatarGroup
+ *   role='group'
+ *   aria-label='Contributors'>
+ *   <Avatar>
+ *     <AvatarFallback>AO</AvatarFallback>
+ *   </Avatar>
+ *   <Avatar>
+ *     <AvatarFallback>JD</AvatarFallback>
+ *   </Avatar>
+ *   <AvatarGroupCount>
+ *     +3<VisuallyHidden> more contributors</VisuallyHidden>
+ *   </AvatarGroupCount>
+ * </AvatarGroup>
+ * ```
  */
 const AvatarGroup = ({ref, ...props}: Readonly<AvatarGroup.Props>): React.ReactElement => {
   const {className, render, ...otherProps} = props;
@@ -235,9 +279,27 @@ AvatarGroup.displayName = "AvatarGroup";
  * @remarks
  * A trailing count matches the first direct avatar's `sm`/`default`/`lg` size.
  * Mixed-size groups deliberately use the first avatar as the sizing reference.
- * Outside a group it uses the default size. Provide a descriptive accessible
- * label when a number alone does not explain the remaining items.
+ * Outside a group it uses the default size. The default `<div>` is generic, so
+ * an `aria-label` on it is not a name. When the number alone does not explain
+ * the remaining items, add visually hidden context after it, or give the count
+ * `role="img"` with an `aria-label` that replaces the visible text.
  * Composed targets accept their corresponding DOM refs through `HTMLElement`.
+ *
+ * @example Visually hidden context
+ * ```tsx
+ * <AvatarGroupCount>
+ *   +3<VisuallyHidden> more contributors</VisuallyHidden>
+ * </AvatarGroupCount>
+ * ```
+ *
+ * @example Count announced as an image
+ * ```tsx
+ * <AvatarGroupCount
+ *   role='img'
+ *   aria-label='3 more contributors'>
+ *   +3
+ * </AvatarGroupCount>
+ * ```
  */
 const AvatarGroupCount = ({ref, ...props}: Readonly<AvatarGroupCount.Props>): React.ReactElement => {
   const {className, render, ...otherProps} = props;

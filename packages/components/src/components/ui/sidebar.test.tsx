@@ -1,12 +1,12 @@
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {Field as BaseField} from "@base-ui/react/field";
-import {useDirection} from "@base-ui/react/direction-provider";
+import {DirectionProvider, useDirection} from "@base-ui/react/direction-provider";
 import {mergeProps} from "@base-ui/react/merge-props";
 import type {BaseUIEvent, HTMLProps} from "@base-ui/react/types";
 import {useRender} from "@base-ui/react/use-render";
 import {Home} from "lucide-react";
 import type {getRole as NativeRoleOracle} from "dom-accessibility-api" with {"resolution-mode": "require"};
-import {act, cleanup, render, screen, waitFor, within} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
@@ -44,6 +44,7 @@ import {
 } from "./sidebar";
 import styles from "./sidebar.module.css";
 import * as stories from "./sidebar.stories";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 
 const stylesheet = readFileSync(join(import.meta.dirname, "sidebar.module.css"), "utf8");
 const accessibilityApi: unknown = createRequire(join(import.meta.dirname, "..", "..", "..", "package.json"))("dom-accessibility-api");
@@ -1828,5 +1829,252 @@ describe("Sidebar current destination", () => {
   it.each(Object.entries(composeStories(stories)))("marks exactly one current page in the %s story", (_name, Story) => {
     const {container} = render(<Story />);
     expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+  });
+});
+
+/** Emulates a mouse resting on a tooltip trigger, as the Tooltip timing tests do. */
+function hoverTrigger(trigger: HTMLElement): void {
+  fireEvent.pointerEnter(trigger, {pointerType: "mouse"});
+  fireEvent.mouseEnter(trigger);
+  fireEvent.mouseMove(trigger);
+}
+
+async function advance(milliseconds: number): Promise<void> {
+  await act(async () => vi.advanceTimersByTimeAsync(milliseconds));
+}
+
+function AppTooltip({label = "Export", help = "Export help"}: Readonly<{label?: string; help?: string}>): React.JSX.Element {
+  return (
+    <Tooltip disableHoverablePopup>
+      <TooltipTrigger>{label}</TooltipTrigger>
+      <TooltipContent>{help}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+describe("Sidebar tooltip timing scope", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    cleanup();
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("keeps Base UI's default 600ms opening delay for an app tooltip inside the provider's subtree", async () => {
+    render(
+      <SidebarProvider>
+        <SidebarInset>
+          <AppTooltip />
+        </SidebarInset>
+      </SidebarProvider>,
+    );
+    hoverTrigger(screen.getByRole("button", {name: "Export"}));
+    await advance(0);
+    expect(screen.queryByText("Export help")).not.toBeInTheDocument();
+    await advance(599);
+    expect(screen.queryByText("Export help")).not.toBeInTheDocument();
+    await advance(1);
+    expect(screen.getByText("Export help")).toBeInTheDocument();
+  });
+
+  it("lets an app TooltipProvider outside the SidebarProvider own its subtree's timing", async () => {
+    render(
+      <TooltipProvider delay={1000}>
+        <SidebarProvider>
+          <SidebarInset>
+            <AppTooltip />
+          </SidebarInset>
+        </SidebarProvider>
+      </TooltipProvider>,
+    );
+    hoverTrigger(screen.getByRole("button", {name: "Export"}));
+    await advance(999);
+    expect(screen.queryByText("Export help")).not.toBeInTheDocument();
+    await advance(1);
+    expect(screen.getByText("Export help")).toBeInTheDocument();
+  });
+
+  it("still opens collapsed menu-button tooltips without delay, even under a slower app provider", async () => {
+    render(
+      <TooltipProvider delay={1000}>
+        <SidebarProvider defaultOpen={false}>
+          <Sidebar collapsible='icon'>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip='Home details'
+                  render={<a href='#home'>Home</a>}
+                />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </Sidebar>
+          <SidebarInset>
+            <AppTooltip />
+          </SidebarInset>
+        </SidebarProvider>
+      </TooltipProvider>,
+    );
+    hoverTrigger(screen.getByRole("link", {name: "Home"}));
+    await advance(0);
+    expect(screen.getByText("Home details")).toBeInTheDocument();
+  });
+});
+
+describe("Sidebar cookie persistence opt-out", () => {
+  it("does not write the sidebar_state cookie when persistState is false, for trigger, rail and shortcut toggles", async () => {
+    const user = userEvent.setup();
+    const cookie = vi.spyOn(document, "cookie", "set");
+    const onOpenChange = vi.fn();
+    const consoleError = vi.spyOn(console, "error");
+    render(
+      <SidebarProvider
+        persistState={false}
+        onOpenChange={onOpenChange}
+        data-testid='wrapper'>
+        <SidebarTrigger />
+        <SidebarRail />
+        <ContextProbe />
+      </SidebarProvider>,
+    );
+    const [trigger, rail] = screen.getAllByRole("button", {name: "Toggle Sidebar"});
+    await user.click(trigger!);
+    expectState({open: false, state: "collapsed", isMobile: false, openMobile: false});
+    await user.click(rail!);
+    await user.keyboard("{Control>}b{/Control}");
+    await user.keyboard("{Meta>}b{/Meta}");
+    expectState({open: true, state: "expanded", isMobile: false, openMobile: false});
+    expect(onOpenChange.mock.calls).toEqual([[false], [true], [false], [true]]);
+    expect(cookie).not.toHaveBeenCalled();
+    expect(screen.getByTestId("wrapper")).not.toHaveAttribute("persiststate");
+    expect(screen.getByTestId("wrapper")).not.toHaveAttribute("persistState");
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("leaves persistence to a controlled owner that opts out", async () => {
+    const user = userEvent.setup();
+    const cookie = vi.spyOn(document, "cookie", "set");
+    const persisted: boolean[] = [];
+    function OwnerPersistedSidebar(): React.JSX.Element {
+      const [open, setOpen] = React.useState(true);
+      return (
+        <SidebarProvider
+          open={open}
+          persistState={false}
+          onOpenChange={(next) => {
+            persisted.push(next);
+            setOpen(next);
+          }}>
+          <SidebarTrigger />
+          <ContextProbe />
+        </SidebarProvider>
+      );
+    }
+    render(<OwnerPersistedSidebar />);
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    expectState({open: false, state: "collapsed", isMobile: false, openMobile: false});
+    expect(persisted).toEqual([false]);
+    expect(cookie).not.toHaveBeenCalled();
+  });
+
+  it("keeps writing the documented cookie by default, including controlled proposals", async () => {
+    const user = userEvent.setup();
+    const cookie = vi.spyOn(document, "cookie", "set");
+    const {unmount} = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    expect(cookie).toHaveBeenLastCalledWith("sidebar_state=false; path=/; max-age=604800");
+    unmount();
+    render(
+      <SidebarProvider
+        open
+        persistState
+        onOpenChange={() => undefined}>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    expect(cookie).toHaveBeenLastCalledWith("sidebar_state=false; path=/; max-age=604800");
+    expect(cookie).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Sidebar final-review fix: root dir only from an RTL provider", () => {
+  type Layout = "desktop" | "static" | "mobile";
+  const layouts: readonly Layout[] = ["desktop", "static", "mobile"];
+
+  function DirectionalSidebar({layout, dir}: Readonly<{layout: Layout; dir?: string}>): React.JSX.Element {
+    return (
+      <SidebarProvider>
+        <Sidebar
+          collapsible={layout === "static" ? "none" : "offcanvas"}
+          dir={dir}>
+          <SidebarContent>Navigation</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>
+    );
+  }
+
+  /** The element that carries the Sidebar's own `dir`: the desktop/static root or the portaled mobile Sheet popup. */
+  async function sidebarRoot(layout: Layout): Promise<HTMLElement> {
+    if (layout === "mobile") {
+      await userEvent.setup().click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+      return screen.findByRole("dialog", {name: "Sidebar"});
+    }
+    const content = screen.getByText("Navigation");
+    const root =
+      layout === "static" ? content.closest<HTMLElement>('[data-sidebar="sidebar"]') : content.closest<HTMLElement>("[data-side]");
+    if (!root) throw new Error(`Missing ${layout} Sidebar root`);
+    return root;
+  }
+
+  it.each(layouts)("lets the %s root inherit an RTL document or ancestor when no provider is present", async (layout) => {
+    if (layout === "mobile") changeMobile(true);
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    // The desktop and static roots render in place under the ancestor; the mobile Sheet portals and inherits <html>.
+    if (layout === "mobile") html.setAttribute("dir", "rtl");
+    try {
+      render(
+        <div
+          dir='rtl'
+          data-testid='rtl-ancestor'>
+          <DirectionalSidebar layout={layout} />
+        </div>,
+      );
+      const root = await sidebarRoot(layout);
+      expect(root).not.toHaveAttribute("dir");
+      // The nearest dir is RTL, so `.desktopRoot:dir(rtl)` matches in browsers (happy-dom does not evaluate :dir()).
+      expect(root.closest("[dir]")).toBe(layout === "mobile" ? html : screen.getByTestId("rtl-ancestor"));
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it.each(layouts)("writes dir=rtl on the %s root under an RTL provider", async (layout) => {
+    if (layout === "mobile") changeMobile(true);
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalSidebar layout={layout} />
+      </DirectionProvider>,
+    );
+    expect(await sidebarRoot(layout)).toHaveAttribute("dir", "rtl");
+  });
+
+  it.each(layouts)("lets a caller's dir win over an RTL provider on the %s root", async (layout) => {
+    if (layout === "mobile") changeMobile(true);
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalSidebar
+          layout={layout}
+          dir='ltr'
+        />
+      </DirectionProvider>,
+    );
+    expect(await sidebarRoot(layout)).toHaveAttribute("dir", "ltr");
   });
 });

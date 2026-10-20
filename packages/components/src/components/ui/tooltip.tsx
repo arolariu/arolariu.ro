@@ -27,14 +27,13 @@ export type TooltipTriggerProps<Payload = unknown> = Readonly<
   Omit<BaseTooltip.Trigger.Props<Payload>, "ref"> & React.RefAttributes<HTMLElement>
 >;
 
-/** Popup semantics plus explicit positioning/portal options; `side=top`, `sideOffset=4`. */
+/** Popup semantics plus explicit positioning/portal options; `side` defaults to `"top"`. */
 export type TooltipContentProps = Readonly<
   React.ComponentPropsWithRef<typeof BaseTooltip.Popup>
     & Pick<
       React.ComponentPropsWithRef<typeof BaseTooltip.Positioner>,
       | "side"
       | "align"
-      | "sideOffset"
       | "alignOffset"
       | "anchor"
       | "positionMethod"
@@ -46,6 +45,8 @@ export type TooltipContentProps = Readonly<
       | "disableAnchorTracking"
     >
     & Pick<React.ComponentPropsWithRef<typeof BaseTooltip.Portal>, "keepMounted" | "container"> & {
+      /** Distance in pixels between the trigger and the tooltip, or a function of their sizes, side and alignment. @default 4 */
+      sideOffset?: BaseTooltip.Positioner.Props["sideOffset"];
       /** Render the default decorative arrow. Set false when composing a custom TooltipArrow. @default true */
       showArrow?: boolean;
     }

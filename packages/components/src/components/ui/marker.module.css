@@ -12,16 +12,31 @@
   text-align: start;
 }
 
-a.marker,
-.content a {
+a.marker {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: var(--ac-space-3);
+}
+
+/*
+ * Plain links inside MarkerContent share the marker's text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only link
+ * resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for example
+ * `buttonVariants()`) keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.content) a:is(a) {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: var(--ac-space-3);
 }
 
 @media (hover: hover) {
-  a.marker:hover,
-  .content a:hover {
+  a.marker:hover {
+    color: var(--ac-foreground);
+  }
+
+  /* Also (0,0,2): `:where(:hover)` adds nothing, so a class-styled anchor's own colour still wins on hover. */
+  :where(.content) a:is(a):where(:hover) {
     color: var(--ac-foreground);
   }
 }

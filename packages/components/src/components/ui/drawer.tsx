@@ -220,14 +220,20 @@ function useDrawerElementRef(ref: React.Ref<HTMLElement> | undefined): React.Ref
  *   it (or cancel it and reveal the control another way). Focus produced by pressing the control never moves it.
  * - Supply a snap point tall enough to show every focusable control (for example `1`), or keep focusable controls
  *   within the smallest snap height; focus cannot be revealed beyond the largest snap point.
+ * - `modal` defaults to `true`. Modal and `"trap-focus"` drawers keep focus inside the popup, so always place a
+ *   reachable close control, such as {@link DrawerClose}, inside {@link DrawerContent}: touch screen-reader users cannot
+ *   press Escape, and the swipe gesture is not available to them.
  *
  * @example
  * ```tsx
  * <Drawer
  *   showSwipeHandle
  *   snapPoints={[0.35, 1]}>
- *   <DrawerTrigger>Open</DrawerTrigger>
- *   <DrawerContent><DrawerTitle>Details</DrawerTitle></DrawerContent>
+ *   <DrawerTrigger>Open details</DrawerTrigger>
+ *   <DrawerContent>
+ *     <DrawerTitle>Details</DrawerTitle>
+ *     <DrawerClose>Close</DrawerClose>
+ *   </DrawerContent>
  * </Drawer>
  * ```
  *
@@ -313,10 +319,25 @@ const DrawerTrigger = ({ref, className, ...props}: Readonly<DrawerTrigger.Props>
  * - Delegates structure and state to the underlying Base UI primitive
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Preserves the underlying primitive API for advanced composition
+ * - {@link DrawerContent} already renders its own portal; configure it through `portalProps`. Compose DrawerPortal
+ *   directly only for manual primitive compositions, whose children are Base UI's Viewport and Popup parts.
  *
  * @example
  * ```tsx
- * <DrawerPortal>Content</DrawerPortal>
+ * import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
+ *
+ * <Drawer>
+ *   <DrawerTrigger>Open</DrawerTrigger>
+ *   <DrawerPortal>
+ *     <DrawerOverlay />
+ *     <BaseDrawer.Viewport>
+ *       <BaseDrawer.Popup>
+ *         <DrawerTitle>Custom composition</DrawerTitle>
+ *         <DrawerClose>Close</DrawerClose>
+ *       </BaseDrawer.Popup>
+ *     </BaseDrawer.Viewport>
+ *   </DrawerPortal>
+ * </Drawer>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
@@ -329,10 +350,17 @@ const DrawerPortal: typeof BaseDrawer.Portal & {displayName?: string} = BaseDraw
  * - Delegates structure and state to the underlying Base UI primitive
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Preserves the underlying primitive API for advanced composition
+ * - Renders a native `<button>` by default; use `render` to adopt another presentation, such as the package Button
+ * - Place at least one inside every modal or `"trap-focus"` {@link DrawerContent}: it is the dismissal path for touch
+ *   screen-reader users, who cannot press Escape or perform the swipe gesture. An icon-only close needs an
+ *   accessible name, such as `aria-label`.
  *
  * @example
  * ```tsx
- * <DrawerClose>Content</DrawerClose>
+ * <DrawerContent>
+ *   <DrawerTitle>Filters</DrawerTitle>
+ *   <DrawerClose render={<Button variant='outline' />}>Close</DrawerClose>
+ * </DrawerContent>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
@@ -354,10 +382,24 @@ function DrawerClose({className, ...props}: Readonly<DrawerClose.Props>): React.
  * - Built on {@link https://base-ui.com/react/components/drawer | Base UI Drawer}
  * - Supports the `render` prop for element composition
  * - Ref targets the actual rendered backdrop, including non-div render targets
+ * - {@link DrawerContent} already renders this backdrop for `modal={true}` drawers. Compose DrawerOverlay only inside a
+ *   manual {@link DrawerPortal} composition.
+ * - The backdrop is presentational (`role="presentation"`) and sits outside the popup, so it takes no content or
+ *   controls. Base UI omits it for nested drawers unless `forceRender` is set.
  *
  * @example
  * ```tsx
- * <DrawerOverlay>Content</DrawerOverlay>
+ * import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
+ *
+ * <DrawerPortal>
+ *   <DrawerOverlay />
+ *   <BaseDrawer.Viewport>
+ *     <BaseDrawer.Popup>
+ *       <DrawerTitle>Custom composition</DrawerTitle>
+ *       <DrawerClose>Close</DrawerClose>
+ *     </BaseDrawer.Popup>
+ *   </BaseDrawer.Viewport>
+ * </DrawerPortal>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
@@ -378,7 +420,29 @@ function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement
 
 /**
  * A decorative drag surface, not an interactive control or a gesture engine.
- * Place it outside Drawer.Content for mouse/pen dragging; Viewport arbitrates the gesture.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Hidden from assistive technology (`aria-hidden`): it has no role, name or tab stop, so give it no meaningful
+ *   content or accessible name
+ * - Place it outside Base UI's `Drawer.Content` region, which keeps native controls out of mouse and pen dragging, for
+ *   example before `props.children` in a function `render` of {@link DrawerContent}; Base UI's Viewport arbitrates
+ *   the gesture. `Drawer`'s `showSwipeHandle` renders one in that position automatically.
+ * - Dragging is never the only way to act: modal drawers still need a {@link DrawerClose} inside the popup
+ *
+ * @example
+ * ```tsx
+ * <DrawerContent
+ *   render={(props) => (
+ *     <section {...props}>
+ *       <DrawerSwipeHandle />
+ *       {props.children}
+ *     </section>
+ *   )}>
+ *   <DrawerTitle>Custom handle</DrawerTitle>
+ *   <DrawerClose>Close</DrawerClose>
+ * </DrawerContent>
+ * ```
  */
 const DrawerSwipeHandle = ({ref, className, render, ...props}: Readonly<DrawerSwipeHandle.Props>): React.ReactElement =>
   useRender({
@@ -447,10 +511,21 @@ function DecoratedDrawerElement({
  * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed drawer mounted with `hidden`,
  *   preserving form state, and `container` chooses the element or shadow root that receives the portal
  * - Reports focus that lands beyond a partial snap point to `Drawer`, which requests its largest snap point
+ * - Name the popup with a {@link DrawerTitle}; Base UI wires it, and any {@link DrawerDescription}, to the dialog
+ * - Modal and `"trap-focus"` drawers keep focus inside the popup, so include a reachable {@link DrawerClose}: touch
+ *   screen-reader users cannot press Escape or perform the swipe gesture
  *
  * @example
  * ```tsx
- * <DrawerContent portalProps={{keepMounted: true}}>Content</DrawerContent>
+ * <Drawer>
+ *   <DrawerTrigger>Edit profile</DrawerTrigger>
+ *   <DrawerContent portalProps={{keepMounted: true}}>
+ *     <DrawerTitle>Edit profile</DrawerTitle>
+ *     <DrawerDescription>Update your display name.</DrawerDescription>
+ *     <input aria-label='Display name' />
+ *     <DrawerClose>Close</DrawerClose>
+ *   </DrawerContent>
+ * </Drawer>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}

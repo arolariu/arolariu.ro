@@ -1166,3 +1166,22 @@ describe("NavigationMenu final review M3: current-page link indicator", () => {
     }
   });
 });
+
+describe("NavigationMenu final review L25: documented positioner defaults", () => {
+  it("places the automatic popup start-aligned 8px below the active trigger", async () => {
+    measurements = installMeasurements();
+    render(
+      <NavigationMenu
+        defaultValue='products'
+        positionerProps={{collisionAvoidance: {side: "none", align: "none"}}}>
+        <MenuItems />
+      </NavigationMenu>,
+    );
+    await screen.findByRole("link", {name: "Analytics"});
+    const positioner = document.querySelector('[data-slot="navigation-menu-positioner"]');
+    expect(positioner).toHaveAttribute("data-side", "bottom");
+    expect(positioner).toHaveAttribute("data-align", "start");
+    // The measured products trigger is 100×32 at (100, 100): 100 + 32 + 8 = 140, start-aligned at 100.
+    await waitFor(() => expect(positioner).toHaveStyle({top: "140px", left: "100px"}));
+  });
+});

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import {fr} from "date-fns/locale";
 import {createRef, StrictMode, useState} from "react";
 import {CalendarDay, type RootProps} from "react-day-picker";
+import {composeStories} from "storybook-react-rsbuild";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -12,6 +13,7 @@ import postcss from "postcss";
 
 import {Calendar, CalendarDayButton, type CalendarDayButtonProps, type DateRange} from "./calendar";
 import styles from "./calendar.module.css";
+import * as stories from "./calendar.stories";
 
 function emittedCalendarStyles(): string {
   const output = transform({
@@ -469,6 +471,44 @@ describe("Calendar", () => {
     expect(within(eventDay).getByText("15")).toBeInTheDocument();
     await user.click(eventDay);
     expect(dayButton("2024-01-15")).toHaveAttribute("data-selected-single", "true");
+  });
+
+  it("review correction: names custom day content through DayPicker's labelDayButton, not through button children", () => {
+    render(
+      <Calendar
+        mode='single'
+        defaultMonth={new Date(2024, 0, 1)}
+        modifiers={{event: new Date(2024, 0, 15)}}
+        components={{DayButton: EventDayButton}}
+        labels={{
+          labelDayButton: (date, modifiers, _options, dateLib) =>
+            `${dateLib?.format(date, "PPPP") ?? date.toDateString()}${modifiers["event"] ? ", 2 events" : ""}`,
+        }}
+      />,
+    );
+    const eventDay = dayButton("2024-01-15");
+
+    // The visible "Event" child is presentational inside the button; only the DayPicker label names the day.
+    expect(within(eventDay).getByText("Event")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Monday, January 15th, 2024, 2 events"})).toBe(eventDay);
+    expect(dayButton("2024-01-16")).toHaveAccessibleName("Tuesday, January 16th, 2024");
+  });
+
+  it("review correction: the events story names event days through DayPicker labels and hides its decorative dots", async () => {
+    const user = userEvent.setup();
+    const {WithEvents} = composeStories(stories);
+    render(<WithEvents />);
+
+    for (const day of ["Friday, January 5th, 2024", "Friday, January 12th, 2024", "Saturday, January 20th, 2024"]) {
+      const button = screen.getByRole("button", {name: `${day}, event scheduled`});
+      const dot = button.querySelector(".ac-story-calendar-eventDot");
+      expect(dot).toHaveAttribute("aria-hidden", "true");
+      expect(dot).not.toHaveAttribute("aria-label");
+    }
+    expect(screen.getByRole("button", {name: "Saturday, January 6th, 2024"})).toBe(dayButton("2024-01-06"));
+
+    await user.click(screen.getByRole("button", {name: "Friday, January 12th, 2024, event scheduled"}));
+    expect(screen.getByRole("button", {name: "Friday, January 12th, 2024, event scheduled, selected"})).toBe(dayButton("2024-01-12"));
   });
 
   it("accepts the exported ref-forwarding CalendarDayButton as a direct component override", () => {

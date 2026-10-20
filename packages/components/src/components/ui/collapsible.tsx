@@ -39,7 +39,10 @@ export interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRe
  *
  * @example
  * ```tsx
- * <Collapsible>Content</Collapsible>
+ * <Collapsible>
+ *   <CollapsibleTrigger>Show shipping details</CollapsibleTrigger>
+ *   <CollapsibleContent>Orders ship within two business days.</CollapsibleContent>
+ * </Collapsible>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}

@@ -3,6 +3,7 @@ import {DirectionProvider} from "@base-ui/react/direction-provider";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
 import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
@@ -22,6 +23,9 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./context-menu";
+import * as stories from "./context-menu.stories";
+
+const {KeyboardPath} = composeStories(stories);
 
 function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
   return <button {...props} />;
@@ -941,7 +945,8 @@ describe("ContextMenu final review M7: logical popup side", () => {
     // Base UI reports inline-end only for a logical request; in RTL that is the physical left side.
     const popup = screen.getByRole("menu", {name: "Context actions"});
     expect(popup).toHaveAttribute("data-side", "inline-end");
-    expect(popup).toHaveAttribute("dir", direction);
+    // Only an RTL provider writes `dir`; an LTR provider is indistinguishable from none, so the popup inherits instead.
+    expect(popup.getAttribute("dir")).toBe(direction === "rtl" ? "rtl" : null);
   });
 
   it("keeps an explicit caller side", () => {
@@ -957,5 +962,125 @@ describe("ContextMenu final review M7: logical popup side", () => {
       </ContextMenu>,
     );
     expect(screen.getByRole("menu", {name: "Context actions"})).toHaveAttribute("data-side", "bottom");
+  });
+});
+
+describe("ContextMenu final review L29: keyboard path", () => {
+  it("reaches every context action from the keyboard through a focusable trigger and a duplicated menu", async () => {
+    const user = userEvent.setup();
+    render(<KeyboardPath />);
+    const status = screen.getByRole("status");
+    await user.tab();
+    const trigger = screen.getByRole("button", {name: "Quarterly report.pdf"});
+    expect(trigger).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(status).toHaveTextContent("Open: Quarterly report.pdf");
+
+    // The context-menu key and Shift+F10 make the browser dispatch `contextmenu` to the focused trigger.
+    fireEvent.contextMenu(trigger);
+    const contextMenu = await screen.findByRole("menu", {name: "Quarterly report actions"});
+    const contextActions = within(contextMenu)
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(contextActions).toEqual(["Rename", "Duplicate", "Move to trash"]);
+    await user.keyboard("{ArrowDown}");
+    await waitFor(() => expect(within(contextMenu).getByRole("menuitem", {name: "Rename"})).toHaveFocus());
+    await user.keyboard("{Enter}");
+    expect(status).toHaveTextContent("Rename: Quarterly report.pdf");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+
+    const more = screen.getByRole("button", {name: "More actions for Quarterly report.pdf"});
+    act(() => more.focus());
+    await user.keyboard("{Enter}");
+    const duplicated = await screen.findByRole("menu", {name: "Quarterly report actions"});
+    expect(
+      within(duplicated)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(contextActions);
+    await waitFor(() => expect(within(duplicated).getByRole("menuitem", {name: "Rename"})).toHaveFocus());
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(status).toHaveTextContent("Duplicate: Quarterly report.pdf");
+  });
+});
+
+describe("ContextMenu final review L25: documented placement defaults", () => {
+  it("opens content at the inline end of its anchor with a 4px align offset and no side offset", async () => {
+    const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Canvas</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Context placement'
+          anchor={anchor}
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <ContextMenuItem>Paste</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Context placement"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 104px)"}));
+  });
+});
+
+describe("ContextMenu final-review fix: popup dir only from an RTL provider", () => {
+  function DirectionalContextMenu({dir}: Readonly<{dir?: string}>): React.ReactElement {
+    return (
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Canvas</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Canvas actions'
+          dir={dir}>
+          <ContextMenuSub defaultOpen>
+            <ContextMenuSubTrigger>Export as</ContextMenuSubTrigger>
+            <ContextMenuSubContent
+              aria-label='Export formats'
+              dir={dir}>
+              <ContextMenuItem>PNG</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
+
+  async function popups(): Promise<readonly HTMLElement[]> {
+    return [await screen.findByRole("menu", {name: "Canvas actions"}), await screen.findByRole("menu", {name: "Export formats"})];
+  }
+
+  it("lets root and submenu popups inherit a document dir=rtl when no provider is present", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<DirectionalContextMenu />);
+      for (const popup of await popups()) {
+        expect(popup).not.toHaveAttribute("dir");
+        expect(popup.closest("[dir]")).toBe(html);
+      }
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("writes dir=rtl on root and submenu popups under an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalContextMenu />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "rtl");
+  });
+
+  it("lets a caller's dir win over an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalContextMenu dir='ltr' />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "ltr");
   });
 });

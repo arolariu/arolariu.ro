@@ -2,11 +2,9 @@
 
 > **Real-world examples to get you building faster.** Copy, paste, and customize these patterns for your projects.
 
-> **Upcoming v3 preparation:** use these APIs only after adopting an actually published artifact. The repository website keeps its official
-> 2.4 tarball and current runtime calls. See [MIGRATION.md](./MIGRATION.md) for precise 2.4 → 3 changes and the preserved historical guide.
-> The package is React 19-only. Mount the canonical `Toaster` once before using its manager. Deprecated composition and facade APIs are
-> removed; examples use `render` and typed ref props. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for component and consumer
-> responsibilities.
+> **Version 3:** see [MIGRATION.md](./MIGRATION.md) for precise 2.4 → 3 changes and the preserved historical guide. The package is React
+> 19-only. Mount the canonical `Toaster` once before using its manager. Deprecated composition and facade APIs are removed; examples use
+> `render` and typed ref props. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for component and consumer responsibilities.
 
 ## 🚀 Getting Started
 
@@ -34,8 +32,8 @@ import {Button, Card} from "@arolariu/components";
 import styles from "./my-component.module.css";
 ```
 
-No utility CSS framework is required. The Base UI minimum remains `^1.9`; React and ReactDOM require `^19`. Publication and website adoption
-remain separately authorized actions. Browser and assistive-technology behavior is not inferred from emulated tests.
+No utility CSS framework is required. In v3 the Base UI peer minimum becomes `^1.9` (2.4 accepted `^1`), and React and ReactDOM require
+`^19`. Browser and assistive-technology behavior is not inferred from emulated tests.
 
 ### Useful Subpath Imports
 
@@ -69,8 +67,9 @@ import {Button, buttonVariants} from "@arolariu/components/button";
 ```
 
 A link rendered through `Button` would be announced as a button, missing from the page's list of links and activated by Space. With
-`variant: "link"`, a real anchor stays underlined at rest, while `<Button variant="link">` underlines only on hover. `buttonVariants` is
-exported from a client module, so call it from a Client Component.
+`variant: "link"`, a real anchor stays underlined at rest, while `<Button variant="link">` underlines only on hover. Imported from
+`@arolariu/components`, `buttonVariants` is also callable in a Server Component; this sample imports it from the
+`@arolariu/components/button` subpath, a client module, so it keeps `"use client"`.
 
 ```css
 /* my-component.module.css */
@@ -178,10 +177,11 @@ export function ActionsPalette() {
 }
 ```
 
-Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. The automatic-root adapter is
-removed; always include the explicit Command root. The placeholder names the search input here; CommandInput's localizable `fallbackLabel`
-(default `"Search commands"`) applies only when no label, `aria-label`, `aria-labelledby`, `title` or placeholder names it. For explicit
-before/after examples, nullable Select/Combobox, async AlertDialog completion and exact Skeleton caps, see [MIGRATION.md](./MIGRATION.md).
+Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. CommandDialog no longer creates
+the Command root (v2.4 did); always include the explicit Command root. The placeholder names the search input here; CommandInput's
+localizable `fallbackLabel` (default `"Search commands"`) applies only when no label, `aria-label`, `aria-labelledby`, `title` or
+placeholder names it. For explicit before/after examples, nullable Select/Combobox, async AlertDialog completion and exact Skeleton caps,
+see [MIGRATION.md](./MIGRATION.md).
 
 ### Simple Card Layout
 
@@ -336,6 +336,9 @@ export function Dashboard() {
   );
 }
 ```
+
+SidebarProvider writes a `sidebar_state` cookie on desktop toggles (Ctrl+B / Cmd+B included) but never reads it. To restore the state, read
+the cookie on the server and pass `defaultOpen`; pass `persistState={false}` if you persist it yourself.
 
 ---
 
@@ -754,8 +757,8 @@ export function UsersTable() {
   return (
     <div className={styles.wrapper}>
       <div className={styles.tableShell}>
-        <Table>
-          <TableCaption>A list of your team members.</TableCaption>
+        <Table containerProps={{role: "region", "aria-labelledby": "team-members-caption"}}>
+          <TableCaption id='team-members-caption'>A list of your team members.</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -1213,6 +1216,10 @@ import {Card} from "@arolariu/components/card";
 import {Button, Card} from "@arolariu/components";
 ```
 
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path; bundlers
+that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js `optimizePackageImports`, still load only the
+modules you use.
+
 ### Accessibility Best Practices
 
 ```tsx
@@ -1549,6 +1556,21 @@ const data: User[] = [
   },
 ];
 const columnHelper = createColumnHelper<User>();
+// Report success only after the clipboard write resolves; it can be rejected (permissions, insecure context).
+async function copyUserId(id: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(id);
+    toast.add({
+      title: "User ID copied to clipboard",
+      type: "success",
+    });
+  } catch {
+    toast.add({
+      title: "Could not copy the user ID",
+      type: "error",
+    });
+  }
+}
 export function DataTableWithSorting() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -1610,16 +1632,7 @@ export function DataTableWithSorting() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(row.original.id);
-                toast.add({
-                  title: "User ID copied to clipboard",
-                  type: "success",
-                });
-              }}>
-              Copy ID
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void copyUserId(row.original.id)}>Copy ID</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
@@ -1674,7 +1687,7 @@ export function DataTableWithSorting() {
       </div>
 
       <div className={styles.tableWrapper}>
-        <Table>
+        <Table containerProps={{role: "region", "aria-label": "Users"}}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -2471,7 +2484,8 @@ export function AppSidebar() {
   transition: transform 150ms;
 }
 
-:global([data-state="open"]) .chevron {
+/* Base UI marks the Collapsible trigger with data-panel-open while its panel is open. */
+:global([data-panel-open]) .chevron {
   transform: rotate(180deg);
 }
 ```
@@ -2693,7 +2707,7 @@ export function DatePicker() {
               mode='single'
               selected={date}
               onSelect={setDate}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -2754,7 +2768,7 @@ export function DateRangePicker() {
                 })
               }
               numberOfMonths={2}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -2852,28 +2866,24 @@ export function FileUploadArea() {
     setUploads((prev) => [...prev, ...newUploads]);
     // Simulate upload progress
     newUploads.forEach((upload) => {
-      simulateUpload(upload.id);
+      simulateUpload(upload);
     });
   };
-  const simulateUpload = (id: string) => {
+  const simulateUpload = (upload: FileUpload) => {
+    // Keep the state updater pure: React may call it twice in Strict Mode, so the timer and toast side effects run outside it.
+    let progress = 0;
     const interval = setInterval(() => {
-      setUploads((prev) =>
-        prev.map((upload) => {
-          if (upload.id === id) {
-            const newProgress = Math.min(upload.progress + 10, 100);
-            const newStatus = newProgress === 100 ? "complete" : upload.status;
-            if (newStatus === "complete") {
-              clearInterval(interval);
-              toast.add({
-                title: `${upload.file.name} uploaded successfully`,
-                type: "success",
-              });
-            }
-            return {...upload, progress: newProgress, status: newStatus};
-          }
-          return upload;
-        }),
-      );
+      const nextProgress = Math.min(progress + 10, 100);
+      const nextStatus: FileUpload["status"] = nextProgress === 100 ? "complete" : "uploading";
+      progress = nextProgress;
+      setUploads((prev) => prev.map((item) => (item.id === upload.id ? {...item, progress: nextProgress, status: nextStatus} : item)));
+      if (nextStatus === "complete") {
+        clearInterval(interval);
+        toast.add({
+          title: `${upload.file.name} uploaded successfully`,
+          type: "success",
+        });
+      }
     }, 300);
   };
   const removeUpload = (id: string) => {

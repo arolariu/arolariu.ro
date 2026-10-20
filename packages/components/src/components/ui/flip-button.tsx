@@ -5,7 +5,7 @@ import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import {useMergedRefs} from "@/hooks/useMergedRefs";
-import {useVisualEffectPolicy} from "./_visual-effects";
+import {useReducedMotionPreference} from "./_visual-effects";
 import styles from "./flip-button.module.css";
 
 const defaultTransition: Transition = {type: "spring", stiffness: 280, damping: 20};
@@ -15,9 +15,9 @@ export type FlipDirection = "top" | "bottom" | "left" | "right";
 
 /** Props accepted by {@link FlipButton}. */
 export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
-  /** Label rendered on the default face of the button. @default undefined */
+  /** Required label on the resting face; part of the generated accessible name. */
   readonly frontText: string;
-  /** Label revealed after the flip animation completes. @default undefined */
+  /** Required label revealed on hover or keyboard focus; part of the generated accessible name. */
   readonly backText: string;
   /** Motion transition applied to both button faces. @default {type: "spring", stiffness: 280, damping: 20} */
   readonly transition?: Transition;
@@ -30,10 +30,13 @@ export interface FlipButtonProps extends Readonly<HTMLMotionProps<"button">> {
 }
 
 /**
- * Renders a two-sided button that flips between front and back labels on hover.
+ * Renders a two-sided button that flips between front and back labels on hover or keyboard focus.
  *
  * @remarks
  * - Animated component using the `motion` library
+ * - The flip is user-initiated motion (hover or focus): under `prefers-reduced-motion: reduce` (tracked live after hydration)
+ *   the faces swap instantly and the press scaling is off. The button observes only that preference: no viewport or document
+ *   visibility observer per instance
  * - Renders a `<button>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
@@ -58,9 +61,10 @@ function FlipButton({
   from = "top",
   ...props
 }: Readonly<FlipButtonProps>): React.JSX.Element {
-  const localRef = React.useRef<HTMLButtonElement>(null);
-  const setRefs = useMergedRefs(localRef, ref);
-  const {reducedMotion} = useVisualEffectPolicy(localRef, {loop: true});
+  // Motion's DOM ref callback is stable and ignores a replaced `ref` prop; the merged ref re-synchronizes replacements and
+  // React 19 callback-ref cleanups.
+  const setRefs = useMergedRefs(ref);
+  const reducedMotion = useReducedMotionPreference();
   // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
   const {key: _ignoredKey, ...restProps} = props;
   const isVertical = from === "top" || from === "bottom";

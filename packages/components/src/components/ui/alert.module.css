@@ -1,9 +1,8 @@
 .alert {
   box-sizing: border-box;
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--ac-space-3);
+  /* Normal flow: free-form children, paragraphs and inline text runs stay in one column. */
+  display: block;
   width: 100%;
   border-radius: var(--ac-radius-lg);
   border: 1px solid var(--ac-border);
@@ -23,6 +22,21 @@
   &:has(> svg) {
     padding-inline-start: calc(var(--ac-space-4) + 1rem + var(--ac-space-3));
   }
+}
+
+/*
+ * Only a direct AlertAction creates the two-column grid. Every other in-flow element child stays in the message column;
+ * the absolutely positioned leading icon is excluded so its containing block remains the alert's padding box.
+ * `:where()` keeps both rules at the single-class specificity of `.alert` for caller overrides.
+ */
+.alert:where(:has(> .action)) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--ac-space-3);
+}
+
+.alert:where(:has(> .action)) > :where(:not(.action, svg)) {
+  grid-column: 1;
 }
 
 .default {
@@ -74,8 +88,13 @@
   justify-self: end;
 }
 
-.title a,
-.description a {
+/*
+ * Links inside the message share its verified text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only
+ * link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for
+ * example `buttonVariants()`) still keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.title, .description) a:is(a) {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.2em;

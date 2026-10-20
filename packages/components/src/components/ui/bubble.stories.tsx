@@ -51,7 +51,11 @@ export const Default: Story = {
   render: (args): React.JSX.Element => (
     <Bubble {...args}>
       <BubbleContent>Text provided by the caller.</BubbleContent>
-      <BubbleReactions aria-label='Message reactions'>👍 2</BubbleReactions>
+      <BubbleReactions
+        role='img'
+        aria-label='2 thumbs-up reactions'>
+        👍 2
+      </BubbleReactions>
     </Bubble>
   ),
 };
@@ -149,7 +153,10 @@ export const EmptyErrorLongContentAndRTL: Story = {
         <BubbleContent>{"LongUnbrokenCallerContent".repeat(15)}</BubbleContent>
       </Bubble>
       <Bubble variant='outline'>
-        <BubbleContent aria-label='Empty bubble content' />
+        <BubbleContent
+          role='img'
+          aria-label='Empty message'
+        />
       </Bubble>
     </BubbleGroup>
   ),
