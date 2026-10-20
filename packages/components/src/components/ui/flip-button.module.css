@@ -42,3 +42,20 @@
 .measure {
   visibility: hidden;
 }
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (forced-colors: active) {
+  .front,
+  .back {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonText;
+  }
+  .button:focus-visible {
+    outline-color: Highlight;
+  }
+}

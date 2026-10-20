@@ -2,6 +2,26 @@
 
 import * as React from "react";
 
+function unsubscribeFromHydration(): void {
+  // React rechecks the constant client snapshot after hydration; no listener is owned.
+}
+const subscribeToHydration = (): (() => void) => unsubscribeFromHydration;
+
+function readStorage<T>(key: string, initialValue: T): T {
+  if (globalThis.window === undefined) return initialValue;
+  try {
+    const item = globalThis.window.localStorage.getItem(key);
+    return item === null ? initialValue : (JSON.parse(item) as T);
+  } catch {
+    return initialValue;
+  }
+}
+
+interface StorageState<T> {
+  value: T;
+  write: Readonly<{key: string; value: T}> | null;
+}
+
 /**
  * Persists state to localStorage with SSR safety and JSON serialization.
  *
@@ -10,6 +30,8 @@ import * as React from "react";
  * across page refreshes and browser sessions. It is SSR-safe and returns the
  * initial value on the server until hydration completes. The hook also syncs
  * state across tabs/windows via the `storage` event.
+ * The hydration snapshot matches the server until the first client commit;
+ * client-only mounts can show their stored snapshot immediately.
  *
  * Error handling:
  * - On initial load, a JSON parse failure falls back to `initialValue`.
@@ -18,6 +40,8 @@ import * as React from "react";
  *   bad cross-tab message).
  * - `localStorage` write failures (quota exceeded, private-mode restrictions)
  *   are swallowed silently — the in-memory state update still succeeds.
+ * - Only committed local changes are persisted; batched setters write their
+ *   final value and cross-tab updates are not written back.
  *
  * @typeParam T - The type of the value being stored.
  * @param key - The localStorage key to store the value under.
@@ -51,39 +75,34 @@ import * as React from "react";
  * ```
  */
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
-  const [storedValue, setStoredValue] = React.useState<T>(() => {
-    // SSR safety: return initial value on server
-    if (globalThis.window === undefined) {
-      return initialValue;
-    }
-
-    try {
-      const item = globalThis.window.localStorage.getItem(key);
-
-      return item === null ? initialValue : (JSON.parse(item) as T);
-    } catch {
-      return initialValue;
-    }
-  });
+  const hydrated = React.useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
+  const [state, setState] = React.useState<StorageState<T>>(() => ({value: readStorage(key, initialValue), write: null}));
+  const persistedWriteRef = React.useRef<StorageState<T>["write"]>(null);
 
   const setValue = React.useCallback(
     (value: T | ((prev: T) => T)) => {
-      try {
-        setStoredValue((currentValue) => {
-          const valueToStore = typeof value === "function" ? (value as (prev: T) => T)(currentValue) : value;
-
-          if (globalThis.window !== undefined) {
-            globalThis.window.localStorage.setItem(key, JSON.stringify(valueToStore));
-          }
-
-          return valueToStore;
-        });
-      } catch {
-        // localStorage writes can throw (quota exceeded, private mode, etc.). Fail silently.
-      }
+      setState((current) => {
+        const nextValue = typeof value === "function" ? (value as (prev: T) => T)(current.value) : value;
+        return {value: nextValue, write: {key, value: nextValue}};
+      });
     },
     [key],
   );
+
+  const {write} = state;
+  React.useEffect(() => {
+    if (write === null || write === persistedWriteRef.current) return;
+    persistedWriteRef.current = write;
+    try {
+      globalThis.window?.localStorage.setItem(write.key, JSON.stringify(write.value));
+    } catch {
+      // Persistence failure must not roll back the committed in-memory value.
+    }
+  }, [write]);
 
   React.useEffect(() => {
     // SSR safety: window is not available on server
@@ -99,7 +118,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       try {
         const newValue = event.newValue === null ? initialValue : (JSON.parse(event.newValue) as T);
 
-        setStoredValue(newValue);
+        setState((current) => ({...current, value: newValue}));
       } catch {
         // Parse failures on cross-tab storage events fall through silently.
       }
@@ -112,5 +131,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     };
   }, [key, initialValue]);
 
-  return [storedValue, setValue];
+  return [hydrated ? state.value : initialValue, setValue];
 }

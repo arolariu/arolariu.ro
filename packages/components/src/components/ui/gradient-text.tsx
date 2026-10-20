@@ -4,23 +4,29 @@ import {motion, type Transition} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./gradient-text.module.css";
+import {useVisualEffectPolicy, type VisualEffectOptions} from "./_visual-effects";
 
 /** Props accepted by {@link GradientText}. */
-export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
+export interface GradientTextProps extends React.ComponentPropsWithRef<"span">, VisualEffectOptions {
+  /** Caller styles are merged at the root; this custom property overrides the gradient prop. */
+  readonly style?: React.CSSProperties & {readonly "--ac-gradient-text-background"?: string};
   /** Text content rendered with the animated gradient fill. @default undefined */
-  text: string;
-  /** CSS gradient string assigned to the animated text fill. @default "linear-gradient(90deg, #3b82f6 0%, #a855f7 20%, #ec4899 50%, #a855f7 80%, #3b82f6 100%)" */
-  gradient?: string;
+  readonly text: string;
+  /** Custom gradient; verify every stop against the actual backdrop. Defaults to theme-aware darker/lighter blue/purple/pink. */
+  readonly gradient?: string;
   /** Adds a blurred neon duplicate behind the primary text layer. @default false */
-  neon?: boolean;
+  readonly neon?: boolean;
   /** Motion timing used for the animated gradient background. @default {duration: 50, repeat: Infinity, ease: "linear"} */
-  transition?: Transition;
+  readonly transition?: Transition;
 }
 
 type GradientStyleProperties = React.CSSProperties & {
-  "--ac-gradient-text-background": string;
+  "--ac-gradient-text-background"?: string;
 };
+
+const defaultTransition: Transition = {duration: 50, repeat: Infinity, ease: "linear"};
 
 /**
  * Renders animated gradient-filled text with an optional neon glow layer.
@@ -38,51 +44,56 @@ type GradientStyleProperties = React.CSSProperties & {
  *
  * @see {@link GradientTextProps} for available props
  */
-const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
-  (
-    {
-      text,
-      className,
-      gradient = "linear-gradient(90deg, #3b82f6 0%, #a855f7 20%, #ec4899 50%, #a855f7 80%, #3b82f6 100%)",
-      neon = false,
-      transition = {duration: 50, repeat: Infinity, ease: "linear"},
-      ...props
-    },
-    ref,
-  ) => {
-    const baseStyle: GradientStyleProperties = {
-      "--ac-gradient-text-background": gradient,
-    };
+function GradientText({
+  ref,
+  loop,
+  motionPaused,
+  text,
+  className,
+  children,
+  style,
+  gradient,
+  neon = false,
+  transition = defaultTransition,
+  ...props
+}: Readonly<GradientTextProps>): React.JSX.Element {
+  const localRef = React.useRef<HTMLSpanElement>(null);
+  const {paused} = useVisualEffectPolicy(localRef, {loop, motionPaused});
+  const setRefs = useMergedRefs(localRef, ref);
+  const baseStyle: GradientStyleProperties = {
+    ...style,
+    "--ac-gradient-text-background": style?.["--ac-gradient-text-background"] ?? gradient,
+  };
 
-    return (
-      <span
-        ref={ref}
-        className={cn(styles.root, className)}
-        {...props}>
+  return (
+    <span
+      ref={setRefs}
+      className={cn(styles.root, className)}
+      style={baseStyle}
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
+      <motion.span
+        className={styles.text}
+        initial={paused ? false : {backgroundPosition: "0% 0%"}}
+        animate={{backgroundPosition: paused ? "0% 0%" : "500% 100%"}}
+        transition={paused ? {duration: 0} : transition}>
+        {text}
+      </motion.span>
+
+      {neon ? (
         <motion.span
-          className={styles.text}
-          style={baseStyle}
-          initial={{backgroundPosition: "0% 0%"}}
-          animate={{backgroundPosition: "500% 100%"}}
-          transition={transition}>
+          aria-hidden='true'
+          className={styles.neon}
+          initial={paused ? false : {backgroundPosition: "0% 0%"}}
+          animate={{backgroundPosition: paused ? "0% 0%" : "500% 100%"}}
+          transition={paused ? {duration: 0} : transition}>
           {text}
         </motion.span>
-
-        {neon ? (
-          <motion.span
-            aria-hidden='true'
-            className={styles.neon}
-            style={baseStyle}
-            initial={{backgroundPosition: "0% 0%"}}
-            animate={{backgroundPosition: "500% 100%"}}
-            transition={transition}>
-            {text}
-          </motion.span>
-        ) : null}
-      </span>
-    );
-  },
-);
+      ) : null}
+      {children}
+    </span>
+  );
+}
 
 GradientText.displayName = "GradientText";
 

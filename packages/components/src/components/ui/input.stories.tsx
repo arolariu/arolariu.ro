@@ -1,6 +1,10 @@
 import {Search} from "lucide-react";
+import {Field as BaseField} from "@base-ui/react/field";
+import {type JSX, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Field, FieldContent, FieldError, FieldLabel} from "./field";
 import {Input} from "./input";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "./input-group";
 
 const meta = {
   title: "Components/Forms/Input",
@@ -30,6 +34,7 @@ export const Default: Story = {
   args: {
     type: "text",
     placeholder: "Enter text...",
+    "aria-label": "Text",
   },
 };
 
@@ -37,6 +42,7 @@ export const Email: Story = {
   args: {
     type: "email",
     placeholder: "name@example.com",
+    "aria-label": "Email",
   },
 };
 
@@ -44,6 +50,7 @@ export const Password: Story = {
   args: {
     type: "password",
     placeholder: "Enter password...",
+    "aria-label": "Password",
   },
 };
 
@@ -51,6 +58,7 @@ export const WithValue: Story = {
   args: {
     type: "text",
     defaultValue: "Pre-filled value",
+    "aria-label": "Editable value",
   },
 };
 
@@ -59,6 +67,7 @@ export const Disabled: Story = {
     type: "text",
     placeholder: "Disabled input",
     disabled: true,
+    "aria-label": "Disabled input",
   },
 };
 
@@ -66,6 +75,7 @@ export const Number: Story = {
   args: {
     type: "number",
     placeholder: "Enter a number...",
+    "aria-label": "Number",
   },
 };
 
@@ -76,41 +86,55 @@ export const WithError: Story = {
     defaultValue: "invalid-email",
   },
   render: (args) => (
-    <div style={{width: "300px"}}>
-      <Input
-        {...args}
-        style={{borderColor: "red", borderWidth: "2px"}}
-        aria-invalid='true'
-        aria-describedby='error-message'
-      />
-      <p
-        id='error-message'
-        style={{color: "red", fontSize: "0.875rem", marginTop: "0.25rem"}}>
-        Please enter a valid email address
-      </p>
-    </div>
+    <Field data-invalid='true'>
+      <FieldLabel htmlFor='error-email'>Email</FieldLabel>
+      <FieldContent>
+        <Input
+          {...args}
+          id='error-email'
+          aria-invalid='true'
+          aria-describedby='error-message'
+        />
+        <FieldError id='error-message'>Please enter a valid email address</FieldError>
+      </FieldContent>
+    </Field>
   ),
 };
 
 export const WithIcon: Story = {
   render: () => (
-    <div style={{position: "relative", width: "300px"}}>
-      <Search
-        style={{
-          position: "absolute",
-          left: "12px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "16px",
-          height: "16px",
-          opacity: 0.5,
-        }}
-      />
-      <Input
-        type='text'
+    <InputGroup>
+      <InputGroupAddon>
+        <Search aria-hidden='true' />
+      </InputGroupAddon>
+      <InputGroupInput
+        type='search'
+        aria-label='Search'
         placeholder='Search...'
-        style={{paddingLeft: "36px"}}
       />
-    </div>
+    </InputGroup>
   ),
 };
+
+function ControlledDemo(): JSX.Element {
+  const [value, setValue] = useState("");
+  return (
+    <BaseField.Root>
+      <BaseField.Label>Controlled name</BaseField.Label>
+      <Input
+        value={value}
+        onValueChange={setValue}
+        render={(props, state) => (
+          <input
+            {...props}
+            data-filled={state.filled}
+          />
+        )}
+      />
+      <output aria-live='polite'>{value || "Enter a name"}</output>
+    </BaseField.Root>
+  );
+}
+
+/** Primitive-owned render state and controlled value updates without wrapper state. */
+export const ControlledComposition: Story = {render: () => <ControlledDemo />};

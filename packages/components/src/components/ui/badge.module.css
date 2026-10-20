@@ -1,15 +1,35 @@
 .badge {
   display: inline-flex;
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  width: fit-content;
+  flex-shrink: 0;
   align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  overflow-wrap: anywhere;
   border-radius: var(--ac-radius-md);
   padding: 0.125rem var(--ac-space-2);
   font-size: var(--ac-text-xs);
   font-weight: 600;
   line-height: 1.6;
-  white-space: nowrap;
+  white-space: normal;
+  outline: none;
   transition:
     background-color var(--ac-transition-fast),
-    color var(--ac-transition-fast);
+    color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
+
+  &:focus-visible {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: 2px;
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--ac-destructive);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ac-destructive), transparent 80%);
+  }
 
   & svg {
     pointer-events: none;
@@ -26,7 +46,7 @@
 
   @media (hover: hover) {
     &:hover {
-      background-color: color-mix(in oklch, var(--ac-primary), transparent 20%);
+      background-color: color-mix(in oklch, var(--ac-primary) 90%, var(--ac-foreground));
     }
   }
 }
@@ -45,18 +65,66 @@
 
 .destructive {
   background-color: var(--ac-destructive);
-  color: var(--ac-background);
+  color: var(--ac-destructive-foreground);
   border: 1px solid transparent;
 
   @media (hover: hover) {
     &:hover {
-      background-color: color-mix(in oklch, var(--ac-destructive), transparent 20%);
+      background-color: color-mix(in oklch, var(--ac-destructive) 90%, var(--ac-foreground));
     }
   }
+}
+
+:is(a, button).badge {
+  min-inline-size: 24px;
+  min-block-size: 24px;
 }
 
 .outline {
   background-color: transparent;
   color: var(--ac-foreground);
   border: 1px solid var(--ac-border);
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--ac-foreground);
+  border: 1px solid transparent;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--ac-accent);
+      color: var(--ac-accent-foreground);
+    }
+  }
+}
+
+.link {
+  background-color: transparent;
+  color: var(--ac-primary-emphasis);
+  border: 1px solid transparent;
+  text-decoration: none;
+  text-underline-offset: 4px;
+
+  @media (hover: hover) {
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .badge {
+    border-color: CanvasText;
+  }
+
+  .badge:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge {
+    transition: none;
+  }
 }

@@ -81,11 +81,9 @@ export function Counter({initial}: Readonly<{initial: number}>): React.JSX.Eleme
 
 - Prefer the native element and its built-in keyboard/focus behavior before
   adding ARIA. `packages/components/src/components/ui/button.tsx` renders a
-  native `<button type="button">` by default and only switches to
-  `role="button"` plus manual `aria-disabled`/keyboard handling
-  (`createNonNativeInteractionProps`) when composed onto a non-button element
-  via the `render`/`asChild` API — see the components catalog for the full
-  composition pattern.
+  native `<button type="button">` by default. Component-library composition
+  rules live in `.github/instructions/components.instructions.md` and its
+  catalog.
 - Give icon-only controls an accessible name (`aria-label` or visually-hidden
   text), and reflect busy/disabled/error state with `aria-busy`,
   `aria-disabled`, and `role="alert"` respectively rather than relying on

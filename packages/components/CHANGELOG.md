@@ -9,6 +9,221 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### [3.0.0] - Unreleased
+
+**💥 Breaking Changes**
+
+- Require React and ReactDOM 19; package-owned DOM refs are ordinary typed props with callback cleanup.
+- Remove all `asChild` APIs, scalar Accordion/type adapters, Checkbox's legacy indeterminate shorthand, Tooltip delay aliases, obsolete
+  navigation/anchor parts, no-op compatibility props, deprecated color aliases, Flip's misspelling and Cell.
+- Deduplicate merged-ref identities and prevent obsolete attachment disposers from detaching replacement nodes.
+- Preserve automatic NavigationMenu and Drawer anatomy through actual opaque React Flight render transport.
+- Target applicable WCAG 2.2 A/AA with native/primitive keyboard and focus behavior, localized generated controls, corrected default token
+  contrast and bounded/controllable motion. Ship ACCESSIBILITY with explicit consumer responsibilities and native/AT evidence limits.
+- CommandDialog supplies only the modal shell; include exactly one explicit `Command` root (v2.4 created it automatically). Native
+  substring/custom-score matching is retained, not a cmdk implementation.
+- Command keeps and navigates the consumer's rendered order inside CommandList, including memoized-row reorders that re-render no Command
+  part: no reordering unless filtering, score order with rendered-order ties while filtering, and rendered order restored afterwards. Each
+  CommandItem/CommandGroup renders a hidden, empty `data-command-anchor` span as its first DOM node; consumer
+  `:first-child`/`:nth-child`/adjacent-sibling selectors over Command parts must account for it. Alt+arrows move to the next or previous
+  group boundary in that visual order, nested groups included, without reversing or cycling. After a memoized-row move, keyboard order
+  catches up in the commit the list observer schedules (a brief, normally sub-frame window); content, text and attribute changes inside
+  options never trigger a re-read.
+- Button props are a naming union: icon sizes (`icon`, `icon-xs`, `icon-sm`, `icon-lg`) require a string `aria-label` or `aria-labelledby`,
+  and `interface X extends ButtonProps` (likewise `InputGroupButtonProps`, `AlertDialogActionProps` and `SidebarTriggerProps`) fails with
+  TS2312; use `type X = ButtonProps & {…}`. Links are native anchors styled with `buttonVariants()`, not Button render targets;
+  `nativeButton={false}` is for non-link targets such as a `<div>`. A real anchor with the `link` variant stays underlined at rest, while
+  `<Button variant="link">` underlines on hover.
+- The pure class helpers `badgeVariants`, `buttonVariants`, `buttonGroupVariants`, `markerVariants`, `navigationMenuTriggerStyle`,
+  `tabsListVariants` and `toggleVariants` live in directive-free modules that the package root re-exports, so Server Components can call
+  them through `@arolariu/components`; in v2.4 only `badgeVariants` was callable there, and `markerVariants` and `tabsListVariants` are new.
+  Component subpaths such as `@arolariu/components/button` still export them from `"use client"` modules, where they are client references:
+  import them from a subpath only in Client Components. The `badge` subpath is now one of those client modules (v2.4's was directive-free),
+  so a Server Component that called `badgeVariants` from `@arolariu/components/badge` must import it from the root.
+- Carousel props are a naming union: pass a localized `aria-label` or `aria-labelledby` (preferably the `id` of a visible heading); v2.4
+  rendered an unnamed `role="region"`. `interface X extends CarouselProps` fails with TS2312, so use `type X = CarouselProps & {…}`. Under
+  `prefers-reduced-motion: reduce`, transitions are instant through a `duration: 0` the carousel adds to
+  `opts.breakpoints["(prefers-reduced-motion: reduce)"]` (keeping a caller entry's other options and outranking other breakpoints'
+  `duration`); the caller's or Embla's default `duration` returns when the preference clears.
+- `toast` is a Base UI manager, not the callable status facade: use `toast.add`/`update`/`close`/`promise` with canonical
+  `timeout`/`limit`/`type`/`actionProps`. `Toast` is a component; notification data is `ToastData`/`ToastObject`.
+- Toast `timeout` defaults to `0` (persistent; v2.4's `duration` defaulted to 5000 ms), so pass `timeout` to keep auto-dismissal. The
+  ready-made close control is named by Toaster `closeLabel` (default `"Close toast"`, was `"Close notification"`). Facade options are
+  removed: `closeButton` (the control is always rendered; compose Toast parts to change it), `containerAriaLabel`
+  (`viewportProps["aria-label"]`), `toastOptions` (no default-options merge), `cancel` (compose Toast parts), `onDismiss`/`onAutoClose`
+  (per-toast `onClose`/`onRemove`, which report no cause), `toast.custom` (compound composition with typed `data`) and `toast.getHistory`
+  (no replacement). MIGRATION maps every v2.4 Toaster and per-toast option.
+- Automatic motion in the visual effects settles five seconds after mount unless `loop`, which requires a caller-supplied, localized pause
+  control that sets `motionPaused`. While paused, FireworksBackground draws a deterministic static starburst: the fixed color or the first
+  palette entry at the `particleSize` midpoint. Skeleton pulses twice (four seconds) instead of indefinitely.
+- New generated, localizable controls: ResizableHandle renders native −/+ step buttons after each separator (two extra tab stops;
+  `decreaseLabel`, `increaseLabel`, `resizeStep`); FireworksBackground renders a native launch button (`launchLabel`) that stays available
+  after automatic launches settle and in `population={0}` click-only mode, and is `aria-disabled` (still focusable) under reduced motion,
+  `motionPaused` or a hidden document; Scratcher renders a reveal button and a completion status (`revealLabel`, `completedLabel`); after
+  the reveal the button stays focusable and is `aria-disabled` (activation ignored) until the card resets. PaginationPrevious/PaginationNext
+  are named by their visible `text` (`"Previous"`/`"Next"`), and collapsed SidebarMenuButton tooltips open without delay (`delay={0}` on
+  their own trigger; v2.4 used Base UI's 600 ms default), while other tooltips are unaffected.
+- `TooltipProvider` is Base UI's provider (v2.4's was a pass-through that ignored `delayDuration`): its `delay`, `closeDelay` and `timeout`
+  (default 400 ms) now apply to the tooltips inside it, and a tooltip there opens instantly when another closed less than `timeout` earlier.
+  Wrapping an app in `<TooltipProvider>` therefore changes its tooltip timing.
+- `ResizableHandle` step buttons sit at least 11px clear of the 1px separator, so presses on them never start a drag while the group's
+  `resizeTargetMinimumSize` is at most 22px (the defaults are 10px fine / 20px coarse); keep that clearance through the `data-slot` hooks if
+  you widen the separator or the hit area. In vertical groups − sits above and + below the line. Their container is excluded from the
+  primitive's hit-region scan (`data-resize-preview`), so separator presses keep focus, the `active` state and double-click reset. New
+  `withControls` opt-out and `data-slot` hooks; pointerdown on the controls propagates normally. Scope consumer `[data-resize-preview]`
+  styles to the primitive's own preview overlays.
+- New `--ac-primary-emphasis` token (light `oklch(0.488 0.243 264.376)`, dark `oklch(0.7 0.14 265.638)`) for primary text, icons and value
+  indicators on neutral surfaces: Badge `link` text, the active Stepper number, Accordion hover text, the Progress/Meter fills, the Slider
+  range fill and NumberField scrubbing text use it. Themes that override `--ac-primary` must override it too. Destructive
+  DropdownMenu/ContextMenu/Menubar/DropDrawer items mix 20% foreground into their text. Default Badges and interactive default Bubbles hover
+  to `color-mix(in oklch, var(--ac-primary) 90%, var(--ac-foreground))`. Plain nested `<a>` links in Bubble content, AlertTitle,
+  AlertDescription, EmptyDescription, FieldDescription, ItemDescription and MarkerContent inherit the surrounding text colour and are
+  underlined (EmptyDescription, FieldDescription, ItemDescription and MarkerContent links also take `--ac-foreground` on hover); their
+  type-only `:where(…) a:is(a)` selectors beat element-only `a {}` resets in any stylesheet order. Class-styled anchors such as
+  `buttonVariants()` keep their own paint, including on hover (v2.4's `.description a` rules in Empty, Field and Item overrode it), so on
+  the primary surface of Bubble's `default` variant use an opaque-fill variant: Button `default`, `secondary`, `outline` or `destructive`,
+  or Badge `default`, `secondary` or `destructive` (Badge `outline` is transparent, unlike Button `outline`). Transparent-fill variants
+  (Button `link`/`ghost`; Badge `outline`/`ghost`/`link`) keep text colours meant for neutral surfaces and are not supported there. The
+  current NavigationMenu link (`active`/`aria-current="page"`) gets a 2px underline, and the active Command option a 2px `--ac-ring`
+  outline.
+- DropdownMenuContent and MenubarContent leave `side` to Base UI unless provided (below the trigger; toward the inline end of a vertical
+  Menubar). ContextMenuContent defaults to the logical `side="inline-end"`, which mirrors in RTL and is reported as
+  `data-side="inline-end"`; v2.4 passed no placement, so Base UI's context-menu default applied (with Base UI 1.9: `data-side="bottom"`,
+  side offset −5, align offset 2). `DropDrawerSub.title` sets the localizable mobile panel heading and drawer dialog name (fallbacks:
+  trigger `label`, visible trigger text, root `mobileTitle`).
+- DropDrawer gains `presentation` (`"responsive"` by default, or `"menu"`/`"drawer"`). `"responsive"` uses the Drawer while
+  `(max-width: 767px)` matches and always renders the desktop Menu during server rendering and hydration; `"menu"` and `"drawer"` force one
+  owner, including on the server. Mobile `DropDrawerSub` `onOpenChange` details support destructured `cancel()` and `allowPropagation()`
+  like Base UI's, and the mobile Back and drill-down chevrons mirror in RTL.
+- DropdownMenuContent and DropdownMenuSubContent (so also Menubar and the desktop DropDrawer menu), ContextMenuContent and its sub-content,
+  DropDrawer's mobile drawer and the Sidebar roots write `dir="rtl"` only under an RTL `DirectionProvider` (a caller's `dir` wins) and never
+  a default `dir="ltr"`; v2.4 wrote no `dir` on any of them. Base UI's `useDirection()` reports `"ltr"` without a provider, so menus keep
+  LTR submenu placement and arrow keys even in an RTL document: wrap RTL apps in `DirectionProvider direction="rtl"`. An explicit LTR
+  provider inside an RTL document needs `dir="ltr"` on the part.
+- `AccordionTrigger.headerProps` (`AccordionHeaderProps`, also `AccordionTrigger.HeaderProps`/`HeaderState`) customizes the heading, an
+  `<h3>` by default that now carries `data-slot="accordion-header"`; applications set the level with `headerProps.render`.
+- LoadingOverlay keeps a persistent, visually hidden status region, empty while hidden, and writes `loadingLabel` (default `"Loading"`) into
+  it while `visible`; the overlay element itself has no role, live-region attributes or default name. AsyncBoundary is a Client Component;
+  with the default (decorative spinner) fallback it renders a new visually hidden `<span role="status">` sibling after its content for the
+  boundary's whole lifetime and writes `loadingLabel` into it while suspended. In list or table contexts pass a fitting `loadingFallback`,
+  which renders no region; custom or `null` fallbacks own their announcement. Spinner and skeleton guidance now points to a status region
+  mounted before loading starts, without `aria-busy` on it.
+- CommandInput's name is the localizable `fallbackLabel` (default `"Search commands"`) only when no `aria-label`, `aria-labelledby`,
+  associated `<label>`, `title` or `placeholder` names it, and never in server HTML. CommandEmpty is a polite status region
+  (`aria-atomic="true"`) that only toggles its children and stays mounted while its CommandList is mounted on the client (in place, when
+  outside a list), so later "no results" text is written into an existing region; an empty state present when the list first mounts appears
+  together with the region. Inside CommandList it is portaled into a `display: contents` `data-slot="command-empty-slot"` element rendered
+  before the listbox, so it is no longer a listbox child.
+- ComboboxEmpty is a polite `role="status"` region whose root stays mounted while it is rendered (Base UI) and only toggles its children; it
+  collapses its padding while empty, so style its margins with `:empty`/`:not(:empty)` and never hide it with `hidden`, `display: none`,
+  `aria-hidden` or conditional rendering. ComboboxContent defaults to `align="start"` and `sideOffset={6}` (Base UI: `"center"`, `0`).
+- Form: server HTML and the hydration render carry the label/control association (including explicit control/label IDs) and
+  `aria-describedby` for written descriptions and messages (including server-known errors) that have explicit IDs or are the item's single
+  generated part of their kind. Generated IDs become unique after hydration; parts rendered internally by other components link once they
+  mount.
+- Sidebar: `SidebarMenuButton`/`SidebarMenuSubButton` `isActive` now sets `aria-current="page"` (overridable, including
+  `aria-current={undefined}`), with a forced-colors current cue and an underline on sub-buttons. The mobile sheet renders a visible, named
+  close control by default, pinned to the top inline-end corner (`showCloseButton`, `closeLabel` default `"Close sidebar"`); in v2.4 that
+  name belonged to a full-screen overlay button. The new `persistState` (default `true`) controls the `sidebar_state` cookie SidebarProvider
+  writes, as v2.4 did, on every desktop open-state change (`path=/`, `max-age=604800`, controlled proposals included); the provider never
+  reads it, so seed `defaultOpen` from it, or pass `false` when the application persists the state. Ctrl+B / Cmd+B still toggles the sidebar
+  but now yields to a `keydown` handler that calls `preventDefault()` first.
+- FocusScope: natively focusable `aria-disabled` controls (Base UI `focusableWhenDisabled`, disabled toolbar roving stops) are tab stops —
+  Tab continues past them, and wrapping, `autoFocus` and focus restoration include them. A scope in a same-origin iframe document looks up
+  `HTMLElement`/`HTMLDetailsElement`/`HTMLFieldSetElement`/`HTMLLegendElement` from the element's own window. `contain` documents the
+  consumer's obligation to provide and announce a keyboard exit (WCAG 2.1.2).
+- `useFocusManager` candidates also skip `aria-disabled`, hidden, `inert`, `display: none`/`visibility: hidden`, closed-`<details>` and
+  disabled-`<fieldset>` content (v2.4 skipped only `disabled` and negative-`tabindex` elements). `focusNext`/`focusPrevious` from a focused
+  element that is not a candidate (a focusable `aria-disabled` control, a `tabindex="-1"` element or a wrapper) continue to the nearest
+  candidate after or before it in DOM order instead of jumping to the first or last candidate; with focus outside the container, or on
+  nothing, they still go to the first or last candidate, and moves past either end always wrap.
+- AlertDialogAction no longer closes automatically; callers own async success-close/failure/pending policies. Content close controls now
+  default visible for Dialog/Sheet, exported Close controls are unstyled, and Sheet's automatic close follows content.
+- DialogContent and SheetContent render the dimming, pointer-blocking backdrop only when the root has `modal={true}` (the default); code
+  that relied on it with `modal={false}` or `"trap-focus"` must use `modal={true}`. DialogContent, SheetContent, AlertDialogContent and
+  DrawerContent accept `portalProps` (`keepMounted`, `container` and the other Portal props). With vertical `snapPoints`, Drawer requests
+  its largest snap point through `onSnapPointChange` (`reason: "none"`) when keyboard or programmatic focus lands beyond the visible snap
+  height: uncontrolled drawers expand, and controlled owners apply or cancel the request.
+- `ChartLegendContent.inactiveSuffix` localizes or suppresses the inactive-series suffix.
+- ScrollArea reserves a stable 1.5rem gutter plus scroll padding (inline-end for the vertical track, block-end for the horizontal one)
+  whenever a package-styled track is mounted, like `scrollbar-gutter: stable`. `ScrollBar` now keeps its track mounted by default
+  (`keepMounted` defaults to `true`; the idle track stays in the DOM, hidden, and paints nothing), so the gutter is in server HTML, never
+  depends on Base UI's overflow measurement, and cannot flip-flop or reflow after hydration. The content box is 1.5rem narrower (or shorter,
+  for a horizontal track) even without overflow. The viewport is `box-sizing: border-box`, and the gutter overrides its own end padding on
+  that axis. The convenience `ScrollArea` always reserves the vertical gutter; compose `ScrollAreaRoot` with `ScrollBar keepMounted={false}`
+  to opt out, which restores mount-on-overflow (the gutter then appears after hydration and can oscillate for width-dependent content).
+- Badge defaults to span/HTMLSpanElement; composed refs and callbacks now truthfully follow their actual native/primitive owners.
+- Alert keeps v2.4's normal flow, so free-form text, paragraphs and links are not split into grid cells. The new `AlertAction`
+  (`AlertActionProps`, `AlertAction.Props`), as a direct child, switches the alert to a two-column grid: the action sits in the trailing
+  column beside the title and description, and every other element child stays in the message column. Wrap loose text in `AlertDescription`
+  when an action is present.
+- `EmptyDescription` composes through Base UI `render` (`useRender`, default `<p>`): use `render={<div />}` for block content. Caller props,
+  including `data-slot`, are applied last, and `EmptyDescriptionState` (`EmptyDescription.State`) types render callbacks. The `empty` module
+  is now a client module (v2.4's was server-compatible), like Badge, Marker and BubbleContent; Server Components can still render every
+  part.
+- Table's scroll viewport (`data-slot="table-container"`, a plain `<div>` in v2.4) is a tab stop (`tabIndex={0}`) with a focus ring, so
+  keyboard users can scroll overflowing tables. The new `containerProps` (attributes and `ref`) names it with `role: "region"` plus
+  `aria-labelledby` (the caption) or `aria-label`, or opts out with `tabIndex: -1` when the table can never overflow.
+- Tabs gain a forced-colors selected-tab cue: the default variant's indicator paints `Highlight` and snaps instead of sliding, and the
+  selected tab switches to `HighlightText` only while that indicator is displayed (not in server HTML or before Base UI measures it); the
+  `line` variant keeps `CanvasText` over its `Highlight` underline.
+- Accordion values are arrays in both single- and multiple-panel modes; Select/Combobox preserve generic nullable/multiple values and
+  original callback details. Combobox conveniences move to explicit parts. Omitted Slider/Progress defaults remain primitive-owned.
+- ChartContainer id/class/ref target its native outer root. Tooltip/Legend content are ref-capable JSX, internal chart scope IDs are unique,
+  nullish formatter results suppress rows and ranges use `~`. Supported non-deprecated chart aliases and RHF pass-throughs remain.
+- Skeleton counts reject negative/fractional/nonfinite/over-limit input with RangeError before allocation: each count ≤ 10,000 and table
+  total cells including optional default-visible header ≤ 10,000. Valid zero/default dimensions and div refs remain.
+- Meaningless Field/Form message output is omitted, explicit null boundary fallbacks remain null and unknown throws normalize to Error.
+  Calendar animation class overrides are single tokens.
+
+**✨ Added**
+
+- Explicit root/public named types (including `FocusManager`, `Politeness` and `EmptyDescriptionState`; `useFocusManager` and `useAnnounce`
+  are now also root exports) and preserved component namespaces for every supported family, plus full Combobox/Progress/ScrollArea parts,
+  AlertAction, Avatar badge/group/count, CalendarDayButton, NavigationMenuPositioner, DrawerSwipeHandle, Popover naming parts and
+  TooltipArrow.
+- NativeSelect and exact Base UI DirectionProvider/useDirection/TextDirection exposure; additive domain-independent
+  Attachment/Bubble/Marker/Message display families.
+- Caller-owned `Stepper.completedLabel`, defaulting to `"Completed"`, so completed-step assistive text can be localized or deliberately
+  omitted.
+- Separator and ButtonGroupSeparator accept a Base UI state-callback `className` as well as a string (v2.4 typed it as a string);
+  ButtonGroupSeparator merges the result after its group class.
+- Shipped MIGRATION guide, preserving historical v0 → v1 documentation and adding comprehensive 2.4 → 3 examples and behavior inventory.
+- Real-module root/type/namespace/export-generator contracts and packed-archive contract tests. Private underscore helpers are excluded from
+  generated public subpaths and blocked through the retained dist wildcard.
+
+**🐛 Fixed**
+
+- FireworksBackground compares its `color` palette and speed/size ranges by value, so new-but-equal inline arrays and objects no longer
+  restart the canvas (v2.4 restarted it on every new identity).
+- RippleButton and FlipButton follow `prefers-reduced-motion`, tracked live after hydration: no ripples or press/hover scaling, and an
+  instant flip. v2.4 ignored the preference.
+
+**🔧 Compatibility**
+
+- Base UI peer minimum becomes **`^1.9`** (2.4 accepted `^1`), the tested drawer-capable version. Public 1.0 lacks `./drawer`; older Base UI
+  consumers must upgrade. This is not a claim about the earliest possible supporting release.
+- React and ReactDOM peers become **`^19`** (2.4 accepted `^18.2 || ^19`). The Motion, React Hook Form and Recharts peer ranges and the
+  runtime dependencies are unchanged; no Sonner, Headless UI or cmdk engine or dependency is added.
+- The documented browser floor now matches the shipped CSS: Chrome/Edge 120, Firefox 121 and Safari 16.5 (see the README's
+  [Browser Support](./README.md#-browser-support)). 2.4's README listed Chrome/Edge 90, Firefox 88 and Safari 14, which its stylesheets
+  already exceeded.
+- CSS Modules, `--ac-*` tokens, CSS side effects, ESM/declaration/source/style outputs and the retained visual extensions remain.
+  Storybook-only layouts and demonstration styles live in their owning story files, so production CSS Modules and npm assets carry no demo
+  rules.
+- Physical paint, native focus/inert, touch, scroll anchoring and screen-reader behavior are not inferred from Vitest/Happy DOM or source
+  typing; ACCESSIBILITY lists the manual browser and assistive-technology checks.
+
+**✅ Verification**
+
+From the package directory, `npm test` builds the package, packs and extracts a real npm archive and runs the complete Vitest suite against
+it: the colocated tests, the complete source/test/story TypeScript graph and the packed ESM/declaration/style/private-import contracts. See
+MIGRATION's [Verification and limits](./MIGRATION.md#verification-and-limits).
+
+**📚 Migration Guide**
+
+[MIGRATION.md](./MIGRATION.md#v24-to-v3) covers every breaking default, ref, value, render and error change with before/after examples.
+
 ### [2.4.0](https://www.npmjs.com/package/@arolariu/components/v/2.4.0) - 2026-10-11
 
 **✨ Added**

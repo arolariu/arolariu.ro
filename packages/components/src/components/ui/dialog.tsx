@@ -3,438 +3,554 @@
 import {Dialog as BaseDialog} from "@base-ui/react/dialog";
 import {mergeProps} from "@base-ui/react/merge-props";
 import {useRender} from "@base-ui/react/use-render";
+import {X} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {Button} from "./button";
 import styles from "./dialog.module.css";
 
-interface DialogProps extends React.ComponentPropsWithRef<typeof BaseDialog.Root> {}
+/** Base UI owns modal state, dismissal, focus and trigger payloads. */
+export type DialogProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payload>>;
+/** Trigger composition uses Base UI's real state and polymorphic render contract. */
+export type DialogTriggerProps = Readonly<
+  Omit<BaseDialog.Trigger.Props, "ref"> & {
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
+/** Unstyled close control; presentation belongs to its caller. */
+export type DialogCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDialog.Close>>;
+/** Backdrop props with the library's presentation classes. */
+export type DialogOverlayProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {className?: string}
+>;
+/** Popup props, including Base UI's initial/final focus and render contracts. */
+export type DialogContentProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> & {
+    className?: string;
+    /** Append an accessible icon close after the content. @default true */
+    showCloseButton?: boolean;
+    /** Caller-localizable accessible name for the automatic icon close. @default "Close" */
+    closeLabel?: string;
+    /**
+     * Props for the internal Portal, for example `keepMounted` (keep the closed popup and its form state mounted
+     * but hidden) or `container` (portal into a theme-scoped element, shadow root or another document). Content
+     * always supplies the portal's children.
+     */
+    portalProps?: Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Portal>, "children">>;
+  }
+>;
+/** Layout composition uses Base UI's polymorphic callback props, not div-specific refs. */
+export type DialogHeaderProps = Readonly<
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
+/** Dialog action layout with an optional explicit dismissal button. */
+export type DialogFooterProps = Readonly<
+  DialogHeaderProps & {
+    /** Append an outline Close button after the supplied actions. @default false */
+    showCloseButton?: boolean;
+    /** Caller-localizable text for the optional footer close. @default "Close" */
+    closeLabel?: string;
+  }
+>;
+/** Accessible dialog heading, wired by Base UI. */
+export type DialogTitleProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {className?: string}>;
+/** Accessible dialog description, wired by Base UI. */
+export type DialogDescriptionProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
+>;
 
-interface DialogTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Trigger>, "className"> {
-  /** Additional CSS classes merged with the dialog trigger styles. @default undefined */
-  className?: string;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer Base UI's `render` prop. */
-  asChild?: boolean;
+type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;
+
+/** Base UI keeps root modality private, so the styled Content reads the value its `Dialog` received. */
+const DialogModalityContext = React.createContext<NonNullable<BaseDialog.Root.Props["modal"]>>(true);
+
+function normalizedElement(render: React.ReactNode): React.ReactElement<{children?: React.ReactNode}> {
+  // eslint-disable-next-line react-x/no-children-to-array -- public React normalization supports Flight/lazy slots without reading private lazy fields.
+  const elements = React.Children.toArray(render);
+  const [element] = elements;
+  if (elements.length !== 1 || !React.isValidElement<{children?: React.ReactNode}>(element) || element.type === React.Fragment) {
+    throw new TypeError("Dialog composition requires a single non-Fragment React element.");
+  }
+  return element;
 }
 
-interface DialogCloseProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Close>, "className"> {
-  /** Additional CSS classes merged with the dialog close control styles. @default undefined */
-  className?: string;
-}
-
-interface DialogOverlayProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> {
-  /** Additional CSS classes merged with the dialog backdrop styles. @default undefined */
-  className?: string;
-}
-
-interface DialogContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> {
-  /** Additional CSS classes merged with the dialog content styles. @default undefined */
-  className?: string;
-}
-
-interface DialogHeaderProps extends React.ComponentPropsWithRef<"div"> {
-  /** Additional CSS classes merged with the dialog header layout styles. @default undefined */
-  className?: string;
-  /** Custom element or render callback used to replace the default header container. @default undefined */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer the `render` prop. */
-  asChild?: boolean;
-}
-
-interface DialogFooterProps extends React.ComponentPropsWithRef<"div"> {
-  /** Additional CSS classes merged with the dialog footer layout styles. @default undefined */
-  className?: string;
-  /** Custom element or render callback used to replace the default footer container. @default undefined */
-  render?: useRender.RenderProp<Record<string, never>>;
-  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer the `render` prop. */
-  asChild?: boolean;
-}
-
-interface DialogTitleProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> {
-  /** Additional CSS classes merged with the dialog title styles. @default undefined */
-  className?: string;
-}
-
-interface DialogDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> {
-  /** Additional CSS classes merged with the dialog description styles. @default undefined */
-  className?: string;
+function DecoratedDialogElement({
+  render,
+  elementProps,
+  closeControl,
+}: Readonly<{
+  render: React.ReactElement;
+  elementProps: Parameters<PrimitiveRenderCallback>[0];
+  closeControl: React.ReactNode;
+}>): React.ReactElement {
+  const element = normalizedElement(render);
+  const children = Object.hasOwn(element.props, "children") ? element.props.children : elementProps.children;
+  // eslint-disable-next-line react-x/no-clone-element -- preserve Base UI's top-level element-child precedence before appending the close.
+  const decorated = React.cloneElement(element, {
+    children: (
+      <>
+        {children}
+        {closeControl}
+      </>
+    ),
+  });
+  return useRender({render: decorated, props: {...elementProps}});
 }
 
 /**
- * Coordinates modal dialog state, focus management, and accessibility semantics.
+ * Coordinates a dialog without adding a DOM wrapper.
  *
  * @remarks
- * - Renders no DOM element by default and coordinates descendant dialog parts
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports composition through descendant `render` props
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Base UI owns open state, focus, dismissal, trigger payloads and modality.
+ * - `modal` defaults to `true`. `DialogContent` renders its page-blocking backdrop only for `modal={true}`;
+ *   `false` and `"trap-focus"` keep the rest of the page visible and pressable, as Base UI documents (an outside
+ *   press still dismisses the dialog unless `disablePointerDismissal` is set).
+ * - Focus-trapping modes need a close control inside the popup so touch screen-reader users can leave it.
  *
- * @example Basic usage
+ * @example
+ * ```tsx
+ * <Dialog modal='trap-focus'>
+ *   <DialogTrigger>Open notes</DialogTrigger>
+ *   <DialogContent>
+ *     <DialogTitle>Notes</DialogTitle>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ */
+function Dialog<Payload = unknown>({modal = true, ...props}: Readonly<Dialog.Props<Payload>>): React.ReactElement {
+  return (
+    <DialogModalityContext.Provider value={modal}>
+      <BaseDialog.Root
+        modal={modal}
+        {...props}
+      />
+    </DialogModalityContext.Provider>
+  );
+}
+Dialog.displayName = "Dialog";
+
+/**
+ * Opens a dialog. Canonical `render` callers specify `nativeButton={false}` for non-buttons.
+ *
+ * @remarks
+ * - Renders a native `<button>` by default; Base UI sets `aria-haspopup="dialog"` and `aria-expanded` and returns focus
+ *   to the trigger when the dialog closes, unless `DialogContent`'s `finalFocus` chooses another target
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - `render` composes another element, such as the package `Button`. Set `nativeButton={false}` only for a non-button
+ *   target that takes button semantics, such as a `<div>`; navigation belongs in a link, not a dialog trigger
+ * - `className` may be a string or a callback that receives the trigger's live state
+ * - An icon-only trigger needs an accessible name, such as `aria-label`
+ *
+ * @example
  * ```tsx
  * <Dialog>
- *   <DialogTrigger>Open</DialogTrigger>
+ *   <DialogTrigger render={<Button variant='outline' />}>Edit profile</DialogTrigger>
  *   <DialogContent>
- *     <DialogTitle>Details</DialogTitle>
+ *     <DialogTitle>Edit profile</DialogTitle>
  *   </DialogContent>
  * </Dialog>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function Dialog(props: Readonly<Dialog.Props>): React.ReactElement {
-  return <BaseDialog.Root {...props} />;
-}
-Dialog.displayName = "Dialog";
-
-/**
- * Opens the dialog from an interactive trigger element.
- *
- * @remarks
- * - Renders a `<button>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
- *
- * @example Basic usage
- * ```tsx
- * <DialogTrigger>Open</DialogTrigger>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
- */
-const DialogTrigger = React.forwardRef<HTMLButtonElement, DialogTrigger.Props>(
-  (props: Readonly<DialogTrigger.Props>, ref): React.ReactElement => {
-    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
-    const {asChild = false, children, className, render, ...otherProps} = props;
-    const renderProp = asChild && React.isValidElement(children) ? children : render;
-
-    return (
-      <BaseDialog.Trigger
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: renderProp as never,
-          props: mergeProps({className}, {}),
-        })}>
-        {renderProp ? undefined : children}
-      </BaseDialog.Trigger>
-    );
-  },
-);
+const DialogTrigger = ({ref, children, render, nativeButton, className, ...props}: Readonly<DialogTrigger.Props>): React.ReactElement => {
+  const primitiveRef: React.RefCallback<HTMLElement> = React.useCallback(
+    (element) => {
+      if (typeof ref === "function") return ref(element);
+      if (ref) ref.current = element;
+      return undefined;
+    },
+    [ref],
+  );
+  return (
+    <BaseDialog.Trigger
+      data-slot='dialog-trigger'
+      ref={primitiveRef}
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      nativeButton={nativeButton}
+      render={render}
+      {...props}>
+      {children}
+    </BaseDialog.Trigger>
+  );
+};
 DialogTrigger.displayName = "DialogTrigger";
 
 /**
- * Portals dialog descendants outside the local DOM hierarchy.
+ * Mounts dialog parts outside their local DOM hierarchy; supports `keepMounted`.
  *
  * @remarks
- * - Renders no DOM element by default and portals descendants into the document body
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Does not expose a `render` prop because it only controls mounting context
- * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
+ * - Base UI's Portal, re-exported unchanged: it renders a `<div>` portal element, appended to `<body>` by default
+ * - {@link DialogContent} already renders its own portal; configure that one through `portalProps`. Compose
+ *   DialogPortal directly only for manual primitive compositions around Base UI's `Dialog.Popup`
+ * - `keepMounted` keeps closed content mounted but hidden; `container` chooses the element or shadow root that
+ *   receives the portal
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogPortal>
- *   <DialogOverlay />
- *   <DialogContent />
- * </DialogPortal>
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <Dialog>
+ *   <DialogTrigger>Open</DialogTrigger>
+ *   <DialogPortal>
+ *     <DialogOverlay />
+ *     <BaseDialog.Popup>
+ *       <DialogTitle>Custom composition</DialogTitle>
+ *       <DialogClose>Close</DialogClose>
+ *     </BaseDialog.Popup>
+ *   </DialogPortal>
+ * </Dialog>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
 const DialogPortal = BaseDialog.Portal;
-DialogPortal.displayName = "DialogPortal";
 
 /**
- * Closes the dialog from an interactive control inside the modal.
+ * Closes a dialog without imposing the automatic icon's positioning or styling.
  *
  * @remarks
- * - Renders a `<button>` element by default
+ * - Renders a native `<button>` by default; `render` adopts another presentation, such as the package `Button`
  * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - `DialogContent`'s automatic icon close and `DialogFooter`'s `showCloseButton` are built on this part. A popup that
+ *   opts out of both must still contain a close control: touch screen-reader users cannot press Escape
+ * - An icon-only close needs an accessible name, such as `aria-label`
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogClose>Dismiss</DialogClose>
+ * <DialogFooter>
+ *   <DialogClose render={<Button variant='outline' />}>Cancel</DialogClose>
+ *   <Button type='submit'>Save</Button>
+ * </DialogFooter>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogClose(props: Readonly<DialogClose.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+function DialogClose({className, ...props}: Readonly<DialogClose.Props>): React.ReactElement {
   return (
     <BaseDialog.Close
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.close, className)}, {}),
-      })}>
-      {children}
-    </BaseDialog.Close>
+      data-slot='dialog-close'
+      className={(state) => cn(styles.control, typeof className === "function" ? className(state) : className)}
+      {...props}
+    />
   );
 }
 DialogClose.displayName = "DialogClose";
 
 /**
- * Renders the dimmed backdrop behind dialog content.
+ * Renders the styled backdrop while forwarding render state and refs directly to Base UI.
  *
  * @remarks
- * - Renders a `<div>` element by default
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
  * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - {@link DialogContent} already renders this backdrop when the enclosing `Dialog` is fully modal (`modal={true}`).
+ *   Compose DialogOverlay only inside a manual {@link DialogPortal} composition
+ * - The backdrop is presentational (`role="presentation"`) and sits outside the popup, so it takes no content or
+ *   controls. Base UI omits it for nested dialogs unless `forceRender` is set
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogOverlay />
+ * import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+ *
+ * <DialogPortal>
+ *   <DialogOverlay className='blurred-backdrop' />
+ *   <BaseDialog.Popup>
+ *     <DialogTitle>Custom composition</DialogTitle>
+ *     <DialogClose>Close</DialogClose>
+ *   </BaseDialog.Popup>
+ * </DialogPortal>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogOverlay(props: Readonly<DialogOverlay.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
-
+function DialogOverlay({className, ...props}: Readonly<DialogOverlay.Props>): React.ReactElement {
   return (
     <BaseDialog.Backdrop
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.backdrop, className)}, {}),
-      })}
+      data-slot='dialog-overlay'
+      className={cn(styles.backdrop, className)}
+      {...props}
     />
   );
 }
 DialogOverlay.displayName = "DialogOverlay";
 
 /**
- * Renders the dialog popup inside a portal with its backdrop.
+ * Portals the styled dialog popup, above a page-blocking backdrop when the dialog is fully modal.
  *
  * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Base UI owns focus, dismissal and modal behavior. The backdrop renders only when the enclosing `Dialog` has
+ *   `modal={true}` (its default); under a raw Base UI root the backdrop is always rendered.
+ * - The automatic icon close is last in DOM order; opt out with `showCloseButton={false}` only when another
+ *   close control remains inside the popup.
+ * - Name the popup with a {@link DialogTitle}; Base UI wires it, and any {@link DialogDescription}, to the dialog.
+ *   Localize the automatic close's accessible name with `closeLabel`.
+ * - `portalProps` configures the internal Portal: `keepMounted` keeps the closed popup mounted with `hidden`,
+ *   preserving form state, and `container` chooses the element or shadow root that receives the portal.
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogContent>
- *   <DialogTitle>Details</DialogTitle>
- * </DialogContent>
+ * <Dialog>
+ *   <DialogTrigger>Edit draft</DialogTrigger>
+ *   <DialogContent portalProps={{keepMounted: true}}>
+ *     <DialogTitle>Draft</DialogTitle>
+ *   </DialogContent>
+ * </Dialog>
  * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-const DialogContent = React.forwardRef<React.ComponentRef<typeof BaseDialog.Popup>, DialogContent.Props>(
-  (props: Readonly<DialogContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
-
-    return (
-      <DialogPortal>
-        <DialogOverlay />
-        <BaseDialog.Popup
-          ref={ref}
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
-          })}>
-          {children}
-        </BaseDialog.Popup>
-      </DialogPortal>
-    );
-  },
-);
+const DialogContent = ({
+  ref,
+  className,
+  children,
+  render,
+  showCloseButton = true,
+  closeLabel = "Close",
+  portalProps,
+  ...props
+}: Readonly<DialogContent.Props>): React.ReactElement => {
+  const modal = React.useContext(DialogModalityContext);
+  const closeControl = showCloseButton ? (
+    <DialogClose
+      aria-label={closeLabel}
+      render={
+        <Button
+          aria-label={closeLabel}
+          variant='ghost'
+          size='icon-sm'
+          className={cn(styles.close)}
+        />
+      }>
+      <X
+        aria-hidden='true'
+        className={styles.closeIcon}
+      />
+    </DialogClose>
+  ) : null;
+  const decorateElement = showCloseButton && render !== undefined && typeof render !== "function";
+  return (
+    <DialogPortal {...portalProps}>
+      {modal === true ? <DialogOverlay /> : null}
+      <BaseDialog.Popup
+        data-slot='dialog-content'
+        ref={ref}
+        render={
+          decorateElement
+            ? (elementProps) => (
+                <DecoratedDialogElement
+                  render={render}
+                  elementProps={elementProps}
+                  closeControl={closeControl}
+                />
+              )
+            : render
+        }
+        className={cn(styles.popup, className)}
+        {...props}>
+        {decorateElement ? (
+          children
+        ) : (
+          <>
+            {children}
+            {closeControl}
+          </>
+        )}
+      </BaseDialog.Popup>
+    </DialogPortal>
+  );
+};
 DialogContent.displayName = "DialogContent";
 
 /**
- * Lays out the title and supporting content at the top of a dialog.
+ * Composes the dialog heading layout without discarding children, events or refs.
  *
  * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: it adds no role or accessible name. Place {@link DialogTitle} and {@link DialogDescription} inside;
+ *   Base UI wires them to the popup wherever they render
  *
- * @example Basic usage
+ * @example
  * ```tsx
  * <DialogHeader>
- *   <DialogTitle>Details</DialogTitle>
+ *   <DialogTitle>Edit profile</DialogTitle>
+ *   <DialogDescription>Changes apply after you save.</DialogDescription>
  * </DialogHeader>
  * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogHeader(props: Readonly<DialogHeader.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+const DialogHeader = ({ref, children, className, render, ...props}: Readonly<DialogHeader.Props>): React.ReactElement => {
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.header, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render,
+    props: {
+      "data-slot": "dialog-header",
+      ...mergeProps<"div">({className: cn(styles.header, className)}, props, {
+        children,
+      }),
+    },
   });
-}
+};
 DialogHeader.displayName = "DialogHeader";
 
 /**
- * Lays out dialog actions and secondary controls at the bottom edge.
+ * Composes footer actions; `showCloseButton` adds a separate outline dismissal control.
  *
  * @remarks
- * - Renders a `<div>` element by default
- * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Renders a `<div>` element by default and supports the `render` prop for element composition
+ * - Layout only: actions keep their own semantics and the footer adds no role
+ * - `showCloseButton` appends an outline {@link DialogClose} after the supplied actions; localize its visible text,
+ *   which is also its accessible name, with `closeLabel`
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogFooter>
- *   <DialogClose>Close</DialogClose>
+ * <DialogFooter
+ *   showCloseButton
+ *   closeLabel='Cancel'>
+ *   <Button type='submit'>Save</Button>
  * </DialogFooter>
  * ```
- *
- * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogFooter(props: Readonly<DialogFooter.Props>): React.ReactElement {
-  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-
+const DialogFooter = ({
+  ref,
+  children,
+  className,
+  render: renderElement,
+  showCloseButton = false,
+  closeLabel = "Close",
+  ...props
+}: Readonly<DialogFooter.Props>): React.ReactElement => {
+  const closeControl = showCloseButton ? <DialogClose render={<Button variant='outline' />}>{closeLabel}</DialogClose> : null;
+  const decorateElement = showCloseButton && renderElement !== undefined && typeof renderElement !== "function";
+  const suppliedChildren = children;
   return useRender({
     defaultTagName: "div",
-    render: renderProp as never,
-    props: mergeProps({className: cn(styles.footer, className)}, otherProps, {
-      children: renderProp ? undefined : children,
-    }),
+    ref,
+    render: decorateElement
+      ? (elementProps) => (
+          <DecoratedDialogElement
+            render={renderElement}
+            elementProps={elementProps}
+            closeControl={closeControl}
+          />
+        )
+      : renderElement,
+    props: {
+      "data-slot": "dialog-footer",
+      ...mergeProps<"div">({className: cn(styles.footer, className)}, props, {
+        children: decorateElement ? (
+          suppliedChildren
+        ) : (
+          <>
+            {suppliedChildren}
+            {closeControl}
+          </>
+        ),
+      }),
+    },
   });
-}
+};
 DialogFooter.displayName = "DialogFooter";
 
 /**
- * Renders the accessible heading for dialog content.
+ * Renders the dialog's accessible heading with primitive-owned composition.
  *
  * @remarks
- * - Renders an `<h2>` element by default
+ * - Renders an `<h2>` element by default and supports the `render` prop for element composition
  * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Base UI references it from the popup's `aria-labelledby`, so it names the dialog. Every dialog needs a title, or
+ *   an `aria-label` on {@link DialogContent} when no visible heading fits
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogTitle>Details</DialogTitle>
+ * <DialogTitle>Delete project</DialogTitle>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogTitle(props: Readonly<DialogTitle.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+function DialogTitle({className, ...props}: Readonly<DialogTitle.Props>): React.ReactElement {
   return (
     <BaseDialog.Title
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "h2",
-        render: render as never,
-        props: mergeProps({className: cn(styles.title, className)}, {}),
-      })}>
-      {children}
-    </BaseDialog.Title>
+      data-slot='dialog-title'
+      className={cn(styles.title, className)}
+      {...props}
+    />
   );
 }
 DialogTitle.displayName = "DialogTitle";
 
 /**
- * Renders supporting copy beneath the dialog title.
+ * Renders the dialog's accessible description with primitive-owned composition.
  *
  * @remarks
- * - Renders a `<p>` element by default
+ * - Renders a `<p>` element by default and supports the `render` prop for element composition
  * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
- * - Supports the `render` prop for element composition
- * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Base UI references it from the popup's `aria-describedby`, so screen readers announce it when the dialog opens;
+ *   keep it brief and put longer content in the dialog body
  *
- * @example Basic usage
+ * @example
  * ```tsx
- * <DialogDescription>Review the details before continuing.</DialogDescription>
+ * <DialogDescription>This permanently removes the project and its files.</DialogDescription>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogDescription(props: Readonly<DialogDescription.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
-
+function DialogDescription({className, ...props}: Readonly<DialogDescription.Props>): React.ReactElement {
   return (
     <BaseDialog.Description
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "p",
-        render: render as never,
-        props: mergeProps({className: cn(styles.description, className)}, {}),
-      })}>
-      {children}
-    </BaseDialog.Description>
+      data-slot='dialog-description'
+      className={cn(styles.description, className)}
+      {...props}
+    />
   );
 }
 DialogDescription.displayName = "DialogDescription";
 
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace Dialog {
-  export type Props = DialogProps;
+  export type Props<Payload = unknown> = DialogProps<Payload>;
   export type State = BaseDialog.Root.State;
+  export type Actions = BaseDialog.Root.Actions;
+  export type ChangeEventDetails = BaseDialog.Root.ChangeEventDetails;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogTrigger {
-  export type Props = DialogTriggerProps;
+  export type Props = Readonly<DialogTriggerProps>;
   export type State = BaseDialog.Trigger.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogClose {
-  export type Props = DialogCloseProps;
+  export type Props = Readonly<DialogCloseProps>;
   export type State = BaseDialog.Close.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogOverlay {
-  export type Props = DialogOverlayProps;
+  export type Props = Readonly<DialogOverlayProps>;
   export type State = BaseDialog.Backdrop.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogContent {
-  export type Props = DialogContentProps;
+  export type Props = Readonly<DialogContentProps>;
   export type State = BaseDialog.Popup.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogHeader {
-  export type Props = DialogHeaderProps;
+  export type Props = Readonly<DialogHeaderProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogFooter {
-  export type Props = DialogFooterProps;
+  export type Props = Readonly<DialogFooterProps>;
   export type State = Record<string, never>;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogTitle {
-  export type Props = DialogTitleProps;
+  export type Props = Readonly<DialogTitleProps>;
   export type State = BaseDialog.Title.State;
 }
-
-// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+// eslint-disable-next-line no-redeclare -- public component namespace typing API
 namespace DialogDescription {
-  export type Props = DialogDescriptionProps;
+  export type Props = Readonly<DialogDescriptionProps>;
   export type State = BaseDialog.Description.State;
 }
 

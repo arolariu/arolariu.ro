@@ -1,0 +1,109 @@
+.marker {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--ac-space-4);
+  align-items: center;
+  gap: var(--ac-space-2);
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-xs);
+  line-height: 1.625;
+  text-align: start;
+}
+
+a.marker {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: var(--ac-space-3);
+}
+
+/*
+ * Plain links inside MarkerContent share the marker's text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only link
+ * resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for example
+ * `buttonVariants()`) keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.content) a:is(a) {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: var(--ac-space-3);
+}
+
+@media (hover: hover) {
+  a.marker:hover {
+    color: var(--ac-foreground);
+  }
+
+  /* Also (0,0,2): `:where(:hover)` adds nothing, so a class-styled anchor's own colour still wins on hover. */
+  :where(.content) a:is(a):where(:hover) {
+    color: var(--ac-foreground);
+  }
+}
+
+.marker:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+:is(a, button).marker {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+}
+
+.separator::before {
+  content: "";
+  min-inline-size: 0;
+  block-size: 1px;
+  flex: 1;
+  margin-inline-end: var(--ac-space-1);
+  background-color: var(--ac-border);
+}
+
+.separator::after {
+  content: "";
+  min-inline-size: 0;
+  block-size: 1px;
+  flex: 1;
+  margin-inline-start: var(--ac-space-1);
+  background-color: var(--ac-border);
+}
+
+.border {
+  border-block-end: 1px solid var(--ac-border);
+  padding-block-end: var(--ac-space-2);
+}
+
+.icon {
+  inline-size: calc(var(--ac-space-3) + var(--ac-space-1) / 2);
+  block-size: calc(var(--ac-space-3) + var(--ac-space-1) / 2);
+  flex-shrink: 0;
+}
+
+.icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.content {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.separator > .content {
+  max-inline-size: 100%;
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+@media (forced-colors: active) {
+  .marker:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .separator::before,
+  .separator::after {
+    background-color: CanvasText;
+  }
+}

@@ -122,8 +122,9 @@ export const <ComponentName> = React.forwardRef<
 <ComponentName>.displayName = "<ComponentName>";
 ```
 
-For a composed shared primitive, use the matching live Base UI `render` and
-`mergeProps` pattern instead of raw prop spreading.
+For a composed shared primitive, follow the Base UI `render` and React 19 `ref`
+prop contract owned by `.github/instructions/components.instructions.md`
+instead of raw prop spreading.
 
 ## Testing Library user behavior
 

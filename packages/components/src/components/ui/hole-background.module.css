@@ -5,6 +5,13 @@
   overflow: hidden;
 }
 
+.content {
+  position: relative;
+  z-index: 8;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
 .root::before {
   content: "";
   position: absolute;
@@ -15,6 +22,7 @@
   height: 140%;
   transform: translate3d(-50%, -50%, 0);
   background: radial-gradient(ellipse at 50% 55%, transparent 10%, white 50%);
+  pointer-events: none;
 }
 
 :global(.dark) .root::before,
@@ -34,6 +42,7 @@
   transform: translate3d(-50%, -50%, 0);
   mix-blend-mode: overlay;
   background: radial-gradient(ellipse at 50% 75%, #a900ff 20%, transparent 75%);
+  pointer-events: none;
 }
 
 .canvas {
@@ -43,6 +52,7 @@
   width: 100%;
   height: 100%;
   opacity: 0.1;
+  pointer-events: none;
 }
 
 :global(.dark) .canvas,
@@ -75,6 +85,7 @@
   opacity: 0.75;
   mix-blend-mode: plus-darker;
   filter: blur(48px);
+  pointer-events: none;
 }
 
 :global(.dark) .glow,
@@ -99,4 +110,18 @@
   opacity: 0.5;
   mix-blend-mode: overlay;
   background: repeating-linear-gradient(transparent, transparent 1px, white 1px, white 2px);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .root::before,
+  .root::after,
+  .glow,
+  .scanlines {
+    display: none;
+  }
+
+  .canvas {
+    visibility: hidden;
+  }
 }

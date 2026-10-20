@@ -1,645 +1,824 @@
-import {act, render, screen} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type {JSX} from "react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import * as React from "react";
+import {renderToString} from "react-dom/server";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-interface MockEmblaApi {
-  canScrollNext: () => boolean;
-  canScrollPrev: () => boolean;
-  off: (event: "reInit" | "select", callback: (api: MockEmblaApi) => void) => void;
-  on: (event: "reInit" | "select", callback: (api: MockEmblaApi) => void) => void;
-  scrollNext: () => void;
-  scrollPrev: () => void;
+import * as CarouselModule from "./carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  useCarousel,
+  type CarouselApi,
+  type CarouselOptions,
+  type CarouselPlugin,
+  type CarouselProps,
+} from "./carousel";
+
+const slideSize = 320;
+type Controls = Readonly<{
+  previous?: React.ComponentPropsWithRef<typeof CarouselPrevious>;
+  next?: React.ComponentPropsWithRef<typeof CarouselNext>;
+}>;
+// The fixture names every carousel unless a test supplies its own `aria-label`.
+type FixtureProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof Carousel>, "aria-label" | "aria-labelledby"> & {readonly "aria-label"?: string}
+>;
+
+function fixtureOffset(element: HTMLElement, property: "offsetWidth" | "offsetHeight" | "offsetLeft" | "offsetTop"): number | undefined {
+  const isTrack = element.dataset["testid"] === "carousel-track";
+  const index = element.dataset["fixtureIndex"];
+  if (!isTrack && index === undefined) return undefined;
+  if (property === "offsetWidth" || property === "offsetHeight") return slideSize;
+  const vertical = element.closest("[data-orientation]")?.getAttribute("data-orientation") === "vertical";
+  const alongAxis = vertical ? property === "offsetTop" : property === "offsetLeft";
+  return !isTrack && alongAxis ? Number(index) * slideSize : 0;
 }
 
-const emblaMock = vi.hoisted(() => {
-  const api: MockEmblaApi = {
-    canScrollNext: vi.fn(() => true),
-    canScrollPrev: vi.fn(() => true),
-    off: vi.fn(),
-    on: vi.fn(),
-    scrollNext: vi.fn(),
-    scrollPrev: vi.fn(),
-  };
+function measuredSlides(count = 3, firstRef?: React.RefObject<HTMLDivElement | null>): React.ReactElement[] {
+  return Array.from({length: count}, (_, index) => (
+    <CarouselItem
+      key={index}
+      data-fixture-index={index}
+      className='consumer-slide'
+      ref={(element) => {
+        element?.style.setProperty("margin-right", "0px");
+        element?.style.setProperty("margin-bottom", "0px");
+        if (index === 0 && firstRef) firstRef.current = element;
+      }}>
+      <button type='button'>Slide {index + 1}</button>
+    </CarouselItem>
+  ));
+}
+
+function renderCarousel(
+  props: FixtureProps = {},
+  controls: Controls = {},
+): ReturnType<typeof render> & {
+  readonly api: () => CarouselApi;
+  readonly renderAgain: (nextProps: FixtureProps, nextControls?: Controls) => void;
+} {
+  let initializedApi: CarouselApi | undefined;
+  const content = (currentProps: FixtureProps, currentControls: Controls): React.ReactElement => (
+    <Carousel
+      {...currentProps}
+      aria-label={currentProps["aria-label"] ?? "Featured slides"}
+      setApi={(api) => {
+        initializedApi = api;
+        currentProps.setApi?.(api);
+      }}>
+      <CarouselContent
+        data-testid='carousel-track'
+        className='consumer-track'>
+        {measuredSlides()}
+      </CarouselContent>
+      <CarouselPrevious {...currentControls.previous} />
+      <CarouselNext {...currentControls.next} />
+      {currentProps.children}
+    </Carousel>
+  );
+  const result = render(content(props, controls));
 
   return {
-    api,
-    useEmblaCarousel: vi.fn((): readonly [() => void, MockEmblaApi | undefined] => [vi.fn(), api]),
+    ...result,
+    renderAgain: (nextProps, nextControls = controls) => result.rerender(content(nextProps, nextControls)),
+    api: () => {
+      if (!initializedApi) throw new Error("Measured Embla viewport did not initialize");
+      return initializedApi;
+    },
   };
-});
+}
 
-vi.mock("embla-carousel-react", () => ({
-  default: emblaMock.useEmblaCarousel,
-}));
+function ContextControls(): React.ReactElement {
+  const {api, orientation, canScrollPrev, canScrollNext, scrollPrev, scrollNext} = useCarousel();
+  return (
+    <>
+      <output aria-label='Carousel context'>{`${orientation}:${api ? "ready" : "pending"}:${String(canScrollPrev)}:${String(canScrollNext)}`}</output>
+      <button
+        type='button'
+        onClick={scrollPrev}>
+        Custom previous
+      </button>
+      <button
+        type='button'
+        onClick={scrollNext}>
+        Custom next
+      </button>
+    </>
+  );
+}
 
-import {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "./carousel";
+const platformGetters = ["offsetWidth", "offsetHeight", "offsetLeft", "offsetTop"] as const;
+const originalDescriptors = platformGetters.map(
+  (property) => [property, Object.getOwnPropertyDescriptor(HTMLElement.prototype, property)] as const,
+);
 
-describe("Carousel", () => {
-  beforeEach(() => {
-    vi.mocked(emblaMock.api.canScrollNext).mockReturnValue(true);
-    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(true);
-    vi.mocked(emblaMock.api.on).mockClear();
-    vi.mocked(emblaMock.api.off).mockClear();
-    vi.mocked(emblaMock.api.scrollNext).mockClear();
-    vi.mocked(emblaMock.api.scrollPrev).mockClear();
-    vi.mocked(emblaMock.useEmblaCarousel).mockReset();
+describe("Carousel with the installed Embla engine", () => {
+  it("does not steal arrow keys from editable descendants or nested widgets", () => {
+    const {api} = renderCarousel({
+      children: (
+        <>
+          <input aria-label='Caption' />
+          <div
+            role='slider'
+            tabIndex={0}
+            aria-label='Volume'
+          />
+        </>
+      ),
+    });
+    for (const target of [screen.getByRole("textbox"), screen.getByRole("slider")]) {
+      const key = new KeyboardEvent("keydown", {key: "ArrowRight", bubbles: true, cancelable: true});
+      fireEvent(target, key);
+      expect(key.defaultPrevented).toBe(false);
+      expect(api().selectedScrollSnap()).toBe(0);
+    }
   });
 
-  function renderCarousel({
-    className,
-    nextButtonOnClick,
-    orientation,
-    previousButtonOnClick,
-  }: Readonly<{
-    className?: string;
-    nextButtonOnClick?: () => void;
-    orientation?: "horizontal" | "vertical";
-    previousButtonOnClick?: () => void;
-  }> = {}): ReturnType<typeof render> {
-    return render(
-      <Carousel
-        className={className}
-        orientation={orientation}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-          <CarouselItem>Slide 2</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious onClick={previousButtonOnClick} />
-        <CarouselNext onClick={nextButtonOnClick} />
+  beforeEach(() => {
+    for (const property of platformGetters) {
+      const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, property)?.get;
+      if (!original) throw new Error(`Missing platform getter: ${property}`);
+      vi.spyOn(HTMLElement.prototype, property, "get").mockImplementation(function (this: HTMLElement): number {
+        return fixtureOffset(this, property) ?? original.call(this);
+      });
+    }
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    for (const [property, descriptor] of originalDescriptors) {
+      expect(Object.getOwnPropertyDescriptor(HTMLElement.prototype, property)).toEqual(descriptor);
+    }
+  });
+
+  it("uses horizontal keys by default from focusable slide content and requests the next measured snap", () => {
+    const {api} = renderCarousel();
+    const firstSlide = screen.getByRole("button", {name: "Slide 1"});
+    const key = new KeyboardEvent("keydown", {key: "ArrowRight", bubbles: true, cancelable: true});
+    firstSlide.focus();
+
+    expect(api().slideNodes()).toHaveLength(3);
+    expect(api().internalEngine().containerRect.width).toBe(320);
+    expect(
+      api()
+        .internalEngine()
+        .slideRects.map((rect) => rect.left),
+    ).toEqual([0, 320, 640]);
+    expect(api().scrollSnapList()).toEqual([-0, 0.5, 1]);
+    expect(api().selectedScrollSnap()).toBe(0);
+    expect(api().internalEngine().target.get()).toBeCloseTo(0);
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeEnabled();
+
+    act(() => firstSlide.dispatchEvent(key));
+
+    expect(key.defaultPrevented).toBe(true);
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(api().internalEngine().target.get()).toBe(-320);
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeEnabled();
+
+    fireEvent.keyDown(firstSlide, {key: "ArrowLeft"});
+    expect(api().selectedScrollSnap()).toBe(0);
+    expect(api().internalEngine().target.get()).toBeCloseTo(0);
+  });
+
+  it("exports the guarded hook for custom controls as the sixth runtime export", () => {
+    expect(CarouselModule).toHaveProperty("useCarousel", expect.any(Function));
+    expect(Object.keys(CarouselModule)).toHaveLength(6);
+  });
+
+  it("merges consumer capture handlers without losing horizontal navigation", () => {
+    const onKeyDownCapture = vi.fn();
+    const {api} = renderCarousel({onKeyDownCapture});
+    fireEvent.keyDown(screen.getByRole("button", {name: "Slide 1"}), {key: "ArrowRight"});
+    expect(onKeyDownCapture).toHaveBeenCalledTimes(1);
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(api().internalEngine().target.get()).toBe(-320);
+  });
+
+  it.each(["previous", "next"] as const)("honors preventDefault on %s navigation without swallowing the consumer click", (control) => {
+    const onClick = vi.fn((event: React.MouseEvent<HTMLElement>) => event.preventDefault());
+    const {api} = renderCarousel({opts: {startIndex: 1}}, {[control]: {onClick}});
+    fireEvent.click(screen.getByRole("button", {name: control === "next" ? "Next slide" : "Previous slide"}));
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(api().internalEngine().target.get()).toBe(-320);
+  });
+
+  it("cannot enable a non-looping end with disabled=false", () => {
+    const {api} = renderCarousel({}, {previous: {disabled: false}, next: {disabled: false}});
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    act(() => api().scrollTo(2, true));
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+  });
+
+  it("uses the reviewed icon-sm Button preset and owns compound data slots", () => {
+    renderCarousel();
+    expect(screen.getByRole("region")).toHaveAttribute("data-slot", "carousel");
+    expect(screen.getAllByRole("group")[0]).toHaveAttribute("data-slot", "carousel-item");
+    expect(screen.getByRole("button", {name: "Previous slide"})).toHaveAttribute("data-slot", "carousel-previous");
+    expect(screen.getByRole("button", {name: "Next slide"})).toHaveAttribute("data-slot", "carousel-next");
+    expect(screen.getByRole("button", {name: "Previous slide"})).toHaveAttribute("data-size", "icon-sm");
+    expect(screen.getByRole("button", {name: "Next slide"})).toHaveAttribute("data-size", "icon-sm");
+  });
+
+  it.each([
+    {
+      name: "explicit horizontal",
+      props: {orientation: "horizontal"},
+      axis: "x",
+      orientation: "horizontal",
+      next: "ArrowRight",
+      previous: "ArrowLeft",
+      ignored: "ArrowDown",
+    },
+    {
+      name: "explicit vertical",
+      props: {orientation: "vertical"},
+      axis: "y",
+      orientation: "vertical",
+      next: "ArrowDown",
+      previous: "ArrowUp",
+      ignored: "ArrowRight",
+    },
+    {
+      name: "opts.axis=x",
+      props: {opts: {axis: "x"}},
+      axis: "x",
+      orientation: "horizontal",
+      next: "ArrowRight",
+      previous: "ArrowLeft",
+      ignored: "ArrowUp",
+    },
+    {
+      name: "opts.axis=y",
+      props: {opts: {axis: "y"}},
+      axis: "y",
+      orientation: "vertical",
+      next: "ArrowDown",
+      previous: "ArrowUp",
+      ignored: "ArrowLeft",
+    },
+    {
+      name: "horizontal overrides y",
+      props: {orientation: "horizontal", opts: {axis: "y"}},
+      axis: "x",
+      orientation: "horizontal",
+      next: "ArrowRight",
+      previous: "ArrowLeft",
+      ignored: "ArrowDown",
+    },
+    {
+      name: "vertical overrides x",
+      props: {orientation: "vertical", opts: {axis: "x"}},
+      axis: "y",
+      orientation: "vertical",
+      next: "ArrowDown",
+      previous: "ArrowUp",
+      ignored: "ArrowRight",
+    },
+  ] satisfies ReadonlyArray<{
+    name: string;
+    props: FixtureProps;
+    axis: string;
+    orientation: string;
+    next: string;
+    previous: string;
+    ignored: string;
+  }>)("keeps $name consistent across the engine, layout, context and keys", ({props, axis, orientation, next, previous, ignored}) => {
+    const {api} = renderCarousel({...props, children: <ContextControls />});
+    expect(api().internalEngine().options.axis).toBe(axis);
+    const region = screen.getByRole("region");
+    expect(region).toHaveAttribute("data-orientation", orientation);
+    for (const element of region.querySelectorAll("[data-slot^='carousel-']")) {
+      expect(element).toHaveAttribute("data-orientation", orientation);
+    }
+    expect(screen.getByLabelText("Carousel context")).toHaveTextContent(`${orientation}:ready:false:true`);
+    const button = screen.getByRole("button", {name: "Slide 1"});
+    const ignoredEvent = new KeyboardEvent("keydown", {key: ignored, bubbles: true, cancelable: true});
+    act(() => button.dispatchEvent(ignoredEvent));
+    expect(ignoredEvent.defaultPrevented).toBe(false);
+    expect(api().selectedScrollSnap()).toBe(0);
+    fireEvent.keyDown(button, {key: next});
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(api().internalEngine().target.get()).toBe(-320);
+    expect(screen.getByLabelText("Carousel context")).toHaveTextContent(`${orientation}:ready:true:true`);
+    fireEvent.keyDown(button, {key: previous});
+    expect(api().selectedScrollSnap()).toBe(0);
+    expect(api().internalEngine().target.get()).toBeCloseTo(0);
+  });
+
+  it("honors consumer keyboard cancellation and ignores unrelated keys", () => {
+    const onKeyDownCapture = vi.fn((event: React.KeyboardEvent<HTMLDivElement>) => event.preventDefault());
+    const {api} = renderCarousel({onKeyDownCapture});
+    fireEvent.keyDown(screen.getByRole("button", {name: "Slide 1"}), {key: "ArrowRight"});
+    expect(onKeyDownCapture).toHaveBeenCalledTimes(1);
+    expect(api().selectedScrollSnap()).toBe(0);
+    fireEvent.keyDown(screen.getByRole("button", {name: "Slide 1"}), {key: "Escape"});
+    expect(api().selectedScrollSnap()).toBe(0);
+  });
+
+  it("supports actual Button keyboard activation and click handlers without submitting forms", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const {api} = renderCarousel({}, {next: {onClick}});
+    const next = screen.getByRole("button", {name: "Next slide"});
+    expect(next).toHaveAttribute("type", "button");
+    next.focus();
+    await user.keyboard("{Enter}");
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(api().selectedScrollSnap()).toBe(1);
+    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
+    expect(api().selectedScrollSnap()).toBe(0);
+    expect(api().internalEngine().target.get()).toBeCloseTo(0);
+  });
+
+  it("clamps the measured ends, updates buttons and preserves explicit disabled=true", () => {
+    const {api, renderAgain} = renderCarousel();
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    expect(api().selectedScrollSnap()).toBe(2);
+    expect(api().internalEngine().target.get()).toBe(-640);
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    expect(api().selectedScrollSnap()).toBe(2);
+    renderAgain({}, {previous: {disabled: true}});
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
+    expect(api().selectedScrollSnap()).toBe(2);
+  });
+
+  it("keeps both controls available and wraps requested snaps when looping", () => {
+    const {api} = renderCarousel({opts: {loop: true}});
+    expect(api().internalEngine().options.loop).toBe(true);
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
+    expect(api().selectedScrollSnap()).toBe(2);
+    expect(api().internalEngine().target.get()).toBe(320);
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    expect(api().selectedScrollSnap()).toBe(0);
+    expect(api().internalEngine().target.get()).toBeCloseTo(0);
+  });
+
+  it("exposes safe pending context without a viewport and enforces the provider guard", () => {
+    const {unmount} = render(
+      <Carousel aria-label='Pending slides'>
+        <ContextControls />
+        <CarouselPrevious />
+        <CarouselNext />
       </Carousel>,
     );
-  }
-
-  it("renders without crashing", () => {
-    // Arrange
-    renderCarousel();
-
-    // Assert
-    expect(screen.getByRole("region")).toBeInTheDocument();
+    expect(screen.getByLabelText("Carousel context")).toHaveTextContent("horizontal:pending:false:false");
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", {name: "Custom next"}));
+    fireEvent.click(screen.getByRole("button", {name: "Custom previous"}));
+    unmount();
+    expect(() => render(<ContextControls />)).toThrow("useCarousel must be used within a <Carousel />");
   });
 
-  it("calls the carousel navigation methods when buttons are clicked", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel();
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Previous slide"}));
-    await user.click(screen.getByRole("button", {name: "Next slide"}));
-
-    // Assert
-    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
-    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
-  });
-
-  it("merges the root className", () => {
-    // Arrange
-    renderCarousel({className: "custom-carousel"});
-
-    // Assert
-    expect(screen.getByRole("region")).toHaveClass("custom-carousel");
-  });
-
-  it("renders slide children", () => {
-    // Arrange
-    renderCarousel();
-
-    // Assert
-    expect(screen.getByText("Slide 1")).toBeInTheDocument();
-    expect(screen.getByText("Slide 2")).toBeInTheDocument();
-  });
-
-  it("merges consumer onClick handlers with carousel navigation", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const previousButtonOnClick = vi.fn();
-    const nextButtonOnClick = vi.fn();
-
-    renderCarousel({nextButtonOnClick, previousButtonOnClick});
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Previous slide"}));
-    await user.click(screen.getByRole("button", {name: "Next slide"}));
-
-    // Assert
-    expect(previousButtonOnClick).toHaveBeenCalledTimes(1);
-    expect(nextButtonOnClick).toHaveBeenCalledTimes(1);
-    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
-    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders custom navigation children instead of the default arrow icons", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
+  it("initializes measured API/options/DOM refs and clears every ref on unmount", () => {
+    const rootRef = React.createRef<HTMLDivElement>();
+    const trackRef = React.createRef<HTMLDivElement>();
+    const slideRef = React.createRef<HTMLDivElement>();
+    const previousRef = React.createRef<HTMLButtonElement>();
+    const nextRef = React.createRef<HTMLButtonElement>();
+    let api: CarouselApi | undefined;
+    const {unmount} = render(
+      <Carousel
+        ref={rootRef}
+        className='consumer-root'
+        aria-label='Featured slides'
+        opts={{align: "start", startIndex: 1}}
+        setApi={(value) => {
+          api = value;
+        }}>
+        <CarouselContent
+          ref={trackRef}
+          data-testid='carousel-track'
+          className='consumer-track'>
+          {measuredSlides(3, slideRef)}
         </CarouselContent>
-        <CarouselPrevious>
-          <span data-testid='previous-icon'>Previous custom icon</span>
-        </CarouselPrevious>
-        <CarouselNext>
-          <span data-testid='next-icon'>Next custom icon</span>
+        <CarouselPrevious ref={previousRef} />
+        <CarouselNext
+          ref={nextRef}
+          size='icon-lg'
+          variant='ghost'
+          className='consumer-next'
+          aria-label='Forward'>
+          <span>Custom icon</span>
         </CarouselNext>
       </Carousel>,
     );
-
-    // Assert
-    expect(screen.getByTestId("previous-icon")).toBeInTheDocument();
-    expect(screen.getByTestId("next-icon")).toBeInTheDocument();
-  });
-
-  it("supports vertical keyboard navigation", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel({orientation: "vertical"});
-
-    // Act
-    screen.getByRole("button", {name: "Previous slide"}).focus();
-    await user.keyboard("{ArrowUp}{ArrowDown}");
-
-    // Assert
-    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
-    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
-  });
-
-  it("passes the initialized embla api to setApi", () => {
-    // Arrange
-    const setApi = vi.fn();
-
-    render(
-      <Carousel setApi={setApi}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(setApi).toHaveBeenCalledWith(emblaMock.api);
-  });
-
-  it("cleans up all Embla event listeners on unmount", () => {
-    // Arrange
-    const {unmount} = renderCarousel();
-    const registrations = [...vi.mocked(emblaMock.api.on).mock.calls];
-
-    // Act
+    if (!api) throw new Error("API callback was not invoked");
+    expect(api.rootNode()).toBe(trackRef.current?.parentElement);
+    expect(api.containerNode()).toBe(trackRef.current);
+    expect(api.slideNodes()[0]).toBe(slideRef.current);
+    expect(api.selectedScrollSnap()).toBe(1);
+    expect(rootRef.current).toBe(screen.getByRole("region", {name: "Featured slides"}));
+    expect(rootRef.current).toHaveClass("consumer-root");
+    expect(trackRef.current).toHaveClass("consumer-track");
+    expect(slideRef.current).toHaveClass("consumer-slide");
+    expect(previousRef.current).toBe(screen.getByRole("button", {name: "Previous slide"}));
+    const next = screen.getByRole("button", {name: "Forward"});
+    expect(nextRef.current).toBe(next);
+    expect(next).toHaveAttribute("data-size", "icon-lg");
+    expect(next).toHaveAttribute("data-variant", "ghost");
+    expect(next).toHaveClass("consumer-next");
+    expect(next.querySelector("svg")).toBeNull();
     unmount();
-
-    // Assert
-    expect(registrations).toHaveLength(2);
-    for (const [event, listener] of registrations) {
-      expect(emblaMock.api.off).toHaveBeenCalledWith(event, listener);
-    }
+    for (const ref of [rootRef, trackRef, slideRef, previousRef, nextRef]) expect(ref.current).toBeNull();
   });
 
-  it.each(["select", "reInit"] as const)("updates both navigation buttons after an Embla %s event", (event) => {
-    // Arrange
-    renderCarousel();
-    const previousButton = screen.getByRole("button", {name: "Previous slide"});
-    const nextButton = screen.getByRole("button", {name: "Next slide"});
-    const listener = vi.mocked(emblaMock.api.on).mock.calls.find(([registeredEvent]) => registeredEvent === event)?.[1];
-
-    expect(listener).toBeDefined();
-    expect(previousButton).toBeEnabled();
-    expect(nextButton).toBeEnabled();
-
-    // Act
-    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(false);
-    act(() => listener?.(emblaMock.api));
-
-    // Assert
-    expect(previousButton).toBeDisabled();
-    expect(nextButton).toBeEnabled();
-
-    // Act
-    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(true);
-    vi.mocked(emblaMock.api.canScrollNext).mockReturnValue(false);
-    act(() => listener?.(emblaMock.api));
-
-    // Assert
-    expect(previousButton).toBeEnabled();
-    expect(nextButton).toBeDisabled();
-  });
-
-  it("keeps navigation disabled until the API initializes, then reads its current availability", () => {
-    // Arrange
-    const setApi = vi.fn();
-    const content = (): JSX.Element => (
-      <Carousel setApi={setApi}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
-    );
-    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), undefined]);
-    const {rerender} = render(content());
-
-    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
-    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
-    expect(setApi).not.toHaveBeenCalled();
-    expect(emblaMock.api.on).not.toHaveBeenCalled();
-
-    // Act
-    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(false);
-    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), emblaMock.api]);
-    rerender(content());
-
-    // Assert
-    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
-    expect(screen.getByRole("button", {name: "Next slide"})).toBeEnabled();
-    expect(setApi).toHaveBeenCalledWith(emblaMock.api);
-  });
-
-  it("releases the old API subscriptions when the carousel API is replaced", () => {
-    // Arrange
-    const replacementApi: MockEmblaApi = {
-      canScrollNext: vi.fn(() => false),
-      canScrollPrev: vi.fn(() => true),
-      off: vi.fn(),
-      on: vi.fn(),
-      scrollNext: vi.fn(),
-      scrollPrev: vi.fn(),
+  it("forwards plugins through real initialization, reInit and destruction while updating availability", () => {
+    const lifecycle: string[] = [];
+    const plugin: NonNullable<CarouselPlugin>[number] = {
+      name: "fixtureLifecycle",
+      options: {},
+      init: (api) => {
+        lifecycle.push(`init:${api.selectedScrollSnap()}`);
+      },
+      destroy: () => {
+        lifecycle.push("destroy");
+      },
     };
-    const content = (): JSX.Element => (
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
-    );
-    const {rerender, unmount} = render(content());
-    const oldRegistrations = [...vi.mocked(emblaMock.api.on).mock.calls];
-
-    // Act
-    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), replacementApi]);
-    rerender(content());
-
-    // Assert
-    for (const [event, listener] of oldRegistrations) {
-      expect(emblaMock.api.off).toHaveBeenCalledWith(event, listener);
-    }
+    const {api, unmount} = renderCarousel({plugins: [plugin]});
+    expect(api().plugins()["fixtureLifecycle"]).toBe(plugin);
+    expect(lifecycle).toEqual(["init:0"]);
+    act(() => api().reInit({startIndex: 2}));
+    expect(api().selectedScrollSnap()).toBe(2);
     expect(screen.getByRole("button", {name: "Previous slide"})).toBeEnabled();
     expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
-    expect(replacementApi.on).toHaveBeenCalledWith("reInit", expect.any(Function));
-    expect(replacementApi.on).toHaveBeenCalledWith("select", expect.any(Function));
+    expect(lifecycle).toEqual(["init:0", "destroy", "init:2"]);
+    unmount();
+    expect(lifecycle).toEqual(["init:0", "destroy", "init:2", "destroy"]);
+    const target = api().internalEngine().target.get();
+    api().scrollPrev();
+    expect(api().internalEngine().target.get()).toBe(target);
+  });
 
-    // Act
+  it("reinitializes the same engine API when orientation/options change and releases subscriptions on replacement/unmount", () => {
+    const initialApi = React.createRef<CarouselApi | null>();
+    let readRegistrations: (() => ReadonlyArray<Parameters<CarouselApi["on"]>>) | undefined;
+    const initPlugin: NonNullable<CarouselPlugin>[number] = {
+      name: "subscriptionObservation",
+      options: {},
+      init: (api) => {
+        if (initialApi.current) return;
+        initialApi.current = api;
+        const on = vi.spyOn(api, "on");
+        readRegistrations = () => on.mock.calls;
+      },
+      destroy: () => {},
+    };
+    const {api, renderAgain, unmount} = renderCarousel({plugins: [initPlugin]});
+    if (!readRegistrations) throw new Error("Plugin did not observe API initialization");
+    const registrations = [...readRegistrations()];
+    expect(registrations.map(([event]) => event)).toEqual(["reInit", "select"]);
+    const oldApi = api();
+    const off = vi.spyOn(oldApi, "off");
+    const reInit = vi.fn();
+    oldApi.on("reInit", reInit);
+    renderAgain({orientation: "vertical", opts: {axis: "x", startIndex: 1}, plugins: [initPlugin]});
+    expect(api()).toBe(oldApi);
+    expect(api().internalEngine().options.axis).toBe("y");
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(reInit).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByRole("button", {name: "Slide 1"}), {key: "ArrowDown"});
+    expect(api().selectedScrollSnap()).toBe(2);
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+    unmount();
+    for (const [event, listener] of registrations) {
+      expect(off).toHaveBeenCalledWith(event, listener);
+    }
+    expect(off).toHaveBeenCalledWith("select", expect.any(Function));
+    expect(off).toHaveBeenCalledWith("reInit", expect.any(Function));
+    const notifications = reInit.mock.calls.length;
+    act(() => oldApi.emit("reInit"));
+    expect(reInit).toHaveBeenCalledTimes(notifications);
+  });
+
+  it("releases the old API listeners when its viewport is removed and initializes a replacement viewport", () => {
+    const observedApis: CarouselApi[] = [];
+    const options: CarouselOptions = {align: "start"};
+    const content = (showViewport: boolean): React.ReactElement => (
+      <Carousel
+        aria-label='Replaceable slides'
+        opts={options}
+        setApi={(api) => {
+          observedApis.push(api);
+        }}>
+        {showViewport && <CarouselContent data-testid='carousel-track'>{measuredSlides()}</CarouselContent>}
+        <CarouselPrevious />
+        <CarouselNext />
+        <ContextControls />
+      </Carousel>
+    );
+    const {rerender, unmount} = render(content(true));
+    const oldApi = observedApis[0];
+    if (!oldApi) throw new Error("Initial viewport did not initialize");
+    const off = vi.spyOn(oldApi, "off");
+    const destroyed = vi.fn();
+    oldApi.on("destroy", destroyed);
+    rerender(content(false));
+    expect(destroyed).toHaveBeenCalledTimes(1);
+    expect(off).toHaveBeenCalledWith("reInit", expect.any(Function));
+    expect(off).toHaveBeenCalledWith("select", expect.any(Function));
+    expect(screen.getByLabelText("Carousel context")).toHaveTextContent("horizontal:pending:false:false");
+    rerender(content(true));
+    const newApi = observedApis.at(-1);
+    if (!newApi) throw new Error("Replacement viewport did not initialize");
+    expect(newApi).not.toBe(oldApi);
+    fireEvent.click(screen.getByRole("button", {name: "Custom next"}));
+    expect(newApi.selectedScrollSnap()).toBe(1);
+    expect(oldApi.selectedScrollSnap()).toBe(0);
+    const newOff = vi.spyOn(newApi, "off");
+    unmount();
+    expect(newOff).toHaveBeenCalledWith("reInit", expect.any(Function));
+    expect(newOff).toHaveBeenCalledWith("select", expect.any(Function));
+  });
+
+  it.each(["previous", "next"] as const)("honors primitive-handler cancellation on %s without replacing the engine", (control) => {
+    const onClick: NonNullable<CarouselNext.Props["onClick"]> = (event) => event.preventBaseUIHandler();
+    const {api} = renderCarousel({opts: {startIndex: 1}}, {[control]: {onClick}});
+    fireEvent.click(screen.getByRole("button", {name: control === "next" ? "Next slide" : "Previous slide"}));
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(api().internalEngine().target.get()).toBe(-320);
+  });
+
+  it("preserves disabled and ARIA semantics on non-native rendered controls", () => {
+    const onClick = vi.fn();
+    const {api} = renderCarousel(
+      {},
+      {
+        previous: {nativeButton: false, render: <a href='#previous'>Previous link</a>, onClick},
+        next: {nativeButton: false, render: <a href='#next'>Next link</a>, onClick},
+      },
+    );
+    const previous = screen.getByRole("button", {name: "Previous link"});
+    expect(previous).toHaveAttribute("aria-disabled", "true");
+    expect(previous).toHaveAttribute("tabindex", "-1");
+    fireEvent.click(previous);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(api().selectedScrollSnap()).toBe(0);
+    fireEvent.click(screen.getByRole("button", {name: "Next link"}));
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves state-dependent consumer props to the real Button primitive", () => {
+    const style: NonNullable<CarouselPrevious.Props["style"]> = (state) => ({opacity: state.disabled ? 0.5 : 1});
+    const {api} = renderCarousel({}, {previous: {style}});
+    expect(screen.getByRole("button", {name: "Previous slide"})).toHaveStyle({opacity: "0.5"});
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    expect(api().selectedScrollSnap()).toBe(1);
+    expect(screen.getByRole("button", {name: "Previous slide"})).toHaveStyle({opacity: "1"});
+  });
+
+  it("renders the stable server snapshot with disabled navigation before viewport hydration", () => {
+    const html = renderToString(
+      <Carousel
+        aria-label='Vertical slides'
+        opts={{axis: "y"}}>
+        <CarouselContent>{measuredSlides()}</CarouselContent>
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>,
+    );
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    expect(container.querySelector("[data-slot='carousel']")).toHaveAttribute("data-orientation", "vertical");
+    expect(container.querySelector("[data-slot='carousel']")).toHaveAttribute("aria-label", "Vertical slides");
+    expect(container.querySelector("[data-slot='carousel-previous']")).toBeDisabled();
+    expect(container.querySelector("[data-slot='carousel-next']")).toBeDisabled();
+  });
+
+  it("passes real primitive render state, child refs/content and cancellation through navigation", () => {
+    const ref = React.createRef<HTMLElement>();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const onClick = vi.fn((event: React.MouseEvent<HTMLButtonElement>) => event.preventDefault());
+    const {api, renderAgain} = renderCarousel(
+      {},
+      {
+        previous: {
+          ref,
+          render: (props, state) => (
+            <button
+              {...props}
+              data-disabled-state={String(state.disabled)}
+            />
+          ),
+        },
+        next: {
+          render: (
+            <button
+              ref={childRef}
+              onClick={onClick}>
+              Rendered next
+            </button>
+          ),
+        },
+      },
+    );
+    expect(ref.current).toHaveAttribute("data-disabled-state", "true");
+    const next = screen.getByRole("button", {name: "Rendered next"});
+    expect(childRef.current).toBe(next);
+    fireEvent.click(next);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(api().selectedScrollSnap()).toBe(0);
+    renderAgain(
+      {},
+      {
+        previous: {
+          ref,
+          render: (props, state) => (
+            <button
+              {...props}
+              data-disabled-state={String(state.disabled)}
+            />
+          ),
+        },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    expect(ref.current).toHaveAttribute("data-disabled-state", "false");
+    expect(api().selectedScrollSnap()).toBe(1);
+  });
+
+  it.each(["previous", "next"] as const)("preserves a canonical %s render target, content and ref", (control) => {
+    const wrapperRef = React.createRef<HTMLElement>();
+    const childRef = React.createRef<HTMLAnchorElement>();
+    const {api} = renderCarousel(
+      {opts: {startIndex: 1}},
+      {
+        [control]: {
+          nativeButton: false,
+          ref: wrapperRef,
+          render: (
+            <a
+              ref={childRef}
+              href='#destination'>
+              Custom navigation
+            </a>
+          ),
+        },
+      },
+    );
+    const target = screen.getByRole("button", {name: "Custom navigation"});
+    expect(target.tagName).toBe("A");
+    expect(wrapperRef.current).toBe(target);
+    expect(childRef.current).toBe(target);
+    fireEvent.click(target);
+    expect(api().selectedScrollSnap()).toBe(control === "next" ? 2 : 0);
+  });
+
+  it("disables both controls for a single measured slide", () => {
+    render(
+      <Carousel aria-label='Single slide'>
+        <CarouselContent data-testid='carousel-track'>{measuredSlides(1)}</CarouselContent>
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>,
+    );
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+  });
+
+  it("review correction: ships no generic English region name and exposes each caller-supplied name", () => {
+    // @ts-expect-error The public props type requires a string `aria-label` or `aria-labelledby`.
+    const unnamedProps: CarouselProps = {orientation: "vertical"};
+    expect(unnamedProps).not.toHaveProperty("aria-label");
+    const slides = <CarouselContent>{measuredSlides(1)}</CarouselContent>;
+    // @ts-expect-error A carousel region needs a caller-localized, distinct name.
+    const unnamed = <Carousel>{slides}</Carousel>;
+    const {unmount} = render(unnamed);
+    const region = screen.getByRole("region");
+    expect(region).toHaveAttribute("aria-roledescription", "carousel");
+    expect(region).not.toHaveAttribute("aria-label");
+    expect(region).toHaveAccessibleName("");
     unmount();
 
-    // Assert
-    for (const [event, listener] of vi.mocked(replacementApi.on).mock.calls) {
-      expect(replacementApi.off).toHaveBeenCalledWith(event, listener);
+    render(
+      <>
+        <Carousel aria-label='Featured products'>{slides}</Carousel>
+        <h2 id='spring-heading'>Spring collection</h2>
+        <Carousel aria-labelledby='spring-heading'>{slides}</Carousel>
+      </>,
+    );
+    const named = screen.getByRole("region", {name: "Featured products"});
+    const labelled = screen.getByRole("region", {name: "Spring collection"});
+    for (const carousel of [named, labelled]) expect(carousel).toHaveAttribute("aria-roledescription", "carousel");
+    expect(named).toHaveAttribute("aria-label", "Featured products");
+    expect(labelled).toHaveAttribute("aria-labelledby", "spring-heading");
+    expect(labelled).not.toHaveAttribute("aria-label");
+  });
+
+  it("review correction: the documented localized example translates the name and both role descriptions", () => {
+    render(
+      <Carousel
+        aria-label='Produits en vedette'
+        aria-roledescription='carrousel'
+        opts={{loop: true}}>
+        <CarouselContent>
+          <CarouselItem aria-roledescription='diapositive'>Diapositive 1</CarouselItem>
+          <CarouselItem aria-roledescription='diapositive'>Diapositive 2</CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious label='Diapositive précédente' />
+        <CarouselNext label='Diapositive suivante' />
+      </Carousel>,
+    );
+    expect(screen.getByRole("region", {name: "Produits en vedette"})).toHaveAttribute("aria-roledescription", "carrousel");
+    const slides = screen.getAllByRole("group");
+    expect(slides).toHaveLength(2);
+    for (const slide of slides) expect(slide).toHaveAttribute("aria-roledescription", "diapositive");
+    expect(screen.getByRole("button", {name: "Diapositive précédente"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Diapositive suivante"})).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/carousel|slide/iu);
+  });
+
+  describe("review correction: reduced-motion duration", () => {
+    const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
+    /** Replaces only the platform preference; Embla, React and the carousel stay real. */
+    function controlReducedMotion(initial: boolean): (reduced: boolean) => void {
+      let reduced = initial;
+      const media = window.matchMedia(reducedMotionQuery);
+      Object.defineProperty(media, "matches", {configurable: true, get: () => reduced});
+      const platformMatchMedia = window.matchMedia.bind(window);
+      vi.spyOn(window, "matchMedia").mockImplementation((query) => (query === reducedMotionQuery ? media : platformMatchMedia(query)));
+      return (next) => {
+        reduced = next;
+        act(() => {
+          media.dispatchEvent(new Event("change"));
+        });
+      };
     }
-  });
 
-  it("disables previous button when canScrollPrev is false", () => {
-    // Arrange
-    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(false);
-    renderCarousel();
+    // Embla 8's own default transition duration, used when the caller supplies none.
+    it.each([
+      {source: "caller", opts: {duration: 40}, expected: 40},
+      {source: "Embla default", opts: undefined, expected: 25},
+    ])("restores the $source duration each time the preference clears", ({opts, expected}) => {
+      const setReduced = controlReducedMotion(false);
+      const {api} = renderCarousel({opts});
+      const duration = (): number => api().internalEngine().options.duration;
+      expect(duration()).toBe(expected);
 
-    // Assert
-    const previousButton = screen.getByRole("button", {name: "Previous slide"});
-    expect(previousButton).toBeDisabled();
-  });
+      setReduced(true);
+      expect(duration()).toBe(0);
+      fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+      expect(api().selectedScrollSnap()).toBe(1);
 
-  it("disables next button when canScrollNext is false", () => {
-    // Arrange
-    vi.mocked(emblaMock.api.canScrollNext).mockReturnValue(false);
-    renderCarousel();
+      setReduced(false);
+      expect(duration()).toBe(expected);
+      expect(api().selectedScrollSnap()).toBe(1);
 
-    // Assert
-    const nextButton = screen.getByRole("button", {name: "Next slide"});
-    expect(nextButton).toBeDisabled();
-  });
+      setReduced(true);
+      expect(duration()).toBe(0);
+      setReduced(false);
+      expect(duration()).toBe(expected);
+    });
 
-  it("supports vertical orientation with correct data attribute", () => {
-    // Arrange
-    renderCarousel({orientation: "vertical"});
+    it.each([
+      {source: "caller", opts: {duration: 40, startIndex: 1}, expected: 40},
+      {source: "Embla default", opts: {startIndex: 1}, expected: 25},
+    ])("starts instant under a reduced-motion preference and then restores the $source duration", ({opts, expected}) => {
+      const setReduced = controlReducedMotion(true);
+      const {api} = renderCarousel({opts});
+      expect(api().internalEngine().options.duration).toBe(0);
+      expect(api().selectedScrollSnap()).toBe(1);
 
-    // Assert
-    const carousel = screen.getByRole("region");
-    expect(carousel).toHaveAttribute("data-orientation", "vertical");
-  });
+      setReduced(false);
+      expect(api().internalEngine().options.duration).toBe(expected);
+      expect(api().selectedScrollSnap()).toBe(1);
+    });
 
-  it("passes vertical axis to Embla when orientation is vertical", () => {
-    // Arrange
-    renderCarousel({orientation: "vertical"});
+    it("keeps caller breakpoints while its own reduced-motion duration wins over every matching caller entry", () => {
+      const setReduced = controlReducedMotion(false);
+      const {api} = renderCarousel({
+        opts: {
+          breakpoints: {
+            [reducedMotionQuery]: {duration: 99, dragFree: true},
+            "(min-width: 1px)": {duration: 60},
+          },
+        },
+      });
+      const options = (): Readonly<{duration: number; dragFree: boolean}> => api().internalEngine().options;
+      expect(window.matchMedia("(min-width: 1px)").matches).toBe(true);
+      expect(options()).toMatchObject({duration: 60, dragFree: false});
 
-    // Assert
-    expect(emblaMock.useEmblaCarousel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        axis: "y",
-      }),
-      undefined,
-    );
-  });
+      setReduced(true);
+      expect(options()).toMatchObject({duration: 0, dragFree: true});
 
-  it("passes horizontal axis to Embla when orientation is horizontal", () => {
-    // Arrange
-    renderCarousel({orientation: "horizontal"});
-
-    // Assert
-    expect(emblaMock.useEmblaCarousel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        axis: "x",
-      }),
-      undefined,
-    );
-  });
-
-  it("defaults to horizontal axis when no orientation is specified", () => {
-    // Arrange
-    renderCarousel();
-
-    // Assert
-    expect(emblaMock.useEmblaCarousel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        axis: "x",
-      }),
-      undefined,
-    );
-  });
-
-  it("supports horizontal keyboard navigation with ArrowLeft", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel({orientation: "horizontal"});
-
-    // Act
-    screen.getByRole("button", {name: "Previous slide"}).focus();
-    await user.keyboard("{ArrowLeft}");
-
-    // Assert
-    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
-  });
-
-  it("supports horizontal keyboard navigation with ArrowRight", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel({orientation: "horizontal"});
-
-    // Act
-    screen.getByRole("button", {name: "Previous slide"}).focus();
-    await user.keyboard("{ArrowRight}");
-
-    // Assert
-    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
-  });
-
-  it("ignores vertical arrow keys when orientation is horizontal", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel({orientation: "horizontal"});
-
-    // Act
-    screen.getByRole("button", {name: "Previous slide"}).focus();
-    await user.keyboard("{ArrowUp}{ArrowDown}");
-
-    // Assert
-    expect(emblaMock.api.scrollPrev).not.toHaveBeenCalled();
-    expect(emblaMock.api.scrollNext).not.toHaveBeenCalled();
-  });
-
-  it("ignores horizontal arrow keys when orientation is vertical", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    renderCarousel({orientation: "vertical"});
-
-    // Act
-    screen.getByRole("button", {name: "Previous slide"}).focus();
-    await user.keyboard("{ArrowLeft}{ArrowRight}");
-
-    // Assert
-    expect(emblaMock.api.scrollPrev).not.toHaveBeenCalled();
-    expect(emblaMock.api.scrollNext).not.toHaveBeenCalled();
-  });
-
-  it("registers Embla event listeners on mount", () => {
-    // Arrange
-    renderCarousel();
-
-    // Assert
-    expect(emblaMock.api.on).toHaveBeenCalledWith("reInit", expect.any(Function));
-    expect(emblaMock.api.on).toHaveBeenCalledWith("select", expect.any(Function));
-  });
-
-  it("calls setApi only when api is available", () => {
-    // Arrange
-    const setApi = vi.fn();
-
-    render(
-      <Carousel setApi={setApi}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(setApi).toHaveBeenCalledWith(emblaMock.api);
-  });
-
-  it("passes opts to Embla carousel", () => {
-    // Arrange
-    render(
-      <Carousel opts={{loop: true, align: "start"}}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(emblaMock.useEmblaCarousel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        align: "start",
-        axis: "x",
-        loop: true,
-      }),
-      undefined,
-    );
-  });
-
-  it("passes plugins to Embla carousel", () => {
-    // Arrange
-    const mockPlugin = vi.fn();
-    render(
-      <Carousel plugins={[mockPlugin]}>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(emblaMock.useEmblaCarousel).toHaveBeenCalledWith(expect.any(Object), [mockPlugin]);
-  });
-
-  it("renders CarouselContent with vertical orientation data attribute", () => {
-    // Arrange
-    render(
-      <Carousel orientation='vertical'>
-        <CarouselContent data-testid='carousel-content'>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    const content = screen.getByTestId("carousel-content");
-    expect(content).toHaveAttribute("data-orientation", "vertical");
-  });
-
-  it("renders CarouselItem with vertical orientation data attribute", () => {
-    // Arrange
-    render(
-      <Carousel orientation='vertical'>
-        <CarouselContent>
-          <CarouselItem data-testid='carousel-item'>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    const item = screen.getByTestId("carousel-item");
-    expect(item).toHaveAttribute("data-orientation", "vertical");
-  });
-
-  it("renders CarouselPrevious with vertical orientation data attribute", () => {
-    // Arrange
-    render(
-      <Carousel orientation='vertical'>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious data-testid='prev-button' />
-      </Carousel>,
-    );
-
-    // Assert
-    const button = screen.getByTestId("prev-button");
-    expect(button).toHaveAttribute("data-orientation", "vertical");
-  });
-
-  it("renders CarouselNext with vertical orientation data attribute", () => {
-    // Arrange
-    render(
-      <Carousel orientation='vertical'>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselNext data-testid='next-button' />
-      </Carousel>,
-    );
-
-    // Assert
-    const button = screen.getByTestId("next-button");
-    expect(button).toHaveAttribute("data-orientation", "vertical");
-  });
-
-  it("applies custom variant to CarouselPrevious", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious
-          variant='ghost'
-          data-testid='prev-ghost'
-        />
-      </Carousel>,
-    );
-
-    // Assert - The button should be rendered with the ghost variant
-    expect(screen.getByTestId("prev-ghost")).toBeInTheDocument();
-  });
-
-  it("applies custom size to CarouselNext", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselNext
-          size='lg'
-          data-testid='next-lg'
-        />
-      </Carousel>,
-    );
-
-    // Assert - The button should be rendered with the lg size
-    expect(screen.getByTestId("next-lg")).toBeInTheDocument();
-  });
-
-  it("merges custom className on CarouselContent", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent
-          className='custom-content'
-          data-testid='content'>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(screen.getByTestId("content")).toHaveClass("custom-content");
-  });
-
-  it("merges custom className on CarouselItem", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem
-            className='custom-item'
-            data-testid='item'>
-            Slide 1
-          </CarouselItem>
-        </CarouselContent>
-      </Carousel>,
-    );
-
-    // Assert
-    expect(screen.getByTestId("item")).toHaveClass("custom-item");
-  });
-
-  it("merges custom className on CarouselPrevious", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselPrevious className='custom-prev' />
-      </Carousel>,
-    );
-
-    // Assert
-    expect(screen.getByRole("button", {name: "Previous slide"})).toHaveClass("custom-prev");
-  });
-
-  it("merges custom className on CarouselNext", () => {
-    // Arrange
-    render(
-      <Carousel>
-        <CarouselContent>
-          <CarouselItem>Slide 1</CarouselItem>
-        </CarouselContent>
-        <CarouselNext className='custom-next' />
-      </Carousel>,
-    );
-
-    // Assert
-    expect(screen.getByRole("button", {name: "Next slide"})).toHaveClass("custom-next");
+      setReduced(false);
+      expect(options()).toMatchObject({duration: 60, dragFree: false});
+    });
   });
 });

@@ -14,21 +14,23 @@ Owns constraints unique to `@arolariu/components`.
 
 - `packages/components/AGENTS.md`
 - RFC 1006 and RFC 1008 for architecture changes
-- A sibling Base UI component, its test/story, and its CSS Module when it owns
-  visual styling
+- A sibling Base UI component, its test/story, and its CSS Module when it owns visual styling
 - `packages/components/src/index.ts`
 
 ## Rules
 
 - Keep public components domain-agnostic.
 - Do not import from `sites/**`.
-- Prefer Base UI `render` composition.
-- Keep `asChild` only for backward-compatible existing APIs.
-- Use `React.forwardRef` when a public component exposes a DOM ref.
+- Prefer Base UI composition; expose canonical `render` composition only; do not reintroduce `asChild`, removed deprecated props or aliases,
+  and do not add legacy adapters.
+- The package is React 19-only: receive DOM refs as typed `ref` props with precise DOM types, and preserve callback-ref cleanup and
+  object-ref ownership.
 - Compose classes with the existing `cn()` helper.
-- Style-owning components use a colocated CSS Module; intentional style-free
-  composition primitives may omit one. Do not use inline style objects.
+- Style-owning components use a colocated CSS Module; intentional style-free composition primitives may omit one. Do not use inline style
+  objects.
 - Preserve keyboard, focus, disabled, and ARIA behavior.
+- Follow `packages/components/ACCESSIBILITY.md` for applicable WCAG 2.2 A/AA criteria and component/consumer verification boundaries;
+  emulated tests do not establish full WCAG conformance.
 - Colocate a focused test and Storybook story.
 - Export every public component and public type from `src/index.ts`.
 
@@ -41,8 +43,8 @@ Open `references/components.md` only when the task needs one of:
 - accessibility/focus work on an overlay, compound, or interactive component;
 - a story/test/barrel-export decision for a new or changed public component.
 
-The catalog does not redefine these rules or the verification/escalation
-sections below; it only adds repository-specific examples and anti-patterns.
+The catalog does not redefine these rules or the verification/escalation sections below; it only adds repository-specific examples and
+anti-patterns.
 
 ## Validation
 
@@ -50,5 +52,5 @@ Run the component-library build and the smallest relevant component test.
 
 ## Escalation
 
-Ask before adding a dependency, changing a public component contract, or
-modifying the library when the user's task did not explicitly include it.
+Ask before adding a dependency, changing a public component contract, or modifying the library when the user's task did not explicitly
+include it.

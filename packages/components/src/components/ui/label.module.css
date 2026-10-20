@@ -1,4 +1,7 @@
 .label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-2);
   font-size: var(--ac-text-sm);
   font-weight: 500;
   line-height: 1;
@@ -7,7 +10,22 @@
   user-select: none;
 }
 
-.label[data-disabled] {
+.label[data-disabled]:not([data-disabled="false"]),
+.label:has(:disabled),
+fieldset:disabled .label,
+[data-disabled="true"] .label {
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+@media (forced-colors: active) {
+  .label {
+    color: CanvasText;
+  }
+
+  .label[data-disabled]:not([data-disabled="false"]),
+  fieldset:disabled .label {
+    color: GrayText;
+    opacity: 1;
+  }
 }

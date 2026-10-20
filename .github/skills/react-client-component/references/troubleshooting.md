@@ -15,7 +15,7 @@ Load only after the named symptom occurs.
 | Test leaks timers, listeners, portals, or mocks | Effect cleanup, fake timers, `afterEach`, Testing Library unmount | Return cleanup, restore real timers/mocks, close portals/observers, and await user-visible disappearance. |
 | `act(...)` warning or flaky async assertion | Unawaited `userEvent`, promise, timer advancement, or state update | Await the interaction/result; use `waitFor` for observable async completion and fake timers only when time is the behavior. |
 | Shared component import is undefined | `packages/components/src/index.ts`, package export path, build output | For explicitly requested library work, add the public component/type export and run library validation. Do not modify the barrel for website-local code. |
-| Ref is null or points to the wrong node | Consumer need, matching shared primitive's `forwardRef`, composed `render` target | Forward the exact public DOM ref only when the contract requires it and add a focused ref test. |
+| Ref is null or points to the wrong node | Consumer need, matching shared primitive's typed `ref` prop (React 19 contract in `.github/instructions/components.instructions.md`), composed `render` target | Forward the exact public DOM ref only when the contract requires it and add a focused ref test. |
 
 If the correction requires a dependency, public shared-component API change,
 new global state boundary, or materially different interaction semantics, stop

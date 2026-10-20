@@ -1,5 +1,7 @@
 .empty {
+  box-sizing: border-box;
   display: flex;
+  width: 100%;
   min-width: 0;
   flex: 1 1 auto;
   flex-direction: column;
@@ -10,10 +12,13 @@
   border: 1px dashed var(--ac-border);
   border-radius: var(--ac-radius-lg);
   text-align: center;
+  text-wrap: balance;
 }
 
 .header {
   display: flex;
+  min-width: 0;
+  width: 100%;
   max-width: 24rem;
   flex-direction: column;
   align-items: center;
@@ -29,8 +34,9 @@
   flex-shrink: 0;
 }
 
-.media svg {
+.media > svg {
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .mediaIcon {
@@ -42,12 +48,14 @@
   color: var(--ac-foreground);
 }
 
-.mediaIcon svg {
+.mediaIcon > svg {
   width: 1.5rem;
   height: 1.5rem;
 }
 
 .title {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--ac-foreground);
   font-size: var(--ac-text-lg);
   font-weight: 600;
@@ -55,19 +63,28 @@
 }
 
 .description {
+  margin: 0;
+  overflow-wrap: anywhere;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
   line-height: 1.6;
 }
 
-.description a {
+/*
+ * Links inside the description share its text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so this beats element-only
+ * link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled anchor (for
+ * example `buttonVariants()`) still keeps its own paint. Author origin still overrides the user agent's link colours.
+ */
+:where(.description) a:is(a) {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 
 @media (hover: hover) {
-  .description a:hover {
+  /* `:where(:hover)` keeps (0,0,2), so the later rule wins over the rest colour but never over a class-styled anchor. */
+  :where(.description) a:is(a):where(:hover) {
     color: var(--ac-foreground);
   }
 }
@@ -81,4 +98,26 @@
   align-items: center;
   gap: var(--ac-space-4);
   font-size: var(--ac-text-sm);
+}
+
+.media > img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* (0,1,2): beats element-only `a:focus-visible` resets, yields to a class-styled anchor's own `:focus-visible` (0,2,0). */
+:where(.description) a:is(a):focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .empty,
+  .mediaIcon {
+    border-color: CanvasText;
+  }
+
+  :where(.description) a:is(a) {
+    color: LinkText;
+  }
 }

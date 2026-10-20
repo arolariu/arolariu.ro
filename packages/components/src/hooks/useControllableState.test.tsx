@@ -1,4 +1,5 @@
-import {act, renderHook} from "@testing-library/react";
+import {act, render, renderHook, screen} from "@testing-library/react";
+import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
 
 import {useControllableState} from "./useControllableState";
@@ -71,6 +72,52 @@ describe("useControllableState", () => {
 
     expect(onChange).toHaveBeenCalledWith("new-value");
     expect(result.current[0]).toBe("new-value");
+  });
+
+  it("notifies each committed uncontrolled change once under StrictMode", () => {
+    const onChange = vi.fn();
+    const {result} = renderHook(() => useControllableState({defaultValue: 0, onChange}), {
+      wrapper: ({children}) => <React.StrictMode>{children}</React.StrictMode>,
+    });
+
+    act(() => result.current[1]((value) => value + 1));
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(1);
+    act(() => {
+      result.current[1]((value) => value + 1);
+      result.current[1]((value) => value + 1);
+    });
+    expect(result.current[0]).toBe(3);
+    expect(onChange.mock.calls).toEqual([[1], [3]]);
+  });
+
+  it("does not notify an uncontrolled update until its suspended render commits", async () => {
+    const onChange = vi.fn();
+    const pending = Promise.withResolvers<void>();
+    const actions: {set?: (value: number) => void} = {};
+    let ready = false;
+    function SuspendedValue(): React.JSX.Element {
+      const [value, setValue] = useControllableState({defaultValue: 0, onChange});
+      actions.set = setValue;
+      if (value === 1 && !ready) throw pending.promise;
+      return <output>{value}</output>;
+    }
+    render(
+      <React.Suspense fallback={<span>Waiting</span>}>
+        <SuspendedValue />
+      </React.Suspense>,
+    );
+    const set = actions.set;
+    if (!set) throw new Error("The fixture did not mount");
+
+    act(() => React.startTransition(() => set(1)));
+    expect(screen.getByRole("status")).toHaveTextContent("0");
+    expect(onChange).not.toHaveBeenCalled();
+    await act(async () => {
+      ready = true;
+      pending.resolve();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("1");
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(1);
   });
 
   it("supports functional updates in uncontrolled mode", () => {

@@ -9,8 +9,8 @@ type MediaQueryChangeEvent = Pick<MediaQueryListEvent, "matches">;
 type MediaQueryListener = (event: MediaQueryChangeEvent) => void;
 type MockedMediaQueryList = MediaQueryList & {
   listeners: MediaQueryListener[];
-  addEventListener: ReturnType<typeof vi.fn>;
-  removeEventListener: ReturnType<typeof vi.fn>;
+  addEventListener: ReturnType<typeof vi.fn<(event: string, handler: EventListenerOrEventListenerObject) => void>>;
+  removeEventListener: ReturnType<typeof vi.fn<(event: string, handler: EventListenerOrEventListenerObject) => void>>;
 };
 
 describe("useMediaQuery", () => {
@@ -31,21 +31,34 @@ describe("useMediaQuery", () => {
         }
 
         const listeners: MediaQueryListener[] = [];
-        const mediaQueryList = {
+        const callbacks = new Map<EventListenerOrEventListenerObject, MediaQueryListener>();
+        const mediaQueryList: MockedMediaQueryList = {
           matches: currentMatches,
           media: query,
-          addEventListener: vi.fn((_event: string, handler: MediaQueryListener) => {
-            listeners.push(handler);
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(() => true),
+          addEventListener: vi.fn((_event: string, handler: EventListenerOrEventListenerObject) => {
+            const notify: MediaQueryListener = (event) => {
+              const change = new MediaQueryListEvent("change", {matches: event.matches, media: query});
+              if (typeof handler === "function") handler(change);
+              else handler.handleEvent(change);
+            };
+            callbacks.set(handler, notify);
+            listeners.push(notify);
           }),
-          removeEventListener: vi.fn((_event: string, handler: MediaQueryListener) => {
-            const listenerIndex = listeners.indexOf(handler);
+          removeEventListener: vi.fn((_event: string, handler: EventListenerOrEventListenerObject) => {
+            const notify = callbacks.get(handler);
+            const listenerIndex = notify ? listeners.indexOf(notify) : -1;
 
             if (listenerIndex >= 0) {
               listeners.splice(listenerIndex, 1);
             }
+            callbacks.delete(handler);
           }),
           listeners,
-        } as MockedMediaQueryList;
+        };
 
         mediaQueryLists.set(query, mediaQueryList);
 
@@ -110,11 +123,10 @@ describe("useMediaQuery", () => {
   it("rechecks the match when it changes between render and subscription", () => {
     // Arrange
     const query = "(min-width: 1024px)";
-    const mediaQueryList = globalThis.window.matchMedia(query) as MockedMediaQueryList;
-    mediaQueryList.addEventListener.mockImplementation((_event: string, listener: MediaQueryListener) => {
-      Object.defineProperty(mediaQueryList, "matches", {value: true});
-      mediaQueryList.listeners.push(listener);
-    });
+    globalThis.window.matchMedia(query);
+    const mediaQueryList = mediaQueryLists.get(query);
+    if (!mediaQueryList) throw new Error("The media query fixture did not initialize");
+    Object.defineProperty(mediaQueryList, "matches", {get: vi.fn().mockReturnValueOnce(false).mockReturnValue(true)});
 
     // Act
     const {result} = renderHook(() => useMediaQuery(query));
@@ -124,17 +136,10 @@ describe("useMediaQuery", () => {
   });
 
   it("removes event listener on unmount", () => {
-    const removeEventListener = vi.fn();
-    const addEventListener = vi.fn();
-
-    vi.spyOn(globalThis.window, "matchMedia").mockReturnValue({
-      matches: false,
-      media: "(min-width: 768px)",
-      addEventListener,
-      removeEventListener,
-    } as MediaQueryList);
-
     const {unmount} = renderHook(() => useMediaQuery("(min-width: 768px)"));
+    const mediaQueryList = mediaQueryLists.get("(min-width: 768px)");
+    if (!mediaQueryList) throw new Error("The media query did not subscribe");
+    const {addEventListener, removeEventListener} = mediaQueryList;
     const listener = addEventListener.mock.calls[0]?.[1];
 
     unmount();
@@ -177,7 +182,11 @@ describe("useMediaQuery", () => {
     expect(result.current).toBe(true);
 
     // A callback retained by the old external source cannot overwrite the new query.
-    act(() => initialListener?.({matches: false}));
+    act(() => {
+      const event = new MediaQueryListEvent("change", {matches: false, media: initialQuery});
+      if (typeof initialListener === "function") initialListener(event);
+      else initialListener?.handleEvent(event);
+    });
     expect(result.current).toBe(true);
 
     unmount();

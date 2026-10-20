@@ -1,3 +1,8 @@
+"use client";
+
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
@@ -8,72 +13,88 @@ import styles from "./item.module.css";
 export type ItemVariant = "default" | "outline" | "muted";
 
 /** Supported size variants for {@link Item}. */
-export type ItemSize = "default" | "sm";
+export type ItemSize = "default" | "sm" | "xs";
 
 /** Supported media treatments for {@link ItemMedia}. */
 export type ItemMediaVariant = "default" | "icon" | "image";
 
-type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
+/** Item-owned state supplied to render callbacks and mapped to data attributes. */
+export type ItemState = Readonly<{
+  slot: "item";
+  variant: ItemVariant;
+  size: ItemSize;
+}>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type ItemRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
 
 /**
  * Props for the {@link ItemGroup} component.
  */
-export type ItemGroupProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemGroupProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemSeparator} component.
  */
-export type ItemSeparatorProps = React.ComponentPropsWithoutRef<typeof Separator>;
+export type ItemSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
 
 /**
  * Props for the {@link Item} component.
  */
-export interface ItemProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Enables rendering an existing div-compatible child element. @default false */
-  asChild?: boolean;
-  /** Compactness applied to the item container. @default "default" */
-  size?: ItemSize;
-  /** Visual surface treatment for the item container. @default "default" */
-  variant?: ItemVariant;
-}
+export type ItemProps = Readonly<
+  Omit<useRender.ComponentProps<"div", ItemState, ItemRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a div. */
+    ref?: React.Ref<HTMLElement>;
+    /** Compactness applied to the item container and direct media slots. @default "default" */
+    size?: ItemSize;
+    /** Visual surface treatment for the item container. @default "default" */
+    variant?: ItemVariant;
+  }
+>;
 
 /**
  * Props for the {@link ItemMedia} component.
  */
-export interface ItemMediaProps extends React.ComponentPropsWithoutRef<"div"> {
-  /** Visual treatment used for the media slot. @default "default" */
-  variant?: ItemMediaVariant;
-}
+export type ItemMediaProps = Readonly<
+  React.ComponentPropsWithRef<"div"> & {
+    /** Visual treatment used for the media slot. @default "default" */
+    variant?: ItemMediaVariant;
+  }
+>;
 
 /**
  * Props for the {@link ItemContent} component.
  */
-export type ItemContentProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
- * Props for the {@link ItemTitle} component.
+ * Props for the {@link ItemTitle} component. Titles wrap by default; truncation is an opt-in caller class.
  */
-export type ItemTitleProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
- * Props for the {@link ItemDescription} component.
+ * Props for the {@link ItemDescription} component. Descriptions wrap by default; a line clamp is an opt-in caller class.
  */
-export type ItemDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+export type ItemDescriptionProps = Readonly<React.ComponentPropsWithRef<"p">>;
 
 /**
  * Props for the {@link ItemActions} component.
  */
-export type ItemActionsProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemActionsProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemHeader} component.
  */
-export type ItemHeaderProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemHeaderProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Props for the {@link ItemFooter} component.
  */
-export type ItemFooterProps = React.ComponentPropsWithoutRef<"div">;
+export type ItemFooterProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Groups a collection of list-like items with consistent spacing.
@@ -81,35 +102,33 @@ export type ItemFooterProps = React.ComponentPropsWithoutRef<"div">;
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Opt into `role="list"` and `role="listitem"` together when using list semantics.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemGroup>
- *   <Item />
+ * <ItemGroup role='list'>
+ *   <Item role='listitem' />
  * </ItemGroup>
  * ```
  *
  * @see {@link ItemGroupProps} for available props
  */
-const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
-  ({className, ...props}: Readonly<ItemGroupProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      role='list'
-      data-slot='item-group'
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
+const ItemGroup = ({ref, className, ...props}: Readonly<ItemGroupProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-group'
+    className={cn(styles.group, className)}
+    {...props}
+  />
 );
 
 /**
  * Inserts a separator between adjacent items.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a wrapped `Separator` component
+ * - Delegates rendering and state ownership to the existing `Separator` component.
+ * - Uses its stable default API; does not evaluate primitive render callbacks.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -119,24 +138,30 @@ const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
  *
  * @see {@link ItemSeparatorProps} for available props
  */
-const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
-  ({className, ...props}: Readonly<ItemSeparatorProps>, ref): React.JSX.Element => (
-    <Separator
-      ref={ref}
-      data-slot='item-separator'
-      orientation='horizontal'
-      className={cn(styles.separator, className)}
-      {...props}
-    />
-  ),
+const ItemSeparator = ({ref, className, ...props}: Readonly<ItemSeparatorProps>): React.JSX.Element => (
+  <Separator
+    ref={ref}
+    data-slot='item-separator'
+    orientation='horizontal'
+    className={typeof className === "function" ? (state) => cn(styles.separator, className(state)) : cn(styles.separator, className)}
+    {...props}
+  />
 );
 
 /**
  * Creates a flexible data-display row with optional media and actions.
  *
  * @remarks
- * - Pure CSS component (no Base UI primitive)
- * - Renders a `<div>` element by default
+ * - Client boundary for Base UI render/ref composition; no interaction primitive.
+ * - Renders an inert `<div>` by default, without button role or keyboard handlers.
+ * - Use `render` with a native anchor/button/label for its native behavior and
+ *   provide children valid for that target's content model.
+ * - Base UI merges child-first handlers and both refs; `preventDefault()` cancels
+ *   native behavior, while `preventBaseUIHandler()` also suppresses the wrapper handler.
+ * - Common `HTMLElement` refs support the actual composed target. Existing div
+ *   object refs remain valid; explicitly div-only callback consumers should use
+ *   `HTMLElement` or narrow the actual node before accessing div-specific members.
+ * - `xs` adds the densest spacing and smaller direct icon/image media slots.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -146,48 +171,31 @@ const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
  *
  * @see {@link ItemProps} for available props
  */
-const Item = React.forwardRef<HTMLDivElement, ItemProps>(
-  (
-    {className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>,
+const Item = ({
+  ref,
+  className,
+  variant = "default",
+  size = "default",
+  render,
+  children,
+  ...props
+}: Readonly<Item.Props>): React.ReactElement => {
+  const mergedClassName = cn(
+    styles.item,
+    variant === "outline" && styles.outline,
+    variant === "muted" && styles.muted,
+    size === "xs" ? styles.sizeXs : size === "sm" ? styles.sizeSm : styles.sizeDefault,
+    className,
+  );
+
+  return useRender<Item.State, HTMLElement>({
+    defaultTagName: "div",
     ref,
-  ): React.JSX.Element => {
-    const mergedClassName = cn(
-      styles.item,
-      variant === "outline" && styles.outline,
-      variant === "muted" && styles.muted,
-      size === "sm" ? styles.sizeSm : styles.sizeDefault,
-      className,
-    );
-
-    if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<
-        React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
-      >;
-
-      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
-      return React.cloneElement(child, {
-        ...props,
-        ref,
-        "data-size": size,
-        "data-slot": "item",
-        "data-variant": variant,
-        className: cn(mergedClassName, child.props.className),
-      });
-    }
-
-    return (
-      <div
-        ref={ref}
-        data-slot='item'
-        data-size={size}
-        data-variant={variant}
-        className={mergedClassName}
-        {...props}>
-        {children}
-      </div>
-    );
-  },
-);
+    render,
+    state: {slot: "item", variant, size},
+    props: mergeProps<"div">({className: mergedClassName}, props, {children}),
+  });
+};
 
 /**
  * Renders the leading media slot for an item.
@@ -195,6 +203,8 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Icon/image dimensions follow the direct parent Item size; images are cropped
+ *   with `object-fit: cover`. The default media variant leaves content intrinsic.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -204,16 +214,14 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
  *
  * @see {@link ItemMediaProps} for available props
  */
-const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
-  ({className, variant = "default", ...props}: Readonly<ItemMediaProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-media'
-      data-variant={variant}
-      className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
-      {...props}
-    />
-  ),
+const ItemMedia = ({ref, className, variant = "default", ...props}: Readonly<ItemMediaProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-media'
+    data-variant={variant}
+    className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
+    {...props}
+  />
 );
 
 /**
@@ -222,6 +230,7 @@ const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Uses a shrinking flex column so long content cannot force the row wider.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -231,15 +240,13 @@ const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
  *
  * @see {@link ItemContentProps} for available props
  */
-const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
-  ({className, ...props}: Readonly<ItemContentProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-content'
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
+const ItemContent = ({ref, className, ...props}: Readonly<ItemContentProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-content'
+    className={cn(styles.content, className)}
+    {...props}
+  />
 );
 
 /**
@@ -248,24 +255,35 @@ const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<div>` element
+ * - Wraps long titles onto as many lines as they need (`overflow-wrap: anywhere`,
+ *   no clamp), so the full text stays visible at narrow widths, high zoom and
+ *   increased text spacing. Inline text/icons remain supported.
+ * - Truncation is opt-in: pass a caller class through `className` (for example
+ *   `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`) and keep the
+ *   full title reachable elsewhere, such as a linked detail view. Truncated text
+ *   stays in the accessibility tree but is hidden from sighted users.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemTitle>Title</ItemTitle>
+ * <ItemTitle>Quarterly report.pdf</ItemTitle>
+ * ```
+ *
+ * @example Opt-in single-line truncation
+ * ```tsx
+ * // .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ * <ItemTitle className='truncate'>A long collection title</ItemTitle>
  * ```
  *
  * @see {@link ItemTitleProps} for available props
  */
-const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
-  ({className, ...props}: Readonly<ItemTitleProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-title'
-      className={cn(styles.title, className)}
-      {...props}
-    />
-  ),
+const ItemTitle = ({ref, className, ...props}: Readonly<ItemTitleProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-title'
+    className={cn(styles.title, className)}
+    {...props}
+  />
 );
 
 /**
@@ -274,24 +292,34 @@ const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders a `<p>` element
+ * - Accepts rich phrasing content, including inline links, not nested block markup.
+ *   Plain nested links inherit the description colour, stay underlined and take
+ *   the foreground colour on hover; class-styled anchors such as
+ *   `buttonVariants()` keep their own paint.
+ * - Wraps onto as many lines as it needs (no clamp), keeping all content visible.
+ *   To clamp, opt in through `className` with a `-webkit-line-clamp` rule
+ *   (`display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden`) whose
+ *   selector also wins over the module's `display: block`, and keep the full text
+ *   reachable elsewhere: clamped text stays in the accessibility tree but is
+ *   hidden from sighted users.
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
- * <ItemDescription>Support text</ItemDescription>
+ * <ItemDescription>
+ *   Shared with 4 people. <a href='/files/report/sharing'>Manage access</a>
+ * </ItemDescription>
  * ```
  *
  * @see {@link ItemDescriptionProps} for available props
  */
-const ItemDescription = React.forwardRef<HTMLParagraphElement, ItemDescriptionProps>(
-  ({className, ...props}: Readonly<ItemDescriptionProps>, ref): React.JSX.Element => (
-    <p
-      ref={ref}
-      data-slot='item-description'
-      className={cn(styles.description, className)}
-      {...props}
-    />
-  ),
+const ItemDescription = ({ref, className, ...props}: Readonly<ItemDescriptionProps>): React.JSX.Element => (
+  <p
+    ref={ref}
+    data-slot='item-description'
+    className={cn(styles.description, className)}
+    {...props}
+  />
 );
 
 /**
@@ -311,15 +339,13 @@ const ItemDescription = React.forwardRef<HTMLParagraphElement, ItemDescriptionPr
  *
  * @see {@link ItemActionsProps} for available props
  */
-const ItemActions = React.forwardRef<HTMLDivElement, ItemActionsProps>(
-  ({className, ...props}: Readonly<ItemActionsProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-actions'
-      className={cn(styles.actions, className)}
-      {...props}
-    />
-  ),
+const ItemActions = ({ref, className, ...props}: Readonly<ItemActionsProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-actions'
+    className={cn(styles.actions, className)}
+    {...props}
+  />
 );
 
 /**
@@ -339,15 +365,13 @@ const ItemActions = React.forwardRef<HTMLDivElement, ItemActionsProps>(
  *
  * @see {@link ItemHeaderProps} for available props
  */
-const ItemHeader = React.forwardRef<HTMLDivElement, ItemHeaderProps>(
-  ({className, ...props}: Readonly<ItemHeaderProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-header'
-      className={cn(styles.header, className)}
-      {...props}
-    />
-  ),
+const ItemHeader = ({ref, className, ...props}: Readonly<ItemHeaderProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-header'
+    className={cn(styles.header, className)}
+    {...props}
+  />
 );
 
 /**
@@ -365,15 +389,13 @@ const ItemHeader = React.forwardRef<HTMLDivElement, ItemHeaderProps>(
  *
  * @see {@link ItemFooterProps} for available props
  */
-const ItemFooter = React.forwardRef<HTMLDivElement, ItemFooterProps>(
-  ({className, ...props}: Readonly<ItemFooterProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='item-footer'
-      className={cn(styles.footer, className)}
-      {...props}
-    />
-  ),
+const ItemFooter = ({ref, className, ...props}: Readonly<ItemFooterProps>): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='item-footer'
+    className={cn(styles.footer, className)}
+    {...props}
+  />
 );
 
 ItemGroup.displayName = "ItemGroup";
@@ -386,5 +408,15 @@ ItemDescription.displayName = "ItemDescription";
 ItemActions.displayName = "ItemActions";
 ItemHeader.displayName = "ItemHeader";
 ItemFooter.displayName = "ItemFooter";
+
+// eslint-disable-next-line no-redeclare -- canonical component namespace typing API
+namespace Item {
+  /** Readonly composition and visual props for the item root. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace and named-import compatibility
+  export type Props = ItemProps;
+  /** Item-owned state passed to render callbacks. */
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace and named-import compatibility
+  export type State = ItemState;
+}
 
 export {Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemHeader, ItemMedia, ItemSeparator, ItemTitle};

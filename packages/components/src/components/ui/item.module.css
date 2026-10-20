@@ -1,5 +1,7 @@
 .group {
   display: flex;
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
 }
 
@@ -9,6 +11,9 @@
 
 .item {
   display: flex;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ac-space-4);
@@ -24,14 +29,22 @@
     box-shadow var(--ac-transition-fast);
 }
 
-.item a {
-  color: inherit;
+a.item {
   text-decoration: none;
 }
 
 .item:focus-visible {
   border-color: var(--ac-ring);
   box-shadow: 0 0 0 1px var(--ac-ring);
+}
+
+@media (forced-colors: active) {
+  .item:focus-visible {
+    outline-width: 2px;
+    outline-style: solid;
+    outline-color: Highlight;
+    outline-offset: 2px;
+  }
 }
 
 .outline {
@@ -48,8 +61,14 @@
 }
 
 .sizeSm {
-  gap: calc(var(--ac-space-2) + 0.125rem);
-  padding: calc(var(--ac-space-2) + 0.125rem) var(--ac-space-4);
+  gap: calc(var(--ac-space-2) + var(--ac-space-1) / 2);
+  padding: calc(var(--ac-space-2) + var(--ac-space-1) / 2) var(--ac-space-4);
+}
+
+.sizeXs {
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-2) var(--ac-space-3);
+  font-size: var(--ac-text-xs);
 }
 
 .media {
@@ -61,25 +80,26 @@
 }
 
 .media svg {
+  pointer-events: none;
   flex-shrink: 0;
 }
 
 .mediaIcon {
-  width: 2rem;
-  height: 2rem;
+  width: var(--ac-size-default);
+  height: var(--ac-size-default);
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-muted);
 }
 
 .mediaIcon svg {
-  width: 1rem;
-  height: 1rem;
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
 }
 
 .mediaImage {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: calc(var(--ac-space-8) + var(--ac-space-2));
+  height: calc(var(--ac-space-8) + var(--ac-space-2));
   overflow: hidden;
   border-radius: var(--ac-radius-sm);
 }
@@ -88,6 +108,26 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.item[data-size="sm"] > .mediaIcon {
+  width: var(--ac-size-md);
+  height: var(--ac-size-md);
+}
+
+.item[data-size="xs"] > .mediaIcon {
+  width: var(--ac-size-sm);
+  height: var(--ac-size-sm);
+}
+
+.item[data-size="sm"] > .mediaImage {
+  width: var(--ac-size-lg);
+  height: var(--ac-size-lg);
+}
+
+.item[data-size="xs"] > .mediaImage {
+  width: var(--ac-size-default);
+  height: var(--ac-size-default);
 }
 
 .content {
@@ -103,42 +143,71 @@
 }
 
 .title {
-  display: flex;
+  display: block;
+  overflow-wrap: anywhere;
   width: fit-content;
-  align-items: center;
-  gap: var(--ac-space-2);
-  font-size: var(--ac-text-sm);
+  max-width: 100%;
+  font-size: inherit;
   line-height: 1.4;
   font-weight: 500;
 }
 
+.title svg {
+  display: inline-block;
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
+  vertical-align: middle;
+}
+
 .description {
+  display: block;
+  overflow-wrap: anywhere;
+  margin: 0;
   color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-sm);
+  font-size: inherit;
+  font-weight: 400;
   line-height: 1.5;
 }
 
-.description a {
+/*
+ * Plain links inside a description inherit its text colour; the underline keeps them distinguishable without colour.
+ * Specificity (0,0,2): `:where()` adds nothing and `:is(a)` adds a second type selector, so these rules beat
+ * element-only link resets such as `a { text-decoration: none; }` in any stylesheet order, while any class-styled
+ * anchor (for example `buttonVariants()`) keeps its own paint. The hover colour stays (0,0,2) through `:where(:hover)`
+ * so it never repaints a class-styled anchor's text either; an element-plus-pseudo-class reset such as
+ * `a:hover { … }` (0,1,1) still overrides it.
+ */
+:where(.description) a:is(a) {
   color: inherit;
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: var(--ac-space-1);
 }
 
 @media (hover: hover) {
-  .description a:hover {
+  :where(.description) a:is(a):where(:hover) {
     color: var(--ac-foreground);
   }
 }
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
+  max-inline-size: 100%;
   align-items: center;
   gap: var(--ac-space-2);
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
 }
 
 .header,
 .footer {
   display: flex;
+  flex-wrap: wrap;
   flex-basis: 100%;
   align-items: center;
   justify-content: space-between;

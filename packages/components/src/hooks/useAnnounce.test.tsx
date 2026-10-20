@@ -1,4 +1,5 @@
-import {act, renderHook} from "@testing-library/react";
+import {act, render, renderHook} from "@testing-library/react";
+import * as React from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {useAnnounce} from "./useAnnounce";
@@ -49,6 +50,42 @@ describe("useAnnounce", () => {
     const remaining = document.querySelectorAll("[aria-live]");
 
     expect(remaining).toHaveLength(0);
+  });
+
+  it("appends one polite and one assertive region to document.body per hook instance", () => {
+    const first = renderHook(() => useAnnounce());
+    const second = renderHook(() => useAnnounce());
+    const bodyRegions = () => [...document.body.children].filter((element) => element.hasAttribute("aria-live"));
+
+    expect(bodyRegions().map((region) => region.getAttribute("aria-live"))).toEqual(["polite", "assertive", "polite", "assertive"]);
+
+    first.unmount();
+    expect(bodyRegions()).toHaveLength(2);
+
+    second.unmount();
+    expect(bodyRegions()).toHaveLength(0);
+  });
+
+  it("drops an announcement made before its regions exist, such as from a child's mount effect", () => {
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback: FrameRequestCallback): number => {
+      callback(0);
+      return 0;
+    });
+    function Child({announce}: {readonly announce: ReturnType<typeof useAnnounce>}): null {
+      React.useEffect(() => {
+        announce("Loaded");
+      }, [announce]);
+      return null;
+    }
+    function Parent(): React.JSX.Element {
+      const announce = useAnnounce();
+      return <Child announce={announce} />;
+    }
+
+    render(<Parent />);
+
+    expect(document.querySelector('[aria-live="polite"]')).toBeInstanceOf(HTMLElement);
+    expect(document.querySelector('[aria-live="polite"]')).toHaveTextContent("");
   });
 
   it("announces messages in the matching live region", () => {

@@ -1,6 +1,10 @@
-import {render, screen, waitFor} from "@testing-library/react";
+import {ContextMenu as BaseContextMenu} from "@base-ui/react/context-menu";
+import {DirectionProvider} from "@base-ui/react/direction-provider";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it} from "vitest";
+import * as React from "react";
+import {composeStories} from "storybook-react-rsbuild";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 
 import {
   ContextMenu,
@@ -9,6 +13,7 @@ import {
   ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
+  ContextMenuPortal,
   ContextMenuRadioGroup,
   ContextMenuRadioItem,
   ContextMenuSeparator,
@@ -18,8 +23,476 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./context-menu";
+import * as stories from "./context-menu.stories";
+
+const {KeyboardPath} = composeStories(stories);
+
+function LegacyControl(props: Readonly<React.ComponentPropsWithRef<"button">>): React.ReactElement {
+  return <button {...props} />;
+}
+
+function LegacyRegion(props: Readonly<React.ComponentPropsWithRef<"div">>): React.ReactElement {
+  return <div {...props} />;
+}
 
 describe("ContextMenu", () => {
+  it("does not normalize a closed pending popup render slot", () => {
+    const normalize = vi.fn(() => {
+      throw new Promise<void>(() => undefined);
+    });
+    const pending: React.ReactElement & Readonly<{$$typeof: symbol; _payload: null; _init: () => never}> = {
+      ...(<div />),
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: null,
+      _init: normalize,
+    };
+    render(
+      <React.Suspense fallback={<p>Pending context menu</p>}>
+        <ContextMenu>
+          <ContextMenuTrigger>Context target</ContextMenuTrigger>
+          <ContextMenuContent render={pending}>
+            <ContextMenuItem>Action</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </React.Suspense>,
+    );
+    expect(screen.getByText("Context target")).toBeVisible();
+    expect(screen.queryByText("Pending context menu")).not.toBeInTheDocument();
+    expect(normalize).not.toHaveBeenCalled();
+  });
+
+  it("retains explicit native-button mode and safe form semantics on the shared custom Item", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    const childRef = React.createRef<HTMLButtonElement>();
+    const wrapperRef = React.createRef<HTMLElement>();
+    const calls: string[] = [];
+    let submissions = 0;
+    try {
+      render(
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Target</ContextMenuTrigger>
+          <ContextMenuContent aria-label='Context actions'>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                submissions += 1;
+              }}>
+              <ContextMenuItem
+                nativeButton
+                ref={wrapperRef}
+                onClick={(event) => {
+                  calls.push("wrapper");
+                  event.preventBaseUIHandler();
+                }}
+                render={
+                  <LegacyControl
+                    ref={childRef}
+                    onClick={() => calls.push("child")}>
+                    Cancel close
+                  </LegacyControl>
+                }
+              />
+            </form>
+          </ContextMenuContent>
+        </ContextMenu>,
+      );
+      const item = screen.getByRole("menuitem", {name: "Cancel close"});
+      expect(item.tagName).toBe("BUTTON");
+      expect(item).toHaveAttribute("type", "button");
+      expect(childRef.current).toBe(item);
+      expect(wrapperRef.current).toBe(item);
+      expect(item.querySelector("button")).toBeNull();
+      await user.click(item);
+      expect(calls).toEqual(["child", "wrapper"]);
+      expect(submissions).toBe(0);
+      expect(screen.getByRole("menu", {name: "Context actions"})).toBeInTheDocument();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it("retains explicit non-native mode on the shared custom Context Item", async () => {
+    const user = userEvent.setup();
+    const errors = vi.spyOn(console, "error");
+    try {
+      render(
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Target</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem
+              nativeButton={false}
+              render={<LegacyRegion>Rename</LegacyRegion>}
+            />
+          </ContextMenuContent>
+        </ContextMenu>,
+      );
+      const item = screen.getByRole("menuitem", {name: "Rename"});
+      expect(item.tagName).toBe("DIV");
+      await act(async () => {
+        item.focus();
+      });
+      await user.keyboard("{Enter}");
+      await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it("routes Popup event handlers to the real menu rather than Positioner", async () => {
+    const user = userEvent.setup();
+    const targets: HTMLElement[] = [];
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Target</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Popup event target'
+          onClick={(event) => {
+            targets.push(event.currentTarget);
+          }}>
+          <ContextMenuItem onClick={(event) => event.preventBaseUIHandler()}>Cancel close</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = screen.getByRole("menu", {name: "Popup event target"});
+    await user.click(screen.getByRole("menuitem", {name: "Cancel close"}));
+    expect(targets).toEqual([popup]);
+    expect(popup).toBeInTheDocument();
+  });
+
+  it("forwards real Context trigger, Popup, Positioner and Portal callbacks and refs", () => {
+    const triggerRef = React.createRef<HTMLDivElement>();
+    const popupRef = React.createRef<HTMLDivElement>();
+    const positionerRef = React.createRef<HTMLDivElement>();
+    const portalRef = React.createRef<HTMLDivElement>();
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger
+          ref={triggerRef}
+          className={(state) => (state.open ? "trigger-open" : "trigger-closed")}
+          render={(props, state) => (
+            <section
+              {...props}
+              data-trigger-open={state.open}
+            />
+          )}>
+          Target
+        </ContextMenuTrigger>
+        <ContextMenuContent
+          ref={popupRef}
+          aria-label='Context actions'
+          className={(state) => (state.open ? "popup-open" : "popup-closed")}
+          render={(props, state) => (
+            <section
+              {...props}
+              data-popup-open={state.open}
+            />
+          )}
+          positionerProps={{
+            ref: positionerRef,
+            className: (state) => (state.open ? "positioner-open" : "positioner-closed"),
+            render: (props, state) => (
+              <div
+                {...props}
+                data-testid='positioner'
+                data-positioner-open={state.open}
+              />
+            ),
+          }}
+          portalProps={{
+            ref: portalRef,
+            className: () => "portal-class",
+            render: (props) => (
+              <div
+                {...props}
+                data-testid='portal'
+              />
+            ),
+          }}>
+          <ContextMenuItem>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = screen.getByRole("menu", {name: "Context actions"});
+    expect(triggerRef.current).toBe(screen.getByText("Target"));
+    expect(triggerRef.current).toHaveClass("trigger-open");
+    expect(triggerRef.current).toHaveAttribute("data-trigger-open", "true");
+    expect(popupRef.current).toBe(popup);
+    expect(popup).toHaveClass("popup-open");
+    expect(popup).toHaveAttribute("data-popup-open", "true");
+    expect(positionerRef.current).toBe(screen.getByTestId("positioner"));
+    expect(positionerRef.current).toHaveClass("positioner-open");
+    expect(positionerRef.current).not.toHaveAttribute("aria-label");
+    expect(portalRef.current).toBe(screen.getByTestId("portal"));
+    expect(portalRef.current).toHaveClass("portal-class");
+    expect(within(popup).getByRole("menuitem", {name: "Rename"})).toBeInTheDocument();
+  });
+
+  it("preserves explicit anatomy and child refs through element render composition", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const childRef = React.createRef<HTMLElement>();
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger render={<section>Ignored trigger</section>}>Target</ContextMenuTrigger>
+        <ContextMenuContent
+          ref={ref}
+          aria-label='Context actions'
+          render={<section ref={childRef}>Ignored popup</section>}
+          positionerProps={{render: <div>Ignored positioner</div>}}
+          portalProps={{render: <div>Ignored portal</div>}}>
+          <ContextMenuCheckboxItem
+            checked
+            render={<div>Toolbar</div>}
+          />
+          <ContextMenuRadioGroup value='light'>
+            <ContextMenuRadioItem
+              value='light'
+              render={<div>Light</div>}
+            />
+          </ContextMenuRadioGroup>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger render={<div>Share</div>} />
+            <ContextMenuSubContent>
+              <ContextMenuItem>Email</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = screen.getByRole("menu", {name: "Context actions"});
+    expect(ref.current).toBe(popup);
+    expect(childRef.current).toBe(popup);
+    expect(screen.getByText("Target")).toBeInTheDocument();
+    expect(screen.queryByText(/Ignored/)).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", {name: "Toolbar"}).querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("menuitemradio", {name: "Light"}).querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("menuitem", {name: "Share"}).querySelector("svg")).not.toBeNull();
+  });
+
+  it("honors trigger contextmenu cancellation and controlled root rerender", async () => {
+    const user = userEvent.setup();
+    const reasons: string[] = [];
+    const view = (open: boolean): React.ReactElement => (
+      <ContextMenu
+        open={open}
+        onOpenChange={(next, details) => {
+          reasons.push(`${next}:${details.reason}`);
+          details.cancel();
+        }}>
+        <ContextMenuTrigger onContextMenu={(event) => event.preventBaseUIHandler()}>Target</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+    const result = render(view(false));
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Target")});
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(reasons).toEqual([]);
+    result.rerender(view(true));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(reasons).toEqual(["false:escape-key"]);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    result.rerender(view(false));
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+  });
+
+  it("keyboard-opens a portaled submenu and returns focus after both Escape levels", async () => {
+    const user = userEvent.setup();
+    const finalFocus = React.createRef<HTMLButtonElement>();
+    const subRef = React.createRef<HTMLElement>();
+    const popupRef = React.createRef<HTMLDivElement>();
+    render(
+      <>
+        <button
+          type='button'
+          ref={finalFocus}>
+          Return here
+        </button>
+        <ContextMenu>
+          <ContextMenuTrigger>Target</ContextMenuTrigger>
+          <ContextMenuContent
+            data-testid='overflow-parent'
+            finalFocus={finalFocus}>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger
+                ref={subRef}
+                className={(state) => (state.open ? "sub-open" : "sub-closed")}
+                render={(props, state) => (
+                  <div
+                    {...props}
+                    data-sub-open={state.open}
+                  />
+                )}>
+                Share
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent
+                ref={popupRef}
+                aria-label='Share options'
+                className={(state) => (state.nested ? "nested" : "root")}
+                render={(props, state) => (
+                  <div
+                    {...props}
+                    data-nested={state.nested}
+                  />
+                )}>
+                <ContextMenuItem>Email</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </ContextMenuContent>
+        </ContextMenu>
+      </>,
+    );
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Target")});
+    const trigger = screen.getByRole("menuitem", {name: "Share"});
+    await act(async () => {
+      trigger.focus();
+    });
+    await user.keyboard("{ArrowRight}");
+    const popup = await screen.findByRole("menu", {name: "Share options"});
+    expect(subRef.current).toBe(trigger);
+    expect(popupRef.current).toBe(popup);
+    expect(trigger).toHaveClass("sub-open");
+    expect(popup).toHaveClass("nested");
+    expect(screen.getByTestId("overflow-parent")).not.toContainElement(popup);
+    expect(document.body).toContainElement(popup);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu", {name: "Share options"})).not.toBeInTheDocument());
+    expect(trigger).toHaveFocus();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(finalFocus.current).toHaveFocus());
+  });
+
+  it("keeps native checkbox/radio details, inset, destructive and disabled semantics", async () => {
+    const user = userEvent.setup();
+    const details: string[] = [];
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Target</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem variant='destructive'>Delete</ContextMenuItem>
+          <ContextMenuItem
+            disabled
+            onClick={() => details.push("disabled")}>
+            Unavailable
+          </ContextMenuItem>
+          <ContextMenuCheckboxItem
+            inset
+            onCheckedChange={(checked, event) => details.push(`${checked}:${event.reason}`)}
+            className={(state) => (state.checked ? "checked" : "unchecked")}
+            render={(props, state) => (
+              <div
+                {...props}
+                data-checked={state.checked}
+              />
+            )}>
+            Toolbar
+          </ContextMenuCheckboxItem>
+          <ContextMenuRadioGroup
+            defaultValue={null}
+            onValueChange={(value: unknown, event) => details.push(`${String(value)}:${event.reason}`)}>
+            <ContextMenuRadioItem
+              inset
+              value='light'
+              className={(state) => (state.checked ? "checked" : "unchecked")}
+              render={(props) => <div {...props} />}>
+              Light
+            </ContextMenuRadioItem>
+            <ContextMenuRadioItem value={null}>None</ContextMenuRadioItem>
+          </ContextMenuRadioGroup>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    fireEvent.click(screen.getByRole("menuitem", {name: "Unavailable"}));
+    expect(details).toEqual([]);
+    expect(screen.getByRole("menuitem", {name: "Delete"})).toHaveAttribute("data-variant", "destructive");
+    const checkbox = screen.getByRole("menuitemcheckbox", {name: "Toolbar"});
+    await user.click(checkbox);
+    expect(checkbox).toHaveAttribute("data-inset", "true");
+    expect(checkbox).toHaveAttribute("aria-checked", "true");
+    expect(checkbox).toHaveClass("checked");
+    const radio = screen.getByRole("menuitemradio", {name: "Light"});
+    await user.click(radio);
+    expect(radio).toHaveAttribute("data-inset", "true");
+    expect(radio).toHaveClass("checked");
+    expect(screen.getByRole("menuitemradio", {name: "None"})).toHaveAttribute("aria-checked", "false");
+    expect(details).toEqual(["true:item-press", "light:item-press"]);
+  });
+
+  it("uses the enclosing Portal ref as submenu container outside the popup overflow owner", () => {
+    const container = React.createRef<HTMLDivElement>();
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Target</ContextMenuTrigger>
+        <ContextMenuContent
+          data-testid='overflow-parent'
+          portalProps={{ref: container}}>
+          <ContextMenuSub defaultOpen>
+            <ContextMenuSubTrigger>Share</ContextMenuSubTrigger>
+            <ContextMenuSubContent
+              aria-label='Share options'
+              portalProps={{container}}
+              collisionAvoidance={{side: "none", align: "none"}}>
+              <ContextMenuItem>Email</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = screen.getByRole("menu", {name: "Share options"});
+    expect(container.current).toContainElement(popup);
+    expect(screen.getByTestId("overflow-parent")).not.toContainElement(popup);
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    expect(popup).toHaveAttribute("data-align", "start");
+  });
+
+  it("retains actual group naming, standalone Portal and precise Popup public types", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Target</ContextMenuTrigger>
+        <ContextMenuPortal ref={ref}>
+          <span>Portal child</span>
+        </ContextMenuPortal>
+        <ContextMenuContent>
+          <ContextMenuGroup>
+            <ContextMenuLabel
+              className={() => "label-class"}
+              render={(props) => <div {...props} />}>
+              Files
+            </ContextMenuLabel>
+            <ContextMenuItem>Rename</ContextMenuItem>
+          </ContextMenuGroup>
+          <ContextMenuSeparator className={() => "separator-class"} />
+          <ContextMenuItem>
+            Save<ContextMenuShortcut render={(props) => <span {...props} />}>Ctrl+S</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    expect(screen.getByRole("group", {name: "Files"})).toBeInTheDocument();
+    expect(ref.current).toContainElement(screen.getByText("Portal child"));
+    expect(screen.getByRole("separator")).toHaveClass("separator-class");
+    expectTypeOf<ContextMenuContent.Props["render"]>().toEqualTypeOf<BaseContextMenu.Popup.Props["render"]>();
+    expectTypeOf<ContextMenuContent.Props["finalFocus"]>().toEqualTypeOf<BaseContextMenu.Popup.Props["finalFocus"]>();
+    expectTypeOf<ContextMenuCheckboxItem.Props["onCheckedChange"]>().toEqualTypeOf<BaseContextMenu.CheckboxItem.Props["onCheckedChange"]>();
+  });
+
+  it("names the role-bearing ContextMenu Popup", () => {
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Actions</ContextMenuTrigger>
+        <ContextMenuContent aria-label='Context actions'>
+          <ContextMenuItem>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    expect(screen.getByRole("menu", {name: "Context actions"})).toBeInTheDocument();
+  });
+
   it("renders without crashing", () => {
     // Arrange
     render(
@@ -121,18 +594,12 @@ describe("ContextMenu", () => {
     // Arrange
     render(
       <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <button type='button'>Open context menu</button>
-        </ContextMenuTrigger>
+        <ContextMenuTrigger render={<button type='button'>Open context menu</button>} />
         <ContextMenuContent>
-          <ContextMenuItem asChild>
-            <span data-testid='child-item'>Child action</span>
-          </ContextMenuItem>
+          <ContextMenuItem render={<span data-testid='child-item'>Child action</span>} />
           <ContextMenuItem>
             Copy
-            <ContextMenuShortcut asChild>
-              <span data-testid='shortcut-child'>⌘K</span>
-            </ContextMenuShortcut>
+            <ContextMenuShortcut render={<span data-testid='shortcut-child'>⌘K</span>} />
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>,
@@ -460,5 +927,160 @@ describe("ContextMenu", () => {
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");
     });
+  });
+});
+
+describe("ContextMenu final review M7: logical popup side", () => {
+  it.each(["ltr", "rtl"] as const)("opens root content toward the logical inline end in %s", (direction) => {
+    render(
+      <DirectionProvider direction={direction}>
+        <ContextMenu defaultOpen>
+          <ContextMenuTrigger>Context target</ContextMenuTrigger>
+          <ContextMenuContent aria-label='Context actions'>
+            <ContextMenuItem>Copy</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </DirectionProvider>,
+    );
+    // Base UI reports inline-end only for a logical request; in RTL that is the physical left side.
+    const popup = screen.getByRole("menu", {name: "Context actions"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    // Only an RTL provider writes `dir`; an LTR provider is indistinguishable from none, so the popup inherits instead.
+    expect(popup.getAttribute("dir")).toBe(direction === "rtl" ? "rtl" : null);
+  });
+
+  it("keeps an explicit caller side", () => {
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Context target</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Context actions'
+          side='bottom'
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <ContextMenuItem>Copy</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    expect(screen.getByRole("menu", {name: "Context actions"})).toHaveAttribute("data-side", "bottom");
+  });
+});
+
+describe("ContextMenu final review L29: keyboard path", () => {
+  it("reaches every context action from the keyboard through a focusable trigger and a duplicated menu", async () => {
+    const user = userEvent.setup();
+    render(<KeyboardPath />);
+    const status = screen.getByRole("status");
+    await user.tab();
+    const trigger = screen.getByRole("button", {name: "Quarterly report.pdf"});
+    expect(trigger).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(status).toHaveTextContent("Open: Quarterly report.pdf");
+
+    // The context-menu key and Shift+F10 make the browser dispatch `contextmenu` to the focused trigger.
+    fireEvent.contextMenu(trigger);
+    const contextMenu = await screen.findByRole("menu", {name: "Quarterly report actions"});
+    const contextActions = within(contextMenu)
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(contextActions).toEqual(["Rename", "Duplicate", "Move to trash"]);
+    await user.keyboard("{ArrowDown}");
+    await waitFor(() => expect(within(contextMenu).getByRole("menuitem", {name: "Rename"})).toHaveFocus());
+    await user.keyboard("{Enter}");
+    expect(status).toHaveTextContent("Rename: Quarterly report.pdf");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+
+    const more = screen.getByRole("button", {name: "More actions for Quarterly report.pdf"});
+    act(() => more.focus());
+    await user.keyboard("{Enter}");
+    const duplicated = await screen.findByRole("menu", {name: "Quarterly report actions"});
+    expect(
+      within(duplicated)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(contextActions);
+    await waitFor(() => expect(within(duplicated).getByRole("menuitem", {name: "Rename"})).toHaveFocus());
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(status).toHaveTextContent("Duplicate: Quarterly report.pdf");
+  });
+});
+
+describe("ContextMenu final review L25: documented placement defaults", () => {
+  it("opens content at the inline end of its anchor with a 4px align offset and no side offset", async () => {
+    const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
+    render(
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Canvas</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Context placement'
+          anchor={anchor}
+          collisionAvoidance={{side: "none", align: "none"}}>
+          <ContextMenuItem>Paste</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const popup = await screen.findByRole("menu", {name: "Context placement"});
+    expect(popup).toHaveAttribute("data-side", "inline-end");
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(280px, 104px)"}));
+  });
+});
+
+describe("ContextMenu final-review fix: popup dir only from an RTL provider", () => {
+  function DirectionalContextMenu({dir}: Readonly<{dir?: string}>): React.ReactElement {
+    return (
+      <ContextMenu defaultOpen>
+        <ContextMenuTrigger>Canvas</ContextMenuTrigger>
+        <ContextMenuContent
+          aria-label='Canvas actions'
+          dir={dir}>
+          <ContextMenuSub defaultOpen>
+            <ContextMenuSubTrigger>Export as</ContextMenuSubTrigger>
+            <ContextMenuSubContent
+              aria-label='Export formats'
+              dir={dir}>
+              <ContextMenuItem>PNG</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
+
+  async function popups(): Promise<readonly HTMLElement[]> {
+    return [await screen.findByRole("menu", {name: "Canvas actions"}), await screen.findByRole("menu", {name: "Export formats"})];
+  }
+
+  it("lets root and submenu popups inherit a document dir=rtl when no provider is present", async () => {
+    const html = document.documentElement;
+    const previous = html.getAttribute("dir");
+    html.setAttribute("dir", "rtl");
+    try {
+      render(<DirectionalContextMenu />);
+      for (const popup of await popups()) {
+        expect(popup).not.toHaveAttribute("dir");
+        expect(popup.closest("[dir]")).toBe(html);
+      }
+    } finally {
+      if (previous === null) html.removeAttribute("dir");
+      else html.setAttribute("dir", previous);
+    }
+  });
+
+  it("writes dir=rtl on root and submenu popups under an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalContextMenu />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "rtl");
+  });
+
+  it("lets a caller's dir win over an RTL provider", async () => {
+    render(
+      <DirectionProvider direction='rtl'>
+        <DirectionalContextMenu dir='ltr' />
+      </DirectionProvider>,
+    );
+    for (const popup of await popups()) expect(popup).toHaveAttribute("dir", "ltr");
   });
 });

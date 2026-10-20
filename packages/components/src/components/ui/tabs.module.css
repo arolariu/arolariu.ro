@@ -1,21 +1,57 @@
 .root {
-  /* Minimal default — consumers can add borders/background via className */
+  display: flex;
+  flex-direction: column;
+}
+
+.root[data-orientation="vertical"] {
+  flex-direction: row;
 }
 
 .list {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  justify-content: safe center;
+  width: fit-content;
+  max-width: 100%;
   position: relative;
   z-index: 0;
-  padding-inline: 0;
   gap: 0;
-  border-bottom: 1px solid var(--ac-border);
+  color: var(--ac-muted-foreground);
+}
+
+.list[data-orientation="vertical"] {
+  flex-direction: column;
+  align-items: stretch;
+  height: fit-content;
+}
+
+.default {
+  padding: var(--ac-space-1);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+}
+
+.line {
+  padding: 0;
+  gap: var(--ac-space-1);
+  border-block-end: 1px solid var(--ac-border);
   background-color: transparent;
 }
 
+.line[data-orientation="vertical"] {
+  border-block-end: 0;
+  border-inline-end: 1px solid var(--ac-border);
+}
+
 .tab {
+  position: relative;
+  z-index: 1;
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
+  gap: var(--ac-space-2);
   border: 0;
   margin: 0;
   outline: none;
@@ -34,12 +70,19 @@
   cursor: pointer;
   transition: color var(--ac-transition-fast);
 
+  &[data-disabled] {
+    cursor: default;
+    opacity: 0.5;
+  }
+
   &[data-active] {
     color: var(--ac-foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
   }
 
   @media (hover: hover) {
-    &:hover {
+    &:hover:not([data-disabled]) {
       color: var(--ac-foreground);
     }
   }
@@ -56,23 +99,69 @@
       outline-offset: -1px;
     }
   }
+
+  & svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+}
+
+.tab[data-orientation="vertical"] {
+  justify-content: flex-start;
+}
+
+.default .tab {
+  border-radius: var(--ac-radius-sm);
 }
 
 .indicator {
   position: absolute;
   z-index: 0;
+  pointer-events: none;
   left: 0;
-  bottom: -1px;
-  translate: var(--active-tab-left) 0;
+  top: 0;
+  translate: var(--active-tab-left) var(--active-tab-top);
   width: var(--active-tab-width);
-  height: 2px;
-  background-color: var(--ac-foreground);
-  transition-property: translate, width;
+  height: var(--active-tab-height);
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-background);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--ac-foreground), transparent 95%);
+  /* Preserve the local sliding/resizing indicator for unequal tab labels. */
+  transition-property: translate, width, height;
   transition-duration: 200ms;
   transition-timing-function: ease-in-out;
 }
 
+.indicator[hidden] {
+  display: none;
+}
+
+.line .indicator {
+  border-radius: 0;
+  background-color: var(--ac-foreground);
+  box-shadow: none;
+}
+
+.line[data-orientation="horizontal"] .indicator {
+  top: auto;
+  bottom: -1px;
+  translate: var(--active-tab-left) 0;
+  height: 2px;
+}
+
+.line[data-orientation="vertical"] .indicator {
+  left: auto;
+  inset-inline-end: -1px;
+  translate: 0 var(--active-tab-top);
+  width: 2px;
+  height: var(--active-tab-height);
+}
+
 .panel {
+  flex: 1;
+  min-width: 0;
   position: relative;
   outline: none;
   padding-top: var(--ac-space-4);
@@ -85,5 +174,41 @@
 
   &[hidden] {
     display: none;
+  }
+}
+
+.panel[data-orientation="vertical"] {
+  padding-top: 0;
+  padding-inline-start: var(--ac-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .indicator {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .indicator,
+  .line .indicator {
+    background-color: Highlight;
+    box-shadow: none;
+    forced-color-adjust: none;
+    /* Snap under the selected tab: a sliding backplate would leave its HighlightText on Canvas mid-move. */
+    transition: none;
+  }
+
+  /*
+   * HighlightText only over its Highlight backplate. Base UI keeps the indicator `hidden` until it has measured the
+   * active tab (always in server HTML), and the system colours stay in charge until then.
+   */
+  .default:has(> .indicator:not([hidden])) .tab[data-active] {
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+
+  .line .tab[data-active] {
+    color: CanvasText;
   }
 }

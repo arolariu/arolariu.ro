@@ -1,5 +1,7 @@
 .positioner {
   z-index: 50;
+  isolation: isolate;
+  outline: none;
 }
 
 .content {
@@ -13,6 +15,7 @@
   background-color: var(--ac-popover);
   color: var(--ac-popover-foreground);
   box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.35);
+  outline: none;
   transform-origin: var(--transform-origin);
   transition:
     opacity var(--ac-transition-normal),
@@ -46,13 +49,36 @@
   color: var(--ac-accent-foreground);
 }
 
+/* Plain --ac-destructive text drops below 4.5:1 on the light highlight and on muted groups; mixing in the
+   foreground (as Bubble does) keeps it at or above 4.5:1 on popover, highlight and muted surfaces in both themes. */
+.item[data-variant="destructive"] {
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
+}
+
+.item[data-variant="destructive"][data-highlighted] {
+  background-color: color-mix(in oklch, var(--ac-destructive) 10%, transparent);
+  color: color-mix(in oklch, var(--ac-destructive) 80%, var(--ac-foreground));
+}
+
+.item :where(svg) {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 .item[data-disabled] {
   opacity: 0.5;
   pointer-events: none;
 }
 
+.item:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
+}
+
 .subTrigger {
-  padding-right: var(--ac-space-3);
+  padding-inline-end: var(--ac-space-3);
 }
 
 .subTrigger[data-popup-open] {
@@ -63,22 +89,37 @@
 .subTriggerIcon {
   width: 1rem;
   height: 1rem;
-  margin-left: auto;
+  margin-inline-start: auto;
   flex-shrink: 0;
 }
 
+/* Base UI opens submenus (placement and arrow keys) from its own direction context, not the DOM, so the chevron mirrors
+   only with that context: an inherited dir="rtl" without an RTL DirectionProvider still opens the submenu to the right. */
+.subTriggerIcon[data-direction="rtl"] {
+  transform: rotate(180deg);
+}
+
 .indicatorItem {
-  padding-left: calc(var(--ac-space-2) + 1.25rem);
+  padding-inline-start: calc(var(--ac-space-2) + 1.25rem);
+}
+
+.indicatorInset {
+  padding-inline-start: calc(var(--ac-space-2) + 2.5rem);
+}
+
+.indicatorInset .indicatorSlot {
+  inset-inline-start: calc(var(--ac-space-2) + 1.25rem);
 }
 
 .indicatorSlot {
   position: absolute;
-  left: var(--ac-space-2);
+  inset-inline-start: var(--ac-space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1rem;
   height: 1rem;
+  pointer-events: none;
 }
 
 .indicatorIcon,
@@ -98,7 +139,7 @@
 }
 
 .inset {
-  padding-left: calc(var(--ac-space-2) + 1.25rem);
+  padding-inline-start: calc(var(--ac-space-2) + 1.25rem);
 }
 
 .separator {
@@ -108,8 +149,37 @@
 }
 
 .shortcut {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-xs);
   letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .content {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .item[data-highlighted],
+  .subTrigger[data-popup-open] {
+    outline: 1px solid Highlight;
+  }
+
+  .item[data-disabled] {
+    color: GrayText;
+    opacity: 1;
+  }
+}
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

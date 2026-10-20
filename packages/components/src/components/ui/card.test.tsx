@@ -5,6 +5,30 @@ import {describe, expect, it} from "vitest";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
 
 describe("Card", () => {
+  it("exposes compact sizing and direct header actions without replacing native content semantics", () => {
+    render(
+      <Card
+        size='sm'
+        role='region'
+        aria-label='Summary'>
+        <CardHeader data-testid='header'>
+          <CardTitle>
+            <h2>Summary</h2>
+          </CardTitle>
+          <CardDescription>Long supporting content</CardDescription>
+          <CardAction>
+            <button type='button'>Manage</button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>Details</CardContent>
+        <CardFooter>Last updated today</CardFooter>
+      </Card>,
+    );
+    expect(screen.getByRole("region", {name: "Summary"})).toHaveAttribute("data-size", "sm");
+    expect(screen.getByRole("button", {name: "Manage"}).parentElement).toHaveAttribute("data-slot", "card-action");
+    expect(screen.getByRole("button", {name: "Manage"}).parentElement?.parentElement).toBe(screen.getByTestId("header"));
+    expect(screen.getByRole("heading", {name: "Summary", level: 2})).toBeInTheDocument();
+  });
   it("renders without crashing", () => {
     render(<Card>Content</Card>);
 

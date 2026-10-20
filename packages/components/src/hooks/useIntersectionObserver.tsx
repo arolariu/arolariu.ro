@@ -2,6 +2,14 @@
 
 import * as React from "react";
 
+interface Observation {
+  readonly element: Element;
+  readonly thresholdKey: string;
+  readonly root: IntersectionObserverInit["root"];
+  readonly rootMargin: string | undefined;
+  readonly disconnect: () => void;
+}
+
 /**
  * Observes element visibility using the Intersection Observer API.
  *
@@ -12,7 +20,9 @@ import * as React from "react";
  * tracking element visibility.
  *
  * The observer automatically disconnects when the component unmounts or when
- * the element reference changes. The hook is SSR-safe and returns `null` when
+ * the actual target changes on a component commit, even when its ref object is
+ * retained. Replacing the target clears the previous entry and ignores queued
+ * deliveries from the old observer. The hook is SSR-safe and returns `null` when
  * running on the server or when the observer is not yet initialized.
  *
  * @param ref - A React ref object pointing to the element to observe.
@@ -57,32 +67,61 @@ export function useIntersectionObserver(
   const [entry, setEntry] = React.useState<IntersectionObserverEntry | null>(null);
 
   const threshold = options?.threshold;
+  const thresholdKey = String(threshold ?? 0);
   const root = options?.root;
   const rootMargin = options?.rootMargin;
+  const observationRef = React.useRef<Observation | null>(null);
 
   React.useEffect(() => {
     const element = ref.current;
+    const {current} = observationRef;
+    if (
+      current?.element === element
+      && current.thresholdKey === thresholdKey
+      && current.root === root
+      && current.rootMargin === rootMargin
+      && globalThis.IntersectionObserver !== undefined
+    ) {
+      return;
+    }
+    current?.disconnect();
+    observationRef.current = null;
+    setEntry(null);
 
-    // SSR safety: IntersectionObserver is not available on server
     if (globalThis.IntersectionObserver === undefined || !element) {
       return;
     }
 
+    let active = true;
     const observer = new globalThis.IntersectionObserver(
       ([observerEntry]) => {
-        if (observerEntry) {
+        if (active && observerEntry) {
           setEntry(observerEntry);
         }
       },
       {threshold, root, rootMargin},
     );
 
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
+    observationRef.current = {
+      element,
+      thresholdKey,
+      root,
+      rootMargin,
+      disconnect: () => {
+        active = false;
+        observer.disconnect();
+      },
     };
-  }, [ref, threshold, root, rootMargin]);
+    observer.observe(element);
+  });
+
+  React.useEffect(
+    () => () => {
+      observationRef.current?.disconnect();
+      observationRef.current = null;
+    },
+    [],
+  );
 
   return entry;
 }

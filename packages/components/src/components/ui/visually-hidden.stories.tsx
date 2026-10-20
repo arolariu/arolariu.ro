@@ -1,115 +1,83 @@
+import {Eye, Pencil, Trash2} from "lucide-react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
+import {Spinner} from "./spinner";
 import {VisuallyHidden} from "./visually-hidden";
+const storyStyles = `
+.ac-story-visually-hidden-storyRow {
+  display: flex;
+  gap: var(--ac-space-2);
+}
+`;
+
+const storyClasses = {
+  storyRow: "ac-story-visually-hidden-storyRow",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Utilities/VisuallyHidden",
   component: VisuallyHidden,
   tags: ["autodocs"],
+  args: {children: "Hidden label"},
 } satisfies Meta<typeof VisuallyHidden>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Icon button with visually hidden label for screen readers.
- */
 export const IconButton: Story = {
   render: () => (
-    <button
-      type='button'
-      style={{
-        padding: "0.75rem",
-        background: "#3b82f6",
-        color: "white",
-        border: "none",
-        borderRadius: "8px",
-        fontSize: "1.25rem",
-        cursor: "pointer",
-      }}>
-      🗑️
-      <VisuallyHidden>Delete item</VisuallyHidden>
-    </button>
+    <Button
+      size='icon'
+      aria-labelledby='vh-delete-item'>
+      <Trash2 aria-hidden='true' />
+      <VisuallyHidden id='vh-delete-item'>Delete item</VisuallyHidden>
+    </Button>
   ),
 };
-
-/**
- * Multiple icon buttons with accessible labels.
- */
 export const IconGroup: Story = {
   render: () => (
-    <div style={{display: "flex", gap: "0.5rem"}}>
-      <button
-        type='button'
-        style={{
-          padding: "0.75rem",
-          background: "#3b82f6",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          fontSize: "1.25rem",
-          cursor: "pointer",
-        }}>
-        📝
-        <VisuallyHidden>Edit</VisuallyHidden>
-      </button>
-      <button
-        type='button'
-        style={{
-          padding: "0.75rem",
-          background: "#10b981",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          fontSize: "1.25rem",
-          cursor: "pointer",
-        }}>
-        👁️
-        <VisuallyHidden>View</VisuallyHidden>
-      </button>
-      <button
-        type='button'
-        style={{
-          padding: "0.75rem",
-          background: "#ef4444",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          fontSize: "1.25rem",
-          cursor: "pointer",
-        }}>
-        🗑️
-        <VisuallyHidden>Delete</VisuallyHidden>
-      </button>
+    <div className={storyClasses.storyRow}>
+      <Button
+        size='icon-sm'
+        aria-labelledby='vh-edit'
+        variant='secondary'>
+        <Pencil aria-hidden='true' />
+        <VisuallyHidden id='vh-edit'>Edit</VisuallyHidden>
+      </Button>
+      <Button
+        size='icon-sm'
+        aria-labelledby='vh-view'
+        variant='secondary'>
+        <Eye aria-hidden='true' />
+        <VisuallyHidden id='vh-view'>View</VisuallyHidden>
+      </Button>
+      <Button
+        size='icon-sm'
+        aria-labelledby='vh-delete'
+        variant='destructive'>
+        <Trash2 aria-hidden='true' />
+        <VisuallyHidden id='vh-delete'>Delete</VisuallyHidden>
+      </Button>
     </div>
   ),
 };
-
-/**
- * Form with visually hidden status message for screen readers.
- */
+/** The static spinner is decorative; the real button gets its full hidden name. */
 export const FormStatus: Story = {
   render: () => (
-    <div style={{padding: "1.5rem", background: "#f3f4f6", borderRadius: "8px", maxWidth: "400px"}}>
-      <h3 style={{marginBottom: "1rem"}}>Subscribe to Newsletter</h3>
-      <input
-        type='email'
-        placeholder='Enter your email'
-        style={{width: "100%", padding: "0.75rem", marginBottom: "0.75rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
+    <Button disabled>
+      <Spinner
+        animated={false}
+        aria-hidden='true'
+        role='presentation'
       />
-      <button
-        type='submit'
-        style={{
-          width: "100%",
-          padding: "0.75rem",
-          background: "#3b82f6",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-        }}>
-        Subscribe
-      </button>
-      <VisuallyHidden role='status'>Form submission successful</VisuallyHidden>
-    </div>
+      <VisuallyHidden>Submitting form</VisuallyHidden>Submitting
+    </Button>
   ),
 };

@@ -1,3 +1,11 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  color: var(--ac-foreground);
+}
+
 .track {
   position: relative;
   width: 100%;
@@ -10,6 +18,64 @@
 .indicator {
   height: 100%;
   border-radius: 9999px;
-  background-color: var(--ac-primary);
+  background-color: var(--ac-primary-emphasis);
   transition: width 200ms ease;
+}
+
+.indicator[data-indeterminate] {
+  width: 50%;
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+.label,
+.value {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.label {
+  font-weight: 500;
+}
+
+.value {
+  margin-inline-start: auto;
+  color: var(--ac-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(200%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    animation: none;
+    transition: none;
+  }
+
+  .indicator[data-indeterminate] {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .track {
+    border: 1px solid CanvasText;
+    background-color: Canvas;
+  }
+
+  .indicator {
+    background-color: Highlight;
+  }
+
+  .label,
+  .value {
+    color: CanvasText;
+  }
 }

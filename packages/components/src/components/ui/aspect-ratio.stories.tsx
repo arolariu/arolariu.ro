@@ -1,174 +1,70 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {AspectRatio} from "./aspect-ratio";
+const storyStyles = `
+.ac-story-aspect-ratio-storyFrame {
+  width: min(32rem, 100%);
+  border-radius: var(--ac-radius-lg);
+}
+
+.ac-story-aspect-ratio-storyMedia {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background-color: var(--ac-muted);
+  color: var(--ac-muted-foreground);
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-aspect-ratio-storyFrame",
+  storyMedia: "ac-story-aspect-ratio-storyMedia",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Layout/AspectRatio",
   component: AspectRatio,
   tags: ["autodocs"],
-  argTypes: {
-    ratio: {
-      control: "text",
-      description: "Aspect ratio applied to the wrapper element",
-    },
-  },
+  argTypes: {ratio: {control: "text", description: "Numeric ratio or native CSS ratio string; takes precedence over caller ratio styles."}},
+  render: (args): React.JSX.Element => (
+    <div className={storyClasses.storyFrame}>
+      <AspectRatio {...args} />
+    </div>
+  ),
 } satisfies Meta<typeof AspectRatio>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default 1:1 square aspect ratio.
- */
-export const Default: Story = {
-  args: {
-    ratio: 1,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #3b82f6, #8b5cf6)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        1:1 Ratio
-      </div>
-    ),
-  },
+export const Default: Story = {args: {children: <div className={storyClasses.storyMedia}>Default square</div>}};
+export const Square: Story = {args: {ratio: 1, children: <div className={storyClasses.storyMedia}>1:1</div>}};
+export const Widescreen: Story = {args: {ratio: 16 / 9, children: <div className={storyClasses.storyMedia}>16:9 numeric ratio</div>}};
+export const Standard: Story = {args: {ratio: 4 / 3, children: <div className={storyClasses.storyMedia}>4:3</div>}};
+export const StringRatio: Story = {
+  args: {ratio: "16 / 9", children: <div className={storyClasses.storyMedia}>16 / 9 CSS ratio string</div>},
 };
-
-/**
- * Widescreen 16:9 aspect ratio commonly used for video content.
- */
-export const Widescreen: Story = {
-  args: {
-    ratio: 16 / 9,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #ec4899, #f43f5e)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        16:9 Widescreen
-      </div>
-    ),
-  },
-};
-
-/**
- * Classic 4:3 aspect ratio used for standard displays.
- */
-export const Standard: Story = {
-  args: {
-    ratio: 4 / 3,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(to bottom right, #10b981, #06b6d4)",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-        }}>
-        4:3 Standard
-      </div>
-    ),
-  },
-};
-
-/**
- * 16:9 aspect ratio wrapping a video placeholder.
- */
 export const Video: Story = {
   args: {
-    ratio: 16 / 9,
+    ratio: "16 / 9",
     children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "#000",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: "16px",
-        }}>
-        <div
-          style={{
-            width: "80px",
-            height: "80px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-          <div
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: "20px solid white",
-              borderTop: "12px solid transparent",
-              borderBottom: "12px solid transparent",
-              marginLeft: "4px",
-            }}
-          />
-        </div>
-        <div style={{color: "rgba(255,255,255,0.7)", fontSize: "14px"}}>Video Player (16:9)</div>
-      </div>
-    ),
-  },
-};
-
-/**
- * 1:1 square aspect ratio for profile images.
- */
-export const Square: Story = {
-  args: {
-    ratio: 1,
-    children: (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-          borderRadius: "12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: "8px",
-        }}>
-        <div
-          style={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "32px",
-          }}>
-          👤
-        </div>
-        <div style={{color: "white", fontSize: "14px", fontWeight: "600"}}>Profile Image</div>
-        <div style={{color: "rgba(255,255,255,0.8)", fontSize: "12px"}}>1:1 Ratio</div>
-      </div>
+      <svg
+        className={storyClasses.storyMedia}
+        role='img'
+        aria-label='Video placeholder'
+        viewBox='0 0 160 90'>
+        <path
+          d='m65 25 35 20-35 20Z'
+          fill='currentColor'
+        />
+      </svg>
     ),
   },
 };

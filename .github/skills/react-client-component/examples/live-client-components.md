@@ -71,6 +71,7 @@ from newer siblings rather than copying legacy details.
 ### Live source
 
 - `packages/components/src/components/ui/button.tsx`
+- `packages/components/src/components/ui/_button-variants.ts`
 - `packages/components/src/components/ui/button.module.css`
 - `packages/components/src/components/ui/button.test.tsx`
 - `packages/components/src/components/ui/button.stories.tsx`
@@ -78,9 +79,11 @@ from newer siblings rather than copying legacy details.
 
 ### Why representative
 
-It demonstrates the explicit shared-library threshold, Base UI `useRender` and
-`mergeProps`, `forwardRef`, namespace types, native default semantics, composed
-non-native disabled behavior, CSS Module composition, tests, story, and export.
+It demonstrates the explicit shared-library threshold, a Base UI primitive
+wrapper (`render` composition and the React 19 `ref` prop, owned by
+`.github/instructions/components.instructions.md`), namespace types, native
+default semantics, composed non-native disabled behavior, CSS Module
+composition, tests, story, and export.
 
 ### Inspect
 

@@ -1,128 +1,91 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Scratcher} from "./scratcher";
+import {Scratcher, type ScratcherProps} from "./scratcher";
+
+function ResettableCard(args: Readonly<ScratcherProps>): React.JSX.Element {
+  const [reset, setReset] = React.useState(0);
+  const [completions, setCompletions] = React.useState(0);
+  return (
+    <div className={storyClasses.demo}>
+      <Scratcher
+        key={reset}
+        {...args}
+        onComplete={(): void => {
+          setCompletions((count) => count + 1);
+          args.onComplete?.();
+        }}
+      />
+      <button
+        type='button'
+        onClick={(): void => {
+          setReset((count) => count + 1);
+        }}>
+        Reset card
+      </button>
+      <p role='status'>Completed {completions} times</p>
+    </div>
+  );
+}
+const storyStyles = `
+.ac-story-scratcher-demo {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.ac-story-scratcher-demoPrize {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-content: center;
+  border-radius: var(--ac-radius-lg);
+  color: var(--ac-foreground);
+  background: var(--ac-muted);
+  font-size: 1.5rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-scratcher-demo",
+  demoPrize: "ac-story-scratcher-demoPrize",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Interactions/Scratcher",
   component: Scratcher,
   tags: ["autodocs"],
+  args: {width: 320, height: 180, minScratchPercentage: 50, children: <div className={storyClasses.demoPrize}>Content revealed</div>},
   argTypes: {
-    width: {
-      control: "number",
-      description: "Width of the scratch card surface in pixels",
-    },
-    height: {
-      control: "number",
-      description: "Height of the scratch card surface in pixels",
-    },
-    minScratchPercentage: {
-      control: {type: "range", min: 10, max: 90, step: 5},
-      description: "Percentage of cleared pixels required before completion fires",
+    width: {control: {type: "number", min: 1}},
+    height: {control: {type: "number", min: 1}},
+    minScratchPercentage: {control: {type: "range", min: 0, max: 100}},
+  },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Pointer scratching and a native keyboard reveal button complete the same card. Children are always mounted and accessible: this is not a security gate. Dimensions/gradient reset the bitmap. Reduced motion finishes feedback immediately.",
+      },
     },
   },
+  render: (args) => <ResettableCard {...args} />,
 } satisfies Meta<typeof Scratcher>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
+export const Default: Story = {};
+export const CustomGradient: Story = {args: {gradientColors: ["#ff0080", "#ff8c00", "#40e0d0"]}};
+export const Large: Story = {args: {width: 400, height: 250, minScratchPercentage: 30}};
 /**
- * Scratch card with default settings revealing hidden content.
+ * Tab to the reveal button and activate it: completion is equivalent to pointer scratching, and focus stays on the button,
+ * which becomes `aria-disabled` (still focusable, activation ignored) until the card resets.
  */
-export const Default: Story = {
-  args: {
-    width: 320,
-    height: 180,
-    minScratchPercentage: 50,
-    onComplete: () => console.log("Scratch complete!"),
-  },
-  render: (args) => (
-    <div style={{display: "flex", justifyContent: "center", padding: "2rem"}}>
-      <Scratcher {...args}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            borderRadius: "8px",
-          }}>
-          🎉 You won!
-        </div>
-      </Scratcher>
-    </div>
-  ),
-};
-
-/**
- * Scratch card with custom gradient colors.
- */
-export const CustomGradient: Story = {
-  args: {
-    width: 300,
-    height: 200,
-    minScratchPercentage: 50,
-    gradientColors: ["#ff0080", "#ff8c00", "#40e0d0"],
-  },
-  render: (args) => (
-    <div style={{display: "flex", justifyContent: "center", padding: "2rem"}}>
-      <Scratcher {...args}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            background: "#1e293b",
-            color: "white",
-            padding: "1rem",
-            borderRadius: "8px",
-          }}>
-          <div style={{fontSize: "2rem", marginBottom: "0.5rem"}}>🎁</div>
-          <div style={{fontSize: "1.25rem", fontWeight: "bold"}}>$50 OFF</div>
-          <div style={{fontSize: "0.875rem", opacity: 0.8}}>Your next purchase</div>
-        </div>
-      </Scratcher>
-    </div>
-  ),
-};
-
-/**
- * Large scratch card with lower completion threshold.
- */
-export const Large: Story = {
-  args: {
-    width: 400,
-    height: 250,
-    minScratchPercentage: 30,
-  },
-  render: (args) => (
-    <div style={{display: "flex", justifyContent: "center", padding: "2rem"}}>
-      <Scratcher {...args}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            color: "white",
-            padding: "2rem",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}>
-          <div style={{fontSize: "3rem", marginBottom: "0.5rem"}}>🏆</div>
-          <div style={{fontSize: "1.75rem", fontWeight: "bold", marginBottom: "0.25rem"}}>Congratulations!</div>
-          <div style={{fontSize: "1rem"}}>You've unlocked a special prize</div>
-        </div>
-      </Scratcher>
-    </div>
-  ),
-};
+export const KeyboardReveal: Story = {args: {revealLabel: "Reveal the card", completedLabel: "Card revealed"}};

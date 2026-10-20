@@ -14,10 +14,18 @@
   height: 0;
 }
 
+.content {
+  position: relative;
+  z-index: 1;
+  color: var(--ac-foreground);
+  background: var(--ac-background);
+}
+
 .filterLayer {
   position: absolute;
   inset: 0;
-  filter: url(#goo) blur(40px);
+  filter: var(--ac-bubble-filter);
+  pointer-events: none;
 }
 
 .bubble {
@@ -94,4 +102,15 @@
   height: 100%;
   opacity: 0.7;
   background: radial-gradient(circle at center, rgb(var(--ac-bubble-sixth-color) / 0.8) 0%, rgb(var(--ac-bubble-sixth-color) / 0) 50%);
+}
+
+@media (forced-colors: active) {
+  .root {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .filterLayer {
+    display: none;
+  }
 }
