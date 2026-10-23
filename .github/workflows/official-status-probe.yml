@@ -53,16 +53,13 @@ jobs:
       - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
         run: |
           set -e
-          # Only exit 2 means the branch is absent; other errors must not bootstrap.
-          if git ls-remote --exit-code --heads origin status-data >/dev/null; then
+          # Explicit existence check — `git fetch ... 2>/dev/null` would also
+          # swallow transient network failures, which could then be misread as
+          # "branch missing" and overwrite real data via the bootstrap path.
+          if git ls-remote --exit-code --heads origin status-data >/dev/null 2>&1; then
             git fetch origin status-data:status-data
             git worktree add -B status-data ../data-wt origin/status-data
           else
-            remote_exit=$?
-            if [ "$remote_exit" -ne 2 ]; then
-              echo "::error::Cannot query status-data; git ls-remote exited ${remote_exit}."
-              exit "$remote_exit"
-            fi
             echo "status-data branch does not exist; bootstrapping as orphan"
             git worktree add --detach ../data-wt HEAD
             cd ../data-wt

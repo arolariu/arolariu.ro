@@ -1,107 +1,162 @@
-# Same-run reusable release only; operators start official-website-build.
-# Caller and callee must be rolled out/reverted together. No workflow_run path.
+# =============================================================================
+# Main Website Release Workflow
+# =============================================================================
+# This workflow deploys the containerized Next.js website to Azure App Service
+# after a successful build workflow completion.
+#
+# Architecture:
+#   - Single Phase: Release - Deploys container from ACR to Azure App Service
+#   - Chained Workflow: Triggered automatically after official-website-build
+#
+# Deployment Strategy:
+#   - Blue/Green: Azure App Service handles deployment slots
+#   - Container: Pulls pre-built image from Azure Container Registry
+#   - Environment URL: Automatically updated in GitHub Environments
+#
+# Triggers:
+#   - Automatic: Triggered on successful completion of official-website-build
+#   - Manual: workflow_dispatch for on-demand deployments
+#
+# Environment Targets:
+#   - Development: dev-arolariu-ro (frontend/dev.arolariu container)
+#   - Production: www-arolariu-ro (frontend/arolariu container)
+#
+# Security:
+#   - Uses OIDC for Azure authentication (no long-lived secrets)
+#   - Azure Container Registry credentials in GitHub Secrets
+#   - Environment-specific secret management
+#
+# Prerequisites:
+#   1. Successful official-website-build workflow run
+#   2. Container image present in Azure Container Registry
+#   3. Azure App Service configured for container deployment
+#   4. GitHub Secrets configured:
+#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CONTAINER_REGISTRY_ADDRESS
+#
+# Related Workflows:
+#   - official-website-build.yml: Builds and pushes container to ACR
+# =============================================================================
+
 name: "official-website-release"
 
+permissions:
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository (if needed)
+  actions: read # Required to download metadata from the completed build run
+
 on:
-  workflow_call:
+  # Automatic trigger after successful build workflow
+  workflow_run:
+    workflows: ["official-website-build"]
+    types: ["completed"]
+    branches: ["preview"]
+
+  # Manual trigger for controlled releases
+  workflow_dispatch:
     inputs:
       environment:
-        description: "Validated website environment"
+        description: "The environment to release to. (e.g. 'development', 'production')"
+        options:
+          - "development"
+          - "production"
+        default: "development"
         required: true
-        type: string
-      source_sha:
-        description: "Validated application source commit"
+        type: choice
+      container_name:
+        description: "The name of the container to release. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
+        options:
+          - "frontend/dev.arolariu"
+          - "frontend/arolariu"
+        default: "frontend/dev.arolariu"
         required: true
-        type: string
-      image:
-        description: "Exact published repository:tag in the existing environment registry"
-        required: true
-        type: string
-    secrets:
-      AZURE_CLIENT_ID:
-        required: true
-      AZURE_TENANT_ID:
-        required: true
-      AZURE_SUBSCRIPTION_ID:
-        required: true
-      AZURE_CONTAINER_REGISTRY_ADDRESS:
-        required: true
+        type: choice
+
+env:
+  COMMIT_SHA: ${{ github.sha }}
+  PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
 
 jobs:
   release:
-    name: 🚀 Release
-    if: github.repository == 'arolariu/arolariu.ro'
+    name: 🚀 Release phase (1/1)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    if: ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')   }}
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ inputs.environment || 'development'}}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    env:
-      TARGET_ENV: ${{ inputs.environment }}
-      COMMIT_SHA: ${{ inputs.source_sha }}
-      IMAGE: ${{ inputs.image }}
-      EVENT_REF: ${{ github.ref }}
-      BUILD_RUN_ID: ${{ github.run_id }}
-      WORKFLOW_SHA: ${{ github.workflow_sha }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
     steps:
-      - name: 🔎 Validate handoff and required environment bindings
-        id: handoff
-        shell: bash
-        run: |
-          set -euo pipefail
-          fail() { echo "::error::$1"; exit 1; }
-          case "$TARGET_ENV" in
-            development) repository=frontend/dev.arolariu; app=dev-arolariu-ro ;;
-            production)
-              [[ "$EVENT_REF" == "refs/heads/main" ]] || fail "Production release requires a main caller."
-              repository=frontend/arolariu; app=www-arolariu-ro
-              ;;
-            *) fail "Unsupported website environment." ;;
-          esac
-          [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "Missing or invalid validated source SHA."
-          # Check the exact passed tag, never rebuild it using this release's attempt.
-          prefix="${repository}:${COMMIT_SHA}-${BUILD_RUN_ID}-"
-          [[ "$IMAGE" == "$prefix"* ]] || fail "Built image does not match the validated website target/source/run."
-          attempt="${IMAGE#"$prefix"}"
-          [[ "$attempt" =~ ^[1-9][0-9]*$ ]] || fail "Invalid built image attempt."
-          # required:true enforces a mapping, not a nonempty value. Check AFTER
-          # callee environment selection, so environment secrets retain precedence.
-          for binding in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID ACR_LOGIN_SERVER; do
-            [[ -n "${!binding}" ]] || fail "Required deployment binding $binding is empty after environment selection."
-          done
-          printf 'app_name=%s\n' "$app" >> "$GITHUB_OUTPUT"
-      - name: 🔐 Authenticate to Azure
+      - name: 📥 Download the triggering build revision
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v8
+        with:
+          name: website-build-metadata
+          path: website-build
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: 📄 Read the triggering build revision
+        id: read-build-metadata
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {readFileSync} = require('node:fs');
+            const {join} = require('node:path');
+            const metadata = JSON.parse(readFileSync(
+              join(process.env.GITHUB_WORKSPACE, 'website-build', 'website-build.json'), 'utf8'));
+            if (!metadata || typeof metadata.commit_sha !== 'string'
+                || !/^[0-9a-f]{40}$/.test(metadata.commit_sha)
+                || (metadata.container_tag !== metadata.commit_sha && metadata.container_tag !== 'latest')) {
+              throw new Error('Invalid website build metadata.');
+            }
+            core.exportVariable('COMMIT_SHA', metadata.commit_sha);
+            core.setOutput('container_tag', metadata.container_tag);
+
+      - name: 🔐 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: 🔐 Authenticate to existing registry
-        shell: bash
+
+      - name: 🔐 Performing auth against private Azure Container Registry...
+        working-directory: '.'
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-      - name: 🔎 Require the published image to exist
-        shell: bash
-        run: az acr repository show --name "${ACR_LOGIN_SERVER%%.*}" --image "$IMAGE" --output none
-      - name: ⚓ Deploy exact passed image
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
+      - name: ⚓ Releasing docker container to Azure App Service...
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ steps.handoff.outputs.app_name }}
-          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{ inputs.image }}"
-      - name: 📊 Release summary
-        shell: bash
         env:
-          APP_NAME: ${{ steps.handoff.outputs.app_name }}
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{ steps.read-build-metadata.outputs.container_tag || (inputs.environment == 'production' && github.sha || 'latest') }}
+        with:
+          app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
+          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+
+      - name: 📊 Release summary
         run: |
-          {
-            echo "## Website release"
-            printf -- '- Environment: `%s`\n- App Service: `%s`\n' "$TARGET_ENV" "$APP_NAME"
-            printf -- '- Source SHA: `%s`\n- Workflow-definition SHA: `%s`\n' "$COMMIT_SHA" "$WORKFLOW_SHA"
-            printf -- '- Exact image (existing environment registry): `%s`\n' "$IMAGE"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Release Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Source Commit | \`${COMMIT_SHA}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Website URL | ${{ steps.deploy-to-webapp.outputs.webapp-url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Live URL**: ${{ steps.deploy-to-webapp.outputs.webapp-url }}" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ RELEASE COMPLETED SUCCESSFULLY                          │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"

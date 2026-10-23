@@ -1,116 +1,147 @@
-# API: captured main history -> mandatory .NET tests -> build -> production Azure.
+# =============================================================================
+# Backend API Build and Deployment Workflow
+# =============================================================================
+# This workflow handles the complete CI/CD pipeline for the .NET backend API
+# (api.arolariu.ro), including testing, containerization, and Azure deployment.
+#
+# Architecture:
+#   - Phase 1: Test - Runs unit tests to validate code quality
+#   - Phase 2: Build - Containerizes the .NET API using Docker
+#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure App Service
+#
+# Triggers:
+#   - Automatic: Push to 'main' branch with changes in sites/api.arolariu.ro/
+#   - Manual: workflow_dispatch with environment and infrastructure selection
+#
+# Security:
+#   - Uses OIDC (OpenID Connect) for Azure authentication (no long-lived secrets)
+#   - Azure Container Registry auth via OIDC (no admin credentials)
+#   - Federated identity via Azure Managed Identity
+#
+# Prerequisites:
+#   1. Azure Managed Identity configured with Federated Credentials
+#   2. Azure Container Registry with push/pull access
+#   3. Azure App Service configured for container deployment
+#   4. GitHub Secrets configured:
+#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      - AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CONTAINER_REGISTRY_ADDRESS
+#
+# Documentation:
+#   - RFC 2001: Domain-Driven Design Architecture
+#   - RFC 2002: OpenTelemetry Backend Observability
+#   - RFC 2003: The Standard Implementation
+# =============================================================================
+
 name: "official-api-trigger"
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
 
 defaults:
   run:
-    shell: bash
     working-directory: ./sites/api.arolariu.ro
 
 on:
+  # Automatic trigger on main branch changes to backend API
   push:
     branches: ["main"]
     paths: ["sites/api.arolariu.ro/**"]
+
+  # Manual trigger for controlled deployments
   workflow_dispatch:
     inputs:
-      commit_sha:
-        description: "Optional full 40-hex commit in main's captured history; select main"
-        default: ""
-        required: false
-        type: string
+      environment:
+        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        options:
+          - "development"
+          - "production"
+        default: "production"
+        required: true
+        type: choice
+      infrastructure:
+        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
+        options:
+          - 'local'
+          - 'azure'
+        default: "azure"
+        required: true
+        type: choice
+
+env:
+  API_NAME: "api.arolariu.ro"
+  API_URL: "https://api.arolariu.ro"
+  COMMIT_SHA: ${{ github.sha }}
+  INFRA: ${{ inputs.infrastructure || 'azure' }}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID}}
 
 jobs:
-  validate:
-    name: 🔎 Validate production source
-    if: github.repository == 'arolariu/arolariu.ro'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      source_sha: ${{ steps.source.outputs.source_sha }}
-      environment: ${{ steps.source.outputs.environment }}
-      image_repository: ${{ steps.source.outputs.image_repository }}
-      app_name: ${{ steps.source.outputs.app_name }}
-    steps:
-      - name: 📥 Read captured history (no credentials persisted)
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: 🔎 Resolve Git source and fixed Azure target
-        id: source
-        working-directory: .
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_REF: ${{ github.ref }}
-          CAPTURED_SHA: ${{ github.sha }}
-          WORKFLOW_SHA: ${{ github.workflow_sha }}
-          COMMIT_INPUT: ${{ inputs.commit_sha }}
-        run: |
-          set -euo pipefail
-          fail() { echo "::error::$1"; exit 1; }
-          case "$EVENT_NAME" in
-            push|workflow_dispatch) ;;
-            *) fail "Unsupported deployment event." ;;
-          esac
-          [[ "$EVENT_REF" == "refs/heads/main" ]] || fail "Production deployment must select main."
-          [[ "$CAPTURED_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "Invalid captured event SHA."
-          [[ "$(git rev-parse --is-shallow-repository)" == false ]] || fail "Full captured history is required."
-          [[ "$(git cat-file -t "$CAPTURED_SHA")" == commit ]] || fail "Captured event commit is unavailable."
-          source_sha="$CAPTURED_SHA"
-          if [[ -n "$COMMIT_INPUT" ]]; then
-            [[ "$COMMIT_INPUT" =~ ^[0-9a-fA-F]{40}$ ]] || fail "commit_sha must be a full 40-hex commit ID."
-            source_sha="${COMMIT_INPUT,,}"
-          fi
-          [[ "$(git cat-file -t "$source_sha")" == commit ]] || fail "Selected SHA is not an available commit."
-          git merge-base --is-ancestor "$source_sha" "$CAPTURED_SHA" ||
-            fail "Selected commit is outside main's captured history."
-          printf 'source_sha=%s\nenvironment=production\nimage_repository=backend/api.arolariu\napp_name=api-arolariu-ro\n' \
-            "$source_sha" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Validated API source"
-            printf -- '- Source SHA: `%s`\n- Workflow-definition SHA: `%s`\n' "$source_sha" "$WORKFLOW_SHA"
-            echo '- Azure target: production / api-arolariu-ro / backend/api.arolariu'
-          } >> "$GITHUB_STEP_SUMMARY"
-
   test:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Test phase (1/3)
-    needs: [validate]
-    if: github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success'
     runs-on: ubuntu-latest
-    environment: ${{ needs.validate.outputs.environment }}
+    environment: ${{ inputs.environment || 'production' }}
     timeout-minutes: 10
-    env:
-      COMMIT_SHA: ${{ needs.validate.outputs.source_sha }}
-      INFRA: azure
-      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID }}
     steps:
-      - name: 📥 Checkout validated source
+      - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.validate.outputs.source_sha }}
+
+      - name: 📝 Display workflow context
+        run: |
+          echo "::group::🔍 Workflow Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🎯 BACKEND API CI/CD PIPELINE                              │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Test phase (1/3)                         │"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
+          echo "│ 🔧 Infrastructure: ${{ env.INFRA }}"
+          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "│ 🔢 Run Number:    ${{ github.run_number }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: "true"
-          install-node-deps: "true"
-          dotnet: "true"
-          install-dotnet-deps: "true"
-          run-generate: "true"
-          generate-args: "artifacts"
-      - name: 🧪 Run unit tests
+          node: 'true'
+          install-node-deps: 'true'
+          dotnet: 'true'
+          install-dotnet-deps: 'true'
+          run-generate: 'true'
+          generate-args: 'artifacts'
+
+      - name: 🧪 Running unit tests...
         working-directory: .
         run: |
-          dotnet test --configuration Release --logger trx \
-            --results-directory ./sites/api.arolariu.ro/TestResults \
-            --collect:"XPlat Code Coverage" ./arolariu.slnx
-      - name: 📤 Upload test results
+          echo "::group::🧪 Running .NET Unit Tests"
+          echo "📍 Solution: arolariu.slnx"
+          echo "📍 Configuration: Release"
+          echo "📍 Test framework: MSTest"
+          echo ""
+          START_TIME=$(date +%s)
+          dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo ""
+          echo "::notice::✅ Unit tests completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          # Write to job summary
+          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuration | Release |" >> $GITHUB_STEP_SUMMARY
+          echo "| Results Directory | ./sites/api.arolariu.ro/TestResults |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload test results...
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -119,128 +150,155 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-  build:
-    name: 🛠️ Build phase (2/3)
-    needs: [validate, test]
-    if: github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success' && needs.test.result == 'success'
-    runs-on: ubuntu-latest
-    environment: ${{ needs.validate.outputs.environment }}
-    outputs:
-      image: ${{ steps.publish.outputs.image }}
-    env:
-      COMMIT_SHA: ${{ needs.validate.outputs.source_sha }}
-      IMAGE_REPOSITORY: ${{ needs.validate.outputs.image_repository }}
-      API_NAME: "api.arolariu.ro"
-      API_URL: "https://api.arolariu.ro"
-      INFRA: azure
-      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID }}
-      ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-    steps:
-      - name: 📥 Checkout validated source
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.validate.outputs.source_sha }}
-      - name: 🏷️ Select run-specific image
-        id: image
-        env:
-          BUILD_RUN_ID: ${{ github.run_id }}
-          BUILD_RUN_ATTEMPT: ${{ github.run_attempt }}
+      - name: 📊 Test phase summary
+        if: always()
         run: |
-          printf 'image=%s:%s-%s-%s\n' "$IMAGE_REPOSITORY" "$COMMIT_SHA" "$BUILD_RUN_ID" "$BUILD_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "::group::📊 Test Phase Summary"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ TEST PHASE COMPLETED                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📁 Artifacts: test-results-${{ github.run_id }}"
+          echo "│ 📅 Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+  build:
+    if: github.repository == 'arolariu/arolariu.ro'
+    name: 🛠️ Build phase (2/3)
+    needs: test
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v7
+
+      - name: 📝 Display build context
+        run: |
+          echo "::group::🔍 Build Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🏗️ BUILD PHASE                                            │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Build phase (2/3)                        │"
+          echo "│ 🐳 Container:     backend/api.arolariu                     │"
+          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: "true"
-          install-node-deps: "true"
-          run-generate: "true"
-          generate-args: "artifacts"
-      - name: 🔒 Authenticate to Azure
+          node: 'true'
+          install-node-deps: 'true'
+          run-generate: 'true'
+          generate-args: 'artifacts'
+
+      - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: 🔒 Authenticate to existing registry
-        working-directory: .
+
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        working-directory: '.'
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-      - name: 🏗️ Build Docker image
         env:
-          IMAGE: ${{ steps.image.outputs.image }}
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
+      - name: 🏗️ Building the docker container...
+        env:
+          CONTAINER_NAME: "backend/api.arolariu"
+          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
+          echo "::group::🐳 Docker Build"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+          echo "│ 📁 Context: ./sites/api.arolariu.ro"
+          echo "│ 🔧 Build args:"
+          echo "│    - API_NAME=${{ env.API_NAME }}"
+          echo "│    - API_URL=${{ env.API_URL }}"
+          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
+          echo "│    - INFRA=${{ env.INFRA }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo ""
+          START_TIME=$(date +%s)
           docker build \
-            --build-arg "API_NAME=$API_NAME" \
-            --build-arg "API_URL=$API_URL" \
-            --build-arg "COMMIT_SHA=$COMMIT_SHA" \
-            --build-arg "INFRA=$INFRA" \
-            --build-arg "AZURE_TENANT_ID=$AZURE_TENANT_ID" \
-            --build-arg "AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID" \
-            --build-arg "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" \
-            -t "${ACR_LOGIN_SERVER}/${IMAGE}" .
-      - name: ⏫ Publish exact built image
-        id: publish
+            --build-arg API_NAME="${{ env.API_NAME }}" \
+            --build-arg API_URL="${{ env.API_URL }}" \
+            --build-arg COMMIT_SHA="${{ env.COMMIT_SHA }}" \
+            --build-arg INFRA="${{ env.INFRA }}" \
+            --build-arg AZURE_TENANT_ID="${{ env.AZURE_TENANT_ID }}" \
+            --build-arg AZURE_SUBSCRIPTION_ID="${{ env.AZURE_SUBSCRIPTION_ID }}" \
+            --build-arg AZURE_CLIENT_ID="${{ env.AZURE_CLIENT_ID }}" \
+            -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} \
+            .
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo ""
+          echo "::notice::✅ Docker build completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          # Get image size
+          IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
+          echo "📦 Image size: $IMAGE_SIZE"
+
+          # Write to job summary
+          echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
+
+      - name: ⏫ Pushing the docker container...
         env:
-          IMAGE: ${{ steps.image.outputs.image }}
+          CONTAINER_NAME: "backend/api.arolariu"
+          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
-          BUILT_IMAGE="${ACR_LOGIN_SERVER}/${IMAGE}"
-          docker push "$BUILT_IMAGE"
-          printf 'image=%s\n' "$IMAGE" >> "$GITHUB_OUTPUT"
-          printf '\n## Published API image\n- Image (existing environment registry): `%s`\n- Source SHA: `%s`\n' \
-            "$IMAGE" "$COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "::group::⏫ Docker Push"
+          echo "📤 Pushing to Azure Container Registry..."
+          START_TIME=$(date +%s)
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Docker push completed in ${DURATION}s"
+          echo "::endgroup::"
 
   deploy:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🚀 Deploy phase (3/3)
-    needs: [validate, test, build]
-    if:
-      github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success' && needs.test.result == 'success' &&
-      needs.build.result == 'success'
+    needs: build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: .
     environment:
-      name: ${{ needs.validate.outputs.environment }}
+      name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    env:
-      COMMIT_SHA: ${{ needs.validate.outputs.source_sha }}
-      IMAGE: ${{ needs.build.outputs.image }}
-      BUILD_RUN_ID: ${{ github.run_id }}
-      WORKFLOW_SHA: ${{ github.workflow_sha }}
-      ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
     steps:
-      - name: 🔎 Validate exact build output
-        id: handoff
-        run: |
-          set -euo pipefail
-          prefix="backend/api.arolariu:${COMMIT_SHA}-${BUILD_RUN_ID}-"
-          [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ && "$IMAGE" == "$prefix"* ]] ||
-            { echo "::error::Built image does not match validated API source/run/target."; exit 1; }
-          attempt="${IMAGE#"$prefix"}"
-          [[ "$attempt" =~ ^[1-9][0-9]*$ ]] ||
-            { echo "::error::Invalid built image attempt."; exit 1; }
-          [[ -n "$ACR_LOGIN_SERVER" ]] || { echo "::error::Existing registry binding is empty."; exit 1; }
-      - name: 🔒 Authenticate to Azure
+      - name: 🔒 Handling the auth process to Azure Public Cloud...
         uses: Azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: 🔒 Authenticate to existing registry
+
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        working-directory: '.'
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-      - name: 🔎 Require the published image to exist
-        run: az acr repository show --name "${ACR_LOGIN_SERVER%%.*}" --image "$IMAGE" --output none
-      - name: ⚓ Deploy exact passed image
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
+      - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
+        env:
+          CONTAINER_NAME: "backend/api.arolariu"
+          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         with:
-          app-name: ${{ needs.validate.outputs.app_name }}
-          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{ needs.build.outputs.image }}"
-      - name: 📊 Deployment summary
-        run: |
-          {
-            echo "## API production release (api-arolariu-ro)"
-            printf -- '- Source SHA: `%s`\n- Workflow-definition SHA: `%s`\n' "$COMMIT_SHA" "$WORKFLOW_SHA"
-            printf -- '- Exact image (existing environment registry): `%s`\n' "$IMAGE"
-          } >> "$GITHUB_STEP_SUMMARY"
+          app-name: "api-arolariu-ro"
+          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
