@@ -34,6 +34,8 @@ authorization helper that can be exercised directly.
 `conftest.py` establishes deterministic local mode, disables telemetry for
 routine tests, resets process metrics and telemetry module state, and suppresses
 startup config loading while constructing `TestClient`.
+That startup patch is existing repository-module mocking debt, not a template
+for new tests or proof of the real startup/loader behavior.
 
 Add narrower setup only when the behavior needs it:
 
@@ -68,24 +70,18 @@ call. First identify whether the value is computed:
 
 Reset or reload the owning layer, not unrelated consumers.
 
-## Patch the consuming module
+## Patch only external boundaries
 
-Patch the name used by the code under test after import:
+Patch an external dependency where the real consumer resolves it. For example,
+`config/loader.py` imports `azure.appconfiguration.provider.load` inside
+`_load_azure_config`; substitute that SDK function before the lazy import.
 
-```python
-with patch("api.config.get_config", return_value=snapshot):
-    response = client.get(...)
-```
-
-Do not patch `config.loader.get_config` when `api.config` already imported that
-function by name. The same rule applies to `api.health.get_config`,
-`api.build_time.get_config`, `api.run_time.get_config`, middleware telemetry
-functions imported by `main`, and `_import_telemetry_dependencies` consumed by
-`telemetry.bootstrap`.
-
-Patch only an owned external seam or a dependency needed to reach the public
-behavior. Keep catalog resolution, response builders, authorization logic, and
-the repository module whose behavior is asserted real.
+Keep the repository loader, catalog, response builders, authorization, and
+route modules real. Patching `api.config.get_config` bypasses repository
+behavior even though it is the correct imported name to patch mechanically.
+Existing internal patches are debt, not permission to add more. If the real
+path cannot execute at the selected unit boundary, move to an integration
+boundary or report the missing seam.
 
 ## Async and sync boundaries
 

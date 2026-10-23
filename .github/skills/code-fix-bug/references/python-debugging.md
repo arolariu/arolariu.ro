@@ -98,10 +98,11 @@ fix; follow the repository risk boundary.
 
 ## Patch-target diagnosis
 
-Patch where the dependency is consumed. If `api.run_time` imported
-`get_config` by name, patch `api.run_time.get_config`, not
-`config.loader.get_config`. If middleware imported a metric recorder into
-`main`, patch `main.record_health_failure_metric`.
+For an approved external double, patch where the dependency is resolved.
+For example, substitute `azure.appconfiguration.provider.load` before
+`config/loader.py` imports it inside `_load_azure_config`. Keep repository
+configuration, policy, metrics, and route functions real; existing internal
+patches are test debt, not regression-proof examples.
 
 When a patch appears to have no effect:
 
@@ -119,9 +120,9 @@ does not prove the fix.
   async boundaries.
 - Most config routes and Azure loader wrappers are synchronous. Diagnose them
   as sync code rather than adding an event loop around them.
-- External Azure imports are deliberately inside wrapper functions. Patch the
-  wrapper or lazy dependency importer for deterministic tests; do not require
-  live cloud access for unit reproduction.
+- External Azure imports are deliberately inside wrapper functions. Substitute
+  the external SDK boundary, not the repository wrapper or lazy importer;
+  do not require live cloud access for unit reproduction.
 - Check missing endpoint/credential/label inputs before attributing a failure
   to Azure SDK behavior.
 - If a synchronous cloud call inside an async route causes blocking, prove the
