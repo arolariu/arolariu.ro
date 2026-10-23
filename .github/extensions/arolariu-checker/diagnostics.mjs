@@ -27,7 +27,12 @@ const MARKDOWN_TYPES = new Set([
 	"prompt",
 	"skill",
 ]);
-const DESCRIPTION_REQUIRED = MARKDOWN_TYPES;
+const REQUIRED_METADATA = {
+	agent: ["name", "description", "tools"],
+	instruction: ["name", "description", "applyTo"],
+	prompt: ["name", "description", "argument-hint", "agent"],
+	skill: ["name", "description"],
+};
 const SOURCE_DERIVED_MEMORY =
 	/(?:\b\d+\.\d+(?:\.\d+)?\b|\b(?:npm|dotnet|python|git|gh)\s+(?:run|test|build|install|add|push)\b|\b\d+\s+(?:agents?|skills?|prompts?|instructions?|extensions?|stores?|sites?|components?|RFCs?)\b)/i;
 const STALE_COMMAND = /\bnpm run (?:test:website|lint)\b/;
@@ -300,16 +305,22 @@ export function diagnoseAssets(repositoryRoot) {
 			const source = readFileSync(path, "utf8");
 			const metadata = parseFrontmatter(source);
 
-			if (DESCRIPTION_REQUIRED.has(asset.type) && !metadata.description) {
-				findings.push(
-					finding(
-						"medium",
-						"missing-description",
-						asset.path,
-						1,
-						`${asset.type} frontmatter requires a description.`,
-					),
-				);
+			for (const field of REQUIRED_METADATA[asset.type]) {
+				if (!metadata[field]?.trim()) {
+					findings.push(
+						finding(
+							"medium",
+							field === "description"
+								? "missing-description"
+								: "missing-metadata",
+							asset.path,
+							1,
+							field === "description"
+								? `${asset.type} frontmatter requires a description.`
+								: `${asset.type} frontmatter requires '${field}'.`,
+						),
+					);
+				}
 			}
 
 			if (
@@ -327,17 +338,17 @@ export function diagnoseAssets(repositoryRoot) {
 				);
 			}
 
-			if (metadata.lastReviewed || metadata.lastUpdated) {
-				const key = metadata.lastReviewed
-					? "lastReviewed:"
-					: "lastUpdated:";
+			for (const key of ["version", "lastReviewed", "lastUpdated"]) {
+				if (!Object.hasOwn(metadata, key)) continue;
 				findings.push(
 					finding(
 						"low",
-						"last-reviewed",
+						key === "version" ? "version-metadata" : "last-reviewed",
 						asset.path,
-						lineOf(source, source.indexOf(key)),
-						"Git history replaces calendar review metadata.",
+						lineOf(source, source.indexOf(`${key}:`)),
+						key === "version"
+							? "Versions belong to their canonical source, not AI asset metadata."
+							: "Git history replaces calendar review metadata.",
 					),
 				);
 			}
@@ -481,6 +492,44 @@ export function diagnoseAssets(repositoryRoot) {
 						asset.path,
 						1,
 						`Memory JSON is invalid: ${error instanceof Error ? error.message : String(error)}`,
+					),
+				);
+			}
+		}
+
+		if (asset.type === "client-config" && asset.path === ".github/mcp.json") {
+			const source = readFileSync(path, "utf8");
+			try {
+				const configuration = JSON.parse(source);
+				const isObject = (value) =>
+					value !== null &&
+					typeof value === "object" &&
+					!Array.isArray(value);
+				const servers =
+					isObject(configuration) && "mcpServers" in configuration
+						? configuration.mcpServers
+						: configuration;
+
+				if (!isObject(servers) || !Object.values(servers).every(isObject)) {
+					findings.push(
+						finding(
+							"high",
+							"invalid-mcp-config",
+							asset.path,
+							1,
+							"MCP configuration must define an object of server objects.",
+						),
+					);
+				}
+			} catch (error) {
+				if (!(error instanceof SyntaxError)) throw error;
+				findings.push(
+					finding(
+						"high",
+						"invalid-json",
+						asset.path,
+						1,
+						"MCP configuration must contain valid JSON.",
 					),
 				);
 			}
