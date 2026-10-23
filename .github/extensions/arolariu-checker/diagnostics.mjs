@@ -306,7 +306,10 @@ export function diagnoseAssets(repositoryRoot) {
 			const metadata = parseFrontmatter(source);
 
 			for (const field of REQUIRED_METADATA[asset.type]) {
-				if (!metadata[field]?.trim()) {
+				const missing = field === "tools"
+					? !Object.hasOwn(metadata, field)
+					: !metadata[field]?.trim();
+				if (missing) {
 					findings.push(
 						finding(
 							"medium",

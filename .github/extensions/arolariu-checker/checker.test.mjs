@@ -287,6 +287,22 @@ test("diagnoseAssets accepts complete required metadata", () => {
 	assert.deepEqual(diagnoseAssets(createFixtureRepository()), []);
 });
 
+test("diagnoseAssets accepts inline and block-style tools lists", () => {
+	for (const tools of [
+		'tools: ["read", "search"]',
+		"tools:\n  - read\n  - search",
+	]) {
+		const root = createFixtureRepository();
+		write(
+			root,
+			".github/agents/backend-expert.agent.md",
+			`---\nname: Backend Expert\ndescription: Backend specialist\n${tools}\n---\n`,
+		);
+
+		assert.deepEqual(diagnoseAssets(root), [], tools);
+	}
+});
+
 test("diagnoseAssets reports missing required metadata", () => {
 	for (const [path, metadata, field] of [
 		[
