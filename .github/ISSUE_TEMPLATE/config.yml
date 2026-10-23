@@ -8,9 +8,9 @@ contact_links:
     url: https://docs.arolariu.ro
     about: Check our comprehensive documentation for guides, tutorials, and API references.
 
-  - name: 🔒 Report a Critical Security Vulnerability
+  - name: 🔒 Report a Security Vulnerability Privately
     url: https://github.com/arolariu/arolariu.ro/security/advisories/new
-    about: For critical security issues, please use GitHub's private security advisory feature.
+    about: Report vulnerabilities of any severity through GitHub's private security advisory feature.
 
   - name: 🛡️ Security Policy
     url: https://github.com/arolariu/arolariu.ro/blob/main/SECURITY.md
