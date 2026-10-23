@@ -1,400 +1,284 @@
-# =============================================================================
-# Main Website Build Workflow (Development/Preview)
-# =============================================================================
-# This workflow handles the CI/CD pipeline for the main Next.js website
-# (arolariu.ro) in development/preview environments, including testing,
-# containerization, and deployment to development Azure App Service.
-#
-# Architecture:
-#   - Phase 1: Test - Unit tests (Vitest) and E2E tests (Playwright)
-#   - Phase 2: Build - Containerizes Next.js app and pushes to ACR
-#
-# Technology Stack:
-#   - Next.js 16.1.6 (App Router, React Server Components)
-#   - React 19.2.4 with TypeScript 5.9.3 (strict mode)
-#   - Playwright for E2E testing
-#   - Vitest for unit testing
-#   - Docker for containerization
-#
-# Triggers:
-#   - Automatic: Push to 'preview' branch with changes in sites/arolariu.ro/
-#   - Manual: workflow_dispatch with environment/infrastructure selection
-#
-# Test Coverage:
-#   - Unit tests with code coverage (uploaded to CodeCov)
-#   - E2E tests with Playwright
-#   - Test reports uploaded as artifacts
-#   - PR comments with test results (on preview branch)
-#
-# Security:
-#   - Uses OIDC for Azure authentication (no long-lived secrets)
-#   - Azure Container Registry credentials in GitHub Secrets
-#   - Environment-specific configurations
-#
-# Prerequisites:
-#   1. Azure Managed Identity configured with Federated Credentials
-#   2. Azure Container Registry with push/pull access
-#   3. GitHub Secrets configured:
-#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_ADDRESS
-#      - CODECOV_TOKEN (for coverage reporting)
-#
-# Related Workflows:
-#   - official-website-release.yml: Deploys built container to Azure
-# =============================================================================
-
+# Website: validate captured Git history -> mandatory tests -> build -> reusable release.
+# The local workflow call uses the caller's workflow commit, even for older source.
 name: "official-website-build"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
-  issues: write # Required for PR comments on test results
-  pull-requests: write # Required for PR comments on test results
+  id-token: write # Existing Azure OIDC rights, also available to reusable release
+  contents: read
+  issues: write # Existing test-report comments
+  pull-requests: write
 
 defaults:
   run:
+    shell: bash
     working-directory: ./sites/arolariu.ro
 
 on:
-  # Automatic trigger on preview branch changes to main website
   push:
     branches: ["preview"]
     paths: ["sites/arolariu.ro/**"]
-
-  # Manual trigger for controlled builds
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to. (e.g. 'development', 'production')"
-        options:
-          - "development"
-          - "production"
+        description: "Azure website target"
+        options: ["development", "production"]
         default: "development"
         required: true
         type: choice
-      infrastructure:
-        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
-        options:
-          - 'local'
-          - 'azure'
-        default: "azure"
-        required: true
-        type: choice
-      container_name:
-        description: "The name of the container to build and deploy. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
-        options:
-          - "frontend/dev.arolariu"
-          - "frontend/arolariu"
-        default: "frontend/dev.arolariu"
-        required: true
-        type: choice
-      skip_tests:
-        description: "Skip the test phase? (true/false)"
-        type: boolean
-        default: false
+      commit_sha:
+        description: "Optional full 40-hex commit in the selected branch's captured history (production: main)"
+        default: ""
         required: false
-
-env:
-  COMMIT_SHA: ${{ github.sha }}
-  PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
-  INFRA: ${{ inputs.infrastructure || 'azure' }}
-  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
-  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
-  # Build-time injections: inlined by next.config.ts env block (SITE_*)
-  # These must be present when `npm run build` executes inside the Docker builder stage.
-  SITE_ENV: ${{ inputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
-  SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
-  SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
-  # Each job's deployment environment selects the same-named environment secret.
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+        type: string
 
 jobs:
-  test:
-    if: github.repository == 'arolariu/arolariu.ro' && inputs.skip_tests != true
-    name: 🧪 Test phase (1/2)
+  validate:
+    name: 🔎 Validate source and target
+    if: github.repository == 'arolariu/arolariu.ro'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'development'}}
-    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.source.outputs.source_sha }}
+      environment: ${{ steps.source.outputs.environment }}
+      image_repository: ${{ steps.source.outputs.image_repository }}
+      app_name: ${{ steps.source.outputs.app_name }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: 📥 Read captured history (no credentials persisted)
         uses: actions/checkout@v7
-
-      - name: 📝 Display workflow context
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 🔎 Resolve Git source and known Azure target
+        id: source
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          CAPTURED_SHA: ${{ github.sha }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          COMMIT_INPUT: ${{ inputs.commit_sha }}
+          TARGET_INPUT: ${{ inputs.environment }}
         run: |
-          echo "::group::🔍 Workflow Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🌐 WEBSITE CI/CD PIPELINE                                  │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Test phase (1/2)                         │"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'development' }}"
-          echo "│ 🔧 Infrastructure: ${{ env.INFRA }}"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "│ 🔢 Run Number:    ${{ github.run_number }}"
-          echo "│ 🧪 Skip Tests:    ${{ inputs.skip_tests || 'false' }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          case "$EVENT_NAME" in
+            push)
+              [[ "$EVENT_REF" == "refs/heads/preview" ]] || fail "Automatic website builds require preview."
+              target=development
+              ;;
+            workflow_dispatch) target="$TARGET_INPUT" ;;
+            *) fail "Unsupported deployment event." ;;
+          esac
+          case "$target" in
+            development) repository=frontend/dev.arolariu; app=dev-arolariu-ro ;;
+            production)
+              [[ "$EVENT_REF" == "refs/heads/main" ]] || fail "Production dispatch must select main."
+              repository=frontend/arolariu; app=www-arolariu-ro
+              ;;
+            *) fail "Unsupported website environment; select development or production." ;;
+          esac
+          [[ "$EVENT_REF" == refs/heads/* ]] || fail "Select a repository branch, not a tag."
+          git check-ref-format "$EVENT_REF" || fail "Invalid branch ref."
+          [[ "$CAPTURED_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "Invalid captured event SHA."
+          [[ "$(git rev-parse --is-shallow-repository)" == false ]] || fail "Full captured history is required."
+          [[ "$(git cat-file -t "$CAPTURED_SHA")" == commit ]] || fail "Captured event commit is unavailable."
+          source_sha="$CAPTURED_SHA"
+          if [[ -n "$COMMIT_INPUT" ]]; then
+            [[ "$COMMIT_INPUT" =~ ^[0-9a-fA-F]{40}$ ]] || fail "commit_sha must be a full 40-hex commit ID."
+            source_sha="${COMMIT_INPUT,,}"
+          fi
+          [[ "$(git cat-file -t "$source_sha")" == commit ]] || fail "Selected SHA is not an available commit."
+          git merge-base --is-ancestor "$source_sha" "$CAPTURED_SHA" ||
+            fail "Selected commit is outside the selected branch's captured history."
+          printf 'source_sha=%s\nenvironment=%s\nimage_repository=%s\napp_name=%s\n' \
+            "$source_sha" "$target" "$repository" "$app" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Validated website source"
+            printf -- '- Source SHA: `%s`\n- Workflow-definition SHA: `%s`\n' "$source_sha" "$WORKFLOW_SHA"
+            printf -- '- Captured branch: `%s`\n- Azure target: `%s` / `%s` / `%s`\n' "$EVENT_REF" "$target" "$app" "$repository"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 🔒 Performing auth against Azure Public Cloud...
+  test:
+    name: 🧪 Test phase
+    needs: [validate]
+    if: github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.validate.outputs.environment }}
+    timeout-minutes: 60
+    env:
+      COMMIT_SHA: ${{ needs.validate.outputs.source_sha }}
+      INFRA: azure
+      PRODUCTION: ${{ needs.validate.outputs.environment == 'production' && 'true' || 'false' }}
+      SITE_ENV: ${{ needs.validate.outputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
+      SITE_NAME: ${{ needs.validate.outputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+      SITE_URL: ${{ needs.validate.outputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID }}
+    steps:
+      - name: 📥 Checkout validated source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.source_sha }}
+      - name: 🔒 Authenticate to Azure
         uses: Azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          install-playwright: 'true'
+          install-playwright: "true"
           run-generate: "true"
           generate-args: "artifacts gql i18n"
-
       - name: 📝 Set public build timestamp
         run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-
       - name: 🧬 TypeScript type-check (tsgo)
-        working-directory: "./sites/arolariu.ro"
         run: |
-          echo "::group::🧬 Running tsgo --noEmit"
-          START_TIME=$(date +%s)
-          # First: generate Next.js route-aware ambient types (PageProps,
-          # LayoutProps, route literal unions) under .next/types/. Without
-          # this step tsgo reports TS2304 for every PageProps/LayoutProps
-          # use across the app (and SVG-import errors that cascade from them).
           npx next typegen
-          # Then run tsgo. The npm package name (@typescript/native-preview)
-          # differs from the bin name (tsgo); npm's registry does not
-          # reverse-lookup bins, so bare `npx tsgo` fails with E404. -p
-          # specifies the package; -y skips the install prompt in CI.
           npx -y -p @typescript/native-preview tsgo --noEmit -p tsconfig.json
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Type-check (tsgo) completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "## 🧬 Type-Check Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tool | @typescript/native-preview (tsgo) |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 🧪 Running unit tests...
-        working-directory: "./sites/arolariu.ro"
-        run: |
-          echo "::group::🧪 Running Vitest Unit Tests"
-          echo "📍 Framework: Vitest"
-          echo "📍 Coverage: Enabled"
-          echo ""
-          START_TIME=$(date +%s)
-          npm run test:unit
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Unit tests completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "## 🧪 Unit Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Framework | Vitest |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 🧪 Running E2E tests...
-        working-directory: './sites/arolariu.ro'
-        run: |
-          echo "::group::🎭 Running Playwright E2E Tests"
-          echo "📍 Framework: Playwright"
-          echo "📍 Browsers: Chromium only"
-          echo ""
-          START_TIME=$(date +%s)
-          npm run test:e2e
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ E2E tests completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "## 🎭 E2E Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Framework | Playwright |" >> $GITHUB_STEP_SUMMARY
+      - name: 🧪 Run unit tests
+        run: npm run test:unit
+      - name: 🎭 Run E2E tests
+        run: npm run test:e2e
         env:
-          # Run Playwright against `next build && next start` instead of `next dev`.
-          # This also disables `output: "standalone"` in next.config.ts (incompatible with next start).
           E2E_USE_PROD: "true"
-
-      - name: 📤 Upload Test Reports
+      - name: 📤 Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          name: test-report-${{ needs.validate.outputs.environment }}-${{ github.run_id }}
           path: sites/arolariu.ro/code-cov/
           if-no-files-found: error
           retention-days: 7
-
-      - name: 💬 Create PR Comment
+      - name: 💬 Create PR comment
         uses: actions/github-script@v8
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JOB_STATUS: ${{ job.status }}
-          COMMIT_SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
           BRANCH_NAME: ${{ github.ref_name }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-
-            // Import and execute the unified unit test action script
-            const { default: runUnitTestAction } = await import('${{ github.workspace }}/.github/scripts/src/runUnitTestAction.ts');
+            const { pathToFileURL } = require('url');
+            const scriptUrl = pathToFileURL(`${process.env.GITHUB_WORKSPACE}/.github/scripts/src/runUnitTestAction.ts`);
+            const { default: runUnitTestAction } = await import(scriptUrl.href);
             await runUnitTestAction();
-
-      - name: ☂️ Uploading code coverage report to CodeCov
+      - name: ☂️ Upload coverage
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: "sites/arolariu.ro/code-cov"
 
   build:
-    if: "!cancelled() && github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')"
-    name: ⚒️ Build phase (2/2)
-    needs: test
+    name: ⚒️ Build and smoke-test image
+    needs: [validate, test]
+    if: github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success' && needs.test.result == 'success'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'development'}}
+    environment: ${{ needs.validate.outputs.environment }}
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+    env:
+      COMMIT_SHA: ${{ needs.validate.outputs.source_sha }}
+      IMAGE_REPOSITORY: ${{ needs.validate.outputs.image_repository }}
+      INFRA: azure
+      PRODUCTION: ${{ needs.validate.outputs.environment == 'production' && 'true' || 'false' }}
+      SITE_ENV: ${{ needs.validate.outputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
+      SITE_NAME: ${{ needs.validate.outputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+      SITE_URL: ${{ needs.validate.outputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID }}
+      ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: 📥 Checkout validated source
         uses: actions/checkout@v7
-
-      - name: 📋 Display build context
+        with:
+          ref: ${{ needs.validate.outputs.source_sha }}
+      - name: 🏷️ Select run-specific image
+        id: image
+        env:
+          BUILD_RUN_ID: ${{ github.run_id }}
+          BUILD_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          echo "::group::🔍 Build Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🏗️ WEBSITE BUILD PHASE                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Build phase (2/2)                        │"
-          echo "│ 🐳 Container:     ${{ inputs.container_name || 'frontend/dev.arolariu' }}"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'development' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🧪 Tests:         ${{ needs.test.result }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: ⚠️ Test Skip Warning
-        if: inputs.skip_tests == true
-        run: |
-          echo "::warning::Tests were skipped for this build (run ${{ github.run_id }})"
-          echo "::warning::Environment: ${{ inputs.environment || 'development' }}"
-          echo "::warning::Triggered by: ${{ github.actor }}"
-
-      - name: 🔒 Performing auth against Azure Public Cloud...
+          printf 'image=%s:%s-%s-%s\n' "$IMAGE_REPOSITORY" "$COMMIT_SHA" "$BUILD_RUN_ID" "$BUILD_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: 🔒 Authenticate to Azure
         uses: Azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          run-generate: 'true'
+          run-generate: "true"
           generate-args: "artifacts gql i18n"
-
       - name: 📝 Set public build timestamp
         run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-
-      - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: "."
+      - name: 🔒 Authenticate to existing registry
+        working-directory: .
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+      - name: 🏗️ Build Docker image
+        working-directory: .
         env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: 🏗️ Building the docker container...
-        working-directory: '.'
-        env:
-          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
+          IMAGE: ${{ steps.image.outputs.image }}
         run: |
-          echo "::group::🐳 Docker Build"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
-          echo "│ 📁 Dockerfile: infra/containers/Dockerfile.frontend"
-          echo "│ 🔧 Build args:"
-          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
-          echo "│    - INFRA=${{ env.INFRA }}"
-          echo "│    - SITE_ENV=${{ env.SITE_ENV }}"
-          echo "│    - SITE_NAME=${{ env.SITE_NAME }}"
-          echo "│    - SITE_URL=${{ env.SITE_URL }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo ""
-
-          START_TIME=$(date +%s)
           docker build -f infra/containers/Dockerfile.frontend \
-            --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
-            --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
-            --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \
-            --build-arg COMMIT_SHA=${{ env.COMMIT_SHA }} \
-            --build-arg INFRA=${{ env.INFRA }} \
-            --build-arg SITE_ENV=${{ env.SITE_ENV }} \
-            --build-arg SITE_URL=${{ env.SITE_URL }} \
-            --build-arg SITE_NAME=${{ env.SITE_NAME }} \
-            --build-arg "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" \
-            --build-arg "TIMESTAMP=${TIMESTAMP}" \
-            -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Docker build completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          # Get image size
-          IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
-          echo "📦 Image size: $IMAGE_SIZE"
-
-          # Write to job summary
-          echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
-
+            --build-arg "AZURE_TENANT_ID=$AZURE_TENANT_ID" \
+            --build-arg "AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID" \
+            --build-arg "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" \
+            --build-arg "COMMIT_SHA=$COMMIT_SHA" \
+            --build-arg "INFRA=$INFRA" \
+            --build-arg "SITE_ENV=$SITE_ENV" \
+            --build-arg "SITE_URL=$SITE_URL" \
+            --build-arg "SITE_NAME=$SITE_NAME" \
+            --build-arg "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" \
+            --build-arg "TIMESTAMP=$TIMESTAMP" \
+            -t "${ACR_LOGIN_SERVER}/${IMAGE}" .
       - name: 🧪 Smoke test final image runtime configuration
         env:
-          CONTAINER_NAME: ${{ inputs.container_name || 'frontend/dev.arolariu' }}
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-        run: node tests/container/runtime-configuration.smoke.mjs "${ACR_LOGIN_SERVER}/${CONTAINER_NAME}:${CONTAINER_TAG}" "$SITE_ENV"
-
-      - name: ⏫ Pushing the docker container...
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: node tests/container/runtime-configuration.smoke.mjs "${ACR_LOGIN_SERVER}/${IMAGE}" "$SITE_ENV"
+      - name: ⏫ Publish exact tested image
+        id: publish
         env:
-          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
+          IMAGE: ${{ steps.image.outputs.image }}
         run: |
-          echo "::group::⏫ Docker Push"
-          echo "📤 Pushing to Azure Container Registry..."
-          START_TIME=$(date +%s)
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Docker push completed in ${DURATION}s"
-          echo "::endgroup::"
+          BUILT_IMAGE="${ACR_LOGIN_SERVER}/${IMAGE}"
+          docker push "$BUILT_IMAGE"
+          # Registry-relative identity avoids secret-masking of cross-job outputs.
+          printf 'image=%s\n' "$IMAGE" >> "$GITHUB_OUTPUT"
+          printf '\n## Published website image\n- Image (existing environment registry): `%s`\n- Source SHA: `%s`\n' \
+            "$IMAGE" "$COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
 
-          echo "## ⏫ Docker Push Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Push Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Registry | Azure Container Registry |" >> $GITHUB_STEP_SUMMARY
+  release:
+    name: 🚀 Release exact built image
+    needs: [validate, test, build]
+    if:
+      github.repository == 'arolariu/arolariu.ro' && needs.validate.result == 'success' && needs.test.result == 'success' &&
+      needs.build.result == 'success'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/official-website-release.yml
+    with:
+      environment: ${{ needs.validate.outputs.environment }}
+      source_sha: ${{ needs.validate.outputs.source_sha }}
+      image: ${{ needs.build.outputs.image }}
+    # Named mappings are required even when the value exists only on the callee's
+    # environment. Environment values take precedence; the callee checks empties.
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_CONTAINER_REGISTRY_ADDRESS: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
