@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review an existing worktree, diff, pull request, commit, or branch range read-only across repository stacks for evidence-backed security, correctness, architecture, contract, performance, and missing-test defects; ignore style-only feedback and route fixes to the owning specialist.
+description: Review an existing worktree, diff, pull request, commit, branch range, or explicitly requested directory read-only across repository stacks for evidence-backed security, correctness, architecture, contract, performance, and missing-test defects; ignore style-only feedback and route fixes to the owning specialist.
 ---
 
 # Code Review
@@ -11,6 +11,7 @@ description: Review an existing worktree, diff, pull request, commit, or branch 
 - Review a named pull request, commit, branch, or comparison range.
 - Perform an independent post-implementation review.
 - Re-review a corrected diff to determine whether blocking findings remain.
+- Audit an existing directory when the user explicitly requests that scope.
 
 ## When Not to Use
 
@@ -24,21 +25,27 @@ description: Review an existing worktree, diff, pull request, commit, or branch 
 
 ## Required Inputs
 
-- Exact review target: current worktree, pull request, commit, branch, or
-  comparison range. If unspecified, use only the current worktree; do not fetch
-  or infer a remote base.
+- Exact review target: current worktree, pull request, commit, branch,
+  comparison range, or explicitly requested directory. If unspecified, use
+  only the current worktree; do not fetch or infer a remote base.
 - Current branch and staged/unstaged/untracked state.
-- Complete changed files plus direct consumers, public entry points, tests,
-  configuration, and generated ownership relevant to each material hunk.
+- Complete changed files (or the selected audit files), plus direct consumers,
+  public entry points, tests, configuration, and generated ownership relevant
+  to the reviewed behavior.
 - Root and nearest local guides, matching path instructions, and accepted RFCs
   only where an architecture claim needs intent.
 - Existing validation evidence. Source or test-file presence is not proof that
   a check ran.
 
+For an explicitly requested whole-folder audit, freeze the selected file list
+and read those files in full rather than requiring a diff. Cite current owning
+lines, disclose unread files, and do not expand the selected scope. The default
+remains worktree-only review; this does not authorize edits or remote fetches.
+
 ## Decision Points
 
-1. What exact diff/range is in scope?
-2. Which changed behaviors, trust boundaries, public contracts, persistent
+1. What exact diff/range or explicitly requested directory is in scope?
+2. Which reviewed behaviors, trust boundaries, public contracts, persistent
    state, lifecycle/cancellation paths, or dependency directions are reachable?
 3. Which stack-specific review resource applies?
 4. What source owns the expected behavior?
@@ -51,12 +58,12 @@ description: Review an existing worktree, diff, pull request, commit, or branch 
 
 1. Freeze the review target and inspect branch plus complete worktree state.
    Include in-scope untracked files; do not reason from a partial staged diff.
-2. Read every changed file in context. Follow direct consumers, configuration,
-   public exports/contracts, and tests where the hunk's behavior depends on
-   them.
+2. Read every changed file (every selected file for a whole-folder audit) in
+   context. Follow direct consumers, configuration, public exports/contracts,
+   and tests where the reviewed behavior depends on them.
 3. Load only the applicable local guides, path instructions, and
    stack-specific review resources.
-4. Build a behavior map for each material change: entry point, reachable
+4. Build a behavior map for each material candidate: entry point, reachable
    caller, inputs, trust boundary, state/side effects, error/cancellation
    behavior, public shape, and existing proof.
 5. Trace each candidate to the first violated invariant. Name the authority
@@ -73,6 +80,9 @@ description: Review an existing worktree, diff, pull request, commit, or branch 
 
 Load only the resources whose changed boundaries are present:
 
+For a whole-folder audit, select resources from the boundaries in the approved
+scope rather than requiring changed lines.
+
 | Trigger | Resource |
 | --- | --- |
 | TypeScript, React, Svelte, browser-worker, or Node boundary changed | [TypeScript and UI review](references/typescript-review.md) |
@@ -88,7 +98,8 @@ catalogs.
 
 A candidate is a finding only when all apply:
 
-- the changed source/configuration is inside the requested scope;
+- the changed source/configuration is inside the requested diff, or the
+  current source is inside an explicitly requested directory audit;
 - a reachable caller, runtime path, or supported consumer exists;
 - expected behavior has a named authority;
 - impact is security, correctness, data loss, public contract, architecture,
@@ -152,6 +163,10 @@ candidate meets the threshold, say:
 Still state material validation gaps. Do not add praise, recap, or speculative
 "consider" items.
 
+For an explicitly requested whole-folder audit, also state file coverage and
+unread areas. If improvements or accepted trade-offs were requested, keep them
+separate from admitted defects.
+
 ## Stop and Ask
 
 - The requested range is ambiguous and materially different comparisons are
@@ -168,3 +183,5 @@ validation gaps. Every finding includes line evidence, reachability/impact,
 confidence, correction outcome, owner, and either an existing remedy skill or
 explicit direct handling with its approval checkpoint. Do not approve while an
 unresolved Critical or High finding remains.
+For requested whole-folder audits, include the coverage and separately requested
+improvements/trade-offs described above.
