@@ -14,6 +14,7 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 - uses: ./.github/actions/setup-workspace
   with:
     node: "false"
+    install-node-deps: "false"
     dotnet: "true"
     install-dotnet-deps: "true"
 
@@ -111,14 +112,18 @@ silently fetch a floating version rather than the one the lock file pins.
 |-------|-------|-----|
 | `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
 | `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
-| `~/.cache/ms-playwright` | this action | `<os>-playwright-<hash(package-lock.json)>` |
+| `~/.cache/ms-playwright` | this action | `<os>-playwright-<requested-browsers>-<hash(package-lock.json)>` |
 
 Neither key carries a workflow-name segment, but GitHub still applies
 branch/tag scope and cache-version accessibility. These are not one
 repository-wide cache object, and the configuration does not imply a fixed
 storage-budget guarantee. Neither cache uses fallback restore keys.
 
-The two keys are not identical in shape. The Playwright key is the lock-file hash alone, since the cached artifacts are browser binaries and the Playwright version governing them is already pinned by the lock file. The `node_modules` key **also includes the Node version**: a cache hit skips `npm ci`, and the tree can contain natively-compiled addons (this repo pulls in `sharp`) whose ABI is tied to the runtime — so a Node bump must invalidate the cache rather than restore binaries built for the previous version.
+The Playwright key includes the requested browser list as well as the lock-file
+hash, so a Chromium-only cache cannot satisfy a later Firefox request.
+The lock file owns the Playwright version. The `node_modules` key instead
+includes the Node version: a cache hit skips `npm ci`, and native addons
+must not be restored across incompatible runtimes.
 
 The cached `node_modules` paths mirror the npm workspaces declared in the root `package.json` (`packages/*`, `sites/*`) — precisely what the root lock file governs. `.github/scripts` is deliberately excluded: it has its own lock file and its own install step (`install-scripts-deps`), so folding it into a cache keyed on the root lock file would make the cache's contents depend on which job populated it first.
 
