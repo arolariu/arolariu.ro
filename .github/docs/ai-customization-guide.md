@@ -157,6 +157,11 @@ Project extensions are optional interactive CLI accelerators:
 | `arolariu-context` | Adds bounded pointers to relevant live repository context |
 | `arolariu-checker` | Exposes read-only inventory and diagnostics |
 
+Context pointers prefer explicit paths and asset names over inferred matches.
+Local guide titles, tooling project names, and recursive instruction inventory
+aid discovery; generic platform/test words alone do not select a workflow.
+Suggestions remain bounded, advisory pointers, not instructions or permissions.
+
 Static instructions remain complete when extensions fail. Native Copilot
 permissions remain authoritative.
 
