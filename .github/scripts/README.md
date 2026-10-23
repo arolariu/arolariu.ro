@@ -18,9 +18,8 @@ This directory contains TypeScript modules used by GitHub Actions workflows for 
 │   ├── newman/        # Newman/Postman test parser
 │   ├── playwright/    # Playwright test parser
 │   └── vitest/        # Vitest coverage parser
-├── hygiene/           # (Legacy) Shell scripts directory
 ├── src/               # Main script entry points
-│   ├── hygiene/       # Hygiene check modules (v3: domain, providers, projections, pipeline)
+│   ├── hygiene/       # Domain, providers, projections, pipeline
 │   ├── runLiveTestAction.ts
 │   └── runUnitTestAction.ts
 └── types/             # Shared TypeScript types
@@ -28,21 +27,28 @@ This directory contains TypeScript modules used by GitHub Actions workflows for 
 
 ## Scripts
 
-### Hygiene check (v3)
+### Hygiene provider pipeline
 
 The hygiene check pipeline is split into per-provider entry points and a final projection gate. Both are invoked from the workflow
-`official-hygiene-check-v2.yml`:
+[`official-hygiene-check-v2.yml`](../workflows/official-hygiene-check-v2.yml).
+The filename is retained; the legacy four-check implementation is not the current pipeline.
 
-- `src/hygiene/pipeline/runProvider.ts <providerId>` -- runs one provider (`format`, `lint`, `test`, `stats`), writes
-  `artifacts/hygiene/outcome-<id>.json`. Exit code is 1 when the provider's gateResult is `failed` or `errored` and 0 otherwise; the
-  workflow uses step-level `continue-on-error: true` on each provider step so a non-zero exit shows a warning marker in the step UI without
-  aborting subsequent providers. Workflow pass/fail is decided by `runProjections.ts`.
+- `src/hygiene/pipeline/runProvider.ts <providerId>` runs one provider and writes
+  `artifacts/hygiene/outcome-<id>.json`. Exit code is 1 when its gate result is
+  `failed` or `errored` and 0 otherwise. The workflow's provider step does not
+  use `continue-on-error`; a nonzero exit fails that job.
 - `src/hygiene/pipeline/runProjections.ts` -- loads all outcome JSON files, builds the aggregate `HygieneReport`, fans out to projections
   (`jsonArtifact`, `stepSummary`, `prComment`, `statusChecks`) via `Promise.allSettled`, and calls `core.setFailed()` if `overallResult` is
-  `failed` or `errored`. This is the single point that turns the workflow red.
+  `failed` or `errored`. This is the aggregate gate; provider jobs can fail
+  independently. Check the YAML dependencies and conditions to establish
+  whether a job actually ran.
 
-Adding a new check: create `src/hygiene/providers/myProvider.ts` exporting a `CheckProvider<P>` value, then register it in
-`src/hygiene/providers/registry.ts`.
+The [provider registry](src/hygiene/providers/registry.ts) owns the available
+IDs: `format`, `lint`, `test-typescript`, `test-dotnet`, `test-python`, and
+`stats`. There is no generic `test` provider.
+
+Adding a check requires registering its `CheckProvider<P>` and including its
+ID in the workflow matrix. Keep its outcome artifact and gate policy aligned.
 
 The `test-typescript` provider runs each project's worker pool in turn and reads an explicitly selected, temporary JSON report file. Vitest
 5 no longer writes that report to stdout by default. Reports are cleaned up after each run, and a nonzero runner exit cannot pass merely
@@ -55,109 +61,33 @@ application and tooling source remain in scope. Fatal process exits are reported
 
 ### runLiveTestAction.ts
 
-Handles live/E2E test execution and result reporting.
+Reports the live workflow's Newman results, statuses, and failure details.
 
 ### runUnitTestAction.ts
 
-Handles unit test execution and coverage reporting.
+Reports website test and coverage results.
 
 ---
 
-## Hygiene Check System (V2)
+## Hygiene Layout and Data Flow
 
-The hygiene check system validates code quality on every PR through parallel checks.
+| Directory | Responsibility |
+| --- | --- |
+| [domain](src/hygiene/domain/) | Provider/report contracts, changed-file routing, and aggregation |
+| [providers](src/hygiene/providers/) | Individual checks and their registry |
+| [pipeline](src/hygiene/pipeline/) | Workflow context, provider execution, and projection entrypoints |
+| [projections](src/hygiene/projections/) | JSON artifacts, summaries, PR comments, and check runs |
 
-### Architecture
+1. Provider jobs write `artifacts/hygiene/outcome-<id>.json` under the workspace root.
+2. The workflow uploads `outcome-*` artifacts and downloads them for aggregation.
+3. `runProjections.ts` loads outcomes and builds the report using the domain contracts.
+4. Projections write `artifacts/hygiene/hygiene-report.json` and publish their
+   configured GitHub outputs.
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    official-hygiene-check-v2.yml                │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐     │
-│  │  Format  │   │   Lint   │   │   Test   │   │  Stats   │     │
-│  │  Check   │   │  Check   │   │  Check   │   │  Check   │     │
-│  └────┬─────┘   └────┬─────┘   └────┬─────┘   └────┬─────┘     │
-│       │              │              │              │            │
-│       ▼              ▼              ▼              ▼            │
-│  format-result  lint-result   test-result   stats-result       │
-│      .json         .json         .json          .json          │
-│       │              │              │              │            │
-│       └──────────────┴──────────────┴──────────────┘            │
-│                              │                                   │
-│                              ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │  Summary Job    │                          │
-│                    │  (Downloads +   │                          │
-│                    │  PR Comment)    │                          │
-│                    └─────────────────┘                          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Module Structure
-
-```text
-src/hygiene/
-├── index.ts              # Main entry point and exports
-├── types.ts              # Unified type definitions
-├── commentBuilder.ts     # Rich PR comment generator
-└── checks/
-    ├── index.ts          # Check module exports
-    ├── formatCheck.ts    # Prettier format check
-    ├── lintCheck.ts      # ESLint lint check
-    ├── testCheck.ts      # Vitest unit test check
-    └── statsCheck.ts     # Code statistics & bundle analysis
-```
-
-### Data Flow
-
-1. **Parallel Execution**: All check jobs run independently
-2. **Artifact Production**: Each check writes `{check}-result.json`
-3. **Artifact Download**: Summary job downloads all artifacts
-4. **Comment Generation**: `commentBuilder.ts` produces rich PR comment
-5. **Comment Posting**: New comment created per workflow run
-
-### Artifact Format
-
-All check results conform to the `HygieneCheckResult` interface:
-
-```typescript
-interface HygieneCheckResult {
-  check: "format" | "lint" | "test" | "stats";
-  status: "success" | "failure" | "skipped" | "error";
-  duration: number;
-  summary: string;
-  timestamp: string;
-  // ... check-specific fields
-}
-```
-
-### PR Comment Features
-
-The generated PR comment includes:
-
-- **Status Summary Table**: Quick overview of all check results
-- **Table of Contents**: Jump links to each section
-- **Code Statistics**: Files changed, lines added/deleted, churn metrics
-- **Bundle Size Analysis**: Comparison vs main branch with file-level details
-- **Formatting Issues**: List of files needing `npm run format`
-- **Lint Errors**: Grouped by file with rule IDs and locations
-- **Test Results**: Pass/fail counts with failed test details
-- **Coverage Report**: Line, statement, function, and branch coverage
-
-### Local Development
-
-Run individual checks locally:
-
-```bash
-# Format check
-npm run format
-
-# Lint check
-npm run lint
-
-# Unit tests
-npm run test:unit
-```
+Artifact paths are workspace-relative, not relative to the scripts working
+directory. The live [provider contract](src/hygiene/domain/provider.ts) and
+[report types](src/hygiene/domain/types.ts) own payload shapes; do not copy the
+retired `HygieneCheckResult` format into new consumers.
 
 ---
 
@@ -174,7 +104,7 @@ The `helpers/` directory provides reusable utilities:
 | `filesystem`  | File reading, globbing, JSON parsing      |
 | `git`         | Git operations (diff, fetch, file sizes)  |
 | `github`      | GitHub API client (issues, comments, PRs) |
-| `http`        | HTTP client with retry logic              |
+| `http`        | HTTP requests; only header options forwarded |
 | `newman`      | Parse Newman/Postman test results         |
 | `playwright`  | Parse Playwright test results             |
 | `vitest`      | Parse Vitest coverage reports             |
@@ -203,9 +133,9 @@ await gh.upsertComment(prNumber, commentBody, uniqueId);
 
 ### Prerequisites
 
-```bash
-cd .github/scripts
-npm install
+```powershell
+Set-Location .github\scripts
+npm ci
 ```
 
 ### Type Checking
@@ -225,5 +155,6 @@ npm test
 1. Create module in `src/` directory
 2. Add types to `types/` if needed
 3. Use helpers from `helpers/` for common operations
-4. Export default function for workflow consumption
-5. Update workflow YAML to call the new script
+4. Match the existing entrypoint's invocation style: CLI modules and imported workflow modules differ
+5. Update its focused tests and documentation
+6. Update workflow YAML only within an explicitly approved workflow change
