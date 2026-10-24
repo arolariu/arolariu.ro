@@ -43,19 +43,16 @@ test. Do not invent a generic `reset` action when the live store uses
 
 ## Defaults, actions, and reset
 
+Apply the awaited setup in **Real persistence and hydration** below to these
+cases. `persist.clearStorage()` returns void; awaiting it does not wait for
+asynchronous adapter deletion or a reset's persistence write.
+
 ```ts
 import {act} from "@testing-library/react";
-import {beforeEach, describe, expect, it} from "vitest";
+import {describe, expect, it} from "vitest";
 import {use<Domain>Store} from "./<domain>Store";
 
 describe("use<Domain>Store", () => {
-  beforeEach(async () => {
-    await use<Domain>Store.persist.clearStorage();
-    act(() => {
-      use<Domain>Store.setState(<live-initial-state>, true);
-    });
-  });
-
   it("starts from the live defaults", () => {
     expect(use<Domain>Store.getState().<field>).toEqual(<live-default>);
   });
@@ -82,8 +79,8 @@ describe("use<Domain>Store", () => {
 });
 ```
 
-If replacing state with the second `setState` argument would remove actions for
-the live store, use its actions or a complete live initial state instead.
+If resetting through `setState` would remove actions for the live store, use
+its actions or a complete live initial state instead.
 
 ## Real persistence and hydration
 

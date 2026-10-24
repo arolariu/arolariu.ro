@@ -12,20 +12,22 @@ import * as core from "@actions/core";
 import * as http from "@actions/http-client";
 
 /**
- * HTTP request options
+ * HTTP request options.
+ * @remarks Only headers are forwarded. The other fields are currently ignored;
+ * they do not configure the underlying client's timeout, redirects, or retries.
  */
 export interface HttpRequestOptions {
   /** Request headers */
   headers?: Record<string, string>;
-  /** Request timeout in milliseconds */
+  /** Request timeout in milliseconds; currently ignored. */
   timeout?: number;
-  /** Whether to allow redirects */
+  /** Whether to allow redirects; currently ignored. */
   allowRedirects?: boolean;
-  /** Maximum number of redirects */
+  /** Maximum number of redirects; currently ignored. */
   maxRedirects?: number;
-  /** Whether to allow retries */
+  /** Whether to allow retries; currently ignored. */
   allowRetries?: boolean;
-  /** Maximum number of retries */
+  /** Maximum number of retries; currently ignored. */
   maxRetries?: number;
 }
 

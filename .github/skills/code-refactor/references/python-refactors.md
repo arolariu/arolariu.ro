@@ -80,11 +80,12 @@ Pay special attention to these cycle-avoidance boundaries:
   `_import_telemetry_dependencies`.
 - Telemetry gauge callbacks dynamically resolve runtime metrics and config
   loader state rather than eagerly importing them into the bootstrap cycle.
-- Tests use importlib mode and patch the consumer's imported name.
+- Tests use importlib mode. Approved external doubles patch the consumer's
+  resolved dependency; existing repository-function patches are test debt.
 
-After moving a function, update every direct import and every consuming-module
-patch target. Do not add a package-level re-export solely to preserve a stale
-test patch or hide a cycle.
+After moving a function, update every direct import and affected external
+patch target. Do not copy internal patches or add a package-level re-export
+solely to preserve a stale test patch or hide a cycle.
 
 ## Async and sync preservation
 

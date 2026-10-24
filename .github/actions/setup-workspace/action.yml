@@ -12,8 +12,8 @@
 #   and the Playwright browser bundle.
 # - Neither cache key carries a workflow-name segment, but GitHub still
 #   applies branch/tag scope and cache-version accessibility. The
-#   Playwright key is the lock-file hash alone; the `node_modules` key
-#   additionally includes the Node version because a cache hit skips
+#   Playwright key includes the requested browsers and lock-file hash;
+#   the `node_modules` key includes the Node version because a cache hit skips
 #   `npm ci` and the tree can hold native addons tied to the runtime ABI.
 # - Inputs are never interpolated directly into `run:` blocks; they
 #   are passed through `env:` to avoid script injection.
@@ -303,7 +303,7 @@ runs:
       uses: actions/cache@v5
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+        key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
 
     - name: 🎭 Install Playwright browsers
       if: inputs.install-playwright == 'true'

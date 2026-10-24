@@ -121,10 +121,11 @@ export type ServerActionResult<T> = Promise<
 >;
 ```
 
-The `error?: never` / `data?: never` pair on the opposite branch is what makes
-`result.data` and `result.error` mutually exclusive after narrowing on
-`success` — omitting it would let a caller read `result.error` on the success
-branch without a compiler error.
+The `error?: never` / `data?: never` pair excludes incompatible payloads on the
+opposite branch. It does not prohibit reading the optional property: after
+narrowing to success, `result.error` has type `undefined`. Without that optional
+property, reading it on the narrowed success branch is a missing-property
+error. Use the `success` discriminant before consuming the matching payload.
 
 A larger discriminated union with a compile-time payload registry lives in
 `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx`
