@@ -44,7 +44,6 @@ name: "official-website-release"
 permissions:
   id-token: write # Required for OIDC authentication with Azure
   contents: read # Required to checkout repository (if needed)
-  actions: read # Required to download metadata from the completed build run
 
 on:
   # Automatic trigger after successful build workflow
@@ -90,33 +89,6 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: 📥 Download the triggering build revision
-        if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v8
-        with:
-          name: website-build-metadata
-          path: website-build
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
-
-      - name: 📄 Read the triggering build revision
-        id: read-build-metadata
-        if: github.event_name == 'workflow_run'
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const {readFileSync} = require('node:fs');
-            const {join} = require('node:path');
-            const metadata = JSON.parse(readFileSync(
-              join(process.env.GITHUB_WORKSPACE, 'website-build', 'website-build.json'), 'utf8'));
-            if (!metadata || typeof metadata.commit_sha !== 'string'
-                || !/^[0-9a-f]{40}$/.test(metadata.commit_sha)
-                || (metadata.container_tag !== metadata.commit_sha && metadata.container_tag !== 'latest')) {
-              throw new Error('Invalid website build metadata.');
-            }
-            core.exportVariable('COMMIT_SHA', metadata.commit_sha);
-            core.setOutput('container_tag', metadata.container_tag);
-
       - name: 🔐 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
         with:
@@ -135,7 +107,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{ steps.read-build-metadata.outputs.container_tag || (inputs.environment == 'production' && github.sha || 'latest') }}
+          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
         with:
           app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
@@ -148,7 +120,6 @@ jobs:
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
-          echo "| Source Commit | \`${COMMIT_SHA}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Website URL | ${{ steps.deploy-to-webapp.outputs.webapp-url }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 **Live URL**: ${{ steps.deploy-to-webapp.outputs.webapp-url }}" >> $GITHUB_STEP_SUMMARY

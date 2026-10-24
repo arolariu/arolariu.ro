@@ -1,168 +1,17 @@
 /**
- * @fileoverview Git helper and website revision handoff tests.
+ * @fileoverview Unit tests for git helper.
  * @module github/scripts/helpers/git/tests
  *
  * @remarks
- * Verifies Git command construction and the actual website workflow scripts
- * using isolated Git repositories and build artifacts, without cloud access.
+ * Verifies Git command construction via mocked `@actions/exec`.
  */
 
 import * as exec from "@actions/exec";
-import {execFileSync, spawnSync} from "node:child_process";
-import {mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
-import {createRequire} from "node:module";
-import {tmpdir} from "node:os";
-import {join} from "node:path";
-import {runInNewContext} from "node:vm";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createGitHelper} from "./index";
 
 // Mock @actions/exec
 vi.mock("@actions/exec");
-
-describe("Website build revision handoff", () => {
-  const build = readFileSync(new URL("../../../workflows/official-website-build.yml", import.meta.url), "utf8");
-  const release = readFileSync(new URL("../../../workflows/official-website-release.yml", import.meta.url), "utf8");
-  const bash = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
-  let directory: string;
-  let sha: string;
-
-  function script(source: string, id: string, kind: "run" | "script"): string {
-    const block = source.split(`        id: ${id}`)[1]?.split(/\r?\n      - /)[0];
-    if (!block) throw new Error(`Missing workflow step ${id}`);
-    const lines = block.split(/\r?\n/);
-    const start = lines.findIndex((line) => line.trim() === `${kind}: |`);
-    if (start < 0) throw new Error(`Missing ${kind} in ${id}`);
-    return lines
-      .slice(start + 1)
-      .map((line) => line.slice(kind === "run" ? 10 : 12))
-      .join("\n");
-  }
-
-  function run(scriptText: string, env: Record<string, string>): {status: number | null; output: string} {
-    const output = join(directory, "github-env");
-    writeFileSync(output, "");
-    const result = spawnSync(bash, ["--noprofile", "--norc", "-euo", "pipefail", "-c", scriptText], {
-      cwd: directory,
-      encoding: "utf8",
-      env: {...process.env, GITHUB_ENV: output, ...env},
-    });
-    if (result.error) throw result.error;
-    return {status: result.status, output: readFileSync(output, "utf8")};
-  }
-
-  function readMetadata(): {env: Record<string, string>; outputs: Record<string, string>} {
-    const env: Record<string, string> = {};
-    const outputs: Record<string, string> = {};
-    runInNewContext(script(release, "read-build-metadata", "script"), {
-      require: createRequire(import.meta.url),
-      process: {env: {GITHUB_WORKSPACE: directory}},
-      core: {
-        exportVariable: (key: string, value: string): void => {
-          env[key] = value;
-        },
-        setOutput: (key: string, value: string): void => {
-          outputs[key] = value;
-        },
-      },
-    });
-    return {env, outputs};
-  }
-
-  beforeEach(() => {
-    directory = mkdtempSync(join(tmpdir(), "website-revision-"));
-    const git = (...args: string[]): string =>
-      execFileSync("git", args, {
-        cwd: directory,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-      }).trim();
-    git("init");
-    git("config", "user.name", "Workflow fixture");
-    git("config", "user.email", "fixture@example.invalid");
-    git("config", "commit.gpgsign", "false");
-    git("config", "core.hooksPath", ".git/no-hooks");
-    git("commit", "--allow-empty", "-m", "selected application revision");
-    sha = git("rev-parse", "HEAD");
-    git("commit", "--allow-empty", "-m", "newer workflow revision");
-    git("checkout", "--detach", sha);
-    mkdirSync(join(directory, "website-build"));
-  });
-
-  afterEach(() => {
-    rmSync(directory, {recursive: true, force: true});
-  });
-
-  it("keeps the original queued/manual workflows and checks out the optional source in both jobs", () => {
-    expect(build).toContain("      commit_sha:");
-    expect(build.match(/ref: \$\{\{ env\.COMMIT_SHA \}\}/g)).toHaveLength(2);
-    for (const input of ["environment", "infrastructure", "container_name", "skip_tests"]) {
-      expect(build).toContain(`      ${input}:`);
-    }
-    expect(build).not.toContain("\n  validate:");
-    expect(release).toContain("  workflow_run:");
-    expect(release).toContain("  workflow_dispatch:");
-    expect(release).not.toContain("workflow_call:");
-    expect(release).toContain("run-id: ${{ github.event.workflow_run.id }}");
-    expect(release).toContain("actions: read");
-    expect(release).toContain("steps.read-build-metadata.outputs.container_tag");
-  });
-
-  it("resolves the selected checkout rather than a newer workflow revision", () => {
-    const result = run(script(build, "source", "run"), {COMMIT_SHA: sha.toUpperCase()});
-    expect(result.status).toBe(0);
-    expect(result.output).toBe(`COMMIT_SHA=${sha}\n`);
-  });
-
-  it.each([
-    ["", "development", "latest"],
-    ["", "production", "sha"],
-    ["sha", "development", "sha"],
-    ["sha", "production", "sha"],
-  ])("keeps image tagging consistent for commit=%s and environment=%s", (input, environment, expected) => {
-    const expressions = [...build.matchAll(/^\s+CONTAINER_TAG: \$\{\{ (.*?) \}\}/gm)];
-    expect(expressions).toHaveLength(4);
-    for (const [, expression] of expressions) {
-      const tag: unknown = runInNewContext(expression ?? "", {
-        inputs: {commit_sha: input ? sha : "", environment},
-        env: {COMMIT_SHA: sha},
-      });
-      expect(tag).toBe(expected === "sha" ? sha : expected);
-    }
-  });
-
-  it("rejects a non-SHA source before exporting build state", () => {
-    const result = run(script(build, "source", "run"), {COMMIT_SHA: "preview"});
-    expect(result.status).not.toBe(0);
-    expect(result.output).toBe("");
-  });
-
-  it("does not export a successful source when Git cannot read the checkout", () => {
-    const result = run(script(build, "source", "run"), {COMMIT_SHA: sha, GIT_DIR: join(directory, "missing.git")});
-    expect(result.status).not.toBe(0);
-    expect(result.output).toBe("");
-  });
-
-  it.each(["latest", "selected-sha"])("forwards the exact source and %s image tag through the build artifact", (tag) => {
-    const imageTag = tag === "latest" ? tag : sha;
-    const result = run(script(build, "write-build-metadata", "run"), {COMMIT_SHA: sha, CONTAINER_TAG: imageTag});
-    expect(result.status).toBe(0);
-    writeFileSync(join(directory, "website-build", "website-build.json"), readFileSync(join(directory, "website-build.json")));
-    expect(readMetadata()).toEqual({env: {COMMIT_SHA: sha}, outputs: {container_tag: imageTag}});
-  });
-
-  it.each(["null", "{}", '{"commit_sha":"invalid","container_tag":"latest"}', '{"commit_sha":"SHA","container_tag":"other"}'])(
-    "rejects invalid build metadata instead of deploying a fallback: %s",
-    (json) => {
-      writeFileSync(join(directory, "website-build", "website-build.json"), json.replace("SHA", sha));
-      expect(() => readMetadata()).toThrow("Invalid website build metadata");
-    },
-  );
-
-  it("fails when the triggering build metadata is missing", () => {
-    expect(() => readMetadata()).toThrow("ENOENT");
-  });
-});
 
 describe("GitHelper", () => {
   let gitHelper: ReturnType<typeof createGitHelper>;

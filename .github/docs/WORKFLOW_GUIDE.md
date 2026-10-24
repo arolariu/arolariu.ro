@@ -72,36 +72,6 @@ Workflow: official-e2e-action
 Use the default target selection, or choose targets in the dispatch form.
 ```
 
-### Optional website build revision
-
-`official-website-build` accepts an optional full 40-character `commit_sha`.
-Leave it empty to use the workflow event's revision. Both test and build
-checkouts use the selected source, including the Docker `COMMIT_SHA` argument.
-Existing environment, infrastructure, container, and `skip_tests` inputs remain.
-
-An explicit SHA uses that SHA as the image tag, including development builds.
-Without it, the existing development `latest` and production commit tags remain.
-After pushing the image, the build uploads `website-build-metadata` containing
-`website-build.json` with the actual checkout SHA and image tag.
-
-The separate release remains queued through `workflow_run`. It downloads that
-artifact from the exact triggering `workflow_run.id`, exports the built
-`COMMIT_SHA`, and uses its recorded image tag. Missing or invalid metadata fails
-before Azure login instead of falling back to the release workflow's revision.
-Manual releases keep their existing inputs and behavior.
-
-The existing automatic `preview`/development routing and manual environment
-controls are unchanged; there is no new main-history policy, target map, or
-reusable-workflow handoff. Default development builds still use mutable `latest`.
-The queued release definition comes from the default branch: deploy both
-workflow updates before using the optional SHA.
-
-Run the isolated Git/Bash and artifact-handoff regressions without cloud access:
-
-```powershell
-npm --prefix .github\scripts test -- helpers/git/index.test.ts --coverage.enabled=false
-```
-
 ## Debugging Failed Workflows
 
 ### 1. Check the Logs
@@ -124,7 +94,6 @@ Check each upload step for its retention period.
 
 | Issue | Workflow | Solution |
 |-------|----------|----------|
-| Build metadata missing or invalid | website-release | Inspect `website-build-metadata` on the triggering run; rerun the build if it expired |
 | Tests not running | api-trigger | Inspect test-job conditions and runner output |
 | PR comment duplicates | hygiene-check | Inspect marker lookup and pagination in `.github/scripts/helpers/github/index.ts` |
 | Health check fails | e2e-action | Check if API is running at api.arolariu.ro |
@@ -205,7 +174,7 @@ Common environment variables used across workflows:
 | Variable | Description |
 |----------|-------------|
 | `NODE_VERSION` | Node.js version selected by the workflow |
-| `COMMIT_SHA` | Website checkout SHA; queued releases read it from the triggering build artifact |
+| `COMMIT_SHA` | Workflow event's commit SHA; its meaning depends on the trigger |
 | `PRODUCTION` | Boolean for production builds |
 | `INFRA` | Infrastructure target (local/azure) |
 
