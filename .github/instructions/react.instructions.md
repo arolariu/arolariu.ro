@@ -37,6 +37,11 @@ import graph, not the filename alone.
 
 ## Artifact Routing
 
+Use this table for the website and explicitly scoped shared-component work.
+Other React applications, such as the Docusaurus documentation site, retain
+their own framework conventions and use the applicable `code-*` workflows.
+Do not add RSC directives merely because a file matches this instruction.
+
 | Artifact or decision | Workflow |
 | --- | --- |
 | App Router page/layout/framework route artifact or proven server component | `react-server-component` |
@@ -93,5 +98,5 @@ outcomes rather than implementation details.
 
 ## Escalation
 
-Ask when a change alters UX/auth behavior, creates a new global state boundary,
-changes React Compiler/configuration, or requires a dependency.
+Ask before auth/security changes, materially unresolved UX choices, a new global
+state boundary, React Compiler/configuration changes, or a new dependency.

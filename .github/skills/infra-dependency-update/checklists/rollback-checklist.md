@@ -39,9 +39,9 @@ discard other work.
 
 ### NuGet
 
-- [ ] Restore prior API central `PackageVersion` values and tooling
-      project-local `PackageReference Version`/`Sdk Version` values at their
-      actual owners.
+- [ ] Restore prior API and tooling central `PackageVersion` values at their
+      independent owners; restore project-local SDK declarations separately.
+      Follow the [NuGet ownership guidance](../references/nuget-migrations.md).
 - [ ] Restore affected projects; regenerate and review `packages.lock.json`
       only for owners whose baseline included one. Do not create project locks
       as incidental rollback work.

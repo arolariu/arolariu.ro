@@ -63,6 +63,7 @@ function createFixtureRepository({
 			"---",
 			"name: Backend Expert",
 			"description: Backend specialist",
+			'tools: ["read", "search"]',
 			"---",
 			"",
 		].join("\n"),
@@ -86,6 +87,8 @@ function createFixtureRepository({
 			"---",
 			`name: ${promptName}`,
 			"description: Bug shortcut",
+			'argument-hint: "[reproduction]"',
+			"agent: agent",
 			"---",
 			"",
 			"[skill](../skills/fix-bug/SKILL.md)",
@@ -239,6 +242,34 @@ test("diagnoseAssets reports source-derived memory", () => {
 	assert.ok(findings.some(({code}) => code === "source-derived-memory"));
 });
 
+test("diagnoseAssets reports forbidden version metadata even when empty", () => {
+	for (const version of ['"1.0.0"', '""', "0"]) {
+		const root = createFixtureRepository();
+		write(
+			root,
+			".github/agents/backend-expert.agent.md",
+			[
+				"---",
+				"name: Backend Expert",
+				"description: Backend specialist",
+				'tools: ["read", "search"]',
+				`version: ${version}`,
+				"---",
+				"",
+			].join("\n"),
+		);
+
+		assert.ok(
+			diagnoseAssets(root).some(
+				({code, path}) =>
+					code === "version-metadata" &&
+					path === ".github/agents/backend-expert.agent.md",
+			),
+			`Must report version: ${version}`,
+		);
+	}
+});
+
 test("diagnoseAssets allows a prompt alias to share its skill name", () => {
 	const findings = diagnoseAssets(
 		createFixtureRepository({
@@ -250,6 +281,122 @@ test("diagnoseAssets allows a prompt alias to share its skill name", () => {
 	assert.ok(
 		!findings.some(({code}) => code === "duplicate-asset-name"),
 	);
+});
+
+test("diagnoseAssets accepts complete required metadata", () => {
+	assert.deepEqual(diagnoseAssets(createFixtureRepository()), []);
+});
+
+test("diagnoseAssets accepts inline and block-style tools lists", () => {
+	for (const tools of [
+		'tools: ["read", "search"]',
+		"tools:\n  - read\n  - search",
+	]) {
+		const root = createFixtureRepository();
+		write(
+			root,
+			".github/agents/backend-expert.agent.md",
+			`---\nname: Backend Expert\ndescription: Backend specialist\n${tools}\n---\n`,
+		);
+
+		assert.deepEqual(diagnoseAssets(root), [], tools);
+	}
+});
+
+test("diagnoseAssets reports missing required metadata", () => {
+	for (const [path, metadata, field] of [
+		[
+			".github/agents/backend-expert.agent.md",
+			"name: '   '\ndescription: Backend specialist\ntools: []",
+			"name",
+		],
+		[
+			".github/agents/backend-expert.agent.md",
+			"name: Backend Expert\ndescription: Backend specialist",
+			"tools",
+		],
+		[
+			".github/instructions/typescript.instructions.md",
+			"name: TypeScript\ndescription: Type rules",
+			"applyTo",
+		],
+		[
+			".github/prompts/fix-bug.prompt.md",
+			'name: fix-bug\ndescription: Bug shortcut\nargument-hint: "[reproduction]"',
+			"agent",
+		],
+		[
+			".github/prompts/fix-bug.prompt.md",
+			"name: fix-bug\ndescription: Bug shortcut\nagent: agent",
+			"argument-hint",
+		],
+		[
+			".github/skills/fix-bug/SKILL.md",
+			"description: Fix a defect",
+			"name",
+		],
+	]) {
+		const root = createFixtureRepository();
+		write(root, path, `---\n${metadata}\n---\n`);
+
+		assert.ok(
+			diagnoseAssets(root).some(
+				(finding) =>
+					finding.path === path &&
+					finding.code === "missing-metadata" &&
+					finding.message.includes(`'${field}'`),
+			),
+			`${path} must report missing ${field}`,
+		);
+	}
+});
+
+test("diagnoseAssets reports malformed MCP JSON", () => {
+	const root = createFixtureRepository();
+	write(root, ".github/mcp.json", "{invalid json");
+
+	assert.ok(
+		diagnoseAssets(root).some(
+			({code, path}) =>
+				code === "invalid-json" && path === ".github/mcp.json",
+		),
+	);
+});
+
+test("diagnoseAssets rejects invalid MCP server maps", () => {
+	for (const configuration of [
+		null,
+		[],
+		{mcpServers: null},
+		{mcpServers: []},
+		{mcpServers: {example: "not a server object"}},
+	]) {
+		const root = createFixtureRepository();
+		write(root, ".github/mcp.json", JSON.stringify(configuration));
+
+		assert.ok(
+			diagnoseAssets(root).some(
+				({code, path}) =>
+					code === "invalid-mcp-config" &&
+					path === ".github/mcp.json",
+			),
+			`Must reject ${JSON.stringify(configuration)}`,
+		);
+	}
+});
+
+test("diagnoseAssets accepts wrapped and bare MCP server maps", () => {
+	for (const configuration of [
+		{},
+		{mcpServers: {}},
+		{mcpServers: {example: {type: "stdio", command: "node"}}},
+		{example: {type: "http", url: "https://example.invalid/mcp"}},
+	]) {
+		const root = createFixtureRepository();
+		write(root, ".github/mcp.json", JSON.stringify(configuration));
+
+		assert.deepEqual(diagnoseAssets(root), []);
+	}
 });
 
 test("diagnoseAssets reports metadata, scope, link, duplicate, and command drift", () => {

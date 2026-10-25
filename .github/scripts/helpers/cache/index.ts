@@ -81,11 +81,12 @@ export interface ICacheHelper {
   restore(options: CacheRestoreOptions): Promise<CacheRestoreResult>;
 
   /**
-   * Checks if cache entry exists for key
+   * Attempts a cache restore and reports whether an entry was found.
+   * @remarks This is not lookup-only: restored files can be written to paths.
    * @param key - Cache key
    * @param paths - Paths to check
    * @param restoreKeys - Optional restore keys
-   * @returns Promise resolving to true if cache exists
+   * @returns True on a restore hit; false on a miss or restore error.
    */
   exists(key: string, paths: string[], restoreKeys?: string[]): Promise<boolean>;
 
@@ -107,7 +108,8 @@ export interface ICacheHelper {
   createRestoreKeys(primaryKey: string, fallbackCount?: number): string[];
 
   /**
-   * Saves and restores cache with automatic key generation
+   * Restores cache with automatic key generation and records state on a miss.
+   * @remarks No post-job saver is registered here; the caller must arrange saving.
    * @param prefix - Cache key prefix
    * @param paths - Paths to cache
    * @param lockFiles - Lock files to hash for key
@@ -298,9 +300,9 @@ export class CacheHelper implements ICacheHelper {
       });
 
       if (!result.hit) {
-        core.info(`Cache miss - will save after workflow completes`);
+        core.info("Cache miss - recording state; the caller must save the cache explicitly");
 
-        // Register post-job action to save cache
+        // State alone does not register a post-job saver.
         core.saveState("cache-key", key);
         core.saveState("cache-paths", JSON.stringify(paths));
       }

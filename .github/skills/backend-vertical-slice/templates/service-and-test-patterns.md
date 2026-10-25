@@ -239,32 +239,9 @@ Do not use when the behavior requires the real HTTP mapper, provider
 serialization, Activity listener, architecture reflection, or a true external
 boundary; choose the matching live test category instead.
 
-```csharp
-/// <summary>Verifies the {{service}} contract.</summary>
-[TestClass]
-public sealed class {{Service}}Tests
-{
-/// <summary>Verifies {{behavior}}.</summary>
-[TestMethod]
-public async Task {{Method}}_{{Condition}}_{{Expected}}()
-{
-  // Arrange
-  var dependency = new Mock<I{{DirectDependency}}>(MockBehavior.Strict);
-  dependency
-    .Setup(candidate => candidate.{{DependencyMethod}}(
-      {{expected arguments}},
-      It.IsAny<CancellationToken>()))
-    .ThrowsAsync(new {{DirectException}}({{deterministic values}}));
-  var service = new {{Service}}(dependency.Object, NullLoggerFactory.Instance);
-
-  // Act
-  {{OuterException}} exception =
-    await Assert.ThrowsExactlyAsync<{{OuterException}}>(
-      () => service.{{Method}}({{arguments}}, CancellationToken.None));
-
-  // Assert
-  Assert.IsExactInstanceOfType<{{DirectException}}>(exception.InnerException);
-  dependency.VerifyAll();
-}
-}
-```
+Use the [MSTest service pattern](../../code-unit-test/templates/stable-test-patterns.md#mstest-service-pattern)
+and select its classifier variant for the exact method. Name the injected
+dependency exception separately from the expected retained cause: ordinary
+Processing classification unwraps its dependency exception, while other
+paths retain it. Assert the appropriate reference identity and exact types;
+do not change production classification to fit a generic test template.

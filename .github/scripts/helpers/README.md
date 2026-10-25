@@ -227,6 +227,11 @@ console.log(`Found ${available.length} artifacts`);
 
 Efficient caching with automatic key generation:
 
+`autoCache()` restores and records key/path state on a miss; it does not
+register a post-job saver. Call `save()` explicitly when the cache is ready.
+`exists()` also attempts restoration and can write files; it is not a
+lookup-only probe.
+
 ```typescript
 import { cache, CacheConfigs } from './helpers';
 
@@ -297,6 +302,10 @@ const size = MarkdownUtils.formatBytes(1024000);
 
 Make HTTP requests:
 
+Only `headers` in `HttpRequestOptions` is forwarded. Timeout, redirect, and
+retry option fields are currently ignored; do not rely on them for request
+limits. Downloads currently use text-body handling and are not binary-safe.
+
 ```typescript
 import { http } from './helpers';
 
@@ -312,10 +321,10 @@ await http.post('https://api.example.com/create', {
   value: 123
 });
 
-// Download file
+// Download a text file
 await http.download(
-  'https://example.com/file.zip',
-  './downloads/file.zip'
+  'https://example.com/file.txt',
+  './downloads/file.txt'
 );
 
 // Custom request

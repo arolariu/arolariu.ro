@@ -50,11 +50,12 @@ into the skill or a step-by-step procedure into the agent.
 ## Frontmatter requirements by surface
 
 Every surface's frontmatter is minimal and functional. The shapes below are
-repository requirements. The checker currently verifies descriptions,
-forbidden model/calendar metadata, the exact global `applyTo: "**"` token,
-and skill-directory name alignment; it does not validate equivalent broad
-glob patterns or every required key/type, so reviewers must still inspect the
-complete frontmatter.
+repository requirements. The checker verifies required-key presence,
+forbidden version/model/calendar metadata, the exact global `applyTo: "**"` token,
+and skill-directory name alignment. It also checks MCP JSON syntax and the
+server-map shape. It does not implement full YAML/schema validation, equivalent
+broad-glob detection, or runtime permission checks; reviewers must still
+inspect the complete configuration.
 
 **Instruction** (`name`, `description`, `applyTo`):
 

@@ -65,8 +65,8 @@ def get_config() -> ConfigSnapshot:
 
 `security/authz.py` types the minimal request surface it needs with a
 `Protocol` instead of importing FastAPI's concrete `Request` everywhere, and
-types the Azure Easy Auth JSON payload with `TypedDict` so untyped
-`json.loads()` output gets a checked shape immediately:
+describes the Azure Easy Auth JSON payload with `TypedDict` for static typing.
+That annotation does not validate untrusted `json.loads()` output at runtime:
 
 ```python
 # sites/exp.arolariu.ro/security/authz.py
@@ -87,6 +87,9 @@ optional error-response fields. Use `Protocol` when a function only needs a
 narrow slice of a larger object (avoids importing a heavy dependency just for
 a type), and `TypedDict` when a dict shape crosses a serialization boundary
 (JSON, headers, env) and needs field-level typing without a full model.
+Keep runtime validation separate: the principal decoder checks the root
+dictionary, and the claim extractor checks the collection and its entries.
+Neither `Protocol` nor `TypedDict` replaces those guards.
 
 ## FastAPI boundaries: routers, DI-free composition, and thin handlers
 
@@ -290,19 +293,11 @@ rule-set change, not a suppression — ask before touching `pyproject.toml`.
 `pyproject.toml`'s `[tool.pytest.ini_options]` sets
 `python_files = ["*.test.py"]` and `addopts = "--import-mode=importlib"`.
 `conftest.py` supplies the shared `client` fixture
-(`fastapi.testclient.TestClient`) used across every `*.test.py` file. Tests
-mock at the module-attribute level with `unittest.mock.patch`, targeting the
-**consuming** module's imported name, not the defining module:
-
-```python
-# sites/exp.arolariu.ro/main.test.py
-with patch("api.health.get_config", return_value=test_config):
-    ...
-```
-
-not `patch("config.loader.get_config", ...)` — because `api/health.py`
-imports `get_config` by name, patching the origin module would not affect the
-already-bound reference in `api.health`.
+(`fastapi.testclient.TestClient`) for HTTP tests. Existing tests that patch
+repository configuration functions bypass the loader and are test debt, not
+approved seams for new tests. Keep repository modules real and follow the
+[Python pytest guidance](../../skills/code-unit-test/references/python-pytest.md)
+for external-boundary doubles and their consuming-module patch targets.
 
 Reloading a module under test to observe environment-driven behavior uses
 `importlib.reload`, as in `config/catalog.test.py`:
@@ -329,18 +324,15 @@ its value.
 
 ```python
 # ❌ Anti-pattern: pytest's default discovery name, ignored by this project's
-# python_files = ["*.test.py"] config, and imprecise patch target.
+# python_files = ["*.test.py"] config, and a repository-module mock.
 # File: test_config.py
 with patch("config.loader.get_config", return_value=...):
     ...
 ```
 
-```python
-# ✅ Correction: file named config.test.py, patch the importing module.
-# File: config.test.py
-with patch("api.config.get_config", return_value=...):
-    ...
-```
+Name the file `config.test.py` and exercise the real repository path with
+controlled external inputs. Patching the importing module's repository helper
+would still bypass its behavior, even when the patch target resolves correctly.
 
 ## Errors: boundary-specific response contracts
 
