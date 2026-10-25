@@ -2,18 +2,13 @@ import {describe, expect, it} from "vitest";
 
 import {
   adjustHexColorLightness,
-  adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
   convertHslToHexString,
-  getComplementaryColor,
-  hexToHsl,
-  hslToHex,
-  isValidHexColor,
-  parseHslString,
   parseHslStringToComponents,
   validateHexColorFormat,
 } from "./color-conversion-utilities";
+import * as colorUtilities from "./color-conversion-utilities";
 
 describe("color-conversion-utilities", () => {
   it("convertHexToHslString handles known color conversions", () => {
@@ -56,12 +51,14 @@ describe("color-conversion-utilities", () => {
     expect(parseHslStringToComponents("187 94 43")).toBeNull();
   });
 
-  it("deprecated aliases still work", () => {
-    expect(hexToHsl("#06b6d4")).toBe(convertHexToHslString("#06b6d4"));
-    expect(hslToHex(0, 100, 50)).toBe(convertHslToHexString(0, 100, 50));
-    expect(isValidHexColor("#06b6d4")).toBe(validateHexColorFormat("#06b6d4"));
-    expect(getComplementaryColor("#123456")).toBe(calculateComplementaryHexColor("#123456"));
-    expect(adjustLightness("#000000", 20)).toBe(adjustHexColorLightness("#000000", 20));
-    expect(parseHslString("187 94% 43%")).toStrictEqual(parseHslStringToComponents("187 94% 43%"));
+  it("exports only the canonical color operations", () => {
+    expect(Object.keys(colorUtilities).sort()).toEqual([
+      "adjustHexColorLightness",
+      "calculateComplementaryHexColor",
+      "convertHexToHslString",
+      "convertHslToHexString",
+      "parseHslStringToComponents",
+      "validateHexColorFormat",
+    ]);
   });
 });

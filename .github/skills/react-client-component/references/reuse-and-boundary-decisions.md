@@ -72,11 +72,13 @@ sync."
 1. Prefer the native semantic element when it fully owns behavior.
 2. Reuse an exported `@arolariu/components` primitive when interaction/focus
    semantics already exist.
-3. In explicitly requested library work, follow current Base UI `render`
-   composition, `mergeProps`, CSS Module `cn()`, and `forwardRef` behavior from
-   `packages/components/src/components/ui/button.tsx` or the matching sibling.
-4. Retain `asChild` only where a live public API already supports it; new
-   composition uses the current `render` pattern.
+3. In explicitly requested library work, follow
+   `.github/instructions/components.instructions.md` and the composition shapes
+   in its catalog: `button.tsx` wraps the Base UI primitive, and `badge.tsx`
+   uses `useRender` + `mergeProps`.
+4. Retain `asChild` only at website call sites whose installed
+   `@arolariu/components` version still supports it; new composition uses
+   `render`.
 5. A public DOM ref is justified by consumer composition/focus needs, not as a
    blanket rule for route-local components.
 

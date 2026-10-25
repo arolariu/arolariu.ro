@@ -1,9 +1,77 @@
 import {Bold, Italic, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline} from "lucide-react";
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Popover, PopoverContent, PopoverTrigger} from "./popover";
 import {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./toolbar";
+const storyStyles = `
+.ac-story-toolbar-dropdownMenu {
+  min-width: 120px;
+  background: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+  border: 1px solid var(--ac-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 0.25rem;
+  z-index: 10;
+}
+
+.ac-story-toolbar-dropdownOption {
+  width: 100%;
+  min-height: 24px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  text-align: start;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ac-story-toolbar-dropdownOption:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: -2px;
+}
+
+.ac-story-toolbar-editor {
+  width: 100%;
+  max-width: 600px;
+}
+
+.ac-story-toolbar-editorToolbar {
+  padding: 0.5rem;
+  background: var(--ac-muted);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid var(--ac-border);
+}
+
+.ac-story-toolbar-editorContent {
+  min-height: 200px;
+  padding: 1rem;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  border: 1px solid var(--ac-input);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+`;
+
+const storyClasses = {
+  dropdownMenu: "ac-story-toolbar-dropdownMenu",
+  dropdownOption: "ac-story-toolbar-dropdownOption",
+  editor: "ac-story-toolbar-editor",
+  editorToolbar: "ac-story-toolbar-editorToolbar",
+  editorContent: "ac-story-toolbar-editorContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/Toolbar",
   component: Toolbar,
   tags: ["autodocs"],
@@ -100,59 +168,30 @@ function ToolbarWithDropdownContent(): React.JSX.Element {
         </ToolbarButton>
       </ToolbarGroup>
       <ToolbarSeparator />
-      <div style={{position: "relative"}}>
-        <ToolbarButton
-          onClick={() => setShowDropdown(!showDropdown)}
-          aria-label='More options'>
-          More ▾
-        </ToolbarButton>
-        {showDropdown ? (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 4px)",
-              left: 0,
-              minWidth: "120px",
-              background: "white",
-              border: "1px solid #e5e7eb",
-              borderRadius: "6px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-              padding: "0.25rem",
-              zIndex: 10,
-            }}>
-            <button
-              type='button'
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                fontSize: "0.875rem",
-                textAlign: "left",
-                background: "transparent",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-              onClick={() => setShowDropdown(false)}>
-              Clear formatting
-            </button>
-            <button
-              type='button'
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                fontSize: "0.875rem",
-                textAlign: "left",
-                background: "transparent",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-              onClick={() => setShowDropdown(false)}>
-              Insert link
-            </button>
-          </div>
-        ) : null}
-      </div>
+      <Popover
+        open={showDropdown}
+        onOpenChange={setShowDropdown}>
+        <PopoverTrigger render={<ToolbarButton aria-label='More options' />}>
+          More <span aria-hidden='true'>▾</span>
+        </PopoverTrigger>
+        <PopoverContent
+          className={storyClasses.dropdownMenu}
+          aria-label='More editor actions'
+          align='start'>
+          <button
+            type='button'
+            className={storyClasses.dropdownOption}
+            onClick={() => setShowDropdown(false)}>
+            Clear formatting
+          </button>
+          <button
+            type='button'
+            className={storyClasses.dropdownOption}
+            onClick={() => setShowDropdown(false)}>
+            Insert link
+          </button>
+        </PopoverContent>
+      </Popover>
     </Toolbar>
   );
 }
@@ -169,15 +208,10 @@ export const WithDropdown: Story = {
  */
 export const EditorToolbar: Story = {
   render: () => (
-    <div style={{width: "100%", maxWidth: "600px"}}>
+    <div className={storyClasses.editor}>
       <Toolbar
         aria-label='Text formatting'
-        style={{
-          padding: "0.5rem",
-          background: "#f9fafb",
-          borderRadius: "8px 8px 0 0",
-          borderBottom: "1px solid #e5e7eb",
-        }}>
+        className={storyClasses.editorToolbar}>
         <ToolbarGroup>
           <ToolbarButton aria-label='Bold'>
             <Bold className='h-4 w-4' />
@@ -203,14 +237,10 @@ export const EditorToolbar: Story = {
         </ToolbarGroup>
       </Toolbar>
       <div
-        style={{
-          minHeight: "200px",
-          padding: "1rem",
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderTop: "none",
-          borderRadius: "0 0 8px 8px",
-        }}
+        className={storyClasses.editorContent}
+        role='textbox'
+        aria-label='Document content'
+        aria-multiline='true'
         contentEditable
         suppressContentEditableWarning>
         Start typing...

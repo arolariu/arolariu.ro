@@ -6,6 +6,8 @@
 
 .content {
   display: flex;
+  max-inline-size: 100%;
+  flex-wrap: wrap;
   flex-direction: row;
   align-items: center;
   gap: var(--ac-space-1);
@@ -19,18 +21,20 @@
 }
 
 .link {
-  min-width: var(--ac-size-default);
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  flex-shrink: 0;
   text-decoration: none;
 }
 
 .previous {
   gap: var(--ac-space-1);
-  padding-left: calc(var(--ac-space-3) - 0.125rem);
+  padding-inline-start: calc(var(--ac-space-3) - 0.125rem);
 }
 
 .next {
   gap: var(--ac-space-1);
-  padding-right: calc(var(--ac-space-3) - 0.125rem);
+  padding-inline-end: calc(var(--ac-space-3) - 0.125rem);
 }
 
 .ellipsis {
@@ -51,14 +55,17 @@
   flex-shrink: 0;
 }
 
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.previous:dir(rtl) > svg,
+.next:dir(rtl) > svg {
+  transform: rotate(180deg);
+}
+
+.navigationText {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .navigationText {
+    display: inline;
+  }
 }

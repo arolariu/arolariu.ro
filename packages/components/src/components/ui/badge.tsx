@@ -1,15 +1,32 @@
+"use client";
+
+import {mergeProps} from "@base-ui/react/merge-props";
+import type {HTMLProps} from "@base-ui/react/types";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-import {cn} from "@/lib/utilities";
-import styles from "./badge.module.css";
+import {badgeVariants} from "./_badge-variants";
 
 /**
  * Defines the supported visual treatments for the Badge component.
  */
-export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+
+/** State supplied to the badge's composition callback and data attributes. */
+export type BadgeState = Readonly<{
+  slot: "badge";
+  variant: BadgeVariant;
+}>;
+
+// Base UI resolves input object/callback refs to a merged callback (or null).
+type BadgeRenderProps = Readonly<
+  Omit<HTMLProps<HTMLElement>, "ref"> & {
+    ref?: React.RefCallback<HTMLElement> | null;
+  }
+>;
 
 /**
- * Represents the options accepted by the internal badge class generator.
+ * Represents the options accepted by the {@link badgeVariants} class generator.
  *
  * @remarks
  * This helper mirrors the public Badge styling API and exists so callers can derive
@@ -17,91 +34,71 @@ export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
  *
  * @default variant `"default"`
  */
-interface BadgeVariantOptions {
+export interface BadgeVariantOptions {
   /**
    * The visual emphasis applied to the badge surface.
    *
    * @default "default"
    */
-  variant?: BadgeVariant;
+  readonly variant?: BadgeVariant;
   /**
    * Additional CSS classes merged with the generated badge classes.
    */
-  className?: string;
+  readonly className?: string;
 }
-
-const variantStyles: Record<BadgeVariant, string> = {
-  default: styles.default!,
-  secondary: styles.secondary!,
-  destructive: styles.destructive!,
-  outline: styles.outline!,
-};
 
 /**
  * Represents the configurable props for the Badge component.
  *
  * @remarks
- * Extends standard `<div>` attributes so badges can expose data attributes, ARIA
+ * Extends standard `<span>` attributes so badges can expose data attributes, ARIA
  * state, and event handlers while preserving the library's visual variants.
  *
  * @default variant `"default"`
  */
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Additional CSS classes merged with the computed badge classes.
-   */
-  className?: string;
-  /**
-   * The visual variant used to communicate importance or status.
-   *
-   * @default "default"
-   */
-  variant?: BadgeVariant;
-}
-
-/**
- * Generates the CSS class list for a badge variant.
- *
- * @remarks
- * This utility is useful when another component needs badge styling but cannot render
- * the Badge component directly. It always includes the base badge classes.
- *
- * @example
- * ```tsx
- * <span className={badgeVariants({variant: "outline"})}>Beta</span>
- * ```
- *
- * @see {@link Badge}
- * @see {@link https://base-ui.com/react/overview Base UI documentation}
- */
-function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOptions> = {}): string {
-  return cn(styles.badge, variantStyles[variant], className);
-}
+export type BadgeProps = Readonly<
+  Omit<useRender.ComponentProps<"span", BadgeState, BadgeRenderProps>, "ref"> & {
+    /** Ref to the actual rendered element; the default target is a span. */
+    ref?: React.Ref<HTMLElement>;
+    /**
+     * The visual variant used to communicate importance or status.
+     *
+     * @default "default"
+     */
+    variant?: BadgeVariant;
+  }
+>;
 
 /**
  * A compact status label for surfacing metadata, categories, or state.
  *
  * @remarks
- * **Rendering Context**: Server- and client-compatible presentational component.
+ * **Rendering Context**: Client boundary for Base UI render/ref composition.
  *
- * Renders a styled `<div>` with pill-like spacing and variant-driven colors.
+ * Renders a styled `<span>` with pill-like spacing and variant-driven colors.
  * Use it for small, high-signal labels such as statuses, tags, or counters.
+ * Previous `HTMLDivElement` refs should migrate to `HTMLSpanElement`. Use
+ * `render={<div />}` only when block-level markup is intentionally required.
+ * Composed targets accept their corresponding DOM refs through the common
+ * `HTMLElement` boundary; callback props carry Base UI's merged callback ref.
  *
  * @example
  * ```tsx
  * <Badge variant="secondary">New</Badge>
  * ```
  *
- * @see {@link badgeVariants} — Generates matching badge classes without rendering.
+ * @see {@link badgeVariants} — Generates matching badge classes without rendering; callable from Server Components when
+ * imported from the package root.
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(({className, variant = "default", ...props}, ref) => (
-  <div
-    ref={ref}
-    className={badgeVariants({variant, className})}
-    {...props}
-  />
-));
+const Badge = ({ref, className, variant = "default", render, ...props}: Readonly<BadgeProps>): React.ReactElement =>
+  useRender<BadgeState, HTMLElement>({
+    defaultTagName: "span",
+    ref,
+    render,
+    state: {slot: "badge", variant},
+    props: mergeProps<"span">({className: badgeVariants({variant, className})}, props),
+  });
 Badge.displayName = "Badge";
 
 export {Badge, badgeVariants};

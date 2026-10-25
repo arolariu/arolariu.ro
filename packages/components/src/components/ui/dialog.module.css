@@ -1,6 +1,8 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  z-index: 50;
+  isolation: isolate;
   min-height: 100dvh;
   background-color: rgb(0 0 0 / 0.5);
   transition: opacity var(--ac-transition-normal);
@@ -21,6 +23,7 @@
   position: fixed;
   top: 50%;
   left: 50%;
+  z-index: 50;
   transform: translate(-50%, -50%);
   width: 32rem;
   max-width: calc(100vw - 2rem);
@@ -37,7 +40,7 @@
   transition:
     opacity var(--ac-transition-normal),
     transform var(--ac-transition-normal);
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
 
   &[data-starting-style],
   &[data-ending-style] {
@@ -92,28 +95,34 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  border: none;
-  border-radius: var(--ac-radius-xs);
-  background: transparent;
-  color: var(--ac-muted-foreground);
-  cursor: pointer;
-  transition:
-    background-color var(--ac-transition-fast),
-    color var(--ac-transition-fast);
-  outline: none;
+}
 
-  @media (hover: hover) {
-    &:hover {
-      background-color: color-mix(in oklch, var(--ac-muted), transparent 50%);
-      color: var(--ac-foreground);
-    }
+.closeIcon {
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .popup {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .backdrop {
+    background-color: color-mix(in srgb, CanvasText, transparent 75%);
+    forced-color-adjust: none;
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--ac-ring);
-    outline-offset: -1px;
+  .popup {
+    border-color: CanvasText;
+    box-shadow: none;
   }
+}
+.control {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

@@ -1,7 +1,884 @@
-import {describe, expect, it} from "vitest";
+import fs from "node:fs";
+import {execFileSync} from "node:child_process";
+import path from "node:path";
+import {parse} from "postcss";
+import selectorParser from "postcss-selector-parser";
+import * as Recharts from "recharts";
+import * as ReactHookForm from "react-hook-form";
+import ts from "typescript";
+import {describe, expect, expectTypeOf, it} from "vitest";
+import {AsyncBoundary, type AsyncBoundaryProps as LocalAsyncBoundaryProps} from "./components/ui/async-boundary";
+import badgeStyles from "./components/ui/badge.module.css";
+import buttonGroupStyles from "./components/ui/button-group.module.css";
+import buttonStyles from "./components/ui/button.module.css";
+import {CardSkeleton, type CardSkeletonProps as LocalCardSkeletonProps} from "./components/ui/card-skeleton";
+import {ErrorBoundary, type ErrorBoundaryProps as LocalErrorBoundaryProps} from "./components/ui/error-boundary";
+import {FocusScope, type FocusScopeProps as LocalFocusScopeProps} from "./components/ui/focus-scope";
+import {FormSkeleton, type FormSkeletonProps as LocalFormSkeletonProps} from "./components/ui/form-skeleton";
+import {ListSkeleton, type ListSkeletonProps as LocalListSkeletonProps} from "./components/ui/list-skeleton";
+import {LoadingOverlay, type LoadingOverlayProps as LocalLoadingOverlayProps} from "./components/ui/loading-overlay";
+import markerStyles from "./components/ui/marker.module.css";
+import navigationMenuStyles from "./components/ui/navigation-menu.module.css";
+import {TableSkeleton, type TableSkeletonProps as LocalTableSkeletonProps} from "./components/ui/table-skeleton";
+import tabsStyles from "./components/ui/tabs.module.css";
+import toggleStyles from "./components/ui/toggle.module.css";
+import type {Politeness as LocalPoliteness} from "./hooks/useAnnounce";
+import type {FocusManager as LocalFocusManager} from "./hooks/useFocusManager";
 import * as exports from "./index";
+import type {
+  AsyncBoundaryProps,
+  CardSkeletonProps,
+  ErrorBoundaryProps,
+  FocusManager,
+  FocusScopeProps,
+  FormSkeletonProps,
+  ListSkeletonProps,
+  LoadingOverlayProps,
+  Politeness,
+  TableSkeletonProps,
+} from "./index";
+
+const supportedComponentModules = [
+  "accordion",
+  "alert-dialog",
+  "alert",
+  "aspect-ratio",
+  "async-boundary",
+  "attachment",
+  "avatar",
+  "background-beams",
+  "badge",
+  "breadcrumb",
+  "bubble-background",
+  "bubble",
+  "button-group",
+  "button",
+  "calendar",
+  "card-skeleton",
+  "card",
+  "carousel",
+  "chart",
+  "checkbox-group",
+  "checkbox",
+  "collapsible",
+  "combobox",
+  "command",
+  "context-menu",
+  "copy-button",
+  "counting-number",
+  "dialog",
+  "direction",
+  "dot-background",
+  "drawer",
+  "dropdown-menu",
+  "dropdrawer",
+  "empty",
+  "error-boundary",
+  "field",
+  "fireworks-background",
+  "flip-button",
+  "focus-scope",
+  "form-skeleton",
+  "form",
+  "gradient-background",
+  "gradient-text",
+  "highlight-text",
+  "hole-background",
+  "hover-card",
+  "input-group",
+  "input-otp",
+  "input",
+  "item",
+  "kbd",
+  "label",
+  "list-skeleton",
+  "loading-overlay",
+  "marker",
+  "menubar",
+  "message",
+  "meter",
+  "native-select",
+  "navigation-menu",
+  "number-field",
+  "pagination",
+  "popover",
+  "progress",
+  "radio-group",
+  "resizable",
+  "ripple-button",
+  "scratcher",
+  "scroll-area",
+  "select",
+  "separator",
+  "sheet",
+  "sidebar",
+  "skeleton",
+  "slider",
+  "spinner",
+  "stepper",
+  "switch",
+  "table-skeleton",
+  "table",
+  "tabs",
+  "textarea",
+  "timeline",
+  "toast",
+  "toggle-group",
+  "toggle",
+  "toolbar",
+  "tooltip",
+  "typewriter",
+  "visually-hidden",
+] as const;
+
+const supportedHookModules = [
+  "useAnnounce",
+  "useBreakpoint",
+  "useClipboard",
+  "useColorScheme",
+  "useControllableState",
+  "useDebounce",
+  "useEventCallback",
+  "useFocusManager",
+  "useFocusVisible",
+  "useId",
+  "useIntersectionObserver",
+  "useInterval",
+  "useIsMobile",
+  "useLocalStorage",
+  "useMediaQuery",
+  "useMergedRefs",
+  "useOnClickOutside",
+  "usePrefersContrast",
+  "usePrevious",
+  "useReducedMotion",
+  "useThrottle",
+  "useTimeout",
+  "useWindowSize",
+] as const;
+
+const rootRuntime: Readonly<Record<string, unknown>> = exports;
+const retainedChartAliases = [
+  "AreaChart",
+  "BarChart",
+  "ComposedChart",
+  "FunnelChart",
+  "LineChart",
+  "PieChart",
+  "RadarChart",
+  "RadialBarChart",
+  "ScatterChart",
+  "Sankey",
+  "SunburstChart",
+  "Treemap",
+  "Area",
+  "Bar",
+  "BarStack",
+  "Funnel",
+  "Line",
+  "Pie",
+  "Radar",
+  "RadialBar",
+  "Scatter",
+  "CartesianGrid",
+  "PolarAngleAxis",
+  "PolarGrid",
+  "PolarRadiusAxis",
+  "XAxis",
+  "YAxis",
+  "ZAxis",
+  "Brush",
+  "ErrorBar",
+  "RechartsLabel",
+  "LabelList",
+  "ReferenceArea",
+  "ReferenceDot",
+  "ReferenceLine",
+  "ResponsiveContainer",
+  "Customized",
+  "Cross",
+  "Curve",
+  "Dot",
+  "Polygon",
+  "Rectangle",
+  "Sector",
+  "Symbols",
+  "Trapezoid",
+  "ZIndexLayer",
+  "DefaultZIndexes",
+  "useChartWidth",
+  "useChartHeight",
+  "useOffset",
+  "usePlotArea",
+  "useMargin",
+  "useIsTooltipActive",
+  "useActiveTooltipCoordinate",
+  "useActiveTooltipDataPoints",
+  "useActiveTooltipLabel",
+  "useXAxisDomain",
+  "useYAxisDomain",
+] as const;
+const retainedFormTypes = [
+  "Control",
+  "ControllerFieldState",
+  "ControllerProps",
+  "ControllerRenderProps",
+  "DefaultValues",
+  "RHFFieldError",
+  "FieldErrors",
+  "FieldPath",
+  "FieldValues",
+  "Path",
+  "RegisterOptions",
+  "Resolver",
+  "SubmitHandler",
+  "UseControllerReturn",
+  "UseFieldArrayReturn",
+  "UseFormReturn",
+] as const;
+
+function assertCanonicalDeclarations(checker: ts.TypeChecker, symbols: ReadonlyMap<string, ts.Symbol>): void {
+  const getType = (name: string): ts.Type => {
+    const symbol = symbols.get(name);
+    if (!symbol) throw new Error(`Missing canonical declaration: ${name}`);
+    return checker.getDeclaredTypeOfSymbol(symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol);
+  };
+  for (const [name, removed] of [
+    ["ButtonProps", ["asChild"]],
+    ["BreadcrumbProps", ["separator"]],
+    ["BreadcrumbLinkProps", ["asChild"]],
+    ["ItemProps", ["asChild"]],
+    ["AccordionProps", ["type", "orientation", "loopFocus"]],
+    ["TooltipProps", ["delayDuration"]],
+    ["TooltipProviderProps", ["delayDuration"]],
+    ["TooltipTriggerProps", ["asChild"]],
+    ["ContextMenuContentProps", ["positionMethod"]],
+    ["DropdownMenuTriggerProps", ["asChild"]],
+    ["DropDrawerProps", ["handle"]],
+    ["DropDrawerTriggerProps", ["handle"]],
+    ["DialogTriggerProps", ["asChild"]],
+    ["AlertDialogTriggerProps", ["asChild"]],
+    ["DrawerHeaderProps", ["asChild"]],
+    ["SheetHeaderProps", ["asChild"]],
+    ["PopoverTriggerProps", ["asChild"]],
+    ["SidebarMenuButtonProps", ["asChild"]],
+    ["SeparatorProps", ["decorative"]],
+    ["ChartLegendContentProps", ["align", "onMouseOver"]],
+  ] as const) {
+    for (const member of removed) expect(checker.getPropertyOfType(getType(name), member), `${name}.${member}`).toBeUndefined();
+  }
+  const direction = getType("FlipDirection");
+  expect(direction.isUnion()).toBe(true);
+  if (direction.isUnion()) {
+    expect(direction.types.some((type) => type.isStringLiteral() && type.value === "righ")).toBe(false);
+  }
+  for (const removed of [
+    "AccordionSingleProps",
+    "AccordionMultipleProps",
+    "AccordionArrayProps",
+    "DeprecatedFlipDirection",
+    "LegacyToastApi",
+    "LegacyToasterProps",
+    "LegacyCommandDialogProps",
+    "LegacyAlertDialogActionProps",
+    "NavigationMenuViewportProps",
+    "NavigationMenuIndicatorProps",
+    "PopoverAnchorProps",
+  ]) {
+    expect(symbols.has(removed), removed).toBe(false);
+  }
+}
+
+/**
+ * Pure class helpers that the root re-exports from directive-free private modules, so Server Components can call them
+ * through `@arolariu/components`; each component module (a client subpath) keeps re-exporting its helper.
+ */
+const serverCallableClassHelpers = [
+  ["badgeVariants", "_badge-variants", "badge"],
+  ["buttonGroupVariants", "_button-group-variants", "button-group"],
+  ["buttonVariants", "_button-variants", "button"],
+  ["markerVariants", "_marker-variants", "marker"],
+  ["navigationMenuTriggerStyle", "_navigation-menu-trigger-style", "navigation-menu"],
+  ["tabsListVariants", "_tabs-list-variants", "tabs"],
+  ["toggleVariants", "_toggle-variants", "toggle"],
+] as const;
+
+/** Whether a module's directive prologue contains `"use client"`. */
+function hasClientDirective(text: string, kind: ts.ScriptKind): boolean {
+  for (const statement of ts.createSourceFile("module", text, ts.ScriptTarget.Latest, true, kind).statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) return false;
+    if (statement.expression.text === "use client") return true;
+  }
+  return false;
+}
+
+function scriptKind(file: string): ts.ScriptKind {
+  if (file.endsWith(".tsx")) return ts.ScriptKind.TSX;
+  return file.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+}
+
+/** The module specifiers a root module re-exports a runtime binding from; type-only re-exports are erased. */
+function reexportSources(root: ts.SourceFile, name: string): string[] {
+  const sources: string[] = [];
+  for (const statement of root.statements) {
+    if (!ts.isExportDeclaration(statement) || statement.isTypeOnly || !statement.exportClause) continue;
+    if (!ts.isNamedExports(statement.exportClause) || !statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier))
+      continue;
+    if (statement.exportClause.elements.some((element) => !element.isTypeOnly && element.name.text === name)) {
+      sources.push(statement.moduleSpecifier.text);
+    }
+  }
+  return sources;
+}
+
+type ImportResolver = (from: string, specifier: string) => string | undefined;
+
+/**
+ * Follows a module's runtime imports and re-exports. Type-only declarations are erased, stylesheets are leaves, and bare
+ * package specifiers are collected instead of followed.
+ */
+function runtimeImportGraph(entry: string, resolve: ImportResolver): Readonly<{modules: string[]; packages: string[]}> {
+  const modules: string[] = [];
+  const packages = new Set<string>();
+  const pending = [entry];
+  for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
+    if (modules.includes(file)) continue;
+    modules.push(file);
+    if (file.endsWith(".css")) continue;
+    const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, scriptKind(file));
+    for (const statement of source.statements) {
+      let specifier: ts.Expression | undefined;
+      if (ts.isImportDeclaration(statement) && statement.importClause?.phaseModifier !== ts.SyntaxKind.TypeKeyword) {
+        specifier = statement.moduleSpecifier;
+      } else if (ts.isExportDeclaration(statement) && !statement.isTypeOnly) {
+        specifier = statement.moduleSpecifier;
+      }
+      if (specifier === undefined || !ts.isStringLiteral(specifier)) continue;
+      const target = resolve(file, specifier.text);
+      if (target === undefined) packages.add(specifier.text);
+      else pending.push(target);
+    }
+  }
+  return {modules, packages: [...packages].sort((left, right) => left.localeCompare(right))};
+}
+
+/** Every module in the graph whose directive prologue makes it a client reference under React Server Components. */
+function clientModulesIn(modules: readonly string[]): string[] {
+  return modules.filter((file) => !file.endsWith(".css") && hasClientDirective(fs.readFileSync(file, "utf8"), scriptKind(file)));
+}
+
+/** Resolves the package's relative and `@/` source imports; bare package specifiers resolve to `undefined`. */
+function resolveSourceImport(from: string, specifier: string): string | undefined {
+  if (!specifier.startsWith(".") && !specifier.startsWith("@/")) return undefined;
+  const base = specifier.startsWith("@/")
+    ? path.join(import.meta.dirname, specifier.slice(2))
+    : path.resolve(path.dirname(from), specifier);
+  const target = [base, `${base}.ts`, `${base}.tsx`].find((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile());
+  if (target === undefined) throw new Error(`Unresolved source import ${specifier} from ${from}`);
+  return target;
+}
+
+/** Resolves emitted relative imports, which carry their file extension; bare package specifiers resolve to `undefined`. */
+function resolveEmittedImport(from: string, specifier: string): string | undefined {
+  if (!specifier.startsWith(".")) return undefined;
+  const target = path.resolve(path.dirname(from), specifier);
+  if (!fs.existsSync(target)) throw new Error(`Unresolved emitted import ${specifier} from ${from}`);
+  return target;
+}
+
+function requiredClass(styles: Readonly<Record<string, string>>, name: string): string {
+  const value = styles[name];
+  if (!value) throw new Error(`Missing CSS Module class: ${name}`);
+  return value;
+}
+
+describe("complete supported public surface", () => {
+  it("does not expose removed compatibility components or deprecated utilities", () => {
+    for (const name of [
+      "LegacyAlertDialogAction",
+      "LegacyCommandDialog",
+      "LegacyToaster",
+      "legacyToast",
+      "Cell",
+      "NavigationMenuViewport",
+      "NavigationMenuIndicator",
+      "PopoverAnchor",
+      "hexToHsl",
+      "hslToHex",
+      "isValidHexColor",
+      "getComplementaryColor",
+      "adjustLightness",
+      "parseHslString",
+    ]) {
+      expect(rootRuntime, name).not.toHaveProperty(name);
+    }
+  });
+
+  it("reconciles the 3.0 workspace while preserving the website's separate published 2.4 artifact", () => {
+    const repositoryDirectory = path.resolve(import.meta.dirname, "../../..");
+    const readManifest = (relativePath: string) => JSON.parse(fs.readFileSync(path.join(repositoryDirectory, relativePath), "utf8"));
+    const root = readManifest("package.json");
+    const lock = readManifest("package-lock.json");
+    const component = readManifest("packages/components/package.json");
+    const website = readManifest("sites/arolariu.ro/package.json");
+    const workspaceEntry = lock.packages["packages/components"];
+    const publishedEntry = lock.packages["sites/arolariu.ro/node_modules/@arolariu/components"];
+    const tarball = "https://registry.npmjs.org/@arolariu/components/-/components-2.4.0.tgz";
+
+    expect(root.devDependencies["@arolariu/components"]).toBe("3.0.0");
+    expect(root.devDependencies["@base-ui/react"]).toBe("1.9.0");
+    expect(lock.packages[""].devDependencies).toEqual(root.devDependencies);
+    expect(workspaceEntry.version).toBe(component.version);
+    expect(workspaceEntry.dependencies).toEqual(component.dependencies);
+    expect(workspaceEntry.devDependencies).toEqual(component.devDependencies);
+    expect(workspaceEntry.peerDependencies).toEqual(component.peerDependencies);
+    expect(lock.packages["node_modules/@arolariu/components"]).toEqual({resolved: "packages/components", link: true});
+    expect(website.dependencies["@arolariu/components"]).toBe(tarball);
+    expect(lock.packages["sites/arolariu.ro"].dependencies["@arolariu/components"]).toBe(tarball);
+    expect(publishedEntry.version).toBe("2.4.0");
+    expect(publishedEntry.resolved).toBe(tarball);
+    expect(publishedEntry.integrity).toBe(
+      "sha512-oAe3DaCDjQ/ETjgOFsfNXIU7tsYmKlVPxKh0BDKmHqVaiA8ldNER31lM9CH0JJKVCXGvLQtXK35OnilYyCPRdg==",
+    );
+    expect(publishedEntry.link).toBeUndefined();
+    const workspaceDirectory = fs.realpathSync(path.join(repositoryDirectory, "node_modules", "@arolariu", "components"));
+    const publishedDirectory = fs.realpathSync(
+      path.join(repositoryDirectory, "sites", "arolariu.ro", "node_modules", "@arolariu", "components"),
+    );
+    expect(workspaceDirectory).toBe(fs.realpathSync(path.join(repositoryDirectory, "packages", "components")));
+    expect(publishedDirectory).not.toBe(workspaceDirectory);
+    expect(JSON.parse(fs.readFileSync(path.join(publishedDirectory, "package.json"), "utf8")).version).toBe("2.4.0");
+  });
+
+  it.each(supportedComponentModules)("preserves every runtime export from the real %s module", async (name) => {
+    const module: Record<string, unknown> = await import(`./components/ui/${name}.tsx`);
+    for (const [exportName, value] of Object.entries(module)) {
+      expect(rootRuntime[exportName], `${name}.${exportName}`).toBe(value);
+    }
+  });
+
+  it.each(supportedHookModules)("preserves every runtime export from the real %s hook", async (name) => {
+    const module: Record<string, unknown> = await import(`./hooks/${name}.tsx`);
+    for (const [exportName, value] of Object.entries(module)) {
+      expect(rootRuntime[exportName], `${name}.${exportName}`).toBe(value);
+    }
+  });
+
+  it("preserves every named public type and merged namespace without wildcard ambiguity", () => {
+    const packageDirectory = path.resolve(import.meta.dirname, "..");
+    const configPath = path.join(packageDirectory, "tsconfig.json");
+    const config = ts.readConfigFile(configPath, ts.sys.readFile);
+    expect(config.error).toBeUndefined();
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, packageDirectory);
+    const files = [
+      ...supportedComponentModules.map((name) => path.join(import.meta.dirname, "components", "ui", `${name}.tsx`)),
+      ...supportedHookModules.map((name) => path.join(import.meta.dirname, "hooks", `${name}.tsx`)),
+      path.join(import.meta.dirname, "lib", "utilities.ts"),
+      path.join(import.meta.dirname, "lib", "color-conversion-utilities.ts"),
+      path.join(import.meta.dirname, "index.ts"),
+    ];
+    const program = ts.createProgram(files, {...parsed.options, noEmit: true, strict: true, strictNullChecks: true});
+    const checker = program.getTypeChecker();
+    const rootFile = program.getSourceFile(path.join(import.meta.dirname, "index.ts"));
+    if (!rootFile) throw new Error("The real package root was not loaded.");
+    const rootSymbol = checker.getSymbolAtLocation(rootFile);
+    if (!rootSymbol) throw new Error("The real package root has no module symbol.");
+    const rootExports = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    assertCanonicalDeclarations(checker, rootExports);
+    for (const name of retainedFormTypes) expect(rootExports.has(name), name).toBe(true);
+    const missing: string[] = [];
+    for (const file of files.slice(0, -1)) {
+      const source = program.getSourceFile(file);
+      if (!source) throw new Error(`Public source was not loaded: ${file}`);
+      const symbol = checker.getSymbolAtLocation(source);
+      if (!symbol) throw new Error(`Public source has no module symbol: ${file}`);
+      for (const sourceExport of checker.getExportsOfModule(symbol)) {
+        const rootName = path.basename(file) === "form.tsx" && sourceExport.name === "FieldError" ? "RHFFieldError" : sourceExport.name;
+        const rootExport = rootExports.get(rootName);
+        if (!rootExport) {
+          missing.push(`${path.basename(file)}:${rootName}`);
+          continue;
+        }
+        const sourceTarget = sourceExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sourceExport) : sourceExport;
+        const rootTarget = rootExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootExport) : rootExport;
+        expect(rootTarget, `${path.basename(file)}:${rootName} must retain its original type/namespace`).toBe(sourceTarget);
+      }
+    }
+    expect(missing).toEqual([]);
+  }, 30000);
+
+  it("retains non-deprecated Recharts identities without colliding with the native Label", () => {
+    const dependency: Readonly<Record<string, unknown>> = Recharts;
+    for (const name of retainedChartAliases) {
+      expect(rootRuntime[name], name).toBe(dependency[name === "RechartsLabel" ? "Label" : name]);
+    }
+    expect(exports.ChartLegend).toBe(Recharts.Legend);
+    expect(exports.ChartTooltip).toBe(Recharts.Tooltip);
+    expect(exports.Label).not.toBe(Recharts.Label);
+  });
+
+  it("retains RHF identity rather than wrapping its provider, controller or hooks", () => {
+    expect(exports.Form).toBe(ReactHookForm.FormProvider);
+    expect(exports.Controller).toBe(ReactHookForm.Controller);
+    for (const name of ["useController", "useFieldArray", "useForm", "useFormContext", "useFormState", "useWatch"] as const) {
+      expect(exports[name]).toBe(ReactHookForm[name]);
+    }
+  });
+
+  it("does not expose private helpers or unselected optional engines at the root", () => {
+    for (const name of [
+      "useVisualEffects",
+      "useVisualEffectPolicy",
+      "useReducedMotionPreference",
+      "_visualEffects",
+      "SonnerToaster",
+      "Headless",
+      "Cmdk",
+    ]) {
+      expect(exports).not.toHaveProperty(name);
+    }
+    expect(Object.keys(exports).some((name) => name.startsWith("_"))).toBe(false);
+  });
+
+  it("keeps every private module export internal except the root class helpers", () => {
+    const privateModules = import.meta.glob<Record<string, unknown>>(
+      ["./components/ui/_*.{ts,tsx}", "./hooks/_*.{ts,tsx}", "./lib/_*.{ts,tsx}", "!**/*.{test,spec,stories}.*"],
+      {eager: true},
+    );
+    const helpers = new Map<string, string>(serverCallableClassHelpers.map(([name, module]) => [name, `./components/ui/${module}.ts`]));
+    expect(Object.keys(privateModules)).toEqual(
+      expect.arrayContaining([
+        "./components/ui/_command-navigation.ts",
+        "./components/ui/_command-state.ts",
+        "./components/ui/_dropdrawer-mobile.tsx",
+        "./components/ui/_visual-effects.tsx",
+        "./lib/_focus-availability.ts",
+        ...helpers.values(),
+      ]),
+    );
+    const leaked: string[] = [];
+    for (const [file, module] of Object.entries(privateModules)) {
+      for (const [name, value] of Object.entries(module)) {
+        if (helpers.get(name) === file) expect(rootRuntime[name], `${file}:${name}`).toBe(value);
+        else if (name in rootRuntime) leaked.push(`${file}:${name}`);
+      }
+    }
+    expect(leaked).toEqual([]);
+  });
+
+  it("re-exports every pure class helper from a directive-free private module that needs no React (Server Components)", () => {
+    const rootFile = path.join(import.meta.dirname, "index.ts");
+    const rootText = fs.readFileSync(rootFile, "utf8");
+    expect(hasClientDirective(rootText, ts.ScriptKind.TS)).toBe(false);
+    const root = ts.createSourceFile(rootFile, rootText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const [name, privateModule] of serverCallableClassHelpers) {
+      const specifier = `./components/ui/${privateModule}`;
+      expect(reexportSources(root, name), name).toEqual([specifier]);
+      const entry = resolveSourceImport(rootFile, specifier);
+      if (entry === undefined) throw new Error(`${name} has no private source module`);
+      const {modules, packages} = runtimeImportGraph(entry, resolveSourceImport);
+      expect(clientModulesIn(modules), `${name} client modules`).toEqual([]);
+      // `cn()` is the only runtime dependency: no React, Base UI or other client package is loaded.
+      expect(packages, `${name} runtime packages`).toEqual(["clsx"]);
+      expect(
+        modules.filter((file) => file.endsWith(".module.css")),
+        `${name} stylesheet`,
+      ).toHaveLength(1);
+    }
+  });
+
+  it("calls every class helper through the root without rendering, with one identity across root, subpath and private module", async () => {
+    for (const [name, privateModule, componentModule] of serverCallableClassHelpers) {
+      const helperModule: Record<string, unknown> = await import(`./components/ui/${privateModule}.ts`);
+      const component: Record<string, unknown> = await import(`./components/ui/${componentModule}.tsx`);
+      expect(typeof helperModule[name], name).toBe("function");
+      expect(rootRuntime[name], name).toBe(helperModule[name]);
+      expect(component[name], name).toBe(helperModule[name]);
+    }
+    expect(exports.badgeVariants({variant: "outline", className: "caller"})).toBe(
+      `${requiredClass(badgeStyles, "badge")} ${requiredClass(badgeStyles, "outline")} caller`,
+    );
+    expect(exports.buttonVariants({variant: "outline", size: "sm", className: "caller"})).toBe(
+      `${requiredClass(buttonStyles, "button")} ${requiredClass(buttonStyles, "outline")} ${requiredClass(buttonStyles, "sizeSm")} caller`,
+    );
+    expect(exports.buttonGroupVariants({orientation: "vertical", className: "caller"})).toBe(
+      `${requiredClass(buttonGroupStyles, "root")} ${requiredClass(buttonGroupStyles, "vertical")} caller`,
+    );
+    expect(exports.markerVariants({variant: "separator", className: "caller", class: "upstream"})).toBe(
+      `${requiredClass(markerStyles, "marker")} ${requiredClass(markerStyles, "separator")} caller upstream`,
+    );
+    expect(exports.navigationMenuTriggerStyle("caller")).toBe(`${requiredClass(navigationMenuStyles, "trigger")} caller`);
+    expect(exports.tabsListVariants({variant: "line", className: "caller"})).toBe(
+      `${requiredClass(tabsStyles, "list")} ${requiredClass(tabsStyles, "line")} caller`,
+    );
+    expect(exports.toggleVariants({variant: "outline", size: "sm", className: "caller"})).toBe(
+      `${requiredClass(toggleStyles, "root")} ${requiredClass(toggleStyles, "outline")} ${requiredClass(toggleStyles, "sizeSm")} caller`,
+    );
+  });
+
+  it("ships the migration guide and preserves the approved runtime peer contract", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
+    expect(manifest.version).toBe("3.0.0");
+    expect(manifest.peerDependencies.react).toBe("^19");
+    expect(manifest.peerDependencies["react-dom"]).toBe("^19");
+    for (const name of ["legacy-alert-dialog-action", "legacy-command-dialog", "legacy-toast"]) {
+      expect(manifest.exports).not.toHaveProperty(`./${name}`);
+    }
+    expect(manifest.files).toContain("MIGRATION.md");
+    expect(manifest.peerDependencies).toEqual({
+      "@base-ui/react": "^1.9",
+      motion: "^13 || ^14",
+      react: "^19",
+      "react-dom": "^19",
+      "react-hook-form": "^7",
+      recharts: "^3.8",
+    });
+    expect(manifest.dependencies).toEqual({
+      clsx: "*",
+      "embla-carousel-react": "*",
+      "input-otp": "*",
+      "lucide-react": "*",
+      "react-day-picker": "*",
+      "react-resizable-panels": "*",
+    });
+    expect(manifest.sideEffects).toEqual(["**/*.css"]);
+    expect(manifest.source).toBe("src/index.ts");
+    expect(manifest.main).toBe("dist/index.js");
+    expect(manifest.types).toBe("dist/index.d.ts");
+    expect(manifest.style).toBe("dist/index.css");
+    for (const excluded of ["!src/**/*.test.*", "!src/**/*.spec.*", "!src/**/*.stories.*"]) {
+      expect(manifest.files).toContain(excluded);
+    }
+  });
+});
+
+// Opt in only after the parent builds and installs the actual npm-packed artifact.
+const packedRoot = process.env["AROLARIU_COMPONENTS_PACKED_ROOT"];
+describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () => {
+  function getPackedRoot(): string {
+    if (!packedRoot) throw new Error("AROLARIU_COMPONENTS_PACKED_ROOT must identify the unpacked/installed npm artifact.");
+    const directory = fs.realpathSync(packedRoot);
+    if (directory === fs.realpathSync(path.resolve(import.meta.dirname, ".."))) {
+      throw new Error("The workspace is not a packed artifact.");
+    }
+    return directory;
+  }
+
+  it("contains the real public ESM/declaration/style modules and migration guide, not tests or stories", () => {
+    const directory = getPackedRoot();
+    const manifest = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"));
+    expect(manifest.name).toBe("@arolariu/components");
+    expect(manifest.version).toBe("3.0.0");
+    expect(manifest.peerDependencies.react).toBe("^19");
+    expect(manifest.peerDependencies["react-dom"]).toBe("^19");
+    for (const name of ["legacy-alert-dialog-action", "legacy-command-dialog", "legacy-toast"]) {
+      expect(manifest.exports).not.toHaveProperty(`./${name}`);
+      expect(fs.existsSync(path.join(directory, "src", "components", "ui", `${name}.tsx`))).toBe(false);
+      expect(fs.existsSync(path.join(directory, "dist", "components", "ui", `${name}.js`))).toBe(false);
+    }
+    for (const required of ["MIGRATION.md", "src/index.ts", "dist/index.js", "dist/index.d.ts", "dist/index.css", "dist/styles.d.ts"]) {
+      expect(fs.existsSync(path.join(directory, required)), required).toBe(true);
+    }
+    for (const [sourceDirectory, names] of [
+      ["components/ui", supportedComponentModules],
+      ["hooks", supportedHookModules],
+      ["lib", ["utilities", "color-conversion-utilities"]],
+    ] as const) {
+      for (const name of names) {
+        const entry = manifest.exports[`./${name}`];
+        expect(entry).toEqual({
+          types: `./dist/${sourceDirectory}/${name}.d.ts`,
+          import: `./dist/${sourceDirectory}/${name}.js`,
+          default: `./dist/${sourceDirectory}/${name}.js`,
+        });
+        for (const target of [entry.types, entry.import]) expect(fs.existsSync(path.join(directory, target)), target).toBe(true);
+        if (sourceDirectory === "components/ui") {
+          const sourceText = fs.readFileSync(path.join(directory, "src", sourceDirectory, `${name}.tsx`), "utf8");
+          const outputText = fs.readFileSync(path.join(directory, entry.import), "utf8");
+          expect(hasClientDirective(outputText, ts.ScriptKind.JS), `${name} client/server boundary`).toBe(
+            hasClientDirective(sourceText, ts.ScriptKind.TSX),
+          );
+        }
+      }
+    }
+    const packedFiles = ts.sys.readDirectory(directory, undefined, ["node_modules"]);
+    expect(packedFiles.filter((file) => /\.(test|spec|stories)\./u.test(file))).toEqual([]);
+    expect(Object.keys(manifest.exports).some((key) => key.includes("_") && manifest.exports[key] !== null)).toBe(false);
+  });
+
+  it("re-exports the class helpers from directive-free emitted modules whose runtime graph needs no React", () => {
+    const directory = getPackedRoot();
+    const rootFile = path.join(directory, "dist", "index.js");
+    const rootText = fs.readFileSync(rootFile, "utf8");
+    expect(hasClientDirective(rootText, ts.ScriptKind.JS), "dist/index.js").toBe(false);
+    const root = ts.createSourceFile(rootFile, rootText, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    for (const [name, privateModule] of serverCallableClassHelpers) {
+      const source = path.join(directory, "src", "components", "ui", `${privateModule}.ts`);
+      expect(hasClientDirective(fs.readFileSync(source, "utf8"), ts.ScriptKind.TS), `src ${privateModule}`).toBe(false);
+      expect(reexportSources(root, name), name).toEqual([`./components/ui/${privateModule}.js`]);
+      const {modules, packages} = runtimeImportGraph(
+        path.join(directory, "dist", "components", "ui", `${privateModule}.js`),
+        resolveEmittedImport,
+      );
+      expect(clientModulesIn(modules), `${name} client modules`).toEqual([]);
+      expect(packages, `${name} runtime packages`).toEqual(["clsx"]);
+    }
+  });
+
+  it("preserves named public declarations and namespace members through every packed subpath", () => {
+    const directory = getPackedRoot();
+    const files = supportedComponentModules.map((name) => path.join(directory, "dist", "components", "ui", `${name}.d.ts`));
+    files.push(...supportedHookModules.map((name) => path.join(directory, "dist", "hooks", `${name}.d.ts`)));
+    files.push(
+      path.join(directory, "dist", "lib", "utilities.d.ts"),
+      path.join(directory, "dist", "lib", "color-conversion-utilities.d.ts"),
+    );
+    const indexFile = path.join(directory, "dist", "index.d.ts");
+    const program = ts.createProgram([...files, indexFile], {
+      noEmit: true,
+      strict: true,
+      skipLibCheck: false,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+      types: ["node", "react", "react-dom"],
+    });
+    expect(ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual(
+      [],
+    );
+    const checker = program.getTypeChecker();
+    const source = program.getSourceFile(indexFile);
+    if (!source) throw new Error("Packed root declarations were not loaded.");
+    const rootSymbol = checker.getSymbolAtLocation(source);
+    if (!rootSymbol) throw new Error("Packed root declarations have no module symbol.");
+    const rootTypes = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
+    assertCanonicalDeclarations(checker, rootTypes);
+    for (const name of retainedFormTypes) expect(rootTypes.has(name), name).toBe(true);
+    for (const file of files) {
+      const moduleFile = program.getSourceFile(file);
+      if (!moduleFile) throw new Error(`Packed declarations absent: ${file}`);
+      const moduleSymbol = checker.getSymbolAtLocation(moduleFile);
+      if (!moduleSymbol) throw new Error(`Packed declaration module absent: ${file}`);
+      for (const symbol of checker.getExportsOfModule(moduleSymbol)) {
+        const rootName = path.basename(file) === "form.d.ts" && symbol.name === "FieldError" ? "RHFFieldError" : symbol.name;
+        const rootType = rootTypes.get(rootName);
+        if (!rootType) throw new Error(`Packed root declaration omits ${rootName}.`);
+        const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+        const rootTarget = rootType.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootType) : rootType;
+        expect(rootTarget, rootName).toBe(target);
+      }
+    }
+  }, 120000);
+
+  it("keeps mounted Storybook styles out of shipped source and executable assets", () => {
+    const directory = getPackedRoot();
+    const assets = ts.sys.readDirectory(directory, [".css", ".js", ".tsx"], ["node_modules"]);
+    const demoSelectors: string[] = [];
+    for (const file of assets) {
+      const content = fs.readFileSync(file, "utf8");
+      expect(content, path.relative(directory, file)).not.toContain("ac-story-");
+      if (!file.endsWith(".css")) continue;
+      parse(content, {from: file}).walkRules((rule) => {
+        selectorParser((selectors) => {
+          selectors.walkClasses((className) => {
+            if (/^_?(?:story|demo|example)(?:[A-Z_-]|$)/u.test(className.value)) {
+              demoSelectors.push(`${path.relative(directory, file)}: ${className.value}`);
+            }
+          });
+        }).processSync(rule.selector);
+      });
+    }
+    expect(demoSelectors).toEqual([]);
+  });
+
+  it("loads every packed ESM entrypoint with real peers and rejects private helper imports", () => {
+    const script = `
+      import {registerHooks} from "node:module";
+      import {readFileSync} from "node:fs";
+      import assert from "node:assert/strict";
+      registerHooks({load(url, context, nextLoad) {
+        if (url.endsWith(".css")) {
+          readFileSync(new URL(url), "utf8");
+          return {format: "module", source: "export default {};", shortCircuit: true};
+        }
+        return nextLoad(url, context);
+      }});
+      const root = await import("@arolariu/components");
+      for (const name of ${JSON.stringify([...supportedComponentModules, ...supportedHookModules, "utilities", "color-conversion-utilities"])}) {
+        const module = await import("@arolariu/components/" + name);
+        for (const [key, value] of Object.entries(module)) assert.equal(root[key], value, name + "." + key);
+      }
+      for (const name of ${JSON.stringify(retainedChartAliases)}) assert.ok(root[name] !== undefined, name);
+      // Pure class helpers run from the root import in plain Node: no DOM and no React render.
+      for (const name of ${JSON.stringify(serverCallableClassHelpers.map(([name]) => name))}) {
+        const classes = root[name]();
+        assert.ok(typeof classes === "string" && classes.length > 0, name);
+      }
+      for (const specifier of [
+        "@arolariu/components/_visual-effects",
+        "@arolariu/components/components/ui/_visual-effects",
+        "@arolariu/components/_button-variants",
+        "@arolariu/components/components/ui/_button-variants",
+      ]) {
+        await assert.rejects(import(specifier), {code: "ERR_PACKAGE_PATH_NOT_EXPORTED"});
+      }
+      console.log("Packed ESM root/subpath identities and private-path rejection passed.");
+    `;
+    // CSS is the sole Node platform boundary; actual CSS files must exist and are read.
+    const output = execFileSync(process.execPath, ["--input-type=module", "--eval", script], {cwd: getPackedRoot(), encoding: "utf8"});
+    expect(output).toContain("Packed ESM root/subpath identities and private-path rejection passed.");
+  }, 30000);
+});
 
 describe("index.ts exports", () => {
+  it("exposes supported local loading primitives at the root", () => {
+    for (const name of [
+      "AsyncBoundary",
+      "CardSkeleton",
+      "ErrorBoundary",
+      "FocusScope",
+      "FormSkeleton",
+      "ListSkeleton",
+      "LoadingOverlay",
+      "TableSkeleton",
+    ]) {
+      expect(exports).toHaveProperty(name);
+    }
+  });
+
+  it.each([
+    ["AsyncBoundary", AsyncBoundary],
+    ["CardSkeleton", CardSkeleton],
+    ["ErrorBoundary", ErrorBoundary],
+    ["FocusScope", FocusScope],
+    ["FormSkeleton", FormSkeleton],
+    ["ListSkeleton", ListSkeleton],
+    ["LoadingOverlay", LoadingOverlay],
+    ["TableSkeleton", TableSkeleton],
+  ] as const)("re-exports %s from its public module", (name, component) => {
+    expect(exports[name]).toBe(component);
+  });
+
+  it("preserves the named public prop types at the root", () => {
+    expectTypeOf<AsyncBoundaryProps>().toEqualTypeOf<LocalAsyncBoundaryProps>();
+    expectTypeOf<CardSkeletonProps>().toEqualTypeOf<LocalCardSkeletonProps>();
+    expectTypeOf<ErrorBoundaryProps>().toEqualTypeOf<LocalErrorBoundaryProps>();
+    expectTypeOf<FocusScopeProps>().toEqualTypeOf<LocalFocusScopeProps>();
+    expectTypeOf<FormSkeletonProps>().toEqualTypeOf<LocalFormSkeletonProps>();
+    expectTypeOf<ListSkeletonProps>().toEqualTypeOf<LocalListSkeletonProps>();
+    expectTypeOf<LoadingOverlayProps>().toEqualTypeOf<LocalLoadingOverlayProps>();
+    expectTypeOf<TableSkeletonProps>().toEqualTypeOf<LocalTableSkeletonProps>();
+  });
+
+  it("preserves the useFocusManager and useAnnounce helper types at the root", () => {
+    expectTypeOf<FocusManager>().toEqualTypeOf<LocalFocusManager>();
+    expectTypeOf<Politeness>().toEqualTypeOf<LocalPoliteness>();
+    expectTypeOf(exports.useFocusManager).returns.toEqualTypeOf<FocusManager>();
+    expectTypeOf(exports.useAnnounce).returns.parameter(1).toEqualTypeOf<Politeness | undefined>();
+  });
+
   it("should export components and utilities", () => {
     expect(exports).toBeDefined();
     const exportKeys = Object.keys(exports);
@@ -358,13 +1235,13 @@ describe("index.ts exports", () => {
   describe("NavigationMenu", () => {
     it("should export NavigationMenu", () => expect(exports).toHaveProperty("NavigationMenu"));
     it("should export NavigationMenuContent", () => expect(exports).toHaveProperty("NavigationMenuContent"));
-    it("should export NavigationMenuIndicator", () => expect(exports).toHaveProperty("NavigationMenuIndicator"));
+    it("does not export the removed navigation indicator", () => expect(exports).not.toHaveProperty("NavigationMenuIndicator"));
     it("should export NavigationMenuItem", () => expect(exports).toHaveProperty("NavigationMenuItem"));
     it("should export NavigationMenuLink", () => expect(exports).toHaveProperty("NavigationMenuLink"));
     it("should export NavigationMenuList", () => expect(exports).toHaveProperty("NavigationMenuList"));
     it("should export NavigationMenuTrigger", () => expect(exports).toHaveProperty("NavigationMenuTrigger"));
     it("should export navigationMenuTriggerStyle", () => expect(exports).toHaveProperty("navigationMenuTriggerStyle"));
-    it("should export NavigationMenuViewport", () => expect(exports).toHaveProperty("NavigationMenuViewport"));
+    it("does not export the removed viewport adapter", () => expect(exports).not.toHaveProperty("NavigationMenuViewport"));
   });
 
   describe("NumberField", () => {
@@ -388,7 +1265,7 @@ describe("index.ts exports", () => {
 
   describe("Popover", () => {
     it("should export Popover", () => expect(exports).toHaveProperty("Popover"));
-    it("should export PopoverAnchor", () => expect(exports).toHaveProperty("PopoverAnchor"));
+    it("does not export the removed structural anchor", () => expect(exports).not.toHaveProperty("PopoverAnchor"));
     it("should export PopoverContent", () => expect(exports).toHaveProperty("PopoverContent"));
     it("should export PopoverTrigger", () => expect(exports).toHaveProperty("PopoverTrigger"));
   });

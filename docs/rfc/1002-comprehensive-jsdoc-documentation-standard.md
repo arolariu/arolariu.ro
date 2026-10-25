@@ -10,17 +10,62 @@
 
 ## Abstract
 
-This RFC documents the comprehensive JSDoc/TSDoc documentation standard employed throughout the arolariu.ro frontend (`sites/arolariu.ro`) codebase. Built on **Next.js 16** (App Router) with **React 19**, this TypeScript-based application uses **type-safe, IntelliSense-optimized JSDoc comments** that serve multiple purposes: IDE autocomplete, API documentation generation, developer onboarding, and architectural knowledge preservation.
+This RFC documents the comprehensive JSDoc/TSDoc documentation standard employed throughout the arolariu.ro frontend (`sites/arolariu.ro`)
+codebase. Built on **Next.js 16** (App Router) with **React 19**, this TypeScript-based application uses **type-safe, IntelliSense-optimized
+JSDoc comments** that serve multiple purposes: IDE autocomplete, API documentation generation, developer onboarding, and architectural
+knowledge preservation.
 
-Unlike minimal code comments, our JSDoc standard creates **production-grade, tutorial-level documentation** embedded in source code. This documentation explains not just the *what* (visible in code), but the *why* (architectural context), *how* (usage patterns), *when* (appropriate use cases), and *what trade-offs* were considered during implementation.
+Unlike minimal code comments, our JSDoc standard creates **production-grade, tutorial-level documentation** embedded in source code. This
+documentation explains not just the _what_ (visible in code), but the _why_ (architectural context), _how_ (usage patterns), _when_
+(appropriate use cases), and _what trade-offs_ were considered during implementation.
 
-This standard leverages JSDoc/TSDoc tags (`@param`, `@returns`, `@example`, `@fileoverview`, `@see`, `@remarks`, etc.) to create rich, structured, cross-referenced documentation that transforms the codebase into a **living technical manual** for TypeScript/React development.
+This standard leverages JSDoc/TSDoc tags (`@param`, `@returns`, `@example`, `@fileoverview`, `@see`, `@remarks`, etc.) to create rich,
+structured, cross-referenced documentation that transforms the codebase into a **living technical manual** for TypeScript/React development.
 
 ---
 
 ## Documentation Accuracy Note
 
-If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be
+updated.
+
+### Component package contract documentation
+
+For `@arolariu/components`, document the actual primitive/native owner of render state, callback details, DOM refs and namespace types. Do
+not describe a polymorphic ref as a fixed button/div, a nullable generic value as string-only, or a primitive callback as stateless. Public
+standalone prop/state names accompany supported namespaces through explicit package exports; collision aliases such as `RHFFieldError`,
+`RechartsLabel` and `ToastData` must be deliberate and explained.
+
+Version-scoped MIGRATION/README/EXAMPLES/CHANGELOG entries must distinguish canonical APIs from removed ones, with exact before/after
+imports and composition. Preserve historical guides rather than overwriting old-version instructions. Document breaking defaults, native
+tags, error/count limits, value/nullability, callback/render ownership, retained extensions and intentional no-ops. Private underscore
+helpers must not appear as advertised package APIs.
+
+Source tests/types, built/packed declarations/modules/CSS, React-floor source evidence, React-floor packed evidence and physical-browser
+limits are different claims; attribute each to its own evidence. Shipped documentation and RFCs state the verification commands and what
+they cover, not dated run logs, test or file counts, or review identifiers, which go stale with every change.
+
+#### Package prop documentation
+
+Every public prop that an `@arolariu/components` component declares or re-declares carries its own JSDoc description, whether the prop is
+declared in an interface, a type alias or an intersection member. An optional prop with a default states it with `@default`, matching the
+implementation, and the tag changes whenever the default does; required props have no `@default`. A wrapper that overrides an inherited
+default (for example Base UI placement) re-declares that prop with its own description and `@default` instead of inheriting the primitive's
+documentation. Props passed through unchanged may rely on the primitive's documentation.
+
+```typescript
+export type ExampleTriggerProps = Readonly<{
+  /**
+   * Accessible name for the icon-only trigger. Localize it.
+   */
+  label: string;
+  /**
+   * Side of the trigger the popup opens on.
+   * @default "bottom"
+   */
+  side?: "top" | "bottom";
+}>;
+```
 
 ---
 
@@ -46,8 +91,9 @@ If any example in this RFC diverges from the live implementation, source code in
 
 TypeScript/React frontends face unique documentation challenges:
 
-1. **Framework Complexity**: Next.js App Router, React Server Components, Client Components, Server Actions—each requires different mental models
-2. **Type Confusion**: TypeScript types are visible in code, but their *purpose* and *constraints* are not
+1. **Framework Complexity**: Next.js App Router, React Server Components, Client Components, Server Actions—each requires different mental
+   models
+2. **Type Confusion**: TypeScript types are visible in code, but their _purpose_ and _constraints_ are not
 3. **Context Loss**: Why was a component memoized? Why client-side only? Why this state management approach?
 4. **Scattered Knowledge**: Architecture decisions hidden in Slack threads or lost in team memory
 5. **Onboarding Friction**: New developers struggle with Next.js conventions and project-specific patterns
@@ -83,16 +129,16 @@ Our JSDoc/TSDoc standard addresses these challenges by:
 
 ### Documentation Levels
 
-| Level | Audience | Content | JSDoc Tags |
-|-------|----------|---------|-----------|
-| **Summary** | All | One-sentence description of purpose | `/** ... */` (first line) |
-| **Detailed Explanation** | Developers | Multi-paragraph context, usage, design decisions | `@remarks`, `@description` |
-| **Parameter Context** | API Consumers | Parameter types, constraints, valid ranges, defaults | `@param` |
-| **Return Value** | API Consumers | What gets returned, when undefined, edge cases | `@returns` |
-| **Examples** | Learners | Real code samples showing typical usage | `@example` |
-| **Cross-References** | Architects | Links to related types, components, patterns, RFCs | `@see`, `@link` |
-| **Type Context** | TypeScript Users | Generic type parameters, constraints, variance | `@template` |
-| **Deprecation** | Maintainers | What's deprecated, why, what to use instead | `@deprecated` |
+| Level                    | Audience         | Content                                              | JSDoc Tags                 |
+| ------------------------ | ---------------- | ---------------------------------------------------- | -------------------------- |
+| **Summary**              | All              | One-sentence description of purpose                  | `/** ... */` (first line)  |
+| **Detailed Explanation** | Developers       | Multi-paragraph context, usage, design decisions     | `@remarks`, `@description` |
+| **Parameter Context**    | API Consumers    | Parameter types, constraints, valid ranges, defaults | `@param`                   |
+| **Return Value**         | API Consumers    | What gets returned, when undefined, edge cases       | `@returns`                 |
+| **Examples**             | Learners         | Real code samples showing typical usage              | `@example`                 |
+| **Cross-References**     | Architects       | Links to related types, components, patterns, RFCs   | `@see`, `@link`            |
+| **Type Context**         | TypeScript Users | Generic type parameters, constraints, variance       | `@template`                |
+| **Deprecation**          | Maintainers      | What's deprecated, why, what to use instead          | `@deprecated`              |
 
 ---
 
@@ -100,7 +146,7 @@ Our JSDoc/TSDoc standard addresses these challenges by:
 
 ### Basic JSDoc Template
 
-```typescript
+````typescript
 /**
  * One-sentence description of what this element does (80 characters max).
  *
@@ -131,7 +177,7 @@ Our JSDoc/TSDoc standard addresses these challenges by:
  * @see {@link RelatedType}
  * @see {@link https://nextjs.org/docs/app/building-your-application/rendering/server-components}
  */
-```
+````
 
 ### File-Level Documentation
 
@@ -193,17 +239,17 @@ Use `@fileoverview` for comprehensive module documentation:
 /**
  * Formats a number as a currency string based on the specified currency code.
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string { }
+export function formatCurrency(amount: number, currency?: string | Currency): string {}
 
 /**
  * Extracts a Base64-encoded string from a Blob object.
  */
-export async function extractBase64FromBlob(blob: Blob): Promise<string> { }
+export async function extractBase64FromBlob(blob: Blob): Promise<string> {}
 
 /**
  * The footer component displaying site navigation, metadata, and legal links.
  */
-export default function Footer(): React.JSX.Element { }
+export default function Footer(): React.JSX.Element {}
 ```
 
 ### 2. Parameter Tag (`@param`)
@@ -230,16 +276,14 @@ export default function Footer(): React.JSX.Element { }
  * @param input.invoiceId - The UUID of the invoice to fetch.
  * @returns A typed success/error result. Identity is derived server-side.
  */
-export async function fetchInvoice(
-  input: Readonly<{invoiceId: string}>,
-): ServerActionResult<Readonly<Invoice>> { }
+export async function fetchInvoice(input: Readonly<{invoiceId: string}>): ServerActionResult<Readonly<Invoice>> {}
 
 /**
  * Formats a date string into a human-readable format.
  * @param dateString - The date string or Date object to format. Optional; returns empty string if not provided.
  * @returns A formatted date string in the format "MMM DD, YYYY" (e.g., "Mar 15, 2023").
  */
-export function formatDate(dateString?: string | Date): string { }
+export function formatDate(dateString?: string | Date): string {}
 
 /**
  * Executes a function within an OpenTelemetry span for distributed tracing.
@@ -251,8 +295,8 @@ export function formatDate(dateString?: string | Date): string { }
 export async function withSpan<T>(
   spanName: SpanOperationType,
   fn: (span: Span) => Promise<T>,
-  attributes?: Record<string, string | number | boolean>
-): Promise<T> { }
+  attributes?: Record<string, string | number | boolean>,
+): Promise<T> {}
 ```
 
 ### 3. Returns Tag (`@returns`)
@@ -276,7 +320,7 @@ export async function withSpan<T>(
  * Collects and returns comprehensive information about the user's browser and environment.
  * @returns A JSON string containing detailed browser and environment information.
  */
-export function dumpBrowserInformation(): Readonly<string> { }
+export function dumpBrowserInformation(): Readonly<string> {}
 
 /**
  * Function that generates a GUID via random number generation.
@@ -285,13 +329,13 @@ export function dumpBrowserInformation(): Readonly<string> { }
  * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
  * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
  */
-export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> { }
+export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {}
 
 /**
  * This hook fetches the invoice information.
  * @returns The invoice information and loading state.
  */
-export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType { }
+export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {}
 ```
 
 ### 4. Example Tag (`@example`)
@@ -329,7 +373,7 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
  * // Returns "£50.00"
  * formatCurrency(50, "GBP");
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string { }
+export function formatCurrency(amount: number, currency?: string | Currency): string {}
 ```
 
 ### 5. See/Link Tags (`@see`, `@link`)
@@ -432,7 +476,7 @@ Mark deprecated APIs with migration guidance:
  *
  * @see {@link fetchUserProfileV2}
  */
-export async function fetchUserProfile(userId: string): Promise<UserProfile> { }
+export async function fetchUserProfile(userId: string): Promise<UserProfile> {}
 ```
 
 ### 3. Inline Type Links
@@ -495,11 +539,7 @@ Use Markdown for hierarchical information:
  *
  * @see {@link https://opentelemetry.io/docs/specs/semconv/}
  */
-export type SpanOperationType =
-  | `http.server.${string}`
-  | `http.client.${string}`
-  | `db.${string}`
-  | `cache.${string}`;
+export type SpanOperationType = `http.server.${string}` | `http.client.${string}` | `db.${string}` | `cache.${string}`;
 ```
 
 ---
@@ -510,7 +550,7 @@ export type SpanOperationType =
 
 **Template**:
 
-```typescript
+````typescript
 /**
  * Brief description of what this component renders.
  *
@@ -528,8 +568,8 @@ export type SpanOperationType =
  * <MyComponent prop1="value" prop2={123} />
  * ```
  */
-export function MyComponent(props: MyComponentProps): React.JSX.Element { }
-```
+export function MyComponent(props: MyComponentProps): React.JSX.Element {}
+````
 
 **Real Examples**:
 
@@ -539,7 +579,7 @@ export function MyComponent(props: MyComponentProps): React.JSX.Element { }
  * This component is used to display the footer of the website.
  * @returns The footer component.
  */
-export default function Footer(): React.JSX.Element { }
+export default function Footer(): React.JSX.Element {}
 
 /**
  * The header component.
@@ -556,7 +596,7 @@ export default memo(Header);
 
 **Template**:
 
-```typescript
+````typescript
 /**
  * Hook description explaining what state/behavior it provides.
  *
@@ -575,8 +615,8 @@ export default memo(Header);
  * const { data, isLoading, error } = useMyHook({ id: '123' });
  * ```
  */
-export function useMyHook(input: InputType): OutputType { }
-```
+export function useMyHook(input: InputType): OutputType {}
+````
 
 **Real Example**:
 
@@ -592,14 +632,14 @@ export function useMyHook(input: InputType): OutputType { }
  *
  * **Error Handling**: Sets `isError` flag on fetch failure. Check this before rendering invoice data.
  */
-export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType { }
+export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {}
 ```
 
 ### Server Actions
 
 **Template**:
 
-```typescript
+````typescript
 "use server";
 
 /**
@@ -628,7 +668,7 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
 export async function myServerAction(param: Type): Promise<Result> {
   // Implementation
 }
-```
+````
 
 **Real Example**:
 
@@ -652,9 +692,7 @@ export async function myServerAction(param: Type): Promise<Result> {
  * @param input.invoiceId - The UUID of the invoice to fetch.
  * @returns A typed success/error result containing the invoice when authorized.
  */
-export async function fetchInvoice(
-  input: Readonly<{invoiceId: string}>,
-): ServerActionResult<Readonly<Invoice>> {
+export async function fetchInvoice(input: Readonly<{invoiceId: string}>): ServerActionResult<Readonly<Invoice>> {
   // Implementation
 }
 ```
@@ -663,7 +701,7 @@ export async function fetchInvoice(
 
 **Template**:
 
-```typescript
+````typescript
 /**
  * Type description explaining what it represents.
  *
@@ -686,7 +724,7 @@ export type MyType = {
   field1: string;
   field2: number;
 };
-```
+````
 
 **Real Examples**:
 
@@ -722,7 +760,7 @@ export type UploadStatus =
 
 **Template**:
 
-```typescript
+````typescript
 /**
  * Function description explaining what it does.
  *
@@ -741,8 +779,8 @@ export type UploadStatus =
  * const result = myUtility(input);
  * ```
  */
-export function myUtility(param: Type): Result { }
-```
+export function myUtility(param: Type): Result {}
+````
 
 **Real Examples**:
 
@@ -764,7 +802,7 @@ export function myUtility(param: Type): Result { }
  * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
  * GUID: b1624a43-1f96-4d22-b94f-d030cc5df437
  */
-export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> { }
+export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {}
 
 /**
  * This function checks if the browser storage is available.
@@ -782,7 +820,7 @@ export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> { }
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Storage}
  */
-export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage"): boolean { }
+export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage"): boolean {}
 ```
 
 ---
@@ -793,7 +831,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
 
 **Document Rendering Context**:
 
-```typescript
+````typescript
 /**
  * Root layout component wrapping the entire application.
  *
@@ -809,7 +847,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
  * @param props - Layout props including children
  * @returns The root layout JSX
  */
-export default async function RootLayout(props: LayoutProps<"/">): Promise<React.JSX.Element> { }
+export default async function RootLayout(props: LayoutProps<"/">): Promise<React.JSX.Element> {}
 
 /**
  * FontContextProvider component provides a context for managing font selection.
@@ -834,7 +872,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
   "use client";
   // Implementation
 }
-```
+````
 
 ### Memoization
 
@@ -921,7 +959,7 @@ function greet(name: string, age: number): string {
 
 ### Generic Constraints Documentation
 
-```typescript
+````typescript
 /**
  * Filters an array of items based on a predicate function.
  *
@@ -935,13 +973,10 @@ function greet(name: string, age: number): string {
  * const users = filterItems(allUsers, user => user.isActive);
  * ```
  */
-export function filterItems<T extends BaseEntity>(
-  items: T[],
-  predicate: (item: T) => boolean
-): T[] {
+export function filterItems<T extends BaseEntity>(items: T[], predicate: (item: T) => boolean): T[] {
   return items.filter(predicate);
 }
-```
+````
 
 ---
 
@@ -1062,7 +1097,7 @@ export interface HttpAttributes {
 
 **File**: `src/contexts/FontContext.tsx`
 
-```typescript
+````typescript
 /**
  * Default font for the application.
  * This font is used when no other font is selected.
@@ -1159,7 +1194,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 
   // ... rest of implementation
 }
-```
+````
 
 ---
 
@@ -1377,7 +1412,7 @@ export default [
  * @param id - Invoice ID
  * @returns Invoice
  */
-export async function fetchInvoice(id: string): Promise<Invoice> { }
+export async function fetchInvoice(id: string): Promise<Invoice> {}
 ```
 
 **Good**:
@@ -1396,9 +1431,7 @@ export async function fetchInvoice(id: string): Promise<Invoice> { }
  * @param input.invoiceId - The UUID of the invoice to fetch.
  * @returns A typed success/error result containing the invoice when accessible.
  */
-export async function fetchInvoice(
-  input: Readonly<{invoiceId: string}>,
-): ServerActionResult<Readonly<Invoice>> { }
+export async function fetchInvoice(input: Readonly<{invoiceId: string}>): ServerActionResult<Readonly<Invoice>> {}
 ```
 
 ### ❌ Anti-Pattern 2: Vague Summaries
@@ -1427,7 +1460,7 @@ export async function fetchInvoice(
 /**
  * Layout component.
  */
-export default function Layout() { }
+export default function Layout() {}
 ```
 
 **Good**:
@@ -1442,7 +1475,7 @@ export default function Layout() { }
  * **Suspense**: Uses React Suspense for streaming HTML with loading fallback.
  * **Metadata**: Generates Open Graph tags via Next.js metadata API.
  */
-export default async function Layout(props: LayoutProps) { }
+export default async function Layout(props: LayoutProps) {}
 ```
 
 ### ❌ Anti-Pattern 4: Implementation Details in Summary
@@ -1476,7 +1509,7 @@ export default async function Layout(props: LayoutProps) { }
 /**
  * Fetches all invoices.
  */
-export async function getInvoices(userId: string) { } // NOW: User-scoped
+export async function getInvoices(userId: string) {} // NOW: User-scoped
 ```
 
 **Good**:
@@ -1488,7 +1521,7 @@ export async function getInvoices(userId: string) { } // NOW: User-scoped
  * @param userId - User identifier used to scope invoice query
  * @returns Array of invoices owned by the user. Empty array if none found.
  */
-export async function getInvoices(userId: string) { }
+export async function getInvoices(userId: string) {}
 ```
 
 ---
@@ -1512,7 +1545,9 @@ Use this checklist when documenting new code:
 
 - [ ] Component purpose documented
 - [ ] Rendering context specified (Server/Client/Edge)
-- [ ] Props documented (if not using TypeScript interface)
+- [ ] Props documented: application components may rely on a TypeScript props interface; `@arolariu/components` props follow
+      [Package prop documentation](#package-prop-documentation) (a description on every public prop the package declares or re-declares and
+      `@default` on every such defaulted optional prop, whether in an interface or a type alias; pass-through props excepted)
 - [ ] Dependencies documented (context providers, hooks required)
 - [ ] Performance considerations (memoization, dynamic imports)
 - [ ] `@example` showing typical usage in JSX
@@ -1545,7 +1580,8 @@ Use this checklist when documenting new code:
 
 ## Conclusion
 
-The arolariu.ro frontend codebase employs a **comprehensive, framework-aware JSDoc/TSDoc standard** that transforms TypeScript code into self-documenting, educational material. This documentation serves as:
+The arolariu.ro frontend codebase employs a **comprehensive, framework-aware JSDoc/TSDoc standard** that transforms TypeScript code into
+self-documenting, educational material. This documentation serves as:
 
 1. **Living Architecture Documentation**: Next.js patterns, React best practices, design decisions embedded in code
 2. **API Reference Material**: IntelliSense tooltips, TypeDoc-generated sites for API consumers
@@ -1569,7 +1605,8 @@ The arolariu.ro frontend codebase employs a **comprehensive, framework-aware JSD
 
 ✅ **Document Framework Patterns**: Server/Client Components, Server Actions, SSR/CSR, dynamic imports, Suspense
 
-This standard ensures that every piece of TypeScript/React code is **self-documenting, contextually rich, and pedagogically valuable**—transforming the frontend codebase into a **living technical manual** that teaches Next.js/React patterns while it functions.
+This standard ensures that every piece of TypeScript/React code is **self-documenting, contextually rich, and pedagogically
+valuable**—transforming the frontend codebase into a **living technical manual** that teaches Next.js/React patterns while it functions.
 
 ---
 
@@ -1586,6 +1623,4 @@ This standard ensures that every piece of TypeScript/React code is **self-docume
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2025-01-26
-**Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+**Document Version**: 1.0.0 **Last Updated**: 2025-01-26 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))

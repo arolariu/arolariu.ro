@@ -23,6 +23,24 @@
 .indicator {
   height: inherit;
   border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary), white 10%) 0%, var(--ac-primary) 100%);
+  background: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary-emphasis), white 10%) 0%, var(--ac-primary-emphasis) 100%);
   transition: width var(--ac-transition-slow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .track {
+    border: 1px solid CanvasText;
+    background-color: Canvas;
+    box-shadow: none;
+  }
+
+  .indicator {
+    background: Highlight;
+  }
 }

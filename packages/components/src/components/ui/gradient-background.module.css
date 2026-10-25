@@ -3,4 +3,19 @@
   height: 100%;
   background-image: linear-gradient(135deg, #3b82f6 0%, #a855f7 50%, #ec4899 100%);
   background-size: 400% 400%;
+  background-position: 0% 50%;
+}
+
+.content {
+  position: relative;
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+@media (forced-colors: active) {
+  .root {
+    background-image: none;
+    background-color: Canvas;
+    color: CanvasText;
+  }
 }

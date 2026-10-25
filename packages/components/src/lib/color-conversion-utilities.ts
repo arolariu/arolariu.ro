@@ -151,17 +151,3 @@ export function parseHslStringToComponents(hslString: string): {hue: number; sat
     lightness: Number.parseInt(match.groups["light"] ?? "0", 10),
   };
 }
-
-// Legacy aliases for backwards compatibility (deprecated)
-/** @deprecated Use convertHexToHslString instead */
-export const hexToHsl = convertHexToHslString;
-/** @deprecated Use convertHslToHexString instead */
-export const hslToHex = convertHslToHexString;
-/** @deprecated Use validateHexColorFormat instead */
-export const isValidHexColor = validateHexColorFormat;
-/** @deprecated Use calculateComplementaryHexColor instead */
-export const getComplementaryColor = calculateComplementaryHexColor;
-/** @deprecated Use adjustHexColorLightness instead */
-export const adjustLightness = adjustHexColorLightness;
-/** @deprecated Use parseHslStringToComponents instead */
-export const parseHslString = parseHslStringToComponents;

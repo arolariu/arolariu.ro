@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
@@ -24,6 +24,307 @@ function renderCollapsible({onOpenChange}: Readonly<{onOpenChange?: (open: boole
 }
 
 describe("Collapsible", () => {
+  it("preserves separate CollapsibleTrigger children with render", () => {
+    render(
+      <Collapsible>
+        <CollapsibleTrigger render={<button />}>Details</CollapsibleTrigger>
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    expect(screen.getByRole("button", {name: "Details"})).toBeInTheDocument();
+  });
+
+  it("passes live primitive state to trigger and panel render callbacks", async () => {
+    const user = userEvent.setup();
+    const {rerender} = render(
+      <Collapsible>
+        <CollapsibleTrigger
+          render={(props, state) => (
+            <button
+              {...props}
+              data-open={String(state.open)}
+              data-is-disabled={String(state.disabled)}
+              data-transition={state.transitionStatus}
+            />
+          )}>
+          Details
+        </CollapsibleTrigger>
+        <CollapsibleContent
+          keepMounted
+          render={(props, state) => (
+            <section
+              {...props}
+              data-testid='render-panel'
+              data-open={String(state.open)}
+              data-transition={state.transitionStatus}
+            />
+          )}>
+          Body
+        </CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    const panel = screen.getByTestId("render-panel");
+    expect(trigger).toHaveAttribute("data-open", "false");
+    expect(trigger).toHaveAttribute("data-is-disabled", "false");
+    expect(panel).toHaveAttribute("data-open", "false");
+    expect(panel).not.toHaveAttribute("data-transition");
+
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("data-open", "true");
+    expect(panel).toHaveAttribute("data-open", "true");
+    expect(panel).toBeVisible();
+    await waitFor(() => expect(panel).toHaveAttribute("data-transition", "idle"));
+
+    rerender(
+      <Collapsible disabled>
+        <CollapsibleTrigger
+          render={(props, state) => (
+            <button
+              {...props}
+              data-open={String(state.open)}
+              data-is-disabled={String(state.disabled)}
+            />
+          )}>
+          Details
+        </CollapsibleTrigger>
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    expect(trigger).toHaveAttribute("data-open", "true");
+    expect(trigger).toHaveAttribute("data-is-disabled", "true");
+    expect(trigger).toBeDisabled();
+  });
+
+  it("merges render element refs, classes, and handlers without submitting a form", async () => {
+    const user = userEvent.setup();
+    const rootRef = React.createRef<HTMLDivElement>();
+    const triggerRef = React.createRef<HTMLButtonElement>();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const panelRef = React.createRef<HTMLDivElement>();
+    const clicks: string[] = [];
+    const submit = vi.fn();
+    render(
+      <form onSubmit={submit}>
+        <Collapsible ref={rootRef}>
+          <CollapsibleTrigger
+            ref={triggerRef}
+            className='wrapper-trigger'
+            onClick={() => clicks.push("wrapper")}
+            render={
+              <button
+                ref={childRef}
+                className='render-trigger'
+                onClick={() => clicks.push("element")}
+              />
+            }>
+            Details
+          </CollapsibleTrigger>
+          <CollapsibleContent
+            ref={panelRef}
+            className='wrapper-panel'
+            render={<div className='render-panel' />}>
+            Body
+          </CollapsibleContent>
+        </Collapsible>
+      </form>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    await user.click(trigger);
+
+    expect(rootRef.current).toContainElement(trigger);
+    expect(triggerRef.current).toBe(trigger);
+    expect(childRef.current).toBe(trigger);
+    expect(trigger).toHaveClass("wrapper-trigger", "render-trigger");
+    expect(panelRef.current).toHaveClass("wrapper-panel", "render-panel");
+    expect(clicks).toEqual(["element", "wrapper"]);
+    expect(trigger).toHaveAttribute("aria-controls", panelRef.current?.id);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("retains render content and cancellation through the real primitive handler", async () => {
+    const user = userEvent.setup();
+    const triggerRef = React.createRef<HTMLButtonElement>();
+    const childRef = React.createRef<HTMLButtonElement>();
+    const clicks: string[] = [];
+    render(
+      <Collapsible>
+        <CollapsibleTrigger
+          ref={triggerRef}
+          className='wrapper-trigger'
+          onClick={() => clicks.push("wrapper")}
+          render={
+            <button
+              ref={childRef}
+              className='child-trigger'
+              onClick={(event) => {
+                clicks.push("child");
+                if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+                  event.preventBaseUIHandler();
+                }
+              }}>
+              Details
+            </button>
+          }
+        />
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    await user.click(trigger);
+
+    expect(triggerRef.current).toBe(trigger);
+    expect(childRef.current).toBe(trigger);
+    expect(trigger).toHaveClass("wrapper-trigger", "child-trigger");
+    expect(clicks).toEqual(["child"]);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("forwards native change details so consumers can cancel opening", async () => {
+    const user = userEvent.setup();
+    const changes: {open: boolean; details: Collapsible.ChangeEventDetails}[] = [];
+    render(
+      <Collapsible
+        onOpenChange={(open, details) => {
+          changes.push({open, details});
+          details.cancel();
+        }}>
+        <CollapsibleTrigger>Details</CollapsibleTrigger>
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    await user.click(trigger);
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]?.open).toBe(true);
+    expect(changes[0]?.details.reason).toBe("trigger-press");
+    expect(changes[0]?.details.event.type).toBe("click");
+    expect(changes[0]?.details.isCanceled).toBe(true);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps controlled false closed across rerenders and ignores disabled activation", async () => {
+    const user = userEvent.setup();
+    const changes: boolean[] = [];
+    const {rerender} = render(
+      <Collapsible
+        open={false}
+        onOpenChange={(open) => changes.push(open)}>
+        <CollapsibleTrigger render={<button />}>Details</CollapsibleTrigger>
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(changes).toEqual([true, true]);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    rerender(
+      <Collapsible
+        defaultOpen
+        open={false}
+        disabled
+        onOpenChange={(open) => changes.push(open)}>
+        <CollapsibleTrigger render={<button />}>Details</CollapsibleTrigger>
+        <CollapsibleContent>Body</CollapsibleContent>
+      </Collapsible>,
+    );
+    await user.click(trigger);
+    await user.keyboard("{Enter} ");
+
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(changes).toEqual([true, true]);
+  });
+
+  it("preserves render element and plain-text content", () => {
+    render(
+      <>
+        <Collapsible>
+          <CollapsibleTrigger render={<button>Render element label</button>} />
+          <CollapsibleContent>First body</CollapsibleContent>
+        </Collapsible>
+        <Collapsible>
+          <CollapsibleTrigger>Fallback label</CollapsibleTrigger>
+          <CollapsibleContent>Second body</CollapsibleContent>
+        </Collapsible>
+      </>,
+    );
+
+    expect(screen.getByRole("button", {name: "Render element label"})).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", {name: "Fallback label"})).toHaveAttribute("type", "button");
+  });
+
+  it("retains mounted panel input state across closing and reopening without remounting the trigger", async () => {
+    const user = userEvent.setup();
+    const {rerender} = render(
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger render={<button />}>Details</CollapsibleTrigger>
+        <CollapsibleContent keepMounted>
+          <input aria-label='Notes' />
+        </CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Details"});
+    const input = screen.getByRole("textbox", {name: "Notes"});
+    await user.type(input, "Retained text");
+    await user.click(trigger);
+    await user.click(trigger);
+    expect(screen.getByRole("textbox", {name: "Notes"})).toBe(input);
+    expect(input).toHaveValue("Retained text");
+
+    rerender(
+      <Collapsible
+        defaultOpen
+        className='rerendered'>
+        <CollapsibleTrigger render={<button />}>Details</CollapsibleTrigger>
+        <CollapsibleContent keepMounted>
+          <input aria-label='Notes' />
+        </CollapsibleContent>
+      </Collapsible>,
+    );
+
+    expect(screen.getByRole("button", {name: "Details"})).toBe(trigger);
+    expect(trigger).toHaveFocus();
+    expect(input).toHaveValue("Retained text");
+  });
+
+  it("keeps nested collapsible contexts independent", async () => {
+    const user = userEvent.setup();
+    render(
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger>Parent</CollapsibleTrigger>
+        <CollapsibleContent>
+          <Collapsible>
+            <CollapsibleTrigger render={<button />}>Child</CollapsibleTrigger>
+            <CollapsibleContent>Nested body</CollapsibleContent>
+          </Collapsible>
+        </CollapsibleContent>
+      </Collapsible>,
+    );
+
+    const parent = screen.getByRole("button", {name: "Parent"});
+    const child = screen.getByRole("button", {name: "Child"});
+    await user.click(child);
+
+    expect(parent).toHaveAttribute("aria-expanded", "true");
+    expect(child).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Nested body")).toBeVisible();
+  });
+
   it("renders the structure, merges class names, and exposes accessibility attributes", () => {
     // Arrange
     const trigger = renderCollapsible();
@@ -111,18 +412,20 @@ describe("Collapsible", () => {
     expect(screen.getByText("Controlled details content")).toBeVisible();
   });
 
-  it("supports rendering the trigger as a child element while preserving the non-asChild trigger path", async () => {
+  it("supports a custom render trigger without nested buttons", async () => {
     // Arrange
     const user = userEvent.setup();
     render(
       <Collapsible>
-        <CollapsibleTrigger asChild>
-          <button
-            type='button'
-            data-testid='trigger-child'>
-            Toggle details
-          </button>
-        </CollapsibleTrigger>
+        <CollapsibleTrigger
+          render={
+            <button
+              type='button'
+              data-testid='trigger-child'>
+              Toggle details
+            </button>
+          }
+        />
         <CollapsibleContent data-testid='collapsible-panel'>Hidden details content</CollapsibleContent>
       </Collapsible>,
     );

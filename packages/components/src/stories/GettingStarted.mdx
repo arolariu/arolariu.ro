@@ -7,8 +7,10 @@
 Install the package and its peer dependencies:
 
 ```bash
-npm install @arolariu/components @base-ui/react motion react react-dom
+npm install @arolariu/components @base-ui/react@^1.9 motion react@^19 react-dom@^19 react-hook-form recharts
 ```
+
+Version 3 is React 19-only and removes deprecated compatibility APIs. The package's `MIGRATION.md` describes the changes from 2.4.
 
 ## Setup
 
@@ -67,6 +69,10 @@ import {Button} from "@arolariu/components/button";
 import {useMediaQuery} from "@arolariu/components/useMediaQuery";
 ```
 
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path (see
+Next.js Integration below); bundlers that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js
+`optimizePackageImports`, still load only the modules you use.
+
 ## TypeScript
 
 All components are fully typed. Use `Readonly<Props>` for component props:
@@ -77,7 +83,9 @@ import type {ButtonProps} from "@arolariu/components";
 
 ## Next.js Integration
 
-The library works with Next.js App Router. Server Components can import components — client-only ones have `"use client"` directives.
+The library works with Next.js App Router. Server Components can import components — client-only ones have `"use client"` directives. Pure
+class helpers such as `buttonVariants` and `badgeVariants` are callable in Server Components when imported from `@arolariu/components`;
+their component subpaths are client modules.
 
 ```tsx
 // app/page.tsx (Server Component)

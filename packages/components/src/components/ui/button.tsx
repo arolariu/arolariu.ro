@@ -1,172 +1,146 @@
 "use client";
 
-import {mergeProps} from "@base-ui/react/merge-props";
-import {useRender} from "@base-ui/react/use-render";
+import {Button as ButtonPrimitive} from "@base-ui/react/button";
 import * as React from "react";
 
-import {cn} from "@/lib/utilities";
-import styles from "./button.module.css";
+import {buttonVariants} from "./_button-variants";
 
-const variantStyles: Record<ButtonVariant, string> = {
-  default: styles.default!,
-  destructive: styles.destructive!,
-  outline: styles.outline!,
-  secondary: styles.secondary!,
-  ghost: styles.ghost!,
-  link: styles.link!,
-};
-
-const sizeStyles: Record<ButtonSize, string> = {
-  default: styles.sizeDefault!,
-  sm: styles.sizeSm!,
-  lg: styles.sizeLg!,
-  icon: styles.sizeIcon!,
-};
-
+/** Supported visual treatments for {@link Button}. */
 export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-export type ButtonSize = "default" | "sm" | "lg" | "icon";
+/** Text and icon-only size presets for {@link Button}. */
+export type ButtonSize = "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 
 /**
- * Serializable button state exposed to Base UI render callbacks.
+ * Primitive-owned button state augmented with the selected visual presets.
  */
-export interface ButtonState extends Record<string, unknown> {
-  variant: ButtonVariant;
-  size: ButtonSize;
-  disabled: boolean;
-}
-
-interface ButtonVariantOptions {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  className?: string;
+export interface ButtonState extends Readonly<ButtonPrimitive.State> {
+  readonly variant: ButtonVariant;
+  readonly size: ButtonSize;
 }
 
 /**
- * Props for the shared button component.
+ * Options for generating {@link Button} classes without rendering it.
+ *
+ * @remarks
+ * Accepted by {@link buttonVariants}. Every member is optional, so `buttonVariants()` returns the classes of a
+ * default-variant, default-size button.
+ *
+ * @example
+ * ```tsx
+ * const options: ButtonVariantOptions = {variant: "outline", size: "sm"};
+ * const className = buttonVariants(options);
+ * ```
  */
-export interface ButtonProps extends Omit<React.ComponentPropsWithRef<"button">, "children" | "className" | "disabled"> {
+export interface ButtonVariantOptions {
   /**
-   * Visual style variant.
+   * Visual treatment. On a real link, `"link"` keeps an underline at rest; the other variants never underline.
+   *
    * @default "default"
    */
-  variant?: ButtonVariant;
+  readonly variant?: ButtonVariant;
   /**
-   * Size preset.
+   * Size preset. The `icon*` sizes are for icon-only controls, which still need an accessible name of their own.
+   *
    * @default "default"
    */
-  size?: ButtonSize;
+  readonly size?: ButtonSize;
   /**
-   * Whether the button should ignore user interaction.
-   * @default false
-   */
-  disabled?: boolean;
-  /**
-   * Additional CSS classes merged with the button styles.
+   * Additional CSS classes merged after the generated classes.
+   *
    * @default undefined
    */
-  className?: string;
-  /**
-   * Custom element or render callback used to replace the default `<button>`.
-   * @default undefined
-   */
-  render?: useRender.RenderProp<ButtonState>;
-  /**
-   * Backward-compatible child-slot API.
-   * Converts the single child element to the `render` prop internally.
-   * @default false
-   */
-  asChild?: boolean;
-  /**
-   * Button contents when `render` is not provided.
-   * @default undefined
-   */
-  children?: React.ReactNode;
+  readonly className?: string;
 }
+
+type PrimitiveRenderCallback = Exclude<ButtonPrimitive.Props["render"], React.ReactElement | undefined>;
+type IconButtonSize = Extract<ButtonSize, `icon${string}`>;
+type ButtonNamingProps =
+  | {readonly size?: Exclude<ButtonSize, IconButtonSize>}
+  | {readonly size?: ButtonSize; readonly "aria-label": string}
+  | {readonly size?: ButtonSize; readonly "aria-labelledby": string};
 
 /**
- * Builds the composed class list for the shared button component.
+ * Readonly Base UI button props with visual presets and render composition.
  */
-function buttonVariants({variant = "default", size = "default", className}: Readonly<ButtonVariantOptions> = {}): string {
-  return cn(styles.button, variantStyles[variant], sizeStyles[size], className);
-}
-
-function isIntrinsicButtonElement(renderProp: ButtonProps["render"]): boolean {
-  return React.isValidElement(renderProp) && typeof renderProp.type === "string" && renderProp.type === "button";
-}
-
-function createNonNativeInteractionProps(disabled: boolean): React.HTMLAttributes<HTMLElement> {
-  return {
-    "aria-disabled": disabled || undefined,
-    role: "button",
-    tabIndex: disabled ? -1 : undefined,
-    onClick(event) {
-      if (!disabled) {
-        return;
-      }
-
-      event.preventDefault();
-
-      if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-        event.preventBaseUIHandler();
-      }
-    },
-    onKeyDown(event) {
-      if (!disabled || (event.key !== "Enter" && event.key !== " ")) {
-        return;
-      }
-
-      event.preventDefault();
-
-      if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
-        event.preventBaseUIHandler();
-      }
-    },
-  };
-}
+export type ButtonProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof ButtonPrimitive>, "render" | "className">
+    & ButtonNamingProps & {
+      /**
+       * Visual style variant.
+       * @default "default"
+       */
+      variant?: ButtonVariant;
+      /**
+       * Size preset.
+       * @default "default"
+       */
+      size?: ButtonSize;
+      /**
+       * Additional CSS classes merged with the button styles.
+       * @default undefined
+       */
+      className?: string;
+      /**
+       * Custom element or render callback used to replace the default `<button>`.
+       * The target must be able to take button semantics; do not render links (`<a href>`) through Button.
+       * @default undefined
+       */
+      render?: React.ReactElement | ((props: Parameters<PrimitiveRenderCallback>[0], state: ButtonState) => React.ReactElement);
+    }
+>;
 
 /**
  * A button component that triggers actions.
- * Built with Base UI's canonical `useRender` + `mergeProps` composition pattern.
+ * Base UI owns rendering, refs, keyboard activation, focus, and disabled behavior.
  *
  * @remarks
  * Renders a native `<button>` by default. Use the `render` prop to compose the
- * button styles and shared behavior with other elements or components. The
- * deprecated `asChild` prop is still supported and internally converted to
- * `render` for backward compatibility.
+ * button styles and shared behavior with other elements or components.
+ * Icon-only content must have an action-specific accessible name supplied
+ * through `aria-label` or `aria-labelledby`.
+ *
+ * Button always exposes button semantics, so it is for actions, not navigation.
+ * Render a link as a native `<a href>` styled with {@link buttonVariants} instead:
+ * rendered through Button, a link is announced as a button, is missing from the
+ * page's list of links, and activates on Space. Imported from the package root,
+ * `buttonVariants` is also callable from Server Components.
+ * Set `nativeButton={false}` only when canonical `render` replaces the button with a
+ * non-link element that can take button semantics (for example a `<div>` or `<span>`);
+ * Base UI then adds `role="button"`, focusability and Enter/Space activation. The
+ * public ref targets `HTMLElement` so non-native render targets are represented accurately.
  *
  * @example
  * ```tsx
  * <Button variant="default" size="sm">Click me</Button>
- * <Button render={<a href="/dashboard" />}>Go to dashboard</Button>
+ * <Button nativeButton={false} render={<div />}>Run task</Button>
+ * <a href="/dashboard" className={buttonVariants({variant: "outline"})}>Go to dashboard</a>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/button | Base UI Button}
  */
-const Button = React.forwardRef<HTMLButtonElement, Button.Props>((props: Readonly<Button.Props>, ref): React.ReactElement => {
-  const {render, asChild = false, variant = "default", size = "default", disabled = false, className, children, ...otherProps} = props;
+const Button = (props: Readonly<Button.Props>): React.ReactElement => {
+  const {ref, render, variant = "default", size = "default", nativeButton, className, children, ...otherProps} = props;
 
-  const state: Button.State = {variant, size, disabled};
-  const composedClassName = buttonVariants({variant, size, className});
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
-  const shouldRenderNativeButton = !renderProp || isIntrinsicButtonElement(renderProp);
-  const typeProps: Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, "type"> = shouldRenderNativeButton ? {type: "button"} : {};
-  const interactionProps = shouldRenderNativeButton ? {disabled} : createNonNativeInteractionProps(disabled);
-
-  return useRender<Button.State, HTMLButtonElement>({
-    defaultTagName: "button",
-    ref,
-    render: renderProp,
-    state,
-    props: mergeProps<"button">({className: composedClassName}, typeProps, otherProps, interactionProps, {
-      children: renderProp ? undefined : children,
-    }),
-  });
-});
+  return (
+    <ButtonPrimitive
+      data-slot='button'
+      data-variant={variant}
+      data-size={size}
+      ref={ref}
+      nativeButton={nativeButton}
+      className={buttonVariants({variant, size, className})}
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant, size}) : render}
+      {...otherProps}>
+      {children}
+    </ButtonPrimitive>
+  );
+};
 Button.displayName = "Button";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Button {
   export type State = ButtonState;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = ButtonProps;
 }
 

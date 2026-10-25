@@ -12,18 +12,25 @@ import styles from "./error-boundary.module.css";
  * recovery-oriented error handling in React client trees.
  */
 interface ErrorBoundaryProps {
+  /** Localized title for the built-in fallback. @default "Something went wrong" */
+  readonly errorTitle?: string;
+  /** Localized error detail; `null` omits it. Defaults to the captured error message. */
+  readonly errorDescription?: React.ReactNode;
+  /** Localized accessible and visible retry label. @default "Try again" */
+  readonly retryLabel?: string;
   /**
    * Content rendered when no error has been captured.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
   /**
    * Custom fallback UI or render function invoked with the current error and reset action.
+   * Explicit `null` renders no fallback. Omit this prop to use the default alert.
    */
-  fallback?: React.ReactNode | ((error: Error, reset: () => void) => React.ReactNode);
+  readonly fallback?: React.ReactNode | ((error: Error, reset: () => void) => React.ReactNode);
   /**
    * Callback invoked after an error has been captured.
    */
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  readonly onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
 /**
@@ -37,7 +44,11 @@ interface ErrorBoundaryState {
   /**
    * The latest captured error, or `null` when the subtree is healthy.
    */
-  error: Error | null;
+  readonly error: Error | null;
+}
+
+function normalizeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(typeof error === "string" ? error : "Unknown rendering failure", {cause: error});
 }
 
 /**
@@ -48,7 +59,12 @@ interface ErrorBoundaryState {
  *
  * React currently requires class components for error boundaries. This implementation
  * captures render-time and lifecycle errors, not asynchronous event handler exceptions,
- * and exposes a `reset()` pathway so callers can retry the failed subtree.
+ * and exposes a `reset()` pathway so callers can retry the failed subtree. Resetting
+ * does not repair its data or promises: fix the condition or replace the rejected
+ * resource first. An unchanged failure is caught again, never reported as success.
+ * This boundary does not catch errors during server rendering or in itself.
+ * Non-Error throws are normalized to an Error whose `cause` preserves the original
+ * value; throwing `null` cannot be mistaken for a healthy state.
  *
  * @example
  * ```tsx
@@ -65,31 +81,45 @@ interface ErrorBoundaryState {
  *
  * @see {@link ErrorBoundaryProps} for available props
  */
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return {error};
+class ErrorBoundary extends React.Component<Readonly<ErrorBoundaryProps>, Readonly<ErrorBoundaryState>> {
+  /** Stores a descendant's render failure for the next fallback render. */
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    return {error: normalizeError(error)};
   }
 
   static readonly displayName = "ErrorBoundary";
 
-  constructor(props: ErrorBoundaryProps) {
+  /** Starts with a healthy subtree; no child work is performed in the constructor. */
+  constructor(props: Readonly<ErrorBoundaryProps>) {
     super(props);
     this.state = {error: null};
   }
 
+  /** Rerenders when the descendant tree, recovery UI, reporter or captured failure changes. */
   override shouldComponentUpdate(nextProps: Readonly<ErrorBoundaryProps>, nextState: Readonly<ErrorBoundaryState>): boolean {
-    const {children, fallback, onError} = this.props;
+    const {children, fallback, onError, errorTitle, errorDescription, retryLabel} = this.props;
     const {error} = this.state;
 
-    return nextProps.children !== children || nextProps.fallback !== fallback || nextProps.onError !== onError || nextState.error !== error;
+    return (
+      nextProps.children !== children
+      || nextProps.fallback !== fallback
+      || nextProps.onError !== onError
+      || nextProps.errorTitle !== errorTitle
+      || nextProps.errorDescription !== errorDescription
+      || nextProps.retryLabel !== retryLabel
+      || nextState.error !== error
+    );
   }
 
-  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  /** Reports React's captured error and component stack after the fallback commits. */
+  override componentDidCatch(error: unknown, errorInfo: React.ErrorInfo): void {
     const {onError} = this.props;
+    const {error: capturedError} = this.state;
 
-    onError?.(error, errorInfo);
+    onError?.(capturedError ?? normalizeError(error), errorInfo);
   }
 
+  /** Clears the captured failure and remounts descendants; callers own repairing the cause. */
   handleReset = (): void => {
     // eslint-disable-next-line react/no-set-state -- Error boundaries must clear internal error state to retry rendering.
     this.setState({error: null});
@@ -98,26 +128,28 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   // eslint-disable-next-line sonarjs/function-return-type -- Error boundary render paths intentionally return generic ReactNode content.
   override render(): React.ReactNode {
     const {error} = this.state;
-    const {children, fallback} = this.props;
+    const {children, fallback, errorTitle = "Something went wrong", errorDescription, retryLabel = "Try again"} = this.props;
     const content: React.ReactNode =
-      error === null
-        ? children
-        : typeof fallback === "function"
-          ? fallback(error, this.handleReset)
-          : (fallback ?? (
-              <div
-                className={styles.fallback}
-                role='alert'>
-                <p className={styles.title}>Something went wrong</p>
-                <p className={styles.message}>{error.message}</p>
-                <button
-                  type='button'
-                  className={styles.retry}
-                  onClick={this.handleReset}>
-                  Try again
-                </button>
-              </div>
-            ));
+      error === null ? (
+        children
+      ) : typeof fallback === "function" ? (
+        fallback(error, this.handleReset)
+      ) : fallback !== undefined ? (
+        fallback
+      ) : (
+        <div
+          className={styles.fallback}
+          role='alert'>
+          <p className={styles.title}>{errorTitle}</p>
+          <p className={styles.message}>{errorDescription === undefined ? error.message : errorDescription}</p>
+          <button
+            type='button'
+            className={styles.retry}
+            onClick={this.handleReset}>
+            {retryLabel}
+          </button>
+        </div>
+      );
 
     return content;
   }

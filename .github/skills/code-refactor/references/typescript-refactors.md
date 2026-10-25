@@ -101,8 +101,8 @@ implementation. Existing store tests that replace the repository adapter cannot 
 For `@arolariu/components`:
 
 - never import from `sites/**`;
-- preserve Base UI `useRender`/`mergeProps`, ref forwarding, and native-first interaction;
-- retain existing `asChild` compatibility but do not spread it to new APIs;
+- follow `.github/instructions/components.instructions.md` for composition,
+  React 19 `ref` and accessibility rules;
 - colocate component, focused test, Storybook story, and a CSS Module when the
   component owns visual presentation;
 - export every supported component and public type from `src/index.ts`;
@@ -110,7 +110,7 @@ For `@arolariu/components`:
 
 Moving a component file without its owned style/test/story or forgetting the
 barrel creates an orphaned or unreachable API even if its local test passes.
-`button.tsx`, `button.module.css`, `button.test.tsx`,
+`button.tsx`, `_button-variants.ts`, `button.module.css`, `button.test.tsx`,
 `button.stories.tsx`, and `src/index.ts` are the styled inspection set;
 `async-boundary.tsx` is the intentional style-free composition example.
 

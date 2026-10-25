@@ -4,15 +4,19 @@
 }
 
 .item {
+  box-sizing: border-box;
+  min-inline-size: 24px;
+  min-block-size: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
-  border: 1px solid var(--ac-primary);
+  inline-size: 24px;
+  block-size: 24px;
+  flex-shrink: 0;
+  border: 1px solid var(--ac-ring);
   border-radius: 999px;
   background-color: var(--ac-background);
-  color: var(--ac-primary);
+  color: var(--ac-ring);
   cursor: pointer;
   outline: none;
   transition:
@@ -37,7 +41,30 @@
 }
 
 .icon {
-  width: 0.625rem;
-  height: 0.625rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
   fill: currentcolor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .item {
+    border-color: ButtonText;
+    color: ButtonText;
+
+    &[data-checked] {
+      border-color: Highlight;
+      color: Highlight;
+    }
+
+    &[data-disabled] {
+      border-color: GrayText;
+      color: GrayText;
+    }
+  }
 }

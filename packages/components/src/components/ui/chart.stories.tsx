@@ -1,22 +1,24 @@
-import {Bar, BarChart, CartesianGrid, XAxis} from "recharts";
+import type * as React from "react";
+import {useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 
-// Import the chart container and components
-// Note: Using dynamic import pattern to avoid circular dependencies
-const ChartModule = await import("./chart");
-const {ChartContainer, ChartTooltip, ChartTooltipContent} = ChartModule;
-
-const meta = {
-  title: "Components/Data Display/Chart",
-  component: ChartContainer,
-  tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
-  },
-} satisfies Meta<typeof ChartContainer>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  Line,
+  LineChart as RechartsLineChart,
+  Pie,
+  PieChart as RechartsPieChart,
+  Rectangle,
+  XAxis,
+  type ChartConfig,
+} from "./chart";
 
 const chartData = [
   {month: "January", desktop: 186, mobile: 80},
@@ -36,15 +38,132 @@ const chartConfig = {
     label: "Mobile",
     color: "#60a5fa",
   },
-};
+} satisfies ChartConfig;
+
+function DataTable({
+  data,
+  columns,
+  caption,
+}: Readonly<{
+  data: ReadonlyArray<Readonly<Record<string, string | number>>>;
+  columns: readonly string[];
+  caption: string;
+}>): React.JSX.Element {
+  return (
+    <table>
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          {columns.map((column) => (
+            <th
+              key={column}
+              scope='col'>
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, index) => (
+          <tr key={index}>
+            {columns.map((column) => (
+              <td key={column}>{row[column]}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+const monthlyData = (
+  <DataTable
+    data={chartData}
+    columns={["month", "desktop", "mobile"]}
+    caption='Monthly visits data'
+  />
+);
+const storyStyles = `
+.ac-story-chart-storyFrame {
+  width: min(600px, calc(100vw - 2rem));
+}
+
+.ac-story-chart-storyCompact {
+  width: min(500px, calc(100vw - 2rem));
+}
+
+.ac-story-chart-storyLarge {
+  width: min(800px, calc(100vw - 2rem));
+  padding: var(--ac-space-6);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-muted);
+}
+
+.ac-story-chart-storyHeading {
+  margin-block: 0 var(--ac-space-4);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-lg);
+  font-weight: 600;
+}
+
+.ac-story-chart-storySamples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--ac-space-6);
+}
+
+.ac-story-chart-storyDark {
+  padding: var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-chart-storyFrame",
+  storyCompact: "ac-story-chart-storyCompact",
+  storyLarge: "ac-story-chart-storyLarge",
+  storyHeading: "ac-story-chart-storyHeading",
+  storySamples: "ac-story-chart-storySamples",
+  storyDark: "ac-story-chart-storyDark",
+} as const;
+
+const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
+  title: "Components/Data Display/Chart",
+  component: ChartContainer,
+  tags: ["autodocs"],
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Config-aware helpers plus identity-preserving Recharts exports. Name meaningful charts and provide accessibleData with equivalent text or a data table; hover tooltips are not alternatives. Use shape on series, not the removed Cell. Container refs/native attributes target the outer group. Separate SSR roots use distinct React identifierPrefix values. Recharts owns sizing, keyboard navigation and series animation (disable isAnimationActive for static/reduced-motion consumers). Legend content invokes only item click/enter/leave callbacks, never forwards engine events to the DOM. .dark ancestors select dark palettes; verify custom series contrast and distinguish series without color alone.",
+      },
+    },
+  },
+  args: {config: chartConfig, children: undefined as React.ReactNode, "aria-label": "Monthly visits", accessibleData: monthlyData},
+} satisfies Meta<typeof ChartContainer>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 /**
  * Bar chart with ChartContainer providing responsive sizing and theming.
  */
 export const Default: Story = {
-  render: () => (
-    <div style={{width: "600px", height: "400px"}}>
-      <ChartContainer config={chartConfig}>
+  render: (args): React.JSX.Element => (
+    <div className={storyClasses.storyFrame}>
+      <ChartContainer {...args}>
         <BarChart
           accessibilityLayer
           data={chartData}>
@@ -57,6 +176,7 @@ export const Default: Story = {
             tickFormatter={(value: string) => value.slice(0, 3)}
           />
           <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartLegend content={<ChartLegendContent />} />
           <Bar
             dataKey='desktop'
             fill='var(--color-desktop)'
@@ -73,11 +193,73 @@ export const Default: Story = {
   ),
 };
 
+/** Series shape composition replaces the removed deprecated Cell helper. */
+export const ShapeComposition: Story = {
+  render: () => (
+    <div className={storyClasses.storyFrame}>
+      <ChartContainer
+        config={chartConfig}
+        aria-label='Desktop visits'
+        accessibleData={
+          <DataTable
+            data={chartData}
+            columns={["month", "desktop"]}
+            caption='Desktop visits data'
+          />
+        }>
+        <BarChart
+          data={chartData}
+          accessibilityLayer>
+          <XAxis dataKey='month' />
+          <Bar
+            dataKey='desktop'
+            fill='var(--color-desktop)'
+            shape={
+              <Rectangle
+                stroke='var(--ac-foreground)'
+                strokeWidth={2}
+              />
+            }
+          />
+        </BarChart>
+      </ChartContainer>
+    </div>
+  ),
+};
+
 /**
  * Simple bar chart with single data series.
  */
+export const ToggleSeries: Story = {
+  render: function ToggleSeries(): React.JSX.Element {
+    const [hidden, setHidden] = useState(false);
+    return (
+      <div className={storyClasses.storyFrame}>
+        <ChartContainer
+          config={chartConfig}
+          aria-label='Desktop visits; activate the legend to show or hide the series'
+          accessibleData={monthlyData}>
+          <BarChart data={chartData}>
+            <XAxis dataKey='month' />
+            <Bar
+              dataKey='desktop'
+              fill='var(--color-desktop)'
+              hide={hidden}
+              isAnimationActive={false}
+            />
+            <ChartLegend
+              content={<ChartLegendContent />}
+              onClick={() => setHidden(!hidden)}
+            />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    );
+  },
+};
+
 export const Simple: Story = {
-  render: () => {
+  render: (): React.JSX.Element => {
     const simpleData = [
       {name: "Jan", value: 400},
       {name: "Feb", value: 300},
@@ -94,8 +276,17 @@ export const Simple: Story = {
     };
 
     return (
-      <div style={{width: "500px", height: "300px"}}>
-        <ChartContainer config={simpleConfig}>
+      <div className={storyClasses.storyCompact}>
+        <ChartContainer
+          config={simpleConfig}
+          aria-label='Sales'
+          accessibleData={
+            <DataTable
+              data={simpleData}
+              columns={["name", "value"]}
+              caption='Sales data'
+            />
+          }>
           <BarChart data={simpleData}>
             <CartesianGrid strokeDasharray='3 3' />
             <XAxis dataKey='name' />
@@ -116,10 +307,16 @@ export const Simple: Story = {
  * Chart container with custom dimensions and styling.
  */
 export const CustomSize: Story = {
-  render: () => (
-    <div style={{width: "800px", height: "500px", padding: "1.5rem", background: "#f9fafb", borderRadius: "8px"}}>
-      <h3 style={{marginBottom: "1rem", fontSize: "1.125rem", fontWeight: "600"}}>Monthly Revenue</h3>
-      <ChartContainer config={chartConfig}>
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyLarge}>
+      <h3 className={storyClasses.storyHeading}>Monthly Revenue</h3>
+      <ChartContainer
+        aria-label='Monthly visits'
+        accessibleData={monthlyData}
+        config={chartConfig}
+        aspect={2}
+        minHeight={200}
+        maxHeight={360}>
         <BarChart
           accessibilityLayer
           data={chartData}>
@@ -150,9 +347,7 @@ export const CustomSize: Story = {
  * Line chart variant showing trend data.
  */
 export const LineChart: Story = {
-  render: () => {
-    const {Line, LineChart: RechartsLineChart, ResponsiveContainer} = require("recharts");
-
+  render: (): React.JSX.Element => {
     const lineData = [
       {month: "Jan", sales: 4000},
       {month: "Feb", sales: 3000},
@@ -170,8 +365,17 @@ export const LineChart: Story = {
     };
 
     return (
-      <div style={{width: "600px", height: "400px"}}>
-        <ChartContainer config={lineConfig}>
+      <div className={storyClasses.storyFrame}>
+        <ChartContainer
+          config={lineConfig}
+          aria-label='Sales trend'
+          accessibleData={
+            <DataTable
+              data={lineData}
+              columns={["month", "sales"]}
+              caption='Sales trend data'
+            />
+          }>
           <RechartsLineChart data={lineData}>
             <CartesianGrid
               strokeDasharray='3 3'
@@ -182,7 +386,7 @@ export const LineChart: Story = {
               tickLine={false}
               axisLine={false}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip content={<ChartTooltipContent indicator='line' />} />
             <Line
               type='monotone'
               dataKey='sales'
@@ -201,16 +405,12 @@ export const LineChart: Story = {
  * Pie chart variant showing distribution.
  */
 export const PieChart: Story = {
-  render: () => {
-    const {Pie, PieChart: RechartsPieChart, Cell} = require("recharts");
-
+  render: (): React.JSX.Element => {
     const pieData = [
-      {name: "Desktop", value: 45},
-      {name: "Mobile", value: 30},
-      {name: "Tablet", value: 25},
+      {name: "desktop", value: 45, fill: "var(--color-desktop)"},
+      {name: "mobile", value: 30, fill: "var(--color-mobile)"},
+      {name: "tablet", value: 25, fill: "var(--color-tablet)"},
     ];
-
-    const COLORS = ["#3b82f6", "#10b981", "#f59e0b"];
 
     const pieConfig = {
       desktop: {label: "Desktop", color: "#3b82f6"},
@@ -219,25 +419,35 @@ export const PieChart: Story = {
     };
 
     return (
-      <div style={{width: "500px", height: "400px"}}>
-        <ChartContainer config={pieConfig}>
+      <div className={storyClasses.storyCompact}>
+        <ChartContainer
+          config={pieConfig}
+          aria-label='Device distribution'
+          accessibleData={
+            <DataTable
+              data={pieData}
+              columns={["name", "value"]}
+              caption='Device distribution data'
+            />
+          }>
           <RechartsPieChart>
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  nameKey='name'
+                  hideLabel
+                />
+              }
+            />
+            <ChartLegend content={<ChartLegendContent nameKey='name' />} />
             <Pie
               data={pieData}
               cx='50%'
               cy='50%'
               labelLine={false}
-              label={({name, percent}: {name: string; percent: number}) => `${name} ${(percent * 100).toFixed(0)}%`}
               outerRadius={120}
-              dataKey='value'>
-              {pieData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Pie>
+              dataKey='value'
+            />
           </RechartsPieChart>
         </ChartContainer>
       </div>
@@ -249,7 +459,7 @@ export const PieChart: Story = {
  * Stacked bar chart showing composition.
  */
 export const Stacked: Story = {
-  render: () => {
+  render: (): React.JSX.Element => {
     const stackedData = [
       {month: "Jan", productA: 400, productB: 240, productC: 240},
       {month: "Feb", productA: 300, productB: 138, productC: 221},
@@ -265,8 +475,17 @@ export const Stacked: Story = {
     };
 
     return (
-      <div style={{width: "600px", height: "400px"}}>
-        <ChartContainer config={stackedConfig}>
+      <div className={storyClasses.storyFrame}>
+        <ChartContainer
+          config={stackedConfig}
+          aria-label='Products by month'
+          accessibleData={
+            <DataTable
+              data={stackedData}
+              columns={["month", "productA", "productB", "productC"]}
+              caption='Products by month data'
+            />
+          }>
           <BarChart data={stackedData}>
             <CartesianGrid
               strokeDasharray='3 3'
@@ -277,7 +496,8 @@ export const Stacked: Story = {
               tickLine={false}
               axisLine={false}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip content={<ChartTooltipContent indicator='dashed' />} />
+            <ChartLegend content={<ChartLegendContent />} />
             <Bar
               dataKey='productA'
               stackId='a'
@@ -298,4 +518,117 @@ export const Stacked: Story = {
       </div>
     );
   },
+};
+
+const themedConfig = {
+  desktop: {label: "Desktop", theme: {light: "#2563eb", dark: "#93c5fd"}},
+  mobile: {label: "Mobile", theme: {light: "#0891b2", dark: "#67e8f9"}},
+} satisfies ChartConfig;
+
+/**
+ * The same scoped palette resolves under light and `.dark` ancestors.
+ */
+export const Themes: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storySamples}>
+      {["light", "dark"].map((theme) => (
+        <div
+          key={theme}
+          className={theme === "dark" ? `dark ${storyClasses.storyDark}` : undefined}>
+          <h3 className={storyClasses.storyHeading}>{theme === "dark" ? "Dark palette" : "Light palette"}</h3>
+          <div className={storyClasses.storyCompact}>
+            <ChartContainer
+              config={themedConfig}
+              aria-label='Monthly visits'
+              accessibleData={monthlyData}>
+              <BarChart
+                data={chartData}
+                accessibilityLayer>
+                <XAxis
+                  dataKey='month'
+                  tickFormatter={(value: string) => value.slice(0, 3)}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar
+                  dataKey='desktop'
+                  fill='var(--color-desktop)'
+                  radius={4}
+                />
+                <Bar
+                  dataKey='mobile'
+                  fill='var(--color-mobile)'
+                  radius={4}
+                />
+              </BarChart>
+            </ChartContainer>
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+function SampleIcon(): React.JSX.Element {
+  return (
+    <svg
+      aria-hidden='true'
+      viewBox='0 0 12 12'>
+      <path
+        fill='currentColor'
+        d='M6 0 12 6 6 12 0 6Z'
+      />
+    </svg>
+  );
+}
+
+const contentConfig = {
+  amount: {label: "Total", color: "#2563eb", unit: "EUR", formatter: (value: number) => value.toFixed(2)},
+  range: {label: "Range", color: "#0891b2"},
+  icon: {label: "Custom indicator", icon: SampleIcon, color: "#8b5cf6"},
+} satisfies ChartConfig;
+
+/**
+ * Deterministic helper samples show zero/range values, each indicator and duplicate legend labels.
+ */
+export const HelperContent: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyFrame}>
+      <ChartContainer
+        config={contentConfig}
+        width={600}
+        height={320}>
+        <div className={storyClasses.storySamples}>
+          {(["dot", "line", "dashed"] as const).map((indicator) => (
+            <ChartTooltipContent
+              key={indicator}
+              active
+              indicator={indicator}
+              label={0}
+              separator=': '
+              payload={[
+                {graphicalItemId: "amount", name: "amount", value: 0, color: "var(--color-amount)"},
+                {graphicalItemId: "range", name: "range", value: [0, 20], color: "var(--color-range)"},
+                {graphicalItemId: "icon", name: "icon", value: 7},
+              ]}
+            />
+          ))}
+          <ChartTooltipContent
+            active
+            hideLabel
+            formatter={(value, name) => [String(value), `${name} (tuple formatter)`]}
+            payload={[{graphicalItemId: "amount", name: "amount", value: 0, color: "var(--color-amount)"}]}
+          />
+          <ChartLegendContent
+            formatter={(value) => <strong>{value}</strong>}
+            payload={[
+              {dataKey: "first", value: "Duplicate", color: "#2563eb"},
+              {dataKey: "second", value: "Duplicate", color: "#0891b2"},
+              {dataKey: "icon", value: "Icon", color: "#8b5cf6"},
+            ]}
+          />
+        </div>
+      </ChartContainer>
+    </div>
+  ),
 };

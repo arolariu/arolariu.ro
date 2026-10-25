@@ -1,8 +1,6 @@
 "use client";
 
-import {mergeProps} from "@base-ui/react/merge-props";
 import {Separator as BaseSeparator} from "@base-ui/react/separator";
-import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -11,13 +9,9 @@ import styles from "./separator.module.css";
 /**
  * Props for the shared separator wrapper.
  */
-export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseSeparator>, "className"> {
-  /** Additional CSS classes merged with the separator styles. @default undefined */
-  className?: string;
+export interface SeparatorProps extends Readonly<React.ComponentPropsWithRef<typeof BaseSeparator>> {
   /** The visual axis used when rendering the separator line. @default "horizontal" */
-  orientation?: "horizontal" | "vertical";
-  /** Legacy compatibility flag retained by the wrapper but not forwarded to Base UI. @default true */
-  decorative?: boolean;
+  readonly orientation?: "horizontal" | "vertical";
 }
 
 /**
@@ -36,32 +30,31 @@ export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof 
  *
  * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
-const Separator = React.forwardRef<HTMLDivElement, Separator.Props>((props, forwardedRef) => {
+const Separator = ({ref: forwardedRef, ...props}: Readonly<Separator.Props>): React.JSX.Element => {
   const {className, orientation = "horizontal", render, ...otherProps} = props;
 
   return (
     <BaseSeparator
       orientation={orientation}
-      {...otherProps}
+      data-slot='separator'
       ref={forwardedRef}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps(
-          {
-            className: cn(styles.separator, orientation === "horizontal" ? styles.horizontal : styles.vertical, className),
-          },
-          {},
-        ),
-      })}
+      render={render}
+      className={(state) =>
+        cn(
+          styles.separator,
+          state.orientation === "horizontal" ? styles.horizontal : styles.vertical,
+          typeof className === "function" ? className(state) : className,
+        )
+      }
+      {...otherProps}
     />
   );
-});
+};
 Separator.displayName = "Separator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Separator {
-  export type Props = SeparatorProps;
+  export type Props = Readonly<SeparatorProps>;
   export type State = BaseSeparator.State;
 }
 

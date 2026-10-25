@@ -35,9 +35,77 @@ for modern applications that demand both beauty and performance._
 - **⚡ Performance Optimized** - Tree-shakeable exports, minimal bundle impact, and source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools
 - **🌙 Flexible Theming** - Light and dark mode via `.dark` or `[data-theme="dark"]`
-- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible, built with RSLib
+- **🚀 Modern Stack** - React 19 only, ESM, SSR compatible, built with RSLib
 
 The current package version is owned by [`package.json`](./package.json).
+
+### Version 3
+
+**3.0.0** is a breaking release. Read [MIGRATION.md](./MIGRATION.md) for the complete **2.4 → 3** defaults/ref/value/render/error changes,
+exact Toast and Command examples, retained extensions and historical v0 → v1 guide.
+
+The Base UI peer minimum becomes **`^1.9`** (2.4 accepted `^1`). React and ReactDOM peers are now **`^19`**. Package-owned components
+receive DOM refs as ordinary React 19 props. React 18, `asChild`, deprecated aliases and the callable toast facade are no longer supported.
+Existing consumers must migrate rather than select a compatibility entrypoint.
+
+The accessibility target is applicable **WCAG 2.2 A/AA**, with the component/application ownership and manual verification requirements
+documented in [ACCESSIBILITY.md](./ACCESSIBILITY.md). An emulated test pass is not full-page conformance.
+
+### Required package verification
+
+From this package directory, run:
+
+```powershell
+npm test
+```
+
+The default command builds the package, creates and extracts a real local npm archive, and runs the complete Vitest suite with
+`AROLARIU_COMPONENTS_PACKED_ROOT` set to that extraction. Packed ESM/declaration/style and private-import contracts therefore run in the
+existing release workflow's `npm test` step instead of silently skipping. The command uses the already-installed real peers, performs no
+dependency installation or publication, and removes only its own temporary extraction when the run finishes or is interrupted
+(Ctrl+C/`SIGINT` or `SIGTERM` is forwarded to the running step and the command exits `130`/`143`). A forced kill cannot clean up, so the
+root `.gitignore` ignores `packages/components/.packed-contract-*/`. Public declarations and story-only payload exclusion are checked
+against actual archive files, not source aliases.
+
+The strict packed-declaration compiler check uses the same deadline as the complete source compiler check, separate from runtime test
+deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
+
+For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
+reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs skip the archive contracts when no extraction is supplied;
+they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story TypeScript
+graph, including negative API assertions.
+
+### Caller attribute escape hatch
+
+Remaining native, `data-*`, and ARIA props are applied after component presets, including native `useRender` prop bags. For example,
+`<Alert role="status" aria-live="polite">Saved</Alert>` can replace the default announcement semantics. An explicitly supplied `undefined`
+can clear an optional preset attribute.
+
+Props consumed for composition still retain that contract: `className` is merged, refs keep their shared ownership and cleanup, and
+caller-first cancellable event handlers preserve primitive behavior unless cancelled. Use the documented `render` API for deeper element
+composition. Applications own the resulting accessibility and behavior when overriding native semantics or component state markers.
+
+### Canonical APIs only
+
+Storybook-only layout and demo styling is owned and mounted by the corresponding `.stories.tsx` file. Production CSS Modules contain only
+component styling; demo styles are not part of the built or packed library. Story mounting preserves scoped class names without adding
+application style objects or a styling dependency.
+
+- Canonical `toast` is a Base UI manager: `toast.add({title, timeout, type})`, `update`, `close`, `promise`. Mount `Toaster` first.
+  `ToastData<T>` / `ToastObject<T>` are notification data; `Toast` is the component.
+- The callable toast facade is removed. No Sonner export/dependency is introduced.
+- `CommandDialog` is a modal shell containing exactly one explicit `Command`. Command is native substring/custom-score matching, not cmdk.
+- `AlertDialogAction` does not close automatically. Close explicitly after success and retain pending/rejection behavior.
+- Button's icon sizes require `aria-label` or `aria-labelledby`, and `ButtonProps` is a union: extend it with `type X = ButtonProps & {…}`,
+  not an interface. Links stay native `<a>` elements styled with `buttonVariants()` rather than Button render targets.
+- Toasts persist until closed unless `timeout` is set (it defaults to `0`; v2.4 dismissed after 5000 ms), and visual effects settle five
+  seconds after mount unless `loop`. See MIGRATION for every changed default, removed toast option and generated control.
+- Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
+  `Toast` versus `ToastData`; original `DirectionProvider`/`useDirection` with `TextDirection`.
+
+All supported runtime values, public named types and defined component namespaces are explicitly exposed at the root, with short
+component/hook/utility subpaths. Supported non-deprecated chart aliases and existing RHF pass-throughs are retained. Private underscore
+modules may be packed transitively but are blocked as public entrypoints, including through the retained nested dist wildcard.
 
 ## 🚀 Quick Start
 
@@ -49,7 +117,7 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion react-hook-form recharts
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
 
 ### Basic Setup
@@ -102,14 +170,18 @@ import {Button, Card} from "@arolariu/components";
 ```css
 /* app-theme.css */
 :root {
-  --ac-primary: oklch(0.62 0.21 262);
-  --ac-primary-foreground: oklch(0.99 0.01 260);
+  --ac-primary: oklch(0.5 0.21 262);
+  --ac-primary-foreground: oklch(0.99 0.004 260);
+  /* Primary text/indicator hue: at least 4.5:1 on --ac-background and 3:1 on --ac-secondary. */
+  --ac-primary-emphasis: oklch(0.5 0.21 262);
   --ac-radius-md: 0.75rem;
 }
 
-.dark {
+.dark,
+[data-theme="dark"] {
   --ac-background: oklch(0.18 0.01 286);
   --ac-foreground: oklch(0.98 0 0);
+  --ac-primary-emphasis: oklch(0.72 0.14 262);
 }
 ```
 
@@ -152,13 +224,13 @@ Explore representative components below. The live public inventory is owned by `
 
 ### 📦 Overlays & Dialogs
 
-| Component      | Description                        | Import                            |
-| -------------- | ---------------------------------- | --------------------------------- |
-| **Dialog**     | Modal dialogs and confirmations    | `@arolariu/components/dialog`     |
-| **Sheet**      | Slide-out panels from screen edges | `@arolariu/components/sheet`      |
-| **Popover**    | Floating content containers        | `@arolariu/components/popover`    |
-| **Tooltip**    | Contextual information on hover    | `@arolariu/components/tooltip`    |
-| **DropDrawer** | Advanced drawer with drop zones    | `@arolariu/components/dropdrawer` |
+| Component      | Description                                                                             | Import                            |
+| -------------- | --------------------------------------------------------------------------------------- | --------------------------------- |
+| **Dialog**     | Modal dialogs and confirmations                                                         | `@arolariu/components/dialog`     |
+| **Sheet**      | Slide-out panels from screen edges                                                      | `@arolariu/components/sheet`      |
+| **Popover**    | Floating content containers                                                             | `@arolariu/components/popover`    |
+| **Tooltip**    | Contextual information on hover                                                         | `@arolariu/components/tooltip`    |
+| **DropDrawer** | Responsive menu that becomes a drawer on narrow viewports (`presentation` overrides it) | `@arolariu/components/dropdrawer` |
 
 ### 📊 Data Display
 
@@ -169,6 +241,9 @@ Explore representative components below. The live public inventory is owned by `
 | **Avatar**   | User profile pictures and placeholders | `@arolariu/components/avatar`   |
 | **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
 | **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
+
+Version 3 also adds the `NativeSelect`, `Attachment`, `Bubble`, `Marker` and `Message` families and exposes Base UI's direction context.
+These are domain-independent native/composed display APIs, not upload controls or an AI/chat SDK. Callers supply text, data and policy.
 
 ### 🎛️ Form Controls
 
@@ -193,6 +268,12 @@ Explore representative components below. The live public inventory is owned by `
 | **Toast**    | Base UI-backed toast system     | `@arolariu/components/toast`    |
 | **Spinner**  | Loading indicators              | `@arolariu/components/spinner`  |
 
+Card/Form/List/Table skeleton layouts keep their native div refs and defaults. Every count is a finite nonnegative integer ≤ 10,000; table
+total cells **including its optional default-visible header** are also capped at 10,000. Invalid/over-limit inputs throw RangeError before
+allocation, without coercion/clamping. Skeletons pulse twice and then stay static; `animated={false}` is explicit static presentation.
+Skeletons announce nothing: callers own one loading announcement through a status region mounted before loading starts (not `aria-busy` on
+that region).
+
 ### 🎪 Animated Backgrounds
 
 | Component               | Description                     | Import                                      |
@@ -210,9 +291,13 @@ Explore representative components below. The live public inventory is owned by `
 
 - `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
 - `tailwindcss` is no longer a peer dependency.
-- `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
+- `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
-- If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
+- Use component props such as `variant` and `size` to style package components. `buttonVariants()` remains the way to give a native link the
+  button appearance (`<a href='/docs' className={buttonVariants({variant: "outline"})}>`); import it from the package root to call it in a
+  Server Component (`import {buttonVariants} from "@arolariu/components"`); the `@arolariu/components/button` subpath is a client module, so
+  its re-export is callable only from Client Components. `badgeVariants()` and the other class helpers (`buttonGroupVariants`,
+  `markerVariants`, `navigationMenuTriggerStyle`, `tabsListVariants`, `toggleVariants`) follow the same rule.
 - CSS custom properties now use the `--ac-*` prefix.
 
 ---
@@ -223,7 +308,7 @@ Explore representative components below. The live public inventory is owned by `
 
 - **Base layer**: [`@base-ui/react`](https://base-ui.com/) provides the primitive building blocks
 - **Composition**: Base UI's `render` prop is the preferred composition API
-- **Backward compatibility**: `asChild` is still supported where available as a shim for Radix-era usage
+- **React 19 contract**: refs are props; deprecated compatibility adapters are not shipped
 
 ### Styling
 
@@ -238,6 +323,10 @@ Explore representative components below. The live public inventory is owned by `
 - Design tokens live in `src/index.css`
 - Theme tokens use the `--ac-` prefix, for example:
   - `--ac-primary`
+  - `--ac-primary-emphasis` — the primary hue for text, icons and value indicators drawn directly on neutral surfaces (Badge `link` text,
+    the active Stepper number, Accordion hover text, Progress/Meter/Slider fills, NumberField scrubbing text), kept at 4.5:1 on
+    `--ac-background` and 3:1 on `--ac-secondary`; `--ac-primary` stays the fill behind `--ac-primary-foreground`. Themes that override
+    `--ac-primary` must override this token too, in every theme they support, keeping both ratios.
   - `--ac-background`
   - `--ac-radius-md`
   - `--ac-chart-1`
@@ -257,7 +346,7 @@ Explore representative components below. The live public inventory is owned by `
 import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
-import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
+import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ---
@@ -353,7 +442,10 @@ export function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className={styles.stack}>
-          <Progress value={75} />
+          <Progress
+            value={75}
+            aria-label='Monthly sales goal'
+          />
           <p className={styles.mutedText}>75% of monthly goal</p>
         </CardContent>
       </Card>
@@ -376,7 +468,7 @@ export function Dashboard() {
 
 ```tsx
 import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
-import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {Sheet, SheetContent, SheetTitle, SheetTrigger} from "@arolariu/components/sheet";
 import {MenuIcon} from "lucide-react";
 import styles from "./app-header.module.css";
 
@@ -399,6 +491,7 @@ export function AppHeader() {
 
         <Sheet>
           <SheetTrigger
+            aria-label='Open navigation'
             render={
               <button
                 type='button'
@@ -408,6 +501,7 @@ export function AppHeader() {
             <MenuIcon />
           </SheetTrigger>
           <SheetContent>
+            <SheetTitle>Navigation</SheetTitle>
             <nav className={styles.mobileNav}>
               <a href='/'>Home</a>
               <a href='/about'>About</a>
@@ -437,6 +531,10 @@ import {Card} from "@arolariu/components/card";
 import {Button, Card} from "@arolariu/components";
 ```
 
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path; bundlers
+that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js `optimizePackageImports`, still load only the
+modules you use.
+
 **Bundle Impact**
 
 - Individual components: typically a few KB gzipped
@@ -452,9 +550,10 @@ import {Button, type ButtonProps} from "@arolariu/components/button";
 import {cn} from "@arolariu/components/utilities";
 import styles from "./custom-button.module.css";
 
-interface CustomButtonProps extends ButtonProps {
+// ButtonProps is a union (icon sizes require aria-label or aria-labelledby), so extend it with an intersection type, not an interface.
+type CustomButtonProps = ButtonProps & {
   icon?: React.ReactNode;
-}
+};
 
 export function CustomButton({icon, children, className, ...props}: CustomButtonProps) {
   return (
@@ -493,10 +592,12 @@ export default function HomePage() {
 Built around **OKLCH CSS custom properties** and **CSS Modules**.
 
 ```css
-/* theme-overrides.module.css */
+/* theme-overrides.module.css: a light-theme scope */
 .themeScope {
-  --ac-primary: oklch(0.7 0.19 250);
-  --ac-primary-foreground: oklch(0.99 0.01 250);
+  --ac-primary: oklch(0.5 0.14 250);
+  --ac-primary-foreground: oklch(0.99 0.004 250);
+  /* Light value; a scope used in a dark theme needs its own (4.5:1 on its background, 3:1 on its secondary). */
+  --ac-primary-emphasis: oklch(0.5 0.14 250);
   --ac-muted: oklch(0.96 0.01 286);
   --ac-radius-md: 0.875rem;
 }
@@ -546,16 +647,34 @@ Inspect generated class names, Base UI data attributes, and source-mapped module
 
 ## 🌐 Browser Support
 
-**Modern browsers only** for optimal performance.
+**Modern browsers only.** The package's CSS is built for current engines: it is not lowered for older ones, and the build drops
+vendor-prefixed fallbacks that current engines no longer need. These are the minimum versions:
 
-| Browser            | Version     |
-| ------------------ | ----------- |
-| 🌟 **Chrome/Edge** | 90+ (2021+) |
-| 🦊 **Firefox**     | 88+ (2021+) |
-| 🧭 **Safari**      | 14+ (2020+) |
+| Browser                       | Minimum version |
+| ----------------------------- | --------------- |
+| 🌟 **Chrome/Edge**            | 120+            |
+| 🦊 **Firefox**                | 121+            |
+| 🧭 **Safari** (macOS and iOS) | 16.5+           |
 
-**Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and
-better performance.
+**Why these versions?** The component and token stylesheets use, without fallbacks:
+
+- the `:dir()` pseudo-class (Chrome/Edge 120, Firefox 49, Safari 16.4) for right-to-left adjustments and for the inset Sidebar's margins in
+  both directions. Engines without it drop each of those rules entirely, left-to-right branches included.
+- unprefixed `background-clip: text` in GradientText (Chrome/Edge 120, Firefox 49, Safari 15.5)
+- the `:has()` selector (Chrome/Edge 105, Firefox 121, Safari 15.4)
+- native CSS nesting (Chrome/Edge 112, Firefox 117, Safari 16.5); every nested selector starts with `&` or another symbol, as those first
+  releases require
+- `oklch()` design tokens and `color-mix()` derived colors (Chrome/Edge 111, Firefox 113, Safari 16.2)
+- media-query range syntax, container queries and dynamic viewport units such as `dvh` (all supported by Safari 16.4 and the Chrome/Edge and
+  Firefox versions above)
+
+LoadingOverlay's translucent backdrop also uses relative color syntax (`rgb(from …)`), which Firefox supports from 128: earlier Firefox
+drops that declaration and shows the overlay without its tint. Its optional `blur` uses the unprefixed `backdrop-filter`, which Safari
+supports from 18, so earlier Safari shows no blur. `field-sizing`, `interpolate-size` and `text-wrap` are progressive enhancements.
+
+These minimums follow from the shipped CSS features; they are not the result of testing every listed engine. Vitest/Happy DOM and CSS
+parsing do not prove native focus/inert, physical gestures/touch, paint/animation, scrolling/anchoring or screen-reader speech; see
+[ACCESSIBILITY.md](./ACCESSIBILITY.md#verification-boundary) for the manual browser and assistive-technology checks.
 
 ---
 

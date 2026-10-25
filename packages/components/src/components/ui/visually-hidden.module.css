@@ -1,4 +1,4 @@
-.visuallyHidden {
+.visuallyHidden:not(:focus):not(:focus-within) {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -1,8 +1,76 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./meter";
+const storyStyles = `
+.ac-story-meter-storyContainer {
+  width: 16rem;
+}
+
+.ac-story-meter-storyLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ac-story-meter-storyValue {
+  color: var(--ac-primary);
+  font-size: var(--ac-text-sm);
+  font-weight: 600;
+}
+
+.ac-story-meter-demoStack {
+  width: 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ac-story-meter-dangerIndicator {
+  background: var(--ac-destructive);
+}
+
+.ac-story-meter-dangerStatus {
+  font-size: 0.875rem;
+  color: var(--ac-destructive);
+  font-weight: 500;
+}
+
+.ac-story-meter-animatedIndicator {
+  transition: width 1s ease-out;
+}
+
+.ac-story-meter-status {
+  font-size: 0.875rem;
+  color: var(--ac-muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-story-meter-animatedIndicator {
+    transition: none;
+  }
+}
+`;
+
+const storyClasses = {
+  storyContainer: "ac-story-meter-storyContainer",
+  storyLabelRow: "ac-story-meter-storyLabelRow",
+  storyValue: "ac-story-meter-storyValue",
+  demoStack: "ac-story-meter-demoStack",
+  dangerIndicator: "ac-story-meter-dangerIndicator",
+  dangerStatus: "ac-story-meter-dangerStatus",
+  animatedIndicator: "ac-story-meter-animatedIndicator",
+  status: "ac-story-meter-status",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Meter",
   component: Meter,
   tags: ["autodocs"],
@@ -18,6 +86,7 @@ type Story = StoryObj<typeof meta>;
  * Default meter showing storage usage.
  */
 export const Default: Story = {
+  args: {value: 72},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -38,6 +107,7 @@ export const Default: Story = {
  * Low value meter.
  */
 export const LowValue: Story = {
+  args: {value: 25},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -58,6 +128,7 @@ export const LowValue: Story = {
  * High value meter.
  */
 export const HighValue: Story = {
+  args: {value: 95},
   render: () => (
     <div className='w-64 space-y-2'>
       <Meter
@@ -78,18 +149,19 @@ export const HighValue: Story = {
  * Meter turning red when value exceeds 80% threshold.
  */
 export const DangerThreshold: Story = {
+  args: {value: 85},
   render: () => (
-    <div style={{width: "16rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
+    <div className={storyClasses.demoStack}>
       <Meter
         value={85}
         min={0}
         max={100}>
         <MeterLabel>Memory usage</MeterLabel>
         <MeterTrack>
-          <MeterIndicator style={{background: "#ef4444"}} />
+          <MeterIndicator className={storyClasses.dangerIndicator} />
         </MeterTrack>
       </Meter>
-      <p style={{fontSize: "0.875rem", color: "#ef4444", fontWeight: "500"}}>⚠️ 85% - Approaching capacity</p>
+      <p className={storyClasses.dangerStatus}>⚠️ 85% - Approaching capacity</p>
     </div>
   ),
 };
@@ -97,24 +169,25 @@ export const DangerThreshold: Story = {
 /**
  * Meter with descriptive label showing percentage value.
  */
-export const WithLabel: Story = {
+export const WithLabel = {
+  args: {value: 65},
   render: () => (
-    <div style={{width: "16rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-      <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-        <MeterLabel style={{fontSize: "0.875rem", fontWeight: "500"}}>CPU Usage</MeterLabel>
-        <span style={{fontSize: "0.875rem", fontWeight: "600", color: "#3b82f6"}}>65%</span>
-      </div>
+    <div className={storyClasses.storyContainer}>
       <Meter
         value={65}
         min={0}
         max={100}>
+        <div className={storyClasses.storyLabelRow}>
+          <MeterLabel>CPU Usage</MeterLabel>
+          <span className={storyClasses.storyValue}>65%</span>
+        </div>
         <MeterTrack>
           <MeterIndicator />
         </MeterTrack>
       </Meter>
     </div>
   ),
-};
+} satisfies Story;
 
 function AnimatedMeterContent(): React.JSX.Element {
   const [value, setValue] = React.useState(0);
@@ -127,17 +200,17 @@ function AnimatedMeterContent(): React.JSX.Element {
   }, []);
 
   return (
-    <div style={{width: "16rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
+    <div className={storyClasses.demoStack}>
       <Meter
         value={value}
         min={0}
         max={100}>
-        <MeterLabel>Loading progress</MeterLabel>
+        <MeterLabel>Storage used</MeterLabel>
         <MeterTrack>
-          <MeterIndicator style={{transition: "width 1s ease-out"}} />
+          <MeterIndicator className={storyClasses.animatedIndicator} />
         </MeterTrack>
       </Meter>
-      <p style={{fontSize: "0.875rem", color: "#6b7280"}}>{value}% complete</p>
+      <p className={storyClasses.status}>{value}% used</p>
     </div>
   );
 }
@@ -146,5 +219,6 @@ function AnimatedMeterContent(): React.JSX.Element {
  * Meter that animates to its value on mount.
  */
 export const Animated: Story = {
+  args: {value: 0},
   render: () => <AnimatedMeterContent />,
 };
