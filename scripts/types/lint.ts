@@ -115,4 +115,3 @@ export interface LintWorkerResult {
   /** Label of the next step in the pipeline that was skipped due to fail-fast, if any. */
   readonly skippedStep?: string;
 }
-

@@ -18,11 +18,11 @@
  * of permanently forcing categories open.
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import styles from './styles.module.css';
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import styles from "./styles.module.css";
 
 const DEBOUNCE_MS = 80;
-const COLLAPSED_CLASS = 'menu__list-item--collapsed';
+const COLLAPSED_CLASS = "menu__list-item--collapsed";
 
 /**
  * Holds the categories we auto-expanded so they can be restored when
@@ -38,24 +38,24 @@ const expandedByFilter = new Set<HTMLElement>();
  */
 function applyFilter(query: string): void {
   const needle = query.trim().toLowerCase();
-  const menu = document.querySelector('.theme-doc-sidebar-menu');
+  const menu = document.querySelector(".theme-doc-sidebar-menu");
   if (!menu) return;
 
-  if (needle === '') {
+  if (needle === "") {
     restoreExpandedCategories();
-    menu.querySelectorAll<HTMLElement>('.menu__list-item').forEach((li) => {
-      li.style.display = '';
+    menu.querySelectorAll<HTMLElement>(".menu__list-item").forEach((li) => {
+      li.style.display = "";
     });
     return;
   }
 
-  const items = menu.querySelectorAll<HTMLElement>('.menu__list-item');
+  const items = menu.querySelectorAll<HTMLElement>(".menu__list-item");
   for (const li of items) {
-    const link = li.querySelector<HTMLAnchorElement>('.menu__link');
-    const label = link?.textContent?.toLowerCase() ?? '';
+    const link = li.querySelector<HTMLAnchorElement>(".menu__link");
+    const label = link?.textContent?.toLowerCase() ?? "";
     const direct = label.includes(needle);
     const descendant = direct ? false : hasMatchingDescendant(li, needle);
-    li.style.display = direct || descendant ? '' : 'none';
+    li.style.display = direct || descendant ? "" : "none";
     if (direct || descendant) expandAncestors(li);
   }
 }
@@ -66,9 +66,9 @@ function applyFilter(query: string): void {
  * any leaf inside them matches.
  */
 function hasMatchingDescendant(li: HTMLElement, needle: string): boolean {
-  const links = li.querySelectorAll<HTMLAnchorElement>('.menu__link');
+  const links = li.querySelectorAll<HTMLAnchorElement>(".menu__link");
   for (const a of links) {
-    if ((a.textContent?.toLowerCase() ?? '').includes(needle)) return true;
+    if ((a.textContent?.toLowerCase() ?? "").includes(needle)) return true;
   }
   return false;
 }
@@ -105,7 +105,7 @@ function restoreExpandedCategories(): void {
  * Debounced 80ms so each keystroke doesn't walk the full DOM.
  */
 export default function SidebarFilter(): React.JSX.Element {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const schedule = useCallback((value: string) => {
@@ -131,10 +131,12 @@ export default function SidebarFilter(): React.JSX.Element {
         className={styles.input}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
-        placeholder=""
-        aria-label="filter sidebar"
-        type="search"
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setQuery("");
+        }}
+        placeholder=''
+        aria-label='filter sidebar'
+        type='search'
       />
       <span className={styles.label}>]</span>
     </div>

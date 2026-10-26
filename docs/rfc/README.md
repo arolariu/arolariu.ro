@@ -1,20 +1,18 @@
 # RFCs
 
-Architecture and design decision records for the arolariu.ro monorepo.
-Each RFC captures one durable decision — the problem it solved, the options
-considered, and what landed.
+Architecture and design decision records for the arolariu.ro monorepo. Each RFC captures one durable decision — the problem it solved, the
+options considered, and what landed.
 
 ## How to add a new RFC
 
-1. Copy [`RFC_TEMPLATE.md`](../RFC_TEMPLATE.md) into `docs/rfc/` with a fresh
-   number (`<next-unused-id>-<short-slug>.md`) derived from the live index.
-   Numbering convention:
+1. Copy [`RFC_TEMPLATE.md`](../RFC_TEMPLATE.md) into `docs/rfc/` with a fresh number (`<next-unused-id>-<short-slug>.md`) derived from the
+   live index. Numbering convention:
    - `0xxx` — process / CI / governance
    - `1xxx` — frontend
    - `2xxx` — backend
 2. Fill in `Status`, `Context`, `Decision`, `Consequences`.
-3. Open a PR against `main`. Update any documentation-site pointer/index owned
-   by the docs project; do not create an independently maintained RFC copy.
+3. Open a PR against `main`. Update any documentation-site pointer/index owned by the docs project; do not create an independently
+   maintained RFC copy.
 
 ## Index
 

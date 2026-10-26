@@ -35,10 +35,10 @@ export async function processInvoice(invoiceId: string) {
   return withSpan("business.invoice.process", async (span) => {
     // Operation name follows convention: category.subcategory.action
     // Categories: http.server, http.client, db, cache, api, component, page, auth, business
-    
+
     const invoice = await fetchInvoice(invoiceId);
     const result = await analyzeInvoice(invoice);
-    
+
     return result;
   });
 }
@@ -58,15 +58,15 @@ export async function createInvoice(data: InvoiceData) {
       "invoice.total_amount": data.totalAmount,
       "invoice.currency": data.currency,
     });
-    
+
     const result = await saveInvoice(data);
-    
+
     // Add result attributes
     span.setAttributes({
       "invoice.id": result.id,
       "invoice.created": true,
     });
-    
+
     return result;
   });
 }
@@ -80,7 +80,7 @@ import {withSpan, addSpanEvent} from "@/instrumentation.server";
 export async function uploadFile(file: File) {
   return withSpan("api.file.upload", async (span) => {
     addSpanEvent("file.validation.start");
-    
+
     const isValid = await validateFile(file);
     if (!isValid) {
       addSpanEvent("file.validation.failed", {
@@ -89,16 +89,16 @@ export async function uploadFile(file: File) {
       });
       throw new Error("Invalid file");
     }
-    
+
     addSpanEvent("file.validation.success");
     addSpanEvent("file.upload.start");
-    
+
     const url = await uploadToStorage(file);
-    
+
     addSpanEvent("file.upload.complete", {
       "file.url": url,
     });
-    
+
     return url;
   });
 }
@@ -115,13 +115,13 @@ export async function deleteInvoice(invoiceId: string) {
       span.setAttributes({
         "invoice.id": invoiceId,
       });
-      
+
       await performDelete(invoiceId);
-      
+
       span.setAttributes({
         "invoice.deleted": true,
       });
-      
+
       return {success: true};
     } catch (error) {
       // Automatically records exception and sets span status to error
@@ -144,14 +144,14 @@ export default async function InvoicePage({params}: {params: {id: string}}) {
       "page.invoice_id": params.id,
       "render.context": "server",
     });
-    
+
     const invoice = await fetchInvoice(params.id);
-    
+
     span.setAttributes({
       "invoice.loaded": true,
       "invoice.merchant": invoice.merchantName,
     });
-    
+
     return <InvoiceDetails invoice={invoice} />;
   });
 }
@@ -167,24 +167,24 @@ export async function GET(request: NextRequest) {
   return withSpan("http.server.invoice.get", async (span) => {
     const {searchParams} = new URL(request.url);
     const userId = searchParams.get("userId");
-    
+
     span.setAttributes({
       "http.method": "GET",
       "http.route": "/api/invoices",
       "user.id": userId ?? "anonymous",
     });
-    
+
     logWithTrace("info", "Fetching invoices", {userId}, "server");
-    
+
     const invoices = await fetchInvoices(userId);
-    
+
     span.setAttributes({
       "invoice.count": invoices.length,
       "http.status_code": 200,
     });
-    
+
     logWithTrace("info", "Invoices fetched successfully", {count: invoices.length}, "server");
-    
+
     return NextResponse.json(invoices);
   });
 }
@@ -198,36 +198,33 @@ import {withSpan, addSpanEvent, logWithTrace} from "@/instrumentation.server";
 export async function createJwtToken(payload: Record<string, any>, secret: string) {
   return withSpan("auth.jwt.create", async (span) => {
     const startTime = Date.now();
-    
+
     span.setAttributes({
       "jwt.algorithm": "HS256",
       "jwt.subject": payload.sub ?? "unknown",
       "jwt.issuer": payload.iss ?? "unknown",
       "jwt.audience": payload.aud ?? "unknown",
     });
-    
+
     addSpanEvent("jwt.signing.start");
     logWithTrace("debug", "Creating JWT token", {subject: payload.sub}, "server");
-    
+
     const secretKey = new TextEncoder().encode(secret);
-    const jwt = await new SignJWT(payload)
-      .setProtectedHeader({alg: "HS256", typ: "JWT"})
-      .setIssuedAt()
-      .sign(secretKey);
-    
+    const jwt = await new SignJWT(payload).setProtectedHeader({alg: "HS256", typ: "JWT"}).setIssuedAt().sign(secretKey);
+
     const duration = Date.now() - startTime;
-    
+
     addSpanEvent("jwt.signing.complete", {
       "jwt.duration_ms": duration,
     });
-    
+
     span.setAttributes({
       "jwt.created": true,
       "jwt.duration_ms": duration,
     });
-    
+
     logWithTrace("info", "JWT token created successfully", {subject: payload.sub, duration}, "server");
-    
+
     return jwt;
   });
 }
@@ -245,16 +242,21 @@ import {logWithTrace} from "@/instrumentation.server";
 
 export async function processPayment(amount: number) {
   logWithTrace("info", "Processing payment", {amount, currency: "USD"}, "server");
-  
+
   try {
     const result = await chargeCard(amount);
     logWithTrace("info", "Payment successful", {transactionId: result.id}, "server");
     return result;
   } catch (error) {
-    logWithTrace("error", "Payment failed", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      amount,
-    }, "server");
+    logWithTrace(
+      "error",
+      "Payment failed",
+      {
+        error: error instanceof Error ? error.message : "Unknown error",
+        amount,
+      },
+      "server",
+    );
     throw error;
   }
 }
@@ -266,16 +268,26 @@ export async function processPayment(amount: number) {
 import {logWithTrace} from "@/instrumentation.server";
 
 export function validateInvoiceData(data: InvoiceData) {
-  logWithTrace("debug", "Starting invoice validation", {
-    merchantId: data.merchantId,
-    itemCount: data.items.length,
-  }, "server");
-  
+  logWithTrace(
+    "debug",
+    "Starting invoice validation",
+    {
+      merchantId: data.merchantId,
+      itemCount: data.items.length,
+    },
+    "server",
+  );
+
   // Validation logic...
-  
-  logWithTrace("debug", "Invoice validation complete", {
-    valid: true,
-  }, "server");
+
+  logWithTrace(
+    "debug",
+    "Invoice validation complete",
+    {
+      valid: true,
+    },
+    "server",
+  );
 }
 ```
 
@@ -296,9 +308,9 @@ export async function GET(request: NextRequest) {
       statusCode: 200,
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
-    
+
     span.setAttributes(attributes);
-    
+
     // Handle request...
   });
 }
@@ -316,13 +328,13 @@ export async function fetchExternalAPI() {
       url: "https://api.example.com/data",
       statusCode: 200,
     });
-    
+
     span.setAttributes(attributes);
-    
+
     const response = await fetch("https://api.example.com/data", {
       method: "POST",
     });
-    
+
     return response.json();
   });
 }
@@ -341,15 +353,15 @@ export async function queryInvoices(userId: string) {
       table: "invoices",
       rowsAffected: 0, // Will update after query
     });
-    
+
     span.setAttributes(attributes);
-    
+
     const result = await db.query("SELECT * FROM invoices WHERE user_id = $1", [userId]);
-    
+
     span.setAttributes({
       "db.rows_affected": result.rows.length,
     });
-    
+
     return result.rows;
   });
 }
@@ -367,15 +379,15 @@ export async function getCachedInvoice(invoiceId: string) {
       key: `invoice:${invoiceId}`,
       hit: false, // Will update after check
     });
-    
+
     span.setAttributes(attributes);
-    
+
     const cached = await redis.get(`invoice:${invoiceId}`);
-    
+
     span.setAttributes({
       "cache.hit": cached !== null,
     });
-    
+
     return cached ? JSON.parse(cached) : null;
   });
 }
@@ -393,17 +405,17 @@ export async function authenticateUser(token: string) {
       userId: undefined, // Will set after verification
       success: false,
     });
-    
+
     span.setAttributes(attributes);
-    
+
     try {
       const payload = await verifyToken(token);
-      
+
       span.setAttributes({
         "auth.user_id": payload.sub,
         "auth.success": true,
       });
-      
+
       return payload;
     } catch (error) {
       span.setAttributes({
@@ -420,17 +432,17 @@ export async function authenticateUser(token: string) {
 
 Follow these conventions for consistent tracing:
 
-| Category | Pattern | Example |
-|----------|---------|---------|
-| HTTP Server | `http.server.{route}` | `http.server.invoice.get` |
-| HTTP Client | `http.client.{service}` | `http.client.external.api` |
-| Database | `db.{operation}.{table}` | `db.query.invoices` |
-| Cache | `cache.{operation}.{key}` | `cache.get.invoice` |
-| API | `api.{resource}.{action}` | `api.invoice.create` |
-| Page | `page.{route}.{action}` | `page.invoice.render` |
-| Component | `component.{name}.{action}` | `component.chart.render` |
-| Auth | `auth.{action}` | `auth.jwt.create` |
-| Business | `business.{domain}.{action}` | `business.invoice.process` |
+| Category    | Pattern                      | Example                    |
+| ----------- | ---------------------------- | -------------------------- |
+| HTTP Server | `http.server.{route}`        | `http.server.invoice.get`  |
+| HTTP Client | `http.client.{service}`      | `http.client.external.api` |
+| Database    | `db.{operation}.{table}`     | `db.query.invoices`        |
+| Cache       | `cache.{operation}.{key}`    | `cache.get.invoice`        |
+| API         | `api.{resource}.{action}`    | `api.invoice.create`       |
+| Page        | `page.{route}.{action}`      | `page.invoice.render`      |
+| Component   | `component.{name}.{action}`  | `component.chart.render`   |
+| Auth        | `auth.{action}`              | `auth.jwt.create`          |
+| Business    | `business.{domain}.{action}` | `business.invoice.process` |
 
 ## Best Practices
 
@@ -598,12 +610,12 @@ export async function register() {
 
 ## Quick Reference
 
-| Task | Function | Example |
-|------|----------|---------|
-| Create span | `withSpan(name, fn)` | `withSpan("api.fetch", async (span) => {})` |
-| Add attributes | `span.setAttributes({})` | `span.setAttributes({"user.id": "123"})` |
-| Add event | `addSpanEvent(name, attrs?)` | `addSpanEvent("cache.hit", {key: "invoice"})` |
-| Record error | `recordSpanError(error, msg)` | `recordSpanError(err, "Failed")` |
+| Task           | Function                              | Example                                              |
+| -------------- | ------------------------------------- | ---------------------------------------------------- |
+| Create span    | `withSpan(name, fn)`                  | `withSpan("api.fetch", async (span) => {})`          |
+| Add attributes | `span.setAttributes({})`              | `span.setAttributes({"user.id": "123"})`             |
+| Add event      | `addSpanEvent(name, attrs?)`          | `addSpanEvent("cache.hit", {key: "invoice"})`        |
+| Record error   | `recordSpanError(error, msg)`         | `recordSpanError(err, "Failed")`                     |
 | Log with trace | `logWithTrace(level, msg, data, ctx)` | `logWithTrace("info", "Success", {id: 1}, "server")` |
 
 ## Additional Resources

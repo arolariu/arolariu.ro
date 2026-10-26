@@ -1,8 +1,7 @@
 # Stable Service and Test Patterns
 
-Use a template only after a current sibling in the same bounded context and
-layer confirms the shape. Replace every placeholder from live source; templates
-never override a changed contract.
+Use a template only after a current sibling in the same bounded context and layer confirms the shape. Replace every placeholder from live
+source; templates never override a changed contract.
 
 ## Interface and Implementation Pair
 
@@ -18,20 +17,17 @@ never override a changed contract.
 - The interface describes one layer role and uses provider-neutral types.
 - The implementation depends only on contracts for the next approved role.
 - Public asynchronous contracts accept and forward cancellation.
-- The method is wrapped by the service's TryCatch partial, owns an Activity, and
-  awaits with `ConfigureAwait(false)`.
+- The method is wrapped by the service's TryCatch partial, owns an Activity, and awaits with `ConfigureAwait(false)`.
 - Public APIs carry accurate XML documentation.
 
 ### Live-derived values
 
-Derive namespace, class modifiers, layer/service names, direct dependency
-contract, result nullability, method name, parameter semantics, Activity source,
-exception docs, logger category, and DI lifetime from the target sibling.
+Derive namespace, class modifiers, layer/service names, direct dependency contract, result nullability, method name, parameter semantics,
+Activity source, exception docs, logger category, and DI lifetime from the target sibling.
 
 ### Invalidated when
 
-Do not use when the change is adapter-only, Broker-only, fits an existing
-contract without a new pair, or the target sibling does not use an
+Do not use when the change is adapter-only, Broker-only, fits an existing contract without a new pair, or the target sibling does not use an
 interface/partial service shape.
 
 ```csharp
@@ -82,16 +78,13 @@ public partial class {{Capability}}Service : I{{Capability}}Service
 
 ### Live-derived values
 
-Derive the exact direct-dependency exception families, current outer exception
-types, marker refinements, logger methods, whether the wrapper or its inner
-exception is passed onward, and whether a generic or typed delegate overload
-matches the sibling.
+Derive the exact direct-dependency exception families, current outer exception types, marker refinements, logger methods, whether the
+wrapper or its inner exception is passed onward, and whether a generic or typed delegate overload matches the sibling.
 
 ### Invalidated when
 
-Do not use when the target is a Broker, an adapter with the shared mapper, or a
-service whose established classifier intentionally distinguishes dependency
-timeouts from caller cancellation with a different catch filter.
+Do not use when the target is a Broker, an adapter with the shared mapper, or a service whose established classifier intentionally
+distinguishes dependency timeouts from caller cancellation with a different catch filter.
 
 ```csharp
 public partial class {{Capability}}Service
@@ -135,21 +128,18 @@ public partial class {{Capability}}Service
 
 - Validation covers only inputs/invariants owned by the current layer.
 - It runs inside the TryCatch scope and before the direct dependency call.
-- Validation throws a typed inner or argument exception that the current
-  classifier maps deliberately.
+- Validation throws a typed inner or argument exception that the current classifier maps deliberately.
 - It performs no I/O and does not call another service.
 
 ### Live-derived values
 
-Derive the validator helper versus BCL guard style, predicate, exception type,
-parameter name, nullability, message policy, and whether validation belongs on
-the domain type instead.
+Derive the validator helper versus BCL guard style, predicate, exception type, parameter name, nullability, message policy, and whether
+validation belongs on the domain type instead.
 
 ### Invalidated when
 
-Do not use when the rule is protocol binding, authorization, cross-capability
-sequencing, provider response translation, or already enforced by the aggregate
-without a service guard.
+Do not use when the rule is protocol binding, authorization, cross-capability sequencing, provider response translation, or already enforced
+by the aggregate without a service guard.
 
 ```csharp
 public partial class {{Capability}}Service
@@ -176,22 +166,19 @@ public partial class {{Capability}}Service
 
 - The Activity lifetime encloses validation and awaited observable work.
 - The display name is derived with `nameof`.
-- The bounded-context Activity source and established enrichment helpers are
-  used.
-- Tags contain only approved identifiers, bounded values, counts, durations, or
-  outcomes; payload content is excluded.
+- The bounded-context Activity source and established enrichment helpers are used.
+- Tags contain only approved identifiers, bounded values, counts, durations, or outcomes; payload content is excluded.
 - Cancellation is not recorded as a classified service failure.
 
 ### Live-derived values
 
-Derive the Activity source, operation kind, parent context, context helper,
-operation name, safe tags, and success/error ownership from the live boundary.
+Derive the Activity source, operation kind, parent context, context helper, operation name, safe tags, and success/error ownership from the
+live boundary.
 
 ### Invalidated when
 
-Do not use this internal-service shape for an Endpoint server Activity, a
-durable consumer requiring remote parent context, or work already fully owned by
-automatic instrumentation.
+Do not use this internal-service shape for an Endpoint server Activity, a durable consumer requiring remote parent context, or work already
+fully owned by automatic instrumentation.
 
 ```csharp
 await TryCatchAsync(async () =>
@@ -215,33 +202,24 @@ await TryCatchAsync(async () =>
 
 ### Invariants
 
-- The test class and public test methods have XML documentation and MSTest
-  attributes.
+- The test class and public test methods have XML documentation and MSTest attributes.
 - Test names follow `Method_Condition_Expected`.
-- Arrange/Act/Assert remains visible; direct dependency contracts are the unit
-  boundary.
-- Exception expectations use `Assert.ThrowsExactly` or
-  `Assert.ThrowsExactlyAsync`.
-- When classification is the behavior, assert the exact outer type and exact
-  inner type.
-- Cancellation and passed arguments/tokens are verified when contractually
-  relevant.
+- Arrange/Act/Assert remains visible; direct dependency contracts are the unit boundary.
+- Exception expectations use `Assert.ThrowsExactly` or `Assert.ThrowsExactlyAsync`.
+- When classification is the behavior, assert the exact outer type and exact inner type.
+- Cancellation and passed arguments/tokens are verified when contractually relevant.
 
 ### Live-derived values
 
-Derive the deterministic builder, direct dependency mock behavior, service
-constructor, exact exception pair, expected call count/order, cancellation
-token, and whether telemetry or side effects are externally observable.
+Derive the deterministic builder, direct dependency mock behavior, service constructor, exact exception pair, expected call count/order,
+cancellation token, and whether telemetry or side effects are externally observable.
 
 ### Invalidated when
 
-Do not use when the behavior requires the real HTTP mapper, provider
-serialization, Activity listener, architecture reflection, or a true external
-boundary; choose the matching live test category instead.
+Do not use when the behavior requires the real HTTP mapper, provider serialization, Activity listener, architecture reflection, or a true
+external boundary; choose the matching live test category instead.
 
-Use the [MSTest service pattern](../../code-unit-test/templates/stable-test-patterns.md#mstest-service-pattern)
-and select its classifier variant for the exact method. Name the injected
-dependency exception separately from the expected retained cause: ordinary
-Processing classification unwraps its dependency exception, while other
-paths retain it. Assert the appropriate reference identity and exact types;
-do not change production classification to fit a generic test template.
+Use the [MSTest service pattern](../../code-unit-test/templates/stable-test-patterns.md#mstest-service-pattern) and select its classifier
+variant for the exact method. Name the injected dependency exception separately from the expected retained cause: ordinary Processing
+classification unwraps its dependency exception, while other paths retain it. Assert the appropriate reference identity and exact types; do
+not change production classification to fit a generic test template.

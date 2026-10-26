@@ -21,11 +21,7 @@ const noop = (): void => undefined;
 
 type WorkerMethod = (...args: unknown[]) => Promise<unknown>;
 
-async function invokeWorkerMethod(
-  method: WorkerMethod,
-  args: readonly unknown[],
-  name: string,
-): Promise<unknown> {
+async function invokeWorkerMethod(method: WorkerMethod, args: readonly unknown[], name: string): Promise<unknown> {
   try {
     return await method(...args);
   } catch (error) {
@@ -45,11 +41,7 @@ function createWorkerCall(
   return () => raceWithSignal(invokeWorkerMethod(method, args, name), signal);
 }
 
-function createCallTimeout(
-  name: string,
-  durationMs: number,
-  callStartMs: number,
-): Readonly<{promise: Promise<never>; cancel: () => void}> {
+function createCallTimeout(name: string, durationMs: number, callStartMs: number): Readonly<{promise: Promise<never>; cancel: () => void}> {
   let handle: ReturnType<typeof setTimeout> | null = null;
   const promise = new Promise<never>((_resolve, reject) => {
     handle = setTimeout(() => {
@@ -136,10 +128,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           }
 
           try {
-            const wrapped = deps.bridge.wrapCall(
-              prop,
-              createWorkerCall(fn as WorkerMethod, callArgs, prop, signal),
-            );
+            const wrapped = deps.bridge.wrapCall(prop, createWorkerCall(fn as WorkerMethod, callArgs, prop, signal));
 
             if (timeout) {
               wrapped.catch(noop);

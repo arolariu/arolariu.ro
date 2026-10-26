@@ -9,9 +9,9 @@
       "command": "run",
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       }
     },
     {
@@ -26,11 +26,11 @@
       },
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       },
-      "presentation": { "group": "10-aspire", "order": 1 }
+      "presentation": {"group": "10-aspire", "order": 1}
     },
     {
       "name": "🚀 [Rancher] Full stack (Aspire)",
@@ -44,11 +44,11 @@
       },
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       },
-      "presentation": { "group": "10-aspire", "order": 2 }
+      "presentation": {"group": "10-aspire", "order": 2}
     },
     {
       "name": "🚀 Full stack (no debug)",
@@ -69,7 +69,7 @@
         "ASPIRE_CONTAINER_RUNTIME": "podman",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
       },
-      "presentation": { "group": "10-aspire", "order": 3 }
+      "presentation": {"group": "10-aspire", "order": 3}
     },
     {
       "name": "🚀 [Rancher] Full stack (no debug)",
@@ -82,7 +82,7 @@
         "ASPIRE_CONTAINER_RUNTIME": "docker",
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
       },
-      "presentation": { "group": "10-aspire", "order": 4 }
+      "presentation": {"group": "10-aspire", "order": 4}
     },
     {
       "name": "🌐 Website only (standalone)",
@@ -145,7 +145,7 @@
       "continueOnAttach": true,
       "localRoot": "${workspaceFolder}/sites/arolariu.ro",
       "remoteRoot": "${workspaceFolder}/sites/arolariu.ro",
-      "presentation": { "group": "10-aspire-attach", "order": 1 }
+      "presentation": {"group": "10-aspire-attach", "order": 1}
     }
   ],
   "compounds": []

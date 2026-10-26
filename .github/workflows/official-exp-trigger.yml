@@ -58,8 +58,8 @@ on:
       infrastructure:
         description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
         options:
-          - 'local'
-          - 'azure'
+          - "local"
+          - "azure"
         default: "azure"
         required: true
         type: choice
@@ -102,10 +102,10 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: 'false'
-          install-node-deps: 'false'
-          python: 'true'
-          install-python-deps: 'true'
+          node: "false"
+          install-node-deps: "false"
+          python: "true"
+          install-python-deps: "true"
 
       - name: 🔍 Running lint checks...
         run: python -m ruff check .

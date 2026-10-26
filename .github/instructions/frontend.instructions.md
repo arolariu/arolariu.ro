@@ -8,8 +8,7 @@ applyTo: "sites/arolariu.ro/**/*.ts,sites/arolariu.ro/**/*.tsx,sites/arolariu.ro
 
 ## Scope
 
-Owns rules unique to `sites/arolariu.ro`. Generic TypeScript and React behavior
-belongs to their dedicated instructions.
+Owns rules unique to `sites/arolariu.ro`. Generic TypeScript and React behavior belongs to their dedicated instructions.
 
 ## Required Inputs
 
@@ -20,30 +19,23 @@ belongs to their dedicated instructions.
 
 ## Rules
 
-- Keep `page.tsx` as a Server Component unless the route itself requires a
-  client boundary.
-- Put browser state and handlers in the smallest `island.tsx` or client
-  component.
-- Fetch server-owned data through private `server-only` helpers called by
-  Server Components. Reserve `"use server"` actions for operations a client
-  must invoke, and treat each as a public RPC authorization boundary.
+- Keep `page.tsx` as a Server Component unless the route itself requires a client boundary.
+- Put browser state and handlers in the smallest `island.tsx` or client component.
+- Fetch server-owned data through private `server-only` helpers called by Server Components. Reserve `"use server"` actions for operations a
+  client must invoke, and treat each as a public RPC authorization boundary.
 - Use the existing transport validation/error mapping at API boundaries.
-- Use Zustand only for genuinely global client state, Context for scoped state,
-  and local state otherwise.
+- Use Zustand only for genuinely global client state, Context for scoped state, and local state otherwise.
 - Use `useShallow` for object-shaped Zustand selectors.
-- Use Clerk middleware for matcher-owned route protection. Preserve
-  server-owned redirect, guest/public, ownership, and authorization checks for
-  routes and Server Actions outside that matcher; never move them client-side.
+- Use Clerk middleware for matcher-owned route protection. Preserve server-owned redirect, guest/public, ownership, and authorization checks
+  for routes and Server Actions outside that matcher; never move them client-side.
 - Route all user-visible text through `next-intl`.
 - Keep `en`, `ro`, and `fr` message keys structurally aligned.
-- Build metadata through the shared metadata helpers and localized typed
-  selectors using the live nested `metadata` message shape.
+- Build metadata through the shared metadata helpers and localized typed selectors using the live nested `metadata` message shape.
 - Handle loading, error, and empty states.
 - Use CSS Modules; do not add inline style objects.
 - Import shared primitives from `@arolariu/components`.
 - Preserve the frontend OpenTelemetry boundaries defined by RFC 1001.
-- Colocate `*.test.ts`/`*.test.tsx` with the source and mock only external
-  boundaries.
+- Colocate `*.test.ts`/`*.test.tsx` with the source and mock only external boundaries.
 
 ## Reference Catalogs
 
@@ -55,27 +47,23 @@ Open `references/frontend.md` only when the task needs one of:
 
 Open `references/nextjs.md` only when the task needs one of:
 
-- deciding ownership or behavior among App Router `page.tsx`, `layout.tsx`,
-  `template.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, or `route.ts`
-  artifacts;
-- handling promised route `params`/`searchParams`, `redirect()`/`notFound()`,
-  segment streaming/Suspense, or Route Handler response/cache behavior;
-- changing the Next.js metadata lifecycle while leaving localized message
-  schema and website metadata-helper behavior with their existing owners;
-- investigating `src/proxy.ts`, `next.config.ts`, or another Next-specific
-  routing/rendering/build edge case far enough to route protected changes to
-  the owning skill and escalation.
+- deciding ownership or behavior among App Router `page.tsx`, `layout.tsx`, `template.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, or
+  `route.ts` artifacts;
+- handling promised route `params`/`searchParams`, `redirect()`/`notFound()`, segment streaming/Suspense, or Route Handler response/cache
+  behavior;
+- changing the Next.js metadata lifecycle while leaving localized message schema and website metadata-helper behavior with their existing
+  owners;
+- investigating `src/proxy.ts`, `next.config.ts`, or another Next-specific routing/rendering/build edge case far enough to route protected
+  changes to the owning skill and escalation.
 
-Do not open `nextjs.md` for ordinary React semantics, message-copy changes,
-Server Action security, or website state placement. Neither catalog redefines
-these rules or a task skill's procedure.
+Do not open `nextjs.md` for ordinary React semantics, message-copy changes, Server Action security, or website state placement. Neither
+catalog redefines these rules or a task skill's procedure.
 
 ## Validation
 
-Use the website local guide's routine verification. Escalate to full website
-tests or global lint only for a final pass or explicit request.
+Use the website local guide's routine verification. Escalate to full website tests or global lint only for a final pass or explicit request.
 
 ## Escalation
 
-Ask before a new dependency, Zustand store, authentication behavior,
-`next.config.ts`, route-contract change, or incidental shared-library change.
+Ask before a new dependency, Zustand store, authentication behavior, `next.config.ts`, route-contract change, or incidental shared-library
+change.

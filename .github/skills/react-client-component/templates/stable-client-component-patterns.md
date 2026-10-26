@@ -5,17 +5,13 @@ Use only after a same-scope live sibling confirms the pattern.
 ## Provenance
 
 - Readonly route component and behavior test:
-  `sites/arolariu.ro/src/app/domains/invoices/_components/classification/ClassificationPicker.tsx`
-  and
+  `sites/arolariu.ro/src/app/domains/invoices/_components/classification/ClassificationPicker.tsx` and
   `sites/arolariu.ro/src/app/domains/invoices/_components/classification/ClassificationPicker.test.tsx`
-- Website CSS Module usage:
-  `sites/arolariu.ro/src/app/about/_components/Hero.tsx` and
+- Website CSS Module usage: `sites/arolariu.ro/src/app/about/_components/Hero.tsx` and
   `sites/arolariu.ro/src/app/about/_components/Hero.module.scss`
-- Shared ref/composition behavior:
-  `packages/components/src/components/ui/button.tsx` and
+- Shared ref/composition behavior: `packages/components/src/components/ui/button.tsx` and
   `packages/components/src/components/ui/button.test.tsx`
-- User interaction/focus behavior:
-  `packages/components/src/components/ui/dialog.test.tsx`
+- User interaction/focus behavior: `packages/components/src/components/ui/dialog.test.tsx`
 - Global website test shims: `sites/arolariu.ro/vitest.setup.ts`
 
 ## Invariants
@@ -24,17 +20,14 @@ Use only after a same-scope live sibling confirms the pattern.
 - `"use client"` appears only when the file directly needs a client feature.
 - Styling is colocated and follows the owning project's module convention.
 - Native semantics or existing shared primitives own interaction.
-- A forwarded ref targets the documented public DOM node and exists only when
-  consumers need it.
-- Tests exercise user-observable roles, names, interactions, keyboard/focus,
-  and state; repository modules are not mocked as an implementation shortcut.
+- A forwarded ref targets the documented public DOM node and exists only when consumers need it.
+- Tests exercise user-observable roles, names, interactions, keyboard/focus, and state; repository modules are not mocked as an
+  implementation shortcut.
 
 ## Live-derived values
 
-Derive prop/domain types, translation selectors, module extension/import depth,
-class names, primitive imports, callback contracts, ref element, builders,
-external boundaries, and expected accessible names from the consumer and live
-sibling.
+Derive prop/domain types, translation selectors, module extension/import depth, class names, primitive imports, callback contracts, ref
+element, builders, external boundaries, and expected accessible names from the consumer and live sibling.
 
 ## Narrow client boundary
 
@@ -76,15 +69,14 @@ export function <ComponentName>({
 }
 ```
 
-Keep event-derived updates in the handler. Do not add an effect to mirror
-`open` into another state value.
+Keep event-derived updates in the handler. Do not add an effect to mirror `open` into another state value.
 
 ## CSS Module composition
 
 Website components derive the SCSS import path and mixins from a sibling:
 
 ```scss
-@use '<live-relative-path>/styles/abstracts' as *;
+@use "<live-relative-path>/styles/abstracts" as *;
 
 .section {
   color: hsl(var(--foreground));
@@ -99,8 +91,7 @@ Website components derive the SCSS import path and mixins from a sibling:
 }
 ```
 
-Shared-library components use their current `.module.css` plus `cn()` pattern.
-Do not mix the two owners or add inline style objects.
+Shared-library components use their current `.module.css` plus `cn()` pattern. Do not mix the two owners or add inline style objects.
 
 ## Ref forwarding when the public contract requires it
 
@@ -122,8 +113,7 @@ export const <ComponentName> = React.forwardRef<
 <ComponentName>.displayName = "<ComponentName>";
 ```
 
-For a composed shared primitive, use the matching live Base UI `render` and
-`mergeProps` pattern instead of raw prop spreading.
+For a composed shared primitive, use the matching live Base UI `render` and `mergeProps` pattern instead of raw prop spreading.
 
 ## Testing Library user behavior
 
@@ -153,13 +143,10 @@ describe("<ComponentName>", () => {
 });
 ```
 
-Add separate tests only for materially distinct behavior such as disabled
-activation, Escape/focus return, loading/error/empty, cleanup, or ref
-forwarding.
+Add separate tests only for materially distinct behavior such as disabled activation, Escape/focus return, loading/error/empty, cleanup, or
+ref forwarding.
 
 ## Invalidated when
 
-Do not use these shapes if the owning project changes CSS Module conventions,
-translation/test setup, Base UI composition, React ref API, client-boundary
-rules, or the live sibling's accessibility contract. Re-inspect and update this
-resource first.
+Do not use these shapes if the owning project changes CSS Module conventions, translation/test setup, Base UI composition, React ref API,
+client-boundary rules, or the live sibling's accessibility contract. Re-inspect and update this resource first.

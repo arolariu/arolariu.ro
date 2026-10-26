@@ -179,6 +179,5 @@ flowchart TD
 
 ---
 
-**Last Updated**: July 2025
-**Version**: 2.1.0  
+**Last Updated**: July 2025 **Version**: 2.1.0\
 **Maintainer**: Alexandru-Razvan Olariu

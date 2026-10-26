@@ -1,6 +1,7 @@
 # 🔗 Bindings Module
 
-This module manages custom domain bindings and managed certificates for App Services and Static Web Apps in the arolariu.ro platform. It ensures correct sequencing and secure configuration for domain and certificate provisioning.
+This module manages custom domain bindings and managed certificates for App Services and Static Web Apps in the arolariu.ro platform. It
+ensures correct sequencing and secure configuration for domain and certificate provisioning.
 
 ---
 
@@ -15,25 +16,25 @@ This module manages custom domain bindings and managed certificates for App Serv
 
 ## 🏗️ Resources Created
 
-| Resource Type                      | Purpose                                   |
-| ---------------------------------- | ----------------------------------------- |
-| App Service Custom Domain Binding  | Binds custom domains to App Services      |
-| Managed Certificate                | Issues and attaches certificates          |
-| Static Web App Custom Domain       | Binds custom domains to Static Web Apps   |
+| Resource Type                     | Purpose                                 |
+| --------------------------------- | --------------------------------------- |
+| App Service Custom Domain Binding | Binds custom domains to App Services    |
+| Managed Certificate               | Issues and attaches certificates        |
+| Static Web App Custom Domain      | Binds custom domains to Static Web Apps |
 
 ---
 
 ## 📁 Module Files
 
-| File                                     | Purpose                                      |
-| ---------------------------------------- | -------------------------------------------- |
-| `deploymentFile.bicep`                   | Orchestrates all binding deployments         |
-| `api-arolariu-ro-bindings.bicep`         | API domain binding                           |
-| `api-arolariu-ro-certificate-bindings.bicep` | API managed certificate                  |
-| `dev-arolariu-ro-bindings.bicep`         | Dev domain binding                           |
-| `dev-arolariu-ro-certificate-bindings.bicep` | Dev managed certificate                  |
-| `cv-arolariu-ro-bindings.bicep`          | CV Static Web App domain binding             |
-| `docs-arolariu-ro-bindings.bicep`        | Docs Static Web App domain binding           |
+| File                                         | Purpose                              |
+| -------------------------------------------- | ------------------------------------ |
+| `deploymentFile.bicep`                       | Orchestrates all binding deployments |
+| `api-arolariu-ro-bindings.bicep`             | API domain binding                   |
+| `api-arolariu-ro-certificate-bindings.bicep` | API managed certificate              |
+| `dev-arolariu-ro-bindings.bicep`             | Dev domain binding                   |
+| `dev-arolariu-ro-certificate-bindings.bicep` | Dev managed certificate              |
+| `cv-arolariu-ro-bindings.bicep`              | CV Static Web App domain binding     |
+| `docs-arolariu-ro-bindings.bicep`            | Docs Static Web App domain binding   |
 
 ---
 

@@ -88,7 +88,11 @@ const SunIcon = (): React.JSX.Element => (
  * ```
  */
 export default function ThemeButton(): React.JSX.Element {
-  const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
   const {theme, setTheme} = useTheme();
   const t = useTranslations();
 

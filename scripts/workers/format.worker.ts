@@ -40,10 +40,7 @@ const directoryMap: Record<Exclude<FormatTarget, "api" | "exp">, string> = {
  * @param customPatterns Optional custom file patterns for selective targeting
  * @returns Promise with exit code and output
  */
-async function checkTarget(
-  target: FormatTarget,
-  customPatterns?: readonly string[],
-): Promise<{code: number; output: string}> {
+async function checkTarget(target: FormatTarget, customPatterns?: readonly string[]): Promise<{code: number; output: string}> {
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"]);
@@ -88,10 +85,7 @@ async function checkTarget(
  * @param customPatterns Optional custom file patterns for selective targeting
  * @returns Promise with exit code and output
  */
-async function formatTarget(
-  target: FormatTarget,
-  customPatterns?: readonly string[],
-): Promise<{code: number; output: string}> {
+async function formatTarget(target: FormatTarget, customPatterns?: readonly string[]): Promise<{code: number; output: string}> {
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verbosity", "quiet"]);
@@ -215,7 +209,8 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
           exitCode: 0,
           resultText: `  ⊘ ${target} skipped: Ruff not found (tried 'ruff' and 'python -m ruff')\n`,
           skipped: true,
-          skipReason: "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
+          skipReason:
+            "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
           workerId,
           durationMs: Math.round(performance.now() - startTime),
           workTimeMs: 0,

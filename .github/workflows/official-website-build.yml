@@ -76,8 +76,8 @@ on:
       infrastructure:
         description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
         options:
-          - 'local'
-          - 'azure'
+          - "local"
+          - "azure"
         default: "azure"
         required: true
         type: choice
@@ -149,7 +149,7 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          install-playwright: 'true'
+          install-playwright: "true"
           run-generate: "true"
           generate-args: "artifacts gql i18n"
 
@@ -204,7 +204,7 @@ jobs:
           echo "| Framework | Vitest |" >> $GITHUB_STEP_SUMMARY
 
       - name: 🧪 Running E2E tests...
-        working-directory: './sites/arolariu.ro'
+        working-directory: "./sites/arolariu.ro"
         run: |
           echo "::group::🎭 Running Playwright E2E Tests"
           echo "📍 Framework: Playwright"
@@ -307,7 +307,7 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          run-generate: 'true'
+          run-generate: "true"
           generate-args: "artifacts gql i18n"
 
       - name: 📝 Set public build timestamp
@@ -320,7 +320,7 @@ jobs:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 🏗️ Building the docker container...
-        working-directory: '.'
+        working-directory: "."
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}

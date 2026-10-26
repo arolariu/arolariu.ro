@@ -1,7 +1,6 @@
 # Live Server Component Examples
 
-These are inspection targets, not copy sources. Re-open every path because page
-data, messages, and access rules are dynamic.
+These are inspection targets, not copy sources. Re-open every path because page data, messages, and access rules are dynamic.
 
 ## Directive-free component currently in a client graph
 
@@ -12,17 +11,13 @@ data, messages, and access rules are dynamic.
 
 ### Why representative
 
-`FeatureItem` has no client directive or hooks, but `FeaturesSection` imports it
-from a client module. It is therefore client-bundled today. Its `IconType`
-function prop is local to that client graph; it is not serialized across an
-RSC boundary.
+`FeatureItem` has no client directive or hooks, but `FeaturesSection` imports it from a client module. It is therefore client-bundled today.
+Its `IconType` function prop is local to that client graph; it is not serialized across an RSC boundary.
 
 ### Inspect
 
-Trace every consumer before declaring a component server-owned. A
-directive-free module can remain server-compatible while being client-bundled
-by an importing client entry. Do not pass function props like `IconType`
-across an actual RSC serialization boundary.
+Trace every consumer before declaring a component server-owned. A directive-free module can remain server-compatible while being
+client-bundled by an importing client entry. Do not pass function props like `IconType` across an actual RSC serialization boundary.
 
 ## Server shell with a small island
 
@@ -34,15 +29,13 @@ across an actual RSC serialization boundary.
 
 ### Why representative
 
-The root page keeps the App Router entry server-owned and delegates animation
-and client rendering to one island. Its route spec checks landmarks, navigation,
-headings, accessibility, and responsive viewports.
+The root page keeps the App Router entry server-owned and delegates animation and client rendering to one island. Its route spec checks
+landmarks, navigation, headings, accessibility, and responsive viewports.
 
 ### Inspect
 
-Confirm why the island is client-only, where the single `main` landmark is
-owned by the root layout, and whether the requested route needs the same split.
-Do not copy its animation or page-wide client boundary into a static route.
+Confirm why the island is client-only, where the single `main` landmark is owned by the root layout, and whether the requested route needs
+the same split. Do not copy its animation or page-wide client boundary into a static route.
 
 ## Localized content and metadata
 
@@ -59,16 +52,14 @@ Do not copy its animation or page-wide client boundary into a static route.
 
 ### Why representative
 
-These pages combine server translations, current typed selector callbacks,
-`getLocale`, `createMetadata`, route CSS Modules, and an optional interactive
-island.
+These pages combine server translations, current typed selector callbacks, `getLocale`, `createMetadata`, route CSS Modules, and an optional
+interactive island.
 
 ### Inspect
 
-Derive the exact typed `metadata` selector branch from the neighboring route
-and verify all locales. `about/page.spec.tsx` is the current colocated route
-test; the privacy-policy route has no colocated spec, so do not claim that
-example proves route behavior beyond its live source.
+Derive the exact typed `metadata` selector branch from the neighboring route and verify all locales. `about/page.spec.tsx` is the current
+colocated route test; the privacy-policy route has no colocated spec, so do not claim that example proves route behavior beyond its live
+source.
 
 ## Server data with streaming client interaction
 
@@ -81,16 +72,13 @@ example proves route behavior beyond its live source.
 
 ### Why representative
 
-The page owns server user data and localized header content, uses a local
-Suspense fallback, and delegates tabs, dialogs, cached entities, loading, and
-interaction to the island.
+The page owns server user data and localized header content, uses a local Suspense fallback, and delegates tabs, dialogs, cached entities,
+loading, and interaction to the island.
 
 ### Inspect
 
-Check which data is actually fetched on the server versus hydrated/fetched by
-the hook, how the fallback matches the island, and whether all success/error/
-empty states are complete. Do not repeat this dual data strategy without a
-specific stale-while-revalidate requirement.
+Check which data is actually fetched on the server versus hydrated/fetched by the hook, how the fallback matches the island, and whether all
+success/error/ empty states are complete. Do not repeat this dual data strategy without a specific stale-while-revalidate requirement.
 
 ## Dynamic route, transport validation, access, and not-found
 
@@ -105,15 +93,13 @@ specific stale-while-revalidate requirement.
 
 ### Why representative
 
-This chain awaits typed route params, validates unknown API data, maps absence
-to `notFound()`, preserves forbidden/public/owner rules, and passes normalized
-domain data to a client island.
+This chain awaits typed route params, validates unknown API data, maps absence to `notFound()`, preserves forbidden/public/owner rules, and
+passes normalized domain data to a client island.
 
 ### Inspect
 
-Trace every failure branch and the exact serialization contract. The access
-rules are route-specific security behavior; inspect them for ownership only and
-never copy or change them as a generic pattern.
+Trace every failure branch and the exact serialization contract. The access rules are route-specific security behavior; inspect them for
+ownership only and never copy or change them as a generic pattern.
 
 ## Auth redirect and middleware boundary
 
@@ -127,17 +113,14 @@ never copy or change them as a generic pattern.
 
 ### Why representative
 
-Together they show the difference between the live Clerk matcher, a server-side
-redirect for an already authenticated visitor, and an interactive auth screen.
-The current route spec covers structure/accessibility but does not directly
-assert the authenticated redirect branch; treat that as a coverage gap rather
-than evidence the redirect is tested.
+Together they show the difference between the live Clerk matcher, a server-side redirect for an already authenticated visitor, and an
+interactive auth screen. The current route spec covers structure/accessibility but does not directly assert the authenticated redirect
+branch; treat that as a coverage gap rather than evidence the redirect is tested.
 
 ### Inspect
 
-Verify whether the requested route is actually matched by middleware and which
-guest behavior already exists. Choose another sibling and stop for approval if
-the task changes route visibility or authentication.
+Verify whether the requested route is actually matched by middleware and which guest behavior already exists. Choose another sibling and
+stop for approval if the task changes route visibility or authentication.
 
 ## Segment loading and recovery
 
@@ -150,12 +133,10 @@ the task changes route visibility or authentication.
 
 ### Why representative
 
-The files demonstrate server-rendered skeletons without duplicate landmarks
-and a client error boundary with a retry callback, safe digest display, and
-localized accessible status.
+The files demonstrate server-rendered skeletons without duplicate landmarks and a client error boundary with a retry callback, safe digest
+display, and localized accessible status.
 
 ### Inspect
 
-Compare the fallback geometry to the final route, confirm recovery and focus/
-announcement semantics, and use a route-local boundary only when its behavior
-differs from the ancestor.
+Compare the fallback geometry to the final route, confirm recovery and focus/ announcement semantics, and use a route-local boundary only
+when its behavior differs from the ancestor.

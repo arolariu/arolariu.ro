@@ -11,7 +11,10 @@
 
 ## Abstract
 
-This RFC documents the OpenTelemetry (OTel) observability implementation in the api.arolariu.ro .NET modular monolith. The system provides comprehensive distributed tracing, structured logging, and performance metrics collection with Azure Application Insights integration. The implementation leverages OpenTelemetry SDK for standardized observability while maintaining zero-allocation performance through source generators and automatic instrumentation.
+This RFC documents the OpenTelemetry (OTel) observability implementation in the api.arolariu.ro .NET modular monolith. The system provides
+comprehensive distributed tracing, structured logging, and performance metrics collection with Azure Application Insights integration. The
+implementation leverages OpenTelemetry SDK for standardized observability while maintaining zero-allocation performance through source
+generators and automatic instrumentation.
 
 ---
 
@@ -21,15 +24,15 @@ This RFC documents the OpenTelemetry (OTel) observability implementation in the 
 
 Modern distributed systems require comprehensive observability to:
 
-- **Diagnose Performance Issues**: Identify bottlenecks across the Invoices
-  flow (Endpoint/Worker → Management → Processing → Orchestration → Foundation
-  → Broker)
+- **Diagnose Performance Issues**: Identify bottlenecks across the Invoices flow (Endpoint/Worker → Management → Processing → Orchestration
+  → Foundation → Broker)
 - **Correlate Distributed Operations**: Track requests through multiple layers of the modular monolith
 - **Monitor System Health**: Collect real-time metrics on throughput, latency, and error rates
 - **Debug Production Issues**: Access structured logs with trace context correlation
 - **Ensure SLA Compliance**: Measure and alert on performance degradation
 
-Without standardized observability, debugging production issues requires manual log correlation and lacks visibility into cross-layer performance characteristics.
+Without standardized observability, debugging production issues requires manual log correlation and lacks visibility into cross-layer
+performance characteristics.
 
 ### 1.2 Design Goals
 
@@ -39,8 +42,7 @@ Without standardized observability, debugging production issues requires manual 
 - **Azure Integration**: Export telemetry to Azure Application Insights for centralized monitoring
 - **Development Visibility**: Provide console export during debugging for immediate feedback
 - **Modular Architecture**: Align tracing with DDD domain boundaries (Common, Core, Auth, Invoices)
-- **Secure Authentication**: Use the repository Azure credential factory for
-  Azure Monitor export
+- **Secure Authentication**: Use the repository Azure credential factory for Azure Monitor export
 
 ---
 
@@ -193,15 +195,13 @@ public static partial class Log
 
 #### 2.2.4 Queued Analysis Trace and Retry Telemetry
 
-Invoice and merchant analysis requests capture W3C `traceparent` in
-`QueueAnalysisMessage`. `InvoiceProcessingService.ProcessAnalysisAsync` parses
-that context and starts an `ActivityKind.Consumer` activity, so background work
-remains correlated with the request that published it.
+Invoice and merchant analysis requests capture W3C `traceparent` in `QueueAnalysisMessage`. `InvoiceProcessingService.ProcessAnalysisAsync`
+parses that context and starts an `ActivityKind.Consumer` activity, so background work remains correlated with the request that published
+it.
 
-Failed-only replacement messages preserve the original `CorrelationId` and
-`TraceParent` while incrementing the bounded logical `AttemptNumber`. Each
-replacement attempt therefore remains in the same distributed trace without
-using Azure Queue dequeue count as application retry state.
+Failed-only replacement messages preserve the original `CorrelationId` and `TraceParent` while incrementing the bounded logical
+`AttemptNumber`. Each replacement attempt therefore remains in the same distributed trace without using Azure Queue dequeue count as
+application retry state.
 
 Bounded analysis telemetry records:
 
@@ -211,9 +211,8 @@ Bounded analysis telemetry records:
 - attempt-three discard; and
 - target persistence failure.
 
-Logs and metrics accept only correlation identifiers, bounded enums, attempt
-numbers, counts, and durations. OCR content, product or merchant names, prompts,
-provider responses, scan URLs, and credentials are excluded.
+Logs and metrics accept only correlation identifiers, bounded enums, attempt numbers, counts, and durations. OCR content, product or
+merchant names, prompts, provider responses, scan URLs, and credentials are excluded.
 
 #### 2.2.5 Azure Monitor Export Integration
 
@@ -223,7 +222,8 @@ provider responses, scan URLs, and credentials are excluded.
 - `Common/Telemetry/Metering/MeteringExtensions.cs`
 - `Common/Telemetry/Tracing/TracingExtensions.cs`
 
-**Purpose**: Export OpenTelemetry logs, metrics, and traces to Azure Monitor/Application Insights using `Azure.Monitor.OpenTelemetry.Exporter`.
+**Purpose**: Export OpenTelemetry logs, metrics, and traces to Azure Monitor/Application Insights using
+`Azure.Monitor.OpenTelemetry.Exporter`.
 
 **Features**:
 
@@ -248,28 +248,21 @@ public static void AddGeneralDomainConfiguration(this WebApplicationBuilder buil
 
 **Azure Monitor authentication**:
 
-- The exporter uses the configured Application Insights connection string and
-  the shared `AzureCredentialFactory`.
+- The exporter uses the configured Application Insights connection string and the shared `AzureCredentialFactory`.
 - Debug builds use the normal `DefaultAzureCredential` developer chain.
-- Release builds configure the managed-identity client ID from
-  `AZURE_CLIENT_ID`.
+- Release builds configure the managed-identity client ID from `AZURE_CLIENT_ID`.
 - Console exporters are added only when a debugger is attached.
 
 **Local Swagger personas**:
 
-- Aspire runs a loopback-only `local-identities` tooling resource for Alice,
-  Bob, and Charlie.
-- Tokens use the same issuer, audience, signature, lifetime validation, and
-  `userIdentifier` claim contract as normal API Bearer tokens.
-- Development Swagger injects persona controls only when the environment is
-  Development, `INFRA=local`, no Azure managed identity is present, and AppHost
-  supplies the loopback identity endpoint.
-- The API content security policy adds that exact loopback origin to
-  `connect-src`; production retains the same-origin-only policy.
-- Tokens, signing secrets, connection strings, raw fixture documents, and scan
-  contents are never logged or exported.
-- The identity helper and seed bootstrap are excluded from deployment manifests;
-  production authentication and observability remain unchanged.
+- Aspire runs a loopback-only `local-identities` tooling resource for Alice, Bob, and Charlie.
+- Tokens use the same issuer, audience, signature, lifetime validation, and `userIdentifier` claim contract as normal API Bearer tokens.
+- Development Swagger injects persona controls only when the environment is Development, `INFRA=local`, no Azure managed identity is
+  present, and AppHost supplies the loopback identity endpoint.
+- The API content security policy adds that exact loopback origin to `connect-src`; production retains the same-origin-only policy.
+- Tokens, signing secrets, connection strings, raw fixture documents, and scan contents are never logged or exported.
+- The identity helper and seed bootstrap are excluded from deployment manifests; production authentication and observability remain
+  unchanged.
 
 **Connection String Resolution**:
 
@@ -362,11 +355,9 @@ internal static async Task<IResult> CreateNewInvoiceAsync(
 }
 ```
 
-Endpoints record bounded identifiers and operation labels, never request
-payloads, OCR content, merchant/product names, prompts, provider responses, or
-credentials. Writes use the repository-owned cancellation budget; timeout and
-client-disconnect outcomes are classified before the safe shared exception
-mapper.
+Endpoints record bounded identifiers and operation labels, never request payloads, OCR content, merchant/product names, prompts, provider
+responses, or credentials. Writes use the repository-owned cancellation budget; timeout and client-disconnect outcomes are classified before
+the safe shared exception mapper.
 
 ### 3.3 High-Performance Logging
 
@@ -465,37 +456,27 @@ public class InvoiceController : ControllerBase
 
 ## 5. Performance Considerations
 
-The implementation uses source-generated logging for recurring events and
-bounded metric labels to control allocation and cardinality. OpenTelemetry
-providers perform their configured batching/export behavior.
+The implementation uses source-generated logging for recurring events and bounded metric labels to control allocation and cardinality.
+OpenTelemetry providers perform their configured batching/export behavior.
 
-No custom trace sampler is currently registered; do not claim a production
-sampling percentage without adding and testing one.
+No custom trace sampler is currently registered; do not claim a production sampling percentage without adding and testing one.
 
-Console exporters are added when `Debugger.IsAttached`, not through a DEBUG
-conditional compilation contract. Activity/listener absence must not affect
-business behavior.
+Console exporters are added when `Debugger.IsAttached`, not through a DEBUG conditional compilation contract. Activity/listener absence must
+not affect business behavior.
 
 ---
 
 ## 6. Security Considerations
 
-The request instrumentation records the remote IP and, when available, the
-claim-derived user identifier as a span tag and baggage value. No consent gate
-is implemented for that enrichment. Treat both as personal data when defining
-access, retention, export, or deletion policy.
+The request instrumentation records the remote IP and, when available, the claim-derived user identifier as a span tag and baggage value. No
+consent gate is implemented for that enrichment. Treat both as personal data when defining access, retention, export, or deletion policy.
 
-Application code must not add OCR/scan content, names, prompts, request bodies,
-credentials, authorization headers, connection strings, or raw provider
-responses to telemetry. The current shared exception recorder still emits
-exception type, message, and stack trace, and several generated exception logs
-accept `exception.Message`; these are implemented privacy debts, not redacted
-patterns.
+Application code must not add OCR/scan content, names, prompts, request bodies, credentials, authorization headers, connection strings, or
+raw provider responses to telemetry. The current shared exception recorder still emits exception type, message, and stack trace, and several
+generated exception logs accept `exception.Message`; these are implemented privacy debts, not redacted patterns.
 
-Telemetry region and retention are deployment/configuration concerns. The
-repository's current infrastructure parameters and Azure resource settings are
-authoritative; this RFC does not assert a compliance region or fixed retention
-period.
+Telemetry region and retention are deployment/configuration concerns. The repository's current infrastructure parameters and Azure resource
+settings are authoritative; this RFC does not assert a compliance region or fixed retention period.
 
 ---
 
@@ -687,7 +668,4 @@ union traces, requests, dependencies
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2025-10-20
-**Reviewed By**: Alexandru Olariu
-**Status**: Implemented
+**Document Version**: 1.0.0 **Last Updated**: 2025-10-20 **Reviewed By**: Alexandru Olariu **Status**: Implemented

@@ -8,8 +8,7 @@ applyTo: "**/AGENTS.md,CLAUDE.md,.github/CODEOWNERS,.github/copilot-instructions
 
 ## Scope
 
-Applies only to repository AI customization and its security-sensitive
-configuration.
+Applies only to repository AI customization and its security-sensitive configuration.
 
 ## Required Inputs
 
@@ -22,38 +21,31 @@ configuration.
 ## Execution Constraints
 
 - Give each fact, rule, workflow, and tool one owning asset.
-- Reference root versions, commands, architecture, and risk rules instead of
-  copying them.
+- Reference root versions, commands, architecture, and risk rules instead of copying them.
 - Keep agents focused on role and routing.
 - Keep skills focused on one repeatable workflow.
 - Keep prompts as thin local shortcuts.
 - Keep extensions optional to static safety and correctness.
-- Keep memory free of versions, commands, counts, architecture snapshots,
-  discoverable paths, secrets, and task state.
-- Do not use stale model pins, arbitrary shell tools, `approveAll`, implicit
-  unmatched permission approval, or success-shaped failures.
+- Keep memory free of versions, commands, counts, architecture snapshots, discoverable paths, secrets, and task state.
+- Do not use stale model pins, arbitrary shell tools, `approveAll`, implicit unmatched permission approval, or success-shaped failures.
 - Do not add `version`, `lastUpdated`, or `lastReviewed` metadata to AI assets.
 
 ## Reference Catalog
 
 Open `references/agent-governance.md` only when the task needs one of:
 
-- deciding which owning asset type (instruction, agent, skill, prompt,
-  extension, or memory) owns a concern, or whether it belongs in a subordinate
-  instruction catalog or MCP client configuration;
+- deciding which owning asset type (instruction, agent, skill, prompt, extension, or memory) owns a concern, or whether it belongs in a
+  subordinate instruction catalog or MCP client configuration;
 - a frontmatter shape question for an instruction, agent, skill, or prompt;
-- confirming a one-owner placement, or correcting an asset that duplicates
-  another asset's owned fact;
-- writing or reviewing a progressive-disclosure trigger for a skill resource
-  or instruction catalog;
-- an extension/MCP threat-boundary question (read-only tools, bounded context
-  injection, native permissions/sandboxing, allowlist scope);
+- confirming a one-owner placement, or correcting an asset that duplicates another asset's owned fact;
+- writing or reviewing a progressive-disclosure trigger for a skill resource or instruction catalog;
+- an extension/MCP threat-boundary question (read-only tools, bounded context injection, native permissions/sandboxing, allowlist scope);
 - a memory-policy question about whether a proposed entry is source-derived;
 - a prompt-versus-skill boundary question;
 - verifying runtime health evidence for an extension beyond source presence.
 
-The catalog does not redefine these rules, the operating protocol, or the
-threat model; it only adds repository-specific examples and corrections.
+The catalog does not redefine these rules, the operating protocol, or the threat model; it only adds repository-specific examples and
+corrections.
 
 ## Validation
 
@@ -65,6 +57,5 @@ threat model; it only adds repository-specific examples and corrections.
 
 ## Escalation
 
-Stop for dependency, security, auth, schema, infrastructure, workflow,
-destructive, or unresolved behavior decisions. Follow the operating protocol
-for source/RFC drift and material uncertainty.
+Stop for dependency, security, auth, schema, infrastructure, workflow, destructive, or unresolved behavior decisions. Follow the operating
+protocol for source/RFC drift and material uncertainty.

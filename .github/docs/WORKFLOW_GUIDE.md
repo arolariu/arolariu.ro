@@ -1,20 +1,19 @@
 # GitHub Actions Workflow Guide
 
-This guide documents the CI/CD workflows for the arolariu.ro monorepo.
-The [workflow definitions](../workflows/) own current triggers, inputs,
-conditions, and retention settings.
+This guide documents the CI/CD workflows for the arolariu.ro monorepo. The [workflow definitions](../workflows/) own current triggers,
+inputs, conditions, and retention settings.
 
 ## Workflow Overview
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `official-website-build` | Push to `preview`, manual | Build and test main website |
-| `official-website-release` | After build, manual | Deploy website to Azure |
-| `official-api-trigger` | Push to `main` (API changes), manual | Build, test, and deploy API |
-| `official-cv-trigger` | Push to `main` (CV changes), manual | Build and deploy CV site |
-| `official-docs-trigger` | Push to `main`, manual | Generate and deploy docs |
-| `official-hygiene-check-v2` | Pull requests | Code quality checks |
-| `official-e2e-action` | Daily at 06:17 UTC, manual | Live Newman checks |
+| Workflow                    | Trigger                              | Purpose                     |
+| --------------------------- | ------------------------------------ | --------------------------- |
+| `official-website-build`    | Push to `preview`, manual            | Build and test main website |
+| `official-website-release`  | After build, manual                  | Deploy website to Azure     |
+| `official-api-trigger`      | Push to `main` (API changes), manual | Build, test, and deploy API |
+| `official-cv-trigger`       | Push to `main` (CV changes), manual  | Build and deploy CV site    |
+| `official-docs-trigger`     | Push to `main`, manual               | Generate and deploy docs    |
+| `official-hygiene-check-v2` | Pull requests                        | Code quality checks         |
+| `official-e2e-action`       | Daily at 06:17 UTC, manual           | Live Newman checks          |
 
 ## Decision Tree: Which Workflow to Use
 
@@ -51,6 +50,7 @@ For workflows with a manual entrypoint, use the GitHub UI:
 ### Common Manual Triggers
 
 **Deploy website to production:**
+
 ```
 Workflow: official-website-release
 Inputs:
@@ -59,6 +59,7 @@ Inputs:
 ```
 
 **Deploy API:**
+
 ```
 Workflow: official-api-trigger
 Inputs:
@@ -67,6 +68,7 @@ Inputs:
 ```
 
 **Run E2E tests:**
+
 ```
 Workflow: official-e2e-action
 Use the default target selection, or choose targets in the dispatch form.
@@ -84,6 +86,7 @@ Use the default target selection, or choose targets in the dispatch form.
 ### 2. Download Artifacts
 
 Most workflows upload artifacts for debugging:
+
 - Test results (`test-results-*`)
 - Coverage reports
 - Build logs
@@ -92,16 +95,15 @@ Check each upload step for its retention period.
 
 ### 3. Common Issues
 
-| Issue | Workflow | Solution |
-|-------|----------|----------|
-| Tests not running | api-trigger | Inspect test-job conditions and runner output |
-| PR comment duplicates | hygiene-check | Inspect marker lookup and pagination in `.github/scripts/helpers/github/index.ts` |
-| Health check fails | e2e-action | Check if API is running at api.arolariu.ro |
+| Issue                       | Workflow      | Solution                                                                                                           |
+| --------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Tests not running           | api-trigger   | Inspect test-job conditions and runner output                                                                      |
+| PR comment duplicates       | hygiene-check | Inspect marker lookup and pagination in `.github/scripts/helpers/github/index.ts`                                  |
+| Health check fails          | e2e-action    | Check if API is running at api.arolariu.ro                                                                         |
 | Missing generated artifacts | website-build | Select the required generator from root `package.json`; for the license manifest, run `npm run generate:artifacts` |
 
-`npm run generate` without task names deliberately generates nothing. Select
-the generator for the missing input; do not run secret-dependent environment
-generation for an unrelated artifact failure.
+`npm run generate` without task names deliberately generates nothing. Select the generator for the missing input; do not run
+secret-dependent environment generation for an unrelated artifact failure.
 
 ### 4. Re-run Failed Jobs
 
@@ -171,30 +173,30 @@ act -l
 
 Common environment variables used across workflows:
 
-| Variable | Description |
-|----------|-------------|
-| `NODE_VERSION` | Node.js version selected by the workflow |
-| `COMMIT_SHA` | Workflow event's commit SHA; its meaning depends on the trigger |
-| `PRODUCTION` | Boolean for production builds |
-| `INFRA` | Infrastructure target (local/azure) |
+| Variable       | Description                                                     |
+| -------------- | --------------------------------------------------------------- |
+| `NODE_VERSION` | Node.js version selected by the workflow                        |
+| `COMMIT_SHA`   | Workflow event's commit SHA; its meaning depends on the trigger |
+| `PRODUCTION`   | Boolean for production builds                                   |
+| `INFRA`        | Infrastructure target (local/azure)                             |
 
 ## Scheduled Workflows
 
-| Workflow | Schedule | Purpose |
-|----------|----------|---------|
+| Workflow              | Schedule        | Purpose            |
+| --------------------- | --------------- | ------------------ |
 | `official-e2e-action` | Daily 06:17 UTC | Live Newman checks |
 
 ## Dependabot Integration
 
-[Dependabot configuration](../dependabot.yml) owns update labels, groups, and
-schedules. For failures, inspect the relevant hygiene provider's output.
-Merge requirements depend on live repository rules, not this guide.
+[Dependabot configuration](../dependabot.yml) owns update labels, groups, and schedules. For failures, inspect the relevant hygiene
+provider's output. Merge requirements depend on live repository rules, not this guide.
 
 ## Troubleshooting
 
 ### Tests Skipped Warning
 
 If you see "Tests were skipped" warning in the build:
+
 - Check if `skip_tests: true` was set intentionally
 - Review the triggering commit/PR
 - Ensure tests pass locally before skipping
@@ -202,6 +204,7 @@ If you see "Tests were skipped" warning in the build:
 ### Artifact Retention
 
 Retention is configured by each upload step. For critical debugging:
+
 1. Download artifacts immediately
 2. Save locally for longer retention
 3. Consider increasing retention for release builds

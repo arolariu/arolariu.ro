@@ -1,4 +1,5 @@
 <!-- Back to top anchor -->
+
 <a id="readme-top"></a>
 
 <!-- PROJECT BANNER -->
@@ -40,11 +41,9 @@
 <br/>
 
 <!-- Primary Status Badges -->
-[![Build Status][build-shield]][build-url]
-[![License][license-shield]][license-url]
-[![Contributors][contributors-shield]][contributors-url]
-[![Issues][issues-shield]][issues-url]
-[![PRs Welcome][prs-shield]][prs-url]
+
+[![Build Status][build-shield]][build-url] [![License][license-shield]][license-url]
+[![Contributors][contributors-shield]][contributors-url] [![Issues][issues-shield]][issues-url] [![PRs Welcome][prs-shield]][prs-url]
 
 <!-- Metrics Badges Row -->
 <br/>
@@ -85,6 +84,7 @@
 </div>
 
 <!-- PLATFORM PREVIEW -->
+
 ## 📸 Platform Preview
 
 <div align="center">
@@ -97,21 +97,22 @@
 <br/>
 <br/>
 
-*🎨 Production-ready platform featuring modern UI/UX with dark mode support*
+_🎨 Production-ready platform featuring modern UI/UX with dark mode support_
 
 </div>
 
 ---
 
 <!-- TABLE OF CONTENTS -->
+
 ## 📋 Table of Contents
 
 <details open>
 <summary><b>Click to expand/collapse</b></summary>
 
 - [✨ AROLARIU.RO Monorepo](#-arolariuro-monorepo)
-    - [🏆 A Modern, Production-Grade Full-Stack Platform](#-a-modern-production-grade-full-stack-platform)
-    - [🛠️ Built With](#️-built-with)
+  - [🏆 A Modern, Production-Grade Full-Stack Platform](#-a-modern-production-grade-full-stack-platform)
+  - [🛠️ Built With](#️-built-with)
   - [📸 Platform Preview](#-platform-preview)
   - [📋 Table of Contents](#-table-of-contents)
   - [🎯 About The Project](#-about-the-project)
@@ -153,9 +154,11 @@
 ---
 
 <!-- ABOUT THE PROJECT -->
+
 ## 🎯 About The Project
 
-The **arolariu.ro** monorepo is a comprehensive full-stack platform built with cutting-edge technologies and enterprise-grade best practices. It demonstrates modern software architecture patterns including:
+The **arolariu.ro** monorepo is a comprehensive full-stack platform built with cutting-edge technologies and enterprise-grade best
+practices. It demonstrates modern software architecture patterns including:
 
 - 🏛️ **Domain-Driven Design (DDD)** with well-defined bounded contexts
 - 📦 **Modular Monolith** architecture for scalable backend services
@@ -164,22 +167,22 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 - 📊 **Full Observability** with OpenTelemetry distributed tracing
 - 📧 **Transactional Emails** with React Email and Resend
 
-> [!TIP]
-> **New to this project?** Start with the [Getting Started](#-getting-started) section, then explore the [Architecture](#️-architecture) to understand the system design.
+> [!TIP] **New to this project?** Start with the [Getting Started](#-getting-started) section, then explore the
+> [Architecture](#️-architecture) to understand the system design.
 
 ### 🌐 Live Services
 
 <div align="center">
 
-| Service | Status | URL | Technology | Purpose |
-|:-------:|:------:|:---:|:----------:|:-------:|
-| 🎨 **Production** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [arolariu.ro](https://arolariu.ro) | Next.js 16 + React 19 | Main platform |
-| 🔧 **Development** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [dev.arolariu.ro](https://dev.arolariu.ro) | Next.js 16 + React 19 | Preview environment |
-| 🚀 **API** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [api.arolariu.ro](https://api.arolariu.ro) | .NET Minimal APIs | REST and OpenAPI |
-| 📄 **CV/Resume** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [cv.arolariu.ro](https://cv.arolariu.ro) | SvelteKit 2 | Personal CV |
-| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [docs.arolariu.ro](https://docs.arolariu.ro) | Docusaurus | Technical docs |
-| 📟 **Status** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [status.arolariu.ro](https://status.arolariu.ro) | SvelteKit | Service availability |
-| 🐍 **Configuration** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [exp.arolariu.ro](https://exp.arolariu.ro) | FastAPI | Target-scoped configuration proxy |
+|       Service        |                                    Status                                     |                       URL                        |      Technology       |              Purpose              |
+| :------------------: | :---------------------------------------------------------------------------: | :----------------------------------------------: | :-------------------: | :-------------------------------: |
+|  🎨 **Production**   | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |        [arolariu.ro](https://arolariu.ro)        | Next.js 16 + React 19 |           Main platform           |
+|  🔧 **Development**  | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |    [dev.arolariu.ro](https://dev.arolariu.ro)    | Next.js 16 + React 19 |        Preview environment        |
+|      🚀 **API**      | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |    [api.arolariu.ro](https://api.arolariu.ro)    |   .NET Minimal APIs   |         REST and OpenAPI          |
+|   📄 **CV/Resume**   | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |     [cv.arolariu.ro](https://cv.arolariu.ro)     |      SvelteKit 2      |            Personal CV            |
+| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |   [docs.arolariu.ro](https://docs.arolariu.ro)   |      Docusaurus       |          Technical docs           |
+|    📟 **Status**     | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [status.arolariu.ro](https://status.arolariu.ro) |       SvelteKit       |       Service availability        |
+| 🐍 **Configuration** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) |    [exp.arolariu.ro](https://exp.arolariu.ro)    |        FastAPI        | Target-scoped configuration proxy |
 
 </div>
 
@@ -187,17 +190,17 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 
 <div align="center">
 
-| Category | Features |
-|:--------:|:---------|
-| 🏛️ **Architecture** | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard |
-| ⚡ **Performance** | React Server Components • Edge Caching • Lazy Loading |
-| 🔒 **Security** | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC |
-| 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana |
-| 🧪 **Quality** | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier |
-| 🔄 **CI/CD** | GitHub Actions • Container builds • Environment-scoped deployments |
-| 🌍 **i18n** | Multi-language Support (EN/RO/FR) • Type-safe Translations • next-intl |
-| 📧 **Email** | React Email Templates • Resend Integration • Transactional Emails |
-| 📦 **Monorepo** | Nx Workspace • Shared Components • Incremental Builds • Affected Commands |
+|       Category       | Features                                                                  |
+| :------------------: | :------------------------------------------------------------------------ |
+| 🏛️ **Architecture**  | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard |
+|  ⚡ **Performance**  | React Server Components • Edge Caching • Lazy Loading                     |
+|   🔒 **Security**    | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC               |
+| 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana      |
+|    🧪 **Quality**    | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier  |
+|     🔄 **CI/CD**     | GitHub Actions • Container builds • Environment-scoped deployments        |
+|     🌍 **i18n**      | Multi-language Support (EN/RO/FR) • Type-safe Translations • next-intl    |
+|     📧 **Email**     | React Email Templates • Resend Integration • Transactional Emails         |
+|   📦 **Monorepo**    | Nx Workspace • Shared Components • Incremental Builds • Affected Commands |
 
 </div>
 
@@ -206,30 +209,29 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 ---
 
 <!-- GETTING STARTED -->
+
 ## 🚀 Getting Started
 
 > 💡 **Powered by [Nx](https://nx.dev)** — Enterprise-grade monorepo tooling for streamlined development workflows
 
 ### Prerequisites
 
-Before you begin, ensure you have the following bootstrap prerequisites installed — `npm run setup` prepares everything else below and
-never installs or upgrades Git, Node.js, or npm:
+Before you begin, ensure you have the following bootstrap prerequisites installed — `npm run setup` prepares everything else below and never
+installs or upgrades Git, Node.js, or npm:
 
-| Tool | Version | Purpose |
-|:----:|:-------:|:--------|
-| ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white) | — | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
-| ![Node.js](https://img.shields.io/badge/Node.js-24.15%2B_or_26%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 24.15.0+ (24.x) or ≥26 | JavaScript runtime — bootstrap prerequisite |
-| ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager — bootstrap prerequisite |
-| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost — prepared by `npm run setup` |
-| Container engine | Rancher Desktop or Podman Desktop | Local SQL, Cosmos, Azurite, and Redis containers — selected/persisted by `npm run setup` (Docker Desktop is not supported) |
-| ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white) | 3.12 | Required for `exp` config service (FastAPI) — prepared by `npm run setup` |
+|                                                            Tool                                                            |              Version              | Purpose                                                                                                                             |
+| :------------------------------------------------------------------------------------------------------------------------: | :-------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------- |
+|            ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white)             |                 —                 | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
+| ![Node.js](https://img.shields.io/badge/Node.js-24.15%2B_or_26%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) |      24.15.0+ (24.x) or ≥26       | JavaScript runtime — bootstrap prerequisite                                                                                         |
+|              ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white)              |               ≥11.x               | Package manager — bootstrap prerequisite                                                                                            |
+|            ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)            |               10.0                | Backend runtime and Aspire AppHost — prepared by `npm run setup`                                                                    |
+|                                                      Container engine                                                      | Rancher Desktop or Podman Desktop | Local SQL, Cosmos, Azurite, and Redis containers — selected/persisted by `npm run setup` (Docker Desktop is not supported)          |
+|          ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)          |               3.12                | Required for `exp` config service (FastAPI) — prepared by `npm run setup`                                                           |
 
 ### Quick Start
 
-> [!WARNING]
-> The Aspire start command below resets all guarded local invoice/merchant
-> documents, invoice blobs, and analysis queue messages before restoring the
-> deterministic local scenarios.
+> [!WARNING] The Aspire start command below resets all guarded local invoice/merchant documents, invoice blobs, and analysis queue messages
+> before restoring the deterministic local scenarios.
 
 ```bash
 # 1️⃣ Clone the repository
@@ -257,24 +259,26 @@ npm run dev:website        # Next.js only
 
 **What `npm run setup` prepares** — a single dependency-aware run that never builds, type-checks, tests, or starts/stops a service:
 
-- Validates the root npm dependency tree (already installed by `npm install`/`npm ci` above), restores the `.github/scripts` npm dependency tree, and regenerates taxonomy/GraphQL/i18n checkout artifacts;
+- Validates the root npm dependency tree (already installed by `npm install`/`npm ci` above), restores the `.github/scripts` npm dependency
+  tree, and regenerates taxonomy/GraphQL/i18n checkout artifacts;
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;
-- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
-- Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
+- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) to `sites/arolariu.ro/.env` without overwriting
+  existing entries, and ensures Playwright's locked Chromium browser is installed;
+- Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs
+  it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
 
 Container engine selection precedence for `npm run setup`: `npm run setup -- --engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`,
-then the persisted `.arolariu/tooling.local.json`, then an interactive prompt when none are set. `npm run dev` and
-`npm run dev:selfhost` consume the same CLI/environment/persisted selection, but throw instead of prompting when none is available.
-Docker Desktop is unsupported and is never selected as a fallback.
+then the persisted `.arolariu/tooling.local.json`, then an interactive prompt when none are set. `npm run dev` and `npm run dev:selfhost`
+consume the same CLI/environment/persisted selection, but throw instead of prompting when none is available. Docker Desktop is unsupported
+and is never selected as a fallback.
 
 Useful flags: `npm run setup -- --verbose` (diagnostic evidence per phase), `npm run setup -- --dry-run` (plan every mutation without
-executing it and without any consent prompt — an engine-selection prompt can still appear when no engine has been chosen yet;
-combine with `--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, Python
-interpreter, HTTPS-trust, Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt;
-it never invents an engine choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine
-explicitly).
+executing it and without any consent prompt — an engine-selection prompt can still appear when no engine has been chosen yet; combine with
+`--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, Python interpreter, HTTPS-trust,
+Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt; it never invents an engine
+choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine explicitly).
 
 Clerk credentials are optional for `npm run setup`, not universally optional at runtime. When both keys are absent, ordinary non-CI
 `next dev` can use Clerk's keyless development mode. The repository has no auth-disabled runtime path: CI, production, and any explicitly
@@ -283,8 +287,8 @@ exits `0` with a degraded React phase when that pair is not ready.
 
 Running `npm run dev:selfhost`? Export `MSSQL_SA_PASSWORD` in your shell/session first — required only when selfhost starts its SQL
 bootstrap, never stored in `.env` or `.arolariu/tooling.local.json`. `npm run setup`'s infrastructure phase strips it from the
-container-engine, port-inspection, and certificate subprocesses it runs, but every other setup subprocess inherits your shell
-environment — export it only in the session used to run `npm run dev:selfhost`.
+container-engine, port-inspection, and certificate subprocesses it runs, but every other setup subprocess inherits your shell environment —
+export it only in the session used to run `npm run dev:selfhost`.
 
 ### Development Commands
 
@@ -348,8 +352,8 @@ npm run status              # Six-section monorepo status dashboard (includes do
 ```
 
 `npm run doctor` diagnoses the workspace; it never builds, type-checks, or runs tests. See
-[DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the full CLI contract, module
-order, and ecosystem-specific troubleshooting commands.
+[DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the full CLI contract, module order, and ecosystem-specific
+troubleshooting commands.
 
 </details>
 
@@ -367,46 +371,50 @@ npx nx show project website      # 🔍 Show project details
 
 ### Aspire Mode (Default)
 
-`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The AppHost orchestrates the entire dev stack:
+`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The
+AppHost orchestrates the entire dev stack:
 
-- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and
-  Charlie, Aspire deletes all documents in the guarded local invoice/merchant
-  Cosmos containers, removes the local invoice blob container, and clears the
-  analysis queue. Preserve local work before starting.
-- **Native website certificate preflight** — the website uses
-  `next dev --experimental-https`; a certificate-free first run can
-  download/run certificate tooling and install a local CA. Confirm that
-  trust-store change before starting.
-- **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via `uvicorn`. Hot reload is preserved on every runtime.
-- **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
-- **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
+- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and Charlie, Aspire deletes all documents in the guarded local
+  invoice/merchant Cosmos containers, removes the local invoice blob container, and clears the analysis queue. Preserve local work before
+  starting.
+- **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
+  certificate tooling and install a local CA. Confirm that trust-store change before starting.
+- **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via
+  `uvicorn`. Hot reload is preserved on every runtime.
+- **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native
+  Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
+- **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and
+  per-resource health badges.
 
-VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`docker`) through both `ASPIRE_CONTAINER_RUNTIME` and its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias, as `npm run dev -- --engine` does, so a stale host-level value cannot override the chosen engine. The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
+VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger
+integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`docker`) through both `ASPIRE_CONTAINER_RUNTIME` and
+its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias, as `npm run dev -- --engine` does, so a stale host-level value cannot override the
+chosen engine. The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do
+not hardcode platform-specific PATH or socket values.
 
-Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
+Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate
+`rancher-desktop` runtime.
 
-The host uses capability-first slices under `Infrastructure`, `Applications`,
-and `LocalDevelopment`; `RepositoryLayout` provides project-rooted paths.
-Bootstrap's invoice scenario and Identity's persona capability remain separate
-executables. Owner-specific coverage lives in `tooling/tests/AppHost.Tests/`,
-`tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
-`tooling/tests/LocalDevelopment.Identity.Tests/`.
-See the [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points)
-for ownership, native resource contracts, and verification commands.
+The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`; `RepositoryLayout` provides
+project-rooted paths. Bootstrap's invoice scenario and Identity's persona capability remain separate executables. Owner-specific coverage
+lives in `tooling/tests/AppHost.Tests/`, `tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
+`tooling/tests/LocalDevelopment.Identity.Tests/`. See the
+[local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points) for ownership, native resource contracts, and
+verification commands.
 
-| Resource | URL | Notes |
-|----------|-----|-------|
-| Aspire dashboard | `https://localhost:17080` | OTel traces · metrics · logs · resource graph |
-| Website (Next.js) | `https://localhost:3000` | HTTPS via `--experimental-https` (mkcert root CA) |
-| API (.NET) | `http://localhost:5000` | Swagger UI at `/` |
-| CV (SvelteKit) | `http://localhost:4173` | Preview server |
-| Docs (Docusaurus) | `http://localhost:3100` | |
-| Status | `http://localhost:3002` | |
-| exp (Python FastAPI) | `https://localhost:5002` | Aspire-managed HTTPS; use the dashboard's current URL |
-| SQL Server | `localhost:8082` | `Encrypt=False` required (vpnkit TLS) |
-| Cosmos emulator | `https://localhost:8081` | vNext preview emulator |
-| Azurite | `http://localhost:10000-10002` | Blob · Queue · Table |
-| Redis | `localhost:6379` | |
+| Resource             | URL                            | Notes                                                 |
+| -------------------- | ------------------------------ | ----------------------------------------------------- |
+| Aspire dashboard     | `https://localhost:17080`      | OTel traces · metrics · logs · resource graph         |
+| Website (Next.js)    | `https://localhost:3000`       | HTTPS via `--experimental-https` (mkcert root CA)     |
+| API (.NET)           | `http://localhost:5000`        | Swagger UI at `/`                                     |
+| CV (SvelteKit)       | `http://localhost:4173`        | Preview server                                        |
+| Docs (Docusaurus)    | `http://localhost:3100`        |                                                       |
+| Status               | `http://localhost:3002`        |                                                       |
+| exp (Python FastAPI) | `https://localhost:5002`       | Aspire-managed HTTPS; use the dashboard's current URL |
+| SQL Server           | `localhost:8082`               | `Encrypt=False` required (vpnkit TLS)                 |
+| Cosmos emulator      | `https://localhost:8081`       | vNext preview emulator                                |
+| Azurite              | `http://localhost:10000-10002` | Blob · Queue · Table                                  |
+| Redis                | `localhost:6379`               |                                                       |
 
 ### Selfhost Mode (Containerized)
 
@@ -427,15 +435,18 @@ Selfhost SQL requires a local password supplied by environment variable:
 $env:MSSQL_SA_PASSWORD = "<local strong password>"
 ```
 
-Keep `MSSQL_SA_PASSWORD` in your shell/session environment only. Do not commit it to `.env` files, VS Code launch profiles, or source control.
+Keep `MSSQL_SA_PASSWORD` in your shell/session environment only. Do not commit it to `.env` files, VS Code launch profiles, or source
+control.
 
-`npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman` brings up the **full Compose stack** including the apps themselves. Use this when you need to:
+`npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman` brings up the **full Compose stack** including the
+apps themselves. Use this when you need to:
 
 - Audit container behavior or validate CI parity
 - Test a deploy-mock-of-prod configuration
 - Reproduce a bug that only manifests in containerized form
 
-The Compose definitions live under `infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`. Stop the stack with `npm run dev:selfhost:stop -- --engine rancher` or `npm run dev:selfhost:stop -- --engine podman`.
+The Compose definitions live under `infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`. Stop the stack with
+`npm run dev:selfhost:stop -- --engine rancher` or `npm run dev:selfhost:stop -- --engine podman`.
 
 ### Troubleshooting
 
@@ -446,10 +457,10 @@ The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on
 
 1. Confirm the website resource is **Running** in the Aspire dashboard.
 2. In VS Code, use the **`Attach to Next.js (Aspire)`** launch configuration (auto-attaches via `inspect` protocol on `localhost:9229`).
-3. If npm logs an `arborist` null-state error during startup, interrupt the
-   owning AppHost terminal and re-run
+3. If npm logs an `arborist` null-state error during startup, interrupt the owning AppHost terminal and re-run
    `npm run dev -- --engine <rancher|podman>`.
-4. For .NET debugging, F5 from `tooling/src/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also targets the AppHost project.
+4. For .NET debugging, F5 from `tooling/src/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also
+   targets the AppHost project.
 
 </details>
 
@@ -458,27 +469,27 @@ The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on
 
 Each resource has a health check; check the dashboard's **Health** column for the failing endpoint:
 
-| Resource | Health endpoint | What it checks |
-|----------|-----------------|----------------|
-| API | `http://localhost:5000/health` | DB + Cosmos + Azurite + Redis + exp connectivity |
-| Website | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
-| exp | `https://localhost:5002/api/ready` | FastAPI ready + runtime configuration available |
-| SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
+| Resource   | Health endpoint                     | What it checks                                            |
+| ---------- | ----------------------------------- | --------------------------------------------------------- |
+| API        | `http://localhost:5000/health`      | DB + Cosmos + Azurite + Redis + exp connectivity          |
+| Website    | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
+| exp        | `https://localhost:5002/api/ready`  | FastAPI ready + runtime configuration available           |
+| SQL Server | TDS handshake                       | Aspire's built-in `WaitFor` gate (`sql-ready`)            |
 
-The API waits for the local scenario bootstrap to complete successfully and for
-exp and the local identity service to become healthy. Those resources have their
-own SQL, Cosmos, and Azurite dependency gates. If exp remains Starting, inspect
-its dependency health and the **exp resource's console logs** in the dashboard.
-`ExpConfigGenerator` runs synchronously before AppHost starts the dashboard;
-configuration-generation failures appear in **AppHost startup output**, not
-dashboard resource logs.
+The API waits for the local scenario bootstrap to complete successfully and for exp and the local identity service to become healthy. Those
+resources have their own SQL, Cosmos, and Azurite dependency gates. If exp remains Starting, inspect its dependency health and the **exp
+resource's console logs** in the dashboard. `ExpConfigGenerator` runs synchronously before AppHost starts the dashboard;
+configuration-generation failures appear in **AppHost startup output**, not dashboard resource logs.
 
 </details>
 
 <details>
 <summary><b>🚪 DCP port collision (e.g. "address already in use")</b></summary>
 
-Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in `tooling/src/AppHost/Applications/`; infrastructure bindings live in `tooling/src/AppHost/Infrastructure/`. If you add a new resource and it can't bind, either:
+Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the
+docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in
+`tooling/src/AppHost/Applications/`; infrastructure bindings live in `tooling/src/AppHost/Infrastructure/`. If you add a new resource and it
+can't bind, either:
 
 - Let Aspire pick a port (read it from the dashboard), or
 - Set `isProxied: false` on the endpoint and pin the host port explicitly.
@@ -488,35 +499,31 @@ Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxi
 <details>
 <summary><b>🔐 SQL Server connection hangs or "TLS handshake failed"</b></summary>
 
-The dev SQL container does not present a trusted TLS certificate. Use the
-connection settings injected by the selected local mode. If connecting with a
-separate database client, derive the current host/port/encryption requirements
-from the live AppHost or Compose configuration rather than copying a password
-or connection string from documentation.
+The dev SQL container does not present a trusted TLS certificate. Use the connection settings injected by the selected local mode. If
+connecting with a separate database client, derive the current host/port/encryption requirements from the live AppHost or Compose
+configuration rather than copying a password or connection string from documentation.
 
 </details>
 
 <details>
 <summary><b>📡 OTLP exporter / dashboard shows no telemetry</b></summary>
 
-The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on `:21031`**. The .NET API uses gRPC by default; the Next.js website uses the HTTP exporter. If you see no traces:
+The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on `:21031`**. The .NET API uses gRPC by default; the Next.js
+website uses the HTTP exporter. If you see no traces:
 
 1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
 2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
-3. For Aspire dashboard TLS, inspect the Kestrel endpoint in
-   `tooling/src/AppHost/Properties/launchSettings.json` and the current ASP.NET
-   Core development certificate. `mkcert` owns selfhost Traefik certificates,
-   not the Aspire dashboard.
+3. For Aspire dashboard TLS, inspect the Kestrel endpoint in `tooling/src/AppHost/Properties/launchSettings.json` and the current ASP.NET
+   Core development certificate. `mkcert` owns selfhost Traefik certificates, not the Aspire dashboard.
 
 </details>
 
 <details>
 <summary><b>🔑 Local HTTPS certificate errors (`*.localhost`)</b></summary>
 
-Selfhost Traefik can use a wildcard `*.localhost` certificate generated by
-**mkcert**. Aspire's dashboard and native website HTTPS have separate
-development-certificate owners. Installing a local CA or modifying the trust
-store is security-sensitive; confirm that change before running:
+Selfhost Traefik can use a wildcard `*.localhost` certificate generated by **mkcert**. Aspire's dashboard and native website HTTPS have
+separate development-certificate owners. Installing a local CA or modifying the trust store is security-sensitive; confirm that change
+before running:
 
 ```bash
 # Install/reinstall the local CA after approval
@@ -540,7 +547,8 @@ podman --version          # Podman Desktop
 podman compose version    # Podman Compose provider
 ```
 
-If the selected engine is not running, start Rancher Desktop or Podman Desktop before `npm run dev -- --engine <rancher|podman>`. Do not start Docker Desktop as a fallback.
+If the selected engine is not running, start Rancher Desktop or Podman Desktop before `npm run dev -- --engine <rancher|podman>`. Do not
+start Docker Desktop as a fallback.
 
 </details>
 
@@ -548,13 +556,10 @@ If the selected engine is not running, start Rancher Desktop or Podman Desktop b
 <summary><b>🧪 Aspire AppHost crashes immediately on startup</b></summary>
 
 1. Run `dotnet restore ./arolariu.slnx` to refresh NuGet packages.
-2. Inspect the first AppHost build/startup error rather than installing an
-   undeclared workload.
-3. If the evidence identifies stale build output, remove only
-   `tooling/src/AppHost/bin` and `tooling/src/AppHost/obj`, then re-run
+2. Inspect the first AppHost build/startup error rather than installing an undeclared workload.
+3. If the evidence identifies stale build output, remove only `tooling/src/AppHost/bin` and `tooling/src/AppHost/obj`, then re-run
    `npm run dev -- --engine <rancher|podman>`.
-4. Check that the current local AppHost configuration supplies the required
-   parameter names without printing their values.
+4. Check that the current local AppHost configuration supplies the required parameter names without printing their values.
 
 </details>
 
@@ -563,6 +568,7 @@ If the selected engine is not running, start Rancher Desktop or Podman Desktop b
 ---
 
 <!-- PROJECT STRUCTURE -->
+
 ## 📂 Project Structure
 
 ```plaintext
@@ -629,22 +635,23 @@ arolariu.ro/
 
 Each sub-project has its own detailed documentation:
 
-| Project | README | Description |
-|:-------:|:------:|:------------|
-| 🎨 **Website** | [`sites/arolariu.ro/README.md`](sites/arolariu.ro/README.md) | Next.js frontend architecture & patterns |
-| ⚙️ **API** | [`sites/api.arolariu.ro/README.md`](sites/api.arolariu.ro/README.md) | .NET backend DDD architecture |
-| 🧩 **Components** | [`packages/components/README.md`](packages/components/README.md) | Shared component library usage |
-| 📄 **CV** | [`sites/cv.arolariu.ro/README.md`](sites/cv.arolariu.ro/README.md) | SvelteKit CV site |
-| 📟 **Status** | [`sites/status.arolariu.ro/README.md`](sites/status.arolariu.ro/README.md) | Service-status site |
-| 🐍 **Experimental Service** | [`sites/exp.arolariu.ro/README.md`](sites/exp.arolariu.ro/README.md) | FastAPI configuration proxy |
-| 📚 **Documentation** | [`sites/docs.arolariu.ro/README.md`](sites/docs.arolariu.ro/README.md) | Docusaurus documentation pipeline |
-| 🏗️ **Infrastructure** | [`infra/Azure/Bicep/DEPLOYMENT_GUIDE.md`](infra/Azure/Bicep/DEPLOYMENT_GUIDE.md) | Azure deployment guide |
+|           Project           |                                      README                                      | Description                              |
+| :-------------------------: | :------------------------------------------------------------------------------: | :--------------------------------------- |
+|       🎨 **Website**        |           [`sites/arolariu.ro/README.md`](sites/arolariu.ro/README.md)           | Next.js frontend architecture & patterns |
+|         ⚙️ **API**          |       [`sites/api.arolariu.ro/README.md`](sites/api.arolariu.ro/README.md)       | .NET backend DDD architecture            |
+|      🧩 **Components**      |         [`packages/components/README.md`](packages/components/README.md)         | Shared component library usage           |
+|          📄 **CV**          |        [`sites/cv.arolariu.ro/README.md`](sites/cv.arolariu.ro/README.md)        | SvelteKit CV site                        |
+|        📟 **Status**        |    [`sites/status.arolariu.ro/README.md`](sites/status.arolariu.ro/README.md)    | Service-status site                      |
+| 🐍 **Experimental Service** |       [`sites/exp.arolariu.ro/README.md`](sites/exp.arolariu.ro/README.md)       | FastAPI configuration proxy              |
+|    📚 **Documentation**     |      [`sites/docs.arolariu.ro/README.md`](sites/docs.arolariu.ro/README.md)      | Docusaurus documentation pipeline        |
+|    🏗️ **Infrastructure**    | [`infra/Azure/Bicep/DEPLOYMENT_GUIDE.md`](infra/Azure/Bicep/DEPLOYMENT_GUIDE.md) | Azure deployment guide                   |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
 <!-- ARCHITECTURE -->
+
 ## 🏗️ Architecture
 
 ### High-Level Overview
@@ -662,7 +669,7 @@ This platform follows a **modular monolith** architecture deployed on **Microsof
 
 <br/>
 
-*Azure Cloud Architecture — Deployed using Infrastructure as Code (Bicep)*
+_Azure Cloud Architecture — Deployed using Infrastructure as Code (Bicep)_
 
 </div>
 
@@ -706,14 +713,11 @@ graph LR
     style AI fill:#f59e0b,stroke:#d97706,color:#fff
 ```
 
-> **Note:** `cv.arolariu.ro` and `status.arolariu.ro` remain standalone sites
-> with no website/component-package dependency.
+> **Note:** `cv.arolariu.ro` and `status.arolariu.ro` remain standalone sites with no website/component-package dependency.
 
 ### Backend — The Standard Flow
 
-The Invoices bounded context follows
-**[The Standard](https://github.com/hassanhabib/The-Standard)** through the
-implemented flow below:
+The Invoices bounded context follows **[The Standard](https://github.com/hassanhabib/The-Standard)** through the implemented flow below:
 
 ```mermaid
 graph TB
@@ -738,13 +742,11 @@ graph TB
     style BR fill:#3b82f6,stroke:#2563eb,color:#fff
 ```
 
-**Key constraints:** Services follow the direct-domain collaborator budget in
-root `AGENTS.md`; framework/support dependencies do not count. Invoices
-endpoints and workers enter through Management, Foundation-to-Foundation calls
-are prohibited, and Brokers contain no business logic.
+**Key constraints:** Services follow the direct-domain collaborator budget in root `AGENTS.md`; framework/support dependencies do not count.
+Invoices endpoints and workers enter through Management, Foundation-to-Foundation calls are prohibited, and Brokers contain no business
+logic.
 
-Core.Auth is a deliberate exception: framework Identity routes and the custom
-logout handler do not use the Invoices service hierarchy.
+Core.Auth is a deliberate exception: framework Identity routes and the custom logout handler do not use the Invoices service hierarchy.
 
 ### Azure Infrastructure
 
@@ -753,16 +755,16 @@ logout handler do not use the Invoices service hierarchy.
 
 <br/>
 
-| Layer | Components | Purpose |
-|:-----:|:-----------|:--------|
-| 🌐 **Networking** | Azure Front Door, DNS Zone | Global edge routing, WAF, DNS |
-| 🖥️ **Compute** | App Service Plans | Production and development hosting |
-| 🌍 **Sites** | App Services and Static Web Apps | Web applications |
-| 🔐 **Identity** | User-Assigned Managed Identities | Workload identity |
-| ⚙️ **Configuration** | Key Vault, App Configuration | Secrets & feature flags |
-| 📦 **Storage** | Blob Storage, SQL Server, Cosmos DB, ACR | Data persistence |
-| 📊 **Observability** | Log Analytics, App Insights, Grafana | Monitoring & alerting |
-| 🤖 **AI** | Azure OpenAI, AI Foundry | GPT models & ML capabilities |
+|        Layer         | Components                               | Purpose                            |
+| :------------------: | :--------------------------------------- | :--------------------------------- |
+|  🌐 **Networking**   | Azure Front Door, DNS Zone               | Global edge routing, WAF, DNS      |
+|    🖥️ **Compute**    | App Service Plans                        | Production and development hosting |
+|     🌍 **Sites**     | App Services and Static Web Apps         | Web applications                   |
+|   🔐 **Identity**    | User-Assigned Managed Identities         | Workload identity                  |
+| ⚙️ **Configuration** | Key Vault, App Configuration             | Secrets & feature flags            |
+|    📦 **Storage**    | Blob Storage, SQL Server, Cosmos DB, ACR | Data persistence                   |
+| 📊 **Observability** | Log Analytics, App Insights, Grafana     | Monitoring & alerting              |
+|      🤖 **AI**       | Azure OpenAI, AI Foundry                 | GPT models & ML capabilities       |
 
 </details>
 
@@ -837,52 +839,52 @@ graph TB
 ---
 
 <!-- CI/CD PIPELINE -->
+
 ## 🔄 CI/CD Pipeline
 
-Automated pipelines enforce repository quality gates and environment-scoped
-build/deployment flows.
+Automated pipelines enforce repository quality gates and environment-scoped build/deployment flows.
 
 <div align="center">
 
 ### 🌐 Website Pipelines
 
-| Environment | Branch | Build | Release | Deployment |
-|:-----------:|:------:|:-----:|:-------:|:----------:|
-| 🟢 **Production** | `main` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [arolariu.ro](https://arolariu.ro) |
-| 🟡 **Preview** | `preview` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [dev.arolariu.ro](https://dev.arolariu.ro) |
+|    Environment    |  Branch   |                                                                                                      Build                                                                                                      |                                                                                                        Release                                                                                                        |                 Deployment                 |
+| :---------------: | :-------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------: |
+| 🟢 **Production** |  `main`   |  [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml)   |  [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml)   |     [arolariu.ro](https://arolariu.ro)     |
+|  🟡 **Preview**   | `preview` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [dev.arolariu.ro](https://dev.arolariu.ro) |
 
 ### ⚙️ API Pipeline
 
-| Environment | Branch | Build & Deploy | Endpoint |
-|:-----------:|:------:|:--------------:|:--------:|
+|    Environment    | Branch |                                                                                             Build & Deploy                                                                                             |                  Endpoint                  |
+| :---------------: | :----: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------: |
 | 🟢 **Production** | `main` | [![API](https://github.com/arolariu/arolariu.ro/actions/workflows/official-api-trigger.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-api-trigger.yml) | [api.arolariu.ro](https://api.arolariu.ro) |
 
 ### 📦 Additional Pipelines
 
-| Pipeline | Status | Purpose |
-|:--------:|:------:|:--------|
-| **Components** | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components |
-| **CV Site** | [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml) | Deploy SvelteKit CV |
-| **Status Site** | [![Status](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml) | Deploy the SvelteKit status site |
-| **Experimental Service** | [![Experimental Service](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml) | Build, test, and deploy the FastAPI configuration service |
-| **Docs** | [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml) | Deploy Docusaurus site |
-| **E2E Tests** | [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml) | Playwright + Newman |
-| **Hygiene** | [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml) | Lint, format, type-check |
+|         Pipeline         |                                                                                                     Status                                                                                                      | Purpose                                                   |
+| :----------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------- |
+|      **Components**      | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components                              |
+|       **CV Site**        |             [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml)             | Deploy SvelteKit CV                                       |
+|     **Status Site**      |       [![Status](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml)       | Deploy the SvelteKit status site                          |
+| **Experimental Service** |   [![Experimental Service](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml)   | Build, test, and deploy the FastAPI configuration service |
+|         **Docs**         |          [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml)          | Deploy Docusaurus site                                    |
+|      **E2E Tests**       |            [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml)             | Playwright + Newman                                       |
+|       **Hygiene**        |    [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml)     | Lint, format, type-check                                  |
 
 </div>
 
 <details>
 <summary><b>🎯 Pipeline Features</b></summary>
 
-| Feature | Description |
-|:-------:|:------------|
-| ✅ **Automated Testing** | Unit, integration & E2E tests on every commit |
-| ✅ **Code Quality Gates** | ESLint, Prettier, TypeScript strict checks |
-| ✅ **Security Scanning** | Dependency vulnerability analysis |
-| ✅ **Docker Multi-stage** | Optimized container builds with layer caching |
-| ✅ **Environment Controls** | GitHub Environment scoping for deployment jobs |
-| ✅ **Container Promotion** | Pre-built images deployed from Azure Container Registry |
-| ✅ **OIDC Authentication** | Secure Azure authentication without secrets |
+|           Feature           | Description                                             |
+| :-------------------------: | :------------------------------------------------------ |
+|  ✅ **Automated Testing**   | Unit, integration & E2E tests on every commit           |
+|  ✅ **Code Quality Gates**  | ESLint, Prettier, TypeScript strict checks              |
+|  ✅ **Security Scanning**   | Dependency vulnerability analysis                       |
+|  ✅ **Docker Multi-stage**  | Optimized container builds with layer caching           |
+| ✅ **Environment Controls** | GitHub Environment scoping for deployment jobs          |
+| ✅ **Container Promotion**  | Pre-built images deployed from Azure Container Registry |
+| ✅ **OIDC Authentication**  | Secure Azure authentication without secrets             |
 
 </details>
 
@@ -891,6 +893,7 @@ build/deployment flows.
 ---
 
 <!-- ROADMAP -->
+
 ## 🗺️ Roadmap
 
 Track the project's progress and upcoming features:
@@ -918,6 +921,7 @@ Track the project's progress and upcoming features:
 ---
 
 <!-- AI-POWERED DEVELOPMENT -->
+
 ## 🤖 AI-Powered Development
 
 The repository provides a layered GitHub Copilot setup:
@@ -929,19 +933,19 @@ The repository provides a layered GitHub Copilot setup:
 - Agent Skills provide portable, on-demand workflows.
 - Prompt files provide local VS Code shortcuts.
 - CLI extensions add optional bounded context and read-only diagnostics.
-- Native Copilot permissions, sandboxing, and GitHub branch rules own command
-  safety; no repository extension attempts to interpret arbitrary shell code.
+- Native Copilot permissions, sandboxing, and GitHub branch rules own command safety; no repository extension attempts to interpret
+  arbitrary shell code.
 
-See the [AI customization guide](.github/docs/ai-customization-guide.md) for
-the live asset inventory, supported surfaces, authority model, maintenance, and
-troubleshooting. Architecture decisions remain in [`docs/rfc/`](docs/rfc/);
-use the [RFC template](docs/RFC_TEMPLATE.md) for new proposals.
+See the [AI customization guide](.github/docs/ai-customization-guide.md) for the live asset inventory, supported surfaces, authority model,
+maintenance, and troubleshooting. Architecture decisions remain in [`docs/rfc/`](docs/rfc/); use the [RFC template](docs/RFC_TEMPLATE.md)
+for new proposals.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
 <!-- REPOSITORY ANALYTICS -->
+
 ## 📊 Repository Analytics
 
 > 📈 **Powered by [Repography](https://repography.com)** — Real-time analytics from GitHub API
@@ -1004,7 +1008,8 @@ Processed 9823755 bytes, 9.824 megabytes (SI)
 scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,dist,.svelte-kit,build
 ```
 
-> Notes: `scc` counts source-like files and can differ from other tools based on exclusions, generated assets, and large/binary-like bundles.
+> Notes: `scc` counts source-like files and can differ from other tools based on exclusions, generated assets, and large/binary-like
+> bundles.
 
 </details>
 
@@ -1026,8 +1031,8 @@ scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,di
 
 <div align="center">
 
-| Issues | Pull Requests |
-|:------:|:-------------:|
+|                                                                                                                         Issues                                                                                                                          |                                                                                                                       Pull Requests                                                                                                                        |
+| :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [![Issue status graph](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_issues.svg)](https://github.com/arolariu/arolariu.ro/issues) | [![Pull request status graph](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_prs.svg)](https://github.com/arolariu/arolariu.ro/pulls) |
 
 </div>
@@ -1039,8 +1044,8 @@ scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,di
 
 <div align="center">
 
-| Activity Map | Trending Topics |
-|:------------:|:---------------:|
+|                                                                                                                  Activity Map                                                                                                                   |                                                                                                                   Trending Topics                                                                                                                    |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [![Activity map](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_map.svg)](https://github.com/arolariu/arolariu.ro/commits) | [![Trending topics](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_words.svg)](https://github.com/arolariu/arolariu.ro/commits) |
 
 </div>
@@ -1085,12 +1090,13 @@ pie title Codebase by Language (Lines of Code)
 ---
 
 <!-- CONTRIBUTING -->
+
 ## 🤝 Contributing
 
 Contributions make the open source community an amazing place to learn, inspire, and create. Any contributions are **greatly appreciated**!
 
-> [!NOTE]
-> Please read the **[Contributing Guide](CONTRIBUTING.md)** for detailed instructions on how to fork, branch, and submit pull requests. By participating, you agree to abide by our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+> [!NOTE] Please read the **[Contributing Guide](CONTRIBUTING.md)** for detailed instructions on how to fork, branch, and submit pull
+> requests. By participating, you agree to abide by our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
 
 <details>
 <summary><b>Quick Contribution Steps</b></summary>
@@ -1123,6 +1129,7 @@ Contributions make the open source community an amazing place to learn, inspire,
 ---
 
 <!-- LICENSE -->
+
 ## 📜 License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
@@ -1132,25 +1139,28 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 ---
 
 <!-- SECURITY -->
+
 ## 🔒 Security
 
-To report security vulnerabilities, please see our **[Security Policy](SECURITY.md)**. Do not report security issues through public GitHub issues.
+To report security vulnerabilities, please see our **[Security Policy](SECURITY.md)**. Do not report security issues through public GitHub
+issues.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
 <!-- CONTACT -->
+
 ## 📞 Contact
 
 <div align="center">
 
-| Channel | Link |
-|:-------:|:----:|
-| 🌐 **Website** | [arolariu.ro](https://arolariu.ro) |
-| 📧 **Email** | [admin@arolariu.ro](mailto:admin@arolariu.ro) |
+|     Channel     |                                   Link                                   |
+| :-------------: | :----------------------------------------------------------------------: |
+| 🌐 **Website**  |                    [arolariu.ro](https://arolariu.ro)                    |
+|  📧 **Email**   |              [admin@arolariu.ro](mailto:admin@arolariu.ro)               |
 | 💼 **LinkedIn** | [Alexandru-Razvan Olariu](https://www.linkedin.com/in/olariu-alexandru/) |
-| 💻 **GitHub** | [@arolariu](https://github.com/arolariu) |
+|  💻 **GitHub**  |                 [@arolariu](https://github.com/arolariu)                 |
 
 </div>
 
@@ -1159,6 +1169,7 @@ To report security vulnerabilities, please see our **[Security Policy](SECURITY.
 ---
 
 <!-- ACKNOWLEDGMENTS -->
+
 ## 🙏 Acknowledgments
 
 Special thanks to these amazing resources and tools:
@@ -1232,7 +1243,9 @@ If you find this project useful, please consider giving it a ⭐ star on GitHub!
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- Reference-style links for badges -->
-[build-shield]: https://img.shields.io/github/actions/workflow/status/arolariu/arolariu.ro/official-website-build.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=Build
+
+[build-shield]:
+  https://img.shields.io/github/actions/workflow/status/arolariu/arolariu.ro/official-website-build.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=Build
 [build-url]: https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml
 [license-shield]: https://img.shields.io/github/license/arolariu/arolariu.ro?style=for-the-badge&color=blue
 [license-url]: https://github.com/arolariu/arolariu.ro/blob/main/LICENSE

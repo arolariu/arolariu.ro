@@ -10,11 +10,11 @@
  * short enough that an extra input would be noise.
  */
 
-import React from 'react';
-import Content from '@theme-original/DocSidebar/Desktop/Content';
-import type ContentType from '@theme/DocSidebar/Desktop/Content';
-import type {WrapperProps} from '@docusaurus/types';
-import SidebarFilter from '@site/src/components/SidebarFilter';
+import React from "react";
+import Content from "@theme-original/DocSidebar/Desktop/Content";
+import type ContentType from "@theme/DocSidebar/Desktop/Content";
+import type {WrapperProps} from "@docusaurus/types";
+import SidebarFilter from "@site/src/components/SidebarFilter";
 
 /** Props forwarded to the wrapped desktop sidebar content component. */
 type Props = WrapperProps<typeof ContentType>;
@@ -29,14 +29,14 @@ type Props = WrapperProps<typeof ContentType>;
  *   3. The first `link` inside a top-level `category`.
  */
 function isTypeScriptReferenceSidebar(props: Props): boolean {
-  if (props.path?.startsWith('/reference/typescript')) return true;
+  if (props.path?.startsWith("/reference/typescript")) return true;
   const first = props.sidebar?.[0];
   if (!first) return false;
-  if (first.type === 'link') return (first.href ?? '').startsWith('/reference/typescript');
-  if (first.type === 'category') {
+  if (first.type === "link") return (first.href ?? "").startsWith("/reference/typescript");
+  if (first.type === "category") {
     const firstChild = first.items?.[0];
-    if (firstChild?.type === 'link') {
-      return (firstChild.href ?? '').startsWith('/reference/typescript');
+    if (firstChild?.type === "link") {
+      return (firstChild.href ?? "").startsWith("/reference/typescript");
     }
   }
   return false;

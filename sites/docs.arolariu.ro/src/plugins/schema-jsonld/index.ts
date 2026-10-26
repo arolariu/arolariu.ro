@@ -11,7 +11,7 @@
  * exposed through the `injectHtmlTags` lifecycle.
  */
 
-import type {Plugin, LoadContext} from '@docusaurus/types';
+import type {Plugin, LoadContext} from "@docusaurus/types";
 
 /**
  * Docusaurus plugin factory. Docusaurus calls this during site load
@@ -19,7 +19,7 @@ import type {Plugin, LoadContext} from '@docusaurus/types';
  */
 export default function schemaJsonLdPlugin(_context: LoadContext): Plugin {
   return {
-    name: 'schema-jsonld',
+    name: "schema-jsonld",
     /**
      * `injectHtmlTags` runs once per locale and its return value is
      * inlined into the `<head>` of every generated HTML page. We emit
@@ -27,31 +27,31 @@ export default function schemaJsonLdPlugin(_context: LoadContext): Plugin {
      */
     injectHtmlTags() {
       const ld = {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'arolariu.ro docs',
-        url: 'https://docs.arolariu.ro',
-        description: 'Unified reference portal for api.arolariu.ro (.NET), arolariu.ro (TypeScript), and exp.arolariu.ro (Python).',
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "arolariu.ro docs",
+        url: "https://docs.arolariu.ro",
+        description: "Unified reference portal for api.arolariu.ro (.NET), arolariu.ro (TypeScript), and exp.arolariu.ro (Python).",
         publisher: {
-          '@type': 'Organization',
-          name: 'arolariu.ro',
-          url: 'https://arolariu.ro',
+          "@type": "Organization",
+          name: "arolariu.ro",
+          url: "https://arolariu.ro",
           logo: {
-            '@type': 'ImageObject',
-            url: 'https://docs.arolariu.ro/img/og-card.png',
+            "@type": "ImageObject",
+            url: "https://docs.arolariu.ro/img/og-card.png",
           },
         },
         author: {
-          '@type': 'Person',
-          name: 'Alexandru-Razvan Olariu',
-          url: 'https://arolariu.ro',
+          "@type": "Person",
+          name: "Alexandru-Razvan Olariu",
+          url: "https://arolariu.ro",
         },
       };
       return {
         headTags: [
           {
-            tagName: 'script',
-            attributes: {type: 'application/ld+json'},
+            tagName: "script",
+            attributes: {type: "application/ld+json"},
             innerHTML: JSON.stringify(ld),
           },
         ],

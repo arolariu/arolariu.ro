@@ -5,8 +5,8 @@
  */
 
 :root,
-:root[data-theme='dark'],
-:root[data-theme='light'] {
+:root[data-theme="dark"],
+:root[data-theme="light"] {
   /* Primary accent → oxidized copper */
   --ifm-color-primary: var(--accent);
   --ifm-color-primary-dark: var(--accent);
@@ -148,23 +148,11 @@ body::before {
   );
 }
 
-:root[data-theme='light'] body::before {
+:root[data-theme="light"] body::before {
   opacity: 1;
   background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2px,
-      rgba(21, 16, 10, 0.025) 2px,
-      rgba(21, 16, 10, 0.025) 3px
-    ),
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 48px,
-      rgba(21, 16, 10, 0.03) 48px,
-      rgba(21, 16, 10, 0.03) 49px
-    );
+    repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(21, 16, 10, 0.025) 2px, rgba(21, 16, 10, 0.025) 3px),
+    repeating-linear-gradient(to right, transparent 0, transparent 48px, rgba(21, 16, 10, 0.03) 48px, rgba(21, 16, 10, 0.03) 49px);
 }
 
 #__docusaurus {
@@ -280,7 +268,9 @@ body::before {
   color: var(--accent);
   text-decoration: none;
   border-bottom: 1px solid var(--accent-faint);
-  transition: border-color 0.12s ease, color 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 .markdown a:hover {
   color: var(--accent);
@@ -370,13 +360,25 @@ body::before {
 
 .theme-admonition--note,
 .alert--secondary,
-.alert--info { border-left-color: var(--doc-note) !important; background: var(--doc-note-bg) !important; }
+.alert--info {
+  border-left-color: var(--doc-note) !important;
+  background: var(--doc-note-bg) !important;
+}
 .theme-admonition--tip,
-.alert--success { border-left-color: var(--doc-tip) !important; background: var(--doc-tip-bg) !important; }
+.alert--success {
+  border-left-color: var(--doc-tip) !important;
+  background: var(--doc-tip-bg) !important;
+}
 .theme-admonition--warning,
-.alert--warning { border-left-color: var(--doc-warning) !important; background: var(--doc-warning-bg) !important; }
+.alert--warning {
+  border-left-color: var(--doc-warning) !important;
+  background: var(--doc-warning-bg) !important;
+}
 .theme-admonition--danger,
-.alert--danger { border-left-color: var(--doc-danger) !important; background: var(--doc-danger-bg) !important; }
+.alert--danger {
+  border-left-color: var(--doc-danger) !important;
+  background: var(--doc-danger-bg) !important;
+}
 
 .theme-admonition .admonitionHeading_node_modules-\@docusaurus-theme-classic-lib-theme-Admonition-Layout-styles-module,
 .theme-admonition [class*="admonitionHeading"] {
@@ -401,9 +403,15 @@ body::before {
   color: var(--text-muted);
 }
 
-.theme-admonition--tip [class*="admonitionHeading"] { color: var(--doc-tip); }
-.theme-admonition--warning [class*="admonitionHeading"] { color: var(--doc-warning); }
-.theme-admonition--danger [class*="admonitionHeading"] { color: var(--doc-danger); }
+.theme-admonition--tip [class*="admonitionHeading"] {
+  color: var(--doc-tip);
+}
+.theme-admonition--warning [class*="admonitionHeading"] {
+  color: var(--doc-warning);
+}
+.theme-admonition--danger [class*="admonitionHeading"] {
+  color: var(--doc-danger);
+}
 
 /* ---------------------------------------------------------------- *
  *  Tables — mono, tabular-nums, hairline rows                       *
@@ -471,7 +479,9 @@ body::before {
   padding: 6px 10px;
   border: 1px solid transparent;
   color: var(--text-muted);
-  transition: color 0.12s ease, border-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .navbar__items .navbar__link:hover {
@@ -529,7 +539,9 @@ body::before {
   border-radius: 0;
   padding: 4px 10px 4px 6px;
   color: var(--text-muted);
-  transition: color 0.08s ease, background 0.08s ease;
+  transition:
+    color 0.08s ease,
+    background 0.08s ease;
   border-left: 2px solid transparent;
   line-height: 1.5;
   position: relative;

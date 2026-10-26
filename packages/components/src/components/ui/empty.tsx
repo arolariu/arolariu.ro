@@ -56,16 +56,14 @@ export type EmptyContentProps = React.ComponentPropsWithoutRef<"div">;
  *
  * @see {@link EmptyProps} for available props
  */
-const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
-  ({className, ...props}: Readonly<EmptyProps>, ref): React.JSX.Element => (
-    <div
-      ref={ref}
-      data-slot='empty'
-      className={cn(styles.empty, className)}
-      {...props}
-    />
-  ),
-);
+const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(({className, ...props}: Readonly<EmptyProps>, ref): React.JSX.Element => (
+  <div
+    ref={ref}
+    data-slot='empty'
+    className={cn(styles.empty, className)}
+    {...props}
+  />
+));
 
 /**
  * Groups the leading header content for an empty state.

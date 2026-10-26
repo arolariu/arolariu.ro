@@ -37,9 +37,9 @@ describe("domain constant type/value exports", () => {
         ? ts.createSourceFile(fileName, fixture, options.target ?? ts.ScriptTarget.ESNext, true)
         : getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
     const program = ts.createProgram([fixturePath], options, host);
-    const diagnostics = ts.getPreEmitDiagnostics(program).map((diagnostic) =>
-      ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
-    );
+    const diagnostics = ts
+      .getPreEmitDiagnostics(program)
+      .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
 
     expect(diagnostics).toEqual([]);
   });

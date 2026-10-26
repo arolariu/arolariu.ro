@@ -6,13 +6,25 @@
  */
 
 @keyframes consolePrint {
-  from { opacity: 0; transform: translateX(-4px); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes blink {
-  0%, 49%   { opacity: 1; }
-  50%, 100% { opacity: 0.15; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.15;
+  }
 }
 
 /* Primary article title reveals as if line-printed */

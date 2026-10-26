@@ -10,47 +10,40 @@ Two coexisting modes for local development.
 > invoice blob container, and clears the analysis queue before restoring Alice, Bob, and Charlie. Preserve or export any local work before
 > starting. Selfhost does not run this scenario reset.
 
-Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`)
-declares and orchestrates everything natively:
+Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`) declares and orchestrates everything natively:
 
-- **Infrastructure**: SQL Server, the Cosmos Linux vNext emulator, Azurite, and Redis are spawned through Aspire integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
-- **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`, then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
-- **Native website HTTPS**: Aspire runs the website's
-  `next dev --experimental-https` script. On a certificate-free first run,
-  Next.js can download/run certificate tooling and install a local CA; confirm
-  that trust-store change before starting.
-- **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
-- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
+- **Infrastructure**: SQL Server, the Cosmos Linux vNext emulator, Azurite, and Redis are spawned through Aspire integrations
+  (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
+- **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`,
+  then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
+- **Native website HTTPS**: Aspire runs the website's `next dev --experimental-https` script. On a certificate-free first run, Next.js can
+  download/run certificate tooling and install a local CA; confirm that trust-store change before starting.
+- **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`),
+  CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
+- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
+  `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies
+  HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
-In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
+In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers
+directly.
 
 #### Tooling structure and extension points
 
-`tooling\src\AppHost\Program.cs` is the composition root. Capability slices keep
-resource definitions beside their supporting behavior: `Infrastructure\Sql`
-owns connection settings/readiness, `Infrastructure\Storage` owns Azurite
-provisioning, and `Applications\Exp` owns the exp resource/configuration overlay.
-`LocalDevelopment` wires the bootstrap and persona helpers. `RepositoryLayout`
-anchors project/config paths to the AppHost directory, independent of shell cwd.
+`tooling\src\AppHost\Program.cs` is the composition root. Capability slices keep resource definitions beside their supporting behavior:
+`Infrastructure\Sql` owns connection settings/readiness, `Infrastructure\Storage` owns Azurite provisioning, and `Applications\Exp` owns the
+exp resource/configuration overlay. `LocalDevelopment` wires the bootstrap and persona helpers. `RepositoryLayout` anchors project/config
+paths to the AppHost directory, independent of shell cwd.
 
-Extend an existing slice or add a focused native builder extension for a new
-capability, then wire its references/waits explicitly and add graph tests.
-Use Aspire's resource builders and typed handle bundles, not a parallel registry
-or generic repository framework. Shared
-[`tooling\Directory.Build.props`](../../tooling/Directory.Build.props) owns the
-compiler, analyzer, style, and documentation policy for all tooling projects.
-Production uses recommended analysis and XML documentation; `.Tests` projects
-select the fixed framework-default analysis without XML documentation by project
-name during early MSBuild evaluation. SDK declarations and resource-specific
-settings remain in each project. See the
-[tooling build and package policy](../../tooling/README.md#build-and-package-policy)
-for the ownership boundaries.
+Extend an existing slice or add a focused native builder extension for a new capability, then wire its references/waits explicitly and add
+graph tests. Use Aspire's resource builders and typed handle bundles, not a parallel registry or generic repository framework. Shared
+[`tooling\Directory.Build.props`](../../tooling/Directory.Build.props) owns the compiler, analyzer, style, and documentation policy for all
+tooling projects. Production uses recommended analysis and XML documentation; `.Tests` projects select the fixed framework-default analysis
+without XML documentation by project name during early MSBuild evaluation. SDK declarations and resource-specific settings remain in each
+project. See the [tooling build and package policy](../../tooling/README.md#build-and-package-policy) for the ownership boundaries.
 
-Bootstrap keeps invoice-scenario materialization and storage adapters together;
-Identity keeps persona lookup/token creation together. Source projects live under
-`tooling\src`; root launch commands are unchanged. Each executable has an owning
-MSTest project:
+Bootstrap keeps invoice-scenario materialization and storage adapters together; Identity keeps persona lookup/token creation together.
+Source projects live under `tooling\src`; root launch commands are unchanged. Each executable has an owning MSTest project:
 
 ```powershell
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
@@ -58,27 +51,20 @@ dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Boot
 dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```
 
-The exp overlay is written through an atomic replacement: generation failures
-leave the previous target intact and never overwrite the developer-owned source.
-Filesystem-linked source/target aliases are rejected. Temporary configuration
-files start with owner-only access; replacement preserves the existing Windows
-target ACL or Unix target mode. New Unix targets use mode `0600`.
-Bootstrap forwards graceful-shutdown cancellation and checks it between reset
-phases. Cancellation stops subsequent work; already completed resets are **not**
-rolled back. Forced process termination cannot guarantee cooperative cleanup.
-The scenario-reset and certificate-trust checkpoints above still apply.
+The exp overlay is written through an atomic replacement: generation failures leave the previous target intact and never overwrite the
+developer-owned source. Filesystem-linked source/target aliases are rejected. Temporary configuration files start with owner-only access;
+replacement preserves the existing Windows target ACL or Unix target mode. New Unix targets use mode `0600`. Bootstrap forwards
+graceful-shutdown cancellation and checks it between reset phases. Cancellation stops subsequent work; already completed resets are **not**
+rolled back. Forced process termination cannot guarantee cooperative cleanup. The scenario-reset and certificate-trust checkpoints above
+still apply.
 
-Azurite's initial readiness event performs idempotent CORS/container/queue
-provisioning. If provisioning fails, native health polling retries only that
-failed work, with six attempts and the existing backoff per operation per poll.
-Storage remains unhealthy while recovery is pending or failing; a successful
-registration is not provisioned again. Recovery does not rerun scenario deletion
-or seed operations.
+Azurite's initial readiness event performs idempotent CORS/container/queue provisioning. If provisioning fails, native health polling
+retries only that failed work, with six attempts and the existing backoff per operation per poll. Storage remains unhealthy while recovery
+is pending or failing; a successful registration is not provisioned again. Recovery does not rerun scenario deletion or seed operations.
 
-Unix process-level coverage sends SIGTERM to the real Bootstrap executable while
-a synthetic loopback storage response is pending. It verifies cooperative exit
-code `1`, a cancellation diagnostic, and no subsequent queue operation; an
-unhandled control process verifies native signal termination separately.
+Unix process-level coverage sends SIGTERM to the real Bootstrap executable while a synthetic loopback storage response is pending. It
+verifies cooperative exit code `1`, a cancellation diagnostic, and no subsequent queue operation; an unhandled control process verifies
+native signal termination separately.
 
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
@@ -88,13 +74,17 @@ Everything containerized via the selected Rancher Desktop or Podman Desktop Comp
 - CI parity validation
 - Testing deploy-mock-of-prod configurations
 
-The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with `--profile selfhost` to include containerized exp + apps). Docker Desktop is deprecated and is not a supported local runtime for this repository.
+The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with
+`--profile selfhost` to include containerized exp + apps). Docker Desktop is deprecated and is not a supported local runtime for this
+repository.
 
 ---
 
 ## Selfhost mode — full setup
 
-This repository contains a complete containerized development environment for the arolariu.ro project. The setup uses an engine-aware Compose wrapper to orchestrate multiple containers organized in logical groups (Management, Storage, Backend, Frontend), allowing developers to run the entire stack locally with Rancher Desktop or Podman Desktop.
+This repository contains a complete containerized development environment for the arolariu.ro project. The setup uses an engine-aware
+Compose wrapper to orchestrate multiple containers organized in logical groups (Management, Storage, Backend, Frontend), allowing developers
+to run the entire stack locally with Rancher Desktop or Podman Desktop.
 
 ## Architecture
 
@@ -121,9 +111,8 @@ Frontend (localhost:3000)  →  exp (http://exp:8080)  ←  Backend (localhost:5
    Clerk Auth               config.docker.json         CosmosDB / SQL / Azurite
 ```
 
-The API and website fetch their indexed runtime configuration from the exp
-service. Each consumer applies its own typed cache/refresh behavior; application
-containers do not embed the environment-specific values in source.
+The API and website fetch their indexed runtime configuration from the exp service. Each consumer applies its own typed cache/refresh
+behavior; application containers do not embed the environment-specific values in source.
 
 ## Prerequisites
 
@@ -131,10 +120,12 @@ containers do not embed the environment-specific values in source.
 - Docker Desktop is deprecated and is not a supported local runtime for this repository
 - **Node.js** 24.15.0+ on the 24.x line, or ≥ 26, and **npm** ≥ 11 (for Azurite blob container init)
 - **Git** (to clone the repository)
-- `MSSQL_SA_PASSWORD` environment variable for the local SQL Server container. Keep it in your shell/session environment only; do not commit it to `.env` files, launch profiles, or source control.
+- `MSSQL_SA_PASSWORD` environment variable for the local SQL Server container. Keep it in your shell/session environment only; do not commit
+  it to `.env` files, launch profiles, or source control.
 - 4GB+ RAM available for containers
 - 10GB+ of free disk space
-- _(Optional)_ **mkcert** installed separately for browser-trusted selfhost HTTPS. Without it, startup continues with Traefik's default self-signed certificate.
+- _(Optional)_ **mkcert** installed separately for browser-trusted selfhost HTTPS. Without it, startup continues with Traefik's default
+  self-signed certificate.
 
 ## Getting Started
 
@@ -148,18 +139,13 @@ npm install
 
 ### 2. Decide whether to use trusted local HTTPS certificates
 
-The startup script never installs the `mkcert` executable. If `mkcert` is
-already available and the selfhost certificates are missing, startup runs
-`mkcert -install` and generates a `*.localhost` certificate for Traefik. That
-command changes the local trust store, so acknowledge that security-sensitive
-effect before the first run.
+The startup script never installs the `mkcert` executable. If `mkcert` is already available and the selfhost certificates are missing,
+startup runs `mkcert -install` and generates a `*.localhost` certificate for Traefik. That command changes the local trust store, so
+acknowledge that security-sensitive effect before the first run.
 
-- **With mkcert installed and approved**: the local CA and certificates are
-  created, then reused from `Management/certs/`.
-- **Without mkcert**: startup continues and Traefik uses its default
-  self-signed certificate.
-- **To install mkcert**: follow its upstream installation guide separately;
-  dependency installation is not part of repository startup.
+- **With mkcert installed and approved**: the local CA and certificates are created, then reused from `Management/certs/`.
+- **Without mkcert**: startup continues and Traefik uses its default self-signed certificate.
+- **To install mkcert**: follow its upstream installation guide separately; dependency installation is not part of repository startup.
 
 Certificates in `Management/certs/` are gitignored.
 
@@ -185,11 +171,11 @@ echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
 The frontend image build also reads `sites/arolariu.ro/.env` as the `website_env` build secret. Create it with `npm run setup`.
 
 These files are gitignored — they will never be committed. `npm run dev:selfhost` checks that `config.docker.json` and
-`sites/arolariu.ro/.env` exist as files before starting any stack. Otherwise Docker Compose and podman-compose would create the missing
-exp bind source as a directory, and the frontend build would fail only after the other stacks had started.
+`sites/arolariu.ro/.env` exist as files before starting any stack. Otherwise Docker Compose and podman-compose would create the missing exp
+bind source as a directory, and the frontend build would fail only after the other stacks had started.
 
-Exp configuration is mounted read-only, never baked into its image. Local admin updates change only the in-memory snapshot, as before;
-edit the developer-owned source outside the container for persistent changes and allow the normal refresh. Exp listens on unprivileged port 8080
+Exp configuration is mounted read-only, never baked into its image. Local admin updates change only the in-memory snapshot, as before; edit
+the developer-owned source outside the container for persistent changes and allow the normal refresh. Exp listens on unprivileged port 8080
 internally (host port 5002 is unchanged). Its image probe is liveness; the selfhost Compose probe uses `/api/ready`, which checks
 configuration readability, not upstream storage or identity-service availability.
 
@@ -199,15 +185,13 @@ Preserve old containers and obtain a separate migration approval if their data m
 volumes; never add volume deletion or pruning implicitly. SQL health and bootstrap use `mssql-tools18`, retain the local
 self-signed-certificate policy and take passwords only from environment.
 
-The selfhost wrapper refuses start and stop reconciliation if existing `mssql`
-or `cosmosdb` containers are not attached to these exact data volumes. It leaves
-those containers intact; preservation or migration requires separate approval.
+The selfhost wrapper refuses start and stop reconciliation if existing `mssql` or `cosmosdb` containers are not attached to these exact data
+volumes. It leaves those containers intact; preservation or migration requires separate approval.
 
 ### 4. Start the environment
 
-Aspire and selfhost have different data effects. The warning above applies to
-Aspire; selfhost performs provisioning without the deterministic scenario
-reset.
+Aspire and selfhost have different data effects. The warning above applies to Aspire; selfhost performs provisioning without the
+deterministic scenario reset.
 
 ```bash
 npm run dev:selfhost -- --engine rancher
@@ -225,28 +209,26 @@ The startup process:
 
 1. Starts Management containers (Traefik)
 2. Starts Storage containers (SQL, CosmosDB, Azurite, Redis, **exp**) detached
-3. Waits a fixed ten seconds before invoking storage/bootstrap steps; this is
-   not a Compose health-readiness gate
+3. Waits a fixed ten seconds before invoking storage/bootstrap steps; this is not a Compose health-readiness gate
 4. Performs the current SQL/Cosmos/Azurite provisioning
 5. Starts the Backend and Frontend Compose projects detached
 
-The root wrapper then exits while Compose keeps running. Use Compose `ps`,
-health status, and logs to establish readiness; container existence alone is
-not sufficient.
+The root wrapper then exits while Compose keeps running. Use Compose `ps`, health status, and logs to establish readiness; container
+existence alone is not sufficient.
 
 ### Accessing Services
 
-| Service | URL | HTTPS URL | Notes |
+| Service               | URL                              | HTTPS URL                    | Notes                                                                            |
 | --------------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
-| **Website** | http://localhost:3000 | https://website.localhost | Auth via Clerk |
-| **API Health** | http://localhost:5000/health | https://api.localhost/health | Shows dependency status |
-| **exp Health** | http://localhost:5002/api/health | — | Config service diagnostics |
-| **exp Admin** | http://localhost:5002/admin | — | Config editor (local only) |
-| **CosmosDB Explorer** | http://localhost:1234 | — | vNext emulator data explorer |
-| **Azurite Blobs** | http://localhost:10000 | — | Blob storage (public read) |
-| **SQL Server** | localhost:8082 | — | User: `sa`; password comes from shell variable `MSSQL_SA_PASSWORD` |
-| **Redis** | localhost:6379 | — | Local password authentication is enabled; use the injected runtime configuration |
-| **Traefik Dashboard** | http://localhost:8080 | https://traefik.localhost | Reverse proxy routes |
+| **Website**           | http://localhost:3000            | https://website.localhost    | Auth via Clerk                                                                   |
+| **API Health**        | http://localhost:5000/health     | https://api.localhost/health | Shows dependency status                                                          |
+| **exp Health**        | http://localhost:5002/api/health | —                            | Config service diagnostics                                                       |
+| **exp Admin**         | http://localhost:5002/admin      | —                            | Config editor (local only)                                                       |
+| **CosmosDB Explorer** | http://localhost:1234            | —                            | vNext emulator data explorer                                                     |
+| **Azurite Blobs**     | http://localhost:10000           | —                            | Blob storage (public read)                                                       |
+| **SQL Server**        | localhost:8082                   | —                            | User: `sa`; password comes from shell variable `MSSQL_SA_PASSWORD`               |
+| **Redis**             | localhost:6379                   | —                            | Local password authentication is enabled; use the injected runtime configuration |
+| **Traefik Dashboard** | http://localhost:8080            | https://traefik.localhost    | Reverse proxy routes                                                             |
 
 ### How config flows locally
 
@@ -260,9 +242,8 @@ not sufficient.
 
 ### Changing config at runtime
 
-Open http://localhost:5002/admin to view and edit config values. Changes are
-ephemeral (reset on container restart). Consumers may retain a value until its
-current refresh interval expires; feature-flag reads refresh on each request.
+Open http://localhost:5002/admin to view and edit config values. Changes are ephemeral (reset on container restart). Consumers may retain a
+value until its current refresh interval expires; feature-flag reads refresh on each request.
 
 ## Container runtime engines
 
@@ -296,9 +277,10 @@ Run Aspire:
 npm run dev:aspire -- --engine rancher
 ```
 
-Rancher Desktop runs Aspire through its Moby/Docker-compatible backend, so the effective Aspire runtime value is `docker`.
-Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
-Ensure your editor process can find the selected runtime on PATH before using VS Code F5 profiles; the repository launch profiles do not hardcode OS-specific install paths.
+Rancher Desktop runs Aspire through its Moby/Docker-compatible backend, so the effective Aspire runtime value is `docker`. Rancher Desktop
+is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
+Ensure your editor process can find the selected runtime on PATH before using VS Code F5 profiles; the repository launch profiles do not
+hardcode OS-specific install paths.
 
 Docker Desktop is not a supported runtime for this repository.
 
@@ -320,8 +302,7 @@ podman --version
 podman compose version
 ```
 
-If `podman compose version` reports a provider under `C:\Program Files\Docker\...`, install `podman-compose`
-and point Podman at it:
+If `podman compose version` reports a provider under `C:\Program Files\Docker\...`, install `podman-compose` and point Podman at it:
 
 ```powershell
 python -m pip install --user podman-compose
@@ -361,18 +342,15 @@ npm run dev:selfhost:stop -- --engine rancher
 npm run dev:selfhost:stop -- --engine podman
 ```
 
-The stop wrapper runs Compose `down` for every project without `--volumes`.
-Storage keeps `--profile selfhost`, matching start, so the profile-gated `exp`
-container is removed and the shared `arolariu-network` can be deleted.
-Named SQL Server, Cosmos, Azurite and Redis volumes survive ordinary teardown.
-The wrapper refuses to reconcile legacy SQL/Cosmos containers without their
-intended volumes; do not bypass that guard with direct Compose removal.
+The stop wrapper runs Compose `down` for every project without `--volumes`. Storage keeps `--profile selfhost`, matching start, so the
+profile-gated `exp` container is removed and the shared `arolariu-network` can be deleted. Named SQL Server, Cosmos, Azurite and Redis
+volumes survive ordinary teardown. The wrapper refuses to reconcile legacy SQL/Cosmos containers without their intended volumes; do not
+bypass that guard with direct Compose removal.
 
 ## HTTPS via Traefik + mkcert
 
-The local stack uses Traefik as a reverse proxy. When approved and available,
-`mkcert` supplies browser-trusted certificates for `*.localhost`; otherwise
-Traefik falls back to its default self-signed certificate.
+The local stack uses Traefik as a reverse proxy. When approved and available, `mkcert` supplies browser-trusted certificates for
+`*.localhost`; otherwise Traefik falls back to its default self-signed certificate.
 
 ### How it works
 
@@ -386,8 +364,7 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
                                certs/local-key.pem
 ```
 
-1. On the approved first trusted-certificate run, `mkcert -install` installs a
-   local Certificate Authority into the OS/browser trust store
+1. On the approved first trusted-certificate run, `mkcert -install` installs a local Certificate Authority into the OS/browser trust store
 2. A wildcard certificate for `*.localhost` is generated and mounted into Traefik
 3. Traefik's **file provider** loads the cert via `traefik/dynamic/tls.yml`
 4. All services use `tls=true` labels — Traefik presents the mkcert cert
@@ -395,26 +372,27 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
 
 ### Available HTTPS routes
 
-| Route | Service |
+| Route                            | Service                |
 | -------------------------------- | ---------------------- |
-| `https://website.localhost` | Next.js website |
-| `https://api.localhost` | .NET API |
-| `https://traefik.localhost` | Traefik dashboard |
-| `https://health.localhost` | Healthchecks dashboard |
-| `https://mssql.localhost` | SQL Server |
-| `https://cosmosdb.localhost` | CosmosDB emulator |
-| `https://azurite-blob.localhost` | Azurite blob storage |
+| `https://website.localhost`      | Next.js website        |
+| `https://api.localhost`          | .NET API               |
+| `https://traefik.localhost`      | Traefik dashboard      |
+| `https://health.localhost`       | Healthchecks dashboard |
+| `https://mssql.localhost`        | SQL Server             |
+| `https://cosmosdb.localhost`     | CosmosDB emulator      |
+| `https://azurite-blob.localhost` | Azurite blob storage   |
 
 ### Why not Let's Encrypt ACME?
 
-ACME requires a publicly resolvable domain — `*.localhost` never resolves externally. The `mkcert` approach gives browser-trusted certs without needing a real domain, DNS, or public internet access.
+ACME requires a publicly resolvable domain — `*.localhost` never resolves externally. The `mkcert` approach gives browser-trusted certs
+without needing a real domain, DNS, or public internet access.
 
 ### OS compatibility
 
-| OS | `*.localhost` DNS | HTTPS routes |
+| OS                | `*.localhost` DNS                    | HTTPS routes                                                                                |
 | ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| **macOS / Linux** | ✅ Resolves automatically (RFC 6761) | Work out of the box |
-| **Windows** | ❌ Does not resolve subdomains | Use direct `localhost:PORT` URLs, or add entries to `C:\Windows\System32\drivers\etc\hosts` |
+| **macOS / Linux** | ✅ Resolves automatically (RFC 6761) | Work out of the box                                                                         |
+| **Windows**       | ❌ Does not resolve subdomains       | Use direct `localhost:PORT` URLs, or add entries to `C:\Windows\System32\drivers\etc\hosts` |
 
 Windows hosts file entries are optional and require administrator approval:
 
@@ -439,15 +417,15 @@ npm run dev:selfhost -- --engine rancher
 
 ## Troubleshooting
 
-| Issue | Solution |
+| Issue                   | Solution                                                                                                                              |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Port conflicts | Ensure ports 3000, 5000, 5002, 8081, 8082, 10000 are free |
-| `exp` not starting | Check `config.docker.json` exists and is valid JSON |
-| Clerk auth errors | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard |
-| Scan images not loading | Ensure the current selfhost bootstrap configured Azurite CORS and the required container |
-| Invoice creation fails | Check CosmosDB containers exist with correct partition keys |
-| API health unhealthy | Use the root application logs first, then inspect the owning Storage or Management Compose project for the first unhealthy dependency |
-| Container build stale | Use `npm run containers:compose -- --engine rancher --file infra/Local/Backend/docker-compose.yml -- up -d --build --force-recreate` |
+| Port conflicts          | Ensure ports 3000, 5000, 5002, 8081, 8082, 10000 are free                                                                             |
+| `exp` not starting      | Check `config.docker.json` exists and is valid JSON                                                                                   |
+| Clerk auth errors       | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard                                                                       |
+| Scan images not loading | Ensure the current selfhost bootstrap configured Azurite CORS and the required container                                              |
+| Invoice creation fails  | Check CosmosDB containers exist with correct partition keys                                                                           |
+| API health unhealthy    | Use the root application logs first, then inspect the owning Storage or Management Compose project for the first unhealthy dependency |
+| Container build stale   | Use `npm run containers:compose -- --engine rancher --file infra/Local/Backend/docker-compose.yml -- up -d --build --force-recreate`  |
 
 ### Viewing logs
 
@@ -456,10 +434,8 @@ npm run dev:selfhost:logs -- --engine rancher
 npm run dev:selfhost:logs -- --engine podman
 ```
 
-The root logs action tails only the selfhost application containers (`exp`,
-API, and website). For SQL, Cosmos, Azurite, Redis, or Traefik, run the
-`containers:compose` wrapper with the owning Compose file and an exact
-`ps`/`logs` operation.
+The root logs action tails only the selfhost application containers (`exp`, API, and website). For SQL, Cosmos, Azurite, Redis, or Traefik,
+run the `containers:compose` wrapper with the owning Compose file and an exact `ps`/`logs` operation.
 
 ## Contributing
 

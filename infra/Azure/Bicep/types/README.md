@@ -1,6 +1,7 @@
 # 🔧 Types Module
 
-This module provides centralized user-defined types for standardized and type-safe Azure Bicep deployments across the entire infrastructure codebase.
+This module provides centralized user-defined types for standardized and type-safe Azure Bicep deployments across the entire infrastructure
+codebase.
 
 ## 📋 **Overview**
 
