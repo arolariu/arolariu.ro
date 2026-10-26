@@ -18,6 +18,17 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+const sonarRecommendedConfig = eslintPluginSonarJs.configs?.["recommended"];
+const sonarLegacyConfig = eslintPluginSonarJs.configs?.["recommended-legacy"];
+if (!sonarRecommendedConfig || Array.isArray(sonarRecommendedConfig) || !sonarRecommendedConfig.rules) {
+  throw new Error("SonarJS recommended rules are unavailable.");
+}
+if (!sonarLegacyConfig || Array.isArray(sonarLegacyConfig) || !sonarLegacyConfig.rules) {
+  throw new Error("SonarJS legacy recommended rules are unavailable.");
+}
+const sonarRecommendedRules = sonarRecommendedConfig.rules;
+const sonarLegacyRules = sonarLegacyConfig.rules;
+
 const websiteEslintConfig: Config = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
@@ -149,7 +160,7 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
     "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs.recommended.rules,
+    ...sonarRecommendedRules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
@@ -390,8 +401,8 @@ const cvEslintConfig: Config = defineConfig({
     "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
     "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
+    ...sonarRecommendedRules,
+    ...sonarLegacyRules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 
@@ -565,7 +576,7 @@ const packagesEslintConfig: Config = defineConfig({
     "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
     "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs.recommended.rules,
+    ...sonarRecommendedRules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
@@ -663,7 +674,6 @@ const packagesEslintConfig: Config = defineConfig({
     "unicorn/no-keyword-prefix": "off", // Biased rule.
     "unicorn/no-nested-ternary": "off", // We allow nested ternary operators.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
-    "unicorn/explicit-length-check": "off", // .size sometimes returns a string, not a number.
     "unicorn/prefer-export-from": "off", // RSLib bundler requires import-then-export pattern for some external types (see CHANGELOG 2.0.0).
     "unicorn/no-abusive-eslint-disable": "warn", // We warn about eslint-disable comments.
   },
@@ -790,8 +800,8 @@ const statusEslintConfig: Config = defineConfig({
     "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
     "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs.recommended.rules,
-    ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
+    ...sonarRecommendedRules,
+    ...sonarLegacyRules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 

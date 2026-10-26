@@ -290,13 +290,13 @@ export class GitHubHelper implements IGitHubHelper {
         head: `${this.repo.owner}:${branchName}`,
       });
 
-      if (response.data.length === 0) {
+      const pr = response.data[0];
+      if (!pr) {
         core.debug(`No open PRs found for branch: ${branchName}`);
         return null;
       }
 
       // Return the first (most recent) open PR for this branch
-      const pr = response.data[0];
       core.info(`Found open PR #${pr.number} for branch: ${branchName}`);
 
       return {

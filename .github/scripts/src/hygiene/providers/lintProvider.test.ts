@@ -19,9 +19,9 @@ describe("website framework-aware lint rules", () => {
       overrideConfig: {
         files: ["**/*.tsx"],
         languageOptions: {...website.languageOptions, parserOptions: {ecmaFeatures: {jsx: true}}},
-        plugins: website.plugins,
+        ...(website.plugins ? {plugins: website.plugins} : {}),
         rules: {"react/require-default-props": rule},
-        settings: website.settings,
+        ...(website.settings ? {settings: website.settings} : {}),
       },
     });
     const options = {filePath: path.join("sites", "arolariu.ro", "src", "DefaultPropsFixture.tsx")};

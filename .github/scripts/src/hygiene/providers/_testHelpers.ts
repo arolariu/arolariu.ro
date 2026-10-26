@@ -277,10 +277,12 @@ export function parseTrxToSuiteResult(name: string, xml: string): SuiteResult {
 
   const parsed: TrxResult[] = rawList.map((r) => {
     const errorInfo = (((r as Record<string, unknown>)["Output"] as Record<string, unknown> | undefined)?.["ErrorInfo"]) as Record<string, unknown> | undefined;
+    const rawDuration = readAttr(r, "duration");
+    const durationMs = rawDuration === undefined ? undefined : parseTrxDuration(String(rawDuration));
     return {
       testName: String(readAttr(r, "testName") ?? "<unnamed>"),
       outcome: String(readAttr(r, "outcome") ?? "Unknown"),
-      ...(readAttr(r, "duration") !== undefined ? {durationMs: parseTrxDuration(String(readAttr(r, "duration")))} : {}),
+      ...(durationMs !== undefined ? {durationMs} : {}),
       ...(errorInfo?.["Message"] !== undefined ? {errorMessage: readText(errorInfo["Message"]) ?? String(errorInfo["Message"])} : {}),
       ...(errorInfo?.["StackTrace"] !== undefined ? {stackTrace: readText(errorInfo["StackTrace"]) ?? String(errorInfo["StackTrace"])} : {}),
     };
