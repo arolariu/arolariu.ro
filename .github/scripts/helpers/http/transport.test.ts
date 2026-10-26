@@ -45,6 +45,7 @@ beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "ci-http-"));
 });
 afterEach(async () => {
+  vi.unstubAllEnvs();
   for (const helper of helpers.splice(0)) {
     if ("dispose" in helper && typeof helper.dispose === "function") helper.dispose();
   }
@@ -58,7 +59,11 @@ afterAll(async () => {
 });
 
 describe("HTTP transport behavior", () => {
-  it("applies native handlers and base headers as well as per-request headers", async () => {
+  it.each([
+    {orchestrationId: undefined, userAgent: "custom-agent"},
+    {orchestrationId: "test job/run", userAgent: "custom-agent actions_orchestration_id/test_job_run"},
+  ])("applies native handlers and headers with orchestration metadata $orchestrationId", async ({orchestrationId, userAgent}) => {
+    vi.stubEnv("ACTIONS_ORCHESTRATION_ID", orchestrationId);
     const handler: RequestHandler = {
       prepareRequest(options): void {
         options.headers = {...options.headers, "X-Prepared": "handler"};
@@ -73,7 +78,7 @@ describe("HTTP transport behavior", () => {
     const helper = createHttpHelper("custom-agent", {handlers: [handler], requestOptions: {headers: {"X-Native": "base"}}});
     helpers.push(helper);
     const result = await helper.get(`${url}/headers`, {headers: {"X-Request": "local"}});
-    expect(result.body).toMatchObject({"user-agent": "custom-agent", "x-prepared": "handler", "x-native": "base", "x-request": "local"});
+    expect(result.body).toMatchObject({"user-agent": userAgent, "x-prepared": "handler", "x-native": "base", "x-request": "local"});
   });
   it("honors false and zero policy overrides in real requests and native client construction", async () => {
     const configurations: ConstructorParameters<typeof HttpClient>[] = [];

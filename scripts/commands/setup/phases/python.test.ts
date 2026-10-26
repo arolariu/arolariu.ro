@@ -13,7 +13,7 @@
  * spawns a process, or observes ambient Node state.
  */
 
-import {resolve} from "node:path";
+import {join, resolve} from "node:path";
 
 import {Exit, Layer} from "effect";
 import {describe, expect, it, vi} from "vitest";
@@ -831,10 +831,13 @@ describe("python characterization (pre-Effect migration)", () => {
       },
       actionIds: ["python.pip.upgrade", "python.dependencies.install"],
       commands: [
-        {command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe", args: ["-m", "pip", "install", "--upgrade", "pip"]},
         {
-          command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe",
-          args: ["-m", "pip", "install", "-r", "<root>\\sites\\exp.arolariu.ro\\requirements-dev.txt"],
+          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          args: ["-m", "pip", "install", "--upgrade", "pip"],
+        },
+        {
+          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          args: ["-m", "pip", "install", "-r", join("<root>", "sites", "exp.arolariu.ro", "requirements-dev.txt")],
         },
       ],
     });
@@ -874,10 +877,13 @@ describe("python characterization (pre-Effect migration)", () => {
           command: "winget",
           args: ["install", "--id", "Python.Python.3.12", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
         },
-        {command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe", args: ["-m", "pip", "install", "--upgrade", "pip"]},
         {
-          command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe",
-          args: ["-m", "pip", "install", "-r", "<root>\\sites\\exp.arolariu.ro\\requirements-dev.txt"],
+          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          args: ["-m", "pip", "install", "--upgrade", "pip"],
+        },
+        {
+          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          args: ["-m", "pip", "install", "-r", join("<root>", "sites", "exp.arolariu.ro", "requirements-dev.txt")],
         },
       ],
     });
