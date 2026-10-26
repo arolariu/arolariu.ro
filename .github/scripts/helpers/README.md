@@ -1,470 +1,121 @@
-# GitHub Actions Helpers
+# GitHub Actions brokers
 
-Type-safe, clean architecture helpers for GitHub Actions workflows using @actions/toolkit.
+Two routes serve different contracts:
 
-## Overview
+| Route                         | Guarantee                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `helpers/sdk/<entrypoint>.ts` | Lossless installed public Actions API, including types/defaults/errors/sentinels |
+| Narrow helper modules         | Documented composition-based conveniences, sometimes intentionally stricter      |
 
-This directory contains modular, well-tested helpers that wrap the @actions/toolkit ecosystem with clean interfaces following SOLID principles. Each helper focuses on a single responsibility and provides a type-safe, easy-to-use API.
-
-## Architecture
-
-```
-helpers/
-├── environment/    # Environment variable management
-├── filesystem/     # File system operations (@actions/io + Node.js fs)
-├── git/           # Git operations (@actions/exec)
-├── github/        # GitHub API operations (@actions/github)
-├── artifacts/     # Artifact management (@actions/artifact)
-├── cache/         # Cache operations (@actions/cache)
-├── comments/      # PR comment builders (markdown)
-├── http/          # HTTP client (@actions/http-client)
-└── index.ts       # Main entry point
-```
-
-## Design Principles
-
-### SOLID Principles
-
-- **Single Responsibility**: Each helper has one clear purpose
-- **Open/Closed**: Extensible through interfaces without modification
-- **Liskov Substitution**: All implementations are substitutable
-- **Interface Segregation**: Clean, focused interfaces
-- **Dependency Inversion**: Depend on abstractions, not implementations
-
-### Clean Code Practices
-
-- Comprehensive JSDoc documentation
-- Type-safe with TypeScript strict mode
-- Consistent error handling
-- Factory pattern for easy instantiation
-- Default exports for convenience
-
-## Usage
-
-### Quick Start
+Native runtime bindings and public type exports are checked against installed package entrypoints. Artifact's default export is preserved
+explicitly. Supported GitHub/IO/HTTP public utility subpaths have their own facades; private SDK imports are not supported. Facade exposure
+does not authorize invoking OIDC, attestation, tool installation, deletion, or cross-run operations.
 
 ```typescript
-// Import default instances (ready to use)
-import { env, fs, git, artifacts, cache, http } from './helpers';
+import {HttpClient} from "./sdk/http-client.ts";
+import {createHttpHelper} from "./http/index.ts";
 
-// Or import factory functions
-import { createGitHubHelper, createCommentBuilder } from './helpers';
+// Exact native API, including raw/stream/JSON operations and handlers.
+const native = new HttpClient("workflow");
+native.dispose();
 
-// Or import specific modules
-import { env } from './helpers/environment';
-import { fs } from './helpers/filesystem';
-```
-
-### Environment Helper
-
-Manage environment variables with type safety:
-
-```typescript
-import { env } from './helpers';
-
-// Get optional variable
-const apiUrl = env.get('API_URL', 'http://localhost:3000');
-
-// Get required variable (fails workflow if missing)
-const commitSha = env.getRequired('GITHUB_SHA');
-
-// Get multiple required variables
-const vars = env.getRequiredBatch(['COMMIT_SHA', 'RUN_ID']);
-
-// Check if variable exists
-if (env.has('DEBUG_MODE')) {
-  console.log('Debug mode enabled');
-}
-
-// Get typed values
-const isProduction = env.getBoolean('IS_PRODUCTION', false);
-const timeout = env.getInt('TIMEOUT_SECONDS', 30);
-
-// Get GitHub context
-const context = env.getGitHubContext();
-console.log(`Running on ${context.ref} by ${context.actor}`);
-```
-
-### File System Helper
-
-Cross-platform file operations:
-
-```typescript
-import { fs } from './helpers';
-
-// Check file existence
-if (await fs.exists('./config.json')) {
-  const config = await fs.readJson<Config>('./config.json');
-}
-
-// Read/write text files
-const content = await fs.readText('./README.md');
-await fs.writeText('./output.txt', 'Hello World', { recursive: true });
-
-// Read/write JSON
-const data = await fs.readJson<Data>('./data.json');
-await fs.writeJson('./output.json', { key: 'value' });
-
-// Copy/move/remove files
-await fs.copy('./source', './dest', { recursive: true });
-await fs.move('./old', './new');
-await fs.remove('./temp', { recursive: true });
-
-// Find files matching pattern
-const logs = await fs.find('./logs', /\.log$/);
-
-// Read last N lines (tail)
-const recentErrors = await fs.readTail('./error.log', 100);
-```
-
-### Git Helper
-
-Type-safe Git operations:
-
-```typescript
-import { git } from './helpers';
-
-// Fetch branch
-await git.fetchBranch('main', 'origin', 50);
-
-// Get diff statistics
-const stats = await git.getDiffStats('origin/main', 'HEAD');
-console.log(`${stats.filesChanged} files, +${stats.linesAdded} -${stats.linesDeleted}`);
-
-// Get changed files
-const files = await git.getChangedFiles('HEAD~1', 'HEAD');
-
-// Get commit info
-const commit = await git.getCommit('HEAD');
-console.log(`${commit.shortSha}: ${commit.message}`);
-
-// Get file sizes from Git tree
-const sizes = await git.getFileSizes('origin/main', ['dist/', 'build/']);
-
-// Check if reference exists
-if (await git.refExists('origin/develop')) {
-  console.log('Develop branch exists');
-}
-
-// List branches
-const branches = await git.listBranches('origin');
-```
-
-### GitHub Helper
-
-GitHub API operations:
-
-```typescript
-import { createGitHubHelper } from './helpers';
-
-const gh = createGitHubHelper(process.env.GITHUB_TOKEN!);
-
-// Get repository info
-const repo = gh.getRepository();
-console.log(`Working on ${repo.fullName}`);
-
-// Get PR context
-const pr = gh.getPullRequest();
-if (pr) {
-  console.log(`PR #${pr.number}: ${pr.title}`);
-}
-
-// Post PR comment
-await gh.postPullRequestComment(123, '## Build Results\n\n✅ Success');
-
-// Find and update comment
-const existingComment = await gh.findComment(123, 'build-results-marker');
-if (existingComment) {
-  await gh.updateComment(existingComment.id, 'Updated content');
-}
-
-// Upsert comment (create or update)
-await gh.upsertComment(123, '## Status\n\nUpdated', 'status-marker');
-
-// Create issue
-await gh.createIssue(
-  'Bug Report',
-  'Description',
-  ['bug', 'high-priority'],
-  ['username']
-);
-
-// Manage labels
-await gh.addLabels(123, ['ready-for-review']);
-await gh.removeLabels(123, ['wip']);
-```
-
-### Artifacts Helper
-
-Upload and download artifacts:
-
-```typescript
-import { artifacts } from './helpers';
-
-// Upload directory as artifact
-await artifacts.uploadDirectory('test-results', './test-output', 30);
-
-// Upload specific files
-await artifacts.uploadFiles(
-  'logs',
-  ['app.log', 'error.log'],
-  './',
-  7
-);
-
-// Download artifact
-await artifacts.download({
-  name: 'build-output',
-  destination: './download'
+// Owned convenience client with native constructor configuration.
+const helper = createHttpHelper("workflow", {
+  requestOptions: {allowRedirects: false, maxRetries: 0},
 });
-
-// List available artifacts
-const available = await artifacts.list();
-console.log(`Found ${available.length} artifacts`);
-```
-
-### Cache Helper
-
-Efficient caching with automatic key generation:
-
-`autoCache()` restores and records key/path state on a miss; it does not
-register a post-job saver. Call `save()` explicitly when the cache is ready.
-`exists()` also attempts restoration and can write files; it is not a
-lookup-only probe.
-
-```typescript
-import { cache, CacheConfigs } from './helpers';
-
-// Auto-cache with common configurations
-await cache.autoCache(
-  CacheConfigs.npm.prefix,
-  CacheConfigs.npm.paths,
-  CacheConfigs.npm.lockFiles
-);
-
-// Manual cache operations
-const result = await cache.restore({
-  key: 'npm-cache-v1-abc123',
-  paths: ['node_modules'],
-  restoreKeys: ['npm-cache-v1-', 'npm-cache-']
-});
-
-if (!result.hit) {
-  // Install dependencies
-  // ...
-  
-  await cache.save({
-    key: 'npm-cache-v1-abc123',
-    paths: ['node_modules']
-  });
-}
-
-// Generate cache key from files
-const key = await cache.generateKey('npm', ['package-lock.json']);
-
-// Create restore keys
-const restoreKeys = cache.createRestoreKeys(key, 3);
-```
-
-### Comments Builder
-
-Build structured PR comments:
-
-```typescript
-import { createCommentBuilder, MarkdownUtils } from './helpers';
-
-const comment = createCommentBuilder()
-  .addHeading('Build Results', 2)
-  .addBadge('Success', 'success')
-  .addParagraph('All checks passed!')
-  .addTable(
-    [
-      { header: 'File', align: 'left' },
-      { header: 'Size', align: 'right' },
-      { header: 'Change', align: 'right' }
-    ],
-    [
-      ['app.js', '125 KB', '+5 KB'],
-      ['styles.css', '45 KB', '-2 KB']
-    ]
-  )
-  .addCollapsible('Details', 'Detailed information...', true)
-  .addIdentifier('build-comment-v1')
-  .build();
-
-// Use markdown utilities
-const link = MarkdownUtils.link('View PR', 'https://github.com/...');
-const bold = MarkdownUtils.bold('Important');
-const size = MarkdownUtils.formatBytes(1024000);
-```
-
-### HTTP Helper
-
-Make HTTP requests:
-
-Only `headers` in `HttpRequestOptions` is forwarded. Timeout, redirect, and
-retry option fields are currently ignored; do not rely on them for request
-limits. Downloads currently use text-body handling and are not binary-safe.
-
-```typescript
-import { http } from './helpers';
-
-// GET request
-const response = await http.get<ApiResponse>('https://api.example.com/data');
-if (response.success) {
-  console.log(response.body);
-}
-
-// POST with JSON body
-await http.post('https://api.example.com/create', {
-  name: 'test',
-  value: 123
-});
-
-// Download a text file
-await http.download(
-  'https://example.com/file.txt',
-  './downloads/file.txt'
-);
-
-// Custom request
-const result = await http.request(
-  'PATCH',
-  'https://api.example.com/update',
-  { status: 'completed' }
-);
-```
-
-## Common Patterns
-
-### Script Entry Point
-
-```typescript
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import { env, fs, git, createGitHubHelper, createCommentBuilder } from './helpers';
-
-export default async function main() {
-  try {
-    // Get GitHub token
-    const token = env.getRequired('GITHUB_TOKEN');
-    const gh = createGitHubHelper(token);
-    
-    // Get PR context
-    const pr = gh.getPullRequest();
-    if (!pr) {
-      core.info('Not a PR context, skipping');
-      return;
-    }
-    
-    // Perform operations
-    await git.fetchBranch('main');
-    const stats = await git.getDiffStats('origin/main', 'HEAD');
-    
-    // Build and post comment
-    const comment = createCommentBuilder()
-      .addHeading('Code Changes')
-      .addParagraph(`${stats.filesChanged} files changed`)
-      .build();
-    
-    await gh.postPullRequestComment(pr.number, comment);
-    
-    core.info('✅ Complete');
-  } catch (error) {
-    const err = error as Error;
-    core.setFailed(err.message);
-  }
+try {
+  await helper.download("https://example.invalid/report.bin", "artifacts/report.bin");
+} finally {
+  helper.dispose();
 }
 ```
 
-### Workflow Script Pattern
+Use narrow imports for isolation. The `helpers/index.ts` barrel eagerly exports all decorators. Its Promise-based `Helpers` factories are
+compatible async construction methods, not a lazy-loading boundary.
+
+## Decorator contracts
+
+### Environment and execution context
+
+`createEnvironmentHelper(record?)` can read an explicit immutable source or the current ambient environment. Supplied-invalid
+booleans/integers are errors; missing values alone use defaults. Required/validated reads throw without calling `core.setFailed`. Snapshots
+may contain secrets and must not be logged or serialized. Native action inputs/state/masking remain in `sdk/core.ts`.
+
+Workflow metadata belongs to `lib/context.ts`: the pure builder takes explicit Actions/local mode, actual checkout SHA, workspace, and
+clock. Its capture adapter acquires cwd/SHA through brokers. Returned context excludes credentials and environment records; local mode has
+no remote run URL.
+
+### Checked execution and Git
+
+`execChecked(command, args, options)` requires exit zero and retains captured output in `CommandExecutionError`. Native startup/listener
+errors preserve identity. Use `sdk/exec.ts` when the caller owns finding-exit interpretation; there is no invented native timeout option.
 
 ```typescript
-// For use with actions/github-script@v8
-const script = async ({ github, context, core, exec }) => {
-  // Import helpers
-  const { env, fs, git } = await import('./helpers');
-  
-  // Use helpers with provided context
-  const commitSha = env.get('GITHUB_SHA');
-  const files = await fs.find('./src', /\.ts$/);
-  const stats = await git.getDiffStats('origin/main', 'HEAD');
-  
-  // Perform workflow logic
-  console.log(`Found ${files.length} TypeScript files`);
-  console.log(`${stats.filesChanged} files changed`);
-};
-
-export default script;
+import {createGitHelper} from "./git/index.ts";
+const git = createGitHelper({cwd: workspaceRoot});
+const changes = await git.getChangeSet(workspaceRoot, baseRef, headRef);
 ```
+
+`getChangeSet` resolves immutable commits and a merge-base comparison, using NUL-delimited name/status records. It retains rename/copy
+origins, deletions, spaces/newlines, and explicit unknown scope. Ordinary `getChangedFiles` and `getDiffStats` remain two-tip comparisons.
+Checked fetch/diff/tree/count failures do not become empty successful data. Scoped clients never mutate cwd.
+
+### Filesystem and evidence
+
+`readJson<T>` is a caller assertion, **not** validation. Evidence consumers use `readValidatedJson(path, decode, maxBytes)` or
+`readTextBounded`, which enforce observed byte limits. `exists` returns false only for missing/non-directory paths; permission errors
+propagate.
+
+`writeJsonAtomic` and `writeStreamAtomic` exclusively own a temporary sibling, await closure, then rename. Failed writes preserve the
+destination and clean only owned state. `withTemporaryDirectory(prefix, callback)` retains its owned directory through awaited work and
+cleans up on success/rejection. Cleanup failure is surfaced, including the original failure when both occur.
+
+Traversal honors zero/finite/unlimited depth, preserves list/find defaults, does not follow directory symlinks, and does not mutate caller
+regex state. Native glob/IO APIs remain available through their facades.
+
+### HTTP
+
+Constructor handlers/options are native. Legacy per-request `timeout` maps to native socket inactivity timeout, not a total deadline.
+Request policy uses owned temporary clients without mutating the shared base client; false/zero options survive. Bodies finish before
+temporary disposal, including rejection. Unsupported request options reject rather than being ignored.
+
+Downloads require 2xx and atomically stream original bytes; 404 cannot replace a destination with an error page. HEAD has no fabricated
+body. Convenience response generics do not validate payload schemas. Dispose owned helpers.
+
+### Cache
+
+Native `undefined`/`-1` values and error classes remain unchanged in `sdk/cache.ts`. Decorated save requires a positive real ID.
+
+`exists` is lookup-only and never restores files. Restoration probes exact policy before writes; nonempty `restoreKeys` explicitly opt into
+native prefix/fallback matching. A match changing between lookup and restore is an error, not an exact success. An SDK miss cannot establish
+a more precise cause than the SDK retained.
+
+Native upload/download/cross-OS options are forwarded. Unsupported legacy `downloadChunkSize` rejects. Every file supplied to
+`generateKey`/`autoCache` is required and readable; do not list alternative lockfile formats as though they were optional. Auto-cache uses
+exact policy and records state on a miss: it installs no post-job saver. Call `save` explicitly with the generated key.
+
+### Artifacts and GitHub
+
+`createArtifactHelper(client?)` composes a complete native client. Uploads require positive identity and retain actual optional size/digest
+metadata. Native compression/retention/archive/find/hash options are exposed through `nativeOptions`; conflicting retention values reject.
+Download owns its destination and rejects integrity mismatch. Listings retain native metadata.
+
+`createGitHubHelper(token, context?, {client?})` accepts complete configured Octokit clients. Comment/issue lists paginate; branch lookup
+returns null only for a successful empty response. SDK errors keep identity. Marker matching remains substring-based without a new
+author/incident ownership policy. `getClient()` retains the full native REST/GraphQL/plugin/pagination surface.
+
+### Raw reports and Markdown
+
+Newman accepts actual serialized JSON, including Buffer DTOs and request errors. Playwright visits nested suites and respects logical
+expected/flaky outcomes, interruption, and retries. Global setup/teardown errors remain separate from assertion counters and render as
+runner failures rather than a green browser section. Vitest coverage/report counters and percentages are decoded, not cast. JUnit/TRX
+helpers return raw DTOs; `lib/testing` normalizes them into workflow suites/findings without fake runner-error tests.
+
+`MarkdownUtils.fence` chooses a delimiter longer than embedded backtick runs. `tableCell` protects pipes/line endings. The fluent builder
+uses both; explicit `addRaw` remains raw. Workflow layout and publication policy stay in `lib`/entrypoints.
 
 ## Testing
 
-Each helper includes interfaces that can be easily mocked for testing:
-
-```typescript
-import type { IEnvironmentHelper } from './helpers/environment';
-
-// Create mock
-const mockEnv: IEnvironmentHelper = {
-  get: (key: string) => 'mock-value',
-  getRequired: (key: string) => 'mock-value',
-  // ... other methods
-};
-
-// Use in tests
-const value = mockEnv.get('TEST_VAR');
-```
-
-## Best Practices
-
-1. **Use default instances** for simple use cases: `env.get()`, `fs.readText()`
-2. **Create specific instances** when you need custom configuration
-3. **Handle errors** appropriately - helpers throw descriptive errors
-4. **Use type parameters** for JSON operations: `fs.readJson<ConfigType>()`
-5. **Leverage factory functions** for dependency injection in tests
-6. **Document your scripts** using JSDoc comments
-7. **Follow the helper patterns** when extending functionality
-
-## Contributing
-
-When adding new helpers:
-
-1. Create a new directory under `helpers/`
-2. Implement an interface following the `I*Helper` pattern
-3. Provide a concrete implementation class
-4. Export a factory function: `create*Helper()`
-5. Export a default instance for convenience
-6. Add comprehensive JSDoc documentation
-7. Export types and interfaces
-8. Update this README
-
-## Migration Guide
-
-Migrating from old helper pattern:
-
-**Before:**
-```typescript
-import { getEnvVar, getRequiredEnvVar } from '../lib/env-helper';
-
-const value = getEnvVar('KEY', 'default');
-const required = getRequiredEnvVar(core, 'REQUIRED_KEY');
-```
-
-**After:**
-```typescript
-import { env } from './helpers';
-
-const value = env.get('KEY', 'default');
-const required = env.getRequired('REQUIRED_KEY');
-```
-
-Key differences:
-- No need to pass `core` parameter (handled internally)
-- Cleaner API with object-oriented approach
-- Better type safety
-- More consistent error handling
-
-## License
-
-Part of the arolariu.ro monorepo. See root LICENSE file.
+Use the commands in the [scripts guide](../README.md). Tests exercise real temporary files/repositories and complete native SDK clients,
+mocking only external boundaries. Native parity tests are not an excuse to duplicate SDK internals or invoke
+destructive/credential-sensitive operations.
