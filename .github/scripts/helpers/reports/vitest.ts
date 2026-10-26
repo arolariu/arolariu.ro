@@ -70,6 +70,8 @@ export function decodeVitestReport(value: unknown): VitestJsonReport {
       ...(file["message"] === undefined ? {} : {message: text(file["message"], "Vitest file message")}),
     };
   });
+  const assertionCount = testResults.reduce((total, file) => total + file.assertionResults.length, 0);
+  if (assertionCount !== numTotalTests) throw new TypeError("Vitest assertion count does not match numTotalTests");
   return {
     numTotalTests,
     numPassedTests,

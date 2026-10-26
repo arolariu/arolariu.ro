@@ -17,7 +17,17 @@ const passing: VitestJsonReport = {
   numPassedTests: 5,
   numFailedTests: 0,
   numPendingTests: 0,
-  testResults: [{name: "x.test.ts", status: "passed", assertionResults: []}],
+  testResults: [
+    {
+      name: "x.test.ts",
+      status: "passed",
+      assertionResults: Array.from({length: 5}, (_, index) => ({
+        fullName: `passing test ${index + 1}`,
+        status: "passed" as const,
+        failureMessages: [],
+      })),
+    },
+  ],
 };
 
 const failing: VitestJsonReport = {
