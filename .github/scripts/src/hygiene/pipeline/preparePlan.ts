@@ -13,6 +13,7 @@ import {captureWorkflowContext, type WorkflowContext} from "../../../lib/context
 import {buildHygienePlan, toProviderMatrix} from "../../../lib/planning/plan.ts";
 import {decodeSharedInputs, decodeWorkspaceInspection} from "../../../lib/planning/workspace.ts";
 import type {HygienePlan, WorkspaceInspection} from "../../../lib/planning/types.ts";
+import {summarizePlanSelection} from "../../../lib/planning/presentation.ts";
 
 /**
  * Collects immutable Git/Nx evidence and persists exactly one shared plan.
@@ -72,7 +73,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     core.setOutput("provider-matrix", JSON.stringify(toProviderMatrix(plan)));
     core.setOutput("plan-id", plan.id);
     core.info(`Hygiene plan ${plan.id}: ${plan.mode}; ${plan.providers.filter((provider) => provider.selected).length} selected providers`);
-    for (const diagnostic of plan.diagnostics) core.warning(`${diagnostic.code}: ${diagnostic.message}`);
+    const selection = summarizePlanSelection(plan);
+    if (selection.level === "warning") core.warning(selection.message);
+    else core.info(selection.message);
+    if (core.isDebug()) for (const diagnostic of plan.diagnostics) core.debug(`${diagnostic.code}: ${diagnostic.message}`);
   } catch (error) {
     core.setFailed(error instanceof Error ? error.message : "Could not prepare hygiene plan");
     process.exitCode = 1;

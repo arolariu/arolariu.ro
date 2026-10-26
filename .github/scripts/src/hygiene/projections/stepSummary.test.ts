@@ -22,6 +22,39 @@ import {providerIds} from "../../../lib/hygiene/registry.ts";
 import {buildVerifiedReport} from "../../../lib/hygiene/aggregate.ts";
 
 describe("scorecard cell safety", () => {
+  it("summarizes repository-wide selection without dumping per-file planning diagnostics", () => {
+    const plan = {
+      ...evidencePlan(),
+      diagnostics: [
+        {code: "shared-input", message: "Nx shared inputs changed; running the declared full scope"},
+        ...Array.from({length: 50}, (_, index) => ({
+          code: "unmapped-change",
+          message: `No declared project owns changed path: infra/file-${index}.json`,
+        })),
+      ],
+    };
+    const report = buildVerifiedReport(planContext(), plan, {
+      outcomes: providerIds().map((id) => evidenceOutcome(plan, id)),
+      issues: [],
+    });
+    const markdown = buildStepSummary(report);
+
+    expect(markdown).toContain("Full validation selected because shared configuration changed.");
+    expect(markdown).toContain(`${report.workflowRunUrl}#artifacts`);
+    expect(markdown).not.toMatch(/shared-input|unmapped-change|No declared project|infra\/file-/);
+    expect(report.plan?.diagnostics).toEqual(plan.diagnostics);
+  });
+  it("explains an actual workspace inspection fallback without hiding evidence errors", () => {
+    const plan = {
+      ...evidencePlan(),
+      diagnostics: [{code: "workspace-unavailable", message: "Workspace facts worker exited with code 1"}],
+    };
+    const report = buildVerifiedReport(planContext(), plan, {outcomes: [], issues: []});
+    const markdown = buildStepSummary(report);
+
+    expect(markdown).toContain("Workspace inspection was unavailable; full validation selected.");
+    expect(markdown).toContain("missing-outcome");
+  });
   it("retains actionable runner diagnostics beyond the short finding-summary budget", () => {
     const message = `Command 'prettier' exited with code 2\n${"module path detail ".repeat(20)}SyntaxError: top-level await`;
     const markdown = renderProviderCard(makeOutcome({gateResult: "errored", error: {message}}));

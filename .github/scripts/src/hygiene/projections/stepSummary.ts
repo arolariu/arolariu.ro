@@ -16,6 +16,7 @@ import {isComparisonFinding} from "../domain/types.ts";
 import {type Finding, type GateResult, type HygieneReport, type ProviderOutcome} from "../domain/types.ts";
 import {PROVIDER_ERROR_MESSAGE_LIMIT} from "../../../lib/hygiene/contracts.ts";
 import {redactEvidenceText} from "../../../helpers/reports/redact.ts";
+import {summarizePlanSelection} from "../../../lib/planning/presentation.ts";
 
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
@@ -517,7 +518,13 @@ function renderPlanEvidence(report: HygieneReport): string {
       `Scope: **${report.plan.mode}** · ${report.plan.providers.length - skipped.length} selected · ${skipped.length} skipped · plan \`${report.plan.id.slice(0, 12)}\``,
     );
     for (const provider of skipped) lines.push(`- \`${provider.id}\`: skipped - ${escapeHtml(provider.reason)}`);
-    for (const diagnostic of report.plan.diagnostics) lines.push(`- \`${diagnostic.code}\`: ${escapeHtml(diagnostic.message)}`);
+    lines.push("", summarizePlanSelection(report.plan).message);
+    if (report.plan.diagnostics.length > 0)
+      lines.push(
+        report.workflowRunUrl
+          ? `[Full planning details in the workflow artifacts](${report.workflowRunUrl}#artifacts).`
+          : "Full planning details are retained in the hygiene plan artifact.",
+      );
     for (const outcome of report.outcomes) {
       if (
         "workflowRunAttempt" in outcome
