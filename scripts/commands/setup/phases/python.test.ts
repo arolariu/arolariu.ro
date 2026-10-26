@@ -789,6 +789,8 @@ describe("dry-run and safety contracts", () => {
 });
 
 describe("python characterization (pre-Effect migration)", () => {
+  // The fixture simulates Windows while repository paths use the test host's separators.
+  const expectedVenvInterpreter = `${join("<root>", "sites", "exp.arolariu.ro")}\\.venv\\Scripts\\python.exe`;
   const wingetVersionKey = commandKey({command: "winget", args: ["--version"]});
   const installKey = commandKey(
     selectPythonInstallationProposal({platform: "win32", availablePackageManagers: new Set(["winget"]), required: requiredPython})!.command,
@@ -832,11 +834,11 @@ describe("python characterization (pre-Effect migration)", () => {
       actionIds: ["python.pip.upgrade", "python.dependencies.install"],
       commands: [
         {
-          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          command: expectedVenvInterpreter,
           args: ["-m", "pip", "install", "--upgrade", "pip"],
         },
         {
-          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          command: expectedVenvInterpreter,
           args: ["-m", "pip", "install", "-r", join("<root>", "sites", "exp.arolariu.ro", "requirements-dev.txt")],
         },
       ],
@@ -878,11 +880,11 @@ describe("python characterization (pre-Effect migration)", () => {
           args: ["install", "--id", "Python.Python.3.12", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
         },
         {
-          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          command: expectedVenvInterpreter,
           args: ["-m", "pip", "install", "--upgrade", "pip"],
         },
         {
-          command: join("<root>", "sites", "exp.arolariu.ro", ".venv", "Scripts", "python.exe"),
+          command: expectedVenvInterpreter,
           args: ["-m", "pip", "install", "-r", join("<root>", "sites", "exp.arolariu.ro", "requirements-dev.txt")],
         },
       ],
