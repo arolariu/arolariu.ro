@@ -12,7 +12,7 @@ describe("fixed workspace facts worker broker", () => {
     const root = join(process.cwd(), "repository with spaces");
     await runWorkspaceInspection(root);
     expect(exec.getExecOutput).toHaveBeenCalledWith(
-      process.execPath,
+      `"${process.execPath.replaceAll('"', '\\"')}"`,
       [join(root, "scripts", "inspection", "workspace-facts.worker.ts"), root],
       {cwd: root, silent: true, ignoreReturnCode: true},
     );

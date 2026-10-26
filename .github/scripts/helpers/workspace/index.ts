@@ -14,7 +14,9 @@ import {getExecOutput, type ExecOutput} from "../sdk/exec.ts";
  * its Nx timeout, temporary state, validation, and cleanup; this adds no engine.
  */
 export function runWorkspaceInspection(root: string): Promise<ExecOutput> {
-  return getExecOutput(process.execPath, [join(root, "scripts", "inspection", "workspace-facts.worker.ts"), root], {
+  // The SDK parses its first parameter as a command line, not a literal path.
+  const executable = `"${process.execPath.replaceAll('"', '\\"')}"`;
+  return getExecOutput(executable, [join(root, "scripts", "inspection", "workspace-facts.worker.ts"), root], {
     cwd: root,
     silent: true,
     ignoreReturnCode: true,
