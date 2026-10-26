@@ -80,7 +80,7 @@ export async function collectLiveEvidence(configuration: LiveConfiguration): Pro
   const read = (path: string, maximum: number): Promise<string> => {
     let value = cache.get(path);
     if (!value) {
-      value = fs.readTextBounded(path, maximum).then(redactEvidenceText);
+      value = fs.readTextBounded(path, maximum);
       cache.set(path, value);
     }
     return value;
@@ -122,7 +122,7 @@ export async function collectLiveEvidence(configuration: LiveConfiguration): Pro
     const target = liveTarget(/^e2e-status-([a-z0-9-]+)\.json$/i.exec(basename(path))?.[1]?.toLowerCase());
     if (!eligible(path, target, "status")) continue;
     try {
-      const raw = record(JSON.parse(await read(path, configuration.maxJsonBytes)), "live status artifact");
+      const raw = record(redactEvidenceValue(JSON.parse(await read(path, configuration.maxJsonBytes))), "live status artifact");
       if (raw["target"] !== undefined && raw["target"] !== target)
         throw new TypeError("Live status target does not match its artifact identity");
       const status = jobStatus(raw["status"]);
@@ -150,7 +150,7 @@ export async function collectLiveEvidence(configuration: LiveConfiguration): Pro
     const target = liveTarget(/^newman-([a-z0-9-]+)-summary\.md$/i.exec(basename(path))?.[1]?.toLowerCase());
     if (!eligible(path, target, "summary")) continue;
     try {
-      summaries[target] = await read(path, configuration.maxLogBytes);
+      summaries[target] = redactEvidenceText(await read(path, configuration.maxLogBytes));
     } catch (error) {
       issue(error, path, target);
     }
@@ -159,7 +159,7 @@ export async function collectLiveEvidence(configuration: LiveConfiguration): Pro
     const target = liveTarget(/^e2e-([a-z0-9-]+)\.log$/i.exec(basename(path))?.[1]?.toLowerCase());
     if (!eligible(path, target, "log")) continue;
     try {
-      const value = await read(path, configuration.maxLogBytes);
+      const value = redactEvidenceText(await read(path, configuration.maxLogBytes));
       logs[target] = {
         summaryTable: extractNewmanSummaryTable(value),
         requestStatuses: extractRequestStatusesFromLog(value),
@@ -188,7 +188,8 @@ export async function collectLiveEvidence(configuration: LiveConfiguration): Pro
   }
   let templateText: string | undefined;
   try {
-    if (await fs.exists(configuration.templatePath)) templateText = await read(configuration.templatePath, configuration.maxLogBytes);
+    if (await fs.exists(configuration.templatePath))
+      templateText = redactEvidenceText(await read(configuration.templatePath, configuration.maxLogBytes));
   } catch (error) {
     issue(error, configuration.templatePath);
   }
