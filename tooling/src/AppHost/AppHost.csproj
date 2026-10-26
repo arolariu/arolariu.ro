@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="Aspire.AppHost.Sdk" Version="13.6.1" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.6.2" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsAspireHost>true</IsAspireHost>
@@ -16,6 +16,7 @@
     <PackageReference Include="Aspire.Hosting.Redis" />
     <PackageReference Include="Aspire.Hosting.SqlServer" />
     <PackageReference Include="Azure.Storage.Queues" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" IsAspireProjectResource="true" />

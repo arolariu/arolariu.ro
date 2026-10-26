@@ -28,7 +28,7 @@ instead of copying version values.
 | Node.js | 24.15.0+ (24.x) or >=26 | `package.json` engines |
 | npm | >=11 | `package.json` engines |
 | .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
-| Aspire | 13.6.1 | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props` |
+| Aspire | 13.6.2 | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props` |
 | C# | 14 | `<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props` |
 | Next.js | 16.4.0 | `package.json` |
 | React | 19.3.0 | `package.json` |
