@@ -1,483 +1,132 @@
 /**
- * @fileoverview Unit tests for HTTP helper.
+ * @fileoverview HTTP conveniences characterized through public native clients.
  * @module github/scripts/helpers/http/tests
- *
- * @remarks
- * Validates wrapper behavior using a mocked `@actions/http-client`.
  */
+import {IncomingMessage, type IncomingHttpHeaders} from "node:http";
+import {Socket} from "node:net";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {HttpClient, HttpClientResponse} from "../sdk/http-client.ts";
+import {createHttpHelper, type IHttpHelper} from "./index.ts";
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {createHttpHelper} from "./index";
-
-// Mock @actions/http-client with a factory that creates the mock methods inside
-vi.mock("@actions/http-client", () => ({
-  HttpClient: vi.fn().mockImplementation(function (this: any) {
-    this.get = vi.fn();
-    this.post = vi.fn();
-    this.put = vi.fn();
-    this.patch = vi.fn();
-    this.del = vi.fn();
-    this.head = vi.fn();
-  }),
-}));
+function response(body = "{}", status: number | undefined = 200, headers: IncomingHttpHeaders = {}): HttpClientResponse {
+  const message = new IncomingMessage(new Socket());
+  message.statusCode = status;
+  message.headers = headers;
+  message.complete = true;
+  message.push(body);
+  message.push(null);
+  return new HttpClientResponse(message);
+}
 
 describe("HttpHelper", () => {
-  let httpHelper: ReturnType<typeof createHttpHelper>;
-  let mockGet: any;
-  let mockPost: any;
-  let mockPut: any;
-  let mockPatch: any;
-  let mockDel: any;
-  let mockHead: any;
+  const url = "https://not-a-network-request.invalid/data";
+  let client: HttpClient;
+  let helper: IHttpHelper;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    httpHelper = createHttpHelper();
-    // Access the mock methods from the created instance
-    const helperAny = httpHelper as any;
-    mockGet = helperAny.client.get;
-    mockPost = helperAny.client.post;
-    mockPut = helperAny.client.put;
-    mockPatch = helperAny.client.patch;
-    mockDel = helperAny.client.del;
-    mockHead = helperAny.client.head;
+    client = new HttpClient("unit-test");
+    for (const method of ["get", "post", "put", "patch", "del", "head", "request"] as const) {
+      vi.spyOn(client, method).mockRejectedValue(new Error(`Unexpected external ${method} call`));
+    }
+    helper = createHttpHelper("unit-test", {createClient: () => client});
+  });
+  afterEach(() => {
+    helper.dispose();
+    vi.restoreAllMocks();
   });
 
-  describe("get", () => {
-    it("should perform GET request and return JSON", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue(JSON.stringify({data: "test"})),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get<{data: string}>("https://api.example.com/data");
-
-      expect(mockGet).toHaveBeenCalled();
-      expect(result.body).toEqual({data: "test"});
-      expect(result.statusCode).toBe(200);
-      expect(result.success).toBe(true);
-    });
-
-    it("should pass custom headers", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      await httpHelper.get("https://api.example.com/data", {
-        headers: {
-          Authorization: "Bearer token",
-        },
-      });
-
-      expect(mockGet).toHaveBeenCalledWith(
-        "https://api.example.com/data",
-        expect.objectContaining({
-          Authorization: "Bearer token",
-        }),
-      );
-    });
-
-    it("should throw error on non-200 status", async () => {
-      const mockResponse = {
-        message: {statusCode: 404, headers: {}},
-        readBody: vi.fn().mockResolvedValue("Not Found"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com/notfound");
-      expect(result.statusCode).toBe(404);
-      expect(result.success).toBe(false);
-    });
+  it("parses JSON and forwards custom GET headers", async () => {
+    vi.mocked(client.get).mockResolvedValue(response('{"data":"test"}'));
+    const result = await helper.get<{data: string}>(url, {headers: {Authorization: "opaque"}});
+    expect(result).toMatchObject({statusCode: 200, success: true, body: {data: "test"}});
+    expect(client.get).toHaveBeenCalledWith(url, expect.objectContaining({Authorization: "opaque"}));
   });
 
-  describe("post", () => {
-    it("should perform POST request with JSON body", async () => {
-      const mockResponse = {
-        message: {statusCode: 201, headers: {}},
-        readBody: vi.fn().mockResolvedValue(JSON.stringify({id: 123})),
-      };
+  it.each(["post", "put", "patch"] as const)("serializes %s JSON and preserves custom headers", async (method) => {
+    vi.mocked(client[method]).mockResolvedValue(response('{"id":123}', 201));
+    const result = await helper[method]<{id: number}>(url, {name: "test"}, {headers: {Authorization: "opaque"}});
+    expect(result.body).toEqual({id: 123});
+    expect(client[method]).toHaveBeenCalledWith(
+      url,
+      '{"name":"test"}',
+      expect.objectContaining({"Content-Type": "application/json", Authorization: "opaque"}),
+    );
+  });
 
-      mockPost.mockResolvedValue(mockResponse);
+  it.each(["post", "put", "patch"] as const)("sends an empty %s body when omitted", async (method) => {
+    vi.mocked(client[method]).mockResolvedValue(response());
+    await helper[method](url);
+    expect(client[method]).toHaveBeenCalledWith(url, "", expect.any(Object));
+  });
 
-      const result = await httpHelper.post<{id: number}>("https://api.example.com/items", {name: "test"});
+  it("uses the native DELETE operation", async () => {
+    vi.mocked(client.del).mockResolvedValue(response("", 204));
+    expect(await helper.delete(url)).toMatchObject({statusCode: 204, success: true, body: ""});
+    expect(client.del).toHaveBeenCalledWith(url, expect.objectContaining({Accept: "application/json"}));
+  });
 
-      expect(result.body).toEqual({id: 123});
-      expect(mockPost).toHaveBeenCalledWith(
-        "https://api.example.com/items",
-        JSON.stringify({name: "test"}),
-        expect.objectContaining({
-          "Content-Type": "application/json",
-        }),
-      );
-    });
+  it("returns HEAD metadata without reading a body", async () => {
+    const raw = response("", 204);
+    const read = vi.spyOn(raw, "readBody");
+    vi.mocked(client.head).mockResolvedValue(raw);
+    expect(await helper.head(url)).toMatchObject({statusCode: 204, body: undefined});
+    expect(read).not.toHaveBeenCalled();
+  });
 
-    it("should merge custom headers with Content-Type", async () => {
-      const mockResponse = {
-        message: {statusCode: 201, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
+  it.each([
+    {body: {data: "value"}, sent: '{"data":"value"}'},
+    {body: "raw string body", sent: "raw string body"},
+    {body: undefined, sent: ""},
+  ])("sends explicit methods and body $sent", async ({body, sent}) => {
+    vi.mocked(client.request).mockResolvedValue(response('{"result":"success"}'));
+    expect((await helper.request("OPTIONS", url, body)).body).toEqual({result: "success"});
+    expect(client.request).toHaveBeenCalledWith("OPTIONS", url, sent, expect.any(Object));
+  });
 
-      mockPost.mockResolvedValue(mockResponse);
+  it.each([
+    {name: "get", method: "get", invoke: (): Promise<unknown> => helper.get(url)},
+    {name: "post", method: "post", invoke: (): Promise<unknown> => helper.post(url, {})},
+    {name: "put", method: "put", invoke: (): Promise<unknown> => helper.put(url, {})},
+    {name: "patch", method: "patch", invoke: (): Promise<unknown> => helper.patch(url, {})},
+    {name: "delete", method: "del", invoke: (): Promise<unknown> => helper.delete(url)},
+    {name: "head", method: "head", invoke: (): Promise<unknown> => helper.head(url)},
+    {name: "request", method: "request", invoke: (): Promise<unknown> => helper.request("OPTIONS", url)},
+    {name: "download", method: "get", invoke: (): Promise<unknown> => helper.download(url, "must-not-be-created")},
+  ] as const)("preserves native $name error identity", async ({method, invoke}) => {
+    const failure = new Error("Native boundary failure");
+    vi.mocked(client[method]).mockRejectedValue(failure);
+    await expect(invoke()).rejects.toBe(failure);
+  });
 
-      await httpHelper.post("https://api.example.com/items", {data: "test"}, {headers: {Authorization: "Bearer token"}});
+  it.each([
+    {body: "Plain text response", status: 200, success: true, expected: "Plain text response"},
+    {body: "", status: 204, success: true, expected: ""},
+    {body: "Not Found", status: 404, success: false, expected: "Not Found"},
+    {body: "{}", status: 302, success: false, expected: {}},
+  ])("retains body and status evidence for HTTP $status", async ({body, status, success, expected}) => {
+    vi.mocked(client.get).mockResolvedValue(response(body, status));
+    expect(await helper.get(url)).toMatchObject({statusCode: status, success, body: expected});
+  });
 
-      expect(mockPost).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer token",
-        }),
-      );
-    });
-
-    it("should handle POST without body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockPost.mockResolvedValue(mockResponse);
-
-      await httpHelper.post("https://api.example.com/trigger");
-
-      expect(mockPost).toHaveBeenCalledWith("https://api.example.com/trigger", "", expect.any(Object));
+  it("normalizes string and repeated headers", async () => {
+    vi.mocked(client.get).mockResolvedValue(
+      response("{}", 200, {
+        "content-type": "application/json",
+        "x-custom-header": "custom-value",
+        "set-cookie": ["cookie1=value1", "cookie2=value2"],
+      }),
+    );
+    expect((await helper.get(url)).headers).toEqual({
+      "content-type": "application/json",
+      "x-custom-header": "custom-value",
+      "set-cookie": "cookie1=value1, cookie2=value2",
     });
   });
 
-  describe("put", () => {
-    it("should perform PUT request", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue(JSON.stringify({updated: true})),
-      };
-
-      mockPut.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.put<{updated: boolean}>("https://api.example.com/items/123", {name: "updated"});
-
-      expect(result.body).toEqual({updated: true});
-      expect(mockPut).toHaveBeenCalled();
-    });
-
-    it("should handle PUT without body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockPut.mockResolvedValue(mockResponse);
-
-      await httpHelper.put("https://api.example.com/reset");
-
-      expect(mockPut).toHaveBeenCalledWith("https://api.example.com/reset", "", expect.any(Object));
-    });
-  });
-
-  describe("patch", () => {
-    it("should perform PATCH request", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue(JSON.stringify({patched: true})),
-      };
-
-      mockPatch.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.patch<{patched: boolean}>("https://api.example.com/items/123", {field: "value"});
-
-      expect(result.body).toEqual({patched: true});
-      expect(mockPatch).toHaveBeenCalled();
-    });
-
-    it("should handle PATCH without body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockPatch.mockResolvedValue(mockResponse);
-
-      await httpHelper.patch("https://api.example.com/refresh");
-
-      expect(mockPatch).toHaveBeenCalledWith("https://api.example.com/refresh", "", expect.any(Object));
-    });
-  });
-
-  describe("delete", () => {
-    it("should perform DELETE request", async () => {
-      const mockResponse = {
-        message: {statusCode: 204, headers: {}},
-        readBody: vi.fn().mockResolvedValue(""),
-      };
-
-      mockDel.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.delete("https://api.example.com/items/123");
-
-      expect(result.statusCode).toBe(204);
-      expect(mockDel).toHaveBeenCalledWith(
-        "https://api.example.com/items/123",
-        expect.objectContaining({
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        }),
-      );
-    });
-  });
-
-  describe("head", () => {
-    it("should perform HEAD request", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn(),
-      };
-
-      mockHead.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.head("https://api.example.com/resource");
-
-      expect(result.statusCode).toBe(200);
-      expect(mockHead).toHaveBeenCalledWith(
-        "https://api.example.com/resource",
-        expect.objectContaining({
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        }),
-      );
-    });
-  });
-
-  describe("download", () => {
-    it("should download file successfully", async () => {
-      const fileContent = "File content here";
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue(fileContent),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      await httpHelper.download("https://example.com/file.txt", "./test-file.txt");
-
-      expect(mockGet).toHaveBeenCalledWith(
-        "https://example.com/file.txt",
-        expect.objectContaining({
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        }),
-      );
-      expect(mockResponse.readBody).toHaveBeenCalled();
-    });
-
-    it("should throw error on download failure", async () => {
-      const mockError = new Error("Network error");
-      mockGet.mockRejectedValue(mockError);
-
-      await expect(httpHelper.download("https://example.com/missing.txt", "./missing-file.txt")).rejects.toThrow(
-        "Download failed: Network error",
-      );
-    });
-  });
-
-  describe("request", () => {
-    it("should perform custom method request with JSON body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue(JSON.stringify({result: "success"})),
-      };
-
-      const helperAny = httpHelper as any;
-      helperAny.client.request = vi.fn().mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.request<{result: string}>("OPTIONS", "https://api.example.com/endpoint", {data: "value"});
-
-      expect(result.body).toEqual({result: "success"});
-      expect(helperAny.client.request).toHaveBeenCalledWith(
-        "OPTIONS",
-        "https://api.example.com/endpoint",
-        JSON.stringify({data: "value"}),
-        expect.any(Object),
-      );
-    });
-
-    it("should perform custom method request with string body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("response text"),
-      };
-
-      const helperAny = httpHelper as any;
-      helperAny.client.request = vi.fn().mockResolvedValue(mockResponse);
-
-      await httpHelper.request("POST", "https://api.example.com/text", "raw string body");
-
-      expect(helperAny.client.request).toHaveBeenCalledWith("POST", "https://api.example.com/text", "raw string body", expect.any(Object));
-    });
-
-    it("should perform custom method request without body", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      const helperAny = httpHelper as any;
-      helperAny.client.request = vi.fn().mockResolvedValue(mockResponse);
-
-      await httpHelper.request("CONNECT", "https://api.example.com");
-
-      expect(helperAny.client.request).toHaveBeenCalledWith("CONNECT", "https://api.example.com", "", expect.any(Object));
-    });
-
-    it("should throw error on request failure", async () => {
-      const helperAny = httpHelper as any;
-      helperAny.client.request = vi.fn().mockRejectedValue(new Error("Connection refused"));
-
-      await expect(httpHelper.request("OPTIONS", "https://api.example.com")).rejects.toThrow("OPTIONS request failed: Connection refused");
-    });
-  });
-
-  describe("error handling", () => {
-    it("should handle GET errors with descriptive messages", async () => {
-      mockGet.mockRejectedValue(new Error("Network timeout"));
-
-      await expect(httpHelper.get("https://api.example.com")).rejects.toThrow("GET request failed: Network timeout");
-    });
-
-    it("should handle POST errors", async () => {
-      mockPost.mockRejectedValue(new Error("Connection refused"));
-
-      await expect(httpHelper.post("https://api.example.com", {data: "test"})).rejects.toThrow("POST request failed: Connection refused");
-    });
-
-    it("should handle PUT errors", async () => {
-      mockPut.mockRejectedValue(new Error("Server error"));
-
-      await expect(httpHelper.put("https://api.example.com/123", {data: "test"})).rejects.toThrow("PUT request failed: Server error");
-    });
-
-    it("should handle PATCH errors", async () => {
-      mockPatch.mockRejectedValue(new Error("Unauthorized"));
-
-      await expect(httpHelper.patch("https://api.example.com/123", {data: "test"})).rejects.toThrow("PATCH request failed: Unauthorized");
-    });
-
-    it("should handle DELETE errors", async () => {
-      mockDel.mockRejectedValue(new Error("Forbidden"));
-
-      await expect(httpHelper.delete("https://api.example.com/123")).rejects.toThrow("DELETE request failed: Forbidden");
-    });
-
-    it("should handle HEAD errors", async () => {
-      mockHead.mockRejectedValue(new Error("Not found"));
-
-      await expect(httpHelper.head("https://api.example.com/resource")).rejects.toThrow("HEAD request failed: Not found");
-    });
-  });
-
-  describe("response processing", () => {
-    it("should handle non-JSON response bodies", async () => {
-      const mockResponse = {
-        message: {statusCode: 200, headers: {}},
-        readBody: vi.fn().mockResolvedValue("Plain text response"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get<string>("https://api.example.com/text");
-
-      expect(result.body).toBe("Plain text response");
-    });
-
-    it("should handle empty response bodies", async () => {
-      const mockResponse = {
-        message: {statusCode: 204, headers: {}},
-        readBody: vi.fn().mockResolvedValue(""),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com/no-content");
-
-      expect(result.statusCode).toBe(204);
-      expect(result.body).toBe("");
-    });
-
-    it("should parse headers correctly with string values", async () => {
-      const mockResponse = {
-        message: {
-          statusCode: 200,
-          headers: {
-            "content-type": "application/json",
-            "x-custom-header": "custom-value",
-          },
-        },
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com");
-
-      expect(result.headers["content-type"]).toBe("application/json");
-      expect(result.headers["x-custom-header"]).toBe("custom-value");
-    });
-
-    it("should parse headers with array values", async () => {
-      const mockResponse = {
-        message: {
-          statusCode: 200,
-          headers: {
-            "set-cookie": ["cookie1=value1", "cookie2=value2"],
-          },
-        },
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com");
-
-      expect(result.headers["set-cookie"]).toBe("cookie1=value1, cookie2=value2");
-    });
-
-    it("should handle missing status code", async () => {
-      const mockResponse = {
-        message: {headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com");
-
-      expect(result.statusCode).toBe(0);
-      expect(result.success).toBe(false);
-    });
-
-    it("should mark 3xx responses as unsuccessful", async () => {
-      const mockResponse = {
-        message: {statusCode: 302, headers: {}},
-        readBody: vi.fn().mockResolvedValue("{}"),
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await httpHelper.get("https://api.example.com");
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("createHttpHelper with custom user agent", () => {
-    it("should create HTTP helper with custom user agent", () => {
-      const customHelper = createHttpHelper("my-custom-agent/1.0");
-      expect(customHelper).toBeDefined();
-    });
+  it("does not describe absent status evidence as success", async () => {
+    const raw = response();
+    raw.message.statusCode = undefined;
+    vi.mocked(client.get).mockResolvedValue(raw);
+    expect(await helper.get(url)).toMatchObject({statusCode: 0, success: false});
   });
 });

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testName="Works_WhenValid_Passes" outcome="Passed" duration="00:00:00.025"/>
+    <UnitTestResult testName="Errors_WhenBroken_Fails" outcome="Error" duration="00:00:00.005">
+      <Output><ErrorInfo><Message>Fixture failed</Message><StackTrace>at Example.Test()</StackTrace></ErrorInfo></Output>
+    </UnitTestResult>
+  </Results>
+</TestRun>
