@@ -15,26 +15,39 @@ import {
   formatHumanBytes,
 } from "./stepSummary.ts";
 import type {Finding, HygieneReport, ProviderOutcome} from "../domain/types.ts";
+import type {SuiteResult, TestSuitesPayload} from "../../../lib/testing/suites.ts";
+import {context as planContext} from "../../../lib/planning/fixtures/plans.ts";
+import {plan as evidencePlan, outcome as evidenceOutcome} from "../../../lib/hygiene/fixtures/outcomes.ts";
+import {providerIds} from "../../../lib/hygiene/registry.ts";
+import {buildVerifiedReport} from "../../../lib/hygiene/aggregate.ts";
 
-// Local SuiteResult/TestSuitesPayload shapes used only by these tests; they
-// must match the structural shape defined inside stepSummary.ts (and the
-// real types in providers/_testHelpers.ts).
-interface SuiteResult {
-  readonly name: string;
-  readonly totalTests: number;
-  readonly passed: number;
-  readonly failed: number;
-  readonly skipped: number;
-  readonly durationMs?: number;
-  readonly findings: readonly Finding[];
-}
-interface TestSuitesPayload {
-  readonly totalTests: number;
-  readonly passed: number;
-  readonly failed: number;
-  readonly skipped: number;
-  readonly suites: readonly SuiteResult[];
-}
+describe("scorecard cell safety", () => {
+  it("publishes selection/skip reasons and explicit missing evidence", () => {
+    const plan = evidencePlan(true);
+    const report = buildVerifiedReport(planContext(), plan, {outcomes: providerIds().map((id) => evidenceOutcome(plan, id)), issues: []});
+    expect(buildStepSummary(report)).toContain("Selection plan");
+    expect(buildStepSummary(report)).toContain("No changed files");
+    const missing = buildVerifiedReport(planContext(), plan, {outcomes: [], issues: []});
+    expect(buildStepSummary(missing)).toContain("missing-outcome");
+  });
+  it("does not label operational zero-count suites as passing", () => {
+    const failed: SuiteResult = {
+      name: "runner",
+      totalTests: 0,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      findings: [{kind: "file", severity: "error", file: "<runner>", message: "No report"}],
+    };
+    const passed: SuiteResult = {name: "passed", totalTests: 1, passed: 1, failed: 0, skipped: 0, findings: []};
+    expect(renderSuiteStatusRow([failed, passed])).toContain("❌ **runner**");
+    expect(renderSuiteFailures(failed)).toContain("No report");
+  });
+  it("does not let provider labels create columns or rows", () => {
+    const markdown = renderScorecard(makeReport({outcomes: [makeOutcome({providerName: "a|b\nc"})]}));
+    expect(markdown).toContain("a\\|b<br>c");
+  });
+});
 
 function makeOutcome<P = unknown>(o: Partial<ProviderOutcome<P>>): ProviderOutcome<P> {
   return {
@@ -87,8 +100,7 @@ describe("normalizePath", () => {
     expect(normalizePath("src/foo.ts")).toBe("src/foo.ts");
   });
   it("normalizes Windows-style workspace paths", () => {
-    expect(normalizePath("D:\\a\\arolariu.ro\\sites\\arolariu.ro\\src\\foo.ts"))
-      .toBe("sites/arolariu.ro/src/foo.ts");
+    expect(normalizePath("D:\\a\\arolariu.ro\\sites\\arolariu.ro\\src\\foo.ts")).toBe("sites/arolariu.ro/src/foo.ts");
   });
 });
 
@@ -127,10 +139,18 @@ describe("classifyProvider", () => {
 });
 
 describe("formatHumanBytes", () => {
-  it("formats bytes", () => { expect(formatHumanBytes(512)).toBe("512 B"); });
-  it("formats kilobytes", () => { expect(formatHumanBytes(2048)).toBe("2.0 KB"); });
-  it("formats megabytes", () => { expect(formatHumanBytes(5_242_880)).toBe("5.0 MB"); });
-  it("preserves sign for negative", () => { expect(formatHumanBytes(-2048)).toBe("-2.0 KB"); });
+  it("formats bytes", () => {
+    expect(formatHumanBytes(512)).toBe("512 B");
+  });
+  it("formats kilobytes", () => {
+    expect(formatHumanBytes(2048)).toBe("2.0 KB");
+  });
+  it("formats megabytes", () => {
+    expect(formatHumanBytes(5_242_880)).toBe("5.0 MB");
+  });
+  it("preserves sign for negative", () => {
+    expect(formatHumanBytes(-2048)).toBe("-2.0 KB");
+  });
 });
 
 describe("renderHeader", () => {
@@ -148,11 +168,7 @@ describe("renderHeader", () => {
   });
   it("renders compact provider pass counts with total duration", () => {
     const report = makeReport({
-      outcomes: [
-        makeOutcome({gateResult: "passed"}),
-        makeOutcome({gateResult: "passed"}),
-        makeOutcome({gateResult: "failed"}),
-      ],
+      outcomes: [makeOutcome({gateResult: "passed"}), makeOutcome({gateResult: "passed"}), makeOutcome({gateResult: "failed"})],
     });
     expect(renderHeader(report)).toMatch(/2\/3 providers passed/);
     expect(renderHeader(report)).toMatch(/300ms/);
@@ -161,11 +177,7 @@ describe("renderHeader", () => {
     const report = makeReport({
       outcomes: [
         makeOutcome({
-          findings: [
-            lineFinding({severity: "error"}),
-            lineFinding({severity: "warning"}),
-            lineFinding({severity: "info"}),
-          ],
+          findings: [lineFinding({severity: "error"}), lineFinding({severity: "warning"}), lineFinding({severity: "info"})],
         }),
       ],
     });
@@ -175,7 +187,14 @@ describe("renderHeader", () => {
     expect(out).toMatch(/1 warnings?/);
   });
   it("excludes MetricFindings from the findings count", () => {
-    const metricFinding: Finding = {kind: "metric", severity: "info", name: "diff.churn", value: 42, unit: "lines", message: "42 lines changed"};
+    const metricFinding: Finding = {
+      kind: "metric",
+      severity: "info",
+      name: "diff.churn",
+      value: 42,
+      unit: "lines",
+      message: "42 lines changed",
+    };
     const report = makeReport({
       outcomes: [makeOutcome({findings: [metricFinding]})],
     });
@@ -208,9 +227,7 @@ describe("renderScorecard", () => {
 
     expect(md).toMatch(/Prettier/);
     expect(md).toMatch(/ESLint/);
-    const providerRows = md
-      .split("\n")
-      .filter((line: string) => /^\| (?!Check \|)[^|-]/.test(line));
+    const providerRows = md.split("\n").filter((line: string) => /^\| (?!Check \|)[^|-]/.test(line));
     expect(providerRows).toHaveLength(2);
     expect(md.indexOf("Prettier")).toBeLessThan(md.indexOf("ESLint"));
   });
@@ -235,9 +252,7 @@ describe("renderScorecard", () => {
 
     const md = renderScorecard(report);
 
-    expect(md).toContain(
-      "| &lt;svg&gt; Provider &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; Co | ✅ PASS | clean |",
-    );
+    expect(md).toContain("| &lt;svg&gt; Provider &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; Co | ✅ PASS | clean |");
     expect(md).not.toContain("<script>");
     expect(md).not.toContain("<svg>");
   });
@@ -326,7 +341,7 @@ describe("renderRulesTable", () => {
     expect(md).toMatch(/`a` \| 1/);
   });
   it("caps at the provided limit", () => {
-    const findings: Finding[] = ["a","b","c","d","e","f","g"].map((id) => lineFinding({ruleId: id}));
+    const findings: Finding[] = ["a", "b", "c", "d", "e", "f", "g"].map((id) => lineFinding({ruleId: id}));
     const md = renderRulesTable(findings, 3);
     const rows = md.split("\n").filter((l) => /^\|\s*`/.test(l));
     expect(rows).toHaveLength(3);
@@ -370,12 +385,14 @@ describe("renderSuiteFailures", () => {
   function suiteWithFailures(name: string, failureCount: number): SuiteResult {
     const findings: Finding[] = [];
     for (let i = 0; i < failureCount; i++) {
-      findings.push(lineFinding({
-        suite: name,
-        message: `failure ${i}`,
-        file: `t${i}.ts`,
-        line: i + 1,
-      }));
+      findings.push(
+        lineFinding({
+          suite: name,
+          message: `failure ${i}`,
+          file: `t${i}.ts`,
+          line: i + 1,
+        }),
+      );
     }
     return {name, totalTests: 100, passed: 100 - failureCount, failed: failureCount, skipped: 0, findings};
   }
@@ -405,29 +422,33 @@ describe("renderSuiteFailures", () => {
     expect(renderSuiteFailures(s)).toBe("");
   });
   it("handles error messages containing triple-backtick fences without breaking layout", () => {
-    const findings: Finding[] = [{
-      kind: "line",
-      severity: "error",
-      file: "t.ts",
-      line: 1,
-      column: 1,
-      message: "Expected:\n```ts\nconst x = 1;\n```\nReceived: undefined",
-      suite: "scripts",
-    }];
+    const findings: Finding[] = [
+      {
+        kind: "line",
+        severity: "error",
+        file: "t.ts",
+        line: 1,
+        column: 1,
+        message: "Expected:\n```ts\nconst x = 1;\n```\nReceived: undefined",
+        suite: "scripts",
+      },
+    ];
     const suite: SuiteResult = {name: "scripts", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings};
     const md = renderSuiteFailures(suite);
     expect(md).toMatch(/````+\s*\n.*Expected:.*\n.*```ts/s);
   });
   it("escapes HTML in test names to prevent tag injection", () => {
-    const findings: Finding[] = [{
-      kind: "line",
-      severity: "error",
-      file: "evil</details>.ts",
-      line: 1,
-      column: 1,
-      message: "boom",
-      suite: "scripts",
-    }];
+    const findings: Finding[] = [
+      {
+        kind: "line",
+        severity: "error",
+        file: "evil</details>.ts",
+        line: 1,
+        column: 1,
+        message: "boom",
+        suite: "scripts",
+      },
+    ];
     const suite: SuiteResult = {name: "scripts", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings};
     const md = renderSuiteFailures(suite);
     expect(md).toContain("&lt;/details&gt;");
@@ -482,12 +503,18 @@ describe("renderStatsDetails", () => {
   it("escapes HTML in comparison names", () => {
     const o = makeOutcome({
       providerId: "stats",
-      findings: [{
-        kind: "comparison",
-        severity: "info",
-        name: "evil<script>name",
-        baseValue: 1, headValue: 2, diff: 1, unit: "B", message: "",
-      }],
+      findings: [
+        {
+          kind: "comparison",
+          severity: "info",
+          name: "evil<script>name",
+          baseValue: 1,
+          headValue: 2,
+          diff: 1,
+          unit: "B",
+          message: "",
+        },
+      ],
     });
     const md = renderStatsDetails(o)!;
     expect(md).toContain("evil&lt;script&gt;name");
@@ -542,12 +569,19 @@ describe("renderProviderCard", () => {
   });
   it("includes suite status row + suite failures for test providers with 2+ suites", () => {
     const payload: TestSuitesPayload = {
-      totalTests: 200, passed: 198, failed: 2, skipped: 0,
+      totalTests: 200,
+      passed: 198,
+      failed: 2,
+      skipped: 0,
       suites: [
-        {name: "scripts", totalTests: 100, passed: 98, failed: 2, skipped: 0, findings: [
-          lineFinding({suite: "scripts", message: "boom"}),
-          lineFinding({suite: "scripts", message: "bang"}),
-        ]},
+        {
+          name: "scripts",
+          totalTests: 100,
+          passed: 98,
+          failed: 2,
+          skipped: 0,
+          findings: [lineFinding({suite: "scripts", message: "boom"}), lineFinding({suite: "scripts", message: "bang"})],
+        },
         {name: "website", totalTests: 100, passed: 100, failed: 0, skipped: 0, findings: []},
       ],
     };

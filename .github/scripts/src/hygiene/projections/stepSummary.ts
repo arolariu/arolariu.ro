@@ -9,40 +9,20 @@
  * compact footer.
  */
 
-import * as core from "@actions/core";
-import {CommentBuilder} from "../../../helpers/comments/index.ts";
+import * as core from "../../../helpers/sdk/core.ts";
+import {CommentBuilder, MarkdownUtils} from "../../../helpers/comments/index.ts";
+import type {SuiteResult as SuiteResultLike, TestSuitesPayload as TestSuitesPayloadLike} from "../../../lib/testing/suites.ts";
 import {isComparisonFinding} from "../domain/types.ts";
-import {
-  type Finding,
-  type GateResult,
-  type HygieneReport,
-  type ProviderOutcome,
-} from "../domain/types.ts";
-
-// Structural redeclaration of SuiteResult / TestSuitesPayload (the real types
-// live in providers/_testHelpers.ts; importing from there would create a
-// projection→providers dependency we want to avoid).
-interface SuiteResultLike {
-  readonly name: string;
-  readonly totalTests: number;
-  readonly passed: number;
-  readonly failed: number;
-  readonly skipped: number;
-  readonly durationMs?: number;
-  readonly findings: readonly Finding[];
-}
-
-interface TestSuitesPayloadLike {
-  readonly totalTests: number;
-  readonly passed: number;
-  readonly failed: number;
-  readonly skipped: number;
-  readonly suites: readonly SuiteResultLike[];
-}
+import {type Finding, type GateResult, type HygieneReport, type ProviderOutcome} from "../domain/types.ts";
 
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
 const MAX_MESSAGE_LENGTH = 240;
+
+function suiteHasFailure(suite: SuiteResultLike): boolean {
+  return suite.failed > 0 || suite.findings.some((finding) => finding.severity === "error" || finding.severity === "critical");
+}
+
 // Keep this list aligned with providers/registry.ts. The projection duplicates
 // the order intentionally so rendering stays independent from provider modules.
 const PROVIDER_ORDER: readonly string[] = ["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"];
@@ -50,12 +30,7 @@ const PROVIDER_ORDER: readonly string[] = ["format", "lint", "test-typescript", 
 // GitHub strips unsupported HTML but still renders supported tags. Escape every
 // dynamic value before interpolating it into markdown tables or details blocks.
 function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 // Provider metadata is registry-owned today, but this helper defines the output
@@ -64,44 +39,42 @@ function providerLabel(outcome: ProviderOutcome<unknown>): string {
   return `${escapeHtml(outcome.providerIcon)} ${escapeHtml(outcome.providerName)}`;
 }
 
-// Error messages may contain triple-backtick snippets. Use a longer fence so
-// the message cannot break out of the details block.
-function fenceSafe(content: string): string {
-  let maxRun = 0;
-  const matches = content.match(/`+/g);
-  if (matches) {
-    for (const m of matches) {
-      if (m.length > maxRun) maxRun = m.length;
-    }
-  }
-  const fence = "`".repeat(Math.max(3, maxRun + 1));
-  return `${fence}\n${content}\n${fence}`;
-}
-
 function resultVerdict(r: GateResult): string {
   switch (r) {
-    case "passed": return "✅ Passed";
-    case "advisory": return "ℹ️ Advisory";
-    case "failed": return "❌ Failed";
-    case "errored": return "💥 Errored";
+    case "passed":
+      return "✅ Passed";
+    case "advisory":
+      return "ℹ️ Advisory";
+    case "failed":
+      return "❌ Failed";
+    case "errored":
+      return "💥 Errored";
   }
 }
 
 function resultPill(r: GateResult): string {
   switch (r) {
-    case "passed": return "PASS";
-    case "advisory": return "ADVISORY";
-    case "failed": return "FAIL";
-    case "errored": return "ERROR";
+    case "passed":
+      return "PASS";
+    case "advisory":
+      return "ADVISORY";
+    case "failed":
+      return "FAIL";
+    case "errored":
+      return "ERROR";
   }
 }
 
 function resultEmoji(r: GateResult): string {
   switch (r) {
-    case "passed": return "✅";
-    case "advisory": return "ℹ️";
-    case "failed": return "❌";
-    case "errored": return "💥";
+    case "passed":
+      return "✅";
+    case "advisory":
+      return "ℹ️";
+    case "failed":
+      return "❌";
+    case "errored":
+      return "💥";
   }
 }
 
@@ -134,7 +107,9 @@ export function formatHumanBytes(bytes: number): string {
 }
 
 function countBySeverity(findings: readonly Finding[]): {errors: number; warnings: number; infos: number} {
-  let errors = 0, warnings = 0, infos = 0;
+  let errors = 0,
+    warnings = 0,
+    infos = 0;
   for (const f of findings) {
     if (f.severity === "error" || f.severity === "critical") errors++;
     else if (f.severity === "warning") warnings++;
@@ -245,8 +220,8 @@ export function renderHeader(report: HygieneReport): string {
   lines.push(`## 🩺 Hygiene Check — ${resultVerdict(report.overallResult)}`);
   lines.push("");
   lines.push(
-    `> **${totals.passed}/${total} providers passed** · **${totals.visibleFindings.length} findings** · ` +
-      `${errors} errors · ${warnings} warnings · ${infos} info · ${formatDurationMs(totals.durationMs)}`,
+    `> **${totals.passed}/${total} providers passed** · **${totals.visibleFindings.length} findings** · `
+      + `${errors} errors · ${warnings} warnings · ${infos} info · ${formatDurationMs(totals.durationMs)}`,
   );
   lines.push(`> Commit \`${report.commitSha.substring(0, 7)}\` · [view run](${report.workflowRunUrl})`);
   return lines.join("\n");
@@ -255,9 +230,7 @@ export function renderHeader(report: HygieneReport): string {
 function comparisonDiffLabel(finding: Finding): string {
   if (finding.kind !== "comparison") return "= 0";
 
-  const absDiff = finding.unit === "B"
-    ? formatHumanBytes(Math.abs(finding.diff))
-    : `${Math.abs(finding.diff)}${finding.unit ?? ""}`;
+  const absDiff = finding.unit === "B" ? formatHumanBytes(Math.abs(finding.diff)) : `${Math.abs(finding.diff)}${finding.unit ?? ""}`;
 
   if (finding.diff > 0) return `▲ +${absDiff}`;
   if (finding.diff < 0) return `▼ -${absDiff}`;
@@ -268,9 +241,7 @@ function statsSignal(outcome: ProviderOutcome<unknown>): string {
   const comparisons = outcome.findings.filter(isComparisonFinding);
   if (comparisons.length === 0) return "no bundle changes";
 
-  const largest = comparisons
-    .slice()
-    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))[0];
+  const largest = comparisons.slice().sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))[0];
   const changed = `${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`;
   return largest ? `${changed} · ${comparisonDiffLabel(largest)}` : changed;
 }
@@ -284,6 +255,7 @@ function testSignal(outcome: ProviderOutcome<unknown>): string | null {
 }
 
 function providerSignal(outcome: ProviderOutcome<unknown>): string {
+  if ("executionStatus" in outcome && outcome.executionStatus === "skipped") return "planned skip";
   if (outcome.gateResult === "errored") return "runner error";
 
   const category = classifyProvider(outcome.providerId);
@@ -323,7 +295,7 @@ export function renderScorecard(report: HygieneReport): string {
     .slice()
     .sort((a, b) => providerSortIndex(a.providerId) - providerSortIndex(b.providerId))
     .map((outcome) => {
-      return `| ${providerLabel(outcome)} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${providerSignal(outcome)} | ${formatDurationMs(outcome.durationMs)} |`;
+      return `| ${MarkdownUtils.tableCell(providerLabel(outcome))} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${MarkdownUtils.tableCell(providerSignal(outcome))} | ${formatDurationMs(outcome.durationMs)} |`;
     });
   return [header, ...rows].join("\n");
 }
@@ -338,7 +310,7 @@ export function renderScorecard(report: HygieneReport): string {
 export function renderRulesTable(findings: readonly Finding[], limit: number): string {
   const counts = new Map<string, number>();
   for (const f of findings) {
-    const ruleId = (f.kind === "line" || f.kind === "file") ? f.ruleId : undefined;
+    const ruleId = f.kind === "line" || f.kind === "file" ? f.ruleId : undefined;
     if (!ruleId) continue;
     counts.set(ruleId, (counts.get(ruleId) ?? 0) + 1);
   }
@@ -346,7 +318,7 @@ export function renderRulesTable(findings: readonly Finding[], limit: number): s
 
   const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
   const header = `| Rule | Count |\n|---|---:|`;
-  const rows = sorted.map(([rule, count]) => `| \`${rule}\` | ${count} |`);
+  const rows = sorted.map(([rule, count]) => `| \`${MarkdownUtils.tableCell(escapeHtml(rule))}\` | ${count} |`);
   return [header, ...rows].join("\n");
 }
 
@@ -359,8 +331,14 @@ export function renderRulesTable(findings: readonly Finding[], limit: number): s
 export function renderSuiteStatusRow(suites: readonly SuiteResultLike[]): string {
   if (suites.length < 2) return "";
 
-  const failed = suites.filter((s) => s.failed > 0).slice().sort((a, b) => a.name.localeCompare(b.name));
-  const passed = suites.filter((s) => s.failed === 0).slice().sort((a, b) => a.name.localeCompare(b.name));
+  const failed = suites
+    .filter(suiteHasFailure)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const passed = suites
+    .filter((s) => !suiteHasFailure(s))
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const statusTokens: string[] = [];
   for (const s of failed) {
@@ -379,15 +357,13 @@ export function renderSuiteStatusRow(suites: readonly SuiteResultLike[]): string
  * @returns Markdown containing capped failure entries, or an empty string when the suite passed.
  */
 export function renderSuiteFailures(suite: SuiteResultLike): string {
-  if (suite.failed === 0) return "";
+  if (!suiteHasFailure(suite)) return "";
 
   const lines: string[] = [];
-  lines.push(`#### \`${suite.name}\` · ${suite.failed} failed of ${suite.totalTests}`);
+  lines.push(`#### \`${suite.name}\` · ${suite.failed > 0 ? `${suite.failed} failed of ${suite.totalTests}` : "runner error"}`);
   lines.push("");
 
-  const failingFindings = suite.findings.filter(
-    (f) => (f.severity === "error" || f.severity === "critical"),
-  );
+  const failingFindings = suite.findings.filter((f) => f.severity === "error" || f.severity === "critical");
   const shown = failingFindings.slice(0, MAX_FAILING_TESTS_PER_SUITE);
 
   for (const f of shown) {
@@ -402,7 +378,7 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
     lines.push(summary);
     lines.push(`<details><summary>error</summary>`);
     lines.push("");
-    lines.push(fenceSafe(errMsg));
+    lines.push(MarkdownUtils.fence(errMsg));
     lines.push("</details>");
     lines.push("");
   }
@@ -428,7 +404,7 @@ export function renderStatsDetails(o: ProviderOutcome<unknown>): string | null {
   const rows = comparisons.map((f) => {
     const before = f.unit === "B" ? formatHumanBytes(f.baseValue) : `${f.baseValue}${f.unit ?? ""}`;
     const after = f.unit === "B" ? formatHumanBytes(f.headValue) : `${f.headValue}${f.unit ?? ""}`;
-    return `| \`${escapeHtml(f.name)}\` | ${before} | ${after} | ${comparisonDiffLabel(f)} |`;
+    return `| \`${MarkdownUtils.tableCell(escapeHtml(f.name))}\` | ${before} | ${after} | ${comparisonDiffLabel(f)} |`;
   });
 
   return [
@@ -479,7 +455,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   }
 
   if (o.gateResult === "errored") {
-    lines.push(fenceSafe(cleanMessage(o.error?.message ?? "Unknown runner error")));
+    lines.push(MarkdownUtils.fence(cleanMessage(o.error?.message ?? "Unknown runner error")));
     lines.push("</details>");
     return lines.join("\n");
   }
@@ -502,7 +478,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
         lines.push("");
       }
       for (const suite of payload.suites) {
-        if (suite.failed > 0) {
+        if (suiteHasFailure(suite)) {
           lines.push(renderSuiteFailures(suite));
           lines.push("");
         }
@@ -526,17 +502,52 @@ export function renderFooter(report: HygieneReport): string {
   return `_🤖 Hygiene v3 · [workflow run](${report.workflowRunUrl})_`;
 }
 
+/** Renders additive plan/provenance details only when versioned evidence is available. */
+function renderPlanEvidence(report: HygieneReport): string {
+  if (!report.plan && !report.evidenceIssues?.length) return "";
+  const lines = ["### Selection plan", ""];
+  if (report.plan) {
+    const skipped = report.plan.providers.filter((provider) => !provider.selected);
+    lines.push(
+      `Scope: **${report.plan.mode}** · ${report.plan.providers.length - skipped.length} selected · ${skipped.length} skipped · plan \`${report.plan.id.slice(0, 12)}\``,
+    );
+    for (const provider of skipped) lines.push(`- \`${provider.id}\`: skipped - ${escapeHtml(provider.reason)}`);
+    for (const diagnostic of report.plan.diagnostics) lines.push(`- \`${diagnostic.code}\`: ${escapeHtml(diagnostic.message)}`);
+    for (const outcome of report.outcomes) {
+      if (
+        "workflowRunAttempt" in outcome
+        && typeof outcome.workflowRunAttempt === "number"
+        && report.workflowRunAttempt !== undefined
+        && outcome.workflowRunAttempt < report.workflowRunAttempt
+      )
+        lines.push(`- Reused \`${outcome.providerId}\` from compatible attempt ${outcome.workflowRunAttempt}`);
+    }
+  }
+  if (report.evidenceIssues?.length) {
+    lines.push("", "**Evidence verification issues:**");
+    for (const issue of report.evidenceIssues.slice(0, 50))
+      lines.push(`- \`${issue.code}\`${issue.providerId ? ` (${escapeHtml(issue.providerId)})` : ""}: ${escapeHtml(issue.message)}`);
+    if (report.evidenceIssues.length > 50)
+      lines.push(`- ${report.evidenceIssues.length - 50} more issue(s); see the required JSON report.`);
+  }
+  return lines.join("\n");
+}
+
 /**
- * Builds the full hygiene PR comment/step summary markdown.
- *
- * @param report - The aggregate hygiene report to project into markdown.
- * @returns The complete GitHub-safe hygiene summary.
+ * Builds the full hygiene PR comment/step summary with explicit plan/evidence details.
+ * @param report - Aggregate report retaining all valid outcomes and diagnostics.
+ * @returns Complete GitHub-safe Markdown with existing check identities/layout.
  */
 export function buildStepSummary(report: HygieneReport): string {
   const cb = new CommentBuilder();
 
   cb.addRaw(renderHeader(report));
   cb.addRaw("\n\n");
+  const planEvidence = renderPlanEvidence(report);
+  if (planEvidence) {
+    cb.addRaw(planEvidence);
+    cb.addRaw("\n\n");
+  }
   cb.addRaw(renderScorecard(report));
   cb.addRaw("\n\n");
 

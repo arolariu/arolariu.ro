@@ -47,10 +47,10 @@ describe("testTypescriptProvider", () => {
     expect(testTypescriptProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
 
-  it("exposes the suite list (scripts + 4 frontend projects)", async () => {
+  it("exposes CI scripts, root tooling, and the four frontend suites", async () => {
     const {TYPESCRIPT_SUITES} = await import("./testTypescriptProvider.ts");
     const names = TYPESCRIPT_SUITES.map(([n]) => n).sort();
-    expect(names).toEqual(["components", "cv", "scripts", "status", "website"]);
+    expect(names).toEqual(["components", "cv", "scripts", "status", "tooling", "website"]);
   });
 
   it("is not applicable when known changes do not affect TypeScript suites", async () => {
@@ -111,11 +111,11 @@ describe("testTypescriptProvider", () => {
       changedFiles: [],
       env: {},
     });
-    expect(result.payload.suites).toHaveLength(5);
-    expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["components", "cv", "scripts", "status", "website"]);
+    expect(result.payload.suites).toHaveLength(6);
+    expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["components", "cv", "scripts", "status", "tooling", "website"]);
     // website suite has 1 failing test; others all passing
     expect(result.payload.failed).toBe(1);
-    expect(result.payload.totalTests).toBe(22);
+    expect(result.payload.totalTests).toBe(27);
     expect(result.findings).toHaveLength(1);
     const f = result.findings[0];
     if (f?.kind === "line") {
@@ -129,7 +129,7 @@ describe("testTypescriptProvider", () => {
     }
   });
 
-  it("records a runner-failed synthetic suite when one project produces no JSON", async () => {
+  it("retains available suites but reports missing JSON without fabricating a test", async () => {
     const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[], opts?: {cwd?: string}) => {
       const cwd = opts?.cwd ?? "";
       if (cwd.includes("cv.arolariu.ro")) {
@@ -149,9 +149,12 @@ describe("testTypescriptProvider", () => {
     });
     const cv = result.payload.suites.find((s) => s.name === "cv");
     expect(cv).toBeDefined();
-    expect(cv?.failed).toBe(1);
+    expect(cv?.totalTests).toBe(0);
+    expect(cv?.failed).toBe(0);
+    expect(result.executionStatus).toBe("errored");
+    expect(result.evidenceStatus).toBe("partial");
     const f = cv?.findings[0];
-    if (f?.kind === "line") {
+    if (f?.kind === "file") {
       expect(f.ruleId).toBe("cv/runner-failed");
       expect(f.message).toContain("vitest produced no JSON report");
     }

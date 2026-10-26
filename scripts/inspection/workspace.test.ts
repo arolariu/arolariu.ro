@@ -24,7 +24,14 @@ import {runWorkerProgram} from "../platform/worker.ts";
 import type {ProbeOutcome} from "./probes.ts";
 import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
-import {collectWorkspaceWorkerDocument, decodeWorkerArgs, projectWorkerDocument, workspaceWorker, WorkspaceWorkerFailure, WorkspaceWorkerUsageError} from "./workspace.worker.ts";
+import {
+  collectWorkspaceWorkerDocument,
+  decodeWorkerArgs,
+  projectWorkerDocument,
+  workspaceWorker,
+  WorkspaceWorkerFailure,
+  WorkspaceWorkerUsageError,
+} from "./workspace.worker.ts";
 
 // ============================================================================
 // Fixtures
@@ -119,14 +126,8 @@ describe("projectNxGraph", () => {
         dependencies: {},
       },
     ],
-    [
-      "a dependency list that is not an array",
-      {nodes: {a: rawNode("a", "libs/a")}, dependencies: {a: "nope"}},
-    ],
-    [
-      "a dependency record missing 'target'",
-      {nodes: {a: rawNode("a", "libs/a")}, dependencies: {a: [{source: "a"}]}},
-    ],
+    ["a dependency list that is not an array", {nodes: {a: rawNode("a", "libs/a")}, dependencies: {a: "nope"}}],
+    ["a dependency record missing 'target'", {nodes: {a: rawNode("a", "libs/a")}, dependencies: {a: [{source: "a"}]}}],
     [
       "a dependency record whose 'source' does not match its owning key",
       {nodes: {a: rawNode("a", "libs/a"), b: rawNode("b", "libs/b")}, dependencies: {a: [rawEdge("b", "a")]}},
@@ -294,7 +295,9 @@ describe("createWorkspaceProvider command construction", () => {
     expect(String(env["NX_CACHE_DIRECTORY"])).toBe(join(String(capturedTempRoot), "cache"));
 
     expect(capturedTempRoot).toBeDefined();
-    expect(resolve(String(capturedTempRoot))).not.toMatch(new RegExp(`^${resolve(repositoryRoot).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}`, "u"));
+    expect(resolve(String(capturedTempRoot))).not.toMatch(
+      new RegExp(`^${resolve(repositoryRoot).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}`, "u"),
+    );
     expect(String(capturedTempRoot).startsWith(resolve(tmpdir()))).toBe(true);
 
     await expect(lstat(String(capturedTempRoot))).rejects.toMatchObject({code: "ENOENT"});
@@ -370,9 +373,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
   });
 
   it("maps a nonzero exit to 'unavailable' without raw stdout/stderr", async () => {
-    const {runner} = createFakeRunner(() =>
-      exited(1, {stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}),
-    );
+    const {runner} = createFakeRunner(() => exited(1, {stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
     const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
@@ -383,9 +384,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
   });
 
   it("maps a timeout to 'unavailable' without raw output", async () => {
-    const {runner} = createFakeRunner(() =>
-      timedOut({stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}),
-    );
+    const {runner} = createFakeRunner(() => timedOut({stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
     const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
@@ -588,7 +587,9 @@ async function snapshotPath(root: string, options: Readonly<{recursive: boolean}
       left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
     );
     for (const directoryEntry of directoryEntries) {
-      const entryRelativePath = (relativePrefix === "" ? directoryEntry.name : `${relativePrefix}/${directoryEntry.name}`).split(sep).join("/");
+      const entryRelativePath = (relativePrefix === "" ? directoryEntry.name : `${relativePrefix}/${directoryEntry.name}`)
+        .split(sep)
+        .join("/");
       const absolutePath = join(root, relativePrefix, directoryEntry.name);
       const entryStat = await lstat(absolutePath);
 
@@ -615,7 +616,9 @@ async function snapshotPath(root: string, options: Readonly<{recursive: boolean}
   return entries;
 }
 
-function sortedSnapshotEntries(snapshot: ReadonlyMap<string, PathSnapshotEntry> | null): readonly (readonly [string, PathSnapshotEntry])[] | null {
+function sortedSnapshotEntries(
+  snapshot: ReadonlyMap<string, PathSnapshotEntry> | null,
+): readonly (readonly [string, PathSnapshotEntry])[] | null {
   if (snapshot === null) {
     return null;
   }
@@ -730,7 +733,7 @@ describe("createWorkspaceProvider live integration", () => {
           "@arolariu/status",
           "@arolariu/website",
         ]);
-        expect(outcome.value.dependencies).toEqual([]);
+        expect(outcome.value.dependencies).toEqual([{source: "@arolariu/website", target: "@arolariu/components"}]);
       }
 
       const nxTopLevelAfter = await snapshotPath(join(paths.root, ".nx"), {recursive: false});

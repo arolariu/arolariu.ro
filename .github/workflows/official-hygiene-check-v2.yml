@@ -1,29 +1,7 @@
 ---
-# =============================================================================
-# Code Hygiene Check Workflow (v3)
-# =============================================================================
-# Architecture (parallel):
-#   Job 1 (detect): checkout + git diff. Decides whether hygiene runs at all.
-#   Job 2 (providers, matrix): one parallel job per check provider. Each
-#     provisions only the toolchain it needs (Node always; .NET only for
-#     test-dotnet; Python only for test-python). Each writes its outcome JSON
-#     and uploads it as an artifact named outcome-<provider>.
-#   Job 3 (gate): downloads every outcome-* artifact, runs runProjections.ts
-#     to build the aggregate HygieneReport, post the PR comment, write step
-#     summary, create per-provider check-runs. The gate step (no
-#     continue-on-error) is the SINGLE source of truth for workflow pass/fail.
-#
-# Honest pass/fail:
-#   - runProvider.ts exits 1 on failed/errored gateResult, 0 otherwise. With
-#     step-level continue-on-error: true, the failing matrix job is marked
-#     failed but other provider jobs (and the gate job) still run.
-#   - Final gate calls core.setFailed() when aggregated overallResult is
-#     'failed' or 'errored'.
-#
-# Migration note: keeping the file name 'official-hygiene-check-v2.yml' so
-# existing branch protection rules continue to match.
-# =============================================================================
-
+# One validated plan selects work and setup for the six existing named jobs.
+# Every job emits executed or explicitly skipped versioned evidence. The gate
+# retains artifact directories so rerun provenance/conflicts survive collection.
 name: "Code Hygiene Check (v3)"
 
 permissions:
@@ -35,6 +13,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "Use dependency-aware affected checks or explicitly run full scope."
+        default: affected
+        required: false
+        type: choice
+        options:
+          - affected
+          - full
 
 concurrency:
   group: hygiene-${{ github.event.pull_request.number || github.ref }}
@@ -51,10 +38,10 @@ jobs:
   detect:
     name: 🧩 Detect changes
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     outputs:
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-      changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
+      provider-matrix: ${{ steps.plan.outputs.provider-matrix }}
+      plan-id: ${{ steps.plan.outputs.plan-id }}
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v7
@@ -62,45 +49,37 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
-      - name: 🔎 Detect changed files
-        id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin "$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" --depth=1 --no-tags --quiet || true
-          git fetch origin "${{ env.BASE_REF }}" --depth=1 --no-tags --quiet || true
-          if ! CHANGED=$(git diff --name-only "${{ env.BASE_REF }}...${{ env.HEAD_REF }}" 2>/dev/null | wc -l | tr -d ' '); then
-            echo "::warning::Could not compute diff against base $BASE_REF; defaulting to has-changes=true so hygiene still runs."
-            CHANGED=1
-          fi
-          echo "Detected $CHANGED changed file(s)."
-          if [ "$CHANGED" -gt 0 ]; then
-            echo "has-changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-changes=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "changed-files-count=$CHANGED" >> "$GITHUB_OUTPUT"
+      - name: 📦 Setup planning dependencies
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          install-node-deps: "true"
+          install-scripts-deps: "true"
 
-  # =============================================================================
-  # Provider matrix: one parallel job per provider. Each provisions only the
-  # toolchain it needs and uploads its outcome JSON as an artifact.
-  # =============================================================================
+      - name: 🔎 Prepare validated hygiene plan
+        id: plan
+        working-directory: .github/scripts
+        env:
+          HYGIENE_SCOPE: ${{ inputs.scope || 'affected' }}
+        run: node --experimental-strip-types src/hygiene/pipeline/preparePlan.ts --scope "$HYGIENE_SCOPE"
+
+      - name: 📤 Upload shared hygiene plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: hygiene-plan
+          path: artifacts/hygiene/plan.json
+          if-no-files-found: error
+          retention-days: 7
+
   providers:
     name: "🔧 ${{ matrix.provider.label }}"
     needs: detect
-    if: needs.detect.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.detect.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
-      matrix:
-        provider:
-          - {id: format,          label: "Prettier",                needs-dotnet: false, needs-python: false}
-          - {id: lint,            label: "ESLint",                  needs-dotnet: false, needs-python: false}
-          - {id: test-typescript, label: "TypeScript Unit Tests",   needs-dotnet: false, needs-python: false}
-          - {id: test-dotnet,     label: "DotNet Unit Tests",       needs-dotnet: true,  needs-python: false}
-          - {id: test-python,     label: "Python Unit Tests",       needs-dotnet: false, needs-python: true}
-          - {id: stats,           label: "Statistics",              needs-dotnet: false, needs-python: false}
+      matrix: ${{ fromJSON(needs.detect.outputs.provider-matrix) }}
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v7
@@ -108,30 +87,28 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
-      # Toolchains, dependency installs, and the component build are all
-      # driven from the matrix. `needs-dotnet` / `needs-python` are YAML
-      # booleans; interpolation renders them as the strings 'true'/'false',
-      # which is exactly what the composite action compares against.
+      - name: 📥 Download shared hygiene plan
+        uses: actions/download-artifact@v6
+        with:
+          name: hygiene-plan
+          path: artifacts/hygiene
+
+      # Scripts/Node bootstrap is mandatory even for skipped evidence. All
+      # expensive root/toolchain/build/generation work follows plan booleans.
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          install-scripts-deps: 'true'
-          run-build-components: ${{ matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript' }}
-          run-generate: ${{ matrix.provider.id == 'test-dotnet' || matrix.provider.id == 'test-typescript' }}
-          generate-args: 'artifacts'
+          install-node-deps: ${{ matrix.provider.root-node-deps }}
+          install-scripts-deps: "true"
+          run-build-components: ${{ matrix.provider.build-components }}
+          run-generate: ${{ matrix.provider.generate-artifacts }}
+          generate-args: "artifacts"
           dotnet: ${{ matrix.provider.needs-dotnet }}
           python: ${{ matrix.provider.needs-python }}
 
-      - name: 🔧 SvelteKit sync (generates .svelte-kit/tsconfig.json required by eslint-plugin-n)
-        if: matrix.provider.id == 'lint'
-        working-directory: sites/cv.arolariu.ro
-        run: npx svelte-kit sync
-        continue-on-error: true
-
-      # Kept out of setup-workspace on purpose: both installs are
-      # best-effort here. A transient restore failure must not fail the
-      # hygiene provider — the provider itself reports the real result.
+      # Preserve best-effort dependency restoration; the actual provider
+      # process/evidence remains authoritative and cannot turn failure to pass.
       - name: 📦 Restore .NET projects (best-effort)
         if: matrix.provider.needs-dotnet
         run: dotnet restore arolariu.slnx
@@ -145,7 +122,9 @@ jobs:
       - name: 🚀 Run provider (${{ matrix.provider.id }})
         id: run-provider
         working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts ${{ matrix.provider.id }}
+        run:
+          node --experimental-strip-types src/hygiene/pipeline/runProvider.ts ${{ matrix.provider.id }} --plan
+          "$GITHUB_WORKSPACE/artifacts/hygiene/plan.json"
 
       - name: 📤 Upload outcome artifact
         if: always()
@@ -156,14 +135,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-  # =============================================================================
-  # Final gate: download every outcome artifact, aggregate, post comment / step
-  # summary / status checks, decide overall workflow pass/fail.
-  # =============================================================================
   gate:
     name: 🎯 Aggregate & gate
-    needs: providers
-    if: always() && (needs.detect.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch')
+    needs: [detect, providers]
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -177,24 +152,30 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          install-node-deps: 'false'
-          install-scripts-deps: 'true'
+          install-node-deps: "false"
+          install-scripts-deps: "true"
 
-      - name: 📥 Download all outcome artifacts
+      - name: 📥 Download shared hygiene plan
         uses: actions/download-artifact@v6
         with:
-          pattern: outcome-*
+          name: hygiene-plan
           path: artifacts/hygiene
-          merge-multiple: true
 
-      - name: 📋 List downloaded outcomes
-        run: ls -la artifacts/hygiene/ || echo "(empty)"
+      - name: 📥 Download outcome evidence with provenance
+        uses: actions/download-artifact@v6
+        # The verifier still runs on download failure so it can publish a
+        # required errored report for missing evidence, never a false pass.
+        continue-on-error: true
+        with:
+          pattern: outcome-*
+          path: artifacts/hygiene/outcomes
+          merge-multiple: false
 
       - name: 🎯 Run projections & gate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts --plan "$GITHUB_WORKSPACE/artifacts/hygiene/plan.json"
 
       - name: 📤 Upload aggregated hygiene report
         if: always()
@@ -203,5 +184,6 @@ jobs:
           name: hygiene-report
           path: |
             artifacts/hygiene/hygiene-report.json
-            artifacts/hygiene/outcome-*.json
+            artifacts/hygiene/plan.json
+            artifacts/hygiene/outcomes/**/outcome-*.json
           retention-days: 7

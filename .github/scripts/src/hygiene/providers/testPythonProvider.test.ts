@@ -23,6 +23,31 @@ describe("testPythonProvider", () => {
   afterEach(async () => {
     await fs.rm(tmpDir, {recursive: true, force: true});
   });
+  it("retains a failed pytest process when its available JUnit assertions passed", async () => {
+    const xmlPath = path.join(tmpDir, "sites", "exp.arolariu.ro", ".pytest-cache", "hygiene-junit.xml");
+    vi.doMock("@actions/exec", () => ({
+      getExecOutput: vi.fn().mockImplementation(async () => {
+        await fs.mkdir(path.dirname(xmlPath), {recursive: true});
+        await fs.writeFile(
+          xmlPath,
+          '<testsuite name="pytest" tests="1" failures="0" errors="0" skipped="0"><testcase name="passed"/></testsuite>',
+        );
+        return {exitCode: 1, stdout: "", stderr: "runner failed after partial results"};
+      }),
+    }));
+    const {testPythonProvider} = await import("./testPythonProvider.ts");
+    const result = await testPythonProvider.run({
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+    expect(result.payload.passed).toBe(1);
+    expect(result.executionStatus).toBe("errored");
+    expect(result.findings.some((finding) => finding.message.includes("code 1"))).toBe(true);
+  });
 
   it("has stable identity fields", async () => {
     const {testPythonProvider} = await import("./testPythonProvider.ts");
@@ -95,7 +120,7 @@ describe("testPythonProvider", () => {
     }
   });
 
-  it("emits runner-failed synthetic suite when no JUnit XML is produced", async () => {
+  it("reports missing JUnit without fabricating a failed test", async () => {
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: "", stderr: "python missing"}),
     }));
@@ -109,9 +134,12 @@ describe("testPythonProvider", () => {
       env: {},
     });
     expect(result.payload.suites[0]?.name).toBe("python");
-    expect(result.payload.failed).toBe(1);
+    expect(result.payload.totalTests).toBe(0);
+    expect(result.payload.failed).toBe(0);
+    expect(result.executionStatus).toBe("errored");
+    expect(result.evidenceStatus).toBe("missing");
     const f = result.findings[0];
-    if (f?.kind === "line") {
+    if (f?.kind === "file") {
       expect(f.ruleId).toBe("python/runner-failed");
     }
   });

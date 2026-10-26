@@ -267,7 +267,6 @@ describe("lintProvider.run", () => {
   });
 
   it("budgets the typed lint process without dropping existing Node options", async () => {
-    vi.stubEnv("NODE_OPTIONS", "--enable-source-maps");
     const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""});
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {lintProvider: provider} = await import("./lintProvider.ts");
@@ -278,7 +277,7 @@ describe("lintProvider.run", () => {
       headRef: "HEAD",
       changeScope: "unknown",
       changedFiles: [],
-      env: {},
+      env: {NODE_OPTIONS: "--enable-source-maps"},
     });
 
     const options = getExecOutput.mock.calls[0]?.[2] as {env?: NodeJS.ProcessEnv} | undefined;
@@ -325,6 +324,6 @@ describe("lintProvider.run", () => {
         changedFiles: [],
         env: {},
       }),
-    ).rejects.toThrow("ESLint exited with code 134");
+    ).rejects.toMatchObject({name: "CommandExecutionError", exitCode: 134});
   });
 });

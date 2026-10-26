@@ -83,16 +83,17 @@ describe("statsProvider.run", () => {
   function mockExec(): {readonly getExecOutput: ReturnType<typeof vi.fn>} {
     const getExecOutput = vi.fn(async (_command: string, args: readonly string[]) => {
       if (args[0] === "fetch") return {exitCode: 0, stdout: "", stderr: ""};
-      if (args[0] === "diff" && args[1] === "--numstat") {
-        return {exitCode: 0, stdout: "10\t2\tsites/arolariu.ro/src/page.tsx\n1\t0\tREADME.md\n", stderr: ""};
+      if (args[0] === "merge-base") return {exitCode: 0, stdout: "b".repeat(40), stderr: ""};
+      if (args[0] === "diff" && args[1] === "--shortstat") {
+        return {exitCode: 0, stdout: "2 files changed, 11 insertions(+), 2 deletions(-)", stderr: ""};
       }
       if (args[0] === "diff" && args[1] === "--name-only") {
-        return {exitCode: 0, stdout: "sites/arolariu.ro/src/page.tsx\nREADME.md\n", stderr: ""};
+        return {exitCode: 0, stdout: "sites/arolariu.ro/src/page.tsx\0README.md\0", stderr: ""};
       }
       if (args[0] === "ls-tree") {
-        const folder = args[4] ?? "";
+        const folder = args.at(-1) ?? "";
         const size = folder === "sites/arolariu.ro" ? 1000 : 500;
-        return {exitCode: 0, stdout: `100644 blob abc ${size}\t${folder}/file.js\n`, stderr: ""};
+        return {exitCode: 0, stdout: `100644 blob abc ${size}\t${folder}/file.js\0`, stderr: ""};
       }
       return {exitCode: 0, stdout: "", stderr: ""};
     });
