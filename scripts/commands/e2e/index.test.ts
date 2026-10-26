@@ -1511,7 +1511,7 @@ function newmanCall(target: string, directory: string, withToken: boolean): unkn
   return {
     command: "npx",
     args: [
-      "newman@6.2.3",
+      "newman",
       "run",
       `<root>/${directory}/postman-collection.json`,
       "--environment",

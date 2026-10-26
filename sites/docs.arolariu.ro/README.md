@@ -95,6 +95,9 @@ TypeScript and `checkJs` settings. Only `static/js/clarity.js` is excluded along
 browser bootstrap loaded directly by `docusaurus.config.ts`, not an imported application module. Docusaurus copies it unchanged into the
 build; its loading and analytics behavior are not altered by this source boundary.
 
+The Docusaurus preset still sets the deprecated `baseUrl` option. The local `baseUrl: null` clears that inherited setting rather than
+enabling it; effective compiler options omit `baseUrl`, and `@site/*` resolves through explicitly relative `paths` entries.
+
 ## Deploy
 
 Pushes to `main` that touch `sites/docs.arolariu.ro/**` (or any of the upstream service sources that feed the extractors) trigger

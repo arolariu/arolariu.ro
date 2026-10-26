@@ -293,7 +293,7 @@ runs:
         PYTHON_DEPS_PATH: ${{ inputs.python-deps-path }}
       run: |
         echo "::group::📦 pip install"
-        python -m pip install --upgrade "pip==26.2.2"
+        python -m pip install --upgrade pip
         python -m pip install -r "${PYTHON_DEPS_PATH}"
         echo "::endgroup::"
 

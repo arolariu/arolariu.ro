@@ -58,11 +58,11 @@ pushes/deletions, or permits direct pushes.
   setting.
 - **CI-side validation of frontmatter / dead refs / version consistency.** Rejected as out-of-scope tooling for this PR.
 - **Commit signing.** Overkill for solo project.
-- **MCP package provenance.** Exact package pins reduce unexpected version drift, but do not verify package contents or lock the entire
-  transitive graph fetched by `npx`. Review updates through the dependency workflow; a pin alone does not establish supply-chain safety.
-- **Playwright MCP all-tools scope.** The workspace entry exposes all tools supplied by its pinned package. Treat browser automation as
+- **MCP package provenance.** Workspace MCP commands follow floating package releases and their transitive graphs through `npx`. Native
+  permissions and filesystem roots do not verify package contents or establish supply-chain safety.
+- **Playwright MCP all-tools scope.** The workspace entry exposes all tools supplied by its floating package. Treat browser automation as
   code-capable, keep native permissions/sandboxing in force, and do not use it against hostile content without an isolated environment.
-  Narrowing or updating it is an MCP/dependency change requiring explicit approval. Verify the active server separately; an existing session
+  Narrowing or pinning it is an MCP/dependency change requiring explicit approval. Verify the active server separately; an existing session
   may still have an older server loaded.
 
 ## Review and extension boundaries

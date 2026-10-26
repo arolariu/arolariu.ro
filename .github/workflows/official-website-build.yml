@@ -170,7 +170,7 @@ jobs:
           # differs from the bin name (tsgo); npm's registry does not
           # reverse-lookup bins, so bare `npx tsgo` fails with E404. -p
           # specifies the package; -y skips the install prompt in CI.
-          npx -y -p @typescript/native-preview@7.0.0-dev.20260707.2 tsgo --noEmit -p tsconfig.json
+          npx -y -p @typescript/native-preview tsgo --noEmit -p tsconfig.json
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "::notice::✅ Type-check (tsgo) completed in ${DURATION}s"
