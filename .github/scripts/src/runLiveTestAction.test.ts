@@ -2,6 +2,8 @@ import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {GitHub} from "../helpers/sdk/github-utils.ts";
+import {record} from "../helpers/reports/validation.ts";
 import runLiveTestAction, {
   discoverTestArtifacts,
   extractTargetFromReportPath,
@@ -26,16 +28,7 @@ const coreMocks = vi.hoisted(() => ({
 const githubMocks = vi.hoisted(() => {
   const searchIssuesAndPullRequests = vi.fn();
   const createIssue = vi.fn();
-  const getOctokit = vi.fn(() => ({
-    rest: {
-      issues: {
-        create: createIssue,
-      },
-      search: {
-        issuesAndPullRequests: searchIssuesAndPullRequests,
-      },
-    },
-  }));
+  const getOctokit = vi.fn<typeof import("../helpers/sdk/github.ts").getOctokit>();
 
   return {
     context: {
@@ -70,6 +63,7 @@ const managedEnvironmentVariables = [
   "FRONTEND_DURATION",
   "FRONTEND_STATUS",
   "GITHUB_TOKEN",
+  "GITHUB_RUN_ATTEMPT",
   "HEALTH_JSON",
   "RUN_ID",
   "RUN_NUMBER",
@@ -156,6 +150,7 @@ function setWorkflowEnvironment(overrides: Readonly<Record<string, string>> = {}
   const defaults: Record<string, string> = {
     EVENT_NAME: "schedule",
     GITHUB_TOKEN: "fake-token",
+    GITHUB_RUN_ATTEMPT: "1",
     RUN_ID: "999",
     RUN_NUMBER: "42",
     SERVER_URL: "https://github.com",
@@ -183,8 +178,30 @@ describe("runLiveTestAction", () => {
     githubMocks.createIssue.mockResolvedValue({
       data: {
         html_url: "https://github.com/arolariu/arolariu.ro/issues/9999",
+        number: 9999,
+        title: "Failure",
+        body: "Report",
+        state: "open",
+        labels: [],
+        assignees: [],
       },
     });
+    const fetch: typeof globalThis.fetch = async (input, options) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/search/issues") {
+        const response = await githubMocks.searchIssuesAndPullRequests({
+          order: url.searchParams.get("order"),
+          per_page: Number(url.searchParams.get("per_page")),
+          q: url.searchParams.get("q"),
+          sort: url.searchParams.get("sort"),
+        });
+        return new Response(JSON.stringify(response.data), {status: 200, headers: {"content-type": "application/json"}});
+      }
+      const body: unknown = JSON.parse(String(options?.body));
+      const response = await githubMocks.createIssue({...record(body, "test issue body"), owner: "arolariu", repo: "arolariu.ro"});
+      return new Response(JSON.stringify(response.data), {status: 201, headers: {"content-type": "application/json"}});
+    };
+    githubMocks.getOctokit.mockReturnValue(new GitHub({auth: "fake-token", request: {fetch}}));
 
     for (const key of managedEnvironmentVariables) {
       originalEnvironmentValues.set(key, process.env[key]);
@@ -280,6 +297,25 @@ describe("runLiveTestAction", () => {
   });
 
   describe("orchestration flow", () => {
+    it("fails and rethrows the original native issue-publication error", async () => {
+      const root = await createTemporaryDirectory();
+      temporaryDirectories.push(root);
+      const failure = new Error("GitHub search unavailable");
+      const client = new GitHub();
+      vi.spyOn(client.rest.search, "issuesAndPullRequests").mockRejectedValue(failure);
+      githubMocks.getOctokit.mockReturnValue(client);
+      setWorkflowEnvironment({ARTIFACTS_DIR: root, FRONTEND_STATUS: "failure", TARGETS: '["frontend"]'});
+      await expect(runLiveTestAction()).rejects.toBe(failure);
+      expect(coreMocks.setFailed).toHaveBeenCalledWith(expect.stringContaining("Failed to create E2E test failure issue"));
+    });
+    it("creates the incident when the job failed despite passing assertions", async () => {
+      const root = await createTemporaryDirectory();
+      temporaryDirectories.push(root);
+      await writeFile(join(root, "newman-frontend.json"), JSON.stringify(createMockNewmanReport("frontend")));
+      setWorkflowEnvironment({ARTIFACTS_DIR: root, FRONTEND_STATUS: "failure", TARGETS: '["frontend"]'});
+      await runLiveTestAction();
+      expect(githubMocks.createIssue).toHaveBeenCalledOnce();
+    });
     it("creates an issue with the aggregated failure context when failures are detected", async () => {
       const root = await createTemporaryDirectory();
       temporaryDirectories.push(root);
@@ -289,7 +325,11 @@ describe("runLiveTestAction", () => {
       await writeFile(join(nestedDirectory, "newman-frontend.json"), JSON.stringify(createMockNewmanReport("frontend", true)), "utf-8");
       await writeFile(join(nestedDirectory, "newman-frontend-summary.md"), "Frontend summary", "utf-8");
       await writeFile(join(nestedDirectory, "e2e-frontend.log"), "line 1\nline 2\nline 3", "utf-8");
-      await writeFile(join(nestedDirectory, "e2e-status-backend.json"), '{"target":"backend","status":"success","duration":"2.80s"}', "utf-8");
+      await writeFile(
+        join(nestedDirectory, "e2e-status-backend.json"),
+        '{"target":"backend","status":"success","duration":"2.80s"}',
+        "utf-8",
+      );
       await writeFile(join(root, "backend-health.json"), '{"status":"Healthy","timestamp":"2026-02-19T00:00:00.000Z"}', "utf-8");
 
       setWorkflowEnvironment({
@@ -364,21 +404,25 @@ describe("runLiveTestAction", () => {
         "### Failed Assertions (frontend)",
         "1. AssertionError  Unknown assertion",
         "   expected 500 to equal 404",
-        "   in \"38 - Get Non-existent Invoice (404)\"",
+        '   in "38 - Get Non-existent Invoice (404)"',
         "",
         "2. AssertionError  Unknown assertion",
         "   timeout of 30000ms exceeded",
-        "   in \"39 - Unauthorized Request (401)\"",
+        '   in "39 - Unauthorized Request (401)"',
         "",
         "3. AssertionError  Unknown assertion",
         "   expected 201 to equal 400",
-        "   in \"40 - Invalid Request Body (400)\"",
+        '   in "40 - Invalid Request Body (400)"',
         "",
       ].join("\n");
 
       await writeFile(join(nestedDirectory, "e2e-frontend.log"), frontendLog, "utf-8");
       await writeFile(join(nestedDirectory, "newman-frontend-summary.md"), frontendSummary, "utf-8");
-      await writeFile(join(nestedDirectory, "e2e-status-frontend.json"), '{"target":"frontend","status":"failure","duration":"3.50s"}', "utf-8");
+      await writeFile(
+        join(nestedDirectory, "e2e-status-frontend.json"),
+        '{"target":"frontend","status":"failure","duration":"3.50s"}',
+        "utf-8",
+      );
 
       setWorkflowEnvironment({
         ARTIFACTS_DIR: root,
@@ -483,7 +527,7 @@ describe("runLiveTestAction", () => {
       process.env["ARTIFACTS_DIR"] = root;
       process.env["GITHUB_TOKEN"] = "fake-token";
 
-      await expect(runLiveTestAction()).rejects.toThrow("Missing required environment variables");
+      await expect(runLiveTestAction()).rejects.toThrow(/required in Actions mode/);
       expect(coreMocks.setFailed).toHaveBeenCalledWith(expect.stringContaining("Failed to create E2E test failure issue"));
       expect(coreMocks.error).toHaveBeenCalledWith(expect.stringContaining("E2E failure issue creation failed"));
     });

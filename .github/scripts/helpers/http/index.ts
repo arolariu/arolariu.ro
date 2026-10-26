@@ -1,386 +1,261 @@
 /**
- * @fileoverview HTTP client operations using @actions/http-client.
+ * @fileoverview HTTP response conveniences with explicit native client ownership.
  * @module github/scripts/helpers/http
  *
  * @remarks
- * Provides a clean, type-safe API for HTTP operations in GitHub Actions.
- * Uses @actions/http-client for making HTTP requests with proper error handling.
- * Follows Single Responsibility Principle by focusing on HTTP operations.
+ * Native HTTP APIs remain available through helpers/sdk. This decorator adds
+ * parsed responses and required binary downloads, without changing SDK error
+ * identities or accepting options that it does not actually apply.
  */
+import {fs} from "../filesystem/index.ts";
+import * as native from "../sdk/http-client.ts";
+import type {RequestHandler, RequestOptions} from "../sdk/http-interfaces.ts";
 
-import * as core from "@actions/core";
-import * as http from "@actions/http-client";
-
-/**
- * HTTP request options.
- * @remarks Only headers are forwarded. The other fields are currently ignored;
- * they do not configure the underlying client's timeout, redirects, or retries.
- */
+/** Request-level policy; configured clients are not mutated to apply overrides. */
 export interface HttpRequestOptions {
-  /** Request headers */
-  headers?: Record<string, string>;
-  /** Request timeout in milliseconds; currently ignored. */
-  timeout?: number;
-  /** Whether to allow redirects; currently ignored. */
-  allowRedirects?: boolean;
-  /** Maximum number of redirects; currently ignored. */
-  maxRedirects?: number;
-  /** Whether to allow retries; currently ignored. */
-  allowRetries?: boolean;
-  /** Maximum number of retries; currently ignored. */
-  maxRetries?: number;
+  readonly headers?: Record<string, string>;
+  /** Native socket inactivity timeout in milliseconds, not a total deadline. */
+  readonly timeout?: number;
+  readonly allowRedirects?: boolean;
+  readonly maxRedirects?: number;
+  readonly allowRetries?: boolean;
+  readonly maxRetries?: number;
 }
 
-/**
- * HTTP response
- */
+/** Factory of independently owned native clients; every call must return a fresh client. */
+export type HttpClientFactory = (...args: ConstructorParameters<typeof native.HttpClient>) => native.HttpClient;
+
+/** Full native configuration plus an injectable external client factory. */
+export interface HttpHelperOptions {
+  readonly handlers?: readonly RequestHandler[];
+  readonly requestOptions?: Readonly<RequestOptions>;
+  readonly createClient?: HttpClientFactory;
+}
+
+/** Parsed response; the generic type remains a caller assertion, not a schema decoder. */
 export interface HttpResponse<T = unknown> {
-  /** HTTP status code */
   readonly statusCode: number;
-  /** Response headers */
   readonly headers: Readonly<Record<string, string>>;
-  /** Response body (parsed if JSON) */
   readonly body: T;
-  /** Whether request was successful (2xx status) */
   readonly success: boolean;
 }
 
-/**
- * JSON request body
- */
+/** Serializable JSON request bodies accepted by the convenience verbs. */
 export type JsonBody = Record<string, unknown> | unknown[];
 
-/**
- * HTTP helper interface
- * Provides methods for HTTP operations
- */
+/** Reusable HTTP conveniences; the owner disposes the helper when finished. */
 export interface IHttpHelper {
   /**
-   * Makes a GET request
-   * @param url - Request URL
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Fetches a parsed JSON value or text without requiring a successful status.
+   * @param url - Target URL.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response; T does not validate runtime data.
+   * @throws Native transport/body errors unchanged.
    */
   get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-
   /**
-   * Makes a POST request
-   * @param url - Request URL
-   * @param body - Request body (JSON)
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Sends a JSON POST.
+   * @param url - Target URL.
+   * @param body - Optional serializable JSON.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response without concealing non-2xx status.
    */
   post<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-
   /**
-   * Makes a PUT request
-   * @param url - Request URL
-   * @param body - Request body (JSON)
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Sends a JSON PUT.
+   * @param url - Target URL.
+   * @param body - Optional serializable JSON.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response.
    */
   put<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-
   /**
-   * Makes a PATCH request
-   * @param url - Request URL
-   * @param body - Request body (JSON)
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Sends a JSON PATCH.
+   * @param url - Target URL.
+   * @param body - Optional serializable JSON.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response.
    */
   patch<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-
   /**
-   * Makes a DELETE request
-   * @param url - Request URL
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Sends a DELETE.
+   * @param url - Target URL.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response.
    */
   delete<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-
   /**
-   * Makes a HEAD request
-   * @param url - Request URL
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Fetches response metadata without fabricating a body.
+   * @param url - Target URL.
+   * @param options - Headers and request-level native policy.
+   * @returns Response metadata with undefined body.
    */
   head(url: string, options?: HttpRequestOptions): Promise<HttpResponse<void>>;
-
   /**
-   * Downloads a file
-   * @param url - File URL
-   * @param destination - Destination path
-   * @param options - Request options
-   * @returns Promise resolving when download completes
+   * Requires a 2xx response and atomically writes its original bytes.
+   * @param url - Download URL.
+   * @param destination - File to replace only after successful transfer.
+   * @param options - Headers and request-level native policy.
+   * @returns Completion after stream/file closure.
+   * @throws {native.HttpClientError} For a non-2xx status.
+   * @throws Original transport/file errors without leaving a success-shaped file.
    */
   download(url: string, destination: string, options?: HttpRequestOptions): Promise<void>;
-
   /**
-   * Makes a request with custom method
-   * @param method - HTTP method
-   * @param url - Request URL
-   * @param body - Optional request body
-   * @param options - Request options
-   * @returns Promise resolving to HTTP response
+   * Sends an explicit method and string/JSON body.
+   * @param method - HTTP method.
+   * @param url - Target URL.
+   * @param body - Raw text or serializable JSON.
+   * @param options - Headers and request-level native policy.
+   * @returns Parsed response.
    */
   request<T = unknown>(method: string, url: string, body?: string | JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  /** Releases the base client's agents once; request-owned clients are released automatically. */
+  dispose(): void;
 }
 
-/**
- * Implementation of HTTP helper
- */
+/** Composition-based HTTP decorator; no SDK subclassing or shared option mutation. */
 export class HttpHelper implements IHttpHelper {
-  private client: http.HttpClient;
+  private readonly userAgent: string;
+  private readonly client: native.HttpClient;
+  private readonly factory: HttpClientFactory;
+  private readonly handlers: RequestHandler[];
+  private readonly requestOptions: RequestOptions;
+  private disposed = false;
 
   /**
-   * Creates a new HTTP helper instance
-   * @param userAgent - User agent string (default: 'github-actions-toolkit')
+   * Creates a reusable base client.
+   * @param userAgent - Native user-agent value.
+   * @param options - Native handlers/configuration and optional fresh-client factory.
    */
-  constructor(userAgent: string = "github-actions-toolkit") {
-    this.client = new http.HttpClient(userAgent);
+  constructor(userAgent = "github-actions-toolkit", options: HttpHelperOptions = {}) {
+    this.userAgent = userAgent;
+    this.factory = options.createClient ?? ((...args) => new native.HttpClient(...args));
+    this.handlers = [...(options.handlers ?? [])];
+    this.requestOptions = {...options.requestOptions};
+    this.client = this.factory(userAgent, [...this.handlers], {...this.requestOptions});
   }
 
-  /**
-   * Processes HTTP response
-   * @param response - HTTP client response
-   * @returns Processed HTTP response
-   */
-  private async processResponse<T>(response: http.HttpClientResponse): Promise<HttpResponse<T>> {
+  private headers(options?: HttpRequestOptions): Record<string, string> {
+    return {"Content-Type": "application/json", Accept: "application/json", ...options?.headers};
+  }
+
+  private async withClient<T>(options: HttpRequestOptions | undefined, operation: (client: native.HttpClient) => Promise<T>): Promise<T> {
+    if (this.disposed) throw new Error("HTTP helper has been disposed");
+    const overrides: RequestOptions = {};
+    const supported = new Set(["headers", "timeout", "allowRedirects", "maxRedirects", "allowRetries", "maxRetries"]);
+    for (const key of Object.keys(options ?? {})) {
+      if (!supported.has(key)) throw new TypeError(`Unsupported HTTP request option '${key}'`);
+    }
+    if (options?.timeout !== undefined) overrides.socketTimeout = options.timeout;
+    if (options?.allowRedirects !== undefined) overrides.allowRedirects = options.allowRedirects;
+    if (options?.maxRedirects !== undefined) overrides.maxRedirects = options.maxRedirects;
+    if (options?.allowRetries !== undefined) overrides.allowRetries = options.allowRetries;
+    if (options?.maxRetries !== undefined) overrides.maxRetries = options.maxRetries;
+    const owned = Object.keys(overrides).length > 0;
+    const client = owned ? this.factory(this.userAgent, [...this.handlers], {...this.requestOptions, ...overrides}) : this.client;
+    try {
+      return await operation(client);
+    } finally {
+      if (owned) client.dispose();
+    }
+  }
+
+  private metadata<T>(response: native.HttpClientResponse, body: T): HttpResponse<T> {
     const statusCode = response.message.statusCode ?? 0;
-    const success = statusCode >= 200 && statusCode < 300;
-
-    // Get response body
-    const bodyText = await response.readBody();
-    let body: T;
-
-    // Try to parse as JSON
-    try {
-      body = JSON.parse(bodyText) as T;
-    } catch {
-      body = bodyText as T;
-    }
-
-    // Extract headers
     const headers: Record<string, string> = {};
-    const rawHeaders = response.message.headers;
-    if (rawHeaders) {
-      for (const [key, value] of Object.entries(rawHeaders)) {
-        if (typeof value === "string") {
-          headers[key] = value;
-        } else if (Array.isArray(value)) {
-          headers[key] = value.join(", ");
-        }
+    for (const [key, value] of Object.entries(response.message.headers)) {
+      if (typeof value === "string") headers[key] = value;
+      else if (Array.isArray(value)) headers[key] = value.join(", ");
+    }
+    return {statusCode, headers, body, success: statusCode >= 200 && statusCode < 300};
+  }
+
+  private async parsed<T>(response: native.HttpClientResponse): Promise<HttpResponse<T>> {
+    const text = await response.readBody();
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      body = text;
+    }
+    // Compatibility generic: callers must still decode unknown domain payloads.
+    return this.metadata(response, body as T);
+  }
+
+  /** {@inheritDoc IHttpHelper.get} */
+  get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return this.withClient(options, async (client) => this.parsed<T>(await client.get(url, this.headers(options))));
+  }
+
+  /** {@inheritDoc IHttpHelper.post} */
+  post<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return this.withClient(options, async (client) =>
+      this.parsed<T>(await client.post(url, body === undefined ? "" : JSON.stringify(body), this.headers(options))),
+    );
+  }
+
+  /** {@inheritDoc IHttpHelper.put} */
+  put<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return this.withClient(options, async (client) =>
+      this.parsed<T>(await client.put(url, body === undefined ? "" : JSON.stringify(body), this.headers(options))),
+    );
+  }
+
+  /** {@inheritDoc IHttpHelper.patch} */
+  patch<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return this.withClient(options, async (client) =>
+      this.parsed<T>(await client.patch(url, body === undefined ? "" : JSON.stringify(body), this.headers(options))),
+    );
+  }
+
+  /** {@inheritDoc IHttpHelper.delete} */
+  delete<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return this.withClient(options, async (client) => this.parsed<T>(await client.del(url, this.headers(options))));
+  }
+
+  /** {@inheritDoc IHttpHelper.head} */
+  head(url: string, options?: HttpRequestOptions): Promise<HttpResponse<void>> {
+    return this.withClient(options, async (client) => this.metadata(await client.head(url, this.headers(options)), undefined));
+  }
+
+  /** {@inheritDoc IHttpHelper.download} */
+  download(url: string, destination: string, options?: HttpRequestOptions): Promise<void> {
+    return this.withClient(options, async (client) => {
+      const response = await client.get(url, this.headers(options));
+      const status = response.message.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        response.message.destroy();
+        throw new native.HttpClientError(`Download returned HTTP ${status}`, status);
       }
-    }
-
-    return {
-      statusCode,
-      headers,
-      body,
-      success,
-    };
+      await fs.writeStreamAtomic(destination, response.message);
+    });
   }
 
-  /**
-   * Creates request headers
-   * @param options - Request options
-   * @returns Request headers
-   */
-  private createHeaders(options?: HttpRequestOptions): Record<string, string> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...options?.headers,
-    };
-
-    return headers;
+  /** {@inheritDoc IHttpHelper.request} */
+  request<T = unknown>(method: string, url: string, body?: string | JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    const data = typeof body === "string" ? body : body === undefined ? "" : JSON.stringify(body);
+    return this.withClient(options, async (client) => this.parsed<T>(await client.request(method, url, data, this.headers(options))));
   }
 
-  /**
-   * {@inheritDoc IHttpHelper.get}
-   */
-  async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`GET ${url}`);
-
-      const response = await this.client.get(url, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`GET request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.post}
-   */
-  async post<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`POST ${url}`);
-
-      const data = body ? JSON.stringify(body) : "";
-      const response = await this.client.post(url, data, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`POST request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.put}
-   */
-  async put<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`PUT ${url}`);
-
-      const data = body ? JSON.stringify(body) : "";
-      const response = await this.client.put(url, data, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`PUT request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.patch}
-   */
-  async patch<T = unknown>(url: string, body?: JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`PATCH ${url}`);
-
-      const data = body ? JSON.stringify(body) : "";
-      const response = await this.client.patch(url, data, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`PATCH request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.delete}
-   */
-  async delete<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`DELETE ${url}`);
-
-      const response = await this.client.del(url, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`DELETE request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.head}
-   */
-  async head(url: string, options?: HttpRequestOptions): Promise<HttpResponse<void>> {
-    try {
-      core.debug(`HEAD ${url}`);
-
-      const response = await this.client.head(url, this.createHeaders(options));
-
-      return this.processResponse<void>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`HEAD request failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.download}
-   */
-  async download(url: string, destination: string, options?: HttpRequestOptions): Promise<void> {
-    try {
-      core.info(`📥 Downloading from ${url} to ${destination}`);
-
-      // Get the file
-      const response = await this.client.get(url, this.createHeaders(options));
-
-      // Save to destination
-      const {writeFile} = await import("node:fs/promises");
-      const {dirname} = await import("node:path");
-      const {mkdir} = await import("node:fs/promises");
-
-      // Ensure destination directory exists
-      await mkdir(dirname(destination), {recursive: true});
-
-      // Write file
-      const body = await response.readBody();
-      await writeFile(destination, body);
-
-      core.info(`✅ Download complete: ${destination}`);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Download failed: ${err.message}`);
-    }
-  }
-
-  /**
-   * {@inheritDoc IHttpHelper.request}
-   */
-  async request<T = unknown>(
-    method: string,
-    url: string,
-    body?: string | JsonBody,
-    options?: HttpRequestOptions,
-  ): Promise<HttpResponse<T>> {
-    try {
-      core.debug(`${method.toUpperCase()} ${url}`);
-
-      const data = typeof body === "string" ? body : body ? JSON.stringify(body) : "";
-
-      const response = await this.client.request(method, url, data, this.createHeaders(options));
-
-      return this.processResponse<T>(response);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`${method} request failed: ${err.message}`);
-    }
+  /** {@inheritDoc IHttpHelper.dispose} */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.client.dispose();
   }
 }
 
 /**
- * Creates a new HTTP helper instance
- * @param userAgent - Optional user agent string
- * @returns HTTP helper instance
- * @example
- * ```typescript
- * const http = createHttpHelper('my-action/1.0');
- *
- * // GET request
- * const response = await http.get('https://api.example.com/data');
- * if (response.success) {
- *   console.log(response.body);
- * }
- *
- * // POST request with body
- * await http.post('https://api.example.com/create', {
- *   name: 'test',
- *   value: 123
- * });
- *
- * // Download file
- * await http.download(
- *   'https://example.com/file.zip',
- *   './downloads/file.zip'
- * );
- * ```
+ * Creates an owned HTTP decorator; retain and dispose it after use.
+ * @param userAgent - Optional native user-agent value.
+ * @param options - Native client handlers/options and optional external factory.
+ * @returns A reusable helper with automatically disposed request-specific clients.
  */
-export function createHttpHelper(userAgent?: string): IHttpHelper {
-  return new HttpHelper(userAgent);
+export function createHttpHelper(userAgent?: string, options?: HttpHelperOptions): IHttpHelper {
+  return new HttpHelper(userAgent, options);
 }
 
-/**
- * Default HTTP helper instance
- * Exported for convenience - can be used directly without creating an instance
- */
+/** Default non-keepalive convenience instance; prefer an owned factory for configured lifecycles. */
 export const httpClient = createHttpHelper();

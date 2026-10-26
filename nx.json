@@ -6,10 +6,7 @@
   },
   "defaultBase": "main",
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -34,18 +31,12 @@
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production"
-      ],
+      "dependsOn": ["^build"],
+      "inputs": ["production"],
       "cache": true
     },
     "test": {
-      "inputs": [
-        "default"
-      ],
+      "inputs": ["default"],
       "cache": true
     }
   },

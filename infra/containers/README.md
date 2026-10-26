@@ -17,16 +17,17 @@ All Dockerfiles include:
 
 ## Available Files
 
-| File | Site | Technology | Port | Base Image |
+| File                  | Site            | Technology            | Port | Base Image                |
 | --------------------- | --------------- | --------------------- | ---- | ------------------------- |
-| `Dockerfile.frontend` | arolariu.ro | Next.js 16 + React 19 | 3000 | node:24-alpine |
-| `Dockerfile.backend` | api.arolariu.ro | .NET 10 ASP.NET Core | 8080 | dotnet/aspnet:10.0-alpine |
-| `Dockerfile.cv` | cv.arolariu.ro | SvelteKit + serve | 3000 | node:24-alpine |
+| `Dockerfile.frontend` | arolariu.ro     | Next.js 16 + React 19 | 3000 | node:24-alpine            |
+| `Dockerfile.backend`  | api.arolariu.ro | .NET 10 ASP.NET Core  | 8080 | dotnet/aspnet:10.0-alpine |
+| `Dockerfile.cv`       | cv.arolariu.ro  | SvelteKit + serve     | 3000 | node:24-alpine            |
 | `Dockerfile.exp`      | exp.arolariu.ro | FastAPI + Uvicorn     | 8080 | python:3.12-slim          |
 
 ## Build Context
 
-**Important:** All Dockerfiles are designed to be built from the **repository root**, not from the `infra/containers` directory or individual site directories.
+**Important:** All Dockerfiles are designed to be built from the **repository root**, not from the `infra/containers` directory or
+individual site directories.
 
 ```bash
 # Correct: from repository root
@@ -54,15 +55,15 @@ must also use `--format docker`.
 
 Build contexts exclude environment files, private exp configuration, package-feed configuration, key material and nested build/dependency
 artifacts. Frontend recipes build the local components package themselves and preserve the complete Next.js standalone hierarchy. Only
-public website metadata values are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the
-build-only `website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated
-website `.env` as this secret, without embedding the file in an image or introducing provider-specific defaults.
+public website metadata values are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the build-only
+`website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated website `.env` as
+this secret, without embedding the file in an image or introducing provider-specific defaults.
 
 Frontend `containers:run` requires the generated website `.env`, parses its quoted values and supplies them through the child process
 environment with engine variable-name flags, never secret values in arguments. Exp `containers:run` requires
 `sites/exp.arolariu.ro/config.docker.json` and mounts it read-only through `EXP_LOCAL_CONFIG_PATH`. Neither file is copied into an image.
-Supply runtime configuration privately through the established environment contract. Authentication configuration and migration are
-owned by their separate workstream; this container follow-up does not provision provider-specific cloud settings.
+Supply runtime configuration privately through the established environment contract. Authentication configuration and migration are owned by
+their separate workstream; this container follow-up does not provision provider-specific cloud settings.
 
 Use the package feeds configured for your environment. The image helper accepts `AROLARIU_CONTAINER_NPM_CONFIG`,
 `AROLARIU_CONTAINER_PIP_CONFIG` and `AROLARIU_CONTAINER_NUGET_CONFIG` as paths to private feed-policy files. The corresponding build secret
@@ -107,14 +108,14 @@ npm run containers:run -- --engine rancher --target cv
 | Argument     | Description                     | Default   |
 | ------------ | ------------------------------- | --------- |
 | `COMMIT_SHA` | Git commit SHA for traceability | `unknown` |
-| `BUILD_DATE` | ISO 8601 build timestamp | - |
-| `VERSION` | Semantic version | `1.0.0` |
+| `BUILD_DATE` | ISO 8601 build timestamp        | -         |
+| `VERSION`    | Semantic version                | `1.0.0`   |
 
 ### Frontend-Specific
 
 | Argument                | Description                      | Default   |
 | ----------------------- | -------------------------------- | --------- |
-| `NODE_VERSION` | Node.js major version | `24` |
+| `NODE_VERSION`          | Node.js major version            | `24`      |
 | `AZURE_TENANT_ID`       | Azure AD tenant ID               | -         |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID            | -         |
 | `AZURE_CLIENT_ID`       | Azure managed identity client ID | -         |
@@ -122,110 +123,92 @@ npm run containers:run -- --engine rancher --target cv
 
 ### Backend-Specific
 
-| Argument | Description | Default |
+| Argument                | Description                      | Default                   |
 | ----------------------- | -------------------------------- | ------------------------- |
-| `DOTNET_VERSION` | .NET SDK/runtime version | `10.0` |
-| `BUILD_CONFIGURATION` | Build configuration | `Release` |
-| `API_NAME` | API service name | `arolariu-backend-api` |
-| `API_URL` | API base URL | `https://api.arolariu.ro` |
-| `AZURE_TENANT_ID` | Azure AD tenant ID | - |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | - |
-| `AZURE_CLIENT_ID` | Azure managed identity client ID | - |
-| `INFRA` | Infrastructure type | `unknown` |
+| `DOTNET_VERSION`        | .NET SDK/runtime version         | `10.0`                    |
+| `BUILD_CONFIGURATION`   | Build configuration              | `Release`                 |
+| `API_NAME`              | API service name                 | `arolariu-backend-api`    |
+| `API_URL`               | API base URL                     | `https://api.arolariu.ro` |
+| `AZURE_TENANT_ID`       | Azure AD tenant ID               | -                         |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID            | -                         |
+| `AZURE_CLIENT_ID`       | Azure managed identity client ID | -                         |
+| `INFRA`                 | Infrastructure type              | `unknown`                 |
 
 ## Environment Variables (Runtime)
 
 ### Frontend
 
-Public configuration is supplied by CI as Docker build arguments. Configure
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment secret in
-each deployment environment. `SITE_*`, `COMMIT_SHA`, and `TIMESTAMP` remain
-build-time inputs. Cloud builds do not generate or mount a website `.env`.
+Public configuration is supplied by CI as Docker build arguments. Configure `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a GitHub environment
+secret in each deployment environment. `SITE_*`, `COMMIT_SHA`, and `TIMESTAMP` remain build-time inputs. Cloud builds do not generate or
+mount a website `.env`.
 
 #### Configuring the public Clerk key in GitHub
 
-In **Settings > Environments**, open `development` and add an environment secret
-named `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` containing that Clerk instance's
-`pk_test_...` value. In `production`, add the same secret name with the
-`pk_live_...` value.
+In **Settings > Environments**, open `development` and add an environment secret named `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` containing that
+Clerk instance's `pk_test_...` value. In `production`, add the same secret name with the `pk_live_...` value.
 
-The workflow declares the input once in its global `env` block. Both jobs select
-their deployment environment with `inputs.environment || 'development'`, so the
-same-named input resolves to the matching environment's value. Preview pushes
-and development dispatches use `DEVELOPMENT`; production dispatches use
-`PRODUCTION`. Separate conditional key names are not necessary. Keep each public
-key paired with the Clerk secret stored under the corresponding exp label.
+The workflow declares the input once in its global `env` block. Both jobs select their deployment environment with
+`inputs.environment || 'development'`, so the same-named input resolves to the matching environment's value. Preview pushes and development
+dispatches use `DEVELOPMENT`; production dispatches use `PRODUCTION`. Separate conditional key names are not necessary. Keep each public key
+paired with the Clerk secret stored under the corresponding exp label.
 
-If you prefer plain configuration variables for these public values, create
-**repository-level** variables named `CLERK_PUBLISHABLE_KEY_DEVELOPMENT` and
-`CLERK_PUBLISHABLE_KEY_PRODUCTION` under **Settings > Secrets and variables >
-Actions > Variables**, and replace the global expression with:
+If you prefer plain configuration variables for these public values, create **repository-level** variables named
+`CLERK_PUBLISHABLE_KEY_DEVELOPMENT` and `CLERK_PUBLISHABLE_KEY_PRODUCTION` under **Settings > Secrets and variables > Actions > Variables**,
+and replace the global expression with:
 
 ```yaml
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[inputs.environment == 'production' && 'CLERK_PUBLISHABLE_KEY_PRODUCTION' || 'CLERK_PUBLISHABLE_KEY_DEVELOPMENT'] }}
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+  ${{ vars[inputs.environment == 'production' && 'CLERK_PUBLISHABLE_KEY_PRODUCTION' || 'CLERK_PUBLISHABLE_KEY_DEVELOPMENT'] }}
 ```
 
 Do not substitute an environment-level `vars` value into the global expression:
 [environment variables become available only after the job starts](https://docs.github.com/en/actions/reference/workflows-and-actions/variables#configuration-variable-precedence).
-The configured environment secrets remain the workflow's supported default.
-The variable expression selects a name before reading its value, so a missing
-production key does not silently select the development key.
+The configured environment secrets remain the workflow's supported default. The variable expression selects a name before reading its value,
+so a missing production key does not silently select the development key.
 
-The existing Next.js `instrumentation.register()` hook awaits
-`initializeRuntimeEnvironmentConfiguration()` before requests are served.
-That method fetches the complete exp runtime document using the PRODUCTION or
-DEVELOPMENT label selected by `SITE_ENV`; missing or unsupported environments
-are rejected. Server-side reads use the initialized document, and runtime
-configuration is applied to the Node process without logging values.
+The existing Next.js `instrumentation.register()` hook awaits `initializeRuntimeEnvironmentConfiguration()` before requests are served. That
+method fetches the complete exp runtime document using the PRODUCTION or DEVELOPMENT label selected by `SITE_ENV`; missing or unsupported
+environments are rejected. Server-side reads use the initialized document, and runtime configuration is applied to the Node process without
+logging values.
 
-Local, Aspire, and selfhost modes use local exp when available and retain
-dotenv values when it is unreachable. Invalid documents and cloud failures
-stop initialization instead of silently substituting defaults. `.env` is
-retained for local/offline use and deprecated for cloud deployment.
-Set `INFRA=local` when using a local Azure identity to access other resources;
-both startup and subsequent config reads then retain local exp routing.
+Local, Aspire, and selfhost modes use local exp when available and retain dotenv values when it is unreachable. Invalid documents and cloud
+failures stop initialization instead of silently substituting defaults. `.env` is retained for local/offline use and deprecated for cloud
+deployment. Set `INFRA=local` when using a local Azure identity to access other resources; both startup and subsequent config reads then
+retain local exp routing.
 
-The container keeps the standard `node server.js` entrypoint. Private values
-are not baked into image layers. Restarting the Node server reloads changed
-private configuration from exp.
+The container keeps the standard `node server.js` entrypoint. Private values are not baked into image layers. Restarting the Node server
+reloads changed private configuration from exp.
 
-Cloud bootstrap gives token acquisition its own 30-second abort signal. The
-10-second exp HTTP deadline starts only after request credentials are available;
-managed-identity cold-start latency does not consume the exp request budget.
-Cloud failures identify `stage=authentication` or `stage=http`, elapsed time,
-known SDK/network error identifiers, and whether a managed-identity endpoint was
-configured. Provider messages, tokens, endpoint values, and private configuration
-are never included in these errors.
+Cloud bootstrap gives token acquisition its own 30-second abort signal. The 10-second exp HTTP deadline starts only after request
+credentials are available; managed-identity cold-start latency does not consume the exp request budget. Cloud failures identify
+`stage=authentication` or `stage=http`, elapsed time, known SDK/network error identifiers, and whether a managed-identity endpoint was
+configured. Provider messages, tokens, endpoint values, and private configuration are never included in these errors.
 
-The build workflow runs a bounded startup smoke test on the final image before
-publishing it. It uses the image's normal entrypoint and runner-stage environment
-(without setting `SITE_ENV` or private variables), plus a local exp fixture.
-The test checks the requested exp label and the application's health report,
-proving the build-time environment survives into runtime instrumentation.
-Run it on a Linux Docker host after building an image:
+The build workflow runs a bounded startup smoke test on the final image before publishing it. It uses the image's normal entrypoint and
+runner-stage environment (without setting `SITE_ENV` or private variables), plus a local exp fixture. The test checks the requested exp
+label and the application's health report, proving the build-time environment survives into runtime instrumentation. Run it on a Linux
+Docker host after building an image:
 
 ```bash
 node sites/arolariu.ro/tests/container/runtime-configuration.smoke.mjs <image> PRODUCTION
 ```
 
-The smoke also exercises the real bundled Azure SDK against a loopback
-App Service-shaped managed-identity endpoint, checking the selected client ID,
-token audience and Authorization handoff. A delayed valid token response covers
-cold-start latency beyond the exp request deadline. Only the external identity
-and exp services are controlled; the normal server entrypoint remains unchanged.
-The fixtures and test containers are temporary; no real Azure credentials are used.
+The smoke also exercises the real bundled Azure SDK against a loopback App Service-shaped managed-identity endpoint, checking the selected
+client ID, token audience and Authorization handoff. A delayed valid token response covers cold-start latency beyond the exp request
+deadline. Only the external identity and exp services are controlled; the normal server entrypoint remains unchanged. The fixtures and test
+containers are temporary; no real Azure credentials are used.
 
-| Variable | Description | Required |
-| ----------------------------------- | ------------------------------------ | -------- |
-| `SITE_ENV` | Public build input: PRODUCTION or DEVELOPMENT | Yes |
-| `SITE_URL` / `SITE_NAME` | Public site metadata from CI | Build |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk key from GitHub configuration | Build |
-| `CLERK_SECRET_KEY` | Runtime Clerk secret from exp, or local dotenv | Runtime |
-| `API_JWT` | Runtime JWT signing secret from exp, or local dotenv | Runtime |
-| `API_JWT_ISSUER` / `API_JWT_AUDIENCE` | Runtime JWT metadata from exp, or local dotenv | Runtime |
-| `API_URL` / `STORAGE_BLOB_ENDPOINT` | Runtime service endpoints from exp, or local dotenv | Runtime |
-| `RESEND_API_KEY` | Runtime email key; empty string disables email | Optional |
-| `EXP_PROXY_URL` | Optional exp URL override, including bare-metal local exp | No |
+| Variable                              | Description                                               | Required |
+| ------------------------------------- | --------------------------------------------------------- | -------- |
+| `SITE_ENV`                            | Public build input: PRODUCTION or DEVELOPMENT             | Yes      |
+| `SITE_URL` / `SITE_NAME`              | Public site metadata from CI                              | Build    |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`   | Public Clerk key from GitHub configuration                | Build    |
+| `CLERK_SECRET_KEY`                    | Runtime Clerk secret from exp, or local dotenv            | Runtime  |
+| `API_JWT`                             | Runtime JWT signing secret from exp, or local dotenv      | Runtime  |
+| `API_JWT_ISSUER` / `API_JWT_AUDIENCE` | Runtime JWT metadata from exp, or local dotenv            | Runtime  |
+| `API_URL` / `STORAGE_BLOB_ENDPOINT`   | Runtime service endpoints from exp, or local dotenv       | Runtime  |
+| `RESEND_API_KEY`                      | Runtime email key; empty string disables email            | Optional |
+| `EXP_PROXY_URL`                       | Optional exp URL override, including bare-metal local exp | No       |
 
 ### Backend
 
@@ -233,37 +216,37 @@ Most backend configuration is embedded at build time via build arguments.
 
 ### CV Site
 
-| Variable | Description | Default |
+| Variable | Description | Default   |
 | -------- | ----------- | --------- |
-| `PORT` | Server port | `3000` |
-| `HOST` | Server host | `0.0.0.0` |
+| `PORT`   | Server port | `3000`    |
+| `HOST`   | Server host | `0.0.0.0` |
 
 ## Multi-Architecture Builds
 
 For building multi-architecture images (amd64/arm64):
 
-Use the engine-native multi-architecture build workflow for the selected runtime.
-For local development, prefer the `npm run containers:build -- --engine <rancher|podman>` wrapper; publishing multi-architecture images remains a release pipeline concern.
+Use the engine-native multi-architecture build workflow for the selected runtime. For local development, prefer the
+`npm run containers:build -- --engine <rancher|podman>` wrapper; publishing multi-architecture images remains a release pipeline concern.
 
 ## Health Checks
 
 All containers include built-in health checks compatible with Docker Compose, Kubernetes, and Azure Container Apps.
 
-| Container | Endpoint | Interval | Timeout | Start Period |
+| Container | Endpoint                      | Interval | Timeout | Start Period |
 | --------- | ----------------------------- | -------- | ------- | ------------ |
-| Backend | `GET /health` (port 8080) | 30s | 10s | 30s |
-| Frontend | `GET /api/health` (port 3000) | 30s | 10s | 30s |
-| CV | `GET /health` (port 3000) | 30s | 10s | 10s |
+| Backend   | `GET /health` (port 8080)     | 30s      | 10s     | 30s          |
+| Frontend  | `GET /api/health` (port 3000) | 30s      | 10s     | 30s          |
+| CV        | `GET /health` (port 3000)     | 30s      | 10s     | 10s          |
 
 ## Security
 
 ### Non-Root Users
 
-| Container | User | UID | Group | GID |
+| Container | User        | UID  | Group      | GID  |
 | --------- | ----------- | ---- | ---------- | ---- |
-| Frontend | `nextjs` | 1001 | `nodejs` | 1001 |
-| Backend | `appuser` | 1001 | `appgroup` | 1001 |
-| CV | `sveltekit` | 1001 | `nodejs` | 1001 |
+| Frontend  | `nextjs`    | 1001 | `nodejs`   | 1001 |
+| Backend   | `appuser`   | 1001 | `appgroup` | 1001 |
+| CV        | `sveltekit` | 1001 | `nodejs`   | 1001 |
 
 ### Image Hardening
 
@@ -292,7 +275,7 @@ podman build -f infra/containers/Dockerfile.backend --target=security-scan -t sc
 ## Compose Example
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   frontend:
@@ -344,7 +327,8 @@ Ensure you're building from the repository root, not from a subdirectory.
 
 ### Health Check Fails
 
-1. Check container logs with the selected engine: `npm run dev:selfhost:logs -- --engine rancher` or `npm run dev:selfhost:logs -- --engine podman`
+1. Check container logs with the selected engine: `npm run dev:selfhost:logs -- --engine rancher` or
+   `npm run dev:selfhost:logs -- --engine podman`
 2. Verify the application started correctly
 3. Check the health endpoint manually: `curl http://localhost:<port>/health`
 

@@ -1,36 +1,29 @@
 # API Reference Catalog
 
-Owner: `.github/instructions/backend.instructions.md`. This catalog holds
-extensive, repository-specific API architecture examples, anti-patterns, edge
-cases, and rationale for `sites/api.arolariu.ro`. It does not define a
-workflow; use `backend-vertical-slice` for implementing a change, `code-unit-test`
-for coverage, or `code-fix-bug`/`code-refactor` for the corresponding narrower task. It
-does not restate versions, global commands, or root safety policy — see root
-`AGENTS.md` and `sites/api.arolariu.ro/AGENTS.md`. It does not duplicate the
-`backend-vertical-slice` skill's own resources
-(`references/layer-decision-table.md`, `references/exception-telemetry-catalog.md`,
-`references/backend-edge-cases.md`), which own the layer-selection and
-edge-case decision workflow; this catalog explains the architecture those
-decisions operate on, with code, not procedure. Minimal API protocol,
-ProblemDetails, cancellation, route metadata, and endpoint telemetry examples
-live in `minimal-apis.md`.
+Owner: `.github/instructions/backend.instructions.md`. This catalog holds extensive, repository-specific API architecture examples,
+anti-patterns, edge cases, and rationale for `sites/api.arolariu.ro`. It does not define a workflow; use `backend-vertical-slice` for
+implementing a change, `code-unit-test` for coverage, or `code-fix-bug`/`code-refactor` for the corresponding narrower task. It does not
+restate versions, global commands, or root safety policy — see root `AGENTS.md` and `sites/api.arolariu.ro/AGENTS.md`. It does not duplicate
+the `backend-vertical-slice` skill's own resources (`references/layer-decision-table.md`, `references/exception-telemetry-catalog.md`,
+`references/backend-edge-cases.md`), which own the layer-selection and edge-case decision workflow; this catalog explains the architecture
+those decisions operate on, with code, not procedure. Minimal API protocol, ProblemDetails, cancellation, route metadata, and endpoint
+telemetry examples live in `minimal-apis.md`.
 
 ## Management-to-Broker layers
 
-The Invoices bounded context is the fully implemented reference for The
-Standard (RFC 2003). The exact, closed dependency graph is:
+The Invoices bounded context is the fully implemented reference for The Standard (RFC 2003). The exact, closed dependency graph is:
 
-| Layer | Implementation | Direct domain dependencies |
-| --- | --- | --- |
-| Management | `InvoiceManagementService` | `IInvoiceProcessingService` |
-| Processing | `InvoiceProcessingService` | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService`, `IAnalysisOrchestrationService` |
-| Orchestration | `InvoiceOrchestrationService` | `IInvoiceStorageFoundationService` |
-| Orchestration | `MerchantOrchestrationService` | `IMerchantStorageFoundationService` |
-| Orchestration | `AnalysisOrchestrationService` | `IAnalysisFoundationService`, `IAnalysisQueueFoundationService` |
-| Foundation | `InvoiceStorageFoundationService` | `IDatabaseBroker` |
-| Foundation | `MerchantStorageFoundationService` | `IDatabaseBroker` |
-| Foundation | `AnalysisFoundationService` | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker` |
-| Foundation | `AnalysisQueueFoundationService` | `IQueueBroker` |
+| Layer         | Implementation                     | Direct domain dependencies                                                                       |
+| ------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Management    | `InvoiceManagementService`         | `IInvoiceProcessingService`                                                                      |
+| Processing    | `InvoiceProcessingService`         | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService`, `IAnalysisOrchestrationService` |
+| Orchestration | `InvoiceOrchestrationService`      | `IInvoiceStorageFoundationService`                                                               |
+| Orchestration | `MerchantOrchestrationService`     | `IMerchantStorageFoundationService`                                                              |
+| Orchestration | `AnalysisOrchestrationService`     | `IAnalysisFoundationService`, `IAnalysisQueueFoundationService`                                  |
+| Foundation    | `InvoiceStorageFoundationService`  | `IDatabaseBroker`                                                                                |
+| Foundation    | `MerchantStorageFoundationService` | `IDatabaseBroker`                                                                                |
+| Foundation    | `AnalysisFoundationService`        | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker`                    |
+| Foundation    | `AnalysisQueueFoundationService`   | `IQueueBroker`                                                                                   |
 
 This graph is enforced by reflection, not just convention:
 
@@ -60,29 +53,24 @@ await TryCatchAsync(async () =>
 }).ConfigureAwait(false);
 ```
 
-`IDatabaseBroker.ReadInvoiceAsync` returns `Invoice?` and the cross-partition
-Broker path returns `null` when no item exists. This Foundation method does
-not prove non-null before `invoice!`; do not copy that assertion as a
-canonical read pattern. A new or changed read must either classify not-found
-explicitly or preserve a genuinely nullable contract. Resolving the existing
-contract is behavior work, not documentation cleanup.
+`IDatabaseBroker.ReadInvoiceAsync` returns `Invoice?` and the cross-partition Broker path returns `null` when no item exists. This
+Foundation method does not prove non-null before `invoice!`; do not copy that assertion as a canonical read pattern. A new or changed read
+must either classify not-found explicitly or preserve a genuinely nullable contract. Resolving the existing contract is behavior work, not
+documentation cleanup.
 
 ## Bounded contexts and dependency direction
 
-| Context | Path | Layers present | Notable shape |
-| --- | --- | --- | --- |
-| Core | `src/Core/` | Host, middleware, health | No domain service hierarchy; hosts composition |
-| Core.Auth | `src/Core.Auth/` | `Brokers/` (`AuthDbContext`), `Endpoints/` | No Management/Processing/Orchestration/Foundation; framework routes use `MapIdentityApi`, and custom logout injects `SignInManager<IdentityUser>` |
-| Invoices | `src/Invoices/` | Full Management → Processing → Orchestration → Foundation → Brokers | The reference implementation of RFC 2001/2003 |
-| Common | `src/Common/` | Shared DDD, `Exceptions/`, `Http/`, `Telemetry/` | Cross-context primitives only; must not become a bypass route around a context's Management boundary |
+| Context   | Path             | Layers present                                                      | Notable shape                                                                                                                                     |
+| --------- | ---------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core      | `src/Core/`      | Host, middleware, health                                            | No domain service hierarchy; hosts composition                                                                                                    |
+| Core.Auth | `src/Core.Auth/` | `Brokers/` (`AuthDbContext`), `Endpoints/`                          | No Management/Processing/Orchestration/Foundation; framework routes use `MapIdentityApi`, and custom logout injects `SignInManager<IdentityUser>` |
+| Invoices  | `src/Invoices/`  | Full Management → Processing → Orchestration → Foundation → Brokers | The reference implementation of RFC 2001/2003                                                                                                     |
+| Common    | `src/Common/`    | Shared DDD, `Exceptions/`, `Http/`, `Telemetry/`                    | Cross-context primitives only; must not become a bypass route around a context's Management boundary                                              |
 
-Core.Auth is a deliberate exception to the five-layer shape. RFC 2001 §2.1
-states that other bounded contexts may use a subset or framework-owned
-topology. Do not treat its Identity endpoint behavior as a precedent for
-skipping Management in Invoices, and do not add a
-Foundation/Orchestration layer to Core.Auth without confirming the change is
-in scope - auth behavior is always an escalation regardless of layering
-questions.
+Core.Auth is a deliberate exception to the five-layer shape. RFC 2001 §2.1 states that other bounded contexts may use a subset or
+framework-owned topology. Do not treat its Identity endpoint behavior as a precedent for skipping Management in Invoices, and do not add a
+Foundation/Orchestration layer to Core.Auth without confirming the change is in scope - auth behavior is always an escalation regardless of
+layering questions.
 
 ```csharp
 // sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs
@@ -96,12 +84,9 @@ public static partial class AuthEndpoints
 
 ## CRUD, analysis, and queue patterns
 
-Foundation CRUD (shown above) is the simplest shape. Analysis composition
-lives in `AnalysisOrchestrationService`, which sequences OCR, generative, and
-taxonomy Foundations and returns a tuple of the mutated aggregate plus the
-options that failed or were dependency-blocked — it does not throw for a
-partial capability failure; Processing decides what that means for
-persistence and retry.
+Foundation CRUD (shown above) is the simplest shape. Analysis composition lives in `AnalysisOrchestrationService`, which sequences OCR,
+generative, and taxonomy Foundations and returns a tuple of the mutated aggregate plus the options that failed or were dependency-blocked —
+it does not throw for a partial capability failure; Processing decides what that means for persistence and retry.
 
 Durable queue work is validated at construction, not at enqueue time:
 
@@ -123,8 +108,7 @@ if (attemptNumber is < 1 or > 3)
 }
 ```
 
-A Foundation test shows the same layer classifying a direct provider failure
-rather than letting it leak as an SDK exception type:
+A Foundation test shows the same layer classifying a direct provider failure rather than letting it leak as an SDK exception type:
 
 ```csharp
 // sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Services/Foundation/AnalysisQueueFoundationServiceTests.cs
@@ -137,24 +121,20 @@ await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
   .ConfigureAwait(false);
 ```
 
-Do not add a poison queue, external workflow-state store, or persistence
-retry — RFC 2003 documents that the current design has none, and Processing's
-three-attempt discard policy is the accepted terminal behavior.
+Do not add a poison queue, external workflow-state store, or persistence retry — RFC 2003 documents that the current design has none, and
+Processing's three-attempt discard policy is the accepted terminal behavior.
 
 ## Service exception propagation
 
-Each Standard layer classifies only failures from its direct dependency while
-preserving cancellation and the marker semantics needed by callers. Exact
-outer/inner retention varies by current service path and is documented by the
-`backend-vertical-slice` exception resource and .NET test guidance.
+Each Standard layer classifies only failures from its direct dependency while preserving cancellation and the marker semantics needed by
+callers. Exact outer/inner retention varies by current service path and is documented by the `backend-vertical-slice` exception resource and
+.NET test guidance.
 
-HTTP status selection, safe `ProblemDetails`, request cancellation, timeout
-policy, and endpoint catch ordering belong to `minimal-apis.md`.
+HTTP status selection, safe `ProblemDetails`, request cancellation, timeout policy, and endpoint catch ordering belong to `minimal-apis.md`.
 
 ## Telemetry
 
-Activities use bounded-context sources and add only approved semantic tags —
-never payload content:
+Activities use bounded-context sources and add only approved semantic tags — never payload content:
 
 ```csharp
 // sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityExtensions.cs
@@ -169,8 +149,7 @@ activity?
     .RecordSuccess();
 ```
 
-Source-generated logging avoids allocation and centralizes message
-identifiers per bounded context:
+Source-generated logging avoids allocation and centralizes message identifiers per bounded context:
 
 ```csharp
 // sites/api.arolariu.ro/src/Invoices/Modules/Log.cs
@@ -178,9 +157,8 @@ identifiers per bounded context:
 public static partial void LogQueueOperationStarted(this ILogger logger, string operationName);
 ```
 
-Full safe/unsafe tag catalogs and Activity-ownership-per-boundary tables are
-owned by the `backend-vertical-slice` skill's exception-telemetry resource;
-this section anchors the constants and helper files those rules apply to.
+Full safe/unsafe tag catalogs and Activity-ownership-per-boundary tables are owned by the `backend-vertical-slice` skill's
+exception-telemetry resource; this section anchors the constants and helper files those rules apply to.
 
 ## Partition and ownership
 
@@ -204,15 +182,12 @@ public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, Cancellation
 }
 ```
 
-A `Guid? userIdentifier` parameter threaded through Foundation and Broker
-reads (see `ReadInvoiceObject` above) is how an owner-scoped read is
-distinguished from a deliberate cross-partition/admin read — never drop or
-default that discriminator in an intermediate layer.
+A `Guid? userIdentifier` parameter threaded through Foundation and Broker reads (see `ReadInvoiceObject` above) is how an owner-scoped read
+is distinguished from a deliberate cross-partition/admin read — never drop or default that discriminator in an intermediate layer.
 
 ## Dependency injection
 
-New services are registered exactly once, in the owning bounded context's
-`WebApplicationBuilderExtensions`, grouped by layer:
+New services are registered exactly once, in the owning bounded context's `WebApplicationBuilderExtensions`, grouped by layer:
 
 ```csharp
 // sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs
@@ -237,16 +212,13 @@ services.AddScoped<IInvoiceManagementService, InvoiceManagementService>();
 services.AddHostedService<AnalysisWorker>();
 ```
 
-`ITaxonomyBroker` is the one `AddSingleton` among the Brokers because
-`JsonTaxonomyBroker` loads immutable embedded GS1/ECOICOP/NACE artifacts at
-startup; every other Broker and service is `AddScoped` to match Cosmos/EF Core
-scoping. Do not default a new registration to `AddSingleton` without the same
-immutable-state justification.
+`ITaxonomyBroker` is the one `AddSingleton` among the Brokers because `JsonTaxonomyBroker` loads immutable embedded GS1/ECOICOP/NACE
+artifacts at startup; every other Broker and service is `AddScoped` to match Cosmos/EF Core scoping. Do not default a new registration to
+`AddSingleton` without the same immutable-state justification.
 
 ## Tests
 
-The dependency graph itself is asserted through constructor reflection, not
-just documented:
+The dependency graph itself is asserted through constructor reflection, not just documented:
 
 ```csharp
 // sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Architecture/InvoiceStandardLayeringArchitectureTests.cs
@@ -261,8 +233,7 @@ public void ServiceConstructors_ApprovedGraph_MatchesExpectedDependencies()
 }
 ```
 
-A representative Foundation test pairs a `MockBehavior.Strict` Broker double
-with an exact classified-exception assertion:
+A representative Foundation test pairs a `MockBehavior.Strict` Broker double with an exact classified-exception assertion:
 
 ```csharp
 // sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Services/Foundation/AnalysisQueueFoundationServiceTests.cs
@@ -283,19 +254,18 @@ public async Task EnqueueAsync_ValidMessage_ReturnsMessageId()
 }
 ```
 
-Full behavior-category selection is the `code-unit-test` skill's .NET guidance;
-this section anchors the architecture-reflection and Foundation-test shapes
-those categories build on.
+Full behavior-category selection is the `code-unit-test` skill's .NET guidance; this section anchors the architecture-reflection and
+Foundation-test shapes those categories build on.
 
 ## Anti-pattern corrections summary
 
-| Anti-pattern | Why it fails here | Correction |
-| --- | --- | --- |
-| An endpoint injecting `IInvoiceStorageFoundationService` directly | Bypasses Management's classification boundary and Processing's workflow policy | Inject only `IInvoiceManagementService`; extend Management if a use case is missing |
-| A new Foundation calling another Foundation | Sideways coupling prohibited by RFC 2001 §2.3 | Route composition through an Orchestration |
-| Adding a Foundation/Orchestration/Processing layer to Core.Auth for symmetry | Core.Auth intentionally has no Standard hierarchy; auth changes are an escalation regardless | Confirm the change is actually approved auth work before touching `Core.Auth/*` |
-| Registering a new service as `AddSingleton` "to be safe" | Breaks Cosmos/EF Core per-request scoping used by every other Broker/service | Match `AddScoped` unless the type holds genuinely immutable startup state like `JsonTaxonomyBroker` |
-| Dropping the `userIdentifier`/partition parameter in a pass-through layer | Silently converts an owner-scoped call into an unscoped one | Thread the discriminator unchanged from endpoint to Broker |
+| Anti-pattern                                                                 | Why it fails here                                                                            | Correction                                                                                          |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| An endpoint injecting `IInvoiceStorageFoundationService` directly            | Bypasses Management's classification boundary and Processing's workflow policy               | Inject only `IInvoiceManagementService`; extend Management if a use case is missing                 |
+| A new Foundation calling another Foundation                                  | Sideways coupling prohibited by RFC 2001 §2.3                                                | Route composition through an Orchestration                                                          |
+| Adding a Foundation/Orchestration/Processing layer to Core.Auth for symmetry | Core.Auth intentionally has no Standard hierarchy; auth changes are an escalation regardless | Confirm the change is actually approved auth work before touching `Core.Auth/*`                     |
+| Registering a new service as `AddSingleton` "to be safe"                     | Breaks Cosmos/EF Core per-request scoping used by every other Broker/service                 | Match `AddScoped` unless the type holds genuinely immutable startup state like `JsonTaxonomyBroker` |
+| Dropping the `userIdentifier`/partition parameter in a pass-through layer    | Silently converts an owner-scoped call into an unscoped one                                  | Thread the discriminator unchanged from endpoint to Broker                                          |
 
 ## Live source pointers
 
@@ -307,4 +277,5 @@ those categories build on.
 - `sites/api.arolariu.ro/src/Invoices/Brokers/QueueBroker/QueueAnalysisMessage.cs` — durable message validation
 - `sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityExtensions.cs` — semantic tag constants
 - `sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs` — the non-Standard bounded-context shape
-- `sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Architecture/InvoiceStandardLayeringArchitectureTests.cs` — reflection-based dependency-graph enforcement
+- `sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Architecture/InvoiceStandardLayeringArchitectureTests.cs` —
+  reflection-based dependency-graph enforcement

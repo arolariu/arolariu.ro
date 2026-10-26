@@ -8,35 +8,39 @@
  * Follows Single Responsibility Principle by focusing on cache operations.
  */
 
-import * as cache from "@actions/cache";
-import * as core from "@actions/core";
+import * as cache from "../sdk/cache.ts";
+import * as core from "../sdk/core.ts";
+import {fs} from "../filesystem/index.ts";
 
 /**
  * Cache save options
  */
-export interface CacheSaveOptions {
+export interface CacheSaveOptions extends Readonly<cache.UploadOptions> {
   /** Cache key */
-  key: string;
+  readonly key: string;
   /** Paths to cache */
-  paths: string[];
-  /** Upload chunk size in bytes */
-  uploadChunkSize?: number;
+  readonly paths: readonly string[];
+  /** Forwarded unchanged to the native SDK. */
+  readonly enableCrossOsArchive?: boolean;
 }
 
 /**
- * Cache restore options
+ * Native download options except lookupOnly, which this decorator owns.
+ * Use exists for a lookup or the native facade for unmodified restore semantics.
  */
-export interface CacheRestoreOptions {
+export interface CacheRestoreOptions extends Readonly<Omit<cache.DownloadOptions, "lookupOnly">> {
   /** Primary cache key */
-  key: string;
+  readonly key: string;
   /** Paths to restore */
-  paths: string[];
+  readonly paths: readonly string[];
   /** Fallback keys to try if primary key not found */
-  restoreKeys?: string[];
+  readonly restoreKeys?: readonly string[];
   /** Whether to fail if cache not found */
-  failOnMiss?: boolean;
-  /** Download chunk size in bytes */
-  downloadChunkSize?: number;
+  readonly failOnMiss?: boolean;
+  /** Forwarded unchanged to the native SDK. */
+  readonly enableCrossOsArchive?: boolean;
+  /** @deprecated Unsupported by the installed SDK; supplying it throws. */
+  readonly downloadChunkSize?: number;
 }
 
 /**
@@ -69,35 +73,37 @@ export interface ICacheHelper {
   /**
    * Saves files to cache
    * @param options - Save options
-   * @returns Promise resolving to save result
+   * @returns A positive native save ID, never a fabricated success for -1/0.
+   * @throws Original SDK errors or an explicit not-saved error.
    */
   save(options: CacheSaveOptions): Promise<CacheSaveResult>;
 
   /**
-   * Restores files from cache
+   * Probes before restoring; prefix fallback requires explicit restoreKeys.
    * @param options - Restore options
    * @returns Promise resolving to restore result
    */
   restore(options: CacheRestoreOptions): Promise<CacheRestoreResult>;
 
   /**
-   * Attempts a cache restore and reports whether an entry was found.
-   * @remarks This is not lookup-only: restored files can be written to paths.
+   * Looks up a matching entry without downloading or writing workspace files.
+   * @remarks Native SDK-suppressed misses cannot be classified more precisely.
    * @param key - Cache key
    * @param paths - Paths to check
    * @param restoreKeys - Optional restore keys
-   * @returns True on a restore hit; false on a miss or restore error.
+   * @returns True for an exact key or explicitly allowed fallback; false for a miss.
+   * @throws Native SDK errors unchanged.
    */
-  exists(key: string, paths: string[], restoreKeys?: string[]): Promise<boolean>;
+  exists(key: string, paths: readonly string[], restoreKeys?: readonly string[]): Promise<boolean>;
 
   /**
    * Generates a cache key from file hashes
    * @param prefix - Key prefix (e.g., 'npm', 'pip')
-   * @param files - Files to hash for key generation
+   * @param files - Required files; any unreadable input rejects the operation.
    * @param suffix - Optional key suffix
    * @returns Promise resolving to generated cache key
    */
-  generateKey(prefix: string, files: string[], suffix?: string): Promise<string>;
+  generateKey(prefix: string, files: readonly string[], suffix?: string): Promise<string>;
 
   /**
    * Creates restore keys from a primary key
@@ -109,13 +115,14 @@ export interface ICacheHelper {
 
   /**
    * Restores cache with automatic key generation and records state on a miss.
-   * @remarks No post-job saver is registered here; the caller must arrange saving.
+   * @remarks Uses exact policy. No post-job saver is registered; callers save explicitly.
+   * A miss does not prove why the SDK found no usable entry. Key and SDK errors propagate.
    * @param prefix - Cache key prefix
    * @param paths - Paths to cache
    * @param lockFiles - Lock files to hash for key
    * @returns Promise resolving to restore result
    */
-  autoCache(prefix: string, paths: string[], lockFiles: string[]): Promise<CacheRestoreResult>;
+  autoCache(prefix: string, paths: readonly string[], lockFiles: readonly string[]): Promise<CacheRestoreResult>;
 }
 
 /**
@@ -126,140 +133,54 @@ export class CacheHelper implements ICacheHelper {
    * {@inheritDoc ICacheHelper.save}
    */
   async save(options: CacheSaveOptions): Promise<CacheSaveResult> {
-    try {
-      core.info(`💾 Saving cache with key: ${options.key}`);
-      core.debug(`Caching paths: ${options.paths.join(", ")}`);
-
-      const saveOptions = options.uploadChunkSize ? {uploadChunkSize: options.uploadChunkSize} : {};
-
-      const cacheId = await cache.saveCache(options.paths, options.key, saveOptions);
-
-      core.info(`✅ Cache saved successfully: ${options.key}`);
-      core.info(`   Cache ID: ${cacheId}`);
-
-      return {
-        id: cacheId,
-        key: options.key,
-      };
-    } catch (error) {
-      const err = error as Error;
-
-      // Check for specific cache errors
-      if (err.message.includes("Cache already exists")) {
-        core.warning(`Cache with key '${options.key}' already exists`);
-        throw error;
-      }
-
-      core.error(`❌ Failed to save cache '${options.key}': ${err.message}`);
-      throw new Error(`Failed to save cache: ${err.message}`);
-    }
+    const {key, paths, enableCrossOsArchive, ...nativeOptions} = options;
+    core.info(`💾 Saving cache with key: ${key}`);
+    const id = await cache.saveCache([...paths], key, nativeOptions, enableCrossOsArchive);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`Cache '${key}' was not saved (native ID: ${id})`);
+    core.info(`✅ Cache saved successfully: ${key} (ID ${id})`);
+    return {id, key};
   }
 
   /**
    * {@inheritDoc ICacheHelper.restore}
    */
   async restore(options: CacheRestoreOptions): Promise<CacheRestoreResult> {
-    try {
-      core.info(`📦 Restoring cache with key: ${options.key}`);
+    const {key, paths, restoreKeys, failOnMiss, downloadChunkSize, enableCrossOsArchive, ...nativeOptions} = options;
+    if (downloadChunkSize !== undefined) throw new TypeError("downloadChunkSize is unsupported by the installed cache SDK");
+    const fallback = (restoreKeys?.length ?? 0) > 0;
+    const keys = restoreKeys ? [...restoreKeys] : undefined;
+    const matched = await cache.restoreCache([...paths], key, keys, {...nativeOptions, lookupOnly: true}, enableCrossOsArchive);
+    if (!matched || (!fallback && matched !== key)) return this.miss(key, failOnMiss);
+    const restored = await cache.restoreCache([...paths], key, keys, {...nativeOptions, lookupOnly: false}, enableCrossOsArchive);
+    if (!restored) return this.miss(key, failOnMiss);
+    if (!fallback && restored !== key) throw new Error(`Cache match changed between lookup and restore for '${key}'`);
+    return {hit: true, matchedKey: restored, requestedKey: key};
+  }
 
-      if (options.restoreKeys && options.restoreKeys.length > 0) {
-        core.debug(`Fallback keys: ${options.restoreKeys.join(", ")}`);
-      }
-
-      const restoreOptions = options.downloadChunkSize ? {lookupOnly: false} : {};
-
-      const cacheKey = await cache.restoreCache(options.paths, options.key, options.restoreKeys, restoreOptions);
-
-      if (!cacheKey) {
-        core.warning(`❌ Cache miss: ${options.key}`);
-
-        if (options.failOnMiss) {
-          throw new Error(`Cache not found for key: ${options.key}`);
-        }
-
-        return {
-          hit: false,
-          requestedKey: options.key,
-        };
-      }
-
-      const isExactMatch = cacheKey === options.key;
-      const matchType = isExactMatch ? "exact" : "partial";
-
-      core.info(`✅ Cache ${matchType} hit: ${cacheKey}`);
-
-      return {
-        hit: true,
-        matchedKey: cacheKey,
-        requestedKey: options.key,
-      };
-    } catch (error) {
-      const err = error as Error;
-      core.error(`❌ Failed to restore cache: ${err.message}`);
-      throw new Error(`Failed to restore cache: ${err.message}`);
-    }
+  private miss(key: string, failOnMiss: boolean | undefined): CacheRestoreResult {
+    core.warning(`No usable cache entry for '${key}'`);
+    if (failOnMiss) throw new Error(`Cache not found for key: ${key}`);
+    return {hit: false, requestedKey: key};
   }
 
   /**
    * {@inheritDoc ICacheHelper.exists}
    */
-  async exists(key: string, paths: string[], restoreKeys?: string[]): Promise<boolean> {
-    try {
-      const restoreOpts: CacheRestoreOptions = {
-        key,
-        paths,
-        failOnMiss: false,
-      };
-      if (restoreKeys) {
-        restoreOpts.restoreKeys = restoreKeys;
-      }
-
-      const result = await this.restore(restoreOpts);
-
-      return result.hit;
-    } catch {
-      return false;
-    }
+  async exists(key: string, paths: readonly string[], restoreKeys?: readonly string[]): Promise<boolean> {
+    const matched = await cache.restoreCache([...paths], key, restoreKeys ? [...restoreKeys] : undefined, {lookupOnly: true});
+    return matched !== undefined && (matched === key || (restoreKeys?.length ?? 0) > 0);
   }
 
   /**
    * {@inheritDoc ICacheHelper.generateKey}
    */
-  async generateKey(prefix: string, files: string[], suffix?: string): Promise<string> {
+  async generateKey(prefix: string, files: readonly string[], suffix?: string): Promise<string> {
     const {createHash} = await import("node:crypto");
-    const {readFile} = await import("node:fs/promises");
-
-    try {
-      core.debug(`Generating cache key from files: ${files.join(", ")}`);
-
-      const hash = createHash("sha256");
-
-      // Hash each file's contents
-      for (const file of files) {
-        try {
-          const content = await readFile(file, "utf-8");
-          hash.update(content);
-        } catch (error) {
-          const err = error as Error;
-          core.warning(`Could not read file for cache key generation: ${file} - ${err.message}`);
-        }
-      }
-
-      const hashValue = hash.digest("hex").substring(0, 16);
-      const parts = [prefix, hashValue];
-
-      if (suffix) {
-        parts.push(suffix);
-      }
-
-      const key = parts.join("-");
-      core.debug(`Generated cache key: ${key}`);
-
-      return key;
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to generate cache key: ${err.message}`);
-    }
+    const hash = createHash("sha256");
+    for (const file of files) hash.update(await fs.readText(file));
+    const parts = [prefix, hash.digest("hex").substring(0, 16)];
+    if (suffix) parts.push(suffix);
+    return parts.join("-");
   }
 
   /**
@@ -281,42 +202,15 @@ export class CacheHelper implements ICacheHelper {
   /**
    * {@inheritDoc ICacheHelper.autoCache}
    */
-  async autoCache(prefix: string, paths: string[], lockFiles: string[]): Promise<CacheRestoreResult> {
-    try {
-      // Generate cache key from lock files
-      const key = await this.generateKey(prefix, lockFiles);
-      const restoreKeys = this.createRestoreKeys(key);
-
-      core.info(`🔄 Auto-cache for ${prefix}`);
-      core.debug(`Key: ${key}`);
-      core.debug(`Restore keys: ${restoreKeys.join(", ")}`);
-
-      // Try to restore from cache
-      const result = await this.restore({
-        key,
-        paths,
-        restoreKeys,
-        failOnMiss: false,
-      });
-
-      if (!result.hit) {
-        core.info("Cache miss - recording state; the caller must save the cache explicitly");
-
-        // State alone does not register a post-job saver.
-        core.saveState("cache-key", key);
-        core.saveState("cache-paths", JSON.stringify(paths));
-      }
-
-      return result;
-    } catch (error) {
-      const err = error as Error;
-      core.warning(`Auto-cache failed: ${err.message}`);
-
-      return {
-        hit: false,
-        requestedKey: prefix,
-      };
+  async autoCache(prefix: string, paths: readonly string[], lockFiles: readonly string[]): Promise<CacheRestoreResult> {
+    const key = await this.generateKey(prefix, lockFiles);
+    const result = await this.restore({key, paths});
+    if (!result.hit) {
+      core.info("Cache miss - recording state; the caller must save the cache explicitly");
+      core.saveState("cache-key", key);
+      core.saveState("cache-paths", JSON.stringify(paths));
     }
+    return result;
   }
 }
 

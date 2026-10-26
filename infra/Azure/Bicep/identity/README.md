@@ -1,6 +1,7 @@
 # 🔐 Identity Module
 
-This module provisions managed identities, federated credentials, and security groups for secure, passwordless access and RBAC in the arolariu.ro platform.
+This module provisions managed identities, federated credentials, and security groups for secure, passwordless access and RBAC in the
+arolariu.ro platform.
 
 ## 📋 Overview
 
@@ -10,12 +11,12 @@ This module provisions managed identities, federated credentials, and security g
 
 ## 📁 Module Files
 
-| File                        | Purpose                                      |
-| --------------------------- | -------------------------------------------- |
-| `deploymentFile.bicep`      | Orchestrates all identity deployments        |
-| `userAssignedIdentity.bicep`| User-assigned managed identity creation      |
-| `federatedCredentials.bicep`| GitHub Actions federated credentials (OIDC)  |
-| `securityGroups.bicep`      | Security groups for JIT access               |
+| File                         | Purpose                                     |
+| ---------------------------- | ------------------------------------------- |
+| `deploymentFile.bicep`       | Orchestrates all identity deployments       |
+| `userAssignedIdentity.bicep` | User-assigned managed identity creation     |
+| `federatedCredentials.bicep` | GitHub Actions federated credentials (OIDC) |
+| `securityGroups.bicep`       | Security groups for JIT access              |
 
 ## 🏗️ Resources Created
 
@@ -275,7 +276,8 @@ type identity = {
 
 ### **GitHub Actions Integration**
 
-Federated identity credentials for both development and production environments are created for the infrastructure managed identity using a single template (`federatedCredentials.bicep`).
+Federated identity credentials for both development and production environments are created for the infrastructure managed identity using a
+single template (`federatedCredentials.bicep`).
 
 **How it works:**
 
@@ -324,7 +326,8 @@ Federated identity credentials for both development and production environments 
 
 ### **arolariu-JIT-Apps**
 
-**Purpose:** Intended for grouping managed identities (User Assigned Managed Identities - UAMIs) to streamline RBAC and bulk permission assignments.
+**Purpose:** Intended for grouping managed identities (User Assigned Managed Identities - UAMIs) to streamline RBAC and bulk permission
+assignments.
 
 **Configuration:**
 
@@ -515,5 +518,4 @@ az keyvault secret list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: December 2025
-**Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: December 2025 **Maintainer**: Alexandru-Razvan Olariu

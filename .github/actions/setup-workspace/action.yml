@@ -351,8 +351,11 @@ runs:
       shell: bash
       env:
         START_TIME: ${{ steps.init.outputs.start_time }}
-        NODE_MODULES_CACHE: ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS') }}
-        PLAYWRIGHT_CACHE: ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
+        NODE_MODULES_CACHE:
+          ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS')
+          }}
+        PLAYWRIGHT_CACHE:
+          ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
       run: |
         DURATION=$(( $(date +%s) - START_TIME ))
         echo "::group::✨ Workspace setup complete"

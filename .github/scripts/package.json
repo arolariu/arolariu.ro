@@ -10,7 +10,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
     "@actions/artifact": "6.3.1",

@@ -4,13 +4,13 @@
  * @module scripts/common/runner.execa.test
  */
 
-import { resolve } from "node:path";
-import { access, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { describe, expect, it } from "vitest";
+import {resolve} from "node:path";
+import {access, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {describe, expect, it} from "vitest";
 
-import { InMemoryLoggerSink, MonorepositoryConsoleLogger } from "./logger.ts";
-import { ExecaProcessRunner } from "./runner.execa.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {ExecaProcessRunner} from "./runner.execa.ts";
 
 const scriptsDirectory = resolve(process.cwd(), "scripts");
 
@@ -30,7 +30,7 @@ const defaultProcessRunner = new ExecaProcessRunner({
  */
 const REAL_SPAWN_TIMEOUT_MS = 45_000;
 
-describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
+describe("defaultProcessRunner", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   it("captures successful stdout with duration metadata", async () => {
     const outcome = await defaultProcessRunner.run({
       command: process.execPath,
@@ -109,7 +109,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
           stderr: "",
         });
       } finally {
-        await rm(temporaryRoot, { recursive: true, force: true });
+        await rm(temporaryRoot, {recursive: true, force: true});
       }
     },
   );
@@ -117,7 +117,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
   it("returns spawn failures without rejecting", async () => {
     const missingWorkingDirectory = resolve(tmpdir(), `process-runner-missing-cwd-${Date.now()}`);
 
-    const outcome = await defaultProcessRunner.run({ command: process.execPath, args: ["-e", "1"] }, { cwd: missingWorkingDirectory });
+    const outcome = await defaultProcessRunner.run({command: process.execPath, args: ["-e", "1"]}, {cwd: missingWorkingDirectory});
 
     expect(outcome).toMatchObject({
       kind: "spawn-failed",
@@ -134,7 +134,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
   it("classifies an unresolved command name using Execa's own metadata instead of a custom PATH scanner", async () => {
     const command = "definitely-not-a-real-tool-xyzzy-12345";
 
-    const outcome = await defaultProcessRunner.run({ command, args: [] });
+    const outcome = await defaultProcessRunner.run({command, args: []});
 
     expect(outcome).toMatchObject({
       kind: "spawn-failed",
@@ -167,10 +167,10 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
         command: process.execPath,
         args: ["-e", "setInterval(() => undefined, 10_000)"],
       },
-      { timeoutMs: 100 },
+      {timeoutMs: 100},
     );
 
-    expect(outcome).toMatchObject({ kind: "timed-out", signal: "SIGTERM" });
+    expect(outcome).toMatchObject({kind: "timed-out", signal: "SIGTERM"});
     expect(outcome.durationMs).toBeLessThan(5_000);
   });
 
@@ -184,10 +184,10 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
           command: process.execPath,
           args: ["-e", "setInterval(() => undefined, 10_000)"],
         },
-        { signal: controller.signal },
+        {signal: controller.signal},
       );
 
-      expect(outcome).toMatchObject({ kind: "cancelled", signal: "SIGTERM" });
+      expect(outcome).toMatchObject({kind: "cancelled", signal: "SIGTERM"});
       expect(outcome.durationMs).toBeLessThan(5_000);
     } finally {
       clearTimeout(cancellation);
@@ -206,7 +206,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
           command: process.execPath,
           args: ["-e", `require("node:fs").writeFileSync(${JSON.stringify(marker)}, "started")`],
         },
-        { signal: controller.signal },
+        {signal: controller.signal},
       );
 
       expect(outcome).toMatchObject({
@@ -214,9 +214,9 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
         stdout: "",
         stderr: "",
       });
-      await expect(access(marker)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(access(marker)).rejects.toMatchObject({code: "ENOENT"});
     } finally {
-      await rm(temporaryRoot, { recursive: true, force: true });
+      await rm(temporaryRoot, {recursive: true, force: true});
     }
   });
 
@@ -244,7 +244,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
           command: process.execPath,
           args: ["-e", "process.stdout.write(`${process.env.COMMAND_RUNNER_PARENT_TEST}:${process.env.COMMAND_RUNNER_CHILD_TEST}`)"],
         },
-        { env: { COMMAND_RUNNER_CHILD_TEST: "child" } },
+        {env: {COMMAND_RUNNER_CHILD_TEST: "child"}},
       );
 
       expect(outcome).toMatchObject({
@@ -273,7 +273,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
           command: process.execPath,
           args: ["-e", `process.stdout.write(Object.hasOwn(process.env, ${JSON.stringify(key)}) ? "present" : "absent")`],
         },
-        { env: { [key]: undefined } },
+        {env: {[key]: undefined}},
       );
 
       expect(outcome).toMatchObject({
@@ -296,7 +296,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
         command: process.execPath,
         args: ["-e", "process.stdout.write(process.cwd())"],
       },
-      { cwd: scriptsDirectory },
+      {cwd: scriptsDirectory},
     );
 
     expect(outcome).toMatchObject({
@@ -330,7 +330,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
       exitCode: 0,
       stdout: '{"secret":"value"}',
     });
-    expect(sink.records).not.toEqual(expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("secret") })]));
+    expect(sink.records).not.toEqual(expect.arrayContaining([expect.objectContaining({text: expect.stringContaining("secret")})]));
   });
 
   it("accepts Uint8Array stdin input", async () => {
@@ -339,7 +339,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
         command: process.execPath,
         args: ["-e", "process.stdin.pipe(process.stdout)"],
       },
-      { input: new TextEncoder().encode("binary-input") },
+      {input: new TextEncoder().encode("binary-input")},
     );
 
     expect(outcome).toMatchObject({
@@ -350,7 +350,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
   });
 
   it("rejects stdin input with inherited stdio", async () => {
-    expect(() => defaultProcessRunner.run({ command: process.execPath, args: ["-e", ""] }, { input: "payload", output: "inherit" })).toThrow(
+    expect(() => defaultProcessRunner.run({command: process.execPath, args: ["-e", ""]}, {input: "payload", output: "inherit"})).toThrow(
       "Cannot supply input when output is inherited",
     );
   });
@@ -367,7 +367,7 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
         command: process.execPath,
         args: ["-e", "process.stdout.write('out'); process.stderr.write('err')"],
       },
-      { logger, output: "tee" },
+      {logger, output: "tee"},
     );
 
     expect(outcome).toMatchObject({
@@ -378,14 +378,14 @@ describe("defaultProcessRunner", { timeout: REAL_SPAWN_TIMEOUT_MS }, () => {
     });
     expect(sink.records).toEqual(
       expect.arrayContaining([
-        { stream: "stdout", text: "out", write: true },
-        { stream: "stderr", text: "err", write: true },
+        {stream: "stdout", text: "out", write: true},
+        {stream: "stderr", text: "err", write: true},
       ]),
     );
   });
 
   it("returns empty captured streams for inherited output", async () => {
-    const outcome = await defaultProcessRunner.run({ command: process.execPath, args: ["-e", ""] }, { output: "inherit" });
+    const outcome = await defaultProcessRunner.run({command: process.execPath, args: ["-e", ""]}, {output: "inherit"});
 
     expect(outcome).toMatchObject({
       kind: "succeeded",

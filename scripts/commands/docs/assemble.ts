@@ -34,22 +34,11 @@ import {DocumentationOutputMissing, DotnetBuildRootUnresolved} from "./errors.ts
 import {normalizeDirectory, readDirectoryEntries, serializeFrontmatter} from "./normalize.ts";
 
 /** Services the documentation assembly requires. */
-export type DocsAssembleRequirements =
-  | Process
-  | FileSystem.FileSystem
-  | Path.Path
-  | Glob
-  | ReadOnlyFiles
-  | Environment
-  | Presenter;
+export type DocsAssembleRequirements = Process | FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles | Environment | Presenter;
 
 /** Every typed failure of the documentation assembly. */
 export type DocsAssembleError =
-  | DocumentationOutputMissing
-  | DotnetBuildRootUnresolved
-  | ProcessError
-  | PlatformError.PlatformError
-  | RepositoryRootNotFound;
+  DocumentationOutputMissing | DotnetBuildRootUnresolved | ProcessError | PlatformError.PlatformError | RepositoryRootNotFound;
 
 /**
  * .NET target framework shared across every project under
@@ -196,7 +185,10 @@ export const assertExpectedDocumentationTiers: (
   for (const tier of REQUIRED_DOCUMENTATION_TIERS) {
     const tierRoot = join(generatedRoot, tier.relativePath);
     if (!(yield* fs.exists(tierRoot))) {
-      return yield* new DocumentationOutputMissing({tier: tier.label, message: `${tier.label}: expected directory not found at ${tierRoot}`});
+      return yield* new DocumentationOutputMissing({
+        tier: tier.label,
+        message: `${tier.label}: expected directory not found at ${tierRoot}`,
+      });
     }
     if ((yield* countDocumentationFiles(tierRoot, true)) === 0) {
       return yield* new DocumentationOutputMissing({

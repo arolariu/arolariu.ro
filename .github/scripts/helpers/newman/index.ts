@@ -23,6 +23,8 @@
  * ```
  */
 
+import {array, count, finite, record, text} from "../reports/validation.ts";
+
 // ============================================================================
 // NEWMAN TYPE DEFINITIONS
 // ============================================================================
@@ -70,13 +72,15 @@ export interface NewmanExecution {
   };
   readonly request: {
     readonly method: string;
-    readonly url: {
-      readonly raw: string;
-      readonly protocol: string;
-      readonly host: readonly string[];
-      readonly path: readonly string[];
-      toString(): string;
-    };
+    readonly url:
+      | string
+      | {
+          readonly raw?: string;
+          readonly protocol?: string;
+          readonly host?: readonly string[];
+          readonly path?: readonly string[];
+          readonly toString?: () => string;
+        };
     readonly header?: ReadonlyArray<{readonly key: string; readonly value: string}>;
   };
   readonly response?: {
@@ -84,7 +88,7 @@ export interface NewmanExecution {
     readonly status: string;
     readonly responseTime: number;
     readonly responseSize?: number;
-    readonly stream?: Uint8Array;
+    readonly stream?: Uint8Array | {readonly type: "Buffer"; readonly data: readonly number[]};
     readonly header?: ReadonlyArray<{readonly key: string; readonly value: string}>;
   };
   readonly assertions?: ReadonlyArray<{
@@ -92,9 +96,10 @@ export interface NewmanExecution {
     readonly error?: {
       readonly name?: string;
       readonly message?: string;
-      toString(): string;
+      readonly toString?: () => string;
     };
   }>;
+  readonly requestError?: {readonly name?: string; readonly message?: string; readonly code?: string};
 }
 
 /**
@@ -138,6 +143,8 @@ export interface NewmanFailedRequest {
     readonly error: string;
   }>;
   readonly responseBody?: string;
+  /** Native request failure, distinct from a test assertion. */
+  readonly requestError?: string;
 }
 
 // ============================================================================
@@ -182,7 +189,7 @@ export interface INewmanHelper {
    * @returns Structured execution statistics including timings, assertions, and failures
    * @throws {Error} If report data is malformed or missing required fields
    */
-  parseReport(reportData: NewmanReport): NewmanExecutionStats;
+  parseReport(reportData: unknown): NewmanExecutionStats;
 
   /**
    * Categorizes failures by type for better analysis
@@ -204,12 +211,118 @@ export interface INewmanHelper {
 /**
  * Implementation of Newman helper
  */
+function decodeUrl(value: unknown): string {
+  if (typeof value === "string") return value;
+  const url = record(value, "Newman request URL");
+  if (url["raw"] !== undefined && text(url["raw"], "Newman URL raw")) return text(url["raw"], "Newman URL raw");
+  const protocol = text(url["protocol"], "Newman URL protocol");
+  const host = array(url["host"], "Newman URL host")
+    .map((part) => text(part, "Newman host part"))
+    .join(".");
+  const path =
+    url["path"] === undefined
+      ? ""
+      : array(url["path"], "Newman URL path")
+          .map((part) => text(part, "Newman path part"))
+          .join("/");
+  return `${protocol}://${host}/${path}`;
+}
+
+function decodeError(value: unknown): {name?: string; message?: string; code?: string} {
+  const error = record(value, "Newman error");
+  return {
+    ...(error["name"] === undefined ? {} : {name: text(error["name"], "Newman error name")}),
+    ...(error["message"] === undefined ? {} : {message: text(error["message"], "Newman error message")}),
+    ...(error["code"] === undefined ? {} : {code: text(error["code"], "Newman error code")}),
+  };
+}
+
+function decodeBytes(value: unknown): Uint8Array {
+  if (value instanceof Uint8Array) return value;
+  const buffer = record(value, "Newman response stream");
+  if (buffer["type"] !== "Buffer") throw new TypeError("Invalid Newman serialized Buffer type");
+  return Uint8Array.from(
+    array(buffer["data"], "Newman buffer data").map((value) => {
+      const byte = count(value, "Newman buffer byte");
+      if (byte > 255) throw new TypeError("Invalid Newman buffer byte");
+      return byte;
+    }),
+  );
+}
+
+function decodeExecution(value: unknown): NewmanExecution {
+  const execution = record(value, "Newman execution");
+  const item = record(execution["item"], "Newman item");
+  const request = record(execution["request"], "Newman request");
+  const response =
+    execution["response"] === undefined || execution["response"] === null ? undefined : record(execution["response"], "Newman response");
+  return {
+    item: {name: text(item["name"], "Newman item name")},
+    request: {method: text(request["method"], "Newman method"), url: decodeUrl(request["url"])},
+    ...(response === undefined
+      ? {}
+      : {
+          response: {
+            code: count(response["code"], "Newman response code"),
+            status: response["status"] === undefined ? "" : text(response["status"], "Newman response status"),
+            responseTime: finite(response["responseTime"], "Newman response time"),
+            ...(response["stream"] === undefined ? {} : {stream: decodeBytes(response["stream"])}),
+          },
+        }),
+    ...(execution["requestError"] === undefined ? {} : {requestError: decodeError(execution["requestError"])}),
+    ...(execution["assertions"] === undefined
+      ? {}
+      : {
+          assertions: array(execution["assertions"], "Newman assertions").map((value) => {
+            const assertion = record(value, "Newman assertion");
+            return {
+              assertion: text(assertion["assertion"], "Newman assertion name"),
+              ...(assertion["error"] === undefined ? {} : {error: decodeError(assertion["error"])}),
+            };
+          }),
+        }),
+  };
+}
+
+function decodeReport(value: unknown): NewmanReport {
+  const report = record(value, "Newman report");
+  const info = record(record(report["collection"], "Newman collection")["info"], "Newman collection info");
+  const run = record(report["run"], "Newman run");
+  const stats = record(run["stats"], "Newman stats");
+  const counter = (name: string): {total: number; failed: number} => {
+    const raw = record(stats[name], `Newman ${name}`);
+    const total = count(raw["total"], `Newman ${name} total`);
+    const failed = count(raw["failed"], `Newman ${name} failed`);
+    if (failed > total) throw new TypeError(`Invalid Newman ${name} counts`);
+    return {total, failed};
+  };
+  const timings = record(run["timings"], "Newman timings");
+  const started = finite(timings["started"], "Newman started", 8.64e15);
+  const completed = finite(timings["completed"], "Newman completed", 8.64e15);
+  if (completed < started) throw new TypeError("Invalid Newman timing order");
+  return {
+    collection: {info: {name: text(info["name"], "Newman collection name"), schema: text(info["schema"], "Newman schema")}},
+    run: {
+      stats: {requests: counter("requests"), assertions: counter("assertions")},
+      timings: {
+        started,
+        completed,
+        responseAverage: finite(timings["responseAverage"], "Newman responseAverage"),
+        responseMin: finite(timings["responseMin"], "Newman responseMin"),
+        responseMax: finite(timings["responseMax"], "Newman responseMax"),
+      },
+      executions: array(run["executions"], "Newman executions").map(decodeExecution),
+    },
+  };
+}
+
 export class NewmanHelper implements INewmanHelper {
   /**
    * {@inheritDoc INewmanHelper.parseReport}
    */
-  parseReport(reportData: NewmanReport): NewmanExecutionStats {
-    const run = reportData.run;
+  parseReport(reportData: unknown): NewmanExecutionStats {
+    const decoded = decodeReport(reportData);
+    const run = decoded.run;
     const stats = run.stats;
     const timings = run.timings;
 
@@ -233,7 +346,7 @@ export class NewmanHelper implements INewmanHelper {
     const failures = this.extractFailedRequests(run.executions);
 
     return {
-      collectionName: reportData.collection.info.name,
+      collectionName: decoded.collection.info.name,
       totalRequests,
       failedRequests,
       successRate,
@@ -269,7 +382,10 @@ export class NewmanHelper implements INewmanHelper {
         categories.clientErrors++;
       } else if (failure.statusCode >= 500) {
         categories.serverErrors++;
-      } else if (failure.failedAssertions.some((a) => a.error.toLowerCase().includes("timeout"))) {
+      } else if (
+        failure.requestError?.toLowerCase().includes("timeout")
+        || failure.failedAssertions.some((a) => a.error.toLowerCase().includes("timeout"))
+      ) {
         categories.timeouts++;
       } else if (failure.failedAssertions.length > 0) {
         categories.assertionFailures++;
@@ -325,12 +441,16 @@ export class NewmanHelper implements INewmanHelper {
       const hasFailedAssertions = execution.assertions?.some((assertion) => assertion.error !== undefined) ?? false;
       const hasResponseError = response?.code !== undefined && response.code >= 400;
 
-      if (hasFailedAssertions || hasResponseError) {
+      if (hasFailedAssertions || hasResponseError || execution.requestError) {
         const failedAssertions = execution.assertions?.filter((assertion) => assertion.error !== undefined) ?? [];
-        const responseBody = response?.stream ? Buffer.from(response.stream).toString("utf-8").substring(0, 500) : "";
+        const responseBody = response?.stream
+          ? Buffer.from(response.stream instanceof Uint8Array ? response.stream : response.stream.data)
+              .toString("utf-8")
+              .substring(0, 500)
+          : "";
 
         // Extract URL - use raw string if available, otherwise construct from parts
-        const urlString = request.url.raw || `${request.url.protocol}://${request.url.host.join(".")}/${request.url.path.join("/")}`;
+        const urlString = decodeUrl(request.url);
 
         failures.push({
           name: item.name,
@@ -340,9 +460,15 @@ export class NewmanHelper implements INewmanHelper {
           responseTime: response?.responseTime ?? 0,
           failedAssertions: failedAssertions.map((assertion) => ({
             assertion: assertion.assertion ?? "Unknown assertion",
-            error: assertion.error?.message ?? assertion.error?.toString() ?? "Unknown error",
+            error: assertion.error?.message ?? assertion.error?.name ?? "Unknown error",
           })),
           responseBody,
+          ...(execution.requestError
+            ? {
+                requestError:
+                  execution.requestError.message ?? execution.requestError.code ?? execution.requestError.name ?? "Unknown request error",
+              }
+            : {}),
         });
       }
     }
@@ -433,6 +559,7 @@ export class NewmanHelper implements INewmanHelper {
     }
     markdown += `- **Status Code:** \`${failure.statusCode}\` ${statusEmoji}\n`;
     markdown += `- **Response Time:** \`${failure.responseTime}ms\`\n\n`;
+    if (failure.requestError) markdown += `**Request Error:** ${failure.requestError}\n\n`;
 
     // Add failed assertions
     if (failure.failedAssertions.length > 0) {
@@ -485,7 +612,7 @@ export function createNewmanHelper(): INewmanHelper {
 export const newman = createNewmanHelper();
 
 // Convenience exports for common operations
-export const parseNewmanReport = (reportData: NewmanReport): NewmanExecutionStats => newman.parseReport(reportData);
+export const parseNewmanReport = (reportData: unknown): NewmanExecutionStats => newman.parseReport(reportData);
 export const categorizeFailures = (stats: NewmanExecutionStats): FailureCategories => newman.categorizeFailures(stats);
 export const generateNewmanResultsSection = (stats: NewmanExecutionStats, testType: string, options?: MarkdownOptions): string =>
   newman.generateMarkdownSection(stats, testType, options);

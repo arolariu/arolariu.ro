@@ -1,0 +1,24 @@
+{
+  "numTotalTests": 4,
+  "numPassedTests": 1,
+  "numFailedTests": 1,
+  "numPendingTests": 1,
+  "numTodoTests": 1,
+  "testResults": [
+    {
+      "name": "example.test.ts",
+      "status": "failed",
+      "assertionResults": [
+        {"fullName": "works", "status": "passed", "failureMessages": []},
+        {
+          "fullName": "fails with {braces}",
+          "status": "failed",
+          "failureMessages": ["Expected {a: 1}"],
+          "location": {"line": 12, "column": 3}
+        },
+        {"fullName": "skips", "status": "pending", "failureMessages": []},
+        {"fullName": "later", "status": "todo", "failureMessages": []}
+      ]
+    }
+  ]
+}

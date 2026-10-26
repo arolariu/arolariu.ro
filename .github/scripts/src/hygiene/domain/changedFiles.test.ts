@@ -50,7 +50,15 @@ describe("classifyChangedFiles", () => {
   });
 
   it("marks root shared config as broad impact", () => {
-    const c = classifyChangedFiles(["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"]);
+    const c = classifyChangedFiles(
+      ["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"],
+      [
+        "{workspaceRoot}/package-lock.json",
+        "{workspaceRoot}/eslint.config.ts",
+        "{workspaceRoot}/vitest.config.ts",
+        "{workspaceRoot}/nx.json",
+      ],
+    );
     expect(c.hasRootSharedChange).toBe(true);
     expect(c.hasJavaScriptSharedChange).toBe(true);
   });
@@ -62,9 +70,9 @@ describe("classifyChangedFiles", () => {
 });
 
 describe("scope helpers", () => {
-  it("runs broadly for unknown scope and root shared changes", () => {
+  it("consumes broad scope resolved by the plan rather than a competing copied root list", () => {
     expect(shouldRunBroadly(unknown())).toBe(true);
-    expect(shouldRunBroadly(known(["package.json"]))).toBe(true);
+    expect(shouldRunBroadly(known(["package.json"]))).toBe(false);
   });
 
   it("does not run broadly for isolated project changes", () => {
@@ -116,7 +124,7 @@ describe("file filters", () => {
 
   it("returns null filters for unknown or broad scope", () => {
     expect(filesForPrettier(unknown())).toBeNull();
-    expect(filesForEslint(known(["package.json"]))).toBeNull();
+    expect(filesForEslint(unknown())).toBeNull();
   });
 });
 
@@ -134,7 +142,7 @@ describe("suitesForTypeScriptChanges", () => {
 
   it("returns null for broad TypeScript scope", () => {
     expect(suitesForTypeScriptChanges(unknown())).toBeNull();
-    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toBeNull();
+    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toEqual([]);
   });
 });
 
@@ -147,6 +155,6 @@ describe("touchedBundleFolders", () => {
 
   it("returns null for unknown or broad scope", () => {
     expect(touchedBundleFolders(unknown(), bundleFolders)).toBeNull();
-    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toBeNull();
+    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toEqual([]);
   });
 });

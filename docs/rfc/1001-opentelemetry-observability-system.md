@@ -9,7 +9,10 @@
 
 ## Abstract
 
-This RFC documents the implementation of a comprehensive observability system for the arolariu.ro Next.js 16 application using the current OpenTelemetry JavaScript SDK stack configured in `sites/arolariu.ro/package.json`. The system provides distributed tracing, metrics collection, and structured logging with a strongly-typed API that enforces semantic conventions and prevents common instrumentation errors through compile-time type checking.
+This RFC documents the implementation of a comprehensive observability system for the arolariu.ro Next.js 16 application using the current
+OpenTelemetry JavaScript SDK stack configured in `sites/arolariu.ro/package.json`. The system provides distributed tracing, metrics
+collection, and structured logging with a strongly-typed API that enforces semantic conventions and prevents common instrumentation errors
+through compile-time type checking.
 
 ---
 
@@ -91,9 +94,9 @@ const sdk = new NodeSDK({
   serviceName: "arolariu.ro",
   instrumentations: [
     getNodeAutoInstrumentations({
-      "@opentelemetry/instrumentation-http": { enabled: true },
-      "@opentelemetry/instrumentation-fetch": { enabled: true },
-      "@opentelemetry/instrumentation-fs": { enabled: true },
+      "@opentelemetry/instrumentation-http": {enabled: true},
+      "@opentelemetry/instrumentation-fetch": {enabled: true},
+      "@opentelemetry/instrumentation-fs": {enabled: true},
       // ... 20+ auto-instrumentations
     }),
   ],
@@ -111,6 +114,7 @@ const sdk = new NodeSDK({
 ```
 
 **Design Decisions**:
+
 - **Batch Span Processor**: Reduces network overhead by batching trace exports
 - **Periodic Metric Reader**: Exports metrics every 60 seconds
 - **OTLP HTTP Protocol**: Industry-standard protocol for observability data
@@ -146,6 +150,7 @@ type MetricName =
 ```
 
 **Benefits**:
+
 - TypeScript enforces naming conventions at compile time
 - IntelliSense provides prefix suggestions
 - Prevents typos like `"api.usr.get"` instead of `"api.user.get"`
@@ -210,53 +215,29 @@ interface ErrorAttributes {
 ##### Tracing API
 
 ```typescript
-async function withSpan<T>(
-  name: SpanOperationType,
-  fn: (span: Span) => Promise<T>,
-  options?: SpanOptions
-): Promise<T>
+async function withSpan<T>(name: SpanOperationType, fn: (span: Span) => Promise<T>, options?: SpanOptions): Promise<T>;
 
-function addSpanEvent(
-  eventName: string,
-  attributes?: TelemetryAttributes
-): void
+function addSpanEvent(eventName: string, attributes?: TelemetryAttributes): void;
 
-function setSpanAttributes(attributes: TelemetryAttributes): void
+function setSpanAttributes(attributes: TelemetryAttributes): void;
 
-function recordSpanError(error: Error | unknown): void
+function recordSpanError(error: Error | unknown): void;
 ```
 
 ##### Metrics API
 
 ```typescript
-function createCounter(
-  name: MetricName,
-  description?: string,
-  unit?: string
-): Counter
+function createCounter(name: MetricName, description?: string, unit?: string): Counter;
 
-function createHistogram(
-  name: MetricName,
-  description?: string,
-  unit?: string
-): Histogram
+function createHistogram(name: MetricName, description?: string, unit?: string): Histogram;
 
-function createUpDownCounter(
-  name: MetricName,
-  description?: string,
-  unit?: string
-): UpDownCounter
+function createUpDownCounter(name: MetricName, description?: string, unit?: string): UpDownCounter;
 ```
 
 ##### Logging API
 
 ```typescript
-function logWithTrace(
-  level: LogLevel,
-  message: string,
-  attributes?: TelemetryAttributes,
-  context?: RenderContext
-): void
+function logWithTrace(level: LogLevel, message: string, attributes?: TelemetryAttributes, context?: RenderContext): void;
 ```
 
 **Production Optimization**: Debug logs are automatically suppressed in production:
@@ -273,14 +254,10 @@ if (level === "debug" && process.env.NODE_ENV === "production") {
 function createHttpServerAttributes(
   method: HttpMethod,
   statusCode: number,
-  options?: { route?: string; target?: string; userAgent?: string; clientAddress?: string }
-): HttpAttributes
+  options?: {route?: string; target?: string; userAgent?: string; clientAddress?: string},
+): HttpAttributes;
 
-function createHttpClientAttributes(
-  method: HttpMethod,
-  url: string,
-  statusCode?: number
-): Partial<HttpAttributes>
+function createHttpClientAttributes(method: HttpMethod, url: string, statusCode?: number): Partial<HttpAttributes>;
 
 function createNextJsAttributes(
   renderContext: RenderContext,
@@ -290,31 +267,20 @@ function createNextJsAttributes(
     serverComponents?: boolean;
     cacheHit?: boolean;
     runtime?: "nodejs" | "edge";
-  }
-): NextJsAttributes
+  },
+): NextJsAttributes;
 
 function createDatabaseAttributes(
   system: string,
   operation: string,
-  options?: { name?: string; collection?: string; statement?: string }
-): DatabaseAttributes
+  options?: {name?: string; collection?: string; statement?: string},
+): DatabaseAttributes;
 
-function createCacheAttributes(
-  system: string,
-  operation: "get" | "set" | "delete" | "clear",
-  hit: boolean,
-  key?: string
-): CacheAttributes
+function createCacheAttributes(system: string, operation: "get" | "set" | "delete" | "clear", hit: boolean, key?: string): CacheAttributes;
 
-function createAuthAttributes(
-  authenticated: boolean,
-  options?: { role?: string; method?: string; provider?: string }
-): AuthAttributes
+function createAuthAttributes(authenticated: boolean, options?: {role?: string; method?: string; provider?: string}): AuthAttributes;
 
-function createErrorAttributes(
-  error: Error | unknown,
-  handled: boolean
-): ErrorAttributes
+function createErrorAttributes(error: Error | unknown, handled: boolean): ErrorAttributes;
 ```
 
 ---
@@ -325,15 +291,15 @@ function createErrorAttributes(
 
 ```typescript
 export async function GET(request: NextRequest) {
-  return withSpan('api.user.get', async (span) => {
+  return withSpan("api.user.get", async (span) => {
     // Set semantic attributes
     span.setAttributes({
-      ...createHttpServerAttributes('GET', 200, {route: '/api/user'}),
-      ...createNextJsAttributes('api', {runtime: 'nodejs'}),
+      ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+      ...createNextJsAttributes("api", {runtime: "nodejs"}),
     });
 
     // Log with trace correlation
-    logWithTrace('info', 'Processing user request', undefined, 'api');
+    logWithTrace("info", "Processing user request", undefined, "api");
 
     try {
       const {userId} = await auth();
@@ -343,25 +309,25 @@ export async function GET(request: NextRequest) {
         const user = await currentUser();
 
         span.setAttributes({
-          ...createAuthAttributes(true, {method: 'clerk', provider: 'clerk'}),
+          ...createAuthAttributes(true, {method: "clerk", provider: "clerk"}),
         });
 
         requestCounter.add(1, {
-          ...createHttpServerAttributes('GET', 200, {route: '/api/user'}),
-          ...createAuthAttributes(true, {method: 'clerk'}),
+          ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+          ...createAuthAttributes(true, {method: "clerk"}),
         });
 
         return NextResponse.json(user);
       } else {
         // Guest user flow
-        const guestToken = await createJwtToken({role: 'guest'});
+        const guestToken = await createJwtToken({role: "guest"});
 
         span.setAttributes({
-          ...createAuthAttributes(false, {method: 'jwt', provider: 'internal'}),
+          ...createAuthAttributes(false, {method: "jwt", provider: "internal"}),
         });
 
         guestCounter.add(1, {
-          ...createHttpServerAttributes('GET', 200, {route: '/api/user'}),
+          ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
         });
 
         return NextResponse.json({token: guestToken});
@@ -369,10 +335,10 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       // Error handling with telemetry
       const errorAttrs = createErrorAttributes(error, true);
-      logWithTrace('error', 'Failed to process user request', errorAttrs, 'api');
+      logWithTrace("error", "Failed to process user request", errorAttrs, "api");
       recordSpanError(error);
 
-      return NextResponse.json({error: 'Internal Server Error'}, {status: 500});
+      return NextResponse.json({error: "Internal Server Error"}, {status: 500});
     }
   });
 }
@@ -382,15 +348,15 @@ export async function GET(request: NextRequest) {
 
 ```typescript
 export default async function UserProfile({userId}: {userId: string}) {
-  return withSpan('component.UserProfile', async (span) => {
+  return withSpan("component.UserProfile", async (span) => {
     span.setAttributes({
-      ...createNextJsAttributes('server', {
+      ...createNextJsAttributes("server", {
         serverComponents: true,
-        pageType: 'dynamic',
+        pageType: "dynamic",
       }),
     });
 
-    logWithTrace('debug', 'Rendering user profile', {userId}, 'server');
+    logWithTrace("debug", "Rendering user profile", {userId}, "server");
 
     const user = await fetchUser(userId);
     return <div>{user.name}</div>;
@@ -402,20 +368,20 @@ export default async function UserProfile({userId}: {userId: string}) {
 
 ```typescript
 async function queryUsers(filters: UserFilters) {
-  return withSpan('db.query', async (span) => {
+  return withSpan("db.query", async (span) => {
     span.setAttributes({
-      ...createDatabaseAttributes('postgresql', 'SELECT', {
-        collection: 'users',
+      ...createDatabaseAttributes("postgresql", "SELECT", {
+        collection: "users",
       }),
     });
 
     const startTime = Date.now();
-    const users = await db.query('SELECT * FROM users WHERE ...');
+    const users = await db.query("SELECT * FROM users WHERE ...");
     const duration = Date.now() - startTime;
 
     queryDurationHistogram.record(duration, {
-      'db.system': 'postgresql',
-      'db.operation': 'SELECT',
+      "db.system": "postgresql",
+      "db.operation": "SELECT",
     });
 
     return users;
@@ -427,20 +393,20 @@ async function queryUsers(filters: UserFilters) {
 
 ```typescript
 async function getCachedUser(userId: string) {
-  return withSpan('cache.get', async (span) => {
+  return withSpan("cache.get", async (span) => {
     const cached = await redis.get(`user:${userId}`);
     const hit = cached !== null;
 
     span.setAttributes({
-      ...createCacheAttributes('redis', 'get', hit, 'user'),
+      ...createCacheAttributes("redis", "get", hit, "user"),
     });
 
     if (hit) {
-      cacheHitCounter.add(1, {'cache.system': 'redis'});
+      cacheHitCounter.add(1, {"cache.system": "redis"});
       return JSON.parse(cached);
     }
 
-    cacheMissCounter.add(1, {'cache.system': 'redis'});
+    cacheMissCounter.add(1, {"cache.system": "redis"});
     const user = await fetchUser(userId);
     await redis.set(`user:${userId}`, JSON.stringify(user));
 
@@ -457,26 +423,30 @@ async function getCachedUser(userId: string) {
 
 ```typescript
 // ✅ Valid: Follows naming convention
-await withSpan('api.user.get', async (span) => { /* ... */ });
+await withSpan("api.user.get", async (span) => {
+  /* ... */
+});
 
 // ❌ TypeScript error: Invalid span name
-await withSpan('user-get', async (span) => { /* ... */ });
+await withSpan("user-get", async (span) => {
+  /* ... */
+});
 //           ~~~~~~~~~~
 // Type '"user-get"' is not assignable to type 'SpanOperationType'
 
 // ✅ Valid: Correct log level
-logWithTrace('info', 'Message', {}, 'api');
+logWithTrace("info", "Message", {}, "api");
 
 // ❌ TypeScript error: Invalid log level
-logWithTrace('information', 'Message', {}, 'api');
+logWithTrace("information", "Message", {}, "api");
 //           ~~~~~~~~~~~~~
 // Type '"information"' is not assignable to type 'LogLevel'
 
 // ✅ Valid: Correct HTTP method
-const attrs = createHttpServerAttributes('GET', 200);
+const attrs = createHttpServerAttributes("GET", 200);
 
 // ❌ TypeScript error: Invalid HTTP method
-const attrs = createHttpServerAttributes('get', 200);
+const attrs = createHttpServerAttributes("get", 200);
 //                                        ~~~~~
 // Type '"get"' is not assignable to type 'HttpMethod'
 ```
@@ -484,6 +454,7 @@ const attrs = createHttpServerAttributes('get', 200);
 ### 4.2 IntelliSense Support
 
 All types provide full autocomplete:
+
 - **Span names**: Suggests prefixes like `api.`, `http.server.`, `db.`
 - **Metric names**: Suggests semantic conventions
 - **Log levels**: `debug`, `info`, `warn`, `error`
@@ -496,12 +467,12 @@ All types provide full autocomplete:
 
 ### 5.1 Overhead Analysis
 
-| Operation | Overhead | Mitigation Strategy |
-|-----------|----------|---------------------|
-| Span creation | ~10-50μs | Batch span processor (reduces network calls) |
-| Metric recording | ~1-5μs | Periodic export (60s intervals) |
-| Log correlation | ~5-10μs | Conditional debug logging (production-disabled) |
-| Attribute setting | ~1-2μs per attribute | Helper functions create minimal attributes |
+| Operation         | Overhead             | Mitigation Strategy                             |
+| ----------------- | -------------------- | ----------------------------------------------- |
+| Span creation     | ~10-50μs             | Batch span processor (reduces network calls)    |
+| Metric recording  | ~1-5μs               | Periodic export (60s intervals)                 |
+| Log correlation   | ~5-10μs              | Conditional debug logging (production-disabled) |
+| Attribute setting | ~1-2μs per attribute | Helper functions create minimal attributes      |
 
 ### 5.2 Production Optimizations
 
@@ -564,16 +535,16 @@ export async function register() {
 
 The OTLP HTTP exporter is compatible with:
 
-| Backend | Traces | Metrics | Logs | Notes |
-|---------|--------|---------|------|-------|
-| Jaeger | ✅ | ❌ | ❌ | Native OTLP support in v1.35+ |
-| Prometheus | ❌ | ✅ | ❌ | Via OpenTelemetry Collector |
-| Grafana Tempo | ✅ | ❌ | ❌ | Native OTLP support |
-| Grafana Loki | ❌ | ❌ | ✅ | Via OpenTelemetry Collector |
-| Elastic APM | ✅ | ✅ | ✅ | Full OTLP support in 8.0+ |
-| Datadog | ✅ | ✅ | ✅ | Via Datadog Agent with OTLP receiver |
-| New Relic | ✅ | ✅ | ✅ | Native OTLP support |
-| Honeycomb | ✅ | ✅ | ❌ | Native OTLP support |
+| Backend       | Traces | Metrics | Logs | Notes                                |
+| ------------- | ------ | ------- | ---- | ------------------------------------ |
+| Jaeger        | ✅     | ❌      | ❌   | Native OTLP support in v1.35+        |
+| Prometheus    | ❌     | ✅      | ❌   | Via OpenTelemetry Collector          |
+| Grafana Tempo | ✅     | ❌      | ❌   | Native OTLP support                  |
+| Grafana Loki  | ❌     | ❌      | ✅   | Via OpenTelemetry Collector          |
+| Elastic APM   | ✅     | ✅      | ✅   | Full OTLP support in 8.0+            |
+| Datadog       | ✅     | ✅      | ✅   | Via Datadog Agent with OTLP receiver |
+| New Relic     | ✅     | ✅      | ✅   | Native OTLP support                  |
+| Honeycomb     | ✅     | ✅      | ❌   | Native OTLP support                  |
 
 ### 7.2 OpenTelemetry Collector
 
@@ -643,20 +614,20 @@ curl http://localhost:3000/api/user
 // tests/telemetry.test.ts
 import {createHttpServerAttributes, createNextJsAttributes} from "@/instrumentation.server";
 
-describe('Telemetry Helpers', () => {
-  it('creates valid HTTP server attributes', () => {
-    const attrs = createHttpServerAttributes('GET', 200, {route: '/api/user'});
+describe("Telemetry Helpers", () => {
+  it("creates valid HTTP server attributes", () => {
+    const attrs = createHttpServerAttributes("GET", 200, {route: "/api/user"});
 
-    expect(attrs['http.method']).toBe('GET');
-    expect(attrs['http.status_code']).toBe(200);
-    expect(attrs['http.route']).toBe('/api/user');
+    expect(attrs["http.method"]).toBe("GET");
+    expect(attrs["http.status_code"]).toBe(200);
+    expect(attrs["http.route"]).toBe("/api/user");
   });
 
-  it('creates valid Next.js attributes', () => {
-    const attrs = createNextJsAttributes('api', {runtime: 'nodejs'});
+  it("creates valid Next.js attributes", () => {
+    const attrs = createNextJsAttributes("api", {runtime: "nodejs"});
 
-    expect(attrs['next.render_context']).toBe('api');
-    expect(attrs['next.runtime']).toBe('nodejs');
+    expect(attrs["next.render_context"]).toBe("api");
+    expect(attrs["next.runtime"]).toBe("nodejs");
   });
 });
 ```
@@ -668,22 +639,24 @@ describe('Telemetry Helpers', () => {
 ### 9.1 From Untyped to Typed Telemetry
 
 **Before (untyped)**:
+
 ```typescript
-await withSpan('user-get', async (span) => {
-  span.setAttribute('method', 'get');
-  span.setAttribute('status', 200);
-  logWithTrace('info', 'Processing request');
+await withSpan("user-get", async (span) => {
+  span.setAttribute("method", "get");
+  span.setAttribute("status", 200);
+  logWithTrace("info", "Processing request");
 });
 ```
 
 **After (type-safe)**:
+
 ```typescript
-await withSpan('api.user.get', async (span) => {
+await withSpan("api.user.get", async (span) => {
   span.setAttributes({
-    ...createHttpServerAttributes('GET', 200, {route: '/api/user'}),
-    ...createNextJsAttributes('api', {runtime: 'nodejs'}),
+    ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+    ...createNextJsAttributes("api", {runtime: "nodejs"}),
   });
-  logWithTrace('info', 'Processing request', undefined, 'api');
+  logWithTrace("info", "Processing request", undefined, "api");
 });
 ```
 
@@ -725,10 +698,10 @@ await withSpan('api.user.get', async (span) => {
 
 ```typescript
 // ❌ BAD: Logs sensitive information
-logWithTrace('info', 'User login', {password: user.password});
+logWithTrace("info", "User login", {password: user.password});
 
 // ✅ GOOD: Logs only non-sensitive identifiers
-logWithTrace('info', 'User login', {userId: user.id});
+logWithTrace("info", "User login", {userId: user.id});
 ```
 
 ### 11.2 Attribute Redaction
@@ -741,8 +714,8 @@ class SensitiveDataProcessor implements SpanProcessor {
   onStart(span: Span) {
     // Redact sensitive attributes
     const attrs = span.attributes;
-    if ('user.email' in attrs) {
-      span.setAttribute('user.email', '[REDACTED]');
+    if ("user.email" in attrs) {
+      span.setAttribute("user.email", "[REDACTED]");
     }
   }
 }
@@ -761,6 +734,7 @@ class SensitiveDataProcessor implements SpanProcessor {
 ### 12.1 OpenTelemetry Specification
 
 This implementation complies with:
+
 - [OpenTelemetry Specification 1.0](https://opentelemetry.io/docs/specs/otel/)
 - [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
@@ -768,12 +742,12 @@ This implementation complies with:
 
 ### 12.2 Semantic Convention Alignment
 
-| Domain | Convention | Compliance |
-|--------|------------|------------|
-| HTTP | [HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/) | ✅ Fully compliant |
-| Database | [Database Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/) | ✅ Fully compliant |
-| RPC | [RPC Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/rpc/) | ⚠️ Partial (internal APIs) |
-| Messaging | [Messaging Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/messaging/) | ❌ Not applicable |
+| Domain    | Convention                                                                               | Compliance                 |
+| --------- | ---------------------------------------------------------------------------------------- | -------------------------- |
+| HTTP      | [HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/)           | ✅ Fully compliant         |
+| Database  | [Database Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/)   | ✅ Fully compliant         |
+| RPC       | [RPC Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/rpc/)             | ⚠️ Partial (internal APIs) |
+| Messaging | [Messaging Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/messaging/) | ❌ Not applicable          |
 
 ---
 
@@ -799,9 +773,12 @@ This implementation complies with:
 
 ## 14. Conclusion
 
-This RFC documents a production-ready observability system that leverages the OpenTelemetry packages currently declared for the website runtime with a strongly-typed API tailored for Next.js 16 applications. The type system enforces semantic conventions, prevents common instrumentation errors, and provides excellent developer experience through IntelliSense support.
+This RFC documents a production-ready observability system that leverages the OpenTelemetry packages currently declared for the website
+runtime with a strongly-typed API tailored for Next.js 16 applications. The type system enforces semantic conventions, prevents common
+instrumentation errors, and provides excellent developer experience through IntelliSense support.
 
 **Key Achievements**:
+
 - ✅ Type-safe API with compile-time enforcement
 - ✅ Semantic convention compliance
 - ✅ Next.js architecture awareness (SSR/CSR/Edge/API)
@@ -896,13 +873,7 @@ interface ErrorAttributes {
   "error.handled": boolean;
 }
 
-type SemanticAttributes =
-  | HttpAttributes
-  | NextJsAttributes
-  | DatabaseAttributes
-  | CacheAttributes
-  | AuthAttributes
-  | ErrorAttributes;
+type SemanticAttributes = HttpAttributes | NextJsAttributes | DatabaseAttributes | CacheAttributes | AuthAttributes | ErrorAttributes;
 
 type TelemetryAttributes = Record<string, string | number | boolean | undefined>;
 ```
@@ -911,19 +882,16 @@ type TelemetryAttributes = Record<string, string | number | boolean | undefined>
 
 ## Appendix B: Metric Naming Conventions
 
-| Metric Type | Naming Pattern | Example | Unit |
-|-------------|----------------|---------|------|
-| Request Count | `<component>.requests` | `api.user.requests` | `1` |
-| Duration | `<component>.duration` | `db.query.duration` | `ms` |
-| Active Connections | `<component>.active` | `http.server.active` | `1` |
-| Cache Hits | `cache.<system>.hits` | `cache.redis.hits` | `1` |
-| Cache Misses | `cache.<system>.misses` | `cache.redis.misses` | `1` |
-| Error Count | `<component>.errors` | `api.user.errors` | `1` |
-| Queue Size | `<component>.queue_size` | `business.invoice.queue_size` | `1` |
+| Metric Type        | Naming Pattern           | Example                       | Unit |
+| ------------------ | ------------------------ | ----------------------------- | ---- |
+| Request Count      | `<component>.requests`   | `api.user.requests`           | `1`  |
+| Duration           | `<component>.duration`   | `db.query.duration`           | `ms` |
+| Active Connections | `<component>.active`     | `http.server.active`          | `1`  |
+| Cache Hits         | `cache.<system>.hits`    | `cache.redis.hits`            | `1`  |
+| Cache Misses       | `cache.<system>.misses`  | `cache.redis.misses`          | `1`  |
+| Error Count        | `<component>.errors`     | `api.user.errors`             | `1`  |
+| Queue Size         | `<component>.queue_size` | `business.invoice.queue_size` | `1`  |
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2025-10-11
-**Reviewed By**: arolariu
-**Status**: ✅ Implemented and Production-Ready
+**Document Version**: 1.0.0 **Last Updated**: 2025-10-11 **Reviewed By**: arolariu **Status**: ✅ Implemented and Production-Ready

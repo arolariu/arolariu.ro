@@ -1,0 +1,21 @@
+{
+  "collection": {"info": {"name": "Serialized API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"}},
+  "run": {
+    "stats": {"requests": {"total": 2, "failed": 2}, "assertions": {"total": 1, "failed": 1}},
+    "timings": {"started": 1767225600000, "completed": 1767225601200, "responseAverage": 25, "responseMin": 25, "responseMax": 25},
+    "executions": [
+      {
+        "item": {"name": "Unavailable"},
+        "request": {"method": "GET", "url": {"protocol": "https", "host": ["example", "invalid"], "path": ["api"]}},
+        "response": {"code": 503, "status": "Unavailable", "responseTime": 25, "stream": {"type": "Buffer", "data": [98, 97, 100]}},
+        "assertions": [{"assertion": "Status is 200", "error": {"name": "AssertionError", "message": "expected 503 to equal 200"}}]
+      },
+      {
+        "item": {"name": "Timeout"},
+        "request": {"method": "GET", "url": "https://example.invalid/slow"},
+        "requestError": {"code": "ETIMEDOUT", "message": "Request timeout"},
+        "assertions": []
+      }
+    ]
+  }
+}

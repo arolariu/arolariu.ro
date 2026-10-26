@@ -3,27 +3,22 @@
 - **Status**: Implemented
 - **Date**: 2025-12-25
 - **Authors**: Alexandru-Razvan Olariu
-- **Related Components**: `sites/arolariu.ro/messages`,
-  `sites/arolariu.ro/src/i18n`, website routes/components, generated message
+- **Related Components**: `sites/arolariu.ro/messages`, `sites/arolariu.ro/src/i18n`, website routes/components, generated message
   declarations
 
 ---
 
 ## Abstract
 
-The website uses `next-intl` for request locale/message delivery and
-`next-intl-selector` for typed selector-based access. English, Romanian, and
-French message files share one structural schema. Server and Client Components
-select values through callbacks against generated message types.
+The website uses `next-intl` for request locale/message delivery and `next-intl-selector` for typed selector-based access. English,
+Romanian, and French message files share one structural schema. Server and Client Components select values through callbacks against
+generated message types.
 
-All user-visible copy should be message-owned. A small number of current
-components still contain hard-coded visible/accessibility strings (including
-scan and sharing surfaces); those are implementation debt, not examples to
-copy.
+All user-visible copy should be message-owned. A small number of current components still contain hard-coded visible/accessibility strings
+(including scan and sharing surfaces); those are implementation debt, not examples to copy.
 
-Live message files, i18n request configuration, generated declarations, and
-consumers are authoritative. This RFC records the intended ownership and
-invariants.
+Live message files, i18n request configuration, generated declarations, and consumers are authoritative. This RFC records the intended
+ownership and invariants.
 
 ## Goals
 
@@ -32,8 +27,7 @@ invariants.
 - Server-owned locale selection and message loading.
 - ICU messages for interpolation, plurals, select branches, dates, and times.
 - Localized metadata, accessibility text, email copy, and errors.
-- Generated declarations derived from the source locale rather than edited by
-  hand.
+- Generated declarations derived from the source locale rather than edited by hand.
 
 ## Supported locale flow
 
@@ -45,10 +39,8 @@ invariants.
 4. dynamically imports the complete selected locale dictionary;
 5. configures the request time zone.
 
-`app/layout.tsx` obtains the selected dictionary and passes it through the
-root client providers. One complete locale dictionary currently crosses that
-provider boundary. Do not claim per-key tree shaking or copy static bundle
-sizes without a current measured build.
+`app/layout.tsx` obtains the selected dictionary and passes it through the root client providers. One complete locale dictionary currently
+crosses that provider boundary. Do not claim per-key tree shaking or copy static bundle sizes without a current measured build.
 
 ## Message ownership
 
@@ -66,8 +58,7 @@ sites/arolariu.ro/messages/
 - Run the repository-owned i18n generator after source-message changes.
 - Never edit `en.d.json.ts` manually.
 
-The generator and live selector types, not this RFC, own the exact emitted
-declaration shape.
+The generator and live selector types, not this RFC, own the exact emitted declaration shape.
 
 ## Typed selector usage
 
@@ -80,8 +71,7 @@ const t = await getTranslations();
 const title = t((messages) => messages.pages.invoices.landing.metadata.title);
 ```
 
-Use the server import for Server Components, layouts, Route Handlers, private
-server helpers, and `generateMetadata`.
+Use the server import for Server Components, layouts, Route Handlers, private server helpers, and `generateMetadata`.
 
 ### Client Components
 
@@ -96,8 +86,7 @@ export function Heading(): React.JSX.Element {
 }
 ```
 
-Do not switch new work back to string namespace calls such as
-`useTranslations("Footer")`. Selector callbacks preserve generated key
+Do not switch new work back to string namespace calls such as `useTranslations("Footer")`. Selector callbacks preserve generated key
 checking through nested message structures.
 
 ## Metadata schema
@@ -119,17 +108,14 @@ Page-level SEO copy uses the live nested `metadata` objects:
 }
 ```
 
-`__metadata__` is not an alternate supported convention. Current locale files
-contain `metadata`; preserve the neighboring route's schema and update all
-locales plus generated declarations together.
+`__metadata__` is not an alternate supported convention. Current locale files contain `metadata`; preserve the neighboring route's schema
+and update all locales plus generated declarations together.
 
-Metadata lifecycle and `createMetadata` behavior are owned by RFC 1004 and
-live source.
+Metadata lifecycle and `createMetadata` behavior are owned by RFC 1004 and live source.
 
 ## ICU messages
 
-Use ICU syntax when one message needs runtime values or language-specific
-branches:
+Use ICU syntax when one message needs runtime values or language-specific branches:
 
 ```json
 {
@@ -140,31 +126,26 @@ branches:
 - Keep placeholder names identical across locales.
 - Pass typed values at the selector call site.
 - Use plural/select/date/time formatting rather than string concatenation.
-- Keep markup out of messages unless the current rich-text consumer explicitly
-  owns it.
+- Keep markup out of messages unless the current rich-text consumer explicitly owns it.
 
-Server formatting uses server APIs such as `getFormatter`; Client Components
-use the matching client hooks. Do not await a client Hook or import it into a
-Server Component.
+Server formatting uses server APIs such as `getFormatter`; Client Components use the matching client hooks. Do not await a client Hook or
+import it into a Server Component.
 
 ## Accessibility and errors
 
 Translate user-visible:
 
 - headings, labels, descriptions, buttons, empty/loading/error states;
-- `aria-label`, visually hidden text, live-region status, and validation
-  messages;
+- `aria-label`, visually hidden text, live-region status, and validation messages;
 - metadata and social descriptions;
 - transactional email content;
 - recoverable Server Action messages shown to users.
 
-Stable machine identifiers, event names, metric labels, route paths, and
-provider error codes are not locale strings.
+Stable machine identifiers, event names, metric labels, route paths, and provider error codes are not locale strings.
 
 ## Server Actions
 
-A `"use server"` export remains implemented on the server but is
-browser-callable RPC. It must:
+A `"use server"` export remains implemented on the server but is browser-callable RPC. It must:
 
 - validate browser-controlled input;
 - derive identity server-side through the established auth boundary;
@@ -172,8 +153,7 @@ browser-callable RPC. It must:
 - return the established typed result contract;
 - translate only user-visible messages.
 
-Do not accept a caller-supplied JWT merely because the action executes on the
-server.
+Do not accept a caller-supplied JWT merely because the action executes on the server.
 
 ## Validation
 
@@ -185,15 +165,14 @@ For message changes:
 - test ICU branches and user-visible behavior at the owning component/action;
 - inspect metadata/email consumers when their key paths change.
 
-For route or component work, use the matching React/i18n skill and the smallest
-current project validation rather than duplicating commands here.
+For route or component work, use the matching React/i18n skill and the smallest current project validation rather than duplicating commands
+here.
 
 ## Trade-offs
 
-The full locale dictionary simplifies one consistent root provider and
-server/client selector API, but it increases the client handoff size. A future
-message-splitting design would require measured bundle evidence and a new
-loading contract; it is not implied by the current selector API.
+The full locale dictionary simplifies one consistent root provider and server/client selector API, but it increases the client handoff size.
+A future message-splitting design would require measured bundle evidence and a new loading contract; it is not implied by the current
+selector API.
 
 ## References
 

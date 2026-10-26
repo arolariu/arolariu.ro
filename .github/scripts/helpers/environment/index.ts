@@ -7,7 +7,7 @@
  * Follows Single Responsibility Principle by focusing solely on environment access and validation.
  */
 
-import * as core from "@actions/core";
+import * as core from "../sdk/core.ts";
 
 /**
  * Configuration for environment variable retrieval
@@ -21,6 +21,14 @@ export interface EnvConfig {
   required?: boolean;
   /** Custom validation function */
   validator?: (value: string) => boolean;
+}
+
+/**
+ * Reads the current directory at the resource boundary, without changing it.
+ * @returns Native absolute working directory for a local execution fallback.
+ */
+export function getWorkingDirectory(): string {
+  return process.cwd();
 }
 
 /**
@@ -60,14 +68,16 @@ export interface IEnvironmentHelper {
    * @param key - Variable name
    * @param defaultValue - Optional default value
    * @returns Variable value or default, undefined if not set
+   * @remarks Ordinary lookup retains legacy "null"/"undefined" sentinel handling;
+   * typed boolean/integer reads reject those supplied invalid strings.
    */
   get(key: string, defaultValue?: string): string | undefined;
 
   /**
-   * Gets a required environment variable, fails workflow if missing
+   * Gets a required environment variable without changing action status.
    * @param key - Variable name
    * @returns Variable value
-   * @throws Sets workflow failure via core.setFailed if missing
+   * @throws {Error} When the value is missing or empty.
    */
   getRequired(key: string): string;
 
@@ -75,7 +85,7 @@ export interface IEnvironmentHelper {
    * Gets multiple required environment variables
    * @param keys - Array of variable names
    * @returns Record mapping variable names to values
-   * @throws Sets workflow failure if any variable is missing
+   * @throws {Error} When any requested variable is missing.
    */
   getRequiredBatch(keys: readonly string[]): Readonly<Record<string, string>>;
 
@@ -87,18 +97,26 @@ export interface IEnvironmentHelper {
   has(key: string): boolean;
 
   /**
+   * Captures a shallow immutable variable record for one execution.
+   * @returns A copy of the current source; it may contain secrets and must not be logged or serialized into reports.
+   */
+  snapshot(): Readonly<Record<string, string | undefined>>;
+
+  /**
    * Parses an environment variable as boolean
    * @param key - Variable name
    * @param defaultValue - Default value if not set
-   * @returns Boolean value
+   * @returns A recognized true/false value, or the default only when absent.
+   * @throws {Error} When a supplied value is not true/false, 1/0, or yes/no.
    */
   getBoolean(key: string, defaultValue?: boolean): boolean;
 
   /**
    * Parses an environment variable as integer
    * @param key - Variable name
-   * @param defaultValue - Default value if not set or invalid
-   * @returns Integer value
+   * @param defaultValue - Default value only when the variable is absent.
+   * @returns A safe integer.
+   * @throws {Error} When a supplied value is not a complete safe integer.
    */
   getInt(key: string, defaultValue: number): number;
 
@@ -122,20 +140,35 @@ export interface IEnvironmentHelper {
  * Provides clean, type-safe access to environment variables
  */
 export class EnvironmentHelper implements IEnvironmentHelper {
+  private readonly variables: Readonly<Record<string, string | undefined>> | undefined;
+
+  /**
+   * Selects a stable injected source or live ambient lookups.
+   * @param variables - Optional record copied once; omission reads the current process environment on each lookup.
+   */
+  constructor(variables?: Readonly<Record<string, string | undefined>>) {
+    this.variables = variables === undefined ? undefined : Object.freeze({...variables});
+  }
+
   /**
    * Checks if a value is considered empty/null
    * @param value - Value to check
    * @returns True if value is empty, null, undefined, or the string representations
    */
   private isEmptyValue(value: string | undefined): boolean {
-    return !value || value === "null" || value === "" || value === "undefined";
+    return !value || value.trim().length === 0 || value === "null" || value === "undefined";
+  }
+
+  private typedValue(key: string): string | undefined {
+    const value = (this.variables ?? process.env)[key];
+    return value === undefined || value.trim().length === 0 ? undefined : value;
   }
 
   /**
    * {@inheritDoc IEnvironmentHelper.get}
    */
   get(key: string, defaultValue?: string): string | undefined {
-    const value = process.env[key];
+    const value = (this.variables ?? process.env)[key];
 
     if (this.isEmptyValue(value)) {
       return defaultValue;
@@ -152,7 +185,6 @@ export class EnvironmentHelper implements IEnvironmentHelper {
 
     if (!value) {
       const errorMessage = `Required environment variable '${key}' is not set or is empty`;
-      core.setFailed(errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -177,7 +209,6 @@ export class EnvironmentHelper implements IEnvironmentHelper {
 
     if (missingVars.length > 0) {
       const errorMessage = `Missing required environment variables: ${missingVars.join(", ")}`;
-      core.setFailed(errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -189,36 +220,47 @@ export class EnvironmentHelper implements IEnvironmentHelper {
    * {@inheritDoc IEnvironmentHelper.has}
    */
   has(key: string): boolean {
-    const value = process.env[key];
+    const value = (this.variables ?? process.env)[key];
     return !this.isEmptyValue(value);
+  }
+
+  /** {@inheritDoc IEnvironmentHelper.snapshot} */
+  snapshot(): Readonly<Record<string, string | undefined>> {
+    return Object.freeze({...(this.variables ?? process.env)});
   }
 
   /**
    * {@inheritDoc IEnvironmentHelper.getBoolean}
    */
   getBoolean(key: string, defaultValue: boolean = false): boolean {
-    const value = this.get(key);
+    const value = this.typedValue(key);
 
     if (!value) {
       return defaultValue;
     }
 
     const normalized = value.toLowerCase().trim();
-    return normalized === "true" || normalized === "1" || normalized === "yes";
+    if (normalized === "true" || normalized === "1" || normalized === "yes") return true;
+    if (normalized === "false" || normalized === "0" || normalized === "no") return false;
+    throw new Error(`Environment variable '${key}' must be a boolean`);
   }
 
   /**
    * {@inheritDoc IEnvironmentHelper.getInt}
    */
   getInt(key: string, defaultValue: number): number {
-    const value = this.get(key);
+    const value = this.typedValue(key);
 
     if (!value) {
       return defaultValue;
     }
 
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? defaultValue : parsed;
+    const normalized = value.trim();
+    const parsed = Number(normalized);
+    if (!/^[+-]?\d+$/.test(normalized) || !Number.isSafeInteger(parsed)) {
+      throw new Error(`Environment variable '${key}' must be a safe integer`);
+    }
+    return parsed;
   }
 
   /**
@@ -251,13 +293,11 @@ export class EnvironmentHelper implements IEnvironmentHelper {
 
     if (required && !value) {
       const errorMessage = `Required environment variable '${key}' is not set or is empty`;
-      core.setFailed(errorMessage);
       throw new Error(errorMessage);
     }
 
     if (value && validator && !validator(value)) {
-      const errorMessage = `Environment variable '${key}' failed validation: ${value}`;
-      core.setFailed(errorMessage);
+      const errorMessage = `Environment variable '${key}' failed validation`;
       throw new Error(errorMessage);
     }
 
@@ -267,6 +307,7 @@ export class EnvironmentHelper implements IEnvironmentHelper {
 
 /**
  * Creates a new instance of the environment helper
+ * @param variables - Optional immutable input source; omission retains live environment lookups.
  * @returns Environment helper instance
  * @example
  * ```typescript
@@ -276,8 +317,8 @@ export class EnvironmentHelper implements IEnvironmentHelper {
  * const isProduction = env.getBoolean('IS_PRODUCTION', false);
  * ```
  */
-export function createEnvironmentHelper(): IEnvironmentHelper {
-  return new EnvironmentHelper();
+export function createEnvironmentHelper(variables?: Readonly<Record<string, string | undefined>>): IEnvironmentHelper {
+  return new EnvironmentHelper(variables);
 }
 
 /**

@@ -1,0 +1,8 @@
+{
+  "scenario": "failed-job-rerun",
+  "currentAttempt": 2,
+  "replacedProvider": "format",
+  "originatingAttempt": 1,
+  "replacementAttempt": 2,
+  "expectedOverallResult": "passed"
+}

@@ -103,15 +103,12 @@ For `@arolariu/components`:
 - never import from `sites/**`;
 - preserve Base UI `useRender`/`mergeProps`, ref forwarding, and native-first interaction;
 - retain existing `asChild` compatibility but do not spread it to new APIs;
-- colocate component, focused test, Storybook story, and a CSS Module when the
-  component owns visual presentation;
+- colocate component, focused test, Storybook story, and a CSS Module when the component owns visual presentation;
 - export every supported component and public type from `src/index.ts`;
 - validate both direct implementation imports and the package entry point.
 
-Moving a component file without its owned style/test/story or forgetting the
-barrel creates an orphaned or unreachable API even if its local test passes.
-`button.tsx`, `button.module.css`, `button.test.tsx`,
-`button.stories.tsx`, and `src/index.ts` are the styled inspection set;
+Moving a component file without its owned style/test/story or forgetting the barrel creates an orphaned or unreachable API even if its local
+test passes. `button.tsx`, `button.module.css`, `button.test.tsx`, `button.stories.tsx`, and `src/index.ts` are the styled inspection set;
 `async-boundary.tsx` is the intentional style-free composition example.
 
 For ordinary TypeScript barrels, avoid widening an internal symbol into a public contract merely to shorten imports. Preserve
@@ -138,8 +135,7 @@ layout rely on them. Preserve semantic markup alongside CSS so accessibility doe
 If a structural move touches user-visible website copy, preserve the same typed selector and identical key shape in `en`, `ro`, and `fr`; do
 not rename keys as cleanup. Generated message declarations follow source messages and must not be maintained by hand.
 
-Keep route metadata in the server route and build it through the shared
-metadata helper and nested `metadata` message shape.
+Keep route metadata in the server route and build it through the shared metadata helper and nested `metadata` message shape.
 
 ### Accessibility
 

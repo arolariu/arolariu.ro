@@ -160,7 +160,10 @@ export const readDirectoryEntries: (
     names,
     (name) =>
       fs.stat(path.join(directory, name)).pipe(
-        Effect.map((info): DocumentationEntry => ({name, kind: info.type === "File" ? "file" : info.type === "Directory" ? "directory" : "other"})),
+        Effect.map((info): DocumentationEntry => ({
+          name,
+          kind: info.type === "File" ? "file" : info.type === "Directory" ? "directory" : "other",
+        })),
         Effect.orElseSucceed((): DocumentationEntry => ({name, kind: "other"})),
       ),
     {concurrency: "unbounded"},

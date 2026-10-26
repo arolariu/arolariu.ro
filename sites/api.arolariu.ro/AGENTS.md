@@ -1,7 +1,6 @@
 # API Local Guide
 
-Root `AGENTS.md` owns repository-wide versions, commands, safety, C# testing,
-and Git rules. This file records only API architecture.
+Root `AGENTS.md` owns repository-wide versions, commands, safety, C# testing, and Git rules. This file records only API architecture.
 
 ## The Standard
 
@@ -18,19 +17,18 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Foundation owns CRUD and domain validation.
 - Brokers wrap external systems and contain no business logic.
 - Foundation services never call other Foundation services.
-- Follow root `AGENTS.md` for the direct-domain collaborator budget;
-  framework and support dependencies such as `ILoggerFactory` do not count.
-- Core.Auth is a deliberate exception and calls ASP.NET Core Identity managers
-  directly from its endpoints.
+- Follow root `AGENTS.md` for the direct-domain collaborator budget; framework and support dependencies such as `ILoggerFactory` do not
+  count.
+- Core.Auth is a deliberate exception and calls ASP.NET Core Identity managers directly from its endpoints.
 
 ## Bounded Contexts
 
-| Context | Path | Responsibility |
-| --- | --- | --- |
-| Core | `src/Core/` | Host, infrastructure, middleware, health |
-| Auth | `src/Core.Auth/` | Authentication and identity |
-| Invoices | `src/Invoices/` | Invoice lifecycle, merchants, analysis |
-| Common | `src/Common/` | Shared DDD and telemetry contracts |
+| Context  | Path             | Responsibility                           |
+| -------- | ---------------- | ---------------------------------------- |
+| Core     | `src/Core/`      | Host, infrastructure, middleware, health |
+| Auth     | `src/Core.Auth/` | Authentication and identity              |
+| Invoices | `src/Invoices/`  | Invoice lifecycle, merchants, analysis   |
+| Common   | `src/Common/`    | Shared DDD and telemetry contracts       |
 
 ## Service Contract
 
@@ -43,8 +41,7 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 
 ## Local Verification
 
-Use the API build/test commands owned by root `AGENTS.md`, selecting the
-smallest relevant project or test subset.
+Use the API build/test commands owned by root `AGENTS.md`, selecting the smallest relevant project or test subset.
 
 ## Architecture References
 

@@ -10,6 +10,29 @@ import {describe, expect, it} from "vitest";
 import {createCommentBuilder, MarkdownUtils} from "./index";
 
 describe("CommentBuilder", () => {
+  it("chooses a fence longer than every embedded backtick run", () => {
+    expect(MarkdownUtils.fence("```", "text")).toBe("````text\n```\n````");
+    expect(createCommentBuilder().addCodeBlock("````\nbody", "text").build()).toBe("`````text\n````\nbody\n`````\n");
+  });
+
+  it.each(["text\n```", "`text`"])("rejects a fence-breaking language %j", (language) => {
+    expect(() => MarkdownUtils.fence("body", language)).toThrow();
+  });
+
+  it("escapes table delimiters and line endings in headers and cells", () => {
+    expect(MarkdownUtils.tableCell("a|b\nc")).toBe("a\\|b<br>c");
+    expect(MarkdownUtils.tableCell("a\r\nb\rc")).toBe("a<br>b<br>c");
+    expect(
+      createCommentBuilder()
+        .addTable([{header: "a|b"}], [["c|d\nnext"]])
+        .build(),
+    ).toContain("| a\\|b |\n| --- |\n| c\\|d<br>next |");
+  });
+
+  it("leaves explicitly raw Markdown unescaped", () => {
+    const raw = "| raw | table |\n```\ncode\n```";
+    expect(createCommentBuilder().addRaw(raw).build()).toBe(`${raw}\n`);
+  });
   it("should build empty comment", () => {
     const builder = createCommentBuilder();
     expect(builder.build()).toBe("");

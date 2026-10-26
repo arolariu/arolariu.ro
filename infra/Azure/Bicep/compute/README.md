@@ -1,6 +1,7 @@
 # 💻 Compute Module
 
-This module provisions Linux-based Azure App Service Plans for production and development workloads, with secure defaults and managed identity integration.
+This module provisions Linux-based Azure App Service Plans for production and development workloads, with secure defaults and managed
+identity integration.
 
 ## 📋 Overview
 
@@ -10,10 +11,10 @@ This module provisions Linux-based Azure App Service Plans for production and de
 
 ## 📁 Module Files
 
-| File                      | Purpose                                    |
-| ------------------------- | ------------------------------------------ |
-| `deploymentFile.bicep`    | Orchestrates App Service Plan deployments  |
-| `appServicePlans.bicep`   | App Service Plans (production & development)|
+| File                    | Purpose                                      |
+| ----------------------- | -------------------------------------------- |
+| `deploymentFile.bicep`  | Orchestrates App Service Plan deployments    |
+| `appServicePlans.bicep` | App Service Plans (production & development) |
 
 ## 🏗️ Resources Created
 

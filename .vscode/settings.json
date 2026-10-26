@@ -20,7 +20,7 @@
   },
 
   // Enable experimental TSGo (Go-based TypeScript) type-checker
-  "js/ts.experimental.useTsgo":true,
+  "js/ts.experimental.useTsgo": true,
 
   // Breadcrumbs Settings
   "breadcrumbs.enabled": true,
@@ -553,10 +553,7 @@
 
   // i18n Settings
   "i18n-ally.keystyle": "nested",
-  "i18n-ally.localesPaths": [
-    "sites/arolariu.ro/messages",
-    "sites/arolariu.ro/src/i18n"
-  ],
+  "i18n-ally.localesPaths": ["sites/arolariu.ro/messages", "sites/arolariu.ro/src/i18n"],
 
   // JSON Settings
   "json.format.enable": true,

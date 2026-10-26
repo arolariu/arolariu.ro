@@ -285,8 +285,7 @@ describe("useInvoiceMetadataAdd", () => {
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
       let promise:
-        | Promise<Readonly<{successCount: number; failureCount: number; failedItems: readonly {key: string; value: string}[]}>>
-        | undefined;
+        Promise<Readonly<{successCount: number; failureCount: number; failedItems: readonly {key: string; value: string}[]}>> | undefined;
       act(() => {
         promise = result.current.addMetadataCallback({key: "value"});
       });

@@ -493,9 +493,14 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
   });
 
   it("identifies exp DNS failures using the nested transport code without disclosing messages", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("sensitive-exp-request-message", {
-      cause: Object.assign(new Error("sensitive-exp-hostname"), {code: "ENOTFOUND"}),
-    })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(
+        new TypeError("sensitive-exp-request-message", {
+          cause: Object.assign(new Error("sensitive-exp-hostname"), {code: "ENOTFOUND"}),
+        }),
+      ),
+    );
     const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
 
     const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);
@@ -556,11 +561,14 @@ describe("initializeRuntimeEnvironmentConfiguration", () => {
   });
 
   it("omits unknown error names and codes instead of trusting arbitrary provider values", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue({
-      name: "private-error-name",
-      code: "private-error-code",
-      message: "private-error-message",
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue({
+        name: "private-error-name",
+        code: "private-error-code",
+        message: "private-error-message",
+      }),
+    );
     const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
 
     const error: unknown = await initializeRuntimeEnvironmentConfiguration().catch((failure: unknown) => failure);

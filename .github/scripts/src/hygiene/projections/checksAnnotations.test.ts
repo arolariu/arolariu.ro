@@ -39,8 +39,11 @@ describe("findingsToAnnotations", () => {
 describe("batchAnnotations", () => {
   it("splits into chunks of 50", () => {
     const items = Array.from({length: 130}, (_, i) => ({
-      path: "x", start_line: i, end_line: i,
-      annotation_level: "warning" as const, message: String(i),
+      path: "x",
+      start_line: i,
+      end_line: i,
+      annotation_level: "warning" as const,
+      message: String(i),
     }));
     const batches = batchAnnotations(items, 50);
     expect(batches).toHaveLength(3);
@@ -54,8 +57,11 @@ describe("postAnnotations", () => {
   it("calls update once per batch", async () => {
     const update = vi.fn().mockResolvedValue({});
     const items = Array.from({length: 75}, (_, i) => ({
-      path: "x", start_line: i, end_line: i,
-      annotation_level: "warning" as const, message: String(i),
+      path: "x",
+      start_line: i,
+      end_line: i,
+      annotation_level: "warning" as const,
+      message: String(i),
     }));
     await postAnnotations(items, {checkRunId: 1, owner: "o", repo: "r", update});
     expect(update).toHaveBeenCalledTimes(2);

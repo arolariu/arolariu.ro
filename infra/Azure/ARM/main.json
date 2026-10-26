@@ -4,9 +4,7 @@
   "contentVersion": "1.0.0.0",
   "metadata": {
     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-    "_EXPERIMENTAL_FEATURES_ENABLED": [
-      "Enable @validate() decorator"
-    ],
+    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
@@ -35,12 +33,7 @@
     },
     "resourceGroupLocation": {
       "type": "string",
-      "allowedValues": [
-        "francecentral",
-        "northeurope",
-        "westeurope",
-        "swedencentral"
-      ],
+      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
       "metadata": {
         "description": "The location of the resource group that will contain all the resources."
       }
@@ -98,9 +91,7 @@
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-            "_EXPERIMENTAL_FEATURES_ENABLED": [
-              "Enable @validate() decorator"
-            ],
+            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
@@ -120,12 +111,7 @@
             },
             "resourceLocation": {
               "type": "string",
-              "allowedValues": [
-                "francecentral",
-                "northeurope",
-                "westeurope",
-                "swedencentral"
-              ],
+              "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
               "metadata": {
                 "description": "The location for the resources."
               }
@@ -167,9 +153,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -217,12 +201,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -264,9 +243,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -309,21 +286,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -382,12 +352,7 @@
                             },
                             "userAssignedManagedIdentityLocation": {
                               "type": "string",
-                              "allowedValues": [
-                                "francecentral",
-                                "northeurope",
-                                "westeurope",
-                                "swedencentral"
-                              ],
+                              "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                               "metadata": {
                                 "description": "The location of the user assigned managed identities"
                               }
@@ -482,9 +447,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -563,17 +526,13 @@
                               "properties": {
                                 "issuer": "https://token.actions.githubusercontent.com",
                                 "subject": "[variables('federatedCredentials')[copyIndex()].subject]",
-                                "audiences": [
-                                  "api://AzureADTokenExchange"
-                                ]
+                                "audiences": ["api://AzureADTokenExchange"]
                               }
                             }
                           }
                         }
                       },
-                      "dependsOn": [
-                        "managedIdentities"
-                      ]
+                      "dependsOn": ["managedIdentities"]
                     },
                     "securityGroups": {
                       "type": "Microsoft.Resources/deployments",
@@ -590,9 +549,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -676,9 +633,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -697,12 +652,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the App Configuration resource."
                       }
@@ -745,9 +695,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -763,21 +711,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -1010,9 +951,7 @@
                                   "enabled": true
                                 }
                               },
-                              "dependsOn": [
-                                "keyVault"
-                              ]
+                              "dependsOn": ["keyVault"]
                             }
                           },
                           "outputs": {
@@ -1058,9 +997,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -1076,21 +1013,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -1530,9 +1460,7 @@
                               "properties": {
                                 "value": "[variables('configs').items[copyIndex()].value]"
                               },
-                              "dependsOn": [
-                                "appConfiguration"
-                              ]
+                              "dependsOn": ["appConfiguration"]
                             }
                           },
                           "outputs": {
@@ -1588,9 +1516,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -1615,12 +1541,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -1653,9 +1574,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -1671,21 +1590,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -1847,9 +1759,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -1865,21 +1775,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -2016,9 +1919,7 @@
                           }
                         }
                       },
-                      "dependsOn": [
-                        "logAnalyticsWorkspaceDeployment"
-                      ]
+                      "dependsOn": ["logAnalyticsWorkspaceDeployment"]
                     }
                   },
                   "outputs": {
@@ -2037,10 +1938,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "configurationDeployment",
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["configurationDeployment", "identitiesDeployment"]
             },
             "storageDeployment": {
               "type": "Microsoft.Resources/deployments",
@@ -2068,9 +1966,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -2097,12 +1993,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -2141,9 +2032,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -2159,21 +2048,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -2293,9 +2175,7 @@
                               "properties": {
                                 "publicAccess": "None"
                               },
-                              "dependsOn": [
-                                "storageAccount::blobServices"
-                              ]
+                              "dependsOn": ["storageAccount::blobServices"]
                             },
                             "storageAccount::queueServices::analysisQueue": {
                               "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
@@ -2307,9 +2187,7 @@
                                   "purpose": "durable-invoice-analysis"
                                 }
                               },
-                              "dependsOn": [
-                                "storageAccount::queueServices"
-                              ]
+                              "dependsOn": ["storageAccount::queueServices"]
                             },
                             "storageAccount::blobServices": {
                               "type": "Microsoft.Storage/storageAccounts/blobServices",
@@ -2331,43 +2209,17 @@
                                 "cors": {
                                   "corsRules": [
                                     {
-                                      "allowedOrigins": [
-                                        "https://arolariu.ro",
-                                        "https://dev.arolariu.ro"
-                                      ],
-                                      "allowedMethods": [
-                                        "GET",
-                                        "HEAD",
-                                        "PUT",
-                                        "OPTIONS"
-                                      ],
-                                      "allowedHeaders": [
-                                        "*"
-                                      ],
-                                      "exposedHeaders": [
-                                        "*"
-                                      ],
+                                      "allowedOrigins": ["https://arolariu.ro", "https://dev.arolariu.ro"],
+                                      "allowedMethods": ["GET", "HEAD", "PUT", "OPTIONS"],
+                                      "allowedHeaders": ["*"],
+                                      "exposedHeaders": ["*"],
                                       "maxAgeInSeconds": 3600
                                     },
                                     {
-                                      "allowedOrigins": [
-                                        "https://api.arolariu.ro"
-                                      ],
-                                      "allowedMethods": [
-                                        "GET",
-                                        "HEAD",
-                                        "POST",
-                                        "PUT",
-                                        "DELETE",
-                                        "PATCH",
-                                        "OPTIONS"
-                                      ],
-                                      "allowedHeaders": [
-                                        "*"
-                                      ],
-                                      "exposedHeaders": [
-                                        "*"
-                                      ],
+                                      "allowedOrigins": ["https://api.arolariu.ro"],
+                                      "allowedMethods": ["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+                                      "allowedHeaders": ["*"],
+                                      "exposedHeaders": ["*"],
                                       "maxAgeInSeconds": 3600
                                     },
                                     {
@@ -2378,20 +2230,9 @@
                                         "http://localhost:5001",
                                         "http://localhost:8080"
                                       ],
-                                      "allowedMethods": [
-                                        "GET",
-                                        "POST",
-                                        "PUT",
-                                        "DELETE",
-                                        "HEAD",
-                                        "OPTIONS"
-                                      ],
-                                      "allowedHeaders": [
-                                        "*"
-                                      ],
-                                      "exposedHeaders": [
-                                        "*"
-                                      ],
+                                      "allowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+                                      "allowedHeaders": ["*"],
+                                      "exposedHeaders": ["*"],
                                       "maxAgeInSeconds": 1800
                                     }
                                   ]
@@ -2406,14 +2247,10 @@
                                   "enable": true,
                                   "name": "AccessTimeTracking",
                                   "trackingGranularityInDays": 1,
-                                  "blobType": [
-                                    "blockBlob"
-                                  ]
+                                  "blobType": ["blockBlob"]
                                 }
                               },
-                              "dependsOn": [
-                                "storageAccount"
-                              ]
+                              "dependsOn": ["storageAccount"]
                             },
                             "storageAccount::fileServices": {
                               "type": "Microsoft.Storage/storageAccounts/fileServices",
@@ -2434,27 +2271,21 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "storageAccount"
-                              ]
+                              "dependsOn": ["storageAccount"]
                             },
                             "storageAccount::queueServices": {
                               "type": "Microsoft.Storage/storageAccounts/queueServices",
                               "apiVersion": "2025-06-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
                               "properties": {},
-                              "dependsOn": [
-                                "storageAccount"
-                              ]
+                              "dependsOn": ["storageAccount"]
                             },
                             "storageAccount::tableServices": {
                               "type": "Microsoft.Storage/storageAccounts/tableServices",
                               "apiVersion": "2025-06-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
                               "properties": {},
-                              "dependsOn": [
-                                "storageAccount"
-                              ]
+                              "dependsOn": ["storageAccount"]
                             },
                             "storageAccount": {
                               "type": "Microsoft.Storage/storageAccounts",
@@ -2517,9 +2348,7 @@
                                       "type": "Lifecycle",
                                       "definition": {
                                         "filters": {
-                                          "blobTypes": [
-                                            "blockBlob"
-                                          ]
+                                          "blobTypes": ["blockBlob"]
                                         },
                                         "actions": {
                                           "baseBlob": {
@@ -2549,9 +2378,7 @@
                                   ]
                                 }
                               },
-                              "dependsOn": [
-                                "storageAccount"
-                              ]
+                              "dependsOn": ["storageAccount"]
                             }
                           },
                           "outputs": {
@@ -2609,9 +2436,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -2627,21 +2452,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -2846,9 +2664,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -2864,21 +2680,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -2976,12 +2785,7 @@
                             },
                             "sqlServerLocation": {
                               "type": "string",
-                              "allowedValues": [
-                                "francecentral",
-                                "northeurope",
-                                "westeurope",
-                                "swedencentral"
-                              ],
+                              "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                               "metadata": {
                                 "description": "The location for the SQL Server resource."
                               }
@@ -3024,9 +2828,7 @@
                               "properties": {
                                 "state": "Disabled"
                               },
-                              "dependsOn": [
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlServer"]
                             },
                             "sqlServer::sqlServerAuditPolicy": {
                               "type": "Microsoft.Sql/servers/auditingPolicies",
@@ -3035,9 +2837,7 @@
                               "properties": {
                                 "auditingState": "Disabled"
                               },
-                              "dependsOn": [
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlServer"]
                             },
                             "sqlServer::sqlServerAuditSettings": {
                               "type": "Microsoft.Sql/servers/auditingSettings",
@@ -3046,9 +2846,7 @@
                               "properties": {
                                 "state": "Disabled"
                               },
-                              "dependsOn": [
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlServer"]
                             },
                             "sqlServer::sqlServerConnectionPolicies": {
                               "type": "Microsoft.Sql/servers/connectionPolicies",
@@ -3057,9 +2855,7 @@
                               "properties": {
                                 "connectionType": "Default"
                               },
-                              "dependsOn": [
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlServer"]
                             },
                             "sqlServer::sqlServerAzureAdOnlyAuth": {
                               "type": "Microsoft.Sql/servers/azureADOnlyAuthentications",
@@ -3068,9 +2864,7 @@
                               "properties": {
                                 "azureADOnlyAuthentication": false
                               },
-                              "dependsOn": [
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlServer"]
                             },
                             "sqlServer": {
                               "type": "Microsoft.Sql/servers",
@@ -3145,10 +2939,7 @@
                                 "freeLimitExhaustionBehavior": "AutoPause"
                               },
                               "tags": "[union(variables('commonTags'), createObject('environment', 'PRODUCTION', 'deployment', 'Bicep'))]",
-                              "dependsOn": [
-                                "sqlDatabasePrimary",
-                                "sqlServer"
-                              ]
+                              "dependsOn": ["sqlDatabasePrimary", "sqlServer"]
                             }
                           },
                           "outputs": {
@@ -3194,9 +2985,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -3212,21 +3001,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -3359,9 +3141,7 @@
                                     ]
                                   },
                                   "partitionKey": {
-                                    "paths": [
-                                      "/UserIdentifier"
-                                    ],
+                                    "paths": ["/UserIdentifier"],
                                     "kind": "Hash",
                                     "version": 2
                                   },
@@ -3370,9 +3150,7 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "noSqlServer::primaryNoSqlDatabase"
-                              ]
+                              "dependsOn": ["noSqlServer::primaryNoSqlDatabase"]
                             },
                             "noSqlServer::primaryNoSqlDatabase::merchantsContainer": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
@@ -3396,9 +3174,7 @@
                                     ]
                                   },
                                   "partitionKey": {
-                                    "paths": [
-                                      "/ParentCompanyId"
-                                    ],
+                                    "paths": ["/ParentCompanyId"],
                                     "kind": "Hash",
                                     "version": 2
                                   },
@@ -3407,9 +3183,7 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "noSqlServer::primaryNoSqlDatabase"
-                              ]
+                              "dependsOn": ["noSqlServer::primaryNoSqlDatabase"]
                             },
                             "noSqlServer::primaryNoSqlDatabase": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
@@ -3422,9 +3196,7 @@
                                 }
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'Primary NoSQL Database'))]",
-                              "dependsOn": [
-                                "noSqlServer"
-                              ]
+                              "dependsOn": ["noSqlServer"]
                             },
                             "noSqlServer": {
                               "type": "Microsoft.DocumentDB/databaseAccounts",
@@ -3519,9 +3291,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment"]
             },
             "computeDeployment": {
               "type": "Microsoft.Resources/deployments",
@@ -3549,9 +3319,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -3579,12 +3347,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the app service plans."
                       }
@@ -3617,9 +3380,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -3635,21 +3396,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -3739,12 +3493,7 @@
                           "parameters": {
                             "appServicePlanLocation": {
                               "type": "string",
-                              "allowedValues": [
-                                "francecentral",
-                                "northeurope",
-                                "westeurope",
-                                "swedencentral"
-                              ],
+                              "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                               "metadata": {
                                 "description": "The location for the app service plans."
                               }
@@ -3857,9 +3606,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment"]
             },
             "websiteDeployment": {
               "type": "Microsoft.Resources/deployments",
@@ -3920,9 +3667,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -3942,12 +3687,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -4061,9 +3801,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -4079,21 +3817,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -4329,9 +4060,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -4347,21 +4076,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -4506,10 +4228,7 @@
                                   "minimumElasticInstanceCount": 1,
                                   "alwaysOn": true,
                                   "cors": {
-                                    "allowedOrigins": [
-                                      "https://clerk.arolariu.ro",
-                                      "https://api.arolariu.ro"
-                                    ]
+                                    "allowedOrigins": ["https://clerk.arolariu.ro", "https://api.arolariu.ro"]
                                   },
                                   "localMySqlEnabled": false,
                                   "ftpsState": "Disabled",
@@ -4624,9 +4343,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -4642,21 +4359,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -4812,10 +4522,7 @@
                                   "linuxFxVersion": "NODE|24-lts",
                                   "alwaysOn": true,
                                   "cors": {
-                                    "allowedOrigins": [
-                                      "https://clerk.arolariu.ro",
-                                      "https://api.arolariu.ro"
-                                    ]
+                                    "allowedOrigins": ["https://clerk.arolariu.ro", "https://api.arolariu.ro"]
                                   },
                                   "localMySqlEnabled": false,
                                   "ftpsState": "Disabled",
@@ -4886,9 +4593,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -4904,21 +4609,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -5071,9 +4769,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -5089,21 +4785,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -5286,9 +4975,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -5304,21 +4991,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -5590,12 +5270,7 @@
                                 "globalValidation": {
                                   "requireAuthentication": true,
                                   "unauthenticatedClientAction": "Return401",
-                                  "excludedPaths": [
-                                    "/api/health",
-                                    "/api/ready",
-                                    "/admin",
-                                    "/admin/*"
-                                  ]
+                                  "excludedPaths": ["/api/health", "/api/ready", "/admin", "/admin/*"]
                                 },
                                 "identityProviders": {
                                   "azureActiveDirectory": {
@@ -5618,9 +5293,7 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "expWebsite"
-                              ]
+                              "dependsOn": ["expWebsite"]
                             }
                           },
                           "outputs": {
@@ -5726,9 +5399,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -5747,12 +5418,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -5801,9 +5467,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -5819,21 +5483,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -5958,9 +5615,7 @@
                                 "enabledState": "Enabled",
                                 "enforceCertificateNameCheck": true
                               },
-                              "dependsOn": [
-                                "frontDoorProfile::productionOriginGroup"
-                              ]
+                              "dependsOn": ["frontDoorProfile::productionOriginGroup"]
                             },
                             "frontDoorProfile::productionEndpoint::productionRoute": {
                               "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
@@ -5985,12 +5640,8 @@
                                 "originGroup": {
                                   "id": "[resourceId('Microsoft.Cdn/profiles/originGroups', parameters('frontDoorName'), 'production')]"
                                 },
-                                "supportedProtocols": [
-                                  "Https"
-                                ],
-                                "patternsToMatch": [
-                                  "/*"
-                                ],
+                                "supportedProtocols": ["Https"],
+                                "patternsToMatch": ["/*"],
                                 "httpsRedirect": "Enabled",
                                 "linkToDefaultDomain": "Enabled",
                                 "forwardingProtocol": "HttpsOnly",
@@ -6021,18 +5672,12 @@
                                           "id": "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', parameters('frontDoorName'), 'production')]"
                                         }
                                       ],
-                                      "patternsToMatch": [
-                                        "/*"
-                                      ]
+                                      "patternsToMatch": ["/*"]
                                     }
                                   ]
                                 }
                               },
-                              "dependsOn": [
-                                "frontDoorProfile",
-                                "frontDoorProfile::productionEndpoint",
-                                "frontDoorWebApplicationFirewall"
-                              ]
+                              "dependsOn": ["frontDoorProfile", "frontDoorProfile::productionEndpoint", "frontDoorWebApplicationFirewall"]
                             },
                             "frontDoorProfile::apexCustomDomain": {
                               "type": "Microsoft.Cdn/profiles/customDomains",
@@ -6045,9 +5690,7 @@
                                   "minimumTlsVersion": "TLS12"
                                 }
                               },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
+                              "dependsOn": ["frontDoorProfile"]
                             },
                             "frontDoorProfile::wwwCustomDomain": {
                               "type": "Microsoft.Cdn/profiles/customDomains",
@@ -6060,9 +5703,7 @@
                                   "minimumTlsVersion": "TLS12"
                                 }
                               },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
+                              "dependsOn": ["frontDoorProfile"]
                             },
                             "frontDoorProfile::productionOriginGroup": {
                               "type": "Microsoft.Cdn/profiles/originGroups",
@@ -6082,9 +5723,7 @@
                                   "probeIntervalInSeconds": 30
                                 }
                               },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
+                              "dependsOn": ["frontDoorProfile"]
                             },
                             "frontDoorProfile::productionEndpoint": {
                               "type": "Microsoft.Cdn/profiles/afdEndpoints",
@@ -6095,9 +5734,7 @@
                                 "enabledState": "Enabled"
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'Production Endpoint'))]",
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
+                              "dependsOn": ["frontDoorProfile"]
                             },
                             "frontDoorWebApplicationFirewall": {
                               "type": "Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
@@ -6192,9 +5829,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -6210,21 +5845,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -6357,9 +5985,7 @@
                               "type": "Microsoft.Network/dnsZones/dnssecConfigs",
                               "apiVersion": "2023-07-01-preview",
                               "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'default')]",
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::apexRecord": {
                               "type": "Microsoft.Network/dnsZones/A",
@@ -6371,9 +5997,7 @@
                                   "id": "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', parameters('frontDoorName'), 'production')]"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::wwwRecord": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6385,9 +6009,7 @@
                                   "cname": "[parameters('frontDoorProductionFqdn')]"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::frontDoorApexTxtRecord": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6397,15 +6019,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "[parameters('frontDoorApexCustomDomainValidationToken')]"
-                                    ]
+                                    "value": ["[parameters('frontDoorApexCustomDomainValidationToken')]"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::frontDoorWwwTxtRecord": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6415,15 +6033,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "[parameters('frontDoorWwwCustomDomainValidationToken')]"
-                                    ]
+                                    "value": ["[parameters('frontDoorWwwCustomDomainValidationToken')]"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::clerkAuthCnameRecord": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6435,9 +6049,7 @@
                                   "cname": "frontend-api.clerk.services"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::clerkAccountsCnameRecord": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6449,9 +6061,7 @@
                                   "cname": "accounts.clerk.services"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::clerkMailCnameRecord": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6463,9 +6073,7 @@
                                   "cname": "<your-clerk-mail-service-cname>"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::clerkMailKeyCnameRecord1": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6477,9 +6085,7 @@
                                   "cname": "<your-clerk-mail-service-cname>"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::clerkMailKeyCnameRecord2": {
                               "type": "Microsoft.Network/dnsZones/CNAME",
@@ -6491,9 +6097,7 @@
                                   "cname": "<your-clerk-mail-service-cname>"
                                 }
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::resendMxRecord": {
                               "type": "Microsoft.Network/dnsZones/MX",
@@ -6508,9 +6112,7 @@
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::resendTxtRecord1": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6520,15 +6122,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "v=spf1 include:amazonses.com ~all"
-                                    ]
+                                    "value": ["v=spf1 include:amazonses.com ~all"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::resendTxtRecord2": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6538,15 +6136,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "v=DKIM1; k=rsa; p=<your-dkim-public-key>"
-                                    ]
+                                    "value": ["v=DKIM1; k=rsa; p=<your-dkim-public-key>"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "dnsZone::dmarcTxtRecord": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6556,15 +6150,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "v=DMARC1; p=none; rua=mailto:admin@arolariu.ro"
-                                    ]
+                                    "value": ["v=DMARC1; p=none; rua=mailto:admin@arolariu.ro"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
+                              "dependsOn": ["dnsZone"]
                             },
                             "frontDoor": {
                               "existing": true,
@@ -6601,9 +6191,7 @@
                           }
                         }
                       },
-                      "dependsOn": [
-                        "azureFrontDoorDeployment"
-                      ]
+                      "dependsOn": ["azureFrontDoorDeployment"]
                     }
                   },
                   "outputs": {
@@ -6622,9 +6210,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "websiteDeployment"
-              ]
+              "dependsOn": ["websiteDeployment"]
             },
             "bindingsDeployment": {
               "type": "Microsoft.Resources/deployments",
@@ -6676,9 +6262,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -6697,12 +6281,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -6795,9 +6374,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -6813,21 +6390,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -6944,9 +6514,7 @@
                                   "cname": "[reference('devWebsite').defaultHostName]"
                                 }
                               },
-                              "dependsOn": [
-                                "devWebsite"
-                              ]
+                              "dependsOn": ["devWebsite"]
                             },
                             "devTxtRecord": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -6956,15 +6524,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "[reference('devWebsite').customDomainVerificationId]"
-                                    ]
+                                    "value": ["[reference('devWebsite').customDomainVerificationId]"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "devWebsite"
-                              ]
+                              "dependsOn": ["devWebsite"]
                             },
                             "devCustomDomain": {
                               "type": "Microsoft.Web/sites/hostNameBindings",
@@ -6976,10 +6540,7 @@
                                 "customHostNameDnsRecordType": "CName",
                                 "siteName": "[parameters('devWebsiteHostname')]"
                               },
-                              "dependsOn": [
-                                "devCnameRecord",
-                                "devTxtRecord"
-                              ]
+                              "dependsOn": ["devCnameRecord", "devTxtRecord"]
                             },
                             "devManagedCertificate": {
                               "type": "Microsoft.Web/certificates",
@@ -6991,9 +6552,7 @@
                                 "canonicalName": "dev.arolariu.ro"
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'Development Managed Certificate', 'resourceType', 'SSL Certificate'))]",
-                              "dependsOn": [
-                                "devCustomDomain"
-                              ]
+                              "dependsOn": ["devCustomDomain"]
                             },
                             "certificateBindings": {
                               "type": "Microsoft.Resources/deployments",
@@ -7018,9 +6577,7 @@
                                   "contentVersion": "1.0.0.0",
                                   "metadata": {
                                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                                      "Enable @validate() decorator"
-                                    ],
+                                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                                     "_generator": {
                                       "name": "bicep",
                                       "version": "0.39.26.7824",
@@ -7063,9 +6620,7 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "devManagedCertificate"
-                              ]
+                              "dependsOn": ["devManagedCertificate"]
                             }
                           }
                         }
@@ -7103,9 +6658,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -7121,21 +6674,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -7252,9 +6798,7 @@
                                   "cname": "[reference('apiWebsite').defaultHostName]"
                                 }
                               },
-                              "dependsOn": [
-                                "apiWebsite"
-                              ]
+                              "dependsOn": ["apiWebsite"]
                             },
                             "apiTxtRecord": {
                               "type": "Microsoft.Network/dnsZones/TXT",
@@ -7264,15 +6808,11 @@
                                 "TTL": 3600,
                                 "TXTRecords": [
                                   {
-                                    "value": [
-                                      "[reference('apiWebsite').customDomainVerificationId]"
-                                    ]
+                                    "value": ["[reference('apiWebsite').customDomainVerificationId]"]
                                   }
                                 ]
                               },
-                              "dependsOn": [
-                                "apiWebsite"
-                              ]
+                              "dependsOn": ["apiWebsite"]
                             },
                             "apiCustomDomain": {
                               "type": "Microsoft.Web/sites/hostNameBindings",
@@ -7284,10 +6824,7 @@
                                 "customHostNameDnsRecordType": "CName",
                                 "siteName": "[parameters('apiWebsiteHostname')]"
                               },
-                              "dependsOn": [
-                                "apiCnameRecord",
-                                "apiTxtRecord"
-                              ]
+                              "dependsOn": ["apiCnameRecord", "apiTxtRecord"]
                             },
                             "apiManagedCertificate": {
                               "type": "Microsoft.Web/certificates",
@@ -7299,9 +6836,7 @@
                                 "canonicalName": "api.arolariu.ro"
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'Development Managed Certificate', 'resourceType', 'SSL Certificate'))]",
-                              "dependsOn": [
-                                "apiCustomDomain"
-                              ]
+                              "dependsOn": ["apiCustomDomain"]
                             },
                             "certificateBindings": {
                               "type": "Microsoft.Resources/deployments",
@@ -7326,9 +6861,7 @@
                                   "contentVersion": "1.0.0.0",
                                   "metadata": {
                                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                                      "Enable @validate() decorator"
-                                    ],
+                                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                                     "_generator": {
                                       "name": "bicep",
                                       "version": "0.39.26.7824",
@@ -7371,9 +6904,7 @@
                                   }
                                 }
                               },
-                              "dependsOn": [
-                                "apiManagedCertificate"
-                              ]
+                              "dependsOn": ["apiManagedCertificate"]
                             }
                           }
                         }
@@ -7402,9 +6933,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -7451,17 +6980,13 @@
                                   "cname": "[reference('docsWebsite').defaultHostname]"
                                 }
                               },
-                              "dependsOn": [
-                                "docsWebsite"
-                              ]
+                              "dependsOn": ["docsWebsite"]
                             },
                             "docsCustomDomain": {
                               "type": "Microsoft.Web/staticSites/customDomains",
                               "apiVersion": "2025-03-01",
                               "name": "[format('{0}/{1}', parameters('docsWebsiteHostname'), 'docs.arolariu.ro')]",
-                              "dependsOn": [
-                                "docsCnameRecord"
-                              ]
+                              "dependsOn": ["docsCnameRecord"]
                             }
                           }
                         }
@@ -7490,9 +7015,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -7539,17 +7062,13 @@
                                   "cname": "[reference('cvWebsite').defaultHostname]"
                                 }
                               },
-                              "dependsOn": [
-                                "cvWebsite"
-                              ]
+                              "dependsOn": ["cvWebsite"]
                             },
                             "cvCustomDomain": {
                               "type": "Microsoft.Web/staticSites/customDomains",
                               "apiVersion": "2025-03-01",
                               "name": "[format('{0}/{1}', parameters('cvWebsiteHostname'), 'cv.arolariu.ro')]",
-                              "dependsOn": [
-                                "cvCnameRecord"
-                              ]
+                              "dependsOn": ["cvCnameRecord"]
                             }
                           }
                         }
@@ -7558,11 +7077,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "computeDeployment",
-                "networkDeployment",
-                "websiteDeployment"
-              ]
+              "dependsOn": ["computeDeployment", "networkDeployment", "websiteDeployment"]
             },
             "aiDeployment": {
               "type": "Microsoft.Resources/deployments",
@@ -7590,9 +7105,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -7611,12 +7124,7 @@
                     },
                     "resourceLocation": {
                       "type": "string",
-                      "allowedValues": [
-                        "francecentral",
-                        "northeurope",
-                        "westeurope",
-                        "swedencentral"
-                      ],
+                      "allowedValues": ["francecentral", "northeurope", "westeurope", "swedencentral"],
                       "metadata": {
                         "description": "The location for the resources."
                       }
@@ -7655,9 +7163,7 @@
                           "contentVersion": "1.0.0.0",
                           "metadata": {
                             "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
+                            "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
@@ -7673,21 +7179,14 @@
                               "properties": {
                                 "environment": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
+                                  "allowedValues": ["DEVELOPMENT", "PRODUCTION"],
                                   "metadata": {
                                     "description": "Environment tag"
                                   }
                                 },
                                 "deploymentType": {
                                   "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
+                                  "allowedValues": ["ARM", "Bicep", "Terraform"],
                                   "metadata": {
                                     "description": "Deployment method"
                                   }
@@ -7811,9 +7310,7 @@
                                 "description": "AI project for arolariu-ro",
                                 "displayName": "arolariu-ro AI Project"
                               },
-                              "dependsOn": [
-                                "aiFoundry"
-                              ]
+                              "dependsOn": ["aiFoundry"]
                             },
                             "aiFoundry": {
                               "type": "Microsoft.CognitiveServices/accounts",
@@ -7838,9 +7335,7 @@
                                 "allowProjectManagement": true,
                                 "publicNetworkAccess": "Enabled",
                                 "defaultProject": "arolariu-ro",
-                                "associatedProjects": [
-                                  "arolariu-ro"
-                                ]
+                                "associatedProjects": ["arolariu-ro"]
                               },
                               "tags": "[union(variables('commonTags'), createObject('sku', 'Standard'))]"
                             }
@@ -7913,9 +7408,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8078,10 +7571,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "storageDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "storageDeployment"]
             },
             "containerRegistryRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8112,9 +7602,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8249,10 +7737,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "storageDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "storageDeployment"]
             },
             "sqlServerRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8277,9 +7762,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8328,10 +7811,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "storageDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "storageDeployment"]
             },
             "cosmosDbRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8356,9 +7836,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8407,10 +7885,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "storageDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "storageDeployment"]
             },
             "keyVaultRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8438,9 +7913,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8520,10 +7993,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "configurationDeployment",
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["configurationDeployment", "identitiesDeployment"]
             },
             "appConfigRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8554,9 +8024,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8654,10 +8122,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "configurationDeployment",
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["configurationDeployment", "identitiesDeployment"]
             },
             "openAiRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8682,9 +8147,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8746,10 +8209,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "aiDeployment",
-                "identitiesDeployment"
-              ]
+              "dependsOn": ["aiDeployment", "identitiesDeployment"]
             },
             "websitesRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8779,9 +8239,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8841,10 +8299,7 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "websiteDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "websiteDeployment"]
             },
             "appInsightsRbac": {
               "type": "Microsoft.Resources/deployments",
@@ -8875,9 +8330,7 @@
                   "contentVersion": "1.0.0.0",
                   "metadata": {
                     "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                    "_EXPERIMENTAL_FEATURES_ENABLED": [
-                      "Enable @validate() decorator"
-                    ],
+                    "_EXPERIMENTAL_FEATURES_ENABLED": ["Enable @validate() decorator"],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
@@ -8956,17 +8409,12 @@
                   }
                 }
               },
-              "dependsOn": [
-                "identitiesDeployment",
-                "observabilityDeployment"
-              ]
+              "dependsOn": ["identitiesDeployment", "observabilityDeployment"]
             }
           }
         }
       },
-      "dependsOn": [
-        "resourceGroup"
-      ]
+      "dependsOn": ["resourceGroup"]
     }
   }
 }

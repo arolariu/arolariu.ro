@@ -131,9 +131,7 @@ export function invalidateConfigValueCache(key?: string): void {
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
 const INFRASTRUCTURE = process.env["INFRA"]?.trim().toLowerCase();
 const IS_CLOUD_DEPLOYMENT =
-  INFRASTRUCTURE === "azure"
-  || Boolean(process.env["WEBSITE_INSTANCE_ID"])
-  || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
+  INFRASTRUCTURE === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]) || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
 
 /**
  * Azure AD token scope for the experiments service.
@@ -429,8 +427,8 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
         const identityEndpointConfigured = Boolean(process.env["IDENTITY_ENDPOINT"] || process.env["MSI_ENDPOINT"]);
         throw new Error(
           `Unable to fetch private runtime configuration from exp (stage=${stage}; `
-          + `failure=${describeConfigurationFailure(error)}; elapsedMs=${Date.now() - startedAt}; `
-          + `identityEndpointConfigured=${identityEndpointConfigured}).`,
+            + `failure=${describeConfigurationFailure(error)}; elapsedMs=${Date.now() - startedAt}; `
+            + `identityEndpointConfigured=${identityEndpointConfigured}).`,
         );
       }
       expCircuitOpen = true;

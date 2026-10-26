@@ -141,8 +141,7 @@ describe("createAggregateProvider command construction", () => {
   it("reports the elapsed duration of the worker run", async () => {
     const runner: ScriptedProcess = {
       match: () => true,
-      respond: () =>
-        TestClock.adjust("7 millis").pipe(Effect.as({stdout: stdoutFor(validWorkerDocument()), stderr: "", durationMs: 7})),
+      respond: () => TestClock.adjust("7 millis").pipe(Effect.as({stdout: stdoutFor(validWorkerDocument()), stderr: "", durationMs: 7})),
     };
 
     const outcome = await invokeProvider(runner);
@@ -181,7 +180,14 @@ describe("createAggregateProvider failure mapping", () => {
   });
 
   it("maps a crashing aggregate worker to unavailable with the bounded exit reason", async () => {
-    const crash = new ProcessExited({command: "node aggregate-worker.ts", stdout: "", stderr: "boom", durationMs: 1, message: "exited", exitCode: 1});
+    const crash = new ProcessExited({
+      command: "node aggregate-worker.ts",
+      stdout: "",
+      stderr: "boom",
+      durationMs: 1,
+      message: "exited",
+      exitCode: 1,
+    });
 
     const outcome = await invokeProvider({match: () => true, respond: crash});
 
@@ -260,7 +266,11 @@ describe("createAggregateProvider document validation", () => {
   });
 
   it("maps a negative nested duration to invalid", async () => {
-    const document = {schemaVersion: 1, tooling: {kind: "available", value: validToolingFacts(), durationMs: -1}, host: availableOutcome(validHostFacts(), 4)};
+    const document = {
+      schemaVersion: 1,
+      tooling: {kind: "available", value: validToolingFacts(), durationMs: -1},
+      host: availableOutcome(validHostFacts(), 4),
+    };
     const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
     const outcome = await invokeProvider(runner);
@@ -298,7 +308,11 @@ describe("createAggregateProvider available reconstruction", () => {
     const document = {
       schemaVersion: 1,
       tooling: {kind: "unavailable", reason: "envinfo was unavailable (TypeError).", durationMs: 2},
-      host: {kind: "invalid", issues: ["projectSystemInformation produced invalid data (SystemInformationProjectionError)."], durationMs: 6},
+      host: {
+        kind: "invalid",
+        issues: ["projectSystemInformation produced invalid data (SystemInformationProjectionError)."],
+        durationMs: 6,
+      },
     };
     const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
@@ -584,7 +598,9 @@ describe("collectAggregateWorkerDocument component collection", () => {
   it("maps invalid host data to a nested invalid host outcome without leaking raw output", async () => {
     const worker = await loadWorkerWithMocks({
       envinfo: envinfoMockModule(async () => JSON.stringify({})),
-      systeminformation: systeminformationMockModule({getAllData: async (): Promise<unknown> => ({injectedHostSecret: "host-secret-do-not-leak"})}),
+      systeminformation: systeminformationMockModule({
+        getAllData: async (): Promise<unknown> => ({injectedHostSecret: "host-secret-do-not-leak"}),
+      }),
     });
 
     const document = await collectDocument(worker);
@@ -844,37 +860,29 @@ function runWorkerSubprocess(args: readonly string[]): Promise<ProcessResult> {
 }
 
 describe("aggregate worker CLI argument validation", () => {
-  it(
-    "emits one normalized failure document and no stderr when the root argument is missing",
-    async () => {
-      const result = await runWorkerSubprocess([]);
+  it("emits one normalized failure document and no stderr when the root argument is missing", async () => {
+    const result = await runWorkerSubprocess([]);
 
-      expect(result.stderr.trim()).toBe("");
-      const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
-      expect(parsed.schemaVersion).toBe(1);
-      expect(parsed.tooling.kind).toBe("unavailable");
-      expect(parsed.host.kind).toBe("unavailable");
-      expect(parsed.tooling.durationMs).toBe(0);
-      expect(parsed.host.durationMs).toBe(0);
-    },
-    30_000,
-  );
+    expect(result.stderr.trim()).toBe("");
+    const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
+    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.tooling.kind).toBe("unavailable");
+    expect(parsed.host.kind).toBe("unavailable");
+    expect(parsed.tooling.durationMs).toBe(0);
+    expect(parsed.host.durationMs).toBe(0);
+  }, 30_000);
 
-  it(
-    "emits one normalized failure document and no stderr when extra arguments are supplied",
-    async () => {
-      const result = await runWorkerSubprocess(["root-a", "root-b"]);
+  it("emits one normalized failure document and no stderr when extra arguments are supplied", async () => {
+    const result = await runWorkerSubprocess(["root-a", "root-b"]);
 
-      expect(result.stderr.trim()).toBe("");
-      const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
-      expect(parsed.schemaVersion).toBe(1);
-      expect(parsed.tooling.kind).toBe("unavailable");
-      expect(parsed.host.kind).toBe("unavailable");
-      expect(parsed.tooling.durationMs).toBe(0);
-      expect(parsed.host.durationMs).toBe(0);
-    },
-    30_000,
-  );
+    expect(result.stderr.trim()).toBe("");
+    const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
+    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.tooling.kind).toBe("unavailable");
+    expect(parsed.host.kind).toBe("unavailable");
+    expect(parsed.tooling.durationMs).toBe(0);
+    expect(parsed.host.durationMs).toBe(0);
+  }, 30_000);
 });
 
 // ============================================================================
@@ -939,7 +947,13 @@ describe("aggregate worker program", () => {
 
   it("names the worker and encodes its document as JSON", () => {
     expect(aggregateWorker.name).toBe("inspection-aggregate-worker");
-    expect(aggregateWorker.encode({schemaVersion: 1, tooling: {kind: "unavailable", reason: "r", durationMs: 0}, host: {kind: "unavailable", reason: "r", durationMs: 0}})).toEqual({
+    expect(
+      aggregateWorker.encode({
+        schemaVersion: 1,
+        tooling: {kind: "unavailable", reason: "r", durationMs: 0},
+        host: {kind: "unavailable", reason: "r", durationMs: 0},
+      }),
+    ).toEqual({
       schemaVersion: 1,
       tooling: {kind: "unavailable", reason: "r", durationMs: 0},
       host: {kind: "unavailable", reason: "r", durationMs: 0},

@@ -236,9 +236,9 @@ function playwrightInventoryOutput(version: string, includeChromium = true): str
   return [
     `Playwright version: ${version}`,
     "  Browsers:",
-    ...(includeChromium ? ["    C:\\ms-playwright\\chromium-1179"] : []),
+    ...(includeChromium ? [`    ${join(tmpdir(), "ms-playwright", "chromium-1179")}`] : []),
     "  References:",
-    "    C:\\repo\\node_modules\\playwright-core",
+    `    ${join(tmpdir(), "repo", "node_modules", "playwright-core")}`,
   ].join("\n");
 }
 

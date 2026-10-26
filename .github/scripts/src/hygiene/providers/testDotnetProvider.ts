@@ -1,61 +1,36 @@
 /**
- * @fileoverview .NET unit tests provider (@arolariu/api MSTest suite via TRX).
+ * @fileoverview .NET provider preserving command status and real TRX evidence.
  * @module github/scripts/src/hygiene/providers/testDotnetProvider
- *
- * @remarks
- * Runs `dotnet test arolariu.slnx --configuration Release --logger trx` at the
- * repo root and parses the produced .trx file(s) into per-test-project suite
- * results. One suite per .trx file produced.
  */
-
-import * as exec from "@actions/exec";
-import fs from "node:fs/promises";
+import * as exec from "../../../helpers/sdk/exec.ts";
+import {fs} from "../../../helpers/filesystem/index.ts";
+import {MAX_REPORT_BYTES} from "../../../helpers/reports/validation.ts";
 import * as path from "node:path";
 import {touchesBackend} from "../domain/changedFiles.ts";
-import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
+import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../../../lib/hygiene/contracts.ts";
+import {providerDescriptor} from "../../../lib/hygiene/registry.ts";
 import {
   aggregateSuites,
   flattenSuiteFindings,
   parseTrxToSuiteResult,
+  runnerErrorSuite,
   testSuitesPayloadSchema,
   type SuiteResult,
   type TestSuitesPayload,
-} from "./_testHelpers.ts";
+} from "../../../lib/testing/suites.ts";
 
 const API_DIR = path.join("sites", "api.arolariu.ro");
 const TEST_RESULTS_REL = path.join(API_DIR, "TestResults");
 
-async function findFiles(root: string, matcher: (name: string) => boolean): Promise<string[]> {
-  let entries: import("node:fs").Dirent[];
-  try {
-    entries = await fs.readdir(root, {withFileTypes: true});
-  } catch {
-    return [];
-  }
-  const results: string[] = [];
-  for (const entry of entries) {
-    const full = path.join(root, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...(await findFiles(full, matcher)));
-    } else if (entry.isFile() && matcher(entry.name)) {
-      results.push(full);
-    }
-  }
-  return results;
-}
-
+/** Executes the existing solution command; operational failures do not become fake tests. */
 export const testDotnetProvider: CheckProvider<TestSuitesPayload> = {
-  id: "test-dotnet",
-  name: "DotNet Unit Tests",
-  icon: "🟪",
-  defaultGate: {kind: "blocking", blockOn: "error"},
+  ...providerDescriptor("test-dotnet"),
   payloadSchema: testSuitesPayloadSchema,
   applicableTo: touchesBackend,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestSuitesPayload>> {
-    const trxDirAbs = path.join(input.workspaceRoot, TEST_RESULTS_REL);
-    await fs.rm(trxDirAbs, {recursive: true, force: true}).catch(() => {});
-
-    await exec.getExecOutput(
+    const root = path.join(input.workspaceRoot, TEST_RESULTS_REL);
+    await fs.remove(root, {recursive: true, force: true});
+    const result = await exec.getExecOutput(
       "dotnet",
       [
         "test",
@@ -72,37 +47,33 @@ export const testDotnetProvider: CheckProvider<TestSuitesPayload> = {
       ],
       {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true},
     );
-
-    const trxFiles = await findFiles(trxDirAbs, (n) => n.endsWith(".trx"));
-    if (trxFiles.length === 0) {
-      const suite: SuiteResult = {
-        name: "dotnet",
-        totalTests: 1,
-        passed: 0,
-        failed: 1,
-        skipped: 0,
-        findings: [
-          {
-            kind: "line",
-            severity: "error",
-            file: "<dotnet test>",
-            line: 1,
-            column: 1,
-            message: "dotnet test produced no .trx files (check setup-dotnet / restore steps in the workflow).",
-            ruleId: "dotnet/runner-failed",
-            suite: "dotnet",
-          },
-        ],
-      };
-      return {payload: aggregateSuites([suite]), findings: flattenSuiteFindings([suite])};
+    const reports = (await fs.exists(root)) ? await fs.find(root, /\.trx$/) : [];
+    if (reports.length === 0) {
+      const suite = runnerErrorSuite("dotnet", "<dotnet test>", `dotnet test produced no .trx files (exit code ${result.exitCode}).`);
+      return {payload: aggregateSuites([suite]), findings: suite.findings, executionStatus: "errored", evidenceStatus: "missing"};
     }
-
     const suites: SuiteResult[] = [];
-    for (const trxFile of trxFiles) {
-      const xml = await fs.readFile(trxFile, "utf-8");
-      const suiteName = path.basename(trxFile, ".trx").replace(/^hygiene[._-]/, "");
-      suites.push(parseTrxToSuiteResult(suiteName || "dotnet", xml));
+    for (const file of reports) {
+      const name = path.basename(file, ".trx").replace(/^hygiene[._-]/, "") || "dotnet";
+      suites.push(parseTrxToSuiteResult(name, await fs.readTextBounded(file, MAX_REPORT_BYTES)));
     }
-    return {payload: aggregateSuites(suites), findings: flattenSuiteFindings(suites)};
+    const payload = aggregateSuites(suites);
+    const findings = flattenSuiteFindings(suites);
+    if (result.exitCode !== 0 && payload.failed === 0) {
+      findings.push(
+        ...runnerErrorSuite(
+          "dotnet",
+          "<dotnet test>",
+          `dotnet test exited with code ${result.exitCode} despite the available passing assertions. ${result.stderr.slice(-4000)}`,
+        ).findings,
+      );
+      return {payload, findings, executionStatus: "errored", evidenceStatus: "partial"};
+    }
+    return {
+      payload,
+      findings,
+      executionStatus: result.exitCode !== 0 || payload.failed > 0 ? "failed" : "passed",
+      evidenceStatus: "complete",
+    };
   },
 };

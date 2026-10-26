@@ -2,16 +2,17 @@
 
 ## Overview
 
-This document outlines the proper usage of `ConfigureAwait()` in the arolariu.ro codebase, explaining when to use it, when to omit it, and the rationale behind these decisions.
+This document outlines the proper usage of `ConfigureAwait()` in the arolariu.ro codebase, explaining when to use it, when to omit it, and
+the rationale behind these decisions.
 
 ## Quick Reference
 
-| Context | Rule | Rationale |
-|---------|------|-----------|
-| **Production Code** | ✅ **Always use** `ConfigureAwait(false)` | Prevents deadlocks, improves performance |
-| **Test Methods** | ❌ **Never use** `ConfigureAwait()` | Bypasses test parallelization, unnecessary overhead |
-| **ASP.NET Controllers** | ✅ **Use** `ConfigureAwait(false)` | No synchronization context after first await |
-| **Library Code** | ✅ **Use** `ConfigureAwait(false)` | Should not assume execution context |
+| Context                 | Rule                                      | Rationale                                           |
+| ----------------------- | ----------------------------------------- | --------------------------------------------------- |
+| **Production Code**     | ✅ **Always use** `ConfigureAwait(false)` | Prevents deadlocks, improves performance            |
+| **Test Methods**        | ❌ **Never use** `ConfigureAwait()`       | Bypasses test parallelization, unnecessary overhead |
+| **ASP.NET Controllers** | ✅ **Use** `ConfigureAwait(false)`        | No synchronization context after first await        |
+| **Library Code**        | ✅ **Use** `ConfigureAwait(false)`        | Should not assume execution context                 |
 
 ---
 
@@ -43,7 +44,8 @@ public async Task<Invoice> GetInvoiceAsync(Guid id)
 
 ### ✅ DO: Use ConfigureAwait(false) in ASP.NET Core
 
-**Why?** After the first `await`, ASP.NET Core doesn't restore the synchronization context, so you should explicitly use `ConfigureAwait(false)` for clarity and performance.
+**Why?** After the first `await`, ASP.NET Core doesn't restore the synchronization context, so you should explicitly use
+`ConfigureAwait(false)` for clarity and performance.
 
 ```csharp
 // ✅ CORRECT
@@ -119,6 +121,7 @@ Test projects automatically disable CA2007 warnings via `Directory.Build.props`:
 ```
 
 This means:
+
 - ✅ Test code **doesn't need** `ConfigureAwait` calls
 - ✅ No CA2007 warnings in test files
 - ✅ Simpler, cleaner test code
@@ -152,7 +155,7 @@ public async Task<Invoice> GetByIdAsync(Guid id, Guid? userId)
         id.ToString(),
    new PartitionKey(userId?.ToString() ?? string.Empty)
     ).ConfigureAwait(false);
-    
+
     return response.Resource;
 }
 ```
@@ -204,18 +207,21 @@ public async Task EndToEnd_CreateAndRetrieveInvoice_Success()
 ## Performance Implications
 
 ### With ConfigureAwait(false)
+
 - ✅ Avoids unnecessary context switches
 - ✅ Better thread pool utilization
 - ✅ Prevents potential deadlocks in library code
 - ✅ Lower memory overhead (no context capture)
 
 ### Without ConfigureAwait (in production)
+
 - ❌ Potential deadlocks in synchronous-over-async code
 - ❌ Unnecessary context captures
 - ❌ Reduced throughput due to context switches
 - ❌ Higher memory allocation
 
 ### Without ConfigureAwait (in tests)
+
 - ✅ **Correct behavior** - test frameworks need context control
 - ✅ Proper test parallelization
 - ✅ Simpler, more readable test code
@@ -229,10 +235,12 @@ public async Task EndToEnd_CreateAndRetrieveInvoice_Success()
 **Severity:** Warning (Production), Silent (Tests)
 
 **Configuration:**
+
 - **Production projects:** `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`
 - **Test projects:** `<NoWarn>$(NoWarn);CA2007</NoWarn>`
 
 **EditorConfig:**
+
 ```ini
 # Production code - enforce ConfigureAwait
 [**/src/**/*.cs]
@@ -250,11 +258,13 @@ dotnet_diagnostic.CA2007.severity = none
 ### Fixing Existing Code
 
 **Step 1:** Run analyzer to find violations
+
 ```bash
 dotnet build /p:EnforceCodeStyleInBuild=true
 ```
 
 **Step 2:** Fix production code violations
+
 ```csharp
 // Before
 await SomeMethodAsync();
@@ -264,6 +274,7 @@ await SomeMethodAsync().ConfigureAwait(false);
 ```
 
 **Step 3:** Remove ConfigureAwait from test code
+
 ```csharp
 // Before
 await orchestrationService.CreateInvoiceObject(invoice, null).ConfigureAwait(false);
@@ -285,15 +296,16 @@ await orchestrationService.CreateInvoiceObject(invoice, null);
 
 ## Summary
 
-| Context | ConfigureAwait | Reason |
-|---------|---------------|--------|
-| **Service layer** | ✅ `.ConfigureAwait(false)` | Library code |
-| **Repository layer** | ✅ `.ConfigureAwait(false)` | Data access code |
-| **Controllers** | ✅ `.ConfigureAwait(false)` | ASP.NET Core best practice |
-| **Domain logic** | ✅ `.ConfigureAwait(false)` | Pure business logic |
-| **Unit tests** | ❌ **Omit** | Test framework control |
-| **Integration tests** | ❌ **Omit** | Test framework control |
+| Context               | ConfigureAwait              | Reason                     |
+| --------------------- | --------------------------- | -------------------------- |
+| **Service layer**     | ✅ `.ConfigureAwait(false)` | Library code               |
+| **Repository layer**  | ✅ `.ConfigureAwait(false)` | Data access code           |
+| **Controllers**       | ✅ `.ConfigureAwait(false)` | ASP.NET Core best practice |
+| **Domain logic**      | ✅ `.ConfigureAwait(false)` | Pure business logic        |
+| **Unit tests**        | ❌ **Omit**                 | Test framework control     |
+| **Integration tests** | ❌ **Omit**                 | Test framework control     |
 
-**Golden Rule:** 
+**Golden Rule:**
+
 - **Production = Always ConfigureAwait(false)**
 - **Tests = Never ConfigureAwait**

@@ -11,19 +11,19 @@
  * Invoke with: `node sites/docs.arolariu.ro/scripts/render-og-card.ts`
  */
 
-import {readFileSync, writeFileSync} from 'node:fs';
-import {resolve} from 'node:path';
-import {Resvg} from '@resvg/resvg-js';
+import {readFileSync, writeFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {Resvg} from "@resvg/resvg-js";
 
 /** Absolute path to the docs-site root (sibling of `static/`). */
-const ROOT = resolve(import.meta.dirname, '..');
+const ROOT = resolve(import.meta.dirname, "..");
 /** Source SVG used as input to the rasterizer. */
-const SVG = resolve(ROOT, 'static/img/og-card.source.svg');
+const SVG = resolve(ROOT, "static/img/og-card.source.svg");
 /** Output path for the rendered PNG (committed alongside the SVG). */
-const PNG = resolve(ROOT, 'static/img/og-card.png');
+const PNG = resolve(ROOT, "static/img/og-card.png");
 
-const svg = readFileSync(SVG, 'utf8');
-const resvg = new Resvg(svg, {fitTo: {mode: 'width', value: 1200}});
+const svg = readFileSync(SVG, "utf8");
+const resvg = new Resvg(svg, {fitTo: {mode: "width", value: 1200}});
 const png = resvg.render().asPng();
 writeFileSync(PNG, png);
 console.log(`rendered ${png.length} bytes -> ${PNG}`);

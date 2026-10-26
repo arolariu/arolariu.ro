@@ -19,35 +19,35 @@
  * intercepts site-search typing.
  */
 
-import React, {useEffect, useRef, useState} from 'react';
-import Layout from '@theme/Layout';
-import Link from '@docusaurus/Link';
-import {useHistory} from '@docusaurus/router';
-import styles from './index.module.css';
+import React, {useEffect, useRef, useState} from "react";
+import Layout from "@theme/Layout";
+import Link from "@docusaurus/Link";
+import {useHistory} from "@docusaurus/router";
+import styles from "./index.module.css";
 
 /** A single row on the landing page — human label + absolute href. */
 type Row = {readonly label: string; readonly href: string};
 
 const I_WANT_TO: readonly Row[] = [
-  {label: 'hit the api from code', href: '/internals/dotnet/arolariu.Backend.Core/'},
-  {label: 'understand the architecture', href: '/monorepo/rfc/domain-driven-design-architecture/'},
-  {label: 'use the component library', href: '/reference/typescript/components/'},
-  {label: 'add a new RFC', href: '/monorepo/rfc/'},
-  {label: 'configure telemetry', href: '/monorepo/backend/opentelemetry-guide/'},
-  {label: 'debug the config proxy', href: '/internals/experimental/config/loader/'},
+  {label: "hit the api from code", href: "/internals/dotnet/arolariu.Backend.Core/"},
+  {label: "understand the architecture", href: "/monorepo/rfc/domain-driven-design-architecture/"},
+  {label: "use the component library", href: "/reference/typescript/components/"},
+  {label: "add a new RFC", href: "/monorepo/rfc/"},
+  {label: "configure telemetry", href: "/monorepo/backend/opentelemetry-guide/"},
+  {label: "debug the config proxy", href: "/internals/experimental/config/loader/"},
 ];
 
 const START_HERE: readonly Row[] = [
-  {label: 'monorepo overview', href: '/monorepo/'},
-  {label: '.net internals', href: '/internals/dotnet/'},
-  {label: 'typescript reference', href: '/reference/typescript/'},
-  {label: 'experimental (python)', href: '/internals/experimental/'},
+  {label: "monorepo overview", href: "/monorepo/"},
+  {label: ".net internals", href: "/internals/dotnet/"},
+  {label: "typescript reference", href: "/reference/typescript/"},
+  {label: "experimental (python)", href: "/internals/experimental/"},
 ];
 
 const RESOURCES: readonly Row[] = [
-  {label: 'rfcs', href: '/monorepo/rfc/'},
-  {label: 'backend guides', href: '/monorepo/backend/'},
-  {label: 'frontend guides', href: '/monorepo/frontend/'},
+  {label: "rfcs", href: "/monorepo/rfc/"},
+  {label: "backend guides", href: "/monorepo/backend/"},
+  {label: "frontend guides", href: "/monorepo/frontend/"},
 ];
 
 const ALL_ROWS: readonly Row[] = [...I_WANT_TO, ...START_HERE, ...RESOURCES];
@@ -57,7 +57,7 @@ const ALL_ROWS: readonly Row[] = [...I_WANT_TO, ...START_HERE, ...RESOURCES];
  * Used to draw the tree-style connector to the left of each row.
  */
 function connector(index: number, total: number): string {
-  return index === total - 1 ? '└─' : '├─';
+  return index === total - 1 ? "└─" : "├─";
 }
 
 /**
@@ -68,7 +68,7 @@ function connector(index: number, total: number): string {
 function isInteractiveTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
   const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
 export default function Home(): React.JSX.Element {
@@ -85,27 +85,29 @@ export default function Home(): React.JSX.Element {
       // Never hijack typing in form fields, search inputs, or editable content.
       if (isInteractiveTarget(event.target)) return;
 
-      if (event.key === 'ArrowDown' || event.key === 'j') {
+      if (event.key === "ArrowDown" || event.key === "j") {
         event.preventDefault();
         setCursor((value) => (value === null ? 0 : Math.min(value + 1, ALL_ROWS.length - 1)));
-      } else if (event.key === 'ArrowUp' || event.key === 'k') {
+      } else if (event.key === "ArrowUp" || event.key === "k") {
         event.preventDefault();
         setCursor((value) => (value === null || value <= 0 ? 0 : value - 1));
-      } else if (event.key === 'Enter' && cursorRef.current !== null) {
+      } else if (event.key === "Enter" && cursorRef.current !== null) {
         event.preventDefault();
         // Route via Docusaurus' SPA history so the navigation stays
         // client-side — no full reload, preserves plugin state.
         history.push(ALL_ROWS[cursorRef.current]!.href);
-      } else if (event.key === 'Escape') {
+      } else if (event.key === "Escape") {
         setCursor(null);
       }
     }
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [history]);
 
   return (
-    <Layout title="docs" description="Unified reference for arolariu.ro">
+    <Layout
+      title='docs'
+      description='Unified reference for arolariu.ro'>
       <main className={styles.page}>
         <section className={styles.hero}>
           <h1 className={styles.wordmark}>
@@ -115,17 +117,35 @@ export default function Home(): React.JSX.Element {
           </h1>
           <p className={styles.tagline}>
             <span className={styles.comment}>//</span> unified reference for three services
-            <span className={styles.caret} aria-hidden="true" />
+            <span
+              className={styles.caret}
+              aria-hidden='true'
+            />
           </p>
         </section>
 
-        <Section title="i want to…" rows={I_WANT_TO} cursor={cursor} cursorOffset={0} />
-        <Section title="start here" rows={START_HERE} cursor={cursor} cursorOffset={I_WANT_TO.length} />
-        <Section title="resources" rows={RESOURCES} cursor={cursor} cursorOffset={I_WANT_TO.length + START_HERE.length} />
+        <Section
+          title='i want to…'
+          rows={I_WANT_TO}
+          cursor={cursor}
+          cursorOffset={0}
+        />
+        <Section
+          title='start here'
+          rows={START_HERE}
+          cursor={cursor}
+          cursorOffset={I_WANT_TO.length}
+        />
+        <Section
+          title='resources'
+          rows={RESOURCES}
+          cursor={cursor}
+          cursorOffset={I_WANT_TO.length + START_HERE.length}
+        />
 
         <footer className={styles.footer}>
-          <span className={styles.comment}>//</span> use <kbd className={styles.kbd}>↑</kbd>{' '}
-          <kbd className={styles.kbd}>↓</kbd> to navigate, <kbd className={styles.kbd}>↵</kbd> to open
+          <span className={styles.comment}>//</span> use <kbd className={styles.kbd}>↑</kbd> <kbd className={styles.kbd}>↓</kbd> to
+          navigate, <kbd className={styles.kbd}>↵</kbd> to open
         </footer>
       </main>
     </Layout>
@@ -150,24 +170,42 @@ function Section({title, rows, cursor, cursorOffset}: Readonly<SectionProps>): R
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>
-        <span className={styles.chevron} aria-hidden="true">&gt;</span> {title}
+        <span
+          className={styles.chevron}
+          aria-hidden='true'>
+          &gt;
+        </span>{" "}
+        {title}
       </h2>
       <ul className={styles.rows}>
         {rows.map((row, i) => {
           const globalIndex = cursorOffset + i;
           const isActive = cursor === globalIndex;
           return (
-            <li key={row.href} className={styles.row} style={{animationDelay: `${60 + globalIndex * 35}ms`}}>
-              <span className={styles.tree} aria-hidden="true">
+            <li
+              key={row.href}
+              className={styles.row}
+              style={{animationDelay: `${60 + globalIndex * 35}ms`}}>
+              <span
+                className={styles.tree}
+                aria-hidden='true'>
                 {connector(i, rows.length)}
               </span>
-              <span className={styles.pointer} aria-hidden="true" data-active={isActive}>
-                {isActive ? '▸' : '·'}
+              <span
+                className={styles.pointer}
+                aria-hidden='true'
+                data-active={isActive}>
+                {isActive ? "▸" : "·"}
               </span>
-              <Link to={row.href} className={styles.rowLabel} data-active={isActive}>
+              <Link
+                to={row.href}
+                className={styles.rowLabel}
+                data-active={isActive}>
                 {row.label}
               </Link>
-              <span className={styles.rowArrow} aria-hidden="true">
+              <span
+                className={styles.rowArrow}
+                aria-hidden='true'>
                 →
               </span>
               <code className={styles.rowPath}>{row.href}</code>

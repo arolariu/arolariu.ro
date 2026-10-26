@@ -35,24 +35,18 @@ Owns GitHub Actions workflow and composite-action conventions.
 Open `references/workflows.md` only when the task needs one of:
 
 - a permissions, OIDC, or third-party-action decision on a specific workflow;
-- a cache-key, path-filter, or concurrency-group decision beyond the rules
-  above;
-- an artifact/secret-handling or environment/deployment-safety question not
-  resolved by the rules above;
-- comparing a proposed workflow change against RFC 0001's established
-  patterns.
+- a cache-key, path-filter, or concurrency-group decision beyond the rules above;
+- an artifact/secret-handling or environment/deployment-safety question not resolved by the rules above;
+- comparing a proposed workflow change against RFC 0001's established patterns.
 
-The catalog does not redefine these rules, the Infrastructure Expert agent's
-approval workflow, or the verification/escalation sections below; it only
-adds repository-specific examples, anti-patterns, and live pointers. It does
-not authorize any mutation.
+The catalog does not redefine these rules, the Infrastructure Expert agent's approval workflow, or the verification/escalation sections
+below; it only adds repository-specific examples, anti-patterns, and live pointers. It does not authorize any mutation.
 
 ## Validation
 
-Inspect the full YAML graph and use the repository's existing workflow
-validation only after the user approves a workflow edit.
+Inspect the full YAML graph and use the repository's existing workflow validation only after the user approves a workflow edit.
 
 ## Escalation
 
-Ask before any workflow mutation, permission expansion, secret use, production
-deployment behavior, trigger change, or new third-party action.
+Ask before any workflow mutation, permission expansion, secret use, production deployment behavior, trigger change, or new third-party
+action.

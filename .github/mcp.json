@@ -19,7 +19,10 @@
       "type": "stdio",
       "command": "cmd",
       "args": [
-        "/c", "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
         "sites/arolariu.ro/src",
         "sites/api.arolariu.ro/src",
         "packages/components/src",

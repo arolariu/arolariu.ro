@@ -8,12 +8,12 @@
  * **Why this exists**:
  * - Consolidates commonly used helpers behind one barrel export.
  * - Provides both named helper instances (e.g. `git`, `fs`, `http`) and
- *   factory helpers (see {@link Helpers}) for cases where lazy-loading reduces
- *   startup cost in GitHub Actions.
+ *   factory helpers (see {@link Helpers}) for compatible asynchronous construction.
  *
  * **Design trade-off**:
- * - The factory functions use dynamic imports which return `Promise`s; callers
- *   should await them (or allow top-level `await` in ESM).
+ * - This barrel eagerly re-exports every decorator. Its dynamic factory methods
+ *   are not a lazy-loading boundary. Import a narrow implementation or SDK facade
+ *   directly when module isolation/startup cost matters.
  *
  * @example
  * ```ts
@@ -50,15 +50,12 @@ export {playwright} from "./playwright/index.ts";
 export {vitest} from "./vitest/index.ts";
 
 /**
- * Helper factory functions for lazy-loading helpers.
+ * Compatible asynchronous helper factory functions.
  *
  * @remarks
- * These factories intentionally return `Promise`s because the underlying
- * implementation modules are loaded dynamically.
- *
- * Use factories when:
- * - A workflow mode only needs a subset of helpers.
- * - You want faster cold-start time in GitHub Actions scripts.
+ * These factories retain their Promise-based API. The surrounding barrel has
+ * already eagerly imported the implementations; use narrow module imports for
+ * genuine isolation, configured native clients, or complete decorator options.
  *
  * Prefer the pre-created exports (e.g. `git`, `fs`, `env`) when the helper is
  * always needed.

@@ -19,13 +19,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "isolatedModules": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2020",
-      "esnext",
-      "webworker"
-    ],
+    "lib": ["dom", "dom.iterable", "es2020", "esnext", "webworker"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
@@ -56,11 +50,6 @@
     "useDefineForClassFields": true,
     "useUnknownInCatchVariables": true
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "**/*.ts",
-    "**/*.d.ts"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["**/*.ts", "**/*.d.ts"]
 }

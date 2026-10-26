@@ -4,7 +4,8 @@
 [![Version](https://img.shields.io/badge/Version-2.0.0-green)](https://github.com/arolariu/arolariu.ro)
 [![Environment](https://img.shields.io/badge/Environment-Production-red)](https://arolariu.ro)
 
-A comprehensive, production-ready Azure infrastructure-as-code solution built with Azure Bicep, featuring standardized naming conventions, explicit dependency management, and enterprise-grade parameter validation.
+A comprehensive, production-ready Azure infrastructure-as-code solution built with Azure Bicep, featuring standardized naming conventions,
+explicit dependency management, and enterprise-grade parameter validation.
 
 ## 📋 **Table of Contents**
 
@@ -136,7 +137,7 @@ graph TD
     H --> K
     I --> K
     J --> K
-    
+
     K --> L[bindingsDeployment]
 ```
 

@@ -63,9 +63,9 @@ async function run(argv: readonly string[], failure?: ScriptedProcess): Promise<
       if (bound === undefined) {
         return Effect.die(new Error("The extractor fixture is not bound."));
       }
-      return Effect.orDie(Effect.andThen(bound.makeDirectory(dir, {recursive: true}), bound.writeFileString(join(dir, "page.md"), "# Page\n"))).pipe(
-        Effect.as(SUCCEEDED),
-      );
+      return Effect.orDie(
+        Effect.andThen(bound.makeDirectory(dir, {recursive: true}), bound.writeFileString(join(dir, "page.md"), "# Page\n")),
+      ).pipe(Effect.as(SUCCEEDED));
     },
   };
   const harness = makeTestLayer({
@@ -92,7 +92,10 @@ describe("docs command", () => {
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls).toBe(5);
-    expect(result.output.at(-1)).toEqual({stream: "stdout", text: "[arolariu::docs] ✅ Assembled documentation from 3 extractor(s) across 4 tier(s).\n"});
+    expect(result.output.at(-1)).toEqual({
+      stream: "stdout",
+      text: "[arolariu::docs] ✅ Assembled documentation from 3 extractor(s) across 4 tier(s).\n",
+    });
   });
 
   it("writes the result as the single JSON document in --json mode", async () => {

@@ -1,51 +1,36 @@
 # Stable Store Test Patterns
 
-Use only after a current store with the same factory/storage shape confirms the
-behavioral contract. This is the preferred real-storage pattern for new or
-rewritten tests, not a claim that every current store suite already follows it.
-Several live store suites still mock `indexedDBStorage`; treat those mocks as
-migration debt and do not copy them into new tests.
+Use only after a current store with the same factory/storage shape confirms the behavioral contract. This is the preferred real-storage
+pattern for new or rewritten tests, not a claim that every current store suite already follows it. Several live store suites still mock
+`indexedDBStorage`; treat those mocks as migration debt and do not copy them into new tests.
 
 ## Provenance
 
-- State/action contracts:
-  `sites/arolariu.ro/src/stores/createEntityStore.test.ts`,
-  `sites/arolariu.ro/src/stores/invoicesStore.test.tsx`,
-  `sites/arolariu.ro/src/stores/scansStore.test.tsx`,
-  `sites/arolariu.ro/src/stores/preferencesStore.test.ts`
-- Real storage contract:
-  `sites/arolariu.ro/src/stores/storage/indexedDBStorage.test.ts`
-- Hydration/selectors:
-  `sites/arolariu.ro/src/app/domains/invoices/_hooks/invoice/useInvoices.test.tsx`,
-  `sites/arolariu.ro/vitest.setup.ts`
-- Cross-tab cleanup:
-  `sites/arolariu.ro/src/app/_components/PreferencesSubscriptions.test.tsx`
+- State/action contracts: `sites/arolariu.ro/src/stores/createEntityStore.test.ts`, `sites/arolariu.ro/src/stores/invoicesStore.test.tsx`,
+  `sites/arolariu.ro/src/stores/scansStore.test.tsx`, `sites/arolariu.ro/src/stores/preferencesStore.test.ts`
+- Real storage contract: `sites/arolariu.ro/src/stores/storage/indexedDBStorage.test.ts`
+- Hydration/selectors: `sites/arolariu.ro/src/app/domains/invoices/_hooks/invoice/useInvoices.test.tsx`, `sites/arolariu.ro/vitest.setup.ts`
+- Cross-tab cleanup: `sites/arolariu.ro/src/app/_components/PreferencesSubscriptions.test.tsx`
 
 ## Invariants
 
 - Tests reset singleton memory and durable storage and remain order-independent.
-- In this preferred pattern, repository store/factory/storage modules run for
-  real; only a true external boundary may be substituted. Existing sibling
-  adapter mocks can show behavior cases but cannot prove the storage module.
-- Defaults, actions, related selection, reset, partialized persistence,
-  hydration completion, stale/invalid durable data, and selector behavior are
-  asserted when owned by the change.
-- Async persistence/rehydration is awaited; timers/channels/subscriptions are
-  cleaned up.
+- In this preferred pattern, repository store/factory/storage modules run for real; only a true external boundary may be substituted.
+  Existing sibling adapter mocks can show behavior cases but cannot prove the storage module.
+- Defaults, actions, related selection, reset, partialized persistence, hydration completion, stale/invalid durable data, and selector
+  behavior are asserted when owned by the change.
+- Async persistence/rehydration is awaited; timers/channels/subscriptions are cleaned up.
 
 ## Live-derived values
 
-Derive the store import, initial/default state, reset action, persist API,
-storage/table/key, domain builder, persisted projection, hydration flag,
-selector fields, and safe cleanup order from the exact store and its closest
-test. Do not invent a generic `reset` action when the live store uses
-`clearEntities`, `clearScans`, or `resetToDefaults`.
+Derive the store import, initial/default state, reset action, persist API, storage/table/key, domain builder, persisted projection,
+hydration flag, selector fields, and safe cleanup order from the exact store and its closest test. Do not invent a generic `reset` action
+when the live store uses `clearEntities`, `clearScans`, or `resetToDefaults`.
 
 ## Defaults, actions, and reset
 
-Apply the awaited setup in **Real persistence and hydration** below to these
-cases. `persist.clearStorage()` returns void; awaiting it does not wait for
-asynchronous adapter deletion or a reset's persistence write.
+Apply the awaited setup in **Real persistence and hydration** below to these cases. `persist.clearStorage()` returns void; awaiting it does
+not wait for asynchronous adapter deletion or a reset's persistence write.
 
 ```ts
 import {act} from "@testing-library/react";
@@ -79,8 +64,7 @@ describe("use<Domain>Store", () => {
 });
 ```
 
-If resetting through `setState` would remove actions for the live store, use
-its actions or a complete live initial state instead.
+If resetting through `setState` would remove actions for the live store, use its actions or a complete live initial state instead.
 
 ## Real persistence and hydration
 
@@ -145,15 +129,11 @@ it("falls back safely when durable data is absent or invalid", async () => {
 });
 ```
 
-Use fake IndexedDB already installed by `sites/arolariu.ro/vitest.setup.ts`.
-Seed through the exported live adapter or persist API; do not mock it.
-This singleton pattern proves the write by reading the live adapter, then
-proves hydration with a distinct seeded durable projection and no intervening
-store mutation. Zustand persist wraps both bound `setState` and slice actions
-with a durable write, so neither can simulate a memory-only reset before
-`rehydrate()`. When the production module exposes its exact store factory,
-prefer a fresh reader instance after the writer's persistence completes; do
-not recreate production middleware or configuration in the test.
+Use fake IndexedDB already installed by `sites/arolariu.ro/vitest.setup.ts`. Seed through the exported live adapter or persist API; do not
+mock it. This singleton pattern proves the write by reading the live adapter, then proves hydration with a distinct seeded durable
+projection and no intervening store mutation. Zustand persist wraps both bound `setState` and slice actions with a durable write, so neither
+can simulate a memory-only reset before `rehydrate()`. When the production module exposes its exact store factory, prefer a fresh reader
+instance after the writer's persistence completes; do not recreate production middleware or configuration in the test.
 
 ## Selector stability
 
@@ -182,12 +162,9 @@ it("does not replace the selected snapshot for an unrelated update", () => {
 });
 ```
 
-For a scalar selector, assert render behavior through a small consumer only
-when reference stability is part of the regression.
+For a scalar selector, assert render behavior through a small consumer only when reference stability is part of the regression.
 
 ## Invalidated when
 
-Do not use these templates if the store changes reset semantics, persist API,
-storage adapter, hydration callback, test environment, selector equality,
-factory contract, or user-partition design. Re-inspect the live store and
-update this resource before reuse.
+Do not use these templates if the store changes reset semantics, persist API, storage adapter, hydration callback, test environment,
+selector equality, factory contract, or user-partition design. Re-inspect the live store and update this resource before reuse.

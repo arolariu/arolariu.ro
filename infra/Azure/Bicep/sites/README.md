@@ -1,6 +1,7 @@
 # 🌍 Sites Module
 
-This module provisions all web applications and static sites for the arolariu.ro platform, including the main website, API services, development environment, CV portfolio, and documentation portal.
+This module provisions all web applications and static sites for the arolariu.ro platform, including the main website, API services,
+development environment, CV portfolio, and documentation portal.
 
 ## 📋 **Overview**
 
@@ -24,14 +25,14 @@ The sites module creates five distinct web applications and static sites:
 
 ## 📁 **Module Files**
 
-| File                   | Purpose                                |
-| ---------------------- | -------------------------------------- |
-| `deploymentFile.bicep` | Orchestrates all site deployments      |
-| `arolariu-ro.bicep`    | Main website (arolariu.ro)             |
-| `api-arolariu-ro.bicep`| API backend service                    |
-| `dev-arolariu-ro.bicep`| Development/staging site               |
-| `cv-arolariu-ro.bicep` | CV portfolio Static Web App            |
-| `docs-arolariu-ro.bicep`| Documentation Static Web App          |
+| File                     | Purpose                           |
+| ------------------------ | --------------------------------- |
+| `deploymentFile.bicep`   | Orchestrates all site deployments |
+| `arolariu-ro.bicep`      | Main website (arolariu.ro)        |
+| `api-arolariu-ro.bicep`  | API backend service               |
+| `dev-arolariu-ro.bicep`  | Development/staging site          |
+| `cv-arolariu-ro.bicep`   | CV portfolio Static Web App       |
+| `docs-arolariu-ro.bicep` | Documentation Static Web App      |
 
 ## 📊 **Architecture**
 
@@ -421,5 +422,4 @@ az webapp update \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025
-**Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: July 2025 **Maintainer**: Alexandru-Razvan Olariu

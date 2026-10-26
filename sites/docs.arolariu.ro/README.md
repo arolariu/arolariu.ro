@@ -1,20 +1,14 @@
 # docs.arolariu.ro
 
-Unified developer reference portal for the arolariu.ro monorepo,
-built on **Docusaurus 3.10** and deployed to Azure Static Web Apps at
+Unified developer reference portal for the arolariu.ro monorepo, built on **Docusaurus 3.10** and deployed to Azure Static Web Apps at
 [https://docs.arolariu.ro](https://docs.arolariu.ro).
 
-The site pulls reference content from three services via three
-extractors (TypeDoc, pydoc-markdown, DefaultDocumentation), then
-normalizes and mounts it under a single shell with a console-aesthetic
-theme shared with `status.arolariu.ro`.
+The site pulls reference content from three services via three extractors (TypeDoc, pydoc-markdown, DefaultDocumentation), then normalizes
+and mounts it under a single shell with a console-aesthetic theme shared with `status.arolariu.ro`.
 
-The `.NET` HTTP API contract is **not** hosted here. `api.arolariu.ro`
-serves Swagger UI at runtime from the live OpenAPI spec (Swashbuckle
-is configured with an empty `RoutePrefix`, so the UI lives at the
-site root and the canonical link is `https://api.arolariu.ro/index.html`).
-The docs navbar links out to that URL rather than duplicating the
-browser here. Internal `.NET` *types* are still documented via
+The `.NET` HTTP API contract is **not** hosted here. `api.arolariu.ro` serves Swagger UI at runtime from the live OpenAPI spec (Swashbuckle
+is configured with an empty `RoutePrefix`, so the UI lives at the site root and the canonical link is `https://api.arolariu.ro/index.html`).
+The docs navbar links out to that URL rather than duplicating the browser here. Internal `.NET` _types_ are still documented via
 `DefaultDocumentation` under `/internals/dotnet/`.
 
 ## What lives here
@@ -43,8 +37,7 @@ sites/docs.arolariu.ro/
                             # (gitignored — regenerated on every build)
 ```
 
-Generated content (`_generated/`, `build/`, `.docusaurus/`) is
-gitignored at the repo root.
+Generated content (`_generated/`, `build/`, `.docusaurus/`) is gitignored at the repo root.
 
 ## Data flow
 
@@ -67,10 +60,8 @@ exp.arolariu.ro            ──pydoc-markdown──────────►
                      Azure Static Web Apps (prod slot)
 ```
 
-The .NET build step itself is a single `dotnet build` invocation
-against `arolariu.Backend.Core.csproj` — that project is the sole
-graph root (everything else is a `<ProjectReference>` dependency),
-so MSBuild compiles the full assembly set in one pass.
+The .NET build step itself is a single `dotnet build` invocation against `arolariu.Backend.Core.csproj` — that project is the sole graph
+root (everything else is a `<ProjectReference>` dependency), so MSBuild compiles the full assembly set in one pass.
 
 ## Local development
 
@@ -85,12 +76,9 @@ python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
 dotnet tool restore                                                # from repo root
 ```
 
-`DefaultDocumentation.Console` is declared as a **local** tool in
-`.config/dotnet-tools.json`, so `dotnet tool restore` is all that is
-needed — there is no global install and nothing to add to `PATH`. The
-orchestrator invokes it as `dotnet defaultdocumentation` (lowercase;
-NuGet registers tool commands in lower case regardless of the package
-name's casing, and Linux file systems enforce that strictly).
+`DefaultDocumentation.Console` is declared as a **local** tool in `.config/dotnet-tools.json`, so `dotnet tool restore` is all that is
+needed — there is no global install and nothing to add to `PATH`. The orchestrator invokes it as `dotnet defaultdocumentation` (lowercase;
+NuGet registers tool commands in lower case regardless of the package name's casing, and Linux file systems enforce that strictly).
 
 **Everyday commands** (from the repo root):
 
@@ -100,84 +88,63 @@ npm run build:docs     # Full production build (triggers the postbuild hook)
 npm run dev:docs       # Live dev server with hot reload (http://localhost:3100)
 ```
 
-`build:docs` and `dev:docs` depend on `docs:assemble` via Nx, so a
-single `npm run build:docs` performs the full pipeline.
+`build:docs` and `dev:docs` depend on `docs:assemble` via Nx, so a single `npm run build:docs` performs the full pipeline.
 
 ## Deploy
 
-Pushes to `main` that touch `sites/docs.arolariu.ro/**` (or any of
-the upstream service sources that feed the extractors) trigger
-`.github/workflows/official-docs-trigger.yml`. The workflow runs
-the same `docs:assemble` + `build:docs` pipeline and uploads
+Pushes to `main` that touch `sites/docs.arolariu.ro/**` (or any of the upstream service sources that feed the extractors) trigger
+`.github/workflows/official-docs-trigger.yml`. The workflow runs the same `docs:assemble` + `build:docs` pipeline and uploads
 `sites/docs.arolariu.ro/build/` to Azure Static Web Apps.
 
 ## Extractor quirks worth knowing
 
-- **.NET project discovery** (`npm run docs:assemble`): the
-  orchestrator globs `sites/api.arolariu.ro/src/*/*.csproj`, parses
-  `<ProjectReference>` entries, and builds only the graph roots so
-  adding a new bounded context doesn't require a hardcoded list
-  update. See `discoverDotnetProjects` + `findDotnetBuildRoots`.
-- **CI restores the API graph root only**. Restoring `arolariu.slnx` breaks
-  Linux runners because the solution includes Visual Studio `.esproj`
-  projects that require `Microsoft.VisualStudio.JavaScript.Sdk`. Generated
-  .NET docs only need the API project graph rooted at
+- **.NET project discovery** (`npm run docs:assemble`): the orchestrator globs `sites/api.arolariu.ro/src/*/*.csproj`, parses
+  `<ProjectReference>` entries, and builds only the graph roots so adding a new bounded context doesn't require a hardcoded list update. See
+  `discoverDotnetProjects` + `findDotnetBuildRoots`.
+- **CI restores the API graph root only**. Restoring `arolariu.slnx` breaks Linux runners because the solution includes Visual Studio
+  `.esproj` projects that require `Microsoft.VisualStudio.JavaScript.Sdk`. Generated .NET docs only need the API project graph rooted at
   `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj`.
-- **Generated docs validation is a deployment gate**. `docs:assemble`
-  fails if any Docusaurus-mounted generated tier is missing or empty.
-  Validation counts extractor output only; orchestrator-generated landing
-  pages such as `index.md` / `README.md` do not satisfy the gate.
-- **Broad extractor coverage is intentional**. TypeDoc includes project-owned
-  source trees and excludes tests, stories, generated output, build output,
-  and dependency internals. DefaultDocumentation requests undocumented items
-  plus public/protected/internal/private member output so maintainers can
-  inspect internal architecture from the generated reference.
-- **Parallel extractor output is buffered** so TypeDoc /
-  pydoc-markdown / DefaultDocumentation logs don't interleave at
-  the terminal; each block is replayed in a fixed order after
-  `Promise.all` resolves. Non-zero exits surface the last 2KB of
-  buffered output so CI logs show the actual failure.
-- **pydoc-markdown** emits CRLF on Windows. `normalizeLineEndings()`
-  in the orchestrator rewrites `\r\n` → `\n` before the frontmatter
-  pass so the parser is platform-agnostic.
-- **Mermaid diagrams** render client-side only (theme-mermaid hydrates
-  after initial HTML). Grepping the SSR HTML for `mermaid` is not a
-  reliable test — look for the fenced code block source in the
-  client JS chunk.
-- **`docusaurus serve` has a dotted-directory routing bug** that
-  404s URLs like `/internals/dotnet/arolariu.Backend.Common/`.
-  Azure Static Web Apps (and any neutral static server) serves
-  them correctly. Don't use `docusaurus serve` for smoke-testing
-  the .NET internals tier locally.
+- **Generated docs validation is a deployment gate**. `docs:assemble` fails if any Docusaurus-mounted generated tier is missing or empty.
+  Validation counts extractor output only; orchestrator-generated landing pages such as `index.md` / `README.md` do not satisfy the gate.
+- **Broad extractor coverage is intentional**. TypeDoc includes project-owned source trees and excludes tests, stories, generated output,
+  build output, and dependency internals. DefaultDocumentation requests undocumented items plus public/protected/internal/private member
+  output so maintainers can inspect internal architecture from the generated reference.
+- **Parallel extractor output is buffered** so TypeDoc / pydoc-markdown / DefaultDocumentation logs don't interleave at the terminal; each
+  block is replayed in a fixed order after `Promise.all` resolves. Non-zero exits surface the last 2KB of buffered output so CI logs show
+  the actual failure.
+- **pydoc-markdown** emits CRLF on Windows. `normalizeLineEndings()` in the orchestrator rewrites `\r\n` → `\n` before the frontmatter pass
+  so the parser is platform-agnostic.
+- **Mermaid diagrams** render client-side only (theme-mermaid hydrates after initial HTML). Grepping the SSR HTML for `mermaid` is not a
+  reliable test — look for the fenced code block source in the client JS chunk.
+- **`docusaurus serve` has a dotted-directory routing bug** that 404s URLs like `/internals/dotnet/arolariu.Backend.Common/`. Azure Static
+  Web Apps (and any neutral static server) serves them correctly. Don't use `docusaurus serve` for smoke-testing the .NET internals tier
+  locally.
 
 ### TypeDoc Coverage Limitations
 
-The website TypeDoc extractor (`typedoc.website.json`) excludes the
-following files/subtrees due to framework-specific type dependencies
-or strict TypeScript compiler requirements:
+The website TypeDoc extractor (`typedoc.website.json`) excludes the following files/subtrees due to framework-specific type dependencies or
+strict TypeScript compiler requirements:
 
 #### Next.js Framework Routes
 
 **Excluded:** `src/app/**`
 
-**Reason:** Next.js App Router pages and layouts rely on
-build-time-generated `PageProps<Route>` and `LayoutProps<Route>`
-types from `.next/dev/types/routes.d.ts`. TypeDoc cannot resolve
-these types outside a full Next.js build context.
+**Reason:** Next.js App Router pages and layouts rely on build-time-generated `PageProps<Route>` and `LayoutProps<Route>` types from
+`.next/dev/types/routes.d.ts`. TypeDoc cannot resolve these types outside a full Next.js build context.
 
 **Error:**
+
 ```
 TS2304: Cannot find name 'PageProps'.
 TS2304: Cannot find name 'LayoutProps'.
 ```
 
-**Impact:** Route components are framework-specific handlers (not
-reusable APIs), so this exclusion doesn't affect public API
-documentation.
+**Impact:** Route components are framework-specific handlers (not reusable APIs), so this exclusion doesn't affect public API documentation.
 
 #### Internationalization-Heavy Components
 
 **Excluded:**
+
 - `src/components/Buttons/ThemeButton.tsx`
 - `src/components/Commander.tsx`
 - `src/components/Footer.tsx`
@@ -185,35 +152,26 @@ documentation.
 - `src/components/Navigation.tsx`
 - `src/presentation/ForbiddenScreen.tsx`
 
-**Reason:** These components use next-intl's message access pattern
-`t((m) => m.app.navigation.domains)` which triggers TypeScript's
-`noPropertyAccessFromIndexSignature` strict check (TS4111) because
-translation objects use index signatures.
+**Reason:** These components use next-intl's message access pattern `t((m) => m.app.navigation.domains)` which triggers TypeScript's
+`noPropertyAccessFromIndexSignature` strict check (TS4111) because translation objects use index signatures.
 
 **Error (39 occurrences across 4 files):**
+
 ```
 TS4111: Property 'app' comes from an index signature, so it must be accessed with ['app'].
 ```
 
-**Resolution Attempted:** Could disable
-`noPropertyAccessFromIndexSignature` in `tsconfig.typedoc.json`, but
-the Task 2 plan prohibited weakening compiler options. Excluding
-specific i18n-heavy presentation components is the narrowest fix
-that preserves strict type-checking.
+**Resolution Attempted:** Could disable `noPropertyAccessFromIndexSignature` in `tsconfig.typedoc.json`, but the Task 2 plan prohibited
+weakening compiler options. Excluding specific i18n-heavy presentation components is the narrowest fix that preserves strict type-checking.
 
-**Impact:** These are presentation/UI components. Business logic in
-`src/hooks/`, `src/stores/`, `src/lib/actions/`, `src/types/`,
+**Impact:** These are presentation/UI components. Business logic in `src/hooks/`, `src/stores/`, `src/lib/actions/`, `src/types/`,
 `src/contexts/`, and other reusable modules is fully documented.
 
 #### Configuration Notes
 
-- **Module Resolution:** The `files: ["src/types/globals.d.ts"]`
-  entry in `tsconfig.typedoc.json` makes ambient module declarations
-  visible to TypeDoc despite the `**/*.d.ts` exclude pattern. This
-  allows TypeDoc to resolve `*.svg` and `*?raw` imports without
-  requiring source-file changes.
-  
-- **Exclusions:** All exclusions are configured in
-  `sites/arolariu.ro/tsconfig.typedoc.json` as the narrowest
-  possible patterns that allow TypeDoc to succeed with strict
-  compiler options intact.
+- **Module Resolution:** The `files: ["src/types/globals.d.ts"]` entry in `tsconfig.typedoc.json` makes ambient module declarations visible
+  to TypeDoc despite the `**/*.d.ts` exclude pattern. This allows TypeDoc to resolve `*.svg` and `*?raw` imports without requiring
+  source-file changes.
+
+- **Exclusions:** All exclusions are configured in `sites/arolariu.ro/tsconfig.typedoc.json` as the narrowest possible patterns that allow
+  TypeDoc to succeed with strict compiler options intact.

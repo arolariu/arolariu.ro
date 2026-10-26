@@ -1,37 +1,34 @@
 # Copilot Path Instructions
 
-Copilot loads matching `*.instructions.md` files by `applyTo` path. Each file
-owns one narrow concern and inherits root `AGENTS.md` plus
+Copilot loads matching `*.instructions.md` files by `applyTo` path. Each file owns one narrow concern and inherits root `AGENTS.md` plus
 `.github/copilot-instructions.md`.
 
 ## Ownership
 
-| File | Owns |
-| --- | --- |
-| `typescript.instructions.md` | TypeScript language and type-system rules |
-| `react.instructions.md` | Common React semantics and artifact-workflow routing |
-| `frontend.instructions.md` | Next.js website architecture |
-| `csharp.instructions.md` | C# language, nullable, docs, and async rules |
-| `backend.instructions.md` | API DDD and The Standard |
-| `components.instructions.md` | Shared component-library constraints |
-| `bicep.instructions.md` | Azure Bicep conventions |
-| `workflows.instructions.md` | GitHub Actions conventions |
-| `python.instructions.md` | Experimental-service Python rules |
-| `svelte.instructions.md` | CV Svelte rules |
-| `agent-governance.instructions.md` | AI asset rules |
+| File                               | Owns                                                 |
+| ---------------------------------- | ---------------------------------------------------- |
+| `typescript.instructions.md`       | TypeScript language and type-system rules            |
+| `react.instructions.md`            | Common React semantics and artifact-workflow routing |
+| `frontend.instructions.md`         | Next.js website architecture                         |
+| `csharp.instructions.md`           | C# language, nullable, docs, and async rules         |
+| `backend.instructions.md`          | API DDD and The Standard                             |
+| `components.instructions.md`       | Shared component-library constraints                 |
+| `bicep.instructions.md`            | Azure Bicep conventions                              |
+| `workflows.instructions.md`        | GitHub Actions conventions                           |
+| `python.instructions.md`           | Experimental-service Python rules                    |
+| `svelte.instructions.md`           | CV Svelte rules                                      |
+| `agent-governance.instructions.md` | AI asset rules                                       |
 
-Subordinate catalogs under `references/` hold optional examples, edge cases,
-and rationale. Notable semantic splits are:
+Subordinate catalogs under `references/` hold optional examples, edge cases, and rationale. Notable semantic splits are:
 
-| Instruction owner | Conditional catalogs |
-| --- | --- |
-| `frontend.instructions.md` | `frontend.md`, `nextjs.md` |
-| `react.instructions.md` | `react.md`, `react-client.md`, `react-server.md` |
-| `backend.instructions.md` | `backend.md`, `minimal-apis.md` |
+| Instruction owner          | Conditional catalogs                             |
+| -------------------------- | ------------------------------------------------ |
+| `frontend.instructions.md` | `frontend.md`, `nextjs.md`                       |
+| `react.instructions.md`    | `react.md`, `react-client.md`, `react-server.md` |
+| `backend.instructions.md`  | `backend.md`, `minimal-apis.md`                  |
 
-The Code Reviewer agent owns the read-only role and tool restrictions;
-`code-review` owns the repeatable review procedure. Neither is globally
-injected into implementation tasks.
+The Code Reviewer agent owns the read-only role and tool restrictions; `code-review` owns the repeatable review procedure. Neither is
+globally injected into implementation tasks.
 
 ## Required Frontmatter
 
@@ -50,10 +47,8 @@ Do not add version or review-date metadata.
 - Keep only rules unique to the matched files.
 - Reference root or local guides for facts and commands.
 - Reference accepted RFCs rather than reproducing them.
-- Prefer concise invariants over tutorials and static implementation
-  templates.
-- Put repeatable task execution in a skill; prompt files are local VS Code
-  shortcuts and are not used by Agent Host.
+- Prefer concise invariants over tutorials and static implementation templates.
+- Put repeatable task execution in a skill; prompt files are local VS Code shortcuts and are not used by Agent Host.
 - Follow `.github/agent-governance/operating-protocol.md`.
 
 ## Product References
