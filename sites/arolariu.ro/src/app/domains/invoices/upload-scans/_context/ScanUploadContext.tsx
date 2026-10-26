@@ -28,7 +28,6 @@ import {initialUploadState} from "../_model/state";
 import type {PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
 import {runUploadSession} from "../_upload/uploadSession";
 
-type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
 type UploadIntakeSource = "input" | "drop" | "paste";
 
 interface ScanUploadContextType {
@@ -68,6 +67,8 @@ const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undef
  * @returns Provider wrapping the upload route subtree.
  */
 export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
+  type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
+
   const t = useTranslations();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());

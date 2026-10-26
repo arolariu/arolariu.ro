@@ -20,7 +20,7 @@
    *   inline-size` + `container-name: statusPage` so child components can
    *   target `@container statusPage (max-width: 640px)`.
    */
-  import {onMount} from "svelte";
+  import {onMount, untrack} from "svelte";
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile} from "$lib/types/status";
   import {WINDOW_CONFIGS} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
@@ -78,7 +78,8 @@
   const lastProbeAt = $derived(sliced?.generatedAt);
 
   async function loadAggregate(g: "fine" | "hourly" | "daily") {
-    if (cache[g]) return;
+    // Refresh owns its fetch; cache invalidation must not retrigger the granularity effect.
+    if (untrack(() => cache[g])) return;
     try {
       const file = await fetchAggregate(g);
       cache = {...cache, [g]: file};

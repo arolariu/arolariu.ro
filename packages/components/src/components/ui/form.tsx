@@ -52,10 +52,6 @@ import styles from "./form.module.css";
  */
 const Form = Object.assign(FormProvider, {displayName: "Form"});
 
-type FormControlElementProps = React.HTMLAttributes<HTMLElement> & {
-  ref?: React.Ref<HTMLElement>;
-};
-
 interface FormControlProps extends Omit<React.HTMLAttributes<HTMLElement>, "children"> {
   /**
    * Single form control element or fallback content to receive field accessibility attributes.
@@ -269,6 +265,10 @@ const FormControl = React.forwardRef<HTMLElement, FormControlProps>(
     );
 
     if (React.isValidElement(children)) {
+      type FormControlElementProps = React.HTMLAttributes<HTMLElement> & {
+        ref?: React.Ref<HTMLElement>;
+      };
+
       const child = children as React.ReactElement<FormControlElementProps>;
       const childDescribedBy = typeof child.props["aria-describedby"] === "string" ? child.props["aria-describedby"] : undefined;
 

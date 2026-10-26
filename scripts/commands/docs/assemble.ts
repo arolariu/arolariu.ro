@@ -325,7 +325,7 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
  *
  * @remarks
  * The multi-value `--GeneratedAccessModifiers Public Protected Internal Private`
- * form follows the DefaultDocumentation.Console 1.2.4 option shape verified via
+ * form follows the DefaultDocumentation.Console 1.2.6 option shape verified via
  * `defaultdocumentation --help` and parser behavior.
  *
  * @param dll - Absolute path to the compiled assembly.

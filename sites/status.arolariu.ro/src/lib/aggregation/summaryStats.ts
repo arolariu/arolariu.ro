@@ -11,9 +11,6 @@
 import {WINDOW_CONFIGS, type FilterWindow, type Incident, type IncidentsFile, type ServiceSeries} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
 
-/** Narrow alias for incidents that carry `resolvedAt` + `durationMs`. */
-type ResolvedIncident = Extract<Incident, {readonly status: "resolved"}>;
-
 const MS_PER_DAY = 86_400_000;
 
 /**
@@ -77,6 +74,9 @@ export function computeIncidentCount(incidents: IncidentsFile | null, windowFilt
  * (UI falls back to "—").
  */
 export function computeMttr(incidents: IncidentsFile | null, windowFilter: FilterWindow): number | undefined {
+  /** Narrow alias for incidents that carry `resolvedAt` + `durationMs`. */
+  type ResolvedIncident = Extract<Incident, {readonly status: "resolved"}>;
+
   if (!incidents) return undefined;
   // eslint-disable-next-line security/detect-object-injection -- windowFilter is constrained to the FilterWindow union.
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;

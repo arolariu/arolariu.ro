@@ -23,9 +23,7 @@ const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
-type SidebarCloneableDivProps = React.ComponentProps<"div"> & SidebarDataAttributes & {ref?: React.Ref<HTMLDivElement>};
 type SidebarCloneableButtonProps = React.ComponentProps<"button"> & SidebarDataAttributes & {ref?: React.Ref<HTMLButtonElement>};
-type SidebarCloneableAnchorProps = React.ComponentProps<"a"> & SidebarDataAttributes & {ref?: React.Ref<HTMLAnchorElement>};
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -628,6 +626,8 @@ interface SidebarGroupLabelProps extends React.ComponentProps<"div"> {
  */
 const SidebarGroupLabel = React.forwardRef<HTMLDivElement, SidebarGroupLabelProps>(
   ({className, asChild = false, children, ...props}, ref) => {
+    type SidebarCloneableDivProps = React.ComponentProps<"div"> & SidebarDataAttributes & {ref?: React.Ref<HTMLDivElement>};
+
     const mergedProps: SidebarCloneableDivProps = {
       ...props,
       children,
@@ -1096,6 +1096,8 @@ interface SidebarMenuSubButtonProps extends React.ComponentProps<"a"> {
  */
 const SidebarMenuSubButton = React.forwardRef<HTMLAnchorElement, SidebarMenuSubButtonProps>(
   ({asChild = false, size = "md", isActive, className, children, ...props}, ref) => {
+    type SidebarCloneableAnchorProps = React.ComponentProps<"a"> & SidebarDataAttributes & {ref?: React.Ref<HTMLAnchorElement>};
+
     const mergedProps: SidebarCloneableAnchorProps = {
       ...props,
       children,

@@ -17,7 +17,8 @@
           <SingleHit>false</SingleHit>
           <SkipAutoProps>false</SkipAutoProps>
           <UseSourceLink>false</UseSourceLink>
-          <DeterministicReport>true</DeterministicReport>
+          <!-- LCOV does not support deterministic reporting; preserve all requested formats. -->
+          <DeterministicReport>false</DeterministicReport>
           <Format>cobertura,lcov,opencover,json</Format>
           <ExcludeByAttribute>
             Obsolete

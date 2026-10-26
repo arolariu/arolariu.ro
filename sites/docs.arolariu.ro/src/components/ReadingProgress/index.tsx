@@ -64,7 +64,7 @@ export default function ReadingProgress(): React.JSX.Element | null {
   return (
     <div
       aria-hidden='true'
-      className={styles.bar}
+      className={styles["bar"]}
       style={{width: `${widthPct}%`}}
     />
   );

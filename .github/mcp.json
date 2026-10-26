@@ -3,17 +3,17 @@
     "context7": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp@4.4.4"]
     },
     "playwright": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@playwright/mcp@latest"]
+      "args": ["/c", "npx", "-y", "@playwright/mcp@0.0.83"]
     },
     "sequential-thinking": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking@2.0.0"]
     },
     "filesystem": {
       "type": "stdio",
@@ -22,7 +22,7 @@
         "/c",
         "npx",
         "-y",
-        "@modelcontextprotocol/server-filesystem",
+        "@modelcontextprotocol/server-filesystem@2.0.1",
         "sites/arolariu.ro/src",
         "sites/api.arolariu.ro/src",
         "packages/components/src",

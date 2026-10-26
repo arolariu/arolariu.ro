@@ -90,6 +90,11 @@ npm run dev:docs       # Live dev server with hot reload (http://localhost:3100)
 
 `build:docs` and `dev:docs` depend on `docs:assemble` via Nx, so a single `npm run build:docs` performs the full pipeline.
 
+Run `npm --workspace @arolariu/docs run typecheck` to check the site source, configuration, sidebars, and build scripts with the root strict
+TypeScript and `checkJs` settings. Only `static/js/clarity.js` is excluded alongside generated build output: it is the unmodified vendor
+browser bootstrap loaded directly by `docusaurus.config.ts`, not an imported application module. Docusaurus copies it unchanged into the
+build; its loading and analytics behavior are not altered by this source boundary.
+
 ## Deploy
 
 Pushes to `main` that touch `sites/docs.arolariu.ro/**` (or any of the upstream service sources that feed the extractors) trigger

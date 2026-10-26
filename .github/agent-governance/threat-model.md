@@ -58,11 +58,12 @@ pushes/deletions, or permits direct pushes.
   setting.
 - **CI-side validation of frontmatter / dead refs / version consistency.** Rejected as out-of-scope tooling for this PR.
 - **Commit signing.** Overkill for solo project.
-- **Supply-chain pinning of MCP packages.** All MCP entries use `npx -y <package>`, which floats versions. A poisoned npm package upgrade
-  would land at next session start. Accepted risk; revisit if any specific package proves unstable.
-- **Playwright MCP all-tools scope.** The current workspace entry exposes all tools supplied by a floating local package. Treat browser
-  automation as code-capable, keep native permissions/sandboxing in force, and do not use it against hostile content without an isolated
-  environment. Narrowing or pinning it is an MCP/dependency change requiring explicit approval.
+- **MCP package provenance.** Exact package pins reduce unexpected version drift, but do not verify package contents or lock the entire
+  transitive graph fetched by `npx`. Review updates through the dependency workflow; a pin alone does not establish supply-chain safety.
+- **Playwright MCP all-tools scope.** The workspace entry exposes all tools supplied by its pinned package. Treat browser automation as
+  code-capable, keep native permissions/sandboxing in force, and do not use it against hostile content without an isolated environment.
+  Narrowing or updating it is an MCP/dependency change requiring explicit approval. Verify the active server separately; an existing session
+  may still have an older server loaded.
 
 ## Review and extension boundaries
 

@@ -42,10 +42,6 @@ import styles from "./PackagesScreen.module.scss";
 
 type Props = Readonly<{packages: NodePackagesJSON}>;
 
-type SortDirection = Readonly<"asc" | "desc">;
-type SortField = Readonly<"name" | "dependencies" | "type">;
-type PackageType = Readonly<"all" | "production" | "development">;
-
 /**
  * Component that displays a dialog with the dependencies of a package.
  * @returns A dialog with the dependencies of a package.
@@ -127,6 +123,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
 
   const handlePackageType = useCallback(
     (e: string) => {
+      type PackageType = Readonly<"all" | "production" | "development">;
       setPackageType(e as PackageType);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPackageType is a stable function.
@@ -135,6 +132,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
 
   const handleSortField = useCallback(
     (e: string) => {
+      type SortField = Readonly<"name" | "dependencies" | "type">;
       setSortField(e as SortField);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortField is a stable function.
@@ -143,6 +141,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
 
   const handleSortDirection = useCallback(
     (e: string) => {
+      type SortDirection = Readonly<"asc" | "desc">;
       setSortDirection(e as SortDirection);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortDirection is a stable function.

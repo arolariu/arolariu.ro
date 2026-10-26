@@ -48,20 +48,6 @@ import styles from "./RelatedInvoicesCard.module.scss";
 type RelationType = "sameMerchant" | "sameCategory" | "similarAmount";
 
 /**
- * Extended invoice type with relationship metadata.
- *
- * @remarks
- * Includes the primary reason why this invoice is considered related.
- * Multiple reasons may apply, but only the primary one is displayed.
- */
-type RelatedInvoiceWithMeta = {
-  /** The related invoice */
-  readonly invoice: Invoice;
-  /** Primary relationship type */
-  readonly relationType: RelationType;
-};
-
-/**
  * Calculates whether two amounts are similar (within ±30% range).
  *
  * @param amount1 - First amount to compare
@@ -124,6 +110,20 @@ function isSimilarAmount(amount1: number, amount2: number): boolean {
  * ```
  */
 export function RelatedInvoicesCard(): React.JSX.Element | null {
+  /**
+   * Extended invoice type with relationship metadata.
+   *
+   * @remarks
+   * Includes the primary reason why this invoice is considered related.
+   * Multiple reasons may apply, but only the primary one is displayed.
+   */
+  type RelatedInvoiceWithMeta = {
+    /** The related invoice */
+    readonly invoice: Invoice;
+    /** Primary relationship type */
+    readonly relationType: RelationType;
+  };
+
   const t = useTranslations();
   const {invoice: currentInvoice} = useInvoiceContext();
   const invoices = useInvoicesStore(useShallow((state) => state.entities));

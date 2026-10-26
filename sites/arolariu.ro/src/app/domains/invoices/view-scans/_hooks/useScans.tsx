@@ -103,9 +103,7 @@ export function useScans(): UseScansOutput {
       setIsSyncing(true);
 
       try {
-        const result = await fetchScans({
-          includeArchived: false,
-        });
+        const result = await fetchScans();
 
         if (result.success && result.data) {
           const fetchedScans = result.data;

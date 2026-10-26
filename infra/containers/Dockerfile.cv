@@ -127,7 +127,7 @@ COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/build/sta
 COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/package.json ./
 
 # Install serve for static file serving (lightweight, production-ready)
-RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm install --global serve@14 && npm cache clean --force
+RUN --mount=type=secret,id=npm_config,target=/root/.npmrc npm install --global serve@14.2.6 && npm cache clean --force
 
 # Security: Switch to non-root user
 USER sveltekit

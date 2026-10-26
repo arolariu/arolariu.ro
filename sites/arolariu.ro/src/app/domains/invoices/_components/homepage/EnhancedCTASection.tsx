@@ -8,20 +8,20 @@ import {useRef} from "react";
 import {TbArrowRight, TbBrain, TbCloud, TbLock, TbSparkles, TbUpload} from "react-icons/tb";
 import styles from "./EnhancedCTASection.module.scss";
 
-type CtaTranslations = Readonly<{
-  title: string;
-  description: string;
-  uploadButton: string;
-  learnMore: string;
-  badges: {secure: string; cloud: string; ai: string};
-}>;
-
 /**
  * Renders the call-to-action section for invoices.
  *
  * @returns The CTA section.
  */
 export default function EnhancedCTASection(): React.JSX.Element {
+  type CtaTranslations = Readonly<{
+    title: string;
+    description: string;
+    uploadButton: string;
+    learnMore: string;
+    badges: {secure: string; cloud: string; ai: string};
+  }>;
+
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-50px"});

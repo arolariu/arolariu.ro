@@ -14,12 +14,6 @@ import styles from "./OnboardingOverlay.module.scss";
 
 type Props = Record<string, never>;
 
-type Step = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-};
-
 /**
  * Onboarding overlay component with 3-step tutorial for first-time users.
  *
@@ -46,6 +40,12 @@ type Step = {
  * @returns The OnboardingOverlay component (only visible when not completed or dismissed)
  */
 export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.Element | null {
+  type Step = {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+  };
+
   const t = useTranslations();
   const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>("invoice-onboarding-complete", false);
   const [onboardingDismissed, setOnboardingDismissed] = useLocalStorage<boolean>("invoice-onboarding-dismissed", false);

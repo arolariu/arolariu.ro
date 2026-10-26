@@ -1,7 +1,10 @@
 {
   "extends": ["../../tsconfig.json", "@docusaurus/tsconfig"],
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": null,
+    "paths": {
+      "@site/*": ["./*"]
+    }
   },
-  "exclude": ["build", "_generated"]
+  "exclude": ["build", "_generated", "static/js/clarity.js"]
 }

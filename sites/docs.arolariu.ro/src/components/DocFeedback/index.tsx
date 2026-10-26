@@ -65,21 +65,21 @@ export default function DocFeedback({pagePath}: Readonly<DocFeedbackProps>): Rea
   };
 
   if (recorded !== null) {
-    return <div className={styles.wrap}>{`// marked (${recorded})`}</div>;
+    return <div className={styles["wrap"]}>{`// marked (${recorded})`}</div>;
   }
 
   return (
-    <div className={styles.wrap}>
-      <span className={styles.prompt}>// was this page useful?</span>
+    <div className={styles["wrap"]}>
+      <span className={styles["prompt"]}>// was this page useful?</span>
       <button
         type='button'
-        className={styles.btn}
+        className={styles["btn"]}
         onClick={() => submit("yes")}>
         [yes]
       </button>
       <button
         type='button'
-        className={styles.btn}
+        className={styles["btn"]}
         onClick={() => submit("no")}>
         [no]
       </button>

@@ -12,6 +12,17 @@
       "severity": "Degraded",
       "reason": "connection pool exhausted",
       "probeCount": 2
+    },
+    {
+      "id": "inc-2026-04-17T10-00-00Z-website",
+      "service": "arolariu.ro",
+      "status": "resolved",
+      "startedAt": "2026-04-17T10:00:00Z",
+      "resolvedAt": "2026-04-17T10:30:00Z",
+      "durationMs": 1800000,
+      "severity": "Unhealthy",
+      "reason": "upstream timeout",
+      "probeCount": 2
     }
   ]
 }

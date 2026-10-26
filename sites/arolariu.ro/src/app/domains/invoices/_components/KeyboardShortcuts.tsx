@@ -26,20 +26,6 @@ type KeyboardShortcutsProps = {
 };
 
 /**
- * Keyboard shortcut definition with handler and metadata.
- */
-type ShortcutDef = {
-  /** The key to listen for (e.g., "k", "n", "u"). */
-  key: string;
-  /** Whether Ctrl (or Cmd on macOS) must be pressed. @default false */
-  ctrl?: boolean;
-  /** Handler function to execute when the shortcut is triggered. */
-  handler: () => void;
-  /** Human-readable description of what the shortcut does. */
-  description: string;
-};
-
-/**
  * Checks if an element should block keyboard shortcuts.
  *
  * @param element - The currently focused element.
@@ -99,6 +85,20 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
   }, [router]);
 
   useEffect(() => {
+    /**
+     * Keyboard shortcut definition with handler and metadata.
+     */
+    type ShortcutDef = {
+      /** The key to listen for (e.g., "k", "n", "u"). */
+      key: string;
+      /** Whether Ctrl (or Cmd on macOS) must be pressed. @default false */
+      ctrl?: boolean;
+      /** Handler function to execute when the shortcut is triggered. */
+      handler: () => void;
+      /** Human-readable description of what the shortcut does. */
+      description: string;
+    };
+
     /**
      * Shortcut definitions with their handlers — defined inside the effect
      * so they are not a dependency that causes re-registration on every render.

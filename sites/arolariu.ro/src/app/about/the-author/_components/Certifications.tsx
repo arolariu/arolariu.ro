@@ -7,16 +7,6 @@ import {useRef} from "react";
 import {TbAward, TbCheck, TbExternalLink} from "react-icons/tb";
 import styles from "./Certifications.module.scss";
 
-type CertificationType = {
-  name: string;
-  code: string;
-  issuer: string;
-  issueDate: string;
-  description: string;
-  coreSkills: string[];
-  link: string;
-};
-
 const containerVariants: Variants = {
   hidden: {opacity: 0},
   visible: {
@@ -37,6 +27,16 @@ const itemVariants: Variants = {
  * @returns A section containing certification cards with interactive elements
  */
 export default function Certifications(): React.JSX.Element {
+  type CertificationType = {
+    name: string;
+    code: string;
+    issuer: string;
+    issueDate: string;
+    description: string;
+    coreSkills: string[];
+    link: string;
+  };
+
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});

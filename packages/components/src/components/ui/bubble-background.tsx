@@ -32,15 +32,6 @@ export interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivEleme
   colors?: BubbleBackgroundColors;
 }
 
-type BubbleStyleProperties = React.CSSProperties & {
-  "--ac-bubble-first-color": string;
-  "--ac-bubble-second-color": string;
-  "--ac-bubble-third-color": string;
-  "--ac-bubble-fourth-color": string;
-  "--ac-bubble-fifth-color": string;
-  "--ac-bubble-sixth-color": string;
-};
-
 /**
  * Renders drifting gradient bubbles with an optional interactive cursor follower.
  *
@@ -76,6 +67,15 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
     },
     ref,
   ) => {
+    type BubbleStyleProperties = React.CSSProperties & {
+      "--ac-bubble-first-color": string;
+      "--ac-bubble-second-color": string;
+      "--ac-bubble-third-color": string;
+      "--ac-bubble-fourth-color": string;
+      "--ac-bubble-fifth-color": string;
+      "--ac-bubble-sixth-color": string;
+    };
+
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     React.useImperativeHandle(ref, () => containerRef.current!, []);

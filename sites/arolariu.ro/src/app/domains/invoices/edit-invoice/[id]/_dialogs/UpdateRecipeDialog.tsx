@@ -51,7 +51,6 @@ type StepRow = {id: string; instruction: string; notes: string};
 type IngredientSectionKey = "purchased" | "pantry" | "missing";
 type IngredientField = "name" | "quantity" | "preparation";
 type StepField = "instruction" | "notes";
-type IngredientRowsSetter = Dispatch<SetStateAction<IngredientRow[]>>;
 type UpdateRecipePayload = Readonly<{recipe: RecipeSuggestion; recipeIndex: number}>;
 
 let rowIdentifierSequence = 0;
@@ -140,6 +139,8 @@ function getIngredientQuantityErrorId(row: IngredientRow, message: string | unde
 const ALL_ALLERGEN_CODES = Object.values(AllergenCode);
 
 export default function UpdateRecipeDialog(): React.JSX.Element {
+  type IngredientRowsSetter = Dispatch<SetStateAction<IngredientRow[]>>;
+
   const t = useTranslations();
   const router = useRouter();
   const {

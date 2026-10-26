@@ -732,7 +732,7 @@ function runNewmanForTarget(
     cleanups.push({target, reportDir, runtimeAuthToken: shouldPassAuthToken ? authToken : undefined, outputToken});
 
     const args = [
-      "newman",
+      "newman@6.2.3",
       "run",
       collectionPath,
       "--environment",

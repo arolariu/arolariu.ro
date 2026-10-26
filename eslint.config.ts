@@ -916,7 +916,12 @@ for (const individualEslintConfig of projectEslintConfig) {
 }
 
 const eslintConfig = defineConfig(
-  {ignores: ["**/{node_modules,.storybook,storybook-static,.superpowers,.svelte-kit,.next,out,bin,build,dist}/**", "docs/superpowers/**"]},
+  {
+    ignores: [
+      "**/{node_modules,.storybook,storybook-static,.superpowers,.svelte-kit,.next,out,bin,build,dist,code-cov,coverage,test-results,playwright-report}/**",
+      "docs/superpowers/**",
+    ],
+  },
   projectEslintConfig,
   toolingOutputConfig,
   toolingPromptOutputConfig,

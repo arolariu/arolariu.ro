@@ -26,7 +26,7 @@ dotnet workload restore || true
 dotnet restore ./arolariu.slnx
 
 echo "=== Installing docfx global tool ==="
-dotnet tool install -g docfx || true
+dotnet tool update -g docfx --version 2.81.0
 
 echo "=== Installing Playwright browsers ==="
 npx playwright install --with-deps || true
@@ -35,7 +35,7 @@ echo "=== Creating Python virtual environment for exp ==="
 if [[ ! -d sites/exp.arolariu.ro/.venv ]]; then
   cd sites/exp.arolariu.ro
   python -m venv .venv
-  .venv/bin/pip install --upgrade pip
+  .venv/bin/pip install --upgrade "pip==26.2.2"
   .venv/bin/pip install -r requirements.txt
   cd -
 fi

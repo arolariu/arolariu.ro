@@ -49,7 +49,6 @@ import {createInvoiceFromScans} from "../_actions/createInvoiceFromScans";
 import styles from "./CreateInvoiceDialog.module.scss";
 
 type CreationMode = "single" | "batch";
-type CreationStep = "select" | "creating" | "complete";
 
 /**
  * Links converted scans back to the invoices created from them and archives
@@ -130,6 +129,8 @@ function ProcessStep({
  * Uses the DialogContext for state management.
  */
 export default function CreateInvoiceDialog(): React.JSX.Element {
+  type CreationStep = "select" | "creating" | "complete";
+
   const t = useTranslations();
   const router = useRouter();
 
