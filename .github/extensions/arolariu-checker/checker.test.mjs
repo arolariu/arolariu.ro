@@ -103,6 +103,22 @@ function createInvalidFixtureRepository() {
   return root;
 }
 
+test("parseFrontmatter folds formatter-wrapped plain scalar descriptions", () => {
+  assert.deepEqual(
+    parseFrontmatter(
+      ["---", "name: Wrapped", "description:", "  A long description", "  continued here.", 'tools: ["read"]', "---"].join("\r\n"),
+    ),
+    {name: "Wrapped", description: "A long description continued here.", tools: '["read"]'},
+  );
+});
+
+test("parseFrontmatter does not treat nested mappings as scalar text", () => {
+  assert.deepEqual(parseFrontmatter(["---", "name: Nested", "description:", "  nested: value", "---"].join("\n")), {
+    name: "Nested",
+    description: "",
+  });
+});
+
 test("parseFrontmatter extracts quoted top-level scalars", () => {
   assert.deepEqual(
     parseFrontmatter(["---", "name: 'Backend Expert'", 'description: "Backend"', 'tools: ["read", "search"]', "---", "Body"].join("\n")),
