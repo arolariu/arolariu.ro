@@ -259,7 +259,10 @@ export function evaluateGate(gate: Gate, findings: readonly Finding[]): GateResu
 // PROVIDER OUTCOME (one file per provider)
 // =============================================================================
 
-/** Structured error captured when a providers run() throws. */
+/** Maximum characters per persisted operational-error field, after redaction. */
+export const PROVIDER_ERROR_MESSAGE_LIMIT = 4096;
+
+/** Redacted, bounded operational error suitable for artifacts and public reports. */
 export interface ProviderError {
   readonly message: string;
   readonly stack?: string;

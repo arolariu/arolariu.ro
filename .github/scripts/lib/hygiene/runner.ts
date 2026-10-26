@@ -16,11 +16,24 @@ import {
 } from "./contracts.ts";
 import {decodeProviderOutcome} from "./outcomes.ts";
 import {decodeProviderId, providerDescriptor} from "./registry.ts";
+import {CommandExecutionError} from "../../helpers/exec/index.ts";
+import {redactEvidenceText} from "../../helpers/reports/redact.ts";
+import {PROVIDER_ERROR_MESSAGE_LIMIT} from "./contracts.ts";
 
 function errorData(error: unknown): ProviderError {
-  return error instanceof Error
-    ? {message: error.message || error.name, ...(error.stack ? {stack: error.stack} : {})}
-    : {message: "Provider threw a non-Error value"};
+  if (!(error instanceof Error)) return {message: "Provider threw a non-Error value"};
+  const sanitize = (value: string): string => redactEvidenceText(value).replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "");
+  let message = sanitize(error.message || error.name);
+  if (error instanceof CommandExecutionError) {
+    const stderr = sanitize(error.stderr).trim();
+    const errorLines = stderr.split(/\r?\n/).filter((line) => /\b(?:error|exception|failed|fatal)\b/i.test(line));
+    const diagnostic = errorLines.length > 0 ? errorLines.join("\n") : stderr;
+    if (diagnostic) message += `\n${diagnostic}`;
+  }
+  return {
+    message: message.slice(0, PROVIDER_ERROR_MESSAGE_LIMIT),
+    ...(error.stack ? {stack: sanitize(error.stack).slice(0, PROVIDER_ERROR_MESSAGE_LIMIT)} : {}),
+  };
 }
 
 /**

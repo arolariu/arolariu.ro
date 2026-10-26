@@ -4,10 +4,16 @@ import {fs} from "../filesystem/index.ts";
 import {parseJUnitXml} from "./junit.ts";
 import {parseTrxResults} from "./trx.ts";
 import {decodeVitestReport} from "./vitest.ts";
+import {redactEvidenceText} from "./redact.ts";
 
 const fixture = (name: string): string => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 describe("raw serialized report decoders", () => {
+  it("redacts quoted credentials in command diagnostics before presentation", () => {
+    const value = redactEvidenceText('password="private value" client_secret=\'other private value\' "api_key": "private-key"');
+    expect(value).not.toMatch(/private value|private-key/);
+    expect(value).toContain("[REDACTED]");
+  });
   it("retains raw JUnit cases without importing workflow findings", async () => {
     const suites = parseJUnitXml(await fs.readText(fixture("junit.xml")));
     expect(suites[0]).toMatchObject({tests: 3, failures: 1, skipped: 1});

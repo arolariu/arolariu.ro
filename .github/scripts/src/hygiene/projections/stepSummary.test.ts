@@ -22,6 +22,11 @@ import {providerIds} from "../../../lib/hygiene/registry.ts";
 import {buildVerifiedReport} from "../../../lib/hygiene/aggregate.ts";
 
 describe("scorecard cell safety", () => {
+  it("retains actionable runner diagnostics beyond the short finding-summary budget", () => {
+    const message = `Command 'prettier' exited with code 2\n${"module path detail ".repeat(20)}SyntaxError: top-level await`;
+    const markdown = renderProviderCard(makeOutcome({gateResult: "errored", error: {message}}));
+    expect(markdown).toContain("SyntaxError: top-level await");
+  });
   it("publishes selection/skip reasons and explicit missing evidence", () => {
     const plan = evidencePlan(true);
     const report = buildVerifiedReport(planContext(), plan, {outcomes: providerIds().map((id) => evidenceOutcome(plan, id)), issues: []});

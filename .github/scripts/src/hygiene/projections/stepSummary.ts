@@ -14,6 +14,8 @@ import {CommentBuilder, MarkdownUtils} from "../../../helpers/comments/index.ts"
 import type {SuiteResult as SuiteResultLike, TestSuitesPayload as TestSuitesPayloadLike} from "../../../lib/testing/suites.ts";
 import {isComparisonFinding} from "../domain/types.ts";
 import {type Finding, type GateResult, type HygieneReport, type ProviderOutcome} from "../domain/types.ts";
+import {PROVIDER_ERROR_MESSAGE_LIMIT} from "../../../lib/hygiene/contracts.ts";
+import {redactEvidenceText} from "../../../helpers/reports/redact.ts";
 
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
@@ -173,17 +175,18 @@ export function normalizePath(file: string): string {
  * Removes noisy terminal formatting and stack frames from provider messages.
  *
  * @param msg - The raw provider, linter, or test-runner message.
+ * @param maxLength - Character budget for this presentation surface.
  * @returns A trimmed message capped to the renderer's maximum summary length.
  */
-export function cleanMessage(msg: string): string {
+export function cleanMessage(msg: string, maxLength = MAX_MESSAGE_LENGTH): string {
   let cleaned = msg.replace(/\u001b\[[0-9;]*m/g, "");
   cleaned = cleaned
     .split("\n")
     .filter((line) => !/^\s*at\s+(file:\/\/\/.*node_modules|\/.*node_modules)/.test(line))
     .join("\n")
     .trim();
-  if (cleaned.length > MAX_MESSAGE_LENGTH) {
-    cleaned = cleaned.substring(0, MAX_MESSAGE_LENGTH - 1).trimEnd() + "…";
+  if (cleaned.length > maxLength) {
+    cleaned = cleaned.substring(0, maxLength - 1).trimEnd() + "…";
   }
   return cleaned;
 }
@@ -455,7 +458,9 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   }
 
   if (o.gateResult === "errored") {
-    lines.push(MarkdownUtils.fence(cleanMessage(o.error?.message ?? "Unknown runner error")));
+    lines.push(
+      MarkdownUtils.fence(cleanMessage(redactEvidenceText(o.error?.message ?? "Unknown runner error"), PROVIDER_ERROR_MESSAGE_LIMIT)),
+    );
     lines.push("</details>");
     return lines.join("\n");
   }

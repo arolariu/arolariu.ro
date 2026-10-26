@@ -6,6 +6,7 @@ import {formatPayloadSchema} from "./payloads.ts";
 import {providerDescriptor} from "./registry.ts";
 import {executeProvider} from "./runner.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "./contracts.ts";
+import {CommandExecutionError} from "../../helpers/exec/index.ts";
 
 const input: ProviderRunInput = {
   workspaceRoot: process.cwd(),
@@ -30,6 +31,46 @@ function provider(run: () => Promise<ProviderRunOutput<unknown>>): CheckProvider
 }
 
 describe("versioned provider execution", () => {
+  it("retains redacted command diagnostics through outcome validation without publishing stdout", async () => {
+    const failure = new CommandExecutionError("prettier", {
+      exitCode: 2,
+      stdout: "private stdout must not be published",
+      stderr:
+        '\u001b[31m[error] SyntaxError: top-level await; password="private password" api_key=private-key Bearer private-bearer\u001b[0m',
+    });
+    const result = await executeProvider(
+      provider(async () => {
+        throw failure;
+      }),
+      input,
+      context(),
+      plan(),
+      clock(),
+    );
+
+    expect(result.error?.message).toContain("SyntaxError: top-level await");
+    expect(result.error?.message).toContain("[REDACTED]");
+    expect(JSON.stringify(result)).not.toMatch(/private password|private-key|private-bearer|private stdout|\u001b/);
+  });
+  it("prioritizes actual error lines when command output exceeds the report budget", async () => {
+    const failure = new CommandExecutionError("prettier", {
+      exitCode: 2,
+      stdout: "",
+      stderr: `${"non-actionable output\n".repeat(1000)}[error] SyntaxError: module parse failed`,
+    });
+    const result = await executeProvider(
+      provider(async () => {
+        throw failure;
+      }),
+      input,
+      context(),
+      plan(),
+      clock(),
+    );
+
+    expect(result.error?.message).toContain("SyntaxError: module parse failed");
+    expect(result.error?.message.length).toBeLessThanOrEqual(4096);
+  });
   it("uses injected wall/monotonic clocks and validates successful output", async () => {
     const planned = plan();
     const result = await executeProvider(

@@ -14,7 +14,10 @@ export function redactEvidenceText(value: string): string {
   return value
     .replace(/\b(Bearer\s+)[^\s"'<>`]+/gi, "$1[REDACTED]")
     .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[REDACTED_JWT]")
-    .replace(/((?:password|client[_-]?secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[:=]\s*)[^\s"'<>`]+/gi, "$1[REDACTED]");
+    .replace(
+      /(["']?(?:password|client[_-]?secret|access[_-]?token|refresh[_-]?token|api[_-]?key)["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^\s"'<>`]+)/gi,
+      "$1[REDACTED]",
+    );
 }
 
 /**
