@@ -1,0 +1,6 @@
+{
+  "scenario": "known-empty",
+  "expectedProviders": ["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"],
+  "expectedOverallResult": "passed",
+  "expectedExecutionStatus": "skipped"
+}
