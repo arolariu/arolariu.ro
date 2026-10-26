@@ -1,5 +1,6 @@
 import {render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
+import {GlobalNotFoundContent} from "./_components/GlobalNotFoundContent";
 import NotFound from "./not-found";
 
 describe("app/not-found.tsx", () => {
@@ -14,5 +15,27 @@ describe("app/not-found.tsx", () => {
     const link = screen.getByRole("link", {name: "app.errors.notFound.buttons.returnButton"});
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/");
+  });
+});
+
+describe("GlobalNotFoundContent", () => {
+  it("renders request-independent 404 content from typed copy", () => {
+    render(
+      <GlobalNotFoundContent
+        qrCodeData='{"userId":"storybook"}'
+        copy={{
+          title: "404",
+          subtitle: "Page not found",
+          additionalInfo: "Additional Information",
+          falsePositive: "Think this is an error?",
+          submitErrorButton: "Submit Error Report",
+          returnButton: "Return to Homepage",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", {level: 1, name: "404"})).toBeInTheDocument();
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Return to Homepage"})).toHaveAttribute("href", "https://arolariu.ro/");
   });
 });

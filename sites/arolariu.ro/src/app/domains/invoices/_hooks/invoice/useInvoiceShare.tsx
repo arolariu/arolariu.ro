@@ -59,6 +59,30 @@ type HookOutputType = Readonly<{
   };
 }>;
 
+async function sendShareInvitation(id: string, action: Extract<ShareAction, {type: "sendEmail"}>): Promise<void> {
+  const {to, locale, fromUsername, replyTo} = action;
+  const fromName = fromUsername?.trim() || "Someone";
+  const result = await sendEmail({
+    templateKey: "invoice-shared",
+    to,
+    props: {
+      fromUsername: fromName,
+      toUsername: to.split("@")[0]?.trim() || "there",
+      identifier: id,
+      locale,
+    },
+    subjectVars: {fromName},
+    ...(replyTo ? {replyTo} : {}),
+  });
+  if (!result.success) {
+    throw new Error(result.error || "unknown");
+  }
+}
+
+function throwShareFailure(error: unknown, getFallbackMessage: () => string): never {
+  throw new Error(error ? String(error) : getFallbackMessage());
+}
+
 /**
  * Manages invoice sharing mutations and email invitation side effects.
  *
@@ -126,7 +150,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.toggleError));
+          throwShareFailure(result.error, () => t((m) => m.toasts.invoices.useInvoiceShare.toggleError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;
@@ -142,32 +166,14 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.revokeError));
+          throwShareFailure(result.error, () => t((m) => m.toasts.invoices.useInvoiceShare.revokeError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;
       }
 
       if (action.type === "sendEmail") {
-        const {to, locale, fromUsername, replyTo} = action;
-        const fromName = fromUsername?.trim() || "Someone";
-
-        const result = await sendEmail({
-          templateKey: "invoice-shared",
-          to,
-          props: {
-            fromUsername: fromName,
-            toUsername: to.split("@")[0]?.trim() || "there",
-            identifier: id,
-            locale,
-          },
-          subjectVars: {fromName},
-          ...(replyTo ? {replyTo} : {}),
-        });
-
-        if (!result.success) {
-          throw new Error(result.error || "unknown");
-        }
+        await sendShareInvitation(id, action);
         return null;
       }
 
@@ -186,12 +192,12 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
    * @returns Aggregate share result after all invoice IDs have been attempted.
    */
   const processBulkRecursive = useCallback(
-    async (
+    async function processBulk(
       ids: readonly string[],
       index: number,
       action: ShareAction,
       acc: {successCount: number; failureCount: number; failedIds: string[]; updatedInvoices: Invoice[]},
-    ): Promise<BulkShareResult> => {
+    ): Promise<BulkShareResult> {
       if (index >= ids.length) {
         return acc;
       }
@@ -201,14 +207,14 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
       }
       try {
         const updatedInvoice = await shareAndMutate(id, action);
-        return await processBulkRecursive(ids, index + 1, action, {
+        return await processBulk(ids, index + 1, action, {
           ...acc,
           successCount: acc.successCount + 1,
           updatedInvoices: updatedInvoice ? [...acc.updatedInvoices, updatedInvoice] : acc.updatedInvoices,
         });
       } catch (error) {
         console.error(`Failed bulk sharing action on invoice ${id}:`, error);
-        return await processBulkRecursive(ids, index + 1, action, {
+        return await processBulk(ids, index + 1, action, {
           ...acc,
           failureCount: acc.failureCount + 1,
           failedIds: [...acc.failedIds, id],

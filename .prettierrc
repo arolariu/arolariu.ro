@@ -9,12 +9,7 @@
   "checkIgnorePragma": true,
   "insertPragma": false,
   "jsxSingleQuote": true,
-  "plugins": [
-    "@prettier/plugin-oxc",
-    "@prettier/plugin-hermes",
-    "prettier-plugin-organize-imports",
-    "prettier-plugin-svelte"
-  ],
+  "plugins": ["@prettier/plugin-oxc", "@prettier/plugin-hermes", "prettier-plugin-organize-imports", "prettier-plugin-svelte"],
   "printWidth": 140,
   "proseWrap": "always",
   "semi": true,
@@ -24,6 +19,12 @@
   "trailingComma": "all",
   "useTabs": false,
   "overrides": [
+    {
+      "files": "*.mjs",
+      "options": {
+        "parser": "babel"
+      }
+    },
     {
       "files": "*.svelte",
       "options": {

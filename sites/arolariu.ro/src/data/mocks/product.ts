@@ -17,7 +17,8 @@
  * @see {@link generateRandomProduct} - Quick random generation
  */
 
-import {type Allergen, type Product, type ProductCategory} from "@/types/invoices";
+import {type Product} from "@/types/invoices";
+import type {StandardClassification} from "@/types/invoices/Classification";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -48,7 +49,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const product = new ProductBuilder()
  *   .withName("Organic Bananas")
- *   .withCategory(ProductCategory.FOOD)
+ *   .withClassification(foodClassification)
  *   .withPrice(2.99)
  *   .withQuantity(5)
  *   .build();
@@ -59,7 +60,7 @@ import {faker} from "@faker-js/faker";
  * // With allergens
  * const product = new ProductBuilder()
  *   .withName("Peanut Butter")
- *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
+ *   .withallergenAssessment([Allergen.PEANUTS, Allergen.TREE_NUTS])
  *   .build();
  * ```
  */
@@ -95,18 +96,18 @@ export class ProductBuilder {
     this.product = {
       name: faker.commerce.productName(),
       productCode: faker.string.alphanumeric(8).toUpperCase(),
-      category: faker.number.int({min: 0, max: 13}) as ProductCategory,
       price,
       quantity,
       quantityUnit: faker.helpers.arrayElement(["kg", "g", "l", "ml", "pcs", "unit"]),
       totalPrice: price * quantity,
-      detectedAllergens: [],
       metadata: {
         isComplete: false,
         isEdited: false,
         isSoftDeleted: false,
         confidence: faker.number.float({min: 0.7, max: 1, multipleOf: 0.01}),
       },
+      classification: null,
+      allergenAssessment: null,
     };
   }
 
@@ -150,22 +151,13 @@ export class ProductBuilder {
   }
 
   /**
-   * Sets the product category classification.
+   * Sets the standard taxonomy classification for the product.
    *
-   * @param category - ProductCategory enum value
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withCategory(ProductCategory.FOOD)
-   *   .build();
-   * ```
-   *
-   * @see {@link ProductCategory} for available categories
+   * @param classification - StandardClassification or null when unclassified.
+   * @returns The ProductBuilder instance for method chaining.
    */
-  withCategory(category: ProductCategory): this {
-    this.product.category = category;
+  withClassification(classification: StandardClassification | null): this {
+    this.product.classification = classification;
     return this;
   }
 
@@ -260,94 +252,10 @@ export class ProductBuilder {
   }
 
   /**
-   * Sets the list of detected allergens for this product.
-   *
-   * @param allergens - Array of Allergen enum values
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withName("Peanut Butter")
-   *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
-   *   .build();
-   * ```
-   *
-   * @see {@link Allergen} for available allergen types
-   */
-  withDetectedAllergens(allergens: Allergen[]): this {
-    this.product.detectedAllergens = allergens;
-    return this;
-  }
-
-  /**
-   * Generates random allergens for testing purposes.
-   *
-   * @param count - Number of allergens to generate (defaults to random 0-3)
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * Randomly selects from common allergen names including gluten, nuts, dairy, eggs, etc.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withRandomAllergens(2) // Exactly 2 allergens
-   *   .build();
-   * ```
-   */
-  withRandomAllergens(count?: number): this {
-    const allergenNames = [
-      "gluten",
-      "crustaceans",
-      "eggs",
-      "fish",
-      "peanuts",
-      "soybeans",
-      "milk",
-      "nuts",
-      "celery",
-      "mustard",
-      "sesame seeds",
-      "sulphur dioxide",
-      "lupin",
-      "molluscs",
-    ];
-
-    const allergenCount = count ?? faker.number.int({min: 0, max: 3});
-    const selectedAllergenNames = faker.helpers.arrayElements(allergenNames, allergenCount);
-    this.product.detectedAllergens = selectedAllergenNames.map((allergenName) => ({
-      name: allergenName,
-      description: faker.lorem.sentence(),
-      learnMoreAddress: faker.internet.url(),
-    }));
-    return this;
-  }
-
-  /**
    * Sets custom metadata flags for the product.
    *
    * @param metadata - Flags for completion, edit status, soft deletion, and OCR confidence
    * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * **Metadata Properties:**
-   * - `isComplete`: Product information is fully populated
-   * - `isEdited`: Product has been manually modified by user
-   * - `isSoftDeleted`: Product is marked for deletion but not removed
-   * - `confidence`: OCR confidence score (0.0 to 1.0)
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withMetadata({
-   *     isComplete: true,
-   *     isEdited: false,
-   *     isSoftDeleted: false,
-   *     confidence: 0.95
-   *   })
-   *   .build();
-   * ```
    */
   withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean; confidence?: number}): this {
     this.product.metadata = {
@@ -369,7 +277,7 @@ export class ProductBuilder {
    * ```typescript
    * const product = new ProductBuilder()
    *   .withName("Apple Juice")
-   *   .withCategory(ProductCategory.BEVERAGES)
+   *   .withClassification(beverageClassification)
    *   .build();
    * ```
    */
@@ -390,7 +298,7 @@ export class ProductBuilder {
    * @example
    * ```typescript
    * const products = new ProductBuilder()
-   *   .withCategory(ProductCategory.FOOD)
+   *   .withClassification(foodClassification)
    *   .withPrice(5.99)
    *   .buildMany(15); // 15 food products at $5.99 each
    * ```
@@ -447,10 +355,10 @@ export function createProductBuilder(): ProductBuilder {
  * // Result: {
  * //   name: "Ergonomic Frozen Hat",
  * //   productCode: "ABC12345",
- * //   category: ProductCategory.FOOD,
+ * //   category: classification.FOOD,
  * //   price: 12.34,
  * //   quantity: 3,
- * //   detectedAllergens: [{name: "gluten", ...}],
+ * //   allergenAssessment: [{name: "gluten", ...}],
  * //   ...
  * // }
  * ```
@@ -458,7 +366,7 @@ export function createProductBuilder(): ProductBuilder {
  * @see {@link generateRandomProducts} for batch generation
  */
 export function generateRandomProduct(): Product {
-  return new ProductBuilder().withRandomAllergens().build();
+  return new ProductBuilder().build();
 }
 
 /**
@@ -545,7 +453,7 @@ export const mockProduct = new ProductBuilder().withName("Test Product").withPri
  * ```typescript
  * // Test filtering by category
  * const foodProducts = mockProductList.filter(
- *   p => p.category === ProductCategory.FOOD
+ *   p => p.category === classification.FOOD
  * );
  * ```
  */

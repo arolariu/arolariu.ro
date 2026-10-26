@@ -307,6 +307,15 @@
   color: hsl(var(--muted-foreground));
 }
 
+.errorAlert {
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--destructive));
+  background-color: hsl(var(--destructive) / 0.1);
+  padding: 0.75rem;
+  color: hsl(var(--destructive));
+  font-size: 0.875rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .header {

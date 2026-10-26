@@ -1,6 +1,7 @@
 # 💾 Storage Module
 
-This module provisions secure, enterprise-grade storage resources for the arolariu.ro platform, including Azure Storage Account, SQL Database, Cosmos DB (NoSQL), and Container Registry.
+This module provisions secure, enterprise-grade storage resources for the arolariu.ro platform, including Azure Storage Account, SQL
+Database, Cosmos DB (NoSQL), and Container Registry.
 
 ## 📋 Overview
 
@@ -15,24 +16,24 @@ This module provides:
 
 ## 🏗️ Resources Created
 
-| Resource Type      | Name Pattern      | Purpose                           |
-| ------------------ | ----------------- | --------------------------------- |
-| Storage Account    | Customizable      | Blob, file, queue, table storage  |
-| SQL Server         | `{prefix}-sql`    | Azure SQL Server                  |
-| SQL Database       | `{prefix}-db`     | SQL Database                      |
-| Cosmos DB Account  | `{prefix}-nosql`  | NoSQL document database           |
-| Container Registry | `{prefix}acr`     | Docker container images           |
-| ManagementPolicy   | default           | Lifecycle/cost optimization       |
+| Resource Type      | Name Pattern     | Purpose                          |
+| ------------------ | ---------------- | -------------------------------- |
+| Storage Account    | Customizable     | Blob, file, queue, table storage |
+| SQL Server         | `{prefix}-sql`   | Azure SQL Server                 |
+| SQL Database       | `{prefix}-db`    | SQL Database                     |
+| Cosmos DB Account  | `{prefix}-nosql` | NoSQL document database          |
+| Container Registry | `{prefix}acr`    | Docker container images          |
+| ManagementPolicy   | default          | Lifecycle/cost optimization      |
 
 ## 📁 Module Files
 
-| File                     | Purpose                              |
-| ------------------------ | ------------------------------------ |
-| `deploymentFile.bicep`   | Orchestrates all storage deployments |
-| `storageAccount.bicep`   | Azure Storage Account                |
-| `sqlServer.bicep`        | Azure SQL Server & Database          |
-| `noSqlServer.bicep`      | Azure Cosmos DB (NoSQL)              |
-| `containerRegistry.bicep`| Azure Container Registry             |
+| File                      | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| `deploymentFile.bicep`    | Orchestrates all storage deployments |
+| `storageAccount.bicep`    | Azure Storage Account                |
+| `sqlServer.bicep`         | Azure SQL Server & Database          |
+| `noSqlServer.bicep`       | Azure Cosmos DB (NoSQL)              |
+| `containerRegistry.bicep` | Azure Container Registry             |
 
 ## 📊 Architecture
 
@@ -134,7 +135,9 @@ module storage 'storage/storageAccount.bicep' = {
 
 **Queue/Table Service:**
 
-- Enabled
+- Queue and table services are enabled.
+- The `invoice-analysis` queue is provisioned declaratively for durable invoice and merchant analysis work. Application Brokers consume this
+  queue but never create infrastructure at runtime.
 
 **Lifecycle Management:**
 
@@ -337,7 +340,6 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
 - **Static websites**: CSS, JavaScript, images
 - **User uploads**: Profile pictures, documents
 - **Application data**: Logs, backups, exports
-- **CDN integration**: Azure Front Door for global delivery
 
 #### **Table Storage**
 
@@ -631,7 +633,6 @@ az cosmosdb sql database throughput show \
 **Storage Account:**
 
 - **Hot tier**: Frequently accessed data
-- **CDN integration**: Static content delivery
 - **Parallel uploads**: Multi-part upload for large files
 
 **SQL Database:**

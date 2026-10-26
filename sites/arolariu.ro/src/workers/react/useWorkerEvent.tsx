@@ -28,7 +28,10 @@ import type {WorkerEvent, WorkerHost} from "../host";
  */
 export function useWorkerEvent<TApi>(host: WorkerHost<TApi>, listener: (event: WorkerEvent) => void): void {
   const listenerRef = useRef(listener);
-  listenerRef.current = listener;
+  useEffect(() => {
+    listenerRef.current = listener;
+  }, [listener]);
+
   useEffect(() => {
     const unsubscribe = host.subscribeToEvents((event) => listenerRef.current(event));
     return unsubscribe;

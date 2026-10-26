@@ -10,7 +10,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Tests.Builders;
@@ -29,7 +28,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceOrchestrationServiceTests
 {
-  private readonly Mock<IInvoiceAnalysisFoundationService> mockAnalysisService;
   private readonly Mock<IInvoiceStorageFoundationService> mockStorageService;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceOrchestrationService>> mockLogger;
@@ -40,7 +38,6 @@ public sealed class InvoiceOrchestrationServiceTests
   /// </summary>
   public InvoiceOrchestrationServiceTests()
   {
-    mockAnalysisService = new Mock<IInvoiceAnalysisFoundationService>();
     mockStorageService = new Mock<IInvoiceStorageFoundationService>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceOrchestrationService>>();
@@ -54,21 +51,11 @@ public sealed class InvoiceOrchestrationServiceTests
       .Returns(mockLogger.Object);
 
     orchestrationService = new InvoiceOrchestrationService(
-      mockAnalysisService.Object,
       mockStorageService.Object,
       mockLoggerFactory.Object);
   }
 
   #region Constructor Tests
-
-  /// <summary>
-  /// Verifies constructor throws ArgumentNullException when analysis service is null.
-  /// </summary>
-  [TestMethod]
-  public void Constructor_NullAnalysisService_ThrowsArgumentNullException() =>
-    // Arrange & Act & Assert
-    Assert.ThrowsExactly<ArgumentNullException>(() =>
-      new InvoiceOrchestrationService(null!, mockStorageService.Object, mockLoggerFactory.Object));
 
   /// <summary>
   /// Verifies constructor throws ArgumentNullException when storage service is null.
@@ -77,7 +64,7 @@ public sealed class InvoiceOrchestrationServiceTests
   public void Constructor_NullStorageService_ThrowsArgumentNullException() =>
     // Arrange & Act & Assert
     Assert.ThrowsExactly<ArgumentNullException>(() =>
-      new InvoiceOrchestrationService(mockAnalysisService.Object, null!, mockLoggerFactory.Object));
+      new InvoiceOrchestrationService(null!, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
@@ -87,179 +74,11 @@ public sealed class InvoiceOrchestrationServiceTests
   {
     // Arrange & Act
     var service = new InvoiceOrchestrationService(
-      mockAnalysisService.Object,
       mockStorageService.Object,
       mockLoggerFactory.Object);
 
     // Assert
     Assert.IsNotNull(service);
-  }
-
-  #endregion
-
-  #region AnalyzeInvoiceWithOptions Tests
-
-  /// <summary>
-  /// Ensures successful invoice analysis orchestration with complete workflow execution.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_ValidInput_ExecutesCompleteWorkflow()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
-    var options = AnalysisOptions.CompleteAnalysis;
-    var originalInvoice = InvoiceBuilder.CreateRandomInvoice();
-    var analyzedInvoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(originalInvoice);
-
-    mockAnalysisService
-      .Setup(s => s.AnalyzeInvoiceAsync(options, originalInvoice, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(analyzedInvoice);
-
-    mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(analyzedInvoice);
-
-    // Act
-    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId, CancellationToken.None);
-
-    // Assert
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, originalInvoice, It.IsAny<CancellationToken>()), Times.Once);
-    mockStorageService.Verify(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates analysis workflow execution without user identifier (partition-less operation).
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_NoUserIdentifier_ExecutesWorkflow()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var options = AnalysisOptions.InvoiceOnly;
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-  .ReturnsAsync(invoice);
-
-    mockAnalysisService
-.Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    // Act
-    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None);
-
-    // Assert
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Confirms that foundation validation exceptions are surfaced as orchestration validation exceptions (no collapse).
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_FoundationValidationException_ThrowsOrchestrationValidationException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var innerException = new InvalidOperationException("Validation failed");
-    var foundationException = new InvoiceFoundationValidationException(innerException);
-
-    mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-   .ThrowsAsync(foundationException);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.NoAnalysis, invoiceId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates foundation dependency exceptions are wrapped into orchestration dependency exceptions.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_FoundationDependencyException_ThrowsOrchestrationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var innerException = new InvalidOperationException("Database connection failed");
-    var foundationException = new InvoiceFoundationDependencyException(innerException);
-
-    mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-      .ThrowsAsync(foundationException);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Ensures foundation dependency validation exceptions propagate as orchestration dependency validation exceptions.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_FoundationDependencyValidationException_ThrowsOrchestrationDependencyValidationException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var innerException = new ArgumentNullException("parameter");
-    var foundationException = new InvoiceFoundationDependencyValidationException(innerException);
-
-    mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-      .ThrowsAsync(foundationException);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyValidationException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceItemsOnly, invoiceId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Verifies foundation service exceptions are wrapped into orchestration service exceptions.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_FoundationServiceException_ThrowsOrchestrationServiceException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var innerException = new InvalidOperationException("Internal service error");
-    var foundationException = new InvoiceFoundationServiceException(innerException);
-
-    mockStorageService
-   .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
- .ThrowsAsync(foundationException);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
-  orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceMerchantOnly, invoiceId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Confirms generic exceptions are wrapped into orchestration service exceptions.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_GenericException_ThrowsOrchestrationServiceException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var exception = new InvalidOperationException("Unexpected error");
-
-    mockStorageService
-   .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-      .ThrowsAsync(exception);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
-        orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -365,6 +184,149 @@ public sealed class InvoiceOrchestrationServiceTests
     // Act & Assert
     await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
       orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
+  }
+
+  #endregion
+
+  #region AttachInvoiceScanAsync Tests
+
+  /// <summary>
+  /// Verifies a new scan is appended and persisted exactly once.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_NewScan_AppendsAndPersistsOnce()
+  {
+    // Arrange
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var scan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("https://example.test/scans/receipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 1 });
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    mockStorageService
+      .Setup(s => s.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act
+    Invoice result = await orchestrationService.AttachInvoiceScanAsync(
+      invoice.id,
+      invoice.UserIdentifier,
+      scan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, result.Scans);
+    Assert.AreEqual(scan, result.Scans.Single());
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies canonical scan identity ignores URI representation and metadata differences.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_CanonicalIdentityAlreadyAttached_SucceedsWithoutPersistence()
+  {
+    // Arrange
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var attachedScan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("HTTPS://EXAMPLE.TEST:443/scans/%72eceipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 1 });
+    var repeatedScan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("https://example.test/scans/receipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 2 });
+    invoice.Scans.Add(attachedScan);
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act
+    Invoice result = await orchestrationService.AttachInvoiceScanAsync(
+      invoice.id,
+      invoice.UserIdentifier,
+      repeatedScan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, result.Scans);
+    Assert.AreEqual(attachedScan, result.Scans.Single());
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies a retry after a committed write with a lost response does not append a second scan.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_FirstCommitResponseLost_RetryDoesNotDuplicateScan()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var persistedScans = new List<InvoiceScan>();
+    var scan = new InvoiceScan(
+      ScanType.PNG,
+      new Uri("https://example.test/scans/receipt.png"),
+      null);
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(() => new Invoice
+      {
+        id = invoiceId,
+        UserIdentifier = userId,
+        Scans = [.. persistedScans],
+      });
+    mockStorageService
+      .Setup(s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid, Guid?, CancellationToken>(
+        (updatedInvoice, _, _, _) => persistedScans = [.. updatedInvoice.Scans])
+      .ThrowsAsync(new InvoiceFoundationDependencyException(
+        new TimeoutException("The commit succeeded, but its response was lost.")));
+
+    // Act
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
+      orchestrationService.AttachInvoiceScanAsync(
+        invoiceId,
+        userId,
+        scan,
+        CancellationToken.None));
+    Invoice retryResult = await orchestrationService.AttachInvoiceScanAsync(
+      invoiceId,
+      userId,
+      scan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, persistedScans);
+    Assert.HasCount(1, retryResult.Scans);
+    Assert.AreEqual(scan, retryResult.Scans.Single());
+    mockStorageService.Verify(
+      s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Exactly(2));
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion

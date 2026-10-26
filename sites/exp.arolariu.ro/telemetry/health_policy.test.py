@@ -66,6 +66,7 @@ class TestShouldSuppressTelemetry:
 
         assert should_suppress_telemetry("/api/health") is False
 
+
 class TestBuildExcludedUrls:
     """Exclusion patterns handed to FastAPIInstrumentor must match is_suppressed_path exactly."""
 

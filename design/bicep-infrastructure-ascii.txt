@@ -12,7 +12,7 @@
 │  │  │                                 🌐 NETWORKING LAYER                                         │  │  │
 │  │  │  ┌─────────────────────┐      ┌─────────────────────┐      ┌─────────────────────┐         │  │  │
 │  │  │  │   Azure Front Door  │─────▶│      DNS Zone       │◀─────│   Custom Domains    │         │  │  │
-│  │  │  │   (CDN + WAF)       │      │   (arolariu.ro)     │      │  *.arolariu.ro      │         │  │  │
+│  │  │  │   (Edge + WAF)      │      │   (arolariu.ro)     │      │  *.arolariu.ro      │         │  │  │
 │  │  │  └─────────┬───────────┘      └─────────────────────┘      └─────────────────────┘         │  │  │
 │  │  └────────────┼────────────────────────────────────────────────────────────────────────────────┘  │  │
 │  │               │                                                                                   │  │
@@ -67,7 +67,7 @@
 │  │  │                                   📦 STORAGE LAYER                                          │  │  │
 │  │  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │  │  │
 │  │  │  │ Storage Account │  │   Container     │  │   Azure SQL     │  │   Cosmos DB     │         │  │  │
-│  │  │  │  (Blobs/CDN)    │  │   Registry      │  │   Server        │  │   (NoSQL)       │         │  │  │
+│  │  │  │  (Blobs/Queues) │  │   Registry      │  │   Server        │  │   (NoSQL)       │         │  │  │
 │  │  │  │                 │  │   (Docker)      │  │  (Relational)   │  │  (Documents)    │         │  │  │
 │  │  │  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘         │  │  │
 │  │  └─────────────────────────────────────────────────────────────────────────────────────────────┘  │  │
@@ -163,7 +163,7 @@
     │                │ • Application Insights                                 │
     │                │ • Managed Grafana                                      │
     ├────────────────┼────────────────────────────────────────────────────────┤
-    │    Storage     │ • Storage Account (Blobs/CDN)                          │
+    │    Storage     │ • Storage Account (Blobs/Queues/Tables)                │
     │                │ • Container Registry (Docker)                          │
     │                │ • Azure SQL Server                                     │
     │                │ • Cosmos DB (NoSQL)                                    │
@@ -177,7 +177,7 @@
     │                │ • docs.arolariu.ro (DocFX - Static)                    │
     │                │ • cv.arolariu.ro (SvelteKit - Static)                  │
     ├────────────────┼────────────────────────────────────────────────────────┤
-    │    Network     │ • Azure Front Door (CDN + WAF)                         │
+    │    Network     │ • Azure Front Door (Edge routing + WAF)                │
     │                │ • DNS Zone (arolariu.ro)                               │
     ├────────────────┼────────────────────────────────────────────────────────┤
     │       AI       │ • Azure OpenAI (GPT Models)                            │
@@ -197,7 +197,7 @@
                                        ▼
                     ┌──────────────────────────────────────┐
                     │         Azure Front Door             │
-                    │     (CDN + WAF + Load Balancer)      │
+                    │     (Edge + WAF + Load Balancer)     │
                     └──────────────────┬───────────────────┘
                                        │
            ┌───────────────┬───────────┴───────────┬───────────────┐
@@ -227,7 +227,7 @@
     ┌─────────────┐
     │   Storage   │
     │   Account   │
-    │  (CDN/Blob) │
+    │   (Blobs)   │
     └─────────────┘
 
 

@@ -26,9 +26,24 @@ import {Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState, useSyncExternalStore} from "react";
 import {TbCheck, TbFileTypePdf} from "react-icons/tb";
 import styles from "./ScanGroupBanner.module.scss";
+
+const DISMISSAL_STORAGE_KEY = "scan-group-banner-dismissed";
+
+function subscribeToDismissal(onStoreChange: () => void): () => void {
+  globalThis.addEventListener("storage", onStoreChange);
+  return () => globalThis.removeEventListener("storage", onStoreChange);
+}
+
+function getDismissalSnapshot(): boolean {
+  return sessionStorage.getItem(DISMISSAL_STORAGE_KEY) === "true";
+}
+
+function getServerDismissalSnapshot(): boolean {
+  return false;
+}
 
 /**
  * Props for the ScanGroupBanner component.
@@ -53,14 +68,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
   const router = useRouter();
   const {scans, setSelectedScans} = useScansStore();
   const [isDismissed, setIsDismissed] = useState<boolean>(!initialVisible);
-
-  // Check session storage on mount
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem("scan-group-banner-dismissed");
-    if (dismissed === "true") {
-      setIsDismissed(true);
-    }
-  }, []);
+  const isPersistentlyDismissed = useSyncExternalStore(subscribeToDismissal, getDismissalSnapshot, getServerDismissalSnapshot);
 
   /**
    * Find groups of scans uploaded within 5 minutes of each other.
@@ -111,7 +119,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
    */
   const handleDismiss = useCallback(() => {
     setIsDismissed(true);
-    sessionStorage.setItem("scan-group-banner-dismissed", "true");
+    sessionStorage.setItem(DISMISSAL_STORAGE_KEY, "true");
   }, []);
 
   /**
@@ -128,7 +136,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
   }, [scanGroup, setSelectedScans, router]);
 
   // Don't show if dismissed or no group found
-  if (isDismissed || !scanGroup) {
+  if (isDismissed || isPersistentlyDismissed || !scanGroup) {
     return null;
   }
 

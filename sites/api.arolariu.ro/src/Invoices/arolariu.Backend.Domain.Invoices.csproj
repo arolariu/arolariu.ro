@@ -7,17 +7,24 @@
   <ItemGroup Label="Azure AI Packages">
     <PackageReference Include="Azure.AI.DocumentIntelligence" />
     <PackageReference Include="Azure.AI.OpenAI" />
-    <PackageReference Include="Azure.AI.Translation.Text" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
   </ItemGroup>
 
   <ItemGroup Label="Azure SDK Packages">
-    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.Storage.Queues" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Azure" />
   </ItemGroup>
 
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Taxonomy Artifacts">
+    <EmbeddedResource Include="Resources\Taxonomies\gpc-2026-05.min.json" />
+    <EmbeddedResource Include="Resources\Taxonomies\ecoicop-v2.min.json" />
+    <EmbeddedResource Include="Resources\Taxonomies\nace-2.1.min.json" />
   </ItemGroup>
 
 </Project>

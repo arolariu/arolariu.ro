@@ -104,9 +104,9 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet: 'true'
-          python: 'true'
-          install-python-deps: 'true'
+          dotnet: "true"
+          python: "true"
+          install-python-deps: "true"
 
       - name: "[DOCS::1/4] 🏗️ Installing documentation extractor dependencies..."
         run: |

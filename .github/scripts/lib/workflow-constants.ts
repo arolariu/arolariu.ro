@@ -2,8 +2,9 @@
  * @fileoverview Centralized constants for GitHub Actions workflows
  * @module lib/workflow-constants
  *
- * This module provides a single source of truth for workflow configuration values.
- * Using these constants ensures consistency across all CI/CD scripts and workflows.
+ * Script-owned reporting policy belongs here. Deployment, job, and runtime
+ * constants below are legacy compatibility hints, not configuration authority:
+ * use live workflows/manifests and root AGENTS.md for their current values.
  *
  * @example
  * ```typescript
@@ -67,7 +68,7 @@ export const ARTIFACT_RETENTION = {
 } as const;
 
 /**
- * Runtime versions used in workflows
+ * Legacy runtime hints; live manifests/workflows and AGENTS.md are authoritative.
  */
 export const VERSIONS = {
   /** Node.js version */
@@ -100,6 +101,16 @@ export const GITHUB_CONSTANTS = {
   HYGIENE_COMMENT_ID: "<!-- arolariu-hygiene-check-v3 -->",
   /** Identifier prefix for E2E test comments */
   E2E_COMMENT_ID: "<!-- arolariu-e2e-test -->",
+} as const;
+
+/** Existing live-issue character budgets plus observed evidence-byte ceilings. */
+export const LIVE_REPORT_LIMITS = {
+  issueBodyChars: 65_000,
+  logTailChars: 2_000,
+  assertionSummaryChars: 12_000,
+  targetSummaryChars: 4_000,
+  jsonBytes: 64 * 1024 * 1024,
+  logBytes: 4 * 1024 * 1024,
 } as const;
 
 /**

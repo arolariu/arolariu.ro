@@ -1,7 +1,7 @@
 "use client";
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -32,7 +32,7 @@ import {motion} from "motion/react";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
-import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
+import {TbCalendar, TbCreditCard, TbHeart} from "react-icons/tb";
 import ItemsTable from "../_components/tables/ItemsTable";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 import styles from "./InvoiceCard.module.scss";
@@ -76,14 +76,12 @@ import styles from "./InvoiceCard.module.scss";
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations();
-  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
-    useEditInvoiceContext();
-  const {paymentInformation, category, isImportant, description} = invoice;
+  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} = useEditInvoiceContext();
+  const {paymentInformation, isImportant, description} = invoice;
 
   // Get the current values (pending change or original)
   const currentPaymentType = pendingChanges.paymentType ?? paymentInformation.paymentType;
   const currentIsImportant = pendingChanges.isImportant ?? isImportant;
-  const currentCategory = pendingChanges.category ?? category;
   const currentDescription = pendingChanges.description ?? description;
   const currentTransactionDate = useMemo(
     () => pendingChanges.transactionDate ?? new Date(paymentInformation.transactionDate),
@@ -98,16 +96,11 @@ export default function InvoiceCard(): React.JSX.Element {
   }, []);
 
   const paymentTypeOptions = useMemo(() => enumToOptions(PaymentType), [enumToOptions]);
-  const categoryOptions = useMemo(() => enumToOptions(InvoiceCategory), [enumToOptions]);
 
   // Get current label for display in Select
   const currentPaymentTypeLabel = useMemo(
     () => paymentTypeOptions.find((opt) => opt.value === currentPaymentType)?.label ?? "",
     [paymentTypeOptions, currentPaymentType],
-  );
-  const currentCategoryLabel = useMemo(
-    () => categoryOptions.find((opt) => opt.value === currentCategory)?.label ?? "",
-    [categoryOptions, currentCategory],
   );
 
   /** Generic handler for enum select changes */
@@ -119,7 +112,6 @@ export default function InvoiceCard(): React.JSX.Element {
   );
 
   const handlePaymentTypeChange = useMemo(() => createEnumHandler<PaymentType>(setPaymentType), [createEnumHandler, setPaymentType]);
-  const handleCategoryChange = useMemo(() => createEnumHandler<InvoiceCategory>(setCategory), [createEnumHandler, setCategory]);
 
   const handleImportantToggle = useCallback(() => {
     setIsImportant(!currentIsImportant);
@@ -286,32 +278,6 @@ export default function InvoiceCard(): React.JSX.Element {
                     </div>
                   </PopoverContent>
                 </Popover>
-              </div>
-            </motion.div>
-            <motion.div
-              whileHover={{scale: 1.02}}
-              transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>{t((m) => m.cards.invoices.invoiceCard.labels.category)}</h3>
-              <div className={styles["categoryRow"]}>
-                <TbTag className={styles["mutedIcon"]} />
-                <Select
-                  value={String(currentCategory)}
-                  onValueChange={handleCategoryChange}>
-                  <SelectTrigger className={styles["categoryTrigger"]}>
-                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectCategory)}>
-                      {currentCategoryLabel}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={String(option.value)}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </motion.div>
             <motion.div

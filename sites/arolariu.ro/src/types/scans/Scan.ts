@@ -45,7 +45,7 @@ import type {ScanMetadata} from "./ScanMetadata";
  * };
  * ```
  */
-export const ScanType = {
+const scanTypes = {
   /** JPEG image format */
   JPEG: "JPEG",
   /** PNG image format */
@@ -63,7 +63,8 @@ export const ScanType = {
   /** Other or unsupported format */
   OTHER: "OTHER",
 } as const;
-export type ScanType = (typeof ScanType)[keyof typeof ScanType];
+export {scanTypes as ScanType};
+export type ScanType = (typeof scanTypes)[keyof typeof scanTypes];
 
 /**
  * Represents the lifecycle status of a standalone scan.
@@ -94,7 +95,7 @@ export type ScanType = (typeof ScanType)[keyof typeof ScanType];
  * }
  * ```
  */
-export const ScanStatus = {
+const scanStatuses = {
   /** Upload in progress */
   UPLOADING: "uploading",
   /** Uploaded to Azure, available for use */
@@ -110,7 +111,8 @@ export const ScanStatus = {
   /** Invoice created, scan archived */
   ARCHIVED: "archived",
 } as const;
-export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
+export {scanStatuses as ScanStatus};
+export type ScanStatus = (typeof scanStatuses)[keyof typeof scanStatuses];
 
 /**
  * Represents a standalone scan stored in Azure Blob Storage.
@@ -141,7 +143,7 @@ export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
  *   id: "019234ab-cdef-7890-abcd-ef1234567890",
  *   userIdentifier: "user_abc123",
  *   name: "receipt-001.jpg",
- *   blobUrl: "https://cdn.arolariu.ro/scans/user_abc123/019234ab_1704067200000.jpg",
+ *   blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user_abc123/019234ab_1704067200000.jpg",
  *   mimeType: "image/jpeg",
  *   sizeInBytes: 1048576,
  *   scanType: ScanType.JPEG,
@@ -172,7 +174,7 @@ export interface Scan {
 
   /**
    * Full URL to the scan in Azure Blob Storage.
-   * Format: https://cdn.arolariu.ro/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
+   * Format: https://{account}.blob.core.windows.net/invoices/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
    */
   readonly blobUrl: string;
 

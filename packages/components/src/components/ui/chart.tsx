@@ -416,10 +416,16 @@ function ChartLegendContent({
   nameKey,
   payload,
   verticalAlign,
-}: React.ComponentProps<"div"> & {
-  hideIcon?: boolean;
-  nameKey?: string;
-} & RechartsPrimitive.DefaultLegendContentProps): React.JSX.Element | null {
+}: React.ComponentProps<"div">
+  & Omit<RechartsPrimitive.DefaultLegendContentProps, "verticalAlign"> & {
+    hideIcon?: boolean;
+    nameKey?: string;
+    /**
+     * Controls content spacing independently of Recharts' deprecated legend container positioning prop.
+     * @default undefined
+     */
+    verticalAlign?: "top" | "bottom" | "middle";
+  }): React.JSX.Element | null {
   const {config} = useChart();
 
   if (!payload?.length) {

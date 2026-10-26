@@ -21,46 +21,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
-
-/**
- * Categorizes merchants by their business type and scale.
- *
- * @remarks
- * Used for filtering, reporting, and analytics. Categories help users
- * understand spending patterns across different retail channels.
- *
- * **Numeric Values:**
- * Values are spaced by 100 to allow future subcategory insertion.
- * `NOT_DEFINED` (0) is the default for unclassified merchants.
- *
- * **Category Definitions:**
- * - `LOCAL_SHOP`: Small independent retailers, corner stores
- * - `SUPERMARKET`: Medium-sized grocery chains (e.g., Penny, Profi)
- * - `HYPERMARKET`: Large-format stores (e.g., Carrefour, Kaufland)
- * - `ONLINE_SHOP`: E-commerce platforms and online retailers
- *
- * @example
- * ```typescript
- * const merchant: Merchant = {
- *   category: MerchantCategory.SUPERMARKET,
- *   // ... other properties
- * };
- *
- * // Filter by category for spending reports
- * const supermarkets = merchants.filter(m => m.category === MerchantCategory.SUPERMARKET);
- * ```
- *
- * @see {@link InvoiceCategory} for invoice-level categorization
- */
-export const MerchantCategory = {
-  NOT_DEFINED: 0,
-  LOCAL_SHOP: 100,
-  SUPERMARKET: 200,
-  HYPERMARKET: 300,
-  ONLINE_SHOP: 400,
-  OTHER: 9999,
-} as const;
-export type MerchantCategory = (typeof MerchantCategory)[keyof typeof MerchantCategory];
+import type {StandardClassification} from "./Classification";
 
 /**
  * Contact information value object matching backend's ContactInformation.
@@ -126,28 +87,26 @@ export interface ContactInformation {
  *   id: "merchant-uuid-here",
  *   name: "Lidl Bucharest Militari",
  *   description: "Lidl supermarket in Militari neighborhood",
- *   category: MerchantCategory.SUPERMARKET,
- *   address: "Str. Iuliu Maniu 220, Bucharest",
- *   phoneNumber: "+40 21 123 4567",
+ *   address: {fullName: "Lidl", address: "Str. Iuliu Maniu 220", phoneNumber: "", emailAddress: "", website: ""},
  *   parentCompanyId: "lidl-romania-uuid",
- *   createdAt: new Date(),
- *   lastUpdatedAt: new Date(),
- *   isDeleted: false
+ *   classification: null,
  * };
  * ```
  *
  * @see {@link NamedEntity} for inherited properties (id, name, description, audit fields)
- * @see {@link MerchantCategory} for category options
  */
 export interface Merchant extends NamedEntity<string> {
-  /** The category of the merchant. */
-  category: MerchantCategory;
-
   /** The contact information and address of the merchant. */
   address: ContactInformation;
 
   /** The unique identifier of the parent company. */
   parentCompanyId: string;
+
+  /**
+   * The standard taxonomy classification for this merchant.
+   * @remarks Expected system is NACE 2.1. Null when the merchant has not been classified.
+   */
+  classification: StandardClassification | null;
 }
 
 /**
@@ -217,7 +176,6 @@ export type CreateMerchantDtoPayload = {
  * ```typescript
  * const updatePayload: UpdateMerchantDtoPayload = {
  *   id: "merchant-uuid",
- *   category: MerchantCategory.HYPERMARKET,
  *   phoneNumber: "+40 21 999 8888"
  * };
  *

@@ -1,124 +1,71 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {AllergenCode, RecipeDifficulty, type RecipeIngredient, type RecipeStep, type RecipeSuggestion} from "@/types/invoices";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {DialogProvider} from "../../../../_contexts/DialogContext";
+import RecipesTab from "./RecipesTab";
 
 /**
  * RecipesTab displays recipe cards generated from invoice items, with
- * pagination and a generate-more action. Depends on `useDialog`.
+ * pagination and a generate-more action.
  *
- * This story renders a static preview of the recipes tab layout.
+ * Requires `DialogProvider` because it (and the nested `RecipeCard`s)
+ * dispatch `EDIT_INVOICE__RECIPE_ADD`, `EDIT_INVOICE__RECIPE_UPDATE`,
+ * `EDIT_INVOICE__RECIPE_DELETE`, and `EDIT_INVOICE__RECIPE_PREVIEW` dialogs.
  */
+const withDialogProviderDecorator: Decorator = (Story) => (
+  <DialogProvider>
+    <Story />
+  </DialogProvider>
+);
+
 const meta = {
   title: "Invoices/EditInvoice/Tabs/RecipesTab",
+  component: RecipesTab,
+  decorators: [withDialogProviderDecorator],
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof RecipesTab>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview with recipe cards. */
+function ingredient(name: string, quantity: string, preparation: string | null = null): RecipeIngredient {
+  return {name, quantity, preparation};
+}
+
+function step(sequence: number, instruction: string, notes: string | null = null): RecipeStep {
+  return {sequence, instruction, notes};
+}
+
+function buildRecipe(name: string, difficulty: RecipeDifficulty, totalMinutes: number): RecipeSuggestion {
+  return {
+    name,
+    description: `Recipe suggestion generated from purchased ingredients: ${name}.`,
+    servings: 2,
+    preparationMinutes: Math.round(totalMinutes * 0.4),
+    cookingMinutes: Math.round(totalMinutes * 0.6),
+    totalMinutes,
+    difficulty,
+    purchasedIngredients: [ingredient("Main Ingredient", "1 pc")],
+    assumedPantryStaples: [ingredient("Salt", "to taste")],
+    missingOptionalIngredients: [],
+    steps: [step(1, "Prepare the ingredients."), step(2, "Cook according to the recipe.")],
+    allergenWarnings: [AllergenCode.Milk],
+  };
+}
+
+const recipes: RecipeSuggestion[] = [
+  buildRecipe("Creamy Pasta", RecipeDifficulty.Easy, 30),
+  buildRecipe("Grilled Chicken Salad", RecipeDifficulty.Easy, 25),
+  buildRecipe("Beef Stir-Fry", RecipeDifficulty.Medium, 40),
+];
+
+/** Recipes tab with generated recipe suggestions. */
 export const WithRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <div>
-          <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>AI-Generated Recipes</h3>
-          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Recipes created from your invoice items</p>
-        </div>
-        <div style={{display: "flex", gap: "0.5rem"}}>
-          <button
-            type='button'
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-            }}>
-            🎉 Generate More
-          </button>
-          <button
-            type='button'
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-            }}>
-            ➕ Add Recipe
-          </button>
-        </div>
-      </div>
-      <div style={{display: "grid", gap: "1rem", padding: "1rem", gridTemplateColumns: "repeat(2, 1fr)"}}>
-        {[
-          {name: "Creamy Pasta", complexity: "Easy", time: "30 min"},
-          {name: "Grilled Chicken Salad", complexity: "Easy", time: "25 min"},
-          {name: "Beef Stir-Fry", complexity: "Medium", time: "40 min"},
-        ].map((recipe) => (
-          <div
-            key={recipe.name}
-            style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-            <h4 style={{fontWeight: "500"}}>{recipe.name}</h4>
-            <div style={{marginTop: "0.25rem", display: "flex", gap: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "#dbeafe",
-                  paddingLeft: "0.5rem",
-                  paddingRight: "0.5rem",
-                  paddingTop: "0.125rem",
-                  paddingBottom: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "#1e40af",
-                }}>
-                {recipe.complexity}
-              </span>
-              <span style={{fontSize: "0.75rem", color: "#6b7280"}}>⏱ {recipe.time}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
+  args: {recipes},
 };
 
-/** Empty recipes tab. */
+/** Recipes tab with no recipes generated yet. */
 export const NoRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>AI-Generated Recipes</h3>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>No recipes generated yet</p>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "2rem", textAlign: "center"}}>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>No recipes have been generated for this invoice yet.</p>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🎉 Generate Recipes
-        </button>
-      </div>
-    </div>
-  ),
+  args: {recipes: []},
 };

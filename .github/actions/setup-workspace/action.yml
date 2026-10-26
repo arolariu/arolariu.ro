@@ -10,12 +10,11 @@
 # - Toolchain caching belongs to `setup-tooling` (built-in caches).
 #   This action caches only what it produces itself: `node_modules`
 #   and the Playwright browser bundle.
-# - Neither cache carries a per-workflow prefix, so all workflows share
-#   one entry each rather than every workflow writing its own
-#   multi-hundred-megabyte copy. The Playwright key is the lock-file
-#   hash alone; the `node_modules` key additionally includes the Node
-#   version, because a cache hit skips `npm ci` and the tree can hold
-#   natively-compiled addons whose ABI is tied to the runtime.
+# - Neither cache key carries a workflow-name segment, but GitHub still
+#   applies branch/tag scope and cache-version accessibility. The
+#   Playwright key includes the requested browsers and lock-file hash;
+#   the `node_modules` key includes the Node version because a cache hit skips
+#   `npm ci` and the tree can hold native addons tied to the runtime ABI.
 # - Inputs are never interpolated directly into `run:` blocks; they
 #   are passed through `env:` to avoid script injection.
 #+#+#+#+############################################################
@@ -109,9 +108,9 @@ inputs:
     default: "false"
 
   generate-args:
-    description: "Flags passed to `npm run generate`."
+    description: "Generator names passed to `npm run generate` (env, artifacts, gql, i18n)."
     required: false
-    default: "/e /a /g /i"
+    default: "env artifacts gql i18n"
 
   run-build-components:
     description: "Whether to build the @arolariu/components package."
@@ -304,7 +303,7 @@ runs:
       uses: actions/cache@v5
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+        key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
 
     - name: 🎭 Install Playwright browsers
       if: inputs.install-playwright == 'true'
@@ -327,7 +326,7 @@ runs:
         fi
         echo "::endgroup::"
 
-    - name: 🔨 Generate artifacts (env, acknowledgements, GraphQL, i18n)
+    - name: 🔨 Generate artifacts (env, taxonomy/licenses, GraphQL, i18n)
       if: inputs.run-generate == 'true'
       shell: bash
       env:
@@ -352,8 +351,11 @@ runs:
       shell: bash
       env:
         START_TIME: ${{ steps.init.outputs.start_time }}
-        NODE_MODULES_CACHE: ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS') }}
-        PLAYWRIGHT_CACHE: ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
+        NODE_MODULES_CACHE:
+          ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS')
+          }}
+        PLAYWRIGHT_CACHE:
+          ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
       run: |
         DURATION=$(( $(date +%s) - START_TIME ))
         echo "::group::✨ Workspace setup complete"

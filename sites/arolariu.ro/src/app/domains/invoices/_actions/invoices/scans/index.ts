@@ -41,7 +41,7 @@
  * - Soft deletion: blobs marked for cleanup by background job
  *
  * **Supported File Formats:**
- * - Images: JPEG, PNG, WebP, HEIC
+ * - Images: JPEG, PNG, BMP, TIFF, HEIF
  * - Documents: PDF
  *
  * @see {@link attachScanToInvoice} - Add scan references to existing invoices

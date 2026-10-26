@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using Microsoft.Extensions.Logging;
 
@@ -14,23 +15,25 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 
 /// <summary>
-/// Class that implements the merchant storage foundation service.
+/// Validates merchant storage inputs and classifies direct database broker failures.
 /// </summary>
 public partial class MerchantStorageFoundationService : IMerchantStorageFoundationService
 {
-  private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly IDatabaseBroker invoiceNoSqlBroker;
   private readonly ILogger<IMerchantStorageFoundationService> logger;
 
   /// <summary>
-  /// Public constructor.
+  /// Initializes a new instance of the <see cref="MerchantStorageFoundationService"/> class.
   /// </summary>
-  /// <param name="invoiceNoSqlBroker"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceNoSqlBroker">The NoSQL persistence broker for merchant entities.</param>
+  /// <param name="loggerFactory">The logger factory used to create the service logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
   public MerchantStorageFoundationService(
-    IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    IDatabaseBroker invoiceNoSqlBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
     this.logger = loggerFactory.CreateLogger<IMerchantStorageFoundationService>();
   }
@@ -41,6 +44,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
+    ArgumentNullException.ThrowIfNull(merchant);
     ValidateMerchantIdentifierIsSet(merchant.id);
 
     await invoiceNoSqlBroker
@@ -76,6 +80,20 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
       .ConfigureAwait(false);
     return merchants;
   }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(
+    IReadOnlyCollection<Guid> merchantIdentifiers,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObjectsByIdentifiers));
+    ArgumentNullException.ThrowIfNull(merchantIdentifiers);
+
+    return await invoiceNoSqlBroker
+      .ReadMerchantsByIdentifiersAsync(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false);
+  }).ConfigureAwait(false);
   #endregion
 
   #region Read Merchant Object API
@@ -97,11 +115,35 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
+    ArgumentNullException.ThrowIfNull(updatedMerchant);
+
     var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
-    ArgumentNullException.ThrowIfNull(currentMerchant);
+    if (currentMerchant is null)
+    {
+      throw new MerchantNotFoundException(merchantIdentifier);
+    }
+
+    currentMerchant.Name = updatedMerchant.Name;
+    currentMerchant.Description = updatedMerchant.Description;
+    currentMerchant.Address = updatedMerchant.Address;
+
+    if (updatedMerchant.Classification is not null)
+    {
+      currentMerchant.Classification = updatedMerchant.Classification;
+    }
+
+    if (updatedMerchant.AdditionalMetadata.Count > 0)
+    {
+      currentMerchant.AdditionalMetadata.Clear();
+
+      foreach ((string key, string value) in updatedMerchant.AdditionalMetadata)
+      {
+        currentMerchant.AdditionalMetadata[key] = value;
+      }
+    }
 
     var newMerchant = await invoiceNoSqlBroker
-      .UpdateMerchantAsync(currentMerchant, updatedMerchant, cancellationToken)
+      .UpdateMerchantAsync(currentMerchant, currentMerchant, cancellationToken)
       .ConfigureAwait(false);
 
     return newMerchant;

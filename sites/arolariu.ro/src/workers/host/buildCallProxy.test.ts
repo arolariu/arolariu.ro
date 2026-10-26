@@ -91,6 +91,17 @@ describe("buildCallProxy", () => {
     expect(inFlight.size).toBe(0);
   });
 
+  it("cancels the per-call timeout after a successful response", async () => {
+    const {proxy} = makeFixture({echo: async (message: string) => message});
+    const clearTimeout = vi.spyOn(globalThis, "clearTimeout");
+    try {
+      await expect(proxy.echo("done")).resolves.toBe("done");
+      expect(clearTimeout).toHaveBeenCalledOnce();
+    } finally {
+      clearTimeout.mockRestore();
+    }
+  });
+
   it("treats 0 as 'timeout disabled'", async () => {
     const inFlight = createInFlightRegistry();
     const bridge = createTelemetryBridge("test", {logger: SILENT_LOGGER});

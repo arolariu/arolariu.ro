@@ -9,8 +9,8 @@
  * Mounted once inside the `Root` swizzle.
  */
 
-import React, {useEffect, useRef, useState} from 'react';
-import styles from './styles.module.css';
+import React, {useEffect, useRef, useState} from "react";
+import styles from "./styles.module.css";
 
 /**
  * Minimum ratio of `scrollHeight / viewportHeight` at which the bar
@@ -51,15 +51,21 @@ export default function ReadingProgress(): React.JSX.Element | null {
       });
     };
     measure();
-    window.addEventListener('scroll', onScroll, {passive: true});
-    window.addEventListener('resize', measure);
+    window.addEventListener("scroll", onScroll, {passive: true});
+    window.addEventListener("resize", measure);
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', measure);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measure);
       if (rafRef.current !== null) window.cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
   if (!active) return null;
-  return <div aria-hidden="true" className={styles.bar} style={{width: `${widthPct}%`}} />;
+  return (
+    <div
+      aria-hidden='true'
+      className={styles.bar}
+      style={{width: `${widthPct}%`}}
+    />
+  );
 }

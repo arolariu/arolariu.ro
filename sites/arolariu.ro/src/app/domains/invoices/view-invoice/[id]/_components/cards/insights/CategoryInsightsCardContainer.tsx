@@ -1,6 +1,11 @@
+/**
+ * @fileoverview Routes an invoice to its most relevant insight card.
+ * @module app/domains/invoices/view-invoice/[id]/components/cards/insights/CategoryInsightsCardContainer
+ */
+
 "use client";
 
-import {InvoiceCategory} from "@/types/invoices";
+import {ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import {CategorySuggestionCard} from "./CategorySuggestionCard";
 import {DiningCard} from "./DiningCard";
@@ -10,43 +15,76 @@ import {NutritionCard} from "./NutritionCard";
 import {VehicleCard} from "./VehicleCard";
 
 /**
- * Renders a category-specific insight card based on the current invoice's category.
+ * ECOICOP v2 division codes that map onto a dedicated insight card.
  *
  * @remarks
- * **Rendering Context**: Client Component (`"use client"`).
+ * These are direct taxonomy semantics, not inferred heuristics: division `01` is
+ * literally "Food and non-alcoholic beverages", `11` is "Restaurants and accommodation
+ * services", and so on. Nothing here parses labels or guesses from keywords.
  *
- * **Component Logic**:
- * - Consumes `InvoiceContext` to get the current invoice category.
- * - Uses a switch statement to determine the most relevant insight card.
- * - Fallback: Renders `GeneralExpenseCard` for unhandled categories or `CategorySuggestionCard` for undefined ones.
+ * Divisions without a dedicated card fall through to {@link GeneralExpenseCard}.
+ */
+const ECOICOP_DIVISION = {
+  /** Food and non-alcoholic beverages. */
+  Food: "01",
+  /** Furnishings, household equipment and routine household maintenance. */
+  Household: "05",
+  /** Transport. */
+  Transport: "07",
+  /** Restaurants and accommodation services. */
+  Restaurants: "11",
+} as const;
+
+/**
+ * Extracts the ECOICOP division code from an invoice classification.
  *
- * **Dependencies**:
- * - Requires `InvoiceContextProvider` to be present in the parent tree.
+ * @remarks
+ * A persisted hierarchy is ordered root to leaf, so the first node is the division.
+ * Returns null for an unclassified invoice or a classification from another system.
  *
- * @returns The specific insight card component corresponding to the invoice category.
+ * @param classification - The invoice classification, or null when unclassified.
+ * @returns The two-character division code, or null when none applies.
+ */
+function resolveEcoicopDivision(classification: StandardClassification | null): string | null {
+  if (classification === null || classification.system !== ClassificationSystem.EcoicopV2) {
+    return null;
+  }
+
+  return classification.hierarchy[0]?.code ?? null;
+}
+
+/**
+ * Renders the insight card that matches the invoice's taxonomy classification.
  *
- * @example
- * ```tsx
- * <CategoryInsightsCardContainer />
- * ```
+ * @remarks
+ * An unclassified invoice shows {@link CategorySuggestionCard}, which prompts the user to
+ * classify it, rather than a generic card that implies the invoice was understood.
+ *
+ * @returns The insight card component.
  */
 export function CategoryInsightsCardContainer(): React.JSX.Element {
-  const {
-    invoice: {category},
-  } = useInvoiceContext();
+  const {invoice} = useInvoiceContext();
+  const division = resolveEcoicopDivision(invoice.classification);
 
-  switch (category) {
-    case InvoiceCategory.GROCERY:
+  if (division === null) {
+    return <CategorySuggestionCard />;
+  }
+
+  switch (division) {
+    case ECOICOP_DIVISION.Food: {
       return <NutritionCard />;
-    case InvoiceCategory.FAST_FOOD:
+    }
+    case ECOICOP_DIVISION.Restaurants: {
       return <DiningCard />;
-    case InvoiceCategory.HOME_CLEANING:
+    }
+    case ECOICOP_DIVISION.Household: {
       return <HomeInventoryCard />;
-    case InvoiceCategory.CAR_AUTO:
+    }
+    case ECOICOP_DIVISION.Transport: {
       return <VehicleCard />;
-    case InvoiceCategory.NOT_DEFINED:
-      return <CategorySuggestionCard />;
-    default:
+    }
+    default: {
       return <GeneralExpenseCard />;
+    }
   }
 }

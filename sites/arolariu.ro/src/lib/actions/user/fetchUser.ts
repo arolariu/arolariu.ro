@@ -11,6 +11,17 @@ import {createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser, type User} from "@clerk/nextjs/server";
 
+function getUserSubject(user: User | null): string {
+  return (
+    user?.primaryEmailAddress?.emailAddress
+    ?? user?.emailAddresses[0]?.emailAddress
+    ?? user?.primaryPhoneNumber?.phoneNumber
+    ?? user?.phoneNumbers[0]?.phoneNumber
+    ?? user?.id
+    ?? "N/A"
+  );
+}
+
 /**
  * Fetches the current user.
  * @returns A promise of the current user and authentication status.
@@ -50,13 +61,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
         iat: currentTimestamp,
         nbf: currentTimestamp,
         exp: expirationTime,
-        sub:
-          user?.primaryEmailAddress?.emailAddress
-          ?? user?.emailAddresses[0]?.emailAddress
-          ?? user?.primaryPhoneNumber?.phoneNumber
-          ?? user?.phoneNumbers[0]?.phoneNumber
-          ?? user?.id
-          ?? "N/A",
+        sub: getUserSubject(user),
         userIdentifier,
         role: "user",
       };

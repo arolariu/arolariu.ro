@@ -10,15 +10,21 @@
 
 ## Abstract
 
-This RFC documents the comprehensive XML documentation standard employed throughout the arolariu.ro backend (`api.arolariu.ro`) codebase. Unlike typical C# XML comments that provide minimal IntelliSense support, our documentation standard creates **tutorial-level, production-ready documentation** embedded directly in source code, serving multiple audiences: developers (IDE IntelliSense), API consumers (generated documentation), and new team members (onboarding material).
+This RFC documents the comprehensive XML documentation standard employed throughout the arolariu.ro backend (`api.arolariu.ro`) codebase.
+Unlike typical C# XML comments that provide minimal IntelliSense support, our documentation standard creates **tutorial-level,
+production-ready documentation** embedded directly in source code, serving multiple audiences: developers (IDE IntelliSense), API consumers
+(generated documentation), and new team members (onboarding material).
 
-This standard leverages the full power of C# XML documentation tags (`<summary>`, `<remarks>`, `<para>`, `<list>`, `<see cref="">`, `<example>`, etc.) to create rich, structured, cross-referenced documentation that explains not just **what** the code does, but **why** it exists, **how** it should be used, **when** it applies, and **what** trade-offs were made.
+This standard leverages the full power of C# XML documentation tags (`<summary>`, `<remarks>`, `<para>`, `<list>`, `<see cref="">`,
+`<example>`, etc.) to create rich, structured, cross-referenced documentation that explains not just **what** the code does, but **why** it
+exists, **how** it should be used, **when** it applies, and **what** trade-offs were made.
 
 ---
 
 ## Documentation Accuracy Note
 
-If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be
+updated.
 
 ---
 
@@ -56,7 +62,7 @@ Our XML documentation standard addresses these challenges by:
 1. **Embedding Documentation in Code**: Single source of truth that evolves with implementation
 2. **Providing Multi-Level Context**: From quick summaries to deep architectural rationale
 3. **Enabling IDE-Integrated Learning**: IntelliSense becomes a teaching tool
-4. **Generating Production Documentation**: DocFX, Swagger, and API docs auto-generated from XML
+4. **Generating Production Documentation**: DefaultDocumentation, Swagger, and API reference pages generated from XML
 5. **Documenting Trade-Offs**: Explain why decisions were made (thread-safety, performance, simplicity)
 6. **Cross-Referencing Architecture**: Link code to RFCs, DDD patterns, and The Standard principles
 
@@ -71,7 +77,7 @@ Our XML documentation standard addresses these challenges by:
    - Future you (6 months later)
    - New team members (onboarding)
    - API consumers (external developers)
-   - Tooling (DocFX, Swagger generators)
+   - Tooling (DefaultDocumentation, Swagger generators)
 3. **Explain the Why, Not Just the What**: Implementation details are visible in code; context is not
 4. **Leverage Structure**: Use XML tags to create scannable, hierarchical documentation
 5. **Cross-Reference Liberally**: Link to related types, methods, RFCs, and external resources
@@ -79,15 +85,15 @@ Our XML documentation standard addresses these challenges by:
 
 ### Documentation Levels
 
-| Level | Audience | Content | XML Tags |
-|-------|----------|---------|----------|
-| **Summary** | All | One-sentence description of purpose | `<summary>` |
-| **Detailed Explanation** | Developers | Multi-paragraph context, usage, design decisions | `<remarks>` with `<para>` |
-| **Parameter Context** | API Consumers | Parameter constraints, valid ranges, nullability | `<param>` |
-| **Return Value** | API Consumers | What gets returned, when null, edge cases | `<returns>` |
-| **Exceptions** | Error Handlers | What exceptions, when thrown, why | `<exception>` |
-| **Examples** | Learners | Real code samples showing usage | `<example>` with `<code>` |
-| **Cross-References** | Architects | Links to related types, patterns, RFCs | `<see cref="">`, `<seealso cref="">` |
+| Level                    | Audience       | Content                                          | XML Tags                             |
+| ------------------------ | -------------- | ------------------------------------------------ | ------------------------------------ |
+| **Summary**              | All            | One-sentence description of purpose              | `<summary>`                          |
+| **Detailed Explanation** | Developers     | Multi-paragraph context, usage, design decisions | `<remarks>` with `<para>`            |
+| **Parameter Context**    | API Consumers  | Parameter constraints, valid ranges, nullability | `<param>`                            |
+| **Return Value**         | API Consumers  | What gets returned, when null, edge cases        | `<returns>`                          |
+| **Exceptions**           | Error Handlers | What exceptions, when thrown, why                | `<exception>`                        |
+| **Examples**             | Learners       | Real code samples showing usage                  | `<example>` with `<code>`            |
+| **Cross-References**     | Architects     | Links to related types, patterns, RFCs           | `<see cref="">`, `<seealso cref="">` |
 
 ---
 
@@ -447,7 +453,7 @@ Link to related types, methods, properties, and members.
 
 ```csharp
 /// <seealso cref="IInvoiceStorageFoundationService"/>
-/// <seealso cref="InvoiceNoSqlBroker"/>
+/// <seealso cref="CosmosDatabaseBroker"/>
 ```
 
 ### 3. Inline Formatting
@@ -592,7 +598,7 @@ internal static class Program { }
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Layer Role (The Standard):</b> Explain which layer (Broker, Foundation, Processing, Orchestration, Exposer).
+/// <b>Layer Role (The Standard):</b> Explain which role (Broker, Foundation, Orchestration, Processing, Management, Endpoint/Worker).
 /// </para>
 /// <para>
 /// <b>Responsibilities:</b>
@@ -1097,43 +1103,24 @@ public static class Validator
 - Use `<remarks>` for extended information (users can expand)
 - Provide `<example>` for complex APIs
 
-### 2. DocFX Documentation Generation
+### 2. DefaultDocumentation and Docusaurus Generation
 
 **How it Works**:
 
-- DocFX parses XML documentation comments from compiled assemblies
-- Generates static HTML documentation sites
-- Supports Markdown in XML comments
-- Cross-references resolve automatically
+- `Directory.Build.props` emits XML documentation beside compiled assemblies.
+- `scripts/commands/docs/assemble.ts` discovers and builds the API project graph.
+- The repository-local `DefaultDocumentation.Console` tool converts each assembly's XML documentation into Markdown under the generated .NET
+  tier.
+- Docusaurus publishes that generated tier with the rest of the documentation site.
 
-**Configuration**:
+**Current ownership**:
 
-```json
-{
-  "metadata": [
-    {
-      "src": [
-        {
-          "files": ["**/*.csproj"],
-          "exclude": ["**/bin/**", "**/obj/**"]
-        }
-      ],
-      "dest": "api",
-      "includePrivateMembers": false,
-      "disableGitFeatures": false,
-      "disableDefaultFilter": false
-    }
-  ],
-  "build": {
-    "content": [
-      {
-        "files": ["api/**/*.yml", "api/index.md"]
-      }
-    ],
-    "dest": "_site"
-  }
-}
-```
+- `.config/dotnet-tools.json` pins the local documentation tool.
+- `scripts/commands/docs/assemble.ts` (with `normalize.ts`) owns project discovery, build roots, invocation arguments, normalization,
+  landing pages, and output validation.
+- `sites/docs.arolariu.ro/project.json` makes assembly a dependency of docs build and development.
+
+Do not hand-edit generated Markdown or introduce a parallel DocFX configuration.
 
 ### 3. Swagger / OpenAPI Generation
 
@@ -1144,41 +1131,30 @@ public static class Validator
 - `<returns>` becomes response description
 - `<remarks>` can be included in extended info
 
-**Configuration** (Swashbuckle):
+The live Swashbuckle configuration is centralized in `SwaggerConfigurationService.GetSwaggerGenOptions` and includes the XML files for
+Common, Core, Core.Auth, and Invoices:
 
 ```csharp
-services.AddSwaggerGen(c =>
-{
-  c.SwaggerDoc("v1", new OpenApiInfo { Title = "arolariu.ro API", Version = "v1" });
-
-  // Include XML comments
-  var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-  var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-  c.IncludeXmlComments(xmlPath);
-});
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Common.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Core.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Core.Auth.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Domain.Invoices.xml"), true);
 ```
 
 ### 4. .NET Compiler Integration
 
-**Enable XML Documentation Generation**:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Suppress missing XML doc warnings -->
-  </PropertyGroup>
-</Project>
-```
-
-**Warnings as Errors (Strict Mode)**:
+**Current XML documentation and strictness settings**:
 
 ```xml
 <PropertyGroup>
-  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  <WarningsAsErrors>CS1591</WarningsAsErrors> <!-- Missing XML comment for publicly visible type or member -->
+  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  <WarningLevel>9999</WarningLevel>
+  <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  <NoWarn>S1135, NU1903, NU1902</NoWarn>
 </PropertyGroup>
 ```
+
+CS1591 is not suppressed. Missing required public XML documentation fails the build through the repository's warning policy.
 
 ---
 
@@ -1454,7 +1430,8 @@ Use this checklist when documenting new code:
 
 ## Conclusion
 
-The arolariu.ro backend codebase employs an **enterprise-grade, tutorial-level XML documentation standard** that goes far beyond typical C# comments. This documentation serves as:
+The arolariu.ro backend codebase employs an **enterprise-grade, tutorial-level XML documentation standard** that goes far beyond typical C#
+comments. This documentation serves as:
 
 1. **Living Architecture Documentation**: Design decisions embedded in code
 2. **API Reference Material**: Auto-generated documentation for consumers
@@ -1476,14 +1453,15 @@ The arolariu.ro backend codebase employs an **enterprise-grade, tutorial-level X
 
 ✅ **Maintain Documentation**: Update docs when code changes (treat as first-class code)
 
-This standard ensures that every piece of code is self-documenting, contextually rich, and pedagogically valuable—transforming the codebase into a **living technical manual** that teaches while it functions.
+This standard ensures that every piece of code is self-documenting, contextually rich, and pedagogically valuable—transforming the codebase
+into a **living technical manual** that teaches while it functions.
 
 ---
 
 ## References
 
 - **C# XML Documentation Comments**: <https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/>
-- **DocFX Documentation Generator**: <https://dotnet.github.io/docfx/>
+- **DefaultDocumentation**: <https://github.com/Doraku/DefaultDocumentation>
 - **Swashbuckle (Swagger for .NET)**: <https://github.com/domaindrivendev/Swashbuckle.AspNetCore>
 - **RFC 2001**: Domain-Driven Design Architecture (`docs/rfc/2001-domain-driven-design-architecture.md`)
 - **RFC 2003**: The Standard Implementation (`docs/rfc/2003-the-standard-implementation.md`)
@@ -1491,6 +1469,4 @@ This standard ensures that every piece of code is self-documenting, contextually
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2025-01-26
-**Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+**Document Version**: 1.0.0 **Last Updated**: 2025-01-26 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))

@@ -9,27 +9,29 @@ import {selectorFromPath, useTranslations} from "next-intl-selector";
  * @remarks
  * Displays summary of:
  * - Selected scans (thumbnails)
- * - Invoice details (name, category, payment, date)
+ * - Invoice details (name, classification, payment, date)
  * - Create invoice button with loading state
+ * - Partial-failure error card with retry affordance
  */
 
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useFormatter} from "next-intl";
-import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
+import {
+  TbAlertTriangle,
+  TbCalendar,
+  TbCategory,
+  TbCreditCard,
+  TbFileDescription,
+  TbFileInvoice,
+  TbFileTypePdf,
+  TbPhoto,
+  TbRefresh,
+  TbSparkles,
+} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
-
-/** Maps InvoiceCategory enum to i18n key suffix. */
-const CATEGORY_KEYS: Record<number, "notDefined" | "grocery" | "fastFood" | "homeCleaning" | "carAuto" | "other"> = {
-  [InvoiceCategory.NOT_DEFINED]: "notDefined",
-  [InvoiceCategory.GROCERY]: "grocery",
-  [InvoiceCategory.FAST_FOOD]: "fastFood",
-  [InvoiceCategory.HOME_CLEANING]: "homeCleaning",
-  [InvoiceCategory.CAR_AUTO]: "carAuto",
-  [InvoiceCategory.OTHER]: "other",
-};
 
 /** Maps PaymentType enum to i18n key suffix. */
 const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer" | "mobilePayment" | "voucher" | "other"> = {
@@ -49,8 +51,35 @@ const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer"
  */
 export default function ReviewStep(): React.JSX.Element {
   const t = useTranslations();
-  const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
+  const {selectedScans, invoiceDetails, classificationSelection, isCreating, partialOutcome, createInvoiceWithScans} =
+    useCreateInvoiceContext();
   const format = useFormatter();
+  let createButtonContent = (
+    <>
+      <TbSparkles />
+      {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
+    </>
+  );
+
+  if (isCreating) {
+    createButtonContent = (
+      <>
+        <Spinner className={styles["spinner"]} />
+        {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
+      </>
+    );
+  } else if (partialOutcome?.status === "partial") {
+    const retryLabel =
+      partialOutcome.failedStep === "scans"
+        ? t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.retryScans)
+        : t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.retry);
+    createButtonContent = (
+      <>
+        <TbRefresh />
+        {retryLabel}
+      </>
+    );
+  }
 
   return (
     <div className={styles["container"]}>
@@ -58,6 +87,23 @@ export default function ReviewStep(): React.JSX.Element {
         <h2 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.title)}</h2>
         <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.subtitle)}</p>
       </div>
+
+      {/* Partial-failure error card */}
+      {partialOutcome?.status === "partial" ? (
+        <Card className={styles["section"]}>
+          <CardContent className={styles["partialErrorContent"]}>
+            <div className={styles["partialErrorHeader"]}>
+              <TbAlertTriangle className={styles["partialErrorIcon"]} />
+              <strong>{t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.title)}</strong>
+            </div>
+            <p className={styles["partialErrorMessage"]}>
+              {partialOutcome.failedStep === "scans"
+                ? t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.scansFailed)
+                : t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.patchFailed)}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Selected Scans */}
       <Card className={styles["section"]}>
@@ -113,19 +159,20 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailValue"]}>{invoiceDetails.name}</div>
           </div>
 
+          {/* Classification replaces legacy category */}
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCategory />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.category)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.classification)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>
-                {t(
-                  selectorFromPath(
-                    `forms.invoices.createInvoice.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`,
-                  ),
-                )}
-              </Badge>
+              {classificationSelection !== null ? (
+                <Badge variant='outline'>{classificationSelection.code}</Badge>
+              ) : (
+                <span className={styles["noClassification"]}>
+                  {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.noClassification)}
+                </span>
+              )}
             </div>
           </div>
 
@@ -165,24 +212,14 @@ export default function ReviewStep(): React.JSX.Element {
         </CardContent>
       </Card>
 
-      {/* Create Button */}
+      {/* Create / Retry Button */}
       <div className={styles["createSection"]}>
         <Button
           size='lg'
           onClick={createInvoiceWithScans}
           disabled={isCreating}
           className={styles["createButton"]}>
-          {isCreating ? (
-            <>
-              <Spinner className={styles["spinner"]} />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
-            </>
-          ) : (
-            <>
-              <TbSparkles />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
-            </>
-          )}
+          {createButtonContent}
         </Button>
         <p className={styles["createHint"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.actions.hint)}</p>
       </div>

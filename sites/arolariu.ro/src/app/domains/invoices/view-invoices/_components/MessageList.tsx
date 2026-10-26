@@ -1,7 +1,7 @@
 "use client";
 
 import {formatDateTime} from "@/lib/utils.generic";
-import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
+import {Avatar, AvatarFallback} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
@@ -16,6 +16,26 @@ type Props = {
     timestamp: string;
   }[];
 };
+
+/**
+ * Splits message content into individually keyed lines.
+ *
+ * @remarks
+ * Derives each line's key from its own text plus an occurrence counter
+ * (rather than its array position), so duplicate lines remain uniquely
+ * identifiable without relying on array index as a React key.
+ *
+ * @param content - The raw message content, potentially spanning multiple lines.
+ * @returns Line texts paired with stable, content-derived keys.
+ */
+function getContentLines(content: string): {key: string; text: string}[] {
+  const occurrences = new Map<string, number>();
+  return content.split("\n").map((text) => {
+    const occurrence = occurrences.get(text) ?? 0;
+    occurrences.set(text, occurrence + 1);
+    return {key: `${text}::${occurrence}`, text};
+  });
+}
 
 /**
  * This function renders a list of messages in a chat interface.
@@ -37,19 +57,13 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           className={`${styles["messageItem"]} ${message.role === "user" ? styles["messageUser"] : styles["messageAssistant"]}`}>
           <Avatar className={styles["avatar"]}>
             {message.role === "assistant" ? (
-              <>
-                <AvatarFallback className={styles["avatarFallbackAssistant"]}>
-                  <TbRobot className={styles["robotIcon"]} />
-                </AvatarFallback>
-                <AvatarImage src='/placeholder.svg?height=32&width=32' />
-              </>
+              <AvatarFallback className={styles["avatarFallbackAssistant"]}>
+                <TbRobot className={styles["robotIcon"]} />
+              </AvatarFallback>
             ) : (
-              <>
-                <AvatarFallback className={styles["avatarFallbackUser"]}>
-                  <TbUser className={styles["userIcon"]} />
-                </AvatarFallback>
-                <AvatarImage src='/placeholder.svg?height=32&width=32' />
-              </>
+              <AvatarFallback className={styles["avatarFallbackUser"]}>
+                <TbUser className={styles["userIcon"]} />
+              </AvatarFallback>
             )}
           </Avatar>
           <div className={styles["messageBody"]}>
@@ -62,11 +76,11 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>
-              {message.content.split("\n").map((line, lineIndex) => (
+              {getContentLines(message.content).map((line) => (
                 <p
-                  key={`${message.id}-line-${lineIndex}`}
+                  key={`${message.id}-${line.key}`}
                   className={styles["messageLine"]}>
-                  {line}
+                  {line.text}
                 </p>
               ))}
             </div>

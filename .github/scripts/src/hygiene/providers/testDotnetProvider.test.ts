@@ -22,6 +22,28 @@ describe("testDotnetProvider", () => {
   afterEach(async () => {
     await fs.rm(tmpDir, {recursive: true, force: true});
   });
+  it("retains a failed process when its available TRX assertions all passed", async () => {
+    const trxDir = path.join(tmpDir, "sites", "api.arolariu.ro", "TestResults");
+    vi.doMock("@actions/exec", () => ({
+      getExecOutput: vi.fn().mockImplementation(async () => {
+        await fs.mkdir(trxDir, {recursive: true});
+        await fs.writeFile(path.join(trxDir, "hygiene.Core.trx"), sampleTrx.replace('outcome="Failed"', 'outcome="Passed"'));
+        return {exitCode: 1, stdout: "", stderr: "runner failed after partial results"};
+      }),
+    }));
+    const {testDotnetProvider} = await import("./testDotnetProvider.ts");
+    const result = await testDotnetProvider.run({
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+    expect(result.payload.passed).toBe(2);
+    expect(result.executionStatus).toBe("errored");
+    expect(result.findings.some((finding) => finding.message.includes("code 1"))).toBe(true);
+  });
 
   it("has stable identity fields", async () => {
     const {testDotnetProvider} = await import("./testDotnetProvider.ts");
@@ -90,7 +112,7 @@ describe("testDotnetProvider", () => {
     expect(result.payload.failed).toBe(2);
   });
 
-  it("emits runner-failed synthetic suite when no .trx files exist", async () => {
+  it("reports missing TRX without fabricating a failed test", async () => {
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: "", stderr: "dotnet not found"}),
     }));
@@ -104,9 +126,12 @@ describe("testDotnetProvider", () => {
       env: {},
     });
     expect(result.payload.suites[0]?.name).toBe("dotnet");
-    expect(result.payload.failed).toBe(1);
+    expect(result.payload.totalTests).toBe(0);
+    expect(result.payload.failed).toBe(0);
+    expect(result.executionStatus).toBe("errored");
+    expect(result.evidenceStatus).toBe("missing");
     const f = result.findings[0];
-    if (f?.kind === "line") {
+    if (f?.kind === "file") {
       expect(f.ruleId).toBe("dotnet/runner-failed");
     }
   });

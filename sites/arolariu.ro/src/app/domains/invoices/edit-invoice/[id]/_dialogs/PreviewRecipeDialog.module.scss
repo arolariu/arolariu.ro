@@ -36,12 +36,34 @@
   }
 }
 
+.stepsList {
+  list-style-type: decimal;
+  padding-left: space(5);
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.stepNotes {
+  font-style: italic;
+  color: color("muted-foreground");
+}
+
+.allergensList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  margin-top: space(2);
+}
+
 .dialogContent {
+  max-height: 90vh;
+  overflow-y: auto;
   @include respond-to("sm") {
     max-width: 28rem;
   }
   @include respond-to("md") {
-    max-width: 32rem;
+    max-width: 36rem;
   }
 }
 
@@ -49,10 +71,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  @include respond-to("sm") {
-    justify-content: space-between;
-  }
 }
 
 .mutedIcon {

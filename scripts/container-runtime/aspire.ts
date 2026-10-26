@@ -1,64 +1,79 @@
 /**
- * @fileoverview Engine-aware Aspire AppHost startup.
+ * @fileoverview Engine-aware Aspire AppHost startup program.
  * @module scripts/container-runtime/aspire
+ *
+ * @remarks
+ * {@link runAspire} resolves the container engine, runs the shared preflight, and starts the
+ * AppHost through the Effect `Process` service with inherited output, so tests script every
+ * process instead of spawning Docker, Podman, or AppHost. Cancellation is fiber interruption,
+ * which terminates the AppHost process tree.
  */
 
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, type CommandRunner} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
-import {exitWithError} from "./types.ts";
+import {Effect} from "effect";
+
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
+import {Environment} from "../platform/Environment.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import {Process, type ProcessError} from "../platform/Process.ts";
+import type {ContainerRuntimeAdapter} from "./adapters.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import type {AspireResult, ContainerEngineInput, ContainerRuntimeError} from "./types.ts";
 
 /** Aspire AppHost command with runtime-specific environment. */
 export interface AspireCommand {
   readonly command: string;
   readonly args: readonly string[];
-  readonly env: NodeJS.ProcessEnv;
+  readonly env: Readonly<Record<string, string | undefined>>;
 }
 
 /**
  * Builds the Aspire AppHost command for the selected container engine.
  *
+ * @remarks
+ * Aspire reads `ASPIRE_CONTAINER_RUNTIME` first and only falls back to the legacy
+ * `DOTNET_ASPIRE_CONTAINER_RUNTIME`, so both are pinned to keep an inherited value from
+ * overriding the selected engine.
+ *
  * @param adapter - Selected runtime adapter.
+ * @param baseEnvironment - Environment values merged under the Aspire runtime override.
  * @returns Command and environment for starting AppHost.
  */
-export function buildAspireCommand(adapter: ContainerRuntimeAdapter): AspireCommand {
+export function buildAspireCommand(
+  adapter: ContainerRuntimeAdapter,
+  baseEnvironment: Readonly<Record<string, string | undefined>>,
+): AspireCommand {
   return {
     command: "dotnet",
-    args: ["run", "--project", "tooling/AppHost"],
+    args: ["run", "--project", "tooling/src/AppHost"],
     env: {
-      ...process.env,
+      ...baseEnvironment,
+      ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,
       DOTNET_ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,
     },
   };
 }
 
 /**
- * Starts Aspire AppHost with the selected container runtime.
+ * Starts Aspire AppHost with the resolved local container engine.
  *
- * @param runner - Command runner used to execute AppHost.
+ * @remarks
+ * Preflight runs first; AppHost then runs with inherited output and the `Environment` variables
+ * merged under `ASPIRE_CONTAINER_RUNTIME` and its legacy `DOTNET_ASPIRE_CONTAINER_RUNTIME` alias.
+ *
+ * @param input - Typed command input.
+ * @returns The engine Aspire AppHost ran with, failing with {@link ContainerRuntimeError} when the
+ * engine cannot be resolved or preflight fails, with `RepositoryRootNotFound` outside a repository,
+ * and with a {@link ProcessError} when AppHost fails.
  */
-export async function runAspire(runner: CommandRunner = defaultRunner): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
-  const adapter = getContainerAdapter(selection.engine);
-
-  await runSharedPreflight(adapter, runner);
-  const command = buildAspireCommand(adapter);
-  const result = await runner.run(command, {env: command.env, stdio: "inherit"});
-
-  if (result.code !== 0) {
-    throw new Error(`Aspire AppHost exited with code ${result.code} for engine '${adapter.engine}'.`);
-  }
-}
-
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-if (isDirectExecution) {
-  try {
-    await runAspire();
-  } catch (error) {
-    exitWithError(error);
-  }
-}
+export const runAspire: (
+  input: Readonly<ContainerEngineInput>,
+) => Effect.Effect<AspireResult, ContainerRuntimeError | RepositoryRootNotFound | ProcessError, PlatformServices> = Effect.fn(
+  "containers.aspire",
+)(function* (input: Readonly<ContainerEngineInput>) {
+  const adapter = yield* prepareContainerEngine(input, "aspire");
+  const environment = yield* Environment;
+  const command = buildAspireCommand(adapter, environment.variables);
+  const runner = yield* Process;
+  yield* runner.run({command: command.command, args: command.args}, {env: command.env, output: "inherit"});
+  return {engine: adapter.engine};
+});

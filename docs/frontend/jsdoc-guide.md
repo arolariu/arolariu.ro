@@ -10,38 +10,38 @@ This guide provides practical examples for documenting TypeScript/React code in 
 
 Every public function, component, and type should have JSDoc:
 
-```typescript
+````typescript
 /**
  * One-sentence summary (80 chars max).
  *
  * @remarks
  * Detailed explanation with context.
- * 
+ *
  * @param paramName - Description
  * @returns Description of return value
- * 
+ *
  * @example
  * ```typescript
  * const result = myFunction('value');
  * ```
  */
-```
+````
 
 ## Common Patterns
 
 ### React Server Components
 
-```typescript
+````typescript
 /**
  * Displays the user's invoice dashboard with real-time updates.
  *
  * @remarks
  * This is a React Server Component that fetches data directly.
  * No client-side JavaScript is shipped for this component.
- * 
+ *
  * @param props - Component properties
  * @returns Server-rendered invoice dashboard
- * 
+ *
  * @example
  * ```tsx
  * export default async function Page() {
@@ -53,11 +53,11 @@ export async function InvoiceDashboard(props: DashboardProps): Promise<React.JSX
   const data = await fetchInvoices(props.userId);
   return <div>{/* ... */}</div>;
 }
-```
+````
 
 ### React Client Components
 
-```typescript
+````typescript
 "use client";
 
 /**
@@ -68,10 +68,10 @@ export async function InvoiceDashboard(props: DashboardProps): Promise<React.JSX
  * - Uses useState for search term
  * - Requires onClick handlers
  * - Needs immediate user feedback
- * 
+ *
  * @param props - Filter configuration
  * @returns Interactive filter UI
- * 
+ *
  * @example
  * ```tsx
  * <InvoiceFilter onFilterChange={handleFilter} />
@@ -81,11 +81,11 @@ export function InvoiceFilter(props: FilterProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState("");
   // ...
 }
-```
+````
 
 ### Custom Hooks
 
-```typescript
+````typescript
 /**
  * Manages invoice selection state with multi-select support.
  *
@@ -94,10 +94,10 @@ export function InvoiceFilter(props: FilterProps): React.JSX.Element {
  * - Select/deselect individual invoices
  * - Select/deselect all invoices
  * - Persistent selection across re-renders
- * 
+ *
  * @param invoiceIds - Available invoice IDs
  * @returns Selection state and control functions
- * 
+ *
  * @example
  * ```typescript
  * const {selectedIds, toggleSelection, selectAll} = useInvoiceSelection(ids);
@@ -106,11 +106,11 @@ export function InvoiceFilter(props: FilterProps): React.JSX.Element {
 export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
   // ...
 }
-```
+````
 
 ### Server Actions
 
-```typescript
+````typescript
 "use server";
 
 /**
@@ -118,17 +118,18 @@ export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
  *
  * @remarks
  * This is a Server Action that:
- * - Runs only on the server (never exposed to client)
- * - Validates user permissions
+ * - Is implemented on the server but exposed as browser-callable RPC
+ * - Validates untrusted input
+ * - Derives identity and authorization on the server
  * - Revalidates the /invoices path
  * - Returns type-safe result
- * 
+ *
  * @param formData - Form data containing invoice fields
  * @returns Success/error result with updated invoice
- * 
+ *
  * @throws {AuthenticationError} If user is not authenticated
  * @throws {ValidationError} If invoice data is invalid
- * 
+ *
  * @example
  * ```typescript
  * const result = await updateInvoice(formData);
@@ -140,11 +141,11 @@ export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
 export async function updateInvoice(formData: FormData): Promise<ActionResult<Invoice>> {
   // ...
 }
-```
+````
 
 ### Utility Functions
 
-```typescript
+````typescript
 /**
  * Formats a number as currency with locale support.
  *
@@ -152,30 +153,26 @@ export async function updateInvoice(formData: FormData): Promise<ActionResult<In
  * - Uses Intl.NumberFormat for locale-aware formatting
  * - Falls back to USD if currency is undefined
  * - Handles zero, negative, and large numbers correctly
- * 
+ *
  * @param amount - Numeric amount to format
  * @param currency - ISO 4217 currency code (e.g., "USD", "EUR")
  * @param locale - BCP 47 locale string (defaults to "en-US")
  * @returns Formatted currency string (e.g., "$123.45")
- * 
+ *
  * @example
  * ```typescript
  * formatCurrency(1234.56, "USD", "en-US"); // "$1,234.56"
  * formatCurrency(1234.56, "EUR", "ro-RO"); // "1.234,56 €"
  * ```
  */
-export function formatCurrency(
-  amount: number,
-  currency: string = "USD",
-  locale: string = "en-US"
-): string {
+export function formatCurrency(amount: number, currency: string = "USD", locale: string = "en-US"): string {
   // ...
 }
-```
+````
 
 ### Type Definitions
 
-```typescript
+````typescript
 /**
  * Represents a user invoice with payment and item details.
  *
@@ -184,7 +181,7 @@ export function formatCurrency(
  * - Invoices are immutable after creation (except metadata)
  * - Total amount is computed from items (not stored separately)
  * - Payment information is optional (unpaid invoices)
- * 
+ *
  * @example
  * ```typescript
  * const invoice: Invoice = {
@@ -199,24 +196,24 @@ export function formatCurrency(
 export interface Invoice {
   /** Unique invoice identifier (format: inv_[a-z0-9]{10}) */
   id: string;
-  
+
   /** Merchant who issued this invoice */
   merchantId: string;
-  
+
   /** Line items included in this invoice */
   items: InvoiceItem[];
-  
+
   /** Payment details (undefined if unpaid) */
   paymentInformation?: PaymentInformation;
-  
+
   /** User-defined metadata (tags, notes, etc.) */
   metadata: InvoiceMetadata;
 }
-```
+````
 
 ### Context Providers
 
-```typescript
+````typescript
 /**
  * Provides theme state (light/dark mode) to the component tree.
  *
@@ -226,23 +223,23 @@ export interface Invoice {
  * - Syncs with system preferences (prefers-color-scheme)
  * - Prevents flash of unstyled content (FOUC)
  * - Uses CSS variables for theme values
- * 
+ *
  * @param props - Provider configuration
  * @returns Theme context provider
- * 
+ *
  * @example
  * ```tsx
  * <ThemeProvider>
  *   <App />
  * </ThemeProvider>
  * ```
- * 
+ *
  * @see {@link useTheme} for consuming theme context
  */
 export function ThemeProvider({children}: {children: React.ReactNode}): React.JSX.Element {
   // ...
 }
-```
+````
 
 ## Essential Tags
 
@@ -260,7 +257,7 @@ Use for multi-paragraph context, design decisions, trade-offs:
  * - Chart only loads when user clicks "View Analytics"
  * - Uses React.lazy() with Suspense boundary
  * - Shows skeleton loader during chunk download
- * 
+ *
  * Trade-offs:
  * - Adds ~200ms delay on first chart view
  * - Worth it: only 15% of users view analytics
@@ -286,7 +283,7 @@ function filterInvoices(
   invoices: Invoice[],
   startDate: string,
   endDate: string = new Date().toISOString(),
-  merchantId?: string
+  merchantId?: string,
 ): Invoice[] {
   // ...
 }
@@ -302,7 +299,7 @@ Explain what's returned, when undefined/null, edge cases:
  *
  * @param invoiceId - Invoice identifier
  * @returns Invoice object if found, null if not found
- * 
+ *
  * @throws {AuthenticationError} If user is not logged in
  * @throws {NetworkError} If API request fails
  */
@@ -315,7 +312,7 @@ async function getInvoice(invoiceId: string): Promise<Invoice | null> {
 
 Show realistic code samples:
 
-```typescript
+````typescript
 /**
  * Debounces a function to limit execution rate.
  *
@@ -325,24 +322,24 @@ Show realistic code samples:
  * const debouncedSearch = debounce((term: string) => {
  *   console.log("Searching for:", term);
  * }, 300);
- * 
+ *
  * debouncedSearch("hello"); // Waits 300ms before logging
  * ```
- * 
+ *
  * @example
  * With React state:
  * ```typescript
  * const handleSearch = debounce((term: string) => {
  *   setSearchResults(performSearch(term));
  * }, 500);
- * 
+ *
  * <input onChange={(e) => handleSearch(e.target.value)} />
  * ```
  */
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
   // ...
 }
-```
+````
 
 ### @see - Cross-References
 
@@ -386,7 +383,7 @@ Before committing, verify:
  * @param userId - The user ID
  * @returns The user
  */
-function getUser(userId: string): User { }
+function getUser(userId: string): User {}
 ```
 
 ### ✅ Do: Add Context
@@ -399,11 +396,11 @@ function getUser(userId: string): User { }
  * - Cached for 5 minutes via React Cache
  * - Includes related invoices (eager loading)
  * - Returns null for deleted accounts
- * 
+ *
  * @param userId - UUID of user to fetch
  * @returns User with profile, or null if not found
  */
-async function getUser(userId: string): Promise<User | null> { }
+async function getUser(userId: string): Promise<User | null> {}
 ```
 
 ### ❌ Don't: Document Implementation Details
@@ -426,14 +423,14 @@ const [selectedCount, setSelectedCount] = useState(0);
 
 ## Quick Reference
 
-| Code Element | Required Tags | Optional Tags |
-|--------------|---------------|---------------|
-| Function | Summary, `@param`, `@returns` | `@remarks`, `@example`, `@throws` |
-| React Component | Summary, `@param props`, `@returns` | `@remarks`, `@example` |
-| Custom Hook | Summary, `@param`, `@returns` | `@remarks`, `@example` |
-| Server Action | Summary, `@param`, `@returns` | `@remarks`, `@throws`, `@example` |
-| Type/Interface | Summary, field comments | `@remarks`, `@example` |
-| Utility | Summary, `@param`, `@returns` | `@remarks`, `@example`, `@see` |
+| Code Element    | Required Tags                       | Optional Tags                     |
+| --------------- | ----------------------------------- | --------------------------------- |
+| Function        | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@throws` |
+| React Component | Summary, `@param props`, `@returns` | `@remarks`, `@example`            |
+| Custom Hook     | Summary, `@param`, `@returns`       | `@remarks`, `@example`            |
+| Server Action   | Summary, `@param`, `@returns`       | `@remarks`, `@throws`, `@example` |
+| Type/Interface  | Summary, field comments             | `@remarks`, `@example`            |
+| Utility         | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@see`    |
 
 ## Additional Resources
 

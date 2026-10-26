@@ -1,0 +1,153 @@
+/**
+ * @fileoverview Styles for the allergen assessment editor.
+ * @module app/domains/invoices/_components/allergens/AllergenAssessmentEditor.module
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.statusSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.signalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.signalsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.signalsTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.addSignalBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.emptySignals {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.signal {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.signalTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.userProvidedBadge {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.removeSignalBtn {
+  padding: 0.25rem;
+  color: var(--muted-foreground);
+
+  &:hover {
+    color: var(--destructive);
+  }
+}
+
+.signalFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.fieldLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.selectTrigger {
+  width: 100%;
+}
+
+.confidenceInput {
+  width: 100%;
+}
+
+.evidenceSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.evidenceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.evidenceTitle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.addEvidenceBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.evidenceRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.evidenceInput {
+  flex: 1;
+  font-size: 0.8125rem;
+}
+
+.removeEvidenceBtn {
+  padding: 0.25rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+
+  &:hover {
+    color: var(--destructive);
+  }
+}
+
+.icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}

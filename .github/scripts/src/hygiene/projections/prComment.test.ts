@@ -3,8 +3,11 @@ import {buildPrCommentMarkdown, postPrComment, HYGIENE_V3_COMMENT_ID, type GitHu
 import type {HygieneReport} from "../domain/types.ts";
 
 const report: HygieneReport = {
-  schemaVersion: "3", commitSha: "abc", prNumber: 42,
-  workflowRunId: "1", workflowRunUrl: "https://x/1",
+  schemaVersion: "3",
+  commitSha: "abc",
+  prNumber: 42,
+  workflowRunId: "1",
+  workflowRunUrl: "https://x/1",
   generatedAt: "2026-05-30T00:00:00.000Z",
   overallResult: "passed",
   outcomes: [],

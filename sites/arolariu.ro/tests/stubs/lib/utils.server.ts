@@ -20,13 +20,7 @@ import {vi} from "vitest";
 export type JwtVerificationResult = {valid: true; payload: Record<string, unknown>} | {valid: false; error: string};
 
 export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
+  "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
 
 export type ServerActionResult<T> = Readonly<
   | {success: true; data: T; error?: never}
@@ -120,6 +114,16 @@ function readHttpStatus(value: unknown): number | undefined {
 }
 
 export async function createErrorResult<T>(error: unknown, defaultMessage?: string): Promise<ServerActionResult<T>> {
+  if (error instanceof Error && error.name === "TransportValidationError") {
+    return {
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: defaultMessage ?? error.message,
+      },
+    } as const;
+  }
+
   if (error instanceof Error) {
     const isTimeout = error.message.includes("timed out");
     const status = isTimeout ? undefined : readHttpStatus(error);

@@ -1,5 +1,6 @@
-import {render, screen} from "@testing-library/react";
+import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type {JSX} from "react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 interface MockEmblaApi {
@@ -23,7 +24,7 @@ const emblaMock = vi.hoisted(() => {
 
   return {
     api,
-    useEmblaCarousel: vi.fn(() => [vi.fn(), api] as const),
+    useEmblaCarousel: vi.fn((): readonly [() => void, MockEmblaApi | undefined] => [vi.fn(), api]),
   };
 });
 
@@ -41,7 +42,7 @@ describe("Carousel", () => {
     vi.mocked(emblaMock.api.off).mockClear();
     vi.mocked(emblaMock.api.scrollNext).mockClear();
     vi.mocked(emblaMock.api.scrollPrev).mockClear();
-    vi.mocked(emblaMock.useEmblaCarousel).mockClear();
+    vi.mocked(emblaMock.useEmblaCarousel).mockReset();
   });
 
   function renderCarousel({
@@ -181,13 +182,120 @@ describe("Carousel", () => {
   it("cleans up all Embla event listeners on unmount", () => {
     // Arrange
     const {unmount} = renderCarousel();
+    const registrations = [...vi.mocked(emblaMock.api.on).mock.calls];
 
     // Act
     unmount();
 
     // Assert
-    expect(emblaMock.api.off).toHaveBeenCalledWith("reInit", expect.any(Function));
-    expect(emblaMock.api.off).toHaveBeenCalledWith("select", expect.any(Function));
+    expect(registrations).toHaveLength(2);
+    for (const [event, listener] of registrations) {
+      expect(emblaMock.api.off).toHaveBeenCalledWith(event, listener);
+    }
+  });
+
+  it.each(["select", "reInit"] as const)("updates both navigation buttons after an Embla %s event", (event) => {
+    // Arrange
+    renderCarousel();
+    const previousButton = screen.getByRole("button", {name: "Previous slide"});
+    const nextButton = screen.getByRole("button", {name: "Next slide"});
+    const listener = vi.mocked(emblaMock.api.on).mock.calls.find(([registeredEvent]) => registeredEvent === event)?.[1];
+
+    expect(listener).toBeDefined();
+    expect(previousButton).toBeEnabled();
+    expect(nextButton).toBeEnabled();
+
+    // Act
+    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(false);
+    act(() => listener?.(emblaMock.api));
+
+    // Assert
+    expect(previousButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
+
+    // Act
+    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(true);
+    vi.mocked(emblaMock.api.canScrollNext).mockReturnValue(false);
+    act(() => listener?.(emblaMock.api));
+
+    // Assert
+    expect(previousButton).toBeEnabled();
+    expect(nextButton).toBeDisabled();
+  });
+
+  it("keeps navigation disabled until the API initializes, then reads its current availability", () => {
+    // Arrange
+    const setApi = vi.fn();
+    const content = (): JSX.Element => (
+      <Carousel setApi={setApi}>
+        <CarouselContent>
+          <CarouselItem>Slide 1</CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>
+    );
+    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), undefined]);
+    const {rerender} = render(content());
+
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+    expect(setApi).not.toHaveBeenCalled();
+    expect(emblaMock.api.on).not.toHaveBeenCalled();
+
+    // Act
+    vi.mocked(emblaMock.api.canScrollPrev).mockReturnValue(false);
+    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), emblaMock.api]);
+    rerender(content());
+
+    // Assert
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeDisabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeEnabled();
+    expect(setApi).toHaveBeenCalledWith(emblaMock.api);
+  });
+
+  it("releases the old API subscriptions when the carousel API is replaced", () => {
+    // Arrange
+    const replacementApi: MockEmblaApi = {
+      canScrollNext: vi.fn(() => false),
+      canScrollPrev: vi.fn(() => true),
+      off: vi.fn(),
+      on: vi.fn(),
+      scrollNext: vi.fn(),
+      scrollPrev: vi.fn(),
+    };
+    const content = (): JSX.Element => (
+      <Carousel>
+        <CarouselContent>
+          <CarouselItem>Slide 1</CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>
+    );
+    const {rerender, unmount} = render(content());
+    const oldRegistrations = [...vi.mocked(emblaMock.api.on).mock.calls];
+
+    // Act
+    vi.mocked(emblaMock.useEmblaCarousel).mockReturnValue([vi.fn(), replacementApi]);
+    rerender(content());
+
+    // Assert
+    for (const [event, listener] of oldRegistrations) {
+      expect(emblaMock.api.off).toHaveBeenCalledWith(event, listener);
+    }
+    expect(screen.getByRole("button", {name: "Previous slide"})).toBeEnabled();
+    expect(screen.getByRole("button", {name: "Next slide"})).toBeDisabled();
+    expect(replacementApi.on).toHaveBeenCalledWith("reInit", expect.any(Function));
+    expect(replacementApi.on).toHaveBeenCalledWith("select", expect.any(Function));
+
+    // Act
+    unmount();
+
+    // Assert
+    for (const [event, listener] of vi.mocked(replacementApi.on).mock.calls) {
+      expect(replacementApi.off).toHaveBeenCalledWith(event, listener);
+    }
   });
 
   it("disables previous button when canScrollPrev is false", () => {

@@ -189,12 +189,11 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
    */
   const onTriggerTimeout = useCallback(async (): Promise<void> => {
     setCallState({status: "pending", method: "timeoutSlow"});
-    const transient = createWorkerHost<PlaygroundWorkerApi>({
+    const {api: transientApi, dispose: transientDispose} = createWorkerHost<PlaygroundWorkerApi>({
       name: "playground-timeout",
       load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
       defaultCallTimeoutMs: 100,
     });
-    const {api: transientApi, dispose: transientDispose} = transient;
     try {
       await transientApi.sleep(5000);
       setCallState({status: "success", method: "timeoutSlow", result: "no timeout (unexpected)"});

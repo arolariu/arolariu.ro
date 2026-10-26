@@ -44,6 +44,9 @@ describe("/api/health", () => {
     vi.stubEnv("SITE_NAME", "dev.arolariu.ro");
     vi.stubEnv("SITE_URL", "https://dev.arolariu.ro");
     vi.stubEnv("INFRA", "local");
+    vi.stubEnv("AZURE_CLIENT_ID", undefined);
+    vi.stubEnv("EXP_PROXY_URL", undefined);
+    vi.stubEnv("API_URL", undefined);
   });
 
   afterEach(() => {
@@ -269,6 +272,55 @@ describe("/api/health", () => {
     // With AZURE_CLIENT_ID set, URLs should use https://
     expect(body.dependencies[0]?.url).toContain("https://exp.arolariu.ro");
     expect(body.dependencies[1]?.url).toContain("https://api.arolariu.ro");
+  });
+
+  it.each([undefined, "test-azure-client-id"])("uses injected native endpoints with AZURE_CLIENT_ID=%s", async (clientId) => {
+    vi.stubEnv("AZURE_CLIENT_ID", clientId);
+    vi.stubEnv("EXP_PROXY_URL", "https://localhost:5002");
+    vi.stubEnv("API_URL", "http://localhost:5000");
+    mockFetch.mockResolvedValue({ok: true, status: 200});
+
+    const {GET} = await import("./route");
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      dependencies: [{url: "https://localhost:5002/api/health"}, {url: "http://localhost:5000/health"}],
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenNthCalledWith(1, "https://localhost:5002/api/health", expect.any(Object));
+    expect(mockFetch).toHaveBeenNthCalledWith(2, "http://localhost:5000/health", expect.any(Object));
+  });
+
+  it("normalizes surrounding whitespace and trailing slashes in injected endpoints", async () => {
+    vi.stubEnv("EXP_PROXY_URL", " https://localhost:5002/// ");
+    vi.stubEnv("API_URL", " http://localhost:5000/ ");
+    mockFetch.mockResolvedValue({ok: true, status: 200});
+
+    const {GET} = await import("./route");
+    const response = await GET();
+
+    expect(await response.json()).toMatchObject({
+      dependencies: [{url: "https://localhost:5002/api/health"}, {url: "http://localhost:5000/health"}],
+    });
+  });
+
+  it.each([
+    {clientId: undefined, expUrl: "http://exp/api/health", apiUrl: "http://api:8080/health"},
+    {clientId: "test-azure-client-id", expUrl: "https://exp.arolariu.ro/api/health", apiUrl: "https://api.arolariu.ro/health"},
+  ])("retains deployment defaults for blank overrides with AZURE_CLIENT_ID=$clientId", async ({clientId, expUrl, apiUrl}) => {
+    vi.stubEnv("AZURE_CLIENT_ID", clientId);
+    vi.stubEnv("EXP_PROXY_URL", " ");
+    vi.stubEnv("API_URL", "");
+    mockFetch.mockResolvedValue({ok: true, status: 200});
+
+    const {GET} = await import("./route");
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      dependencies: [{url: expUrl}, {url: apiUrl}],
+    });
   });
 
   it("returns unknown nextVersion when next/package.json version is undefined", async () => {

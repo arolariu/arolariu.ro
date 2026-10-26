@@ -22,14 +22,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceBrokerExtendedTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<IDatabaseBroker> mockBroker;
 
   /// <summary>
   /// Initializes test fixtures.
   /// </summary>
   public InvoiceBrokerExtendedTests()
   {
-    mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockBroker = new Mock<IDatabaseBroker>();
   }
 
   #region Invoice CRUD Extended Tests
@@ -345,27 +345,6 @@ public sealed class InvoiceBrokerExtendedTests
 
     // Act
     var result = await mockBroker.Object.UpdateMerchantAsync(currentMerchant, updatedMerchant, CancellationToken.None);
-
-    // Assert
-    Assert.AreSame(updatedMerchant, result);
-  }
-
-  /// <summary>
-  /// Validates merchant update by ID.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateMerchantAsync_ById_ReturnsUpdatedMerchant()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchantId, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
-
-    // Act
-    var result = await mockBroker.Object.UpdateMerchantAsync(merchantId, updatedMerchant, CancellationToken.None);
 
     // Assert
     Assert.AreSame(updatedMerchant, result);

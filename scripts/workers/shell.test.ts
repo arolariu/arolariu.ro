@@ -1,10 +1,37 @@
+// @vitest-environment node
 /**
  * @fileoverview Unit tests for shared worker shell helpers.
  * @module scripts/workers/shell.test
+ *
+ * @remarks
+ * These tests spawn real child processes through the shared command runner, so they
+ * require the Node environment. The repository default `happy-dom` environment
+ * replaces the global `AbortController`/`AbortSignal` with DOM implementations that
+ * Node's own `events` internals reject, which breaks every real spawn in this file.
  */
 
 import {describe, expect, it} from "vitest";
-import {isToolAvailable} from "./shell.ts";
+import {isToolAvailable, runCommand} from "./shell.ts";
+
+describe("runCommand", () => {
+  it("preserves the legacy merged output shape for nonzero commands", async () => {
+    const result = await runCommand(process.execPath, ["-e", "process.stdout.write('out'); process.stderr.write('err'); process.exit(3)"]);
+
+    expect(result).toEqual({
+      code: 3,
+      output: "outerr",
+    });
+  });
+
+  it("preserves spawn errors in output", async () => {
+    const command = "definitely-not-a-real-tool-xyzzy-12345";
+
+    const result = await runCommand(command, []);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain(command);
+  });
+});
 
 describe("isToolAvailable", () => {
   // Use process.execPath (absolute path to the current node binary) instead of

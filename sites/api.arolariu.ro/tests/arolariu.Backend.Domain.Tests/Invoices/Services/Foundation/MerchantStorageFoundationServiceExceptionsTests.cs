@@ -23,7 +23,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public class MerchantStorageFoundationServiceExceptionsTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
+  private readonly Mock<IDatabaseBroker> _broker = new();
   private readonly MerchantStorageFoundationService _sut;
 
   /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>

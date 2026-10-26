@@ -43,6 +43,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import {parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -120,8 +122,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * **Wire Format:**
  * The backend DTO (`UpdateProductRequestDto`) is **flat**, not nested. This
  * action flattens the input `payload` before sending so the wire body looks
- * like `{ originalProductName, name, category, quantity, quantityUnit,
- * productCode, price, detectedAllergens }`.
+ * like `{ originalProductName, name, quantity, quantityUnit, productCode, price }`.
  *
  * **Cache Revalidation:**
  * On successful update, automatically revalidates Next.js cache for:
@@ -161,14 +162,9 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *     originalProductName: "Zuzu Milk 2% 1 Liter",
  *     updatedProduct: {
  *       name: "Zuzu Milk 2% 1 Liter",
- *       category: ProductCategory.DAIRY,
  *       quantity: 2,
  *       quantityUnit: "pcs",
  *       price: 8.99,
- *       detectedAllergens: [
- *         { name: "Lactose", description: "Milk sugar", learnMoreAddress: "" },
- *         { name: "Milk Protein", description: "Casein and whey proteins", learnMoreAddress: "" }
- *       ]
  *     }
  *   }
  * });
@@ -188,12 +184,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *   payload: {
  *     originalProductName: "Gala Apples",
  *     updatedProduct: {
- *       name: "Organic Gala Apples", // Name can be changed
- *       category: ProductCategory.FRUITS,
+ *       name: "Organic Gala Apples",
  *       quantity: 3,
  *       quantityUnit: "kg",
- *       price: 15.99, // Price updated
- *       detectedAllergens: []
+ *       price: 15.99,
  *     }
  *   }
  * });
@@ -230,12 +224,12 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       const requestBody = {
         originalProductName,
         name: updatedProduct.name,
-        category: updatedProduct.category,
+        classificationCode: resolveClassificationCodeForWrite(updatedProduct.classification),
         quantity: updatedProduct.quantity,
         quantityUnit: updatedProduct.quantityUnit,
         productCode: updatedProduct.productCode,
         price: updatedProduct.price,
-        detectedAllergens: updatedProduct.detectedAllergens,
+        allergenAssessment: updatedProduct.allergenAssessment,
       } as const;
 
       addSpanEvent("bff.request.update-invoice-product.start");
@@ -252,12 +246,18 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
 
       if (response.ok) {
         logWithTrace("info", "Successfully updated product in invoice", {invoiceId}, "server");
-        const product = (await response.json()) as Product;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseProductResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.update-invoice-product.invalid");
+          logWithTrace("error", "Update product response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {
           success: true,
-          data: product,
+          data: parsed.value,
         } as const;
       }
 

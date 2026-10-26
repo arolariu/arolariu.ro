@@ -1,32 +1,39 @@
 /**
- * @fileoverview Tests for shared container runtime types and CLI error handling.
+ * @fileoverview Tests for shared container runtime types.
  * @module scripts/container-runtime/types.test
  */
 
-import {afterEach, describe, expect, it, vi} from "vitest";
-import {exitWithError} from "./types.ts";
+import {Effect, Exit} from "effect";
+import {describe, expect, it} from "vitest";
 
-describe("exitWithError", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    process.exitCode = undefined;
+import {ContainerRuntimeError} from "./types.ts";
+
+describe("ContainerRuntimeError", () => {
+  it("is a tagged Error carrying a stable name and the supplied message", () => {
+    // Arrange & Act
+    const error = new ContainerRuntimeError({message: "bad runtime"});
+
+    // Assert
+    expect(error).toBeInstanceOf(Error);
+    expect(error._tag).toBe("ContainerRuntimeError");
+    expect(error.name).toBe("ContainerRuntimeError");
+    expect(error.message).toBe("bad runtime");
   });
 
-  it("prints Error messages and sets exit code 1", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    exitWithError(new Error("bad runtime"));
-
-    expect(error).toHaveBeenCalledWith("bad runtime");
-    expect(process.exitCode).toBe(1);
+  it("stays distinguishable from a plain Error for programmatic classification", () => {
+    expect(new Error("bad runtime")).not.toBeInstanceOf(ContainerRuntimeError);
   });
 
-  it("prints non-Error values and sets exit code 1", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  it("fails an Effect program as a typed failure when yielded", async () => {
+    // Arrange
+    const program = Effect.gen(function* () {
+      return yield* new ContainerRuntimeError({message: "bad runtime"});
+    });
 
-    exitWithError("bad runtime");
+    // Act
+    const exit = await Effect.runPromiseExit(Effect.flip(program));
 
-    expect(error).toHaveBeenCalledWith("bad runtime");
-    expect(process.exitCode).toBe(1);
+    // Assert
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual(new ContainerRuntimeError({message: "bad runtime"}));
   });
 });

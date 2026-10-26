@@ -42,8 +42,8 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-import {formatEnum} from "@/lib/utils.generic";
-import {ProductCategory} from "@/types/invoices";
+import {getClassificationGroup} from "@/app/domains/invoices/_utils/labelUtilities";
+import {getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
 import {
   Badge,
   Card,
@@ -64,7 +64,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale} from "next-intl";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbArrowsSort, TbSearch, TbShoppingCart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -77,44 +77,17 @@ import styles from "./ItemAnalyticsCard.module.scss";
  * Defines which property of Product to sort by.
  * Each field corresponds to a sortable table column.
  */
-type SortField = "name" | "category" | "price" | "quantity";
+type SortField = "name" | "classification" | "price" | "quantity";
 
 /**
  * Sort direction for ascending or descending order.
  */
 type SortDirection = "asc" | "desc";
 
-/**
- * Maps ProductCategory enum values to badge color variants.
- *
- * @remarks
- * Provides visual differentiation for product categories in the table.
- * Colors align with UI design system badge variants.
- *
- * @see {@link ProductCategory} for category definitions
- */
-const categoryColors: Record<number, "default" | "secondary" | "outline" | "destructive"> = {
-  [ProductCategory.NOT_DEFINED]: "secondary",
-  [ProductCategory.BAKED_GOODS]: "default",
-  [ProductCategory.GROCERIES]: "default",
-  [ProductCategory.DAIRY]: "outline",
-  [ProductCategory.MEAT]: "destructive",
-  [ProductCategory.FISH]: "outline",
-  [ProductCategory.FRUITS]: "default",
-  [ProductCategory.VEGETABLES]: "default",
-  [ProductCategory.BEVERAGES]: "secondary",
-  [ProductCategory.ALCOHOLIC_BEVERAGES]: "destructive",
-  [ProductCategory.TOBACCO]: "destructive",
-  [ProductCategory.CLEANING_SUPPLIES]: "secondary",
-  [ProductCategory.PERSONAL_CARE]: "secondary",
-  [ProductCategory.MEDICINE]: "outline",
-  [ProductCategory.OTHER]: "secondary",
-};
-
 /** Minimal interface for sortable item fields used by the sort comparator. */
 type SortableItem = {
   readonly name: string;
-  readonly category: number;
+  readonly classificationGroup: string;
   readonly totalPrice: number;
   readonly quantity: number;
 };
@@ -127,8 +100,8 @@ function resolveSortComparison(a: SortableItem, b: SortableItem, sortField: Sort
   switch (sortField) {
     case "name":
       return a.name.localeCompare(b.name, locale);
-    case "category":
-      return a.category - b.category;
+    case "classification":
+      return a.classificationGroup.localeCompare(b.classificationGroup, locale);
     case "price":
       return a.totalPrice - b.totalPrice;
     case "quantity":
@@ -210,40 +183,25 @@ export function ItemAnalyticsCard(): React.JSX.Element {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  /**
-   * Filters items based on search query.
-   *
-   * @remarks
-   * Searches against product name for comprehensive matching.
-   * Case-insensitive search using locale-aware lowercase transformation.
-   *
-   * **Performance:** Memoized to recompute only when items or query change.
-   */
+  /** Filters items based on search query — case-insensitive, memoized. */
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return invoice.items;
-
     const query = searchQuery.toLowerCase();
     return invoice.items.filter((item) => item.name.toLowerCase().includes(query));
   }, [invoice.items, searchQuery]);
 
-  /**
-   * Sorts filtered items by selected field and direction.
-   *
-   * @remarks
-   * Uses `Array#toSorted()` (ES2023) to avoid in-place mutation.
-   * Implements locale-aware string comparison for names.
-   *
-   * **Sort Logic:**
-   * - `name`: Sorts by `name` using locale collation
-   * - `category`: Sorts by `category` enum numeric value
-   * - `price`: Sorts by `totalPrice` (total, not unit price)
-   * - `quantity`: Sorts by `quantity`
-   *
-   * **Performance:** Memoized to recompute only when dependencies change.
-   */
+  /** Sorts filtered items by selected field and direction, memoized. */
   const sortedItems = useMemo(() => {
     return filteredItems.toSorted((a, b) => {
-      const comparison = resolveSortComparison(a, b, sortField, locale);
+      const aWithGroup = {
+        ...a,
+        classificationGroup: getClassificationGroup(a.classification ?? null) ?? "",
+      };
+      const bWithGroup = {
+        ...b,
+        classificationGroup: getClassificationGroup(b.classification ?? null) ?? "",
+      };
+      const comparison = resolveSortComparison(aWithGroup, bWithGroup, sortField, locale);
       return sortDirection === "asc" ? comparison : -comparison;
     });
   }, [filteredItems, sortField, sortDirection, locale]);
@@ -290,13 +248,17 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     }
 
     const sortedByPrice = invoice.items.toSorted((a, b) => b.totalPrice - a.totalPrice);
-    const uniqueCategories = new Set(invoice.items.map((item) => item.category));
-    const allAllergens = new Set(invoice.items.flatMap((item) => item.detectedAllergens.map((allergen) => allergen.name)));
+    const uniqueGroups = new Set(invoice.items.map((item) => getClassificationGroup(item.classification ?? null) ?? "unclassified"));
+    const allAllergens = new Set(
+      invoice.items.flatMap((item) =>
+        item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals.map((s) => s.code) : [],
+      ),
+    );
 
     return {
       mostExpensive: sortedByPrice[0],
       cheapest: sortedByPrice.at(-1),
-      categoryCount: uniqueCategories.size,
+      categoryCount: uniqueGroups.size,
       allergenCount: allAllergens.size,
     };
   }, [invoice.items]);
@@ -332,8 +294,8 @@ export function ItemAnalyticsCard(): React.JSX.Element {
   /** Sorts items by the "name" column. */
   const handleSortByName = useCallback(() => handleSort("name"), [handleSort]);
 
-  /** Sorts items by the "category" column. */
-  const handleSortByCategory = useCallback(() => handleSort("category"), [handleSort]);
+  /** Sorts items by the "classification" column. */
+  const handleSortByClassification = useCallback(() => handleSort("classification"), [handleSort]);
 
   /** Sorts items by the "price" column. */
   const handleSortByPrice = useCallback(() => handleSort("price"), [handleSort]);
@@ -341,19 +303,8 @@ export function ItemAnalyticsCard(): React.JSX.Element {
   /** Sorts items by the "quantity" column. */
   const handleSortByQuantity = useCallback(() => handleSort("quantity"), [handleSort]);
 
-  /**
-   * Retrieves the display name for a product category.
-   *
-   * @remarks
-   * Uses ProductCategory const-object to get the category name.
-   * Returns "NOT_DEFINED" for unknown categories.
-   *
-   * @param category - The category enum value
-   * @returns The category name string
-   */
-  const getCategoryName = useCallback((category: ProductCategory): string => {
-    return formatEnum(ProductCategory, category) || "NOT_DEFINED";
-  }, []);
+  // Pre-translate unclassified label once per render
+  const unclassifiedLabel = t((m) => m.shared.invoices.classification.unclassified);
 
   // Empty state: no items in invoice
   if (invoice.items.length === 0) {
@@ -428,7 +379,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableHead>
                         <button
                           type='button'
-                          onClick={handleSortByCategory}
+                          onClick={handleSortByClassification}
                           className={styles["sortButton"]}>
                           {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.columns.category)}
                           <TbArrowsSort className={styles["sortIcon"]} />
@@ -502,29 +453,22 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                   </Tooltip>
                                 )}
                               </div>
-                              {item.detectedAllergens.length > 0 && (
+                              {item.allergenAssessment?.status === "detected" && item.allergenAssessment.signals.length > 0 && (
                                 <div className={styles["allergenList"]}>
-                                  {item.detectedAllergens.map((allergen) => (
-                                    <Tooltip key={allergen.name}>
+                                  {item.allergenAssessment.signals.map((signal) => (
+                                    <Tooltip key={signal.code}>
                                       <TooltipTrigger>
                                         <Badge
                                           variant='destructive'
                                           className={styles["allergenBadge"]}>
                                           <TbAlertTriangle className={styles["allergenIcon"]} />
-                                          {allergen.name}
+                                          {t(selectorFromPath(getAllergenLabelKey(signal.code)))}
                                         </Badge>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className={styles["allergenDescription"]}>{allergen.description}</p>
-                                        {allergen.learnMoreAddress ? (
-                                          <a
-                                            href={allergen.learnMoreAddress}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className={styles["allergenLink"]}>
-                                            Learn more →
-                                          </a>
-                                        ) : null}
+                                        <p className={styles["allergenDescription"]}>
+                                          {t(selectorFromPath(getAllergenEvidenceLevelLabelKey(signal.evidenceLevel)))}
+                                        </p>
                                       </TooltipContent>
                                     </Tooltip>
                                   ))}
@@ -533,7 +477,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={categoryColors[item.category]}>{getCategoryName(item.category)}</Badge>
+                            <Badge variant='outline'>{getClassificationGroup(item.classification ?? null) ?? unclassifiedLabel}</Badge>
                           </TableCell>
                           <TableCell>{item.price.toFixed(2)}</TableCell>
                           <TableCell>

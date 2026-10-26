@@ -54,16 +54,15 @@ import styles from "./PreviewScanDialog.module.scss";
  * openDialog("SHARED__SCAN_PREVIEW", "view", {scan});
  * ```
  */
-export default function PreviewScanDialog(): React.JSX.Element {
+export default function PreviewScanDialog(): React.JSX.Element | null {
   const t = useTranslations();
 
   const {
     isOpen,
     close,
-    currentDialog: {
-      payload: {scan},
-    },
+    currentDialog: {payload},
   } = useDialog("SHARED__SCAN_PREVIEW", "view");
+  const scan = payload?.scan ?? null;
 
   /**
    * Handles preview dialog open-state transitions.
@@ -84,6 +83,8 @@ export default function PreviewScanDialog(): React.JSX.Element {
     },
     [close],
   );
+
+  if (scan === null) return null;
 
   return (
     <Dialog

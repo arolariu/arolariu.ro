@@ -182,24 +182,24 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    * @see {@link performMutation} - Atomic deletion operation called per iteration
    */
   const processBulkRecursive = useCallback(
-    async (
+    async function processBulk(
       ids: readonly string[],
       index: number,
       acc: {successCount: number; failureCount: number; failedIds: string[]},
-    ): Promise<BulkDeleteResult> => {
+    ): Promise<BulkDeleteResult> {
       if (index >= ids.length) {
         return acc;
       }
       const id = ids[index]!;
       try {
         await performMutation(id);
-        return await processBulkRecursive(ids, index + 1, {
+        return await processBulk(ids, index + 1, {
           ...acc,
           successCount: acc.successCount + 1,
         });
       } catch (error) {
         console.error(`Failed to delete invoice ${id}:`, error);
-        return await processBulkRecursive(ids, index + 1, {
+        return await processBulk(ids, index + 1, {
           ...acc,
           failureCount: acc.failureCount + 1,
           failedIds: [...acc.failedIds, id],

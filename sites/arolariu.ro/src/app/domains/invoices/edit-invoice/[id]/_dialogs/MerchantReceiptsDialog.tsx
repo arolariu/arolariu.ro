@@ -84,7 +84,13 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     isOpen,
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT_INVOICES");
-  const merchant = payload;
+  // `payload` is `null` at runtime whenever the dialog has not been opened yet
+  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
+  // production gate which only renders this component once `open()` has already
+  // set a real merchant payload). Fall back to `null` and guard the one place
+  // that reads `merchant.name` so the component never crashes on an initial
+  // closed render.
+  const merchant: Merchant | null = payload ?? null;
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [receipts, setReceipts] = useState<Invoice[]>([]);
@@ -142,7 +148,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.title, {merchant: merchant.name})}</DialogTitle>
+          <DialogTitle>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.title, {merchant: merchant?.name ?? ""})}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.description)}</DialogDescription>
         </DialogHeader>
 

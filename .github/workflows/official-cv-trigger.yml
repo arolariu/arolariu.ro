@@ -98,7 +98,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
 
       - name: 🧪 Running unit tests...
-        working-directory: './sites/cv.arolariu.ro'
+        working-directory: "./sites/cv.arolariu.ro"
         run: |
           echo "::group::🧪 Running SvelteKit Tests"
           START_TIME=$(date +%s)
@@ -142,7 +142,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
 
       - name: 📦 Prepare and build...
-        working-directory: './sites/cv.arolariu.ro'
+        working-directory: "./sites/cv.arolariu.ro"
         run: |
           echo "::group::🏗️ Building CV Website"
           echo "📍 Framework: SvelteKit"

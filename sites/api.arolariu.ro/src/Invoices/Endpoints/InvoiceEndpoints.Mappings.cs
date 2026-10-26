@@ -2,13 +2,13 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
@@ -261,9 +261,9 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(RemoveMerchantFromInvoiceAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
-    router // Create the invoice scan for a given invoice.
-      .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
-      .Accepts<CreateInvoiceScanRequestDto>("application/json")
+    router // Attach an invoice scan to a given invoice.
+      .MapPost("/invoices/{id}/scans", AttachInvoiceScanAsync)
+      .Accepts<AttachInvoiceScanRequestDto>("application/json")
       .Produces<InvoiceScanResponseDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -276,7 +276,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
       .RequireRateLimiting(RateLimitPolicies.StandardWrites)
-      .WithName(nameof(CreateInvoiceScanAsync))
+      .WithName(nameof(AttachInvoiceScanAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve the invoice scans for a given invoice.
@@ -313,7 +313,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve the invoice metadata for a given invoice.
       .MapGet("/invoices/{id}/metadata", RetrieveInvoiceMetadataAsync)
-      .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
+      .Produces<IReadOnlyDictionary<string, string?>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -329,7 +329,7 @@ public static partial class InvoiceEndpoints
     router // Update the invoice metadata for a given invoice.
       .MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
       .Accepts<PatchMetadataRequestDto>("application/json")
-      .Produces<Dictionary<string, string>>(StatusCodes.Status202Accepted)
+      .Produces<IReadOnlyDictionary<string, string?>>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -356,6 +356,23 @@ public static partial class InvoiceEndpoints
       .RequireAuthorization()
       .RequireRateLimiting(RateLimitPolicies.StandardWrites)
       .WithName(nameof(DeleteInvoiceMetadataAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+
+    router
+      .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+      .Accepts<InvoiceAnalysisRequestDto>("application/json")
+      .Produces<string>(StatusCodes.Status202Accepted)
+      .ProducesValidationProblem()
+      .ProducesProblem(StatusCodes.Status401Unauthorized)
+      .ProducesProblem(StatusCodes.Status402PaymentRequired)
+      .ProducesProblem(StatusCodes.Status403Forbidden)
+      .ProducesProblem(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status429TooManyRequests)
+      .ProducesProblem(StatusCodes.Status500InternalServerError)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
+      .WithName(nameof(AnalyzeInvoiceAsync))
+      .RequireAuthorization()
+      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
   }
 
@@ -514,22 +531,11 @@ public static partial class InvoiceEndpoints
       .RequireRateLimiting(RateLimitPolicies.StandardReads)
       .WithName(nameof(RetrieveProductsFromMerchantAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
-  }
 
-  /// <summary>
-  /// Registers invoice analysis endpoints (computational enrichment and AI / OCR driven classification).
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Operation:</b> Current surface exposes a single POST analyze route performing synchronous orchestration then returning <c>202 Accepted</c>.</para>
-  /// <para><b>Backlog:</b> Potential evolution to long‑running asynchronous workflow (introduce operation status resource, webhooks or push notifications).</para>
-  /// <para><b>Charging / Billing:</b> Includes <c>402 PaymentRequired</c> problem mapping placeholder for future usage-based billing enforcement.</para>
-  /// <para><b>Idempotency:</b> Re-analysis overwrites prior enrichment; idempotent only when source inputs have not changed.</para>
-  /// </remarks>
-  /// <param name="router">Route builder instance.</param>
-  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router) => router // Analyze a specific invoice, given its identifier.
-      .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-      .Accepts<AnalyzeInvoiceRequestDto>("application/json")
-      .Produces<InvoiceResponseDto>(StatusCodes.Status202Accepted)
+    router
+      .MapPost("/merchants/{id}/analyze", AnalyzeMerchantAsync)
+      .Accepts<MerchantAnalysisRequestDto>("application/json")
+      .Produces<string>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status402PaymentRequired)
@@ -537,9 +543,10 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(AnalyzeInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
+      .WithName(nameof(AnalyzeMerchantAsync))
       .RequireAuthorization()
       .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
-      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
-      .WithRequestTimeout(RequestTimeoutPolicies.Analysis);
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+  }
 }

@@ -3,7 +3,7 @@
  * @module data/mocks/merchant.test
  */
 
-import {MerchantCategory} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {
   MerchantBuilder,
@@ -13,6 +13,17 @@ import {
   mockMerchant,
   mockMerchantList,
 } from "./merchant";
+
+const TEST_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.Nace21,
+  version: "2.1",
+  code: "47.11",
+  officialLabel: "Retail sale in non-specialised stores",
+  hierarchy: [{level: "section", code: "G", officialLabel: "Wholesale and retail trade"}],
+  origin: ClassificationOrigin.Manual,
+  confidence: null,
+  evidence: [],
+};
 
 describe("MerchantBuilder", () => {
   describe("Constructor", () => {
@@ -30,7 +41,6 @@ describe("MerchantBuilder", () => {
       expect(merchant).toHaveProperty("numberOfUpdates");
       expect(merchant).toHaveProperty("isImportant");
       expect(merchant).toHaveProperty("isSoftDeleted");
-      expect(merchant).toHaveProperty("category");
       expect(merchant).toHaveProperty("address");
       expect(merchant.address).toHaveProperty("phoneNumber");
       expect(merchant).toHaveProperty("parentCompanyId");
@@ -56,10 +66,11 @@ describe("MerchantBuilder", () => {
       expect(merchant.address.address).toBe("123 Custom Street");
     });
 
-    it("should set category", () => {
+    it("should set classification and clear it", () => {
       const builder = new MerchantBuilder();
-      const merchant = builder.withCategory(MerchantCategory.LOCAL_SHOP).build();
-      expect(merchant.category).toBe(MerchantCategory.LOCAL_SHOP);
+
+      expect(builder.withClassification(TEST_CLASSIFICATION).build().classification).toEqual(TEST_CLASSIFICATION);
+      expect(builder.withClassification(null).build().classification).toBeNull();
     });
 
     it("should set phoneNumber", () => {
@@ -127,13 +138,11 @@ describe("MerchantBuilder", () => {
 
   describe("buildMany", () => {
     it("should build multiple merchants with the same configuration", () => {
-      const builder = new MerchantBuilder().withCategory(MerchantCategory.SUPERMARKET).withIsImportant(true);
-
+      const builder = new MerchantBuilder().withIsImportant(true);
       const merchants = builder.buildMany(3);
 
       expect(merchants).toHaveLength(3);
       merchants.forEach((merchant) => {
-        expect(merchant.category).toBe(MerchantCategory.SUPERMARKET);
         expect(merchant.isImportant).toBe(true);
       });
     });
@@ -174,7 +183,6 @@ describe("MerchantBuilder", () => {
         .withName("Chain Merchant")
         .withDescription("Chain merchant description")
         .withAddress("Chain Address")
-        .withCategory(MerchantCategory.ONLINE_SHOP)
         .withPhoneNumber("+40123456789")
         .withParentCompanyId("parent-chain-123")
         .withIsImportant(true)
@@ -188,7 +196,6 @@ describe("MerchantBuilder", () => {
       expect(merchant.name).toBe("Chain Merchant");
       expect(merchant.description).toBe("Chain merchant description");
       expect(merchant.address.address).toBe("Chain Address");
-      expect(merchant.category).toBe(MerchantCategory.ONLINE_SHOP);
       expect(merchant.address.phoneNumber).toBe("+40123456789");
       expect(merchant.parentCompanyId).toBe("parent-chain-123");
       expect(merchant.isImportant).toBe(true);
@@ -210,7 +217,6 @@ describe("MerchantBuilder", () => {
       expect(merchant).toHaveProperty("id");
       expect(merchant).toHaveProperty("name");
       expect(merchant).toHaveProperty("address");
-      expect(merchant).toHaveProperty("category");
     });
 
     it("should generate multiple random merchants", () => {
@@ -234,7 +240,6 @@ describe("MerchantBuilder", () => {
     it("should have pre-configured mockMerchant", () => {
       expect(mockMerchant.id).toBe("merchant-1");
       expect(mockMerchant.name).toBe("Test Merchant");
-      expect(mockMerchant.category).toBe(MerchantCategory.SUPERMARKET);
     });
 
     it("should have pre-configured mockMerchantList", () => {

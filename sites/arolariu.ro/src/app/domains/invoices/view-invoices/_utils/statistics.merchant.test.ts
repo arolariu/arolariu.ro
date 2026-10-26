@@ -6,7 +6,7 @@
 import {describe, expect, it} from "vitest";
 
 // Import types
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
 
 // Import functions to test
 import {computeMerchantTrends, computeMerchantVisitFrequency} from "./statistics";
@@ -26,30 +26,44 @@ function createMockInvoice(merchantId: string, amount: number, date: Date, itemC
     name: `Invoice ${merchantId}`,
     description: "Test invoice",
     createdAt: date,
+    createdBy: "user-123",
     lastUpdatedAt: date,
+    lastUpdatedBy: "user-123",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
     userIdentifier: "user-123",
     merchantReference: merchantId,
-    category: 0,
+    classification: null,
     scans: [],
+    sharedWith: [],
+    additionalMetadata: {},
+    receiptType: "",
+    countryRegion: "RO",
+    taxDetails: [],
+    payments: [],
     paymentInformation: {
       transactionDate: date,
       totalCostAmount: amount,
+      totalTaxAmount: 0,
+      subtotalAmount: 0,
+      tipAmount: 0,
       currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
-      currencyCode: "RON",
       paymentType: 200,
-      isValid: true,
     },
     items: Array.from({length: itemCount}, (_, index) => ({
-      id: `product-${invoiceId}-${index}`,
       name: `Product ${index}`,
-      productIdentifier: `prod-${invoiceId}-${index}`,
       quantity: 1,
-      unitPrice: amount / Math.max(1, itemCount),
+      quantityUnit: "pcs",
+      productCode: "",
+      price: amount / Math.max(1, itemCount),
       totalPrice: amount,
-      category: null,
-    })),
+      classification: null,
+      allergenAssessment: null,
+      metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 1},
+    })) as Product[],
     possibleRecipes: [],
-  } as unknown as Invoice;
+  };
 }
 
 describe("Merchant Analytics", () => {

@@ -1,51 +1,48 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {DialogProvider, useDialog} from "../../../_contexts/DialogContext";
+import ImageDialog from "./ImageDialog";
 
 /**
- * Static visual preview of the ImageDialog component.
+ * ImageDialog renders a full-size view of a receipt scan image.
  *
- * The actual component depends on `useDialog` context with a payload URL,
- * so this story renders a faithful HTML replica of the full-width dialog
- * with a receipt image placeholder.
+ * The dialog reads its image URL from `DialogContext` payload rather than
+ * props (and renders `null` while the payload is empty), so this story
+ * opens the `EDIT_INVOICE__IMAGE` dialog on mount via a small harness
+ * component that shares the same `DialogProvider`.
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/ImageDialog",
+  component: ImageDialog,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof ImageDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default image dialog with receipt placeholder. */
+const mockImageUrl = "https://picsum.photos/seed/imagedialog/600/800";
+
+/** Opens `EDIT_INVOICE__IMAGE` on mount so the dialog renders already visible. */
+function ImageDialogOpener({imageUrl}: Readonly<{imageUrl: string}>): null {
+  const {open} = useDialog("EDIT_INVOICE__IMAGE", "view", imageUrl);
+
+  useEffect(() => {
+    open();
+  }, [open]);
+
+  return null;
+}
+
+/** Default image dialog showing a receipt scan at full size. */
 export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Image</h2>
-      </div>
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          aspectRatio: "3/4",
-          maxHeight: "500px",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f9fafb",
-        }}>
-        <img
-          src='https://picsum.photos/seed/imagedialog/600/800'
-          alt='Receipt scan preview'
-          style={{height: "100%", width: "100%", objectFit: "contain"}}
-        />
-      </div>
-    </div>
-  ),
+  decorators: [
+    (Story) => (
+      <DialogProvider>
+        <ImageDialogOpener imageUrl={mockImageUrl} />
+        <Story />
+      </DialogProvider>
+    ),
+  ],
 };

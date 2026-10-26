@@ -31,7 +31,7 @@
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
-import {getInvoiceCategoryLabel, getPaymentTypeLabel, getProductCategoryLabel} from "../../../../_utils/labelUtilities";
+import {getPaymentTypeLabel} from "../../../../_utils/labelUtilities";
 
 /**
  * PDF stylesheet with professional design.
@@ -221,6 +221,22 @@ interface InvoicePDFProps {
   readonly invoice: Invoice;
   /** The merchant associated with the invoice (can be null) */
   readonly merchant: Merchant | null;
+  /** Locale-aware messages supplied by the interactive export surface. */
+  readonly messages: Readonly<{
+    readonly classification: string;
+    readonly unclassified: string;
+  }>;
+}
+
+/**
+ * Resolves a printable value while preserving the existing falsy fallback.
+ *
+ * @param value - Candidate PDF text.
+ * @param fallback - Text rendered when the candidate is empty or absent.
+ * @returns The candidate text or its fallback.
+ */
+function getPrintableText(value: string | null | undefined, fallback: string): string {
+  return value ? value : fallback;
 }
 
 /**
@@ -257,6 +273,7 @@ interface InvoicePDFProps {
  * @param props - Component props
  * @param props.invoice - The invoice data to render
  * @param props.merchant - The merchant data (can be null)
+ * @param props.messages - Locale-aware PDF labels and fallback text
  * @returns PDF Document component ready for rendering
  *
  * @example
@@ -265,10 +282,16 @@ interface InvoicePDFProps {
  * import {pdf} from "@react-pdf/renderer";
  * import {InvoicePDF} from "./InvoicePDF";
  *
- * const blob = await pdf(<InvoicePDF invoice={invoice} merchant={merchant} />).toBlob();
+ * const blob = await pdf(
+ *   <InvoicePDF
+ *     invoice={invoice}
+ *     merchant={merchant}
+ *     messages={{classification: "Classification", unclassified: "Unclassified"}}
+ *   />,
+ * ).toBlob();
  * ```
  */
-export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): React.JSX.Element {
+export function InvoicePDF({invoice, merchant, messages}: Readonly<InvoicePDFProps>): React.JSX.Element {
   const generatedDate = formatDate(new Date(), {
     locale: "en-US",
     year: "numeric",
@@ -315,7 +338,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Invoice Name:</Text>
-            <Text style={styles.value}>{invoice.name || "N/A"}</Text>
+            <Text style={styles.value}>{getPrintableText(invoice.name, "N/A")}</Text>
           </View>
 
           {invoice.description ? (
@@ -326,8 +349,8 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
           ) : null}
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Category:</Text>
-            <Text style={styles.value}>{getInvoiceCategoryLabel(invoice.category)}</Text>
+            <Text style={styles.label}>{messages.classification}:</Text>
+            <Text style={styles.value}>{invoice.classification?.officialLabel ?? messages.unclassified}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -355,7 +378,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Merchant Name:</Text>
-            <Text style={styles.value}>{merchant?.name || "Unknown Merchant"}</Text>
+            <Text style={styles.value}>{getPrintableText(merchant?.name, "Unknown Merchant")}</Text>
           </View>
 
           {merchant?.address?.fullName ? (
@@ -464,15 +487,15 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
                 <Text style={[styles.tableCell, styles.tableCellNumber]}>{index + 1}</Text>
                 <View style={[styles.tableCell, styles.tableCellProduct]}>
                   <Text style={styles.productName}>{product.name}</Text>
-                  {product.detectedAllergens.length > 0 ? (
-                    <Text style={styles.allergens}>Allergens: {product.detectedAllergens.map((a) => a.name).join(", ")}</Text>
+                  {product.allergenAssessment?.status === "detected" && product.allergenAssessment.signals.length > 0 ? (
+                    <Text style={styles.allergens}>Allergens: {product.allergenAssessment.signals.map((s) => s.code).join(", ")}</Text>
                   ) : null}
                 </View>
                 <Text style={[styles.tableCell, styles.tableCellCategory]}>
-                  {getProductCategoryLabel(product.category, {notDefinedLabel: "Not Defined", unknownLabel: "Not Defined"})}
+                  {product.classification?.officialLabel ?? "Not Classified"}
                 </Text>
                 <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
-                <Text style={[styles.tableCell, styles.tableCellUnit]}>{product.quantityUnit || "pcs"}</Text>
+                <Text style={[styles.tableCell, styles.tableCellUnit]}>{getPrintableText(product.quantityUnit, "pcs")}</Text>
                 <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrencyValue(product.price)}</Text>
                 <Text style={[styles.tableCell, styles.tableCellTotal]}>{formatCurrencyValue(product.totalPrice)}</Text>
               </View>

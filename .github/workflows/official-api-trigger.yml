@@ -63,8 +63,8 @@ on:
       infrastructure:
         description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
         options:
-          - 'local'
-          - 'azure'
+          - "local"
+          - "azure"
         default: "azure"
         required: true
         type: choice
@@ -109,10 +109,12 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: 'false'
-          install-node-deps: 'false'
-          dotnet: 'true'
-          install-dotnet-deps: 'true'
+          node: "true"
+          install-node-deps: "true"
+          dotnet: "true"
+          install-dotnet-deps: "true"
+          run-generate: "true"
+          generate-args: "artifacts"
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -185,6 +187,14 @@ jobs:
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
 
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node: "true"
+          install-node-deps: "true"
+          run-generate: "true"
+          generate-args: "artifacts"
+
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
         with:
@@ -193,7 +203,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
+        working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
@@ -278,7 +288,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
+        working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}

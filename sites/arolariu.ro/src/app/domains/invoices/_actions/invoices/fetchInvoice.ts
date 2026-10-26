@@ -25,6 +25,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input parameters for fetching a single invoice.
@@ -107,8 +108,14 @@ export async function fetchInvoice({invoiceId}: ServerActionInputType): ServerAc
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoice...", {invoiceId}, "server");
-        const data = (await response.json()) as Readonly<Invoice>;
-        return {success: true, data};
+        const payload: unknown = await response.json();
+        const parsed = tryParse(parseInvoiceResponse, payload);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.fetch-invoice.invalid");
+          logWithTrace("error", "Invoice response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.request.fetch-invoice.error");

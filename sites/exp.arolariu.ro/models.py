@@ -221,10 +221,6 @@ class WebsiteBuildTimeConfig(ExpModel):
         alias="Site:Url",
         description="Fully-qualified site URL (e.g. https://arolariu.ro).",
     )
-    site_use_cdn: str = Field(
-        alias="Site:UseCdn",
-        description="CDN toggle for static asset prefix.",
-    )
 
 
 class WebsiteRunTimeConfig(WebsiteBuildTimeConfig):

@@ -1,15 +1,38 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {InvoiceBuilder} from "@/data/mocks";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {DialogProvider} from "../../../_contexts/DialogContext";
+import TableViewActions from "./TableViewActions";
+
+/**
+ * Wraps the story in the real invoice `DialogProvider` context.
+ *
+ * @remarks
+ * Defined locally (rather than importing `.storybook/providers.tsx`) because
+ * Rolldown's dependency graph resolves the same `.storybook/providers` module
+ * from many different relative depths across the story suite, which has been
+ * observed to intermittently break unrelated stories during production
+ * builds. Importing the production `DialogProvider` context directly avoids
+ * that instability while still exercising the real context implementation.
+ */
+const withDialogProvider: Decorator = (Story) => (
+  <DialogProvider>
+    <Story />
+  </DialogProvider>
+);
 
 /**
  * TableViewActions renders a dropdown menu with edit, share, and
- * delete actions for individual invoice rows. Depends on
- * `useDialog` context and `useTranslations`.
+ * delete actions for individual invoice rows.
  *
- * This story renders a static preview of the actions dropdown.
+ * Mounted with a real `Invoice` fixture and wrapped in the real
+ * `DialogProvider` because the share/delete actions dispatch through
+ * `useDialog`.
  */
 const meta = {
   title: "Invoices/ViewInvoices/Views/TableViewActions",
+  component: TableViewActions,
   decorators: [
+    withDialogProvider,
     (Story) => (
       <div style={{display: "flex", minHeight: "200px", alignItems: "flex-start", justifyContent: "center", paddingTop: "2rem"}}>
         <Story />
@@ -19,82 +42,13 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  args: {
+    invoice: new InvoiceBuilder().build(),
+  },
+} satisfies Meta<typeof TableViewActions>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview of the actions dropdown menu (expanded). */
-export const Preview: Story = {
-  render: () => (
-    <div
-      style={{
-        width: "10rem",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-      }}>
-      <div style={{padding: "0.25rem"}}>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          ✏️ Edit
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          🔗 Share
-        </button>
-        <hr style={{margin: "0.25rem 0", borderColor: "#e5e7eb"}} />
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-            color: "#ef4444",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
-};
-
-/** Collapsed state — just the trigger button. */
-export const Collapsed: Story = {
-  render: () => (
-    <button
-      type='button'
-      style={{
-        borderRadius: "0.375rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        padding: "0.5rem",
-        boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-      }}>
-      <span style={{color: "#6b7280"}}>☰</span>
-    </button>
-  ),
-};
+/** Default collapsed trigger — click to reveal the actions dropdown menu. */
+export const Default: Story = {};

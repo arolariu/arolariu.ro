@@ -13,7 +13,7 @@
  */
 
 import type {Decorator} from "@storybook/react";
-import type {AbstractIntlMessages} from "next-intl";
+import type {AbstractIntlMessages, Locale} from "next-intl";
 import {NextIntlClientProvider} from "next-intl";
 
 import enMessages from "../messages/en.json";
@@ -21,19 +21,25 @@ import frMessages from "../messages/fr.json";
 import roMessages from "../messages/ro.json";
 
 // ─── Message catalog ─────────────────────────────────────────────
-const messagesByLocale: Record<string, AbstractIntlMessages> = {
+const messagesByLocale: Record<Locale, AbstractIntlMessages> = {
   en: enMessages as AbstractIntlMessages,
   ro: roMessages as AbstractIntlMessages,
   fr: frMessages as AbstractIntlMessages,
 };
+
+/** Narrows a Storybook toolbar value to a supported application locale. */
+function isSupportedLocale(value: unknown): value is Locale {
+  return value === "en" || value === "ro" || value === "fr";
+}
 
 /**
  * Wraps stories in NextIntlClientProvider with locale from toolbar.
  * Uses a React key to force full remount when locale changes.
  */
 export const withI18n: Decorator = (Story, context) => {
-  const locale = (context.globals["locale"] as string) ?? "en";
-  const messages = messagesByLocale[locale] ?? enMessages;
+  const localeValue: unknown = context.globals["locale"];
+  const locale: Locale = isSupportedLocale(localeValue) ? localeValue : "en";
+  const messages = messagesByLocale[locale];
   return (
     <NextIntlClientProvider
       key={`i18n-${locale}`}

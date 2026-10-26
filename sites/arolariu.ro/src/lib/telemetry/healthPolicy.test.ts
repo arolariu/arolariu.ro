@@ -3,19 +3,13 @@ import {SUPPRESSION_ENV_VAR, isSuppressedPath, parseSuppressionFlag, shouldSuppr
 
 describe("healthPolicy", () => {
   describe("isSuppressedPath", () => {
-    it.each(["/health", "/api/health", "/api/ready", "/HEALTH", "/Api/Health", "/health/", "/api/health?x=1"])(
-      "suppresses %s",
-      (path) => {
-        expect(isSuppressedPath(path)).toBe(true);
-      },
-    );
+    it.each(["/health", "/api/health", "/api/ready", "/HEALTH", "/Api/Health", "/health/", "/api/health?x=1"])("suppresses %s", (path) => {
+      expect(isSuppressedPath(path)).toBe(true);
+    });
 
-    it.each(["/", "/api/user", "/api/healthy", "/healthcheck-admin", "/health/details", "", undefined])(
-      "does not suppress %s",
-      (path) => {
-        expect(isSuppressedPath(path)).toBe(false);
-      },
-    );
+    it.each(["/", "/api/user", "/api/healthy", "/healthcheck-admin", "/health/details", "", undefined])("does not suppress %s", (path) => {
+      expect(isSuppressedPath(path)).toBe(false);
+    });
   });
 
   describe("parseSuppressionFlag", () => {

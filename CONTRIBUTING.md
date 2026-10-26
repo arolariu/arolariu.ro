@@ -4,16 +4,19 @@ First off, thank you for considering contributing to `arolariu.ro`! It's people 
 
 ## Getting Started
 
-**New to the project?** Start with the [Development Guide](DEVELOPMENT.md) — it covers setup, tooling, and getting your dev environment running in minutes.
+**New to the project?** Start with the [Development Guide](DEVELOPMENT.md) — it covers setup, tooling, and getting your dev environment
+running in minutes.
 
 **Choose your workspace profile** for a tailored VS Code experience:
+
 - 🌐 **Frontend** — `.vscode/frontend.code-workspace` (Next.js, components, CV site)
 - 🔧 **Backend** — `.vscode/backend.code-workspace` (.NET API, Python exp service)
 - 🚀 **Fullstack** — `.vscode/fullstack.code-workspace` (everything + compound debug)
 
 ## Where do I go from here?
 
-If you've noticed a bug or have a feature request, [make one](https://github.com/arolariu/arolariu.ro/issues/new/choose)! It's generally best if you get confirmation of your bug or approval for your feature request this way before starting to code.
+If you've noticed a bug or have a feature request, [make one](https://github.com/arolariu/arolariu.ro/issues/new/choose)! It's generally
+best if you get confirmation of your bug or approval for your feature request this way before starting to code.
 
 If you have a general question, feel free to reach out or start a discussion.
 
@@ -28,6 +31,7 @@ git checkout -b 325-add-japanese-translations
 ```
 
 **Branch naming conventions:**
+
 - `feat/description` — new features
 - `fix/description` — bug fixes
 - `refactor/description` — code refactoring
@@ -44,7 +48,8 @@ npm run test:api         # backend tests (MSTest)
 npm run test:e2e         # end-to-end tests (Playwright + Newman)
 ```
 
-Details for each sub-project can be found in their respective `README.md` files (if available) or by inspecting their `package.json` or `.csproj` files.
+Details for each sub-project can be found in their respective `README.md` files (if available) or by inspecting their `package.json` or
+`.csproj` files.
 
 ## Implement your fix or feature
 
@@ -58,12 +63,18 @@ Run these checks locally — they're the same ones CI will run:
 npm run format           # auto-fix formatting (Prettier)
 npm run lint             # check for lint errors (ESLint)
 npm run test:unit        # run unit tests
-npm run doctor           # check workspace health
+npm run doctor           # read-only environment diagnosis
 ```
+
+`npm run setup` prepares your environment (dependency-aware install/restore/generate); `npm run doctor` only diagnoses that environment
+afterward and never builds, type-checks, or runs tests itself, so it is not a substitute for
+`npm run test:unit`/`npm run lint`/`npm run build` — run those separately. See
+[DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the full doctor contract.
 
 ### Per-Role Checklist
 
 **Frontend changes:**
+
 - [ ] TypeScript strict mode — no `any` types
 - [ ] Components use `Readonly<Props>` and explicit return types
 - [ ] All user-facing strings go through `next-intl` (no hardcoded text)
@@ -72,6 +83,7 @@ npm run doctor           # check workspace health
 - [ ] Tests written with Vitest + Testing Library
 
 **Backend changes:**
+
 - [ ] Follow The Standard layer hierarchy (Brokers → Foundation → Orchestration → Processing → Endpoints)
 - [ ] Max 2-3 dependencies per service (Florance Pattern)
 - [ ] XML documentation on all public APIs
@@ -80,6 +92,7 @@ npm run doctor           # check workspace health
 - [ ] No business logic in Brokers
 
 **All changes:**
+
 - [ ] Conventional commit message (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`)
 - [ ] No secrets or credentials in code
 - [ ] Documentation updated if behavior changes
@@ -106,7 +119,8 @@ Finally, go to GitHub and make a Pull Request.
 
 ## Keeping your Pull Request updated
 
-If a maintainer asks you to "rebase" your PR, they're saying that a lot of code has changed, and that you need to update your branch so it's easier to merge.
+If a maintainer asks you to "rebase" your PR, they're saying that a lot of code has changed, and that you need to update your branch so it's
+easier to merge.
 
 To learn more about rebasing in Git, there are a lot of good resources but here's the suggested workflow:
 
@@ -119,6 +133,7 @@ git push --force-with-lease origin 325-add-japanese-translations
 ## Code Style
 
 This project enforces strict code quality standards:
+
 - **TypeScript**: Strictest mode with zero `any` tolerance
 - **C#**: XML docs required, `TreatWarningsAsErrors` enabled
 - **Formatting**: Prettier (TS/JS), `.editorconfig` (C#)

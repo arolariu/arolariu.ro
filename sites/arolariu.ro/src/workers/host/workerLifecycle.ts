@@ -57,9 +57,7 @@ export function createWorkerLifecycle(options: CreateWorkerLifecycleOptions): Wo
   };
 
   const scheduleIdle = (): void => {
-    if (!idleEnabled) return;
-    if (state !== "ready") return;
-    if (inFlight > 0) return;
+    if (!idleEnabled || state !== "ready" || inFlight > 0) return;
     clearIdle();
     idleHandle = setTimeout(() => {
       idleHandle = null;

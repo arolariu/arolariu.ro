@@ -1,85 +1,20 @@
-/**
- * @fileoverview Cross-invoice aggregate statistics utilities.
- * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/statistics
- *
- * @remarks
- * This module provides pure utility functions for computing aggregate analytics
- * across multiple invoices. These functions power the statistics dashboard with
- * KPIs, trends, category breakdowns, and spending patterns.
- *
- * **Design Principles:**
- * - Pure functions with no side effects
- * - TypeScript strict mode with explicit return types
- * - Safe access patterns (optional chaining, nullish coalescing)
- * - Performance-conscious (single-pass aggregations where possible)
- * - Currency-aware (all amounts normalized to RON via yearly average exchange rates)
- *
- * **Performance Considerations:**
- * All functions are O(n) complexity where n is the number of invoices.
- * For large datasets (>10k invoices), consider:
- * - Implementing pagination/windowing
- * - Caching results in Zustand store
- * - Using web workers for background computation
- *
- * **Date Handling:**
- * All date operations use native Date API and are timezone-aware.
- * Months are formatted using Intl.DateTimeFormat for locale support.
- *
- * @example
- * ```typescript
- * import { computeKPIs, computeMonthlySpending } from "./_utils/statistics";
- *
- * const kpis = computeKPIs(invoices);
- * const monthlyData = computeMonthlySpending(invoices);
- * ```
- *
- * @see {@link Invoice} for invoice structure
- * @see {@link Product} for product structure
- * @see {@link PaymentInformation} for payment details
- */
+/** @fileoverview Pure, RON-normalized cross-invoice aggregate statistics. */
 
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
+import {AllergenAssessmentStatus, type AllergenCode} from "@/types/invoices/Allergen";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
-import {getProductCategoryLabel} from "../../_utils/labelUtilities";
-export {getProductCategoryLabel} from "../../_utils/labelUtilities";
+import {getClassificationGroup} from "../../_utils/labelUtilities";
 
-/**
- * Empty GUID constant used to filter invalid merchant references.
- *
- * @remarks
- * Some invoices may have an all-zeros GUID as a placeholder merchantReference.
- * This constant enables consistent filtering across all merchant-related computations.
- */
+/** Empty GUID used to filter placeholder merchant references. */
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
-/**
- * Validates whether a merchant reference is valid and non-empty.
- *
- * @param ref - Merchant reference string (may be undefined or null)
- * @returns `true` if the reference is valid, `false` otherwise
- *
- * @remarks
- * A valid merchant reference must:
- * - Be defined (not null/undefined)
- * - Not be the empty GUID (00000000-0000-0000-0000-000000000000)
- * - Have a non-zero length
- */
+/** Determines whether a merchant reference is non-empty and non-placeholder. */
 function isValidMerchantRef(ref: string | undefined | null): boolean {
   return ref !== null && ref !== undefined && ref !== EMPTY_GUID && ref.length > 0;
 }
 
-/**
- * Extracts the RON-normalized amount from an invoice.
- *
- * @remarks
- * Converts the invoice's `totalCostAmount` to RON using the yearly average
- * exchange rate for the invoice's transaction year. RON invoices pass through
- * unchanged. Unknown currencies are returned as-is.
- *
- * @param invoice - The invoice to extract the amount from
- * @returns The amount in RON (or original amount if currency is unknown)
- */
+/** Returns an invoice amount normalized to RON for its transaction year. */
 function getAmountInRON(invoice: Invoice): number {
   const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
   const currencyCode = invoice.paymentInformation?.currency?.code ?? "RON";
@@ -87,321 +22,87 @@ function getAmountInRON(invoice: Invoice): number {
   return toRON(amount, currencyCode, year);
 }
 
-/**
- * Key Performance Indicator data for dashboard summary row.
- *
- * @remarks
- * Provides high-level metrics computed from all invoices.
- * These metrics give users a quick overview of their spending behavior.
- *
- * **Calculation Notes:**
- * - `totalSpending`: Sum of all invoice totals
- * - `averagePerInvoice`: Mean invoice value (totalSpending / invoiceCount)
- * - `mostFrequentMerchant`: Merchant with highest invoice count
- * - `averageItemsPerInvoice`: Mean number of products per invoice
- * - `currency`: Extracted from first invoice, assumes homogeneous currency
- *
- * @example
- * ```typescript
- * const kpis = computeKPIs(invoices);
- * console.log(`Total: ${kpis.currency} ${kpis.totalSpending}`);
- * console.log(`Average per invoice: ${kpis.averagePerInvoice.toFixed(2)}`);
- * ```
- */
+/** Key performance indicators for the statistics summary. */
 export type KPIData = {
-  /** Total spending across all invoices */
   totalSpending: number;
-  /** Number of invoices analyzed */
   invoiceCount: number;
-  /** Average amount per invoice */
   averagePerInvoice: number;
-  /** Most frequently used merchant */
   mostFrequentMerchant: {id: string; count: number} | null;
-  /** Average number of items per invoice */
   averageItemsPerInvoice: number;
-  /** Total number of items across all invoices */
   totalItems: number;
-  /** Currency code used (assumes homogeneous currency) */
   currency: string;
 };
 
-/**
- * Monthly spending data point for trend charts.
- *
- * @remarks
- * Aggregates spending by calendar month for temporal analysis.
- * Useful for identifying spending trends, seasonal patterns, and anomalies.
- *
- * **Format:**
- * - `month`: Human-readable month label (e.g., "Jan 2025")
- * - `monthKey`: Machine-readable sortable key (e.g., "2025-01")
- * - `amount`: Total spending for the month
- * - `invoiceCount`: Number of invoices in the month
- *
- * @example
- * ```typescript
- * const monthlyData = computeMonthlySpending(invoices);
- * const chartData = monthlyData.map(m => ({
- *   x: m.month,
- *   y: m.amount
- * }));
- * ```
- */
+/** Calendar-month spending aggregate for trend charts. */
 export type MonthlySpending = {
-  /** Human-readable month label (e.g., "Jan 2025") */
   month: string;
-  /** Machine-readable month key for sorting (e.g., "2025-01") */
   monthKey: string;
-  /** Total spending amount for the month */
   amount: number;
-  /** Number of invoices in the month */
   invoiceCount: number;
-  /** List of invoices in the month with id, name, and amount */
   invoices: ReadonlyArray<{id: string; name: string; amount: number}>;
 };
 
-/**
- * Category spending aggregate for pie/bar charts.
- *
- * @remarks
- * Groups spending by invoice category to show where money goes.
- * Categories are defined by the InvoiceCategory enum.
- *
- * **Percentage Calculation:**
- * Percentage is computed as (category amount / total spending) * 100
- *
- * @example
- * ```typescript
- * const categories = computeCategoryAggregates(invoices);
- * const grocerySpend = categories.find(c => c.category === "Grocery");
- * console.log(`Grocery: ${grocerySpend?.percentage.toFixed(1)}%`);
- * ```
- */
-export type CategoryAggregate = {
-  /** Human-readable category name */
+/** Invoice spending grouped by canonical taxonomy root. */
+export type ClassificationGroupAggregate = {
   category: string;
-  /** Numeric category ID from enum */
-  categoryId: number;
-  /** Total spending in this category */
   amount: number;
-  /** Number of invoices in this category */
   count: number;
-  /** Percentage of total spending */
   percentage: number;
 };
 
-/**
- * Merchant spending aggregate for top merchants analysis.
- *
- * @remarks
- * Identifies where users spend most frequently and how much.
- * Useful for loyalty program optimization and spending awareness.
- *
- * @example
- * ```typescript
- * const merchants = computeMerchantAggregates(invoices);
- * const topMerchant = merchants[0]; // Sorted by totalSpend descending
- * console.log(`Top merchant: ${topMerchant.totalSpend} total`);
- * ```
- */
+/** Spending and visit aggregate for one merchant. */
 export type MerchantAggregate = {
-  /** Merchant unique identifier */
   merchantId: string;
-  /** Total spending at this merchant */
   totalSpend: number;
-  /** Number of invoices from this merchant */
   invoiceCount: number;
-  /** Average spending per visit */
   averageSpend: number;
 };
 
-/**
- * Daily spending data for heatmap visualizations.
- *
- * @remarks
- * Provides granular day-by-day spending data for calendar heatmaps.
- * Useful for identifying spending patterns by day of week or month.
- *
- * **Date Format:**
- * ISO 8601 date string (YYYY-MM-DD) for consistency and sorting.
- *
- * @example
- * ```typescript
- * const dailyData = computeDailySpending(invoices);
- * const heatmapData = dailyData.map(d => ({
- *   date: d.date,
- *   value: d.amount
- * }));
- * ```
- */
+/** Daily spending aggregate for calendar heatmaps. */
 export type DailySpending = {
-  /** ISO date string (YYYY-MM-DD) */
   date: string;
-  /** Total spending on this date */
   amount: number;
-  /** Number of invoices on this date */
   invoiceCount: number;
 };
 
-/**
- * Price bucket for distribution histogram.
- *
- * @remarks
- * Groups invoices into price ranges to show spending distribution.
- * Helps identify typical transaction sizes and outliers.
- *
- * **Default Buckets:**
- * - 0-5, 5-10, 10-25, 25-50, 50-100, 100+
- *
- * @example
- * ```typescript
- * const distribution = computePriceDistribution(invoices);
- * distribution.forEach(bucket => {
- *   console.log(`${bucket.range}: ${bucket.count} invoices`);
- * });
- * ```
- */
+/** One histogram bucket in the invoice price distribution. */
 export type PriceBucket = {
-  /** Human-readable range label (e.g., "0-5") */
   range: string;
-  /** Minimum value (inclusive) */
   min: number;
-  /** Maximum value (exclusive, except for last bucket) */
   max: number;
-  /** Number of invoices in this bucket */
   count: number;
-  /** Total spending in this bucket */
   totalAmount: number;
 };
 
-/**
- * Time-of-day spending segment for behavioral analysis.
- *
- * @remarks
- * Segments spending by time of day to identify shopping patterns.
- * Useful for understanding user behavior and optimizing features.
- *
- * **Segments:**
- * - Morning: 6:00-12:00
- * - Afternoon: 12:00-17:00
- * - Evening: 17:00-21:00
- * - Night: 21:00-6:00
- *
- * @example
- * ```typescript
- * const timeData = computeTimeOfDay(invoices);
- * const morningSpend = timeData.find(t => t.segment === "Morning");
- * ```
- */
+/** Spending aggregate for one time-of-day segment. */
 export type TimeOfDaySegment = {
-  /** Time segment name */
   segment: string;
-  /** Number of invoices in this segment */
   invoiceCount: number;
-  /** Total spending in this segment */
   totalAmount: number;
-  /** Average spending per invoice in this segment */
   averageAmount: number;
 };
 
-/**
- * Month-over-month comparison for trend analysis.
- *
- * @remarks
- * Compares current month spending with previous month to show trends.
- * Includes delta calculations and new merchant discovery metrics.
- *
- * **Delta Calculations:**
- * - `spendingDelta`: Absolute difference (current - previous)
- * - `spendingDeltaPercent`: Percentage change ((current - previous) / previous * 100)
- * - `invoiceCountDelta`: Change in number of invoices
- * - `newMerchantCount`: Number of new merchants in current month
- *
- * @example
- * ```typescript
- * const comparison = computeMonthComparison(invoices);
- * if (comparison.spendingDeltaPercent > 10) {
- *   console.warn("Spending increased by >10%!");
- * }
- * ```
- */
+/** Current-versus-previous-month spending comparison. */
 export type MonthComparison = {
-  /** Current month spending data */
   currentMonth: MonthlySpending;
-  /** Previous month spending data (null if not available) */
   previousMonth: MonthlySpending | null;
-  /** Absolute spending change */
   spendingDelta: number;
-  /** Percentage spending change */
   spendingDeltaPercent: number;
-  /** Change in invoice count */
   invoiceCountDelta: number;
-  /** Number of new merchants in current month */
   newMerchantCount: number;
 };
 
-/**
- * Currency distribution data for multi-currency analysis.
- *
- * @remarks
- * Provides spending breakdown by currency to help users understand
- * their multi-currency spending patterns. All amounts are converted
- * to RON using yearly average exchange rates for comparison.
- *
- * **Sorting:**
- * Results are sorted by RON total (descending) to show highest-spend currencies first.
- *
- * **Percentage Calculation:**
- * Percentage represents share of total RON-normalized spending.
- *
- * **Single Currency Scenario:**
- * If all invoices use the same currency, returns single entry with 100% share.
- *
- * @example
- * ```typescript
- * const distribution = computeCurrencyDistribution(invoices);
- * distribution.forEach(curr => {
- *   console.log(`${curr.currencyCode}: ${curr.totalInRON.toFixed(2)} RON (${curr.percentage}%)`);
- * });
- * ```
- */
+/** Original and RON-normalized totals for one currency. */
 export type CurrencyDistribution = {
-  /** ISO 4217 currency code (e.g., "EUR", "USD", "RON") */
   currencyCode: string;
-  /** Currency symbol for display (e.g., "€", "$", "lei") */
   currencySymbol: string;
-  /** Number of invoices in this currency */
   invoiceCount: number;
-  /** Total spending in original currency */
   totalOriginal: number;
-  /** Total spending converted to RON */
   totalInRON: number;
-  /** Percentage of total RON spending (0-100) */
   percentage: number;
 };
 
-/**
- * Computes Key Performance Indicators from invoices.
- *
- * @param invoices - Array of invoices to analyze
- * @returns KPI data with spending metrics
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- * Performs a single pass through the data to compute all metrics.
- *
- * **Edge Cases:**
- * - Empty array: Returns zeroed metrics with "RON" default currency
- * - Missing payment info: Uses 0 for amounts
- * - No merchant: Returns null for mostFrequentMerchant
- *
- * @example
- * ```typescript
- * const kpis = computeKPIs(invoices);
- * console.log(`Total: ${kpis.totalSpending} ${kpis.currency}`);
- * console.log(`Avg per invoice: ${kpis.averagePerInvoice.toFixed(2)}`);
- * ```
- */
+/** Computes RON-normalized key performance indicators. */
 export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
   if (invoices.length === 0) {
     return {
@@ -453,31 +154,7 @@ export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
   };
 }
 
-/**
- * Computes monthly spending aggregates for trend visualization.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of monthly spending data, sorted chronologically
- *
- * @remarks
- * **Performance:** O(n log n) due to sorting, where n is the number of unique months.
- *
- * **Date Extraction:**
- * Uses `paymentInformation.transactionDate` for grouping.
- * Falls back to invoice creation date if transaction date is unavailable.
- *
- * **Locale:**
- * Month labels are formatted using `Intl.DateTimeFormat` for internationalization.
- *
- * @example
- * ```typescript
- * const monthlyData = computeMonthlySpending(invoices);
- * // Returns: [
- * //   { month: "Dec 2024", monthKey: "2024-12", amount: 1234.56, invoiceCount: 15 },
- * //   { month: "Jan 2025", monthKey: "2025-01", amount: 1567.89, invoiceCount: 18 }
- * // ]
- * ```
- */
+/** Computes chronological calendar-month spending aggregates. */
 export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): MonthlySpending[] {
   const monthMap = new Map<string, {amount: number; count: number}>();
   const monthInvoicesMap = new Map<string, Array<{id: string; name: string; amount: number}>>();
@@ -534,88 +211,29 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
   return result.toSorted((a, b) => a.monthKey.localeCompare(b.monthKey));
 }
 
-/**
- * Maps InvoiceCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from InvoiceCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (GROCERY) → "Grocery"
- * - 200 (FAST_FOOD) → "Dining"
- * - 300 (HOME_CLEANING) → "Home"
- * - 400 (CAR_AUTO) → "Auto"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getCategoryLabel(100); // "Grocery"
- * const label2 = getCategoryLabel(200); // "Dining"
- * ```
- */
-export function getCategoryLabel(categoryId: number): string {
-  const labels: Record<number, string> = {
-    0: "Uncategorized",
-    100: "Grocery",
-    200: "Dining",
-    300: "Home",
-    400: "Auto",
-    9999: "Other",
-  };
-
-  return labels[categoryId] ?? "Unknown";
-}
-
-/**
- * Computes spending aggregates by invoice category.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of category aggregates, sorted by amount descending
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Percentage Calculation:**
- * Each category's percentage is computed as (category total / grand total) * 100.
- *
- * **Category Mapping:**
- * Uses {@link getCategoryLabel} to convert enum values to human-readable names.
- *
- * @example
- * ```typescript
- * const categories = computeCategoryAggregates(invoices);
- * // Returns: [
- * //   { category: "Grocery", categoryId: 100, amount: 3456.78, count: 23, percentage: 45.2 },
- * //   { category: "Dining", categoryId: 200, amount: 2123.45, count: 18, percentage: 27.8 }
- * // ]
- * ```
- */
-export function computeCategoryAggregates(invoices: ReadonlyArray<Invoice>): CategoryAggregate[] {
-  const categoryMap = new Map<number, {amount: number; count: number}>();
+/** Groups invoice spending by canonical taxonomy root, including unclassified invoices. */
+export function computeClassificationGroupAggregates(invoices: ReadonlyArray<Invoice>): ClassificationGroupAggregate[] {
+  const groupMap = new Map<string, {amount: number; count: number}>();
   let totalSpending = 0;
 
   for (const invoice of invoices) {
-    const category = invoice.category ?? 0;
+    const group = getClassificationGroup(invoice.classification ?? null) ?? "unclassified";
     const amount = getAmountInRON(invoice);
     totalSpending += amount;
 
-    const existing = categoryMap.get(category) ?? {amount: 0, count: 0};
-    categoryMap.set(category, {
+    const existing = groupMap.get(group) ?? {amount: 0, count: 0};
+    groupMap.set(group, {
       amount: existing.amount + amount,
       count: existing.count + 1,
     });
   }
 
-  const result: CategoryAggregate[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  const result: ClassificationGroupAggregate[] = [];
+  for (const [group, data] of groupMap.entries()) {
     const percentage = totalSpending > 0 ? (data.amount / totalSpending) * 100 : 0;
 
     result.push({
-      category: getCategoryLabel(categoryId),
-      categoryId,
+      category: group,
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
       percentage: Math.round(percentage * 10) / 10,
@@ -625,29 +243,7 @@ export function computeCategoryAggregates(invoices: ReadonlyArray<Invoice>): Cat
   return result.toSorted((a, b) => b.amount - a.amount);
 }
 
-/**
- * Computes spending aggregates by merchant.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of merchant aggregates, sorted by total spend descending
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Merchant Identification:**
- * Uses `invoice.merchantReference` as the unique identifier.
- * Skips invoices without merchant references.
- *
- * **Average Calculation:**
- * Average spend = total spend / invoice count
- *
- * @example
- * ```typescript
- * const merchants = computeMerchantAggregates(invoices);
- * const topMerchant = merchants[0]; // Highest spending
- * console.log(`Top: ${topMerchant.totalSpend} across ${topMerchant.invoiceCount} visits`);
- * ```
- */
+/** Computes merchant aggregates sorted by total spend. */
 export function computeMerchantAggregates(invoices: ReadonlyArray<Invoice>): MerchantAggregate[] {
   const merchantMap = new Map<string, {totalSpend: number; count: number}>();
 
@@ -677,30 +273,7 @@ export function computeMerchantAggregates(invoices: ReadonlyArray<Invoice>): Mer
   return result.toSorted((a, b) => b.totalSpend - a.totalSpend);
 }
 
-/**
- * Computes daily spending for calendar heatmap visualization.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of daily spending data, sorted by date ascending
- *
- * @remarks
- * **Performance:** O(n log n) due to sorting, where n is the number of unique days.
- *
- * **Date Format:**
- * Dates are formatted as ISO 8601 strings (YYYY-MM-DD) for consistency.
- *
- * **Use Case:**
- * Ideal for calendar heatmaps showing spending intensity by day.
- *
- * @example
- * ```typescript
- * const dailyData = computeDailySpending(invoices);
- * // Returns: [
- * //   { date: "2025-01-15", amount: 234.56, invoiceCount: 3 },
- * //   { date: "2025-01-16", amount: 89.12, invoiceCount: 1 }
- * // ]
- * ```
- */
+/** Computes chronological daily spending for calendar heatmaps. */
 export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpending[] {
   const dayMap = new Map<string, {amount: number; count: number}>();
 
@@ -743,30 +316,7 @@ export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpe
   return result.toSorted((a, b) => a.date.localeCompare(b.date));
 }
 
-/**
- * Computes invoice price distribution buckets.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of price buckets with counts and totals
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Buckets:**
- * Default buckets are: 0-5, 5-10, 10-25, 25-50, 50-100, 100+
- *
- * **Use Case:**
- * Useful for histogram visualization showing transaction size distribution.
- *
- * @example
- * ```typescript
- * const distribution = computePriceDistribution(invoices);
- * // Returns: [
- * //   { range: "0-5", min: 0, max: 5, count: 12, totalAmount: 45.67 },
- * //   { range: "5-10", min: 5, max: 10, count: 8, totalAmount: 67.89 }
- * // ]
- * ```
- */
+/** Computes fixed RON price-distribution buckets. */
 export function computePriceDistribution(invoices: ReadonlyArray<Invoice>): PriceBucket[] {
   // Define buckets
   const buckets: Array<{min: number; max: number; range: string}> = [
@@ -806,16 +356,7 @@ export function computePriceDistribution(invoices: ReadonlyArray<Invoice>): Pric
   }));
 }
 
-/**
- * Maps an hour-of-day (0-23) to the corresponding time-of-day segment name.
- *
- * @param hour - Hour integer (0-23)
- * @returns One of "Morning" | "Afternoon" | "Evening" | "Night"
- *
- * @remarks
- * Extracted to module scope to avoid a `let`/if-else block inside `computeTimeOfDay`
- * that would otherwise trigger the `init-declarations` lint rule.
- */
+/** Maps an hour to its statistics time-of-day segment. */
 function getTimeSegment(hour: number): "Morning" | "Afternoon" | "Evening" | "Night" {
   if (hour >= 6 && hour < 12) return "Morning";
   if (hour >= 12 && hour < 17) return "Afternoon";
@@ -823,33 +364,7 @@ function getTimeSegment(hour: number): "Morning" | "Afternoon" | "Evening" | "Ni
   return "Night";
 }
 
-/**
- * Computes spending by time-of-day segments.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of time segment data
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Segments:**
- * - Morning: 6:00-12:00 (6 hours)
- * - Afternoon: 12:00-17:00 (5 hours)
- * - Evening: 17:00-21:00 (4 hours)
- * - Night: 21:00-6:00 (9 hours)
- *
- * **Use Case:**
- * Identifies user shopping patterns and behavioral trends.
- *
- * @example
- * ```typescript
- * const timeData = computeTimeOfDay(invoices);
- * // Returns: [
- * //   { segment: "Morning", invoiceCount: 34, totalAmount: 1234.56, averageAmount: 36.31 },
- * //   { segment: "Afternoon", invoiceCount: 45, totalAmount: 2345.67, averageAmount: 52.13 }
- * // ]
- * ```
- */
+/** Computes spending aggregates for fixed time-of-day segments. */
 export function computeTimeOfDay(invoices: ReadonlyArray<Invoice>): TimeOfDaySegment[] {
   const segments = {
     Morning: {invoiceCount: 0, totalAmount: 0},
@@ -878,9 +393,7 @@ export function computeTimeOfDay(invoices: ReadonlyArray<Invoice>): TimeOfDaySeg
   }));
 }
 
-/**
- * Creates an empty month comparison when no data is available.
- */
+/** Creates an empty month comparison. */
 function createEmptyMonthComparison(): MonthComparison {
   const emptyMonth: MonthlySpending = {
     month: "",
@@ -899,9 +412,7 @@ function createEmptyMonthComparison(): MonthComparison {
   };
 }
 
-/**
- * Calculates spending delta values between two months.
- */
+/** Calculates spending deltas between two months. */
 function calculateSpendingDeltas(
   currentMonth: MonthlySpending,
   previousMonth: MonthlySpending | null,
@@ -914,9 +425,7 @@ function calculateSpendingDeltas(
   return {spendingDelta, spendingDeltaPercent, invoiceCountDelta};
 }
 
-/**
- * Counts new merchants appearing in the current month for the first time.
- */
+/** Counts merchants appearing for the first time in the current month. */
 function countNewMerchants(invoices: ReadonlyArray<Invoice>, currentMonthStart: Date, currentMonthEnd: Date): number {
   const merchantsBeforeCurrent = new Set<string>();
   const merchantsInCurrent = new Set<string>();
@@ -945,34 +454,7 @@ function countNewMerchants(invoices: ReadonlyArray<Invoice>, currentMonthStart: 
   return newMerchantCount;
 }
 
-/**
- * Computes month-over-month comparison for current vs previous month.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Month comparison data with delta calculations
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Current/Previous Month:**
- * - Current month: Most recent calendar month with data
- * - Previous month: Calendar month immediately before current
- *
- * **Delta Calculations:**
- * - Spending delta: Absolute difference
- * - Spending delta percent: Percentage change
- * - New merchant count: Merchants appearing for first time in current month
- *
- * **Edge Cases:**
- * - No previous month: All previous month fields are null/zero
- * - Same spending: Delta percent is 0
- *
- * @example
- * ```typescript
- * const comparison = computeMonthComparison(invoices);
- * console.log(`Spending ${comparison.spendingDeltaPercent > 0 ? 'up' : 'down'} by ${Math.abs(comparison.spendingDeltaPercent)}%`);
- * ```
- */
+/** Compares the latest calendar month with its predecessor. */
 export function computeMonthComparison(invoices: ReadonlyArray<Invoice>): MonthComparison {
   const monthlyData = computeMonthlySpending(invoices);
 
@@ -1002,29 +484,7 @@ export function computeMonthComparison(invoices: ReadonlyArray<Invoice>): MonthC
   };
 }
 
-/**
- * Maps PaymentType enum values to human-readable labels.
- *
- * @param paymentType - Numeric payment type ID from PaymentType enum
- * @returns Human-readable payment type label
- *
- * @remarks
- * **Payment Type Mappings:**
- * - 0 (Unknown) → "Unknown"
- * - 100 (Cash) → "Cash"
- * - 200 (Card) → "Card"
- * - 300 (Transfer) → "Bank Transfer"
- * - 400 (MobilePayment) → "Mobile Payment"
- * - 500 (Voucher) → "Voucher"
- * - 9999 (Other) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getPaymentTypeLabel(200); // "Card"
- * const label2 = getPaymentTypeLabel(400); // "Mobile Payment"
- * ```
- */
+/** Maps payment-type wire values to their legacy statistics labels. */
 export function getPaymentTypeLabel(paymentType: number): string {
   const labels: Record<number, string> = {
     0: "Unknown",
@@ -1039,104 +499,97 @@ export function getPaymentTypeLabel(paymentType: number): string {
   return labels[paymentType] ?? "Unknown";
 }
 
-/**
- * Merchant spending trend data for time-series visualization.
- *
- * @remarks
- * Provides monthly spending breakdown for individual merchants,
- * enabling trend analysis and comparison across merchants.
- *
- * **Use Case:**
- * Display top N merchants' spending patterns over time to identify
- * changes in shopping behavior or merchant preference shifts.
- *
- * @example
- * ```typescript
- * const trends = computeMerchantTrends(invoices, 5);
- * const topMerchant = trends[0];
- * console.log(`${topMerchant.merchantId}: ${topMerchant.totalSpend} total`);
- * ```
- */
+/** Monthly spending trend for one merchant. */
 export type MerchantTrend = {
-  /** Merchant unique identifier */
   merchantId: string;
-  /** Monthly spending data points */
   monthlyData: Array<{
-    /** Month key in YYYY-MM format */
     monthKey: string;
-    /** Spending amount in that month */
     amount: number;
   }>;
-  /** Total spending across all months */
   totalSpend: number;
 };
 
-/**
- * Merchant visit pattern analysis data.
- *
- * @remarks
- * Provides behavioral insights into shopping frequency and patterns
- * at specific merchants. Useful for understanding habitual shopping
- * behavior and identifying preferred shopping days.
- *
- * **Calculation Notes:**
- * - Visit = one invoice
- * - Day of week uses native JavaScript Date.getDay() (0=Sunday)
- * - Basket size = average number of items per invoice
- *
- * @example
- * ```typescript
- * const patterns = computeMerchantVisitFrequency(invoices);
- * const pattern = patterns[0];
- * console.log(`Shop at ${pattern.merchantId} every ${pattern.averageVisitsPerMonth} times/month`);
- * console.log(`Usually on ${pattern.mostCommonDayOfWeek}`);
- * ```
- */
+/** Visit frequency and basket averages for one merchant. */
 export type MerchantVisitPattern = {
-  /** Merchant unique identifier */
   merchantId: string;
-  /** Total number of visits (invoices) */
   totalVisits: number;
-  /** Average visits per month */
   averageVisitsPerMonth: number;
-  /** Most common shopping day (0=Sunday, 6=Saturday) */
   mostCommonDayOfWeek: number;
-  /** Average number of items per visit */
   averageBasketSize: number;
-  /** Average spending per visit */
   averageSpendPerVisit: number;
 };
 
-/**
- * Computes spending trends for top N merchants over time.
- *
- * @param invoices - Array of invoices to analyze
- * @param topN - Number of top merchants to include (default: 5)
- * @returns Array of merchant trends, sorted by total spend descending
- *
- * @remarks
- * **Algorithm:**
- * 1. Aggregate total spending per merchant
- * 2. Select top N merchants by total spend
- * 3. For each top merchant, compute monthly spending breakdown
- * 4. Sort results by total spend descending
- *
- * **Performance:** O(n) for aggregation + O(m log m) for sorting merchants,
- * where n = invoice count, m = unique merchant count.
- *
- * **Use Case:**
- * Visualize spending trends for favorite merchants to identify
- * seasonal patterns or changes in shopping behavior.
- *
- * @example
- * ```typescript
- * const trends = computeMerchantTrends(invoices, 3);
- * // Returns top 3 merchants with their monthly spending data
- * trends.forEach(trend => {
- *   console.log(`${trend.merchantId}: ${trend.monthlyData.length} months`);
- * });
- * ```
- */
+type MerchantVisitData = {
+  visits: number;
+  dates: Date[];
+  dayOfWeekCounts: Map<number, number>;
+  totalItems: number;
+  totalSpend: number;
+};
+
+function getMerchantVisitData(merchantData: Map<string, MerchantVisitData>, merchantId: string): MerchantVisitData {
+  const existing = merchantData.get(merchantId);
+  if (existing !== undefined) return existing;
+  const created: MerchantVisitData = {
+    visits: 0,
+    dates: [],
+    dayOfWeekCounts: new Map(),
+    totalItems: 0,
+    totalSpend: 0,
+  };
+  merchantData.set(merchantId, created);
+  return created;
+}
+
+function addMerchantVisit(merchantData: Map<string, MerchantVisitData>, invoice: Invoice): void {
+  const merchantId = invoice.merchantReference;
+  if (!isValidMerchantRef(merchantId)) return;
+  const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
+  const date = new Date(transactionDate);
+  const data = getMerchantVisitData(merchantData, merchantId);
+  data.visits += 1;
+  data.dates.push(date);
+  data.dayOfWeekCounts.set(date.getDay(), (data.dayOfWeekCounts.get(date.getDay()) ?? 0) + 1);
+  data.totalItems += invoice.items?.length ?? 0;
+  data.totalSpend += getAmountInRON(invoice);
+}
+
+function calculateMonthsSpan(dates: readonly Date[]): number {
+  const sortedDates = dates.toSorted((left, right) => left.getTime() - right.getTime());
+  const [firstDate] = sortedDates;
+  const lastDate = sortedDates.at(-1);
+  if (firstDate === undefined || lastDate === undefined || sortedDates.length <= 1) return 1;
+  const millisecondsPerMonth = 30.44 * 24 * 60 * 60 * 1000;
+  return Math.max(1, (lastDate.getTime() - firstDate.getTime()) / millisecondsPerMonth);
+}
+
+function findMostCommonDay(dayOfWeekCounts: ReadonlyMap<number, number>): number {
+  let mostCommonDay = 0;
+  let maximumCount = 0;
+  for (const [day, count] of dayOfWeekCounts) {
+    if (count > maximumCount) {
+      maximumCount = count;
+      mostCommonDay = day;
+    }
+  }
+  return mostCommonDay;
+}
+
+function createMerchantVisitPattern(merchantId: string, data: MerchantVisitData): MerchantVisitPattern {
+  const averageVisitsPerMonth = data.visits / calculateMonthsSpan(data.dates);
+  const averageBasketSize = data.visits > 0 ? data.totalItems / data.visits : 0;
+  const averageSpendPerVisit = data.visits > 0 ? data.totalSpend / data.visits : 0;
+  return {
+    merchantId,
+    totalVisits: data.visits,
+    averageVisitsPerMonth: Math.round(averageVisitsPerMonth * 100) / 100,
+    mostCommonDayOfWeek: findMostCommonDay(data.dayOfWeekCounts),
+    averageBasketSize: Math.round(averageBasketSize * 100) / 100,
+    averageSpendPerVisit: Math.round(averageSpendPerVisit * 100) / 100,
+  };
+}
+
+/** Computes monthly trends for the top merchants by total spend. */
 export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: number = 5): MerchantTrend[] {
   // Step 1: Compute total spending per merchant
   const merchantTotals = new Map<string, number>();
@@ -1201,276 +654,48 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
   return result;
 }
 
-/**
- * Computes visit frequency and shopping patterns per merchant.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of merchant visit patterns, sorted by total visits descending
- *
- * @remarks
- * **Algorithm:**
- * 1. Group invoices by merchant
- * 2. For each merchant, calculate:
- *    - Total visits (invoice count)
- *    - Date range to determine average visits per month
- *    - Day-of-week frequency distribution
- *    - Average basket size (items per invoice)
- *
- * **Performance:** O(n) where n = invoice count.
- *
- * **Day of Week:**
- * Uses native Date.getDay() where 0=Sunday, 6=Saturday.
- * Converts to human-readable names like "Monday", "Tuesday", etc.
- *
- * @example
- * ```typescript
- * const patterns = computeMerchantVisitFrequency(invoices);
- * const topPattern = patterns[0];
- * console.log(`Visit ${topPattern.merchantId} ~${topPattern.averageVisitsPerMonth.toFixed(1)}x/month`);
- * console.log(`Usually on ${topPattern.mostCommonDayOfWeek}`);
- * console.log(`Avg basket: ${topPattern.averageBasketSize} items`);
- * ```
- */
+/** Computes merchant visit patterns sorted by total visits. */
 export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>): MerchantVisitPattern[] {
-  type MerchantData = {
-    visits: number;
-    dates: Date[];
-    dayOfWeekCounts: Map<number, number>;
-    totalItems: number;
-    totalSpend: number;
-  };
-
-  const merchantData = new Map<string, MerchantData>();
-
-  // Aggregate data per merchant
+  const merchantData = new Map<string, MerchantVisitData>();
   for (const invoice of invoices) {
-    const merchantId = invoice.merchantReference;
-    if (isValidMerchantRef(merchantId)) {
-      const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
-      const date = new Date(transactionDate);
-      const dayOfWeek = date.getDay();
-
-      const itemCount = invoice.items?.length ?? 0;
-      const amount = getAmountInRON(invoice);
-
-      if (!merchantData.has(merchantId)) {
-        merchantData.set(merchantId, {
-          visits: 0,
-          dates: [],
-          dayOfWeekCounts: new Map(),
-          totalItems: 0,
-          totalSpend: 0,
-        });
-      }
-
-      const data = merchantData.get(merchantId)!;
-      data.visits += 1;
-      data.dates.push(date);
-      data.dayOfWeekCounts.set(dayOfWeek, (data.dayOfWeekCounts.get(dayOfWeek) ?? 0) + 1);
-      data.totalItems += itemCount;
-      data.totalSpend += amount;
-    }
+    addMerchantVisit(merchantData, invoice);
   }
 
-  // Build result array
   const result: MerchantVisitPattern[] = [];
-
   for (const [merchantId, data] of merchantData.entries()) {
-    // Calculate average visits per month
-    const sortedDates = data.dates.toSorted((a, b) => a.getTime() - b.getTime());
-    const [firstDate] = sortedDates;
-    const lastDate = sortedDates.at(-1);
-
-    let monthsSpan = 1; // Default to 1 month minimum
-
-    if (firstDate && lastDate && sortedDates.length > 1) {
-      const msPerMonth = 30.44 * 24 * 60 * 60 * 1000; // Average days per month
-      monthsSpan = Math.max(1, (lastDate.getTime() - firstDate.getTime()) / msPerMonth);
-    }
-
-    const averageVisitsPerMonth = data.visits / monthsSpan;
-
-    // Find most common day of week
-    let mostCommonDay = 0;
-    let maxCount = 0;
-
-    for (const [day, count] of data.dayOfWeekCounts.entries()) {
-      if (count > maxCount) {
-        maxCount = count;
-        mostCommonDay = day;
-      }
-    }
-
-    // Calculate averages
-    const averageBasketSize = data.visits > 0 ? data.totalItems / data.visits : 0;
-    const averageSpendPerVisit = data.visits > 0 ? data.totalSpend / data.visits : 0;
-
-    result.push({
-      merchantId,
-      totalVisits: data.visits,
-      averageVisitsPerMonth: Math.round(averageVisitsPerMonth * 100) / 100,
-      mostCommonDayOfWeek: mostCommonDay,
-      averageBasketSize: Math.round(averageBasketSize * 100) / 100,
-      averageSpendPerVisit: Math.round(averageSpendPerVisit * 100) / 100,
-    });
+    result.push(createMerchantVisitPattern(merchantId, data));
   }
 
   return result.toSorted((a, b) => b.totalVisits - a.totalVisits);
 }
 
-/**
- * Product category spending aggregate for product-level analytics.
- *
- * @remarks
- * Groups all products across all invoices by ProductCategory enum.
- * Provides spending insights at the product category level (not invoice category).
- *
- * **Calculation:**
- * - Aggregates `product.totalPrice` across all invoices
- * - Normalizes to RON using invoice's transaction year
- * - Computes percentage of total product spending
- *
- * @example
- * ```typescript
- * const categoryData = computeProductCategorySpending(invoices);
- * // Returns: [
- * //   { category: "Dairy", categoryId: 300, totalSpent: 1234.56, productCount: 45, percentage: 15.2 },
- * //   { category: "Meat", categoryId: 400, totalSpent: 987.65, productCount: 32, percentage: 12.1 }
- * // ]
- * ```
- */
-export type ProductCategorySpending = {
-  /** Human-readable category name */
+/** Product spending grouped by canonical taxonomy root. */
+export type ProductClassificationSpending = {
   category: string;
-  /** Numeric category ID from ProductCategory enum */
-  categoryId: number;
-  /** Total spending in this category (RON) */
   totalSpent: number;
-  /** Number of products in this category */
   productCount: number;
-  /** Percentage of total product spending */
   percentage: number;
 };
 
-/**
- * Top product aggregate for most-purchased items analysis.
- *
- * @remarks
- * Aggregates products by name to identify
- * most frequently purchased items and spending patterns.
- *
- * **Aggregation Key:**
- * Products are grouped by `name`.
- * This handles slight variations in OCR output for the same product.
- *
- * @example
- * ```typescript
- * const topProducts = computeTopProducts(invoices, 10);
- * // Returns: [
- * //   { name: "Milk 2% 1L", totalQuantity: 24, totalSpent: 215.76, purchaseCount: 12, averagePrice: 8.99 },
- * //   { name: "Bread White", totalQuantity: 18, totalSpent: 89.10, purchaseCount: 18, averagePrice: 4.95 }
- * // ]
- * ```
- */
+/** Purchase and price aggregate for one product name. */
 export type TopProduct = {
-  /** Product name */
   name: string;
-  /** Total quantity purchased across all invoices */
   totalQuantity: number;
-  /** Total spending on this product (RON) */
   totalSpent: number;
-  /** Number of invoices containing this product */
   purchaseCount: number;
-  /** Average price per unit */
   averagePrice: number;
 };
 
-/**
- * Allergen frequency aggregate for dietary tracking.
- *
- * @remarks
- * Counts allergen occurrences across all products to help users identify
- * allergen exposure in their purchases.
- *
- * **Use Case:**
- * Useful for dietary restrictions, health tracking, and allergen awareness.
- *
- * @example
- * ```typescript
- * const allergens = computeAllergenFrequency(invoices);
- * // Returns: [
- * //   { name: "Lactose", description: "Found in dairy products", productCount: 34, percentage: 12.3 },
- * //   { name: "Gluten", description: "Found in wheat products", productCount: 28, percentage: 10.1 }
- * // ]
- * ```
- */
+/** EU-14 frequency using assessed products as the denominator. */
 export type AllergenFrequency = {
-  /** Allergen name */
-  name: string;
-  /** Allergen description */
-  description: string;
-  /** Number of products containing this allergen */
+  code: AllergenCode;
   productCount: number;
-  /** Percentage of total products */
   percentage: number;
 };
 
-/**
- * Maps ProductCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from ProductCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (BAKED_GOODS) → "Baked Goods"
- * - 200 (GROCERIES) → "Groceries"
- * - 300 (DAIRY) → "Dairy"
- * - 400 (MEAT) → "Meat"
- * - 500 (FISH) → "Fish"
- * - 600 (FRUITS) → "Fruits"
- * - 700 (VEGETABLES) → "Vegetables"
- * - 800 (BEVERAGES) → "Beverages"
- * - 900 (ALCOHOLIC_BEVERAGES) → "Alcoholic Beverages"
- * - 1000 (TOBACCO) → "Tobacco"
- * - 1100 (CLEANING_SUPPLIES) → "Cleaning Supplies"
- * - 1200 (PERSONAL_CARE) → "Personal Care"
- * - 1300 (MEDICINE) → "Medicine"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getProductCategoryLabel(300); // "Dairy"
- * const label2 = getProductCategoryLabel(400); // "Meat"
- * ```
- */
-/**
- * Computes spending aggregates by product category.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of product category spending data, sorted by totalSpent descending
- *
- * @remarks
- * **Performance:** O(n * m) where n is the number of invoices and m is average items per invoice.
- *
- * **Currency Normalization:**
- * All product prices are converted to RON using the invoice's transaction year
- * exchange rate. This ensures accurate cross-currency aggregation.
- *
- * **Soft Delete Handling:**
- * Products with `metadata.isSoftDeleted = true` are excluded from calculations.
- *
- * @example
- * ```typescript
- * const categorySpending = computeProductCategorySpending(invoices);
- * const dairySpending = categorySpending.find(c => c.categoryId === 300);
- * console.log(`Dairy: ${dairySpending?.totalSpent.toFixed(2)} RON`);
- * ```
- */
-export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>): ProductCategorySpending[] {
-  const categoryMap = new Map<number, {totalSpent: number; productCount: number}>();
+/** Groups non-deleted product spending by canonical taxonomy root. */
+export function computeProductClassificationSpending(invoices: ReadonlyArray<Invoice>): ProductClassificationSpending[] {
+  const groupMap = new Map<string, {totalSpent: number; productCount: number}>();
   let grandTotal = 0;
 
   for (const invoice of invoices) {
@@ -1479,13 +704,12 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
 
     const items = invoice.items ?? [];
     for (const product of items) {
-      // Skip soft-deleted products
       if (!product.metadata?.isSoftDeleted) {
-        const category = product.category ?? 0;
+        const group = getClassificationGroup(product.classification ?? null) ?? "unclassified";
         const productPriceRON = toRON(product.totalPrice, currencyCode, year);
 
-        const existing = categoryMap.get(category) ?? {totalSpent: 0, productCount: 0};
-        categoryMap.set(category, {
+        const existing = groupMap.get(group) ?? {totalSpent: 0, productCount: 0};
+        groupMap.set(group, {
           totalSpent: existing.totalSpent + productPriceRON,
           productCount: existing.productCount + 1,
         });
@@ -1495,13 +719,12 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
     }
   }
 
-  const result: ProductCategorySpending[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  const result: ProductClassificationSpending[] = [];
+  for (const [group, data] of groupMap.entries()) {
     const percentage = grandTotal > 0 ? (data.totalSpent / grandTotal) * 100 : 0;
 
     result.push({
-      category: getProductCategoryLabel(categoryId),
-      categoryId,
+      category: group,
       totalSpent: Math.round(data.totalSpent * 100) / 100,
       productCount: data.productCount,
       percentage: Math.round(percentage * 10) / 10,
@@ -1511,34 +734,7 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
   return result.toSorted((a, b) => b.totalSpent - a.totalSpent);
 }
 
-/**
- * Computes top N most purchased products across all invoices.
- *
- * @param invoices - Array of invoices to analyze
- * @param topN - Number of top products to return (default: 10)
- * @returns Array of top products, sorted by totalSpent descending
- *
- * @remarks
- * **Performance:** O(n * m * log(n * m)) where n is invoices and m is items per invoice.
- *
- * **Product Identification:**
- * Products are grouped by `name`.
- * This handles OCR variations for the same product.
- *
- * **Currency Normalization:**
- * All amounts are converted to RON for accurate cross-currency aggregation.
- *
- * **Soft Delete Handling:**
- * Products with `metadata.isSoftDeleted = true` are excluded.
- *
- * @example
- * ```typescript
- * const topProducts = computeTopProducts(invoices, 5);
- * topProducts.forEach(product => {
- *   console.log(`${product.name}: ${product.totalQuantity} units, ${product.totalSpent} RON`);
- * });
- * ```
- */
+/** Computes the top non-deleted products by RON-normalized spend. */
 export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10): TopProduct[] {
   const productMap = new Map<
     string,
@@ -1599,72 +795,36 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
   return result.toSorted((a, b) => b.totalSpent - a.totalSpent).slice(0, topN);
 }
 
-/**
- * Computes allergen frequency across all products.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of allergen frequencies, sorted by productCount descending
- *
- * @remarks
- * **Performance:** O(n * m * a) where n is invoices, m is items per invoice,
- * and a is allergens per product (typically small).
- *
- * **Allergen Identification:**
- * Allergens are identified by name and aggregated across all products.
- * The description is taken from the first occurrence of each allergen.
- *
- * **Percentage Calculation:**
- * Percentage is computed as (products with allergen / total products) * 100.
- *
- * **Soft Delete Handling:**
- * Products with `metadata.isSoftDeleted = true` are excluded.
- *
- * @example
- * ```typescript
- * const allergens = computeAllergenFrequency(invoices);
- * allergens.forEach(allergen => {
- *   console.log(`${allergen.name}: ${allergen.productCount} products (${allergen.percentage}%)`);
- * });
- * ```
- */
+function countProductAllergens(product: Product, allergenMap: Map<AllergenCode, number>): boolean {
+  const {allergenAssessment} = product;
+  if (product.metadata?.isSoftDeleted || allergenAssessment === null) return false;
+  if (allergenAssessment.status === AllergenAssessmentStatus.Detected) {
+    const productAllergenCodes = new Set(allergenAssessment.signals.map((signal) => signal.code));
+    for (const code of productAllergenCodes) {
+      allergenMap.set(code, (allergenMap.get(code) ?? 0) + 1);
+    }
+  }
+  return true;
+}
+
+/** Computes EU-14 frequencies across assessed, non-deleted products. */
 export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): AllergenFrequency[] {
-  const allergenMap = new Map<string, {description: string; productCount: number}>();
-  let totalProducts = 0;
+  const allergenMap = new Map<AllergenCode, number>();
+  let assessedProducts = 0; // Denominator: only products with allergenAssessment !== null
 
   for (const invoice of invoices) {
     const items = invoice.items ?? [];
     for (const product of items) {
-      // Skip soft-deleted products
-      if (!product.metadata?.isSoftDeleted) {
-        totalProducts++;
-
-        const allergens = product.detectedAllergens ?? [];
-        for (const allergen of allergens) {
-          const existing = allergenMap.get(allergen.name);
-          if (existing) {
-            allergenMap.set(allergen.name, {
-              description: existing.description,
-              productCount: existing.productCount + 1,
-            });
-          } else {
-            allergenMap.set(allergen.name, {
-              description: allergen.description,
-              productCount: 1,
-            });
-          }
-        }
-      }
+      if (countProductAllergens(product, allergenMap)) assessedProducts++;
     }
   }
 
   const result: AllergenFrequency[] = [];
-  for (const [name, data] of allergenMap.entries()) {
-    const percentage = totalProducts > 0 ? (data.productCount / totalProducts) * 100 : 0;
-
+  for (const [code, count] of allergenMap.entries()) {
+    const percentage = assessedProducts > 0 ? (count / assessedProducts) * 100 : 0;
     result.push({
-      name,
-      description: data.description,
-      productCount: data.productCount,
+      code,
+      productCount: count,
       percentage: Math.round(percentage * 10) / 10,
     });
   }
@@ -1672,39 +832,21 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
   return result.toSorted((a, b) => b.productCount - a.productCount);
 }
 
-/**
- * Computes currency distribution across all invoices.
- *
- * @param invoices - Array of invoices to analyze
- * @returns Array of currency distribution data, sorted by RON total (descending)
- *
- * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Currency Normalization:**
- * - All amounts are converted to RON using `toRON` with transaction year
- * - Original currency amounts are preserved for reference
- * - Uses `paymentInformation.currency` for identification
- *
- * **Edge Cases:**
- * - Empty array: Returns empty array
- * - Missing currency info: Defaults to "RON"
- * - Single currency: Returns one entry with 100% percentage
- *
- * **Percentage Rounding:**
- * Percentages are rounded to one decimal place for display clarity.
- *
- * @example
- * ```typescript
- * const distribution = computeCurrencyDistribution(invoices);
- * // Multi-currency result:
- * // [
- * //   { currencyCode: "EUR", totalInRON: 5000, percentage: 55.5, ... },
- * //   { currencyCode: "USD", totalInRON: 3000, percentage: 33.3, ... },
- * //   { currencyCode: "RON", totalInRON: 1000, percentage: 11.1, ... }
- * // ]
- * ```
- */
+/** Counts non-deleted products carrying an allergen assessment. */
+export function countAssessedProducts(invoices: ReadonlyArray<Invoice>): number {
+  let assessedProducts = 0;
+
+  for (const invoice of invoices) {
+    const items = invoice.items ?? [];
+    for (const product of items) {
+      if (!product.metadata?.isSoftDeleted && product.allergenAssessment !== null) assessedProducts++;
+    }
+  }
+
+  return assessedProducts;
+}
+
+/** Computes currency totals sorted by RON-normalized spend. */
 export function computeCurrencyDistribution(invoices: ReadonlyArray<Invoice>): CurrencyDistribution[] {
   if (invoices.length === 0) {
     return [];

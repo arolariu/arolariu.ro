@@ -1,172 +1,94 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
+import {generateRandomMerchant, InvoiceBuilder} from "@/data/mocks";
+import {AllergenCode, RecipeDifficulty, type Invoice, type RecipeSuggestion} from "@/types/invoices";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {DialogProvider, InvoiceContextProvider} from "../../../../../../../../.storybook/providers";
+import {InvoiceTabs} from "./InvoiceTabs";
 
 /**
- * Static visual preview of the InvoiceTabs component.
- *
- * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
- * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext` for recipes and metadata.
- * This story renders a faithful HTML replica showing the "Possible Recipes" and
- * "Additional Info" tabs.
+ * InvoiceTabs displays AI-generated recipe suggestions and additional invoice
+ * metadata. Reads the invoice via `useInvoiceContext`, and its child
+ * components (`RecipeCard`, `MetadataTab`) call `useDialog` for their CRUD
+ * actions, so every story mounts the real component inside both the real
+ * `InvoiceContextProvider` and `DialogProvider` re-exported from
+ * `.storybook/providers`.
  */
+const mockMerchant = generateRandomMerchant();
+
+const sampleRecipes: RecipeSuggestion[] = [
+  {
+    name: "Pasta Carbonara",
+    description: "A classic Italian recipe using ingredients from your purchase.",
+    servings: 2,
+    preparationMinutes: 15,
+    cookingMinutes: 20,
+    totalMinutes: 35,
+    difficulty: RecipeDifficulty.Medium,
+    purchasedIngredients: [
+      {name: "Spaghetti", quantity: "200 g", preparation: null},
+      {name: "Eggs", quantity: "2", preparation: null},
+      {name: "Bacon", quantity: "100 g", preparation: "diced"},
+    ],
+    assumedPantryStaples: [{name: "Parmesan cheese", quantity: "50 g", preparation: "grated"}],
+    missingOptionalIngredients: [],
+    steps: [
+      {sequence: 1, instruction: "Cook the spaghetti until al dente.", notes: null},
+      {sequence: 2, instruction: "Fry the bacon until crisp.", notes: null},
+      {sequence: 3, instruction: "Mix eggs and cheese, then combine with hot pasta and bacon.", notes: "Off the heat to avoid scrambling."},
+    ],
+    allergenWarnings: [AllergenCode.Eggs, AllergenCode.Milk],
+  },
+  {
+    name: "Caesar Salad",
+    description: "A quick, easy salad using fresh produce from your purchase.",
+    servings: 2,
+    preparationMinutes: 15,
+    cookingMinutes: 0,
+    totalMinutes: 15,
+    difficulty: RecipeDifficulty.Easy,
+    purchasedIngredients: [{name: "Romaine lettuce", quantity: "1 head", preparation: "chopped"}],
+    assumedPantryStaples: [{name: "Caesar dressing", quantity: "3 tbsp", preparation: null}],
+    missingOptionalIngredients: [{name: "Croutons", quantity: "1 cup", preparation: null}],
+    steps: [{sequence: 1, instruction: "Toss lettuce with dressing and serve.", notes: null}],
+    allergenWarnings: [],
+  },
+];
+
+function withInvoice(invoice: Invoice): Decorator {
+  return (Story) => (
+    <DialogProvider>
+      <InvoiceContextProvider
+        invoice={invoice}
+        merchant={mockMerchant}>
+        <Story />
+      </InvoiceContextProvider>
+    </DialogProvider>
+  );
+}
+
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceTabs",
+  component: InvoiceTabs,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof InvoiceTabs>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default with recipe cards visible. */
+/** With recipe suggestions visible. */
 export const WithRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.75rem", border: "1px solid #e5e7eb"}}>
-      <div style={{padding: "1.5rem", paddingBottom: "0"}}>
-        <div
-          style={{
-            display: "grid",
-            width: "100%",
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            borderRadius: "0.5rem",
-            backgroundColor: "#f3f4f6",
-            padding: "0.25rem",
-          }}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#fff",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-            }}>
-            <TbChefHat style={{height: "1rem", width: "1rem"}} />
-            Possible Recipes
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              color: "#6b7280",
-            }}>
-            <TbInfoCircle style={{height: "1rem", width: "1rem"}} />
-            Additional Info
-          </button>
-        </div>
-      </div>
-
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1.5rem"}}>
-        {[
-          {name: "Pasta Carbonara", complexity: "Normal", duration: 35, prep: 15, cook: 20},
-          {name: "Caesar Salad", complexity: "Easy", duration: 15, prep: 15, cook: 0},
-        ].map((recipe) => (
-          <div
-            key={recipe.name}
-            style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-              <h4 style={{fontWeight: 600}}>{recipe.name}</h4>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  paddingLeft: "0.5rem",
-                  paddingRight: "0.5rem",
-                  paddingTop: "0.125rem",
-                  paddingBottom: "0.125rem",
-                  fontSize: "0.75rem",
-                  ...(recipe.complexity === "Easy"
-                    ? {backgroundColor: "#f3f4f6", color: "#374151"}
-                    : {backgroundColor: "#dbeafe", color: "#1d4ed8"}),
-                }}>
-                {recipe.complexity}
-              </span>
-            </div>
-            <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
-              A classic recipe using ingredients from your purchase.
-            </p>
-            <div style={{marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#6b7280"}}>
-              <TbClock style={{height: "1rem", width: "1rem"}} />
-              <span>{recipe.duration} min</span>
-              <span style={{color: "#d1d5db"}}>•</span>
-              <span>
-                Prep: {recipe.prep}m, Cook: {recipe.cook}m
-              </span>
-            </div>
-            <button
-              style={{marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.875rem", color: "#2563eb"}}>
-              View Recipe
-              <TbExternalLink style={{height: "0.75rem", width: "0.75rem"}} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
+  decorators: [
+    withInvoice(
+      new InvoiceBuilder()
+        .withPossibleRecipes(sampleRecipes)
+        .withAdditionalMetadata({source: "mobile-app", requiresAnalysis: "false"})
+        .build(),
+    ),
+  ],
 };
 
-/** Empty recipes state. */
+/** Empty recipes state — no AI suggestions available for this invoice. */
 export const EmptyRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.75rem", border: "1px solid #e5e7eb"}}>
-      <div style={{padding: "1.5rem", paddingBottom: "0"}}>
-        <div
-          style={{
-            display: "grid",
-            width: "100%",
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            borderRadius: "0.5rem",
-            backgroundColor: "#f3f4f6",
-            padding: "0.25rem",
-          }}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#fff",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-            }}>
-            <TbChefHat style={{height: "1rem", width: "1rem"}} />
-            Possible Recipes
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              color: "#6b7280",
-            }}>
-            <TbInfoCircle style={{height: "1rem", width: "1rem"}} />
-            Additional Info
-          </button>
-        </div>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem"}}>
-        <TbChefHat style={{color: "rgba(107,114,128,0.5)", height: "3rem", width: "3rem"}} />
-        <p style={{marginTop: "0.5rem", fontSize: "0.875rem", color: "#6b7280"}}>No recipes available for this invoice.</p>
-      </div>
-    </div>
-  ),
+  decorators: [withInvoice(new InvoiceBuilder().withPossibleRecipes([]).build())],
 };

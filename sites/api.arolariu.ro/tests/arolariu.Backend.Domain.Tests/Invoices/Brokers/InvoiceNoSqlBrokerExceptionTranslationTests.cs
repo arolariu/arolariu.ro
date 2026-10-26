@@ -20,14 +20,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests the translation layer that wraps CosmosException into typed invoice inner exceptions.
 /// </summary>
 [TestClass]
-public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBrokerTestsBase
+public sealed class CosmosDatabaseBrokerExceptionTranslationTests : CosmosDatabaseBrokerTestsBase
 {
-  private InvoiceNoSqlBroker BuildBroker()
+  private CosmosDatabaseBroker BuildBroker()
   {
-    var options = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
+    var options = new DbContextOptionsBuilder<CosmosDatabaseBroker>()
       .UseCosmos("https://localhost:8081", "test-key", "primary")
       .Options;
-    return new InvoiceNoSqlBroker(mockCosmosClient.Object, options);
+    return new CosmosDatabaseBroker(mockCosmosClient.Object, options);
   }
 
   private static CosmosException MakeCosmosException(HttpStatusCode code) =>

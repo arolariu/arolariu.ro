@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 
 /// <summary>
 /// Foundation storage contract for persisting and retrieving <see cref="Merchant"/> aggregates.
@@ -71,6 +72,19 @@ public interface IMerchantStorageFoundationService
   /// <returns>Enumerable (empty if none).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
+
+  /// <summary>Reads every merchant whose identifier appears in the supplied set.</summary>
+  /// <remarks>
+  /// <para><b>Authorisation:</b> This method applies no ownership filtering. Callers MUST supply an
+  /// identifier set they have already authorised.</para>
+  /// <para><b>Performance:</b> Executes a bounded cross-partition query chunked by the broker.</para>
+  /// </remarks>
+  /// <param name="merchantIdentifiers">The merchant identifiers to read. May be empty.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The merchants matching the supplied identifiers.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when the identifier set is null.</exception>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
   #endregion
 
   #region Update Merchant Object API

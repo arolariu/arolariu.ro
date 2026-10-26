@@ -109,13 +109,13 @@ type ApiEnvironmentVariables<TEnvironment extends "production"> = Readonly<{
  * Next.js inlines `NEXT_PUBLIC_*` values at build time. `CLERK_SECRET_KEY`
  * remains server-only.
  *
- * `API_JWT` and `RESEND_API_KEY` are optional legacy fallbacks used only when
- * exp is unavailable during migration or in isolated test scenarios.
+ * Runtime private values are initialized from exp by `instrumentation.register()`.
+ * Local/offline deployments retain dotenv values when local exp is unreachable.
  *
  * **Secret Management**:
  * - **Production**: Stored in Azure Key Vault, injected at runtime via exp
- * - **Development**: Stored in `.env.local` (gitignored)
- * - **CI/CD**: Stored as GitHub Secrets, injected during builds
+ * - **Local development**: Stored in `.env` or `.env.local` (gitignored)
+ * - **CI/CD**: Public key from GitHub environment configuration; private values are never build inputs
  *
  * @example
  * ```typescript
@@ -129,6 +129,8 @@ type AuthEnvironmentVariables = Readonly<{
   readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
   readonly CLERK_SECRET_KEY: string;
   readonly API_JWT?: string;
+  readonly API_JWT_ISSUER?: string;
+  readonly API_JWT_AUDIENCE?: string;
   readonly RESEND_API_KEY?: string;
 }>;
 
@@ -153,6 +155,7 @@ type AzureRuntimeEnvironmentVariables = Readonly<
 type LegacyRuntimeEnvironmentVariables = Readonly<
   Partial<{
     readonly CONFIG_STORE: string;
+    readonly STORAGE_BLOB_ENDPOINT: string;
   }>
 >;
 
@@ -163,14 +166,12 @@ type LegacyRuntimeEnvironmentVariables = Readonly<
  * **Environment Variables**:
  * - `TIMESTAMP`: ISO 8601 build timestamp (e.g., "2025-11-26T12:00:00Z")
  * - `COMMIT_SHA`: Git commit hash for traceability
- * - `USE_CDN`: Whether to use Azure CDN for static assets prefix
  *
  * The commit SHA is attached to telemetry spans for deployment tracking.
  */
 type MetadataEnvironmentVariables = Readonly<{
   readonly TIMESTAMP: string;
   readonly COMMIT_SHA: string;
-  readonly USE_CDN: boolean;
 }>;
 
 /**
@@ -180,7 +181,7 @@ type MetadataEnvironmentVariables = Readonly<{
  * The preferred runtime contract is now:
  * - site metadata (`SITE_*`)
  * - Clerk keys
- * - build metadata (`TIMESTAMP`, `COMMIT_SHA`, `USE_CDN`)
+ * - build metadata (`TIMESTAMP`, `COMMIT_SHA`)
  * - optional Azure managed-identity identifiers
  *
  * API endpoint, auth secret, Resend key, and configuration-store access are

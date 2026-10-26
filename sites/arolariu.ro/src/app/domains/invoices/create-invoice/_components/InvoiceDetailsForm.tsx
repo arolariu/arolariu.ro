@@ -7,13 +7,14 @@
  * @remarks
  * Form with fields for:
  * - Invoice name (required)
- * - Category dropdown
+ * - Classification (ClassificationPicker — replaces legacy numeric category)
  * - Payment type dropdown
  * - Transaction date picker
  * - Description textarea (optional)
  */
 
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import ClassificationPicker from "@/app/domains/invoices/_components/classification/ClassificationPicker";
+import {ClassificationSystem, PaymentType, type ClassificationSelection} from "@/types/invoices";
 import {
   Button,
   Calendar,
@@ -80,8 +81,16 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
  */
 export default function InvoiceDetailsForm(): React.JSX.Element {
   const t = useTranslations();
-  const {invoiceDetails, setName, setCategory, setPaymentType, setTransactionDate, setDescription, selectedScans} =
-    useCreateInvoiceContext();
+  const {
+    invoiceDetails,
+    setName,
+    setPaymentType,
+    setTransactionDate,
+    setDescription,
+    classificationSelection,
+    setClassification,
+    selectedScans,
+  } = useCreateInvoiceContext();
 
   /** Updates the invoice name as the user types. */
   const handleNameChange = useCallback(
@@ -91,12 +100,12 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     [setName],
   );
 
-  /** Updates the invoice category selection. */
-  const handleCategoryChange = useCallback(
-    (value: string) => {
-      setCategory(Number.parseInt(value, 10) as InvoiceCategory);
+  /** Updates the classification selection from the picker. */
+  const handleClassificationChange = useCallback(
+    (selection: ClassificationSelection | null) => {
+      setClassification(selection);
     },
-    [setCategory],
+    [setClassification],
   );
 
   /** Updates the payment type selection. */
@@ -158,36 +167,15 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.name.hint)}</p>
             </div>
 
-            {/* Category */}
+            {/* Classification */}
             <div className={styles["formField"]}>
-              <Label htmlFor='invoice-category'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.label)}</Label>
-              <Select
-                value={invoiceDetails.category.toString()}
-                onValueChange={handleCategoryChange}>
-                <SelectTrigger id='invoice-category'>
-                  <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.placeholder)} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.notDefined)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.grocery)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.fastFood)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.homeCleaning)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.carAuto)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.other)}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <ClassificationPicker
+                system={ClassificationSystem.EcoicopV2}
+                value={classificationSelection}
+                onChange={handleClassificationChange}
+                label={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.classification.label)}
+              />
+              <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.classification.hint)}</p>
             </div>
 
             {/* Payment Type */}
@@ -229,15 +217,17 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
             <div className={styles["formField"]}>
               <Label htmlFor='transaction-date'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.transactionDate.label)}</Label>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id='transaction-date'
-                    variant='outline'
-                    className={styles["dateButton"]}>
-                    <TbCalendar className={styles["calendarIcon"]} />
-                    {dateFormatter.format(invoiceDetails.transactionDate)}
-                  </Button>
-                </PopoverTrigger>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id='transaction-date'
+                      variant='outline'
+                      className={styles["dateButton"]}>
+                      <TbCalendar className={styles["calendarIcon"]} />
+                      {dateFormatter.format(invoiceDetails.transactionDate)}
+                    </Button>
+                  }
+                />
                 <PopoverContent
                   className={styles["calendarPopover"]}
                   align='start'>
@@ -245,7 +235,6 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                     mode='single'
                     selected={invoiceDetails.transactionDate}
                     onSelect={handleTransactionDateChange}
-                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

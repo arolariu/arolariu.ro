@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "../../../src/lib/utils.server";
-import {InvoiceAnalysisOptions, InvoiceScanType, ProductCategory} from "../../../src/types/invoices";
+import {InvoiceScanType} from "../../../src/types/invoices";
 import {ScanStatus} from "../../../src/types/scans";
 import {TestDataBuilder} from "./testDataBuilder";
 
@@ -8,12 +8,11 @@ describe("TestDataBuilder", () => {
   it("builds typed invoice-domain entities from string kinds", () => {
     const product = TestDataBuilder.build("product", {
       name: "Milk",
-      category: ProductCategory.GROCERIES,
       quantity: 2,
       price: 5,
     });
     const invoiceScan = TestDataBuilder.build("invoiceScan", {
-      scanType: InvoiceScanType.PDF,
+      type: InvoiceScanType.PDF,
       location: "https://storage.test/receipt.pdf",
     });
     const invoice = TestDataBuilder.build("invoice", {
@@ -39,12 +38,10 @@ describe("TestDataBuilder", () => {
       id: "scan-test-1",
       status: ScanStatus.READY,
     });
-    const options = TestDataBuilder.build("invoiceAnalysisOptions", InvoiceAnalysisOptions.CompleteAnalysis);
 
     expect(createScanPayload.location).toBe("https://storage.test/scan.png");
     expect(createInvoicePayload.initialScan.location).toBe("https://storage.test/initial.jpg");
     expect(scan.id).toBe("scan-test-1");
-    expect(options).toBe(InvoiceAnalysisOptions.CompleteAnalysis);
   });
 
   it("builds auth, server-action, store, HTTP, and Azure helpers", async () => {

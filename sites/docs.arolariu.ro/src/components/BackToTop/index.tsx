@@ -8,8 +8,8 @@
  * falling back to an instant scroll.
  */
 
-import React, {useEffect, useState} from 'react';
-import styles from './styles.module.css';
+import React, {useEffect, useState} from "react";
+import styles from "./styles.module.css";
 
 /** Minimum vertical scroll (in px) before the button appears. */
 const THRESHOLD_PX = 400;
@@ -24,19 +24,23 @@ export default function BackToTop(): React.JSX.Element | null {
   useEffect(() => {
     const onScroll = (): void => setVisible(window.scrollY > THRESHOLD_PX);
     onScroll();
-    window.addEventListener('scroll', onScroll, {passive: true});
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, {passive: true});
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const toTop = (): void => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({top: 0, behavior: reduce ? 'auto' : 'smooth'});
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({top: 0, behavior: reduce ? "auto" : "smooth"});
   };
 
   if (!visible) return null;
 
   return (
-    <button type="button" className={styles.btn} onClick={toTop} aria-label="back to top">
+    <button
+      type='button'
+      className={styles.btn}
+      onClick={toTop}
+      aria-label='back to top'>
       [↑ top]
     </button>
   );

@@ -43,6 +43,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {parseMerchantResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input parameters for the fetchMerchant server action.
@@ -192,8 +193,14 @@ export async function fetchMerchant({merchantId}: ServerActionInputType): Server
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchant", {merchantId}, "server");
-        const data = (await response.json()) as Readonly<Merchant>;
-        return {success: true, data} as const;
+        const payload: unknown = await response.json();
+        const parsed = tryParse(parseMerchantResponse, payload);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.fetch-merchant.invalid");
+          logWithTrace("error", "Merchant response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.request.fetch-merchant.error");

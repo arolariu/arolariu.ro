@@ -14,7 +14,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 
 /// <summary>
-/// This class represents the merchant orchestration service.
+/// Delegates merchant persistence workflows to the merchant storage Foundation.
 /// </summary>
 public partial class MerchantOrchestrationService : IMerchantOrchestrationService
 {
@@ -22,10 +22,11 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
   private readonly ILogger<IMerchantOrchestrationService> logger;
 
   /// <summary>
-  /// Public constructor.
+  /// Initializes a new instance of the <see cref="MerchantOrchestrationService"/> class.
   /// </summary>
-  /// <param name="merchantStorage"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="merchantStorage">The merchant storage foundation boundary.</param>
+  /// <param name="loggerFactory">The factory used to create the orchestration logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="merchantStorage"/> is <see langword="null"/>.</exception>
   public MerchantOrchestrationService(
     IMerchantStorageFoundationService merchantStorage,
     ILoggerFactory loggerFactory)
@@ -69,6 +70,18 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
       .ReadAllMerchantObjects(parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
     return merchants;
+  }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(
+    IReadOnlyCollection<Guid> merchantIdentifiers,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObjectsByIdentifiers));
+    return await merchantStorage
+      .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 

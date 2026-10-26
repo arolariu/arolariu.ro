@@ -1,9 +1,19 @@
 /**
  * @fileoverview Tests for container runtime preflight checks.
  * @module scripts/container-runtime/preflight.test
+ *
+ * @remarks
+ * Every probe answers from a scripted `Process` on the in-memory harness, in call order; an
+ * unscripted extra probe dies. The failure messages are the exact legacy texts, including the
+ * failure detail rebuilt from the `ProcessError` fields.
  */
 
-import {describe, expect, it, vi} from "vitest";
+import {Cause, Effect, Exit, Result} from "effect";
+import {describe, expect, it} from "vitest";
+
+import type {ProbeOutcome} from "../inspection/probes.ts";
+import {formatProcessRequest} from "../platform/Process.ts";
+import {effectTest, makeTestLayer, processOutcomeEffect, type ScriptedProcess, type TestHarness} from "../platform/testing.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,
@@ -11,185 +21,485 @@ import {
   assertRancherBackend,
   assertToolAvailable,
   requiredLocalPorts,
-  runSharedPreflight,
+  runContainerPreflight,
   warnOnExistingLocalContainers,
 } from "./preflight.ts";
-import type {CommandRunner} from "./process.ts";
+import {ContainerRuntimeError} from "./types.ts";
 
-function runnerWith(output: string, code = 0): CommandRunner {
+function succeeded(stdout = "", stderr = ""): ProbeOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout, stderr, durationMs: 0};
+}
+
+function exited(code: number, stdout = "", stderr = ""): ProbeOutcome {
+  return {kind: "exited", exitCode: code, stdout, stderr, durationMs: 0};
+}
+
+/** One scripted probe answer: an outcome, or `"interrupt"` for a probe interrupted while it runs. */
+type ProbeAnswer = ProbeOutcome | "interrupt";
+
+/**
+ * Scripts every process request from `answers`, in call order; an extra request dies.
+ *
+ * @param answers - One answer per expected probe.
+ * @returns The catch-all script.
+ */
+function inOrder(answers: readonly ProbeAnswer[]): ScriptedProcess {
+  const queue = [...answers];
   return {
-    run: async () => ({code, output}),
+    match: () => true,
+    respond: (request) => {
+      const next = queue.shift();
+      if (next === undefined) {
+        return Effect.die(new Error(`unscripted process: ${formatProcessRequest(request)}`));
+      }
+      return next === "interrupt" ? Effect.interrupt : processOutcomeEffect(request, next);
+    },
   };
 }
 
-describe("assertToolAvailable", () => {
-  it("passes when the tool exits successfully", async () => {
-    await expect(assertToolAvailable("podman", runnerWith("podman version 5"))).resolves.toBeUndefined();
-  });
+/**
+ * Builds a harness whose processes answer from `answers` in order.
+ *
+ * @param answers - One answer per expected probe.
+ * @returns The harness.
+ */
+function harnessWith(...answers: readonly ProbeAnswer[]): TestHarness {
+  return makeTestLayer({processes: [inOrder(answers)], context: "preflight"});
+}
 
-  it("throws when the tool is missing", async () => {
-    await expect(assertToolAvailable("podman", runnerWith("not found", 1))).rejects.toThrow("Required tool 'podman' is not available");
-  });
+/**
+ * Renders the recorded probes as command lines.
+ *
+ * @param harness - The harness.
+ * @returns One `command arg…` line per probe.
+ */
+function probeLines(harness: TestHarness): readonly string[] {
+  return harness.processCalls().map((call) => [call.request.command, ...call.request.args].join(" "));
+}
+
+describe("assertToolAvailable", () => {
+  const passing = harnessWith(succeeded("podman version 5"));
+  effectTest(
+    "passes when the tool exits successfully, probing --version with the whole failure output kept",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        yield* assertToolAvailable("podman");
+
+        // Assert
+        expect(passing.processCalls()).toEqual([{request: {command: "podman", args: ["--version"]}, options: {failureOutput: "full"}}]);
+      }),
+    passing.layer,
+  );
+
+  effectTest(
+    "fails with the legacy message and the stdout detail when the tool is missing",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+
+        // Assert
+        expect(error).toBeInstanceOf(ContainerRuntimeError);
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: not found");
+      }),
+    harnessWith(exited(1, "not found")).layer,
+  );
+
+  effectTest(
+    "prefers stderr over stdout in the failure detail",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: permission denied");
+      }),
+    harnessWith(exited(1, "partial stdout", "permission denied")).layer,
+  );
+
+  effectTest(
+    "keeps the leading 2000 characters of a long failure output",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe(`Required tool 'podman' is not available. Output: ${"a".repeat(2_000)}`);
+      }),
+    harnessWith(exited(1, "", `${"a".repeat(2_000)}${"b".repeat(500)}`)).layer,
+  );
+
+  effectTest(
+    "falls back to the exit code when the failed probe printed nothing",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: exit code 127");
+      }),
+    harnessWith(exited(127)).layer,
+  );
+
+  effectTest(
+    "reports the spawn failure reason",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: spawn podman ENOENT");
+      }),
+    harnessWith({kind: "spawn-failed", message: "spawn podman ENOENT", stdout: "", stderr: "", durationMs: 0}).layer,
+  );
+
+  effectTest(
+    "reports the terminating signal",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: terminated by SIGKILL");
+      }),
+    harnessWith({kind: "signalled", signal: "SIGKILL", stdout: "", stderr: "", durationMs: 0}).layer,
+  );
+
+  effectTest(
+    "reports a timed-out probe",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: timed out");
+      }),
+    harnessWith({kind: "timed-out", stdout: "", stderr: "", durationMs: 0}).layer,
+  );
+
+  effectTest(
+    "keeps an empty spawn failure detail empty",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertToolAvailable("podman"));
+        expect(error.message).toBe("Required tool 'podman' is not available. Output: ");
+      }),
+    harnessWith({kind: "spawn-failed", message: "", stdout: "", stderr: "", durationMs: 0}).layer,
+  );
 });
 
 describe("assertNoDockerDesktopBackend", () => {
-  it("throws when the active backend is Docker Desktop", async () => {
-    await expect(assertNoDockerDesktopBackend(runnerWith("Docker Desktop 4.40.0"))).rejects.toThrow("Docker Desktop is the active backend");
-  });
+  effectTest(
+    "fails when the active backend is Docker Desktop",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertNoDockerDesktopBackend());
+        expect(error.message).toBe(
+          "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
+        );
+      }),
+    harnessWith(succeeded("Docker Desktop 4.40.0")).layer,
+  );
 
-  it("passes when the active backend is Rancher Desktop", async () => {
-    await expect(assertNoDockerDesktopBackend(runnerWith("Rancher Desktop"))).resolves.toBeUndefined();
-  });
+  effectTest(
+    "passes when the active backend is Rancher Desktop",
+    () => assertNoDockerDesktopBackend(),
+    harnessWith(succeeded("Rancher Desktop")).layer,
+  );
+
+  effectTest(
+    "fails when the Docker Desktop banner is only present on stderr",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertNoDockerDesktopBackend());
+        expect(error).toBeInstanceOf(ContainerRuntimeError);
+      }),
+    harnessWith(succeeded("", "Docker Desktop 4.40.0")).layer,
+  );
+
+  effectTest(
+    "passes when the probe itself fails, since a failed probe cannot confirm a Docker Desktop banner",
+    () => assertNoDockerDesktopBackend(),
+    harnessWith(exited(1, "Docker Desktop is not running")).layer,
+  );
 });
 
 describe("assertRancherBackend", () => {
-  it("accepts Rancher Desktop output", async () => {
-    await expect(assertRancherBackend(runnerWith("Rancher Desktop 1.20.0"))).resolves.toBeUndefined();
-  });
+  effectTest("accepts Rancher Desktop output", () => assertRancherBackend(), harnessWith(succeeded("Rancher Desktop 1.20.0")).layer);
 
-  it("rejects Docker Desktop output", async () => {
-    await expect(assertRancherBackend(runnerWith("Docker Desktop 4.40.0"))).rejects.toThrow(
-      "Rancher engine selected but Docker Desktop appears to be active",
-    );
-  });
+  for (const stream of ["stdout", "stderr"] as const) {
+    const podmanEndpoint = JSON.stringify({
+      Client: {Version: "29.6.2-rd"},
+      Server: {Components: [{Name: "Podman Engine", Version: "5.8.2"}]},
+    });
+    effectTest(
+      `rejects a Rancher-installed client connected to a Podman endpoint reported on ${stream}`,
+      () =>
+        Effect.gen(function* () {
+          const result = yield* Effect.exit(assertRancherBackend());
 
-  it("rejects an unavailable Docker-compatible CLI", async () => {
-    await expect(assertRancherBackend(runnerWith("not found", 1))).rejects.toThrow(
-      "Rancher Desktop Docker-compatible CLI is not available",
+          expect(result._tag).toBe("Failure");
+          if (Exit.isFailure(result)) {
+            const error = Cause.findError(result.cause);
+            expect(Result.isSuccess(error)).toBe(true);
+            if (Result.isSuccess(error)) {
+              expect(error.success).toBeInstanceOf(ContainerRuntimeError);
+              expect(error.success.message).toContain("endpoint is served by Podman");
+            }
+          }
+        }),
+      harnessWith(succeeded(stream === "stdout" ? podmanEndpoint : "", stream === "stderr" ? podmanEndpoint : "")).layer,
     );
-  });
+  }
+
+  effectTest(
+    "rejects Docker Desktop output",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertRancherBackend());
+        expect(error.message).toBe(
+          "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
+        );
+      }),
+    harnessWith(succeeded("Docker Desktop 4.40.0")).layer,
+  );
+
+  effectTest(
+    "rejects an unavailable Docker-compatible CLI",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertRancherBackend());
+        expect(error.message).toBe("Rancher Desktop Docker-compatible CLI is not available. Output: not found");
+      }),
+    harnessWith(exited(1, "not found")).layer,
+  );
+
+  effectTest(
+    "rejects a Docker Desktop banner reported only on stderr",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertRancherBackend());
+        expect(error.message).toContain("Rancher engine selected but Docker Desktop appears to be active");
+      }),
+    harnessWith(succeeded("", "Docker Desktop 4.40.0")).layer,
+  );
 });
 
 describe("assertPodmanBackend", () => {
-  it("accepts a working Podman CLI and compose provider", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.4.0"};
-        }
+  effectTest(
+    "accepts a working Podman CLI and compose provider",
+    () => assertPodmanBackend(),
+    harnessWith(succeeded("podman version 5.4.0"), succeeded("podman-compose version 1.2.0")).layer,
+  );
 
-        if (command.command === "podman" && command.args.join(" ") === "compose version") {
-          return {code: 0, output: "podman-compose version 1.2.0"};
-        }
+  effectTest(
+    "rejects missing Podman",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertPodmanBackend());
+        expect(error.message).toBe("Podman is not available. Output: podman missing");
+      }),
+    harnessWith(exited(1, "podman missing")).layer,
+  );
 
-        return {code: 1, output: "unexpected command"};
-      },
-    };
+  effectTest(
+    "rejects missing Podman Compose provider",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertPodmanBackend());
+        expect(error.message).toBe(
+          "Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: podman compose provider is not configured",
+        );
+      }),
+    harnessWith(succeeded("podman version 5.4.0"), exited(1, "podman compose provider is not configured")).layer,
+  );
 
-    await expect(assertPodmanBackend(runner)).resolves.toBeUndefined();
-  });
+  const delegationMessage =
+    "Podman Compose is currently delegated to a Docker Desktop compose provider. Install podman-compose and set PODMAN_COMPOSE_PROVIDER to the podman-compose executable.";
 
-  it("rejects missing Podman", async () => {
-    await expect(assertPodmanBackend(runnerWith("podman missing", 1))).rejects.toThrow("Podman is not available");
-  });
+  effectTest(
+    "rejects Docker Desktop compose provider delegation",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertPodmanBackend());
+        expect(error.message).toBe(delegationMessage);
+      }),
+    harnessWith(
+      succeeded("podman version 5.8.2"),
+      succeeded('Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"'),
+    ).layer,
+  );
 
-  it("rejects missing Podman Compose provider", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.4.0"};
-        }
+  effectTest(
+    "rejects macOS Docker Desktop compose provider delegation",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertPodmanBackend());
+        expect(error.message).toBe(delegationMessage);
+      }),
+    harnessWith(
+      succeeded("podman version 5.8.2"),
+      succeeded('Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"'),
+    ).layer,
+  );
 
-        return {code: 1, output: "podman compose provider is not configured"};
-      },
-    };
+  effectTest(
+    "rejects Docker Desktop compose provider delegation reported only on stderr",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(assertPodmanBackend());
+        expect(error.message).toBe(delegationMessage);
+      }),
+    harnessWith(
+      succeeded("podman version 5.8.2"),
+      succeeded("", 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"'),
+    ).layer,
+  );
 
-    await expect(assertPodmanBackend(runner)).rejects.toThrow("Podman Compose provider is not available");
-  });
-
-  it("rejects Docker Desktop compose provider delegation", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
-        }
-
-        return {
-          code: 0,
-          output: 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"',
-        };
-      },
-    };
-
-    await expect(assertPodmanBackend(runner)).rejects.toThrow("Podman Compose is currently delegated to a Docker Desktop compose provider");
-  });
-
-  it("rejects macOS Docker Desktop compose provider delegation", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
-        }
-
-        return {
-          code: 0,
-          output: 'Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"',
-        };
-      },
-    };
-
-    await expect(assertPodmanBackend(runner)).rejects.toThrow("Podman Compose is currently delegated to a Docker Desktop compose provider");
-  });
-
-  it("allows Podman Compose provider output", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
-        }
-
-        return {code: 0, output: "podman version 5.8.2\npodman-compose version 1.5.0"};
-      },
-    };
-
-    await expect(assertPodmanBackend(runner)).resolves.toBeUndefined();
-  });
+  effectTest(
+    "allows Podman Compose provider output",
+    () => assertPodmanBackend(),
+    harnessWith(succeeded("podman version 5.8.2"), succeeded("podman version 5.8.2\npodman-compose version 1.5.0")).layer,
+  );
 });
 
 describe("warnOnExistingLocalContainers", () => {
-  it("warns when known local containers already exist", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("mssql\nredis\n"));
+  const colliding = harnessWith(succeeded("mssql\r\nredis\n  \nunrelated\n"));
+  effectTest(
+    "warns with the legacy text when known local containers already exist",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        yield* warnOnExistingLocalContainers(getContainerAdapter("podman"));
 
-    expect(warn).toHaveBeenCalledWith("Existing local containers detected for Podman Desktop: mssql, redis");
-  });
+        // Assert
+        expect(colliding.processCalls()).toEqual([
+          {request: {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"]}, options: {}},
+        ]);
+        expect(colliding.output()).toEqual([
+          {stream: "stderr", text: "[arolariu::preflight] ⚠️ Existing local containers detected for Podman Desktop: mssql, redis\n"},
+        ]);
+      }),
+    colliding.layer,
+  );
 
-  it("does not warn when container listing fails", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("error", 1));
+  const quiet = harnessWith(succeeded("unrelated\n"));
+  effectTest(
+    "does not warn when no known container exists",
+    () =>
+      Effect.gen(function* () {
+        yield* warnOnExistingLocalContainers(getContainerAdapter("rancher"));
+        expect(quiet.output()).toEqual([]);
+      }),
+    quiet.layer,
+  );
 
-    expect(warn).not.toHaveBeenCalled();
-  });
+  const failing = harnessWith(exited(1, "error"));
+  effectTest(
+    "does not warn when container listing fails",
+    () =>
+      Effect.gen(function* () {
+        yield* warnOnExistingLocalContainers(getContainerAdapter("podman"));
+        expect(failing.output()).toEqual([]);
+      }),
+    failing.layer,
+  );
 });
 
-describe("runSharedPreflight", () => {
-  it("runs Rancher validation and compose checks", async () => {
-    const calls: string[] = [];
-    const runner: CommandRunner = {
-      run: async (command) => {
-        calls.push([command.command, ...command.args].join(" "));
-        return {code: 0, output: "Rancher Desktop"};
-      },
-    };
+describe("runContainerPreflight", () => {
+  const rancher = harnessWith(succeeded("Docker version 27.3.1"), succeeded("Server: Moby Engine"), succeeded("v2.29.7"), succeeded());
+  effectTest(
+    "runs Rancher validation and compose checks in order and returns the Rancher adapter",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const adapter = yield* runContainerPreflight("rancher");
 
-    await runSharedPreflight(getContainerAdapter("rancher"), runner);
+        // Assert
+        expect(adapter).toBe(getContainerAdapter("rancher"));
+        expect(probeLines(rancher)).toEqual([
+          "docker --version",
+          "docker version",
+          "docker compose version",
+          "docker ps -a --format {{.Names}}",
+        ]);
+      }),
+    rancher.layer,
+  );
 
-    expect(calls).toEqual(["docker --version", "docker version", "docker compose version", "docker ps -a --format {{.Names}}"]);
-  });
+  const podman = harnessWith(
+    succeeded("podman version 5.8.2"),
+    exited(1),
+    succeeded("podman version 5.8.2"),
+    succeeded("podman-compose version 1.5.0"),
+    succeeded("podman-compose version 1.5.0"),
+    succeeded("mssql\n"),
+  );
+  effectTest(
+    "runs the advisory Docker Desktop probe and the Podman checks in order, then warns",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const adapter = yield* runContainerPreflight("podman");
 
-  it("rejects Docker Desktop before validating Podman", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman") {
-          return {code: 0, output: "podman version 5.4.0"};
-        }
+        // Assert
+        expect(adapter).toBe(getContainerAdapter("podman"));
+        expect(probeLines(podman)).toEqual([
+          "podman --version",
+          "docker version",
+          "podman --version",
+          "podman compose version",
+          "podman compose version",
+          "podman ps -a --format {{.Names}}",
+        ]);
+        expect(podman.output()).toEqual([
+          {stream: "stderr", text: "[arolariu::preflight] ⚠️ Existing local containers detected for Podman Desktop: mssql\n"},
+        ]);
+      }),
+    podman.layer,
+  );
 
-        return {code: 0, output: "Docker Desktop 4.40.0"};
-      },
-    };
+  const dockerDesktop = harnessWith(succeeded("podman version 5.4.0"), succeeded("Docker Desktop 4.40.0"));
+  effectTest(
+    "rejects Docker Desktop before validating Podman",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(runContainerPreflight("podman"));
+        expect(error.message).toBe(
+          "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
+        );
+        expect(dockerDesktop.processCalls()).toHaveLength(2);
+      }),
+    dockerDesktop.layer,
+  );
 
-    await expect(runSharedPreflight(getContainerAdapter("podman"), runner)).rejects.toThrow("Docker Desktop is the active backend");
-  });
+  const missingCompose = harnessWith(succeeded(), succeeded("Server: Moby Engine"), exited(1, "", "'compose' is not a docker command."));
+  effectTest(
+    "rejects an unavailable compose provider with the engine display name",
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(runContainerPreflight("rancher"));
+        expect(error.message).toBe("Rancher Desktop Compose provider is not available. Output: 'compose' is not a docker command.");
+        expect(missingCompose.processCalls()).toHaveLength(3);
+      }),
+    missingCompose.layer,
+  );
+
+  const interrupted = harnessWith("interrupt");
+  effectTest(
+    "stops without any later probe when a probe is interrupted",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const exit = yield* Effect.exit(runContainerPreflight("rancher"));
+
+        // Assert
+        expect(Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause)).toBe(true);
+        expect(probeLines(interrupted)).toEqual(["docker --version"]);
+      }),
+    interrupted.layer,
+  );
+
+  const interruptedAdvisory = harnessWith(succeeded("podman version 5.8.2"), "interrupt");
+  effectTest(
+    "stops at the advisory Docker Desktop probe when it is interrupted",
+    () =>
+      Effect.gen(function* () {
+        const exit = yield* Effect.exit(runContainerPreflight("podman"));
+        expect(Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause)).toBe(true);
+        expect(probeLines(interruptedAdvisory)).toEqual(["podman --version", "docker version"]);
+      }),
+    interruptedAdvisory.layer,
+  );
 });
 
 describe("requiredLocalPorts", () => {

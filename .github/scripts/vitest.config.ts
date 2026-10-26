@@ -1,20 +1,20 @@
 /**
- * @fileoverview Vitest configuration for GitHub Actions helper tests.
+ * @fileoverview Vitest configuration for CI brokers, services, and native integration contracts.
  * @module github/scripts/vitest-config
  *
  * @remarks
- * This configuration is scoped to the `.github/scripts` TypeScript helpers and
- * their unit tests.
+ * This configuration is scoped to `.github/scripts`; root-tooling AST/worker
+ * contracts run separately through scripts/vitest.config.ts.
  *
  * **Runtime**: Node.js.
  *
  * **Coverage**:
- * - Includes helper implementation files under `helpers/`
- * - Excludes test/spec files and node_modules content
+ * - Includes helper and lib implementations.
+ * - Excludes test/spec/fixture files and node_modules content.
  *
  * @example
  * ```bash
- * npm run test:unit
+ * npm --prefix .github/scripts test
  * ```
  */
 import {defineConfig} from "vitest/config";
@@ -27,8 +27,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["helpers/**/*.ts"],
-      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
+      include: ["helpers/**/*.ts", "lib/**/*.ts"],
+      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/*.d.ts", "**/fixtures/**", "**/node_modules/**"],
     },
   },
 });

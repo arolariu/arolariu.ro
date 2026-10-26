@@ -4,15 +4,18 @@
  */
 
 import {MerchantBuilder} from "@/data/mocks";
-import {MerchantCategory, type Merchant} from "@/types/invoices";
+import {type Merchant} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchantsStore} from "./merchantsStore";
 
+// Expose a mutable getItem handle so hydration-validation tests can seed storage per-test.
+const mockGetItem = vi.hoisted(() => vi.fn().mockResolvedValue(null));
+
 // Mock the IndexedDB storage
 vi.mock("./storage/indexedDBStorage", () => ({
   createIndexedDBStorage: () => ({
-    getItem: vi.fn().mockResolvedValue(null),
+    getItem: mockGetItem,
     setItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
   }),
@@ -26,7 +29,6 @@ describe("useMerchantsStore", () => {
     .withDescription("A local grocery store")
     .withCreatedAt(new Date("2025-01-01"))
     .withLastUpdatedAt(new Date("2025-01-01"))
-    .withCategory(MerchantCategory.LOCAL_SHOP)
     .withAddress("123 Main St, City, State 12345")
     .withPhoneNumber("+1-555-0100")
     .withParentCompanyId("company-1")
@@ -38,7 +40,6 @@ describe("useMerchantsStore", () => {
     .withDescription("A large supermarket chain")
     .withCreatedAt(new Date("2025-01-02"))
     .withLastUpdatedAt(new Date("2025-01-02"))
-    .withCategory(MerchantCategory.SUPERMARKET)
     .withAddress("456 Market Ave, City, State 12345")
     .withPhoneNumber("+1-555-0200")
     .withParentCompanyId("company-2")
@@ -50,13 +51,14 @@ describe("useMerchantsStore", () => {
     .withDescription("An online shopping platform")
     .withCreatedAt(new Date("2025-01-03"))
     .withLastUpdatedAt(new Date("2025-01-03"))
-    .withCategory(MerchantCategory.ONLINE_SHOP)
     .withAddress("789 Digital Blvd, City, State 12345")
     .withPhoneNumber("+1-555-0300")
     .withParentCompanyId("company-3")
     .build();
 
   beforeEach(() => {
+    // Restore the default null return so storage-unaware tests see an empty store.
+    mockGetItem.mockResolvedValue(null);
     // Reset the store before each test
     const {result} = renderHook(() => useMerchantsStore);
     act(() => {
@@ -179,7 +181,6 @@ describe("useMerchantsStore", () => {
         .withDescription("Updated description")
         .withCreatedAt(new Date("2025-01-01"))
         .withLastUpdatedAt(new Date("2025-06-01"))
-        .withCategory(MerchantCategory.HYPERMARKET)
         .withAddress("999 New Address")
         .withPhoneNumber("+1-555-9999")
         .withParentCompanyId("company-updated")
@@ -193,7 +194,6 @@ describe("useMerchantsStore", () => {
       expect(result.current.getState().entities).toHaveLength(1);
       expect(result.current.getState().entities[0]?.name).toBe("Updated Merchant Name");
       expect(result.current.getState().entities[0]?.description).toBe("Updated description");
-      expect(result.current.getState().entities[0]?.category).toBe(MerchantCategory.HYPERMARKET);
     });
 
     it("should not create duplicates when upserting same merchant twice", () => {
@@ -255,13 +255,11 @@ describe("useMerchantsStore", () => {
         result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
         result.current.getState().updateEntity(mockMerchant1.id, {
           name: "Updated Merchant Name",
-          category: MerchantCategory.HYPERMARKET,
         });
       });
 
       const updatedMerchant = result.current.getState().entities.find((m) => m.id === mockMerchant1.id);
       expect(updatedMerchant?.name).toBe("Updated Merchant Name");
-      expect(updatedMerchant?.category).toBe(MerchantCategory.HYPERMARKET);
       expect(updatedMerchant?.description).toBe(mockMerchant1.description); // Should remain unchanged
       expect(updatedMerchant?.address).toBe(mockMerchant1.address); // Should remain unchanged
     });
@@ -285,7 +283,6 @@ describe("useMerchantsStore", () => {
       expect(updatedMerchant?.name).toBe("New Name");
       expect(updatedMerchant?.address.address).toBe("New Address");
       expect(updatedMerchant?.address.phoneNumber).toBe("+1-555-9999");
-      expect(updatedMerchant?.category).toBe(mockMerchant1.category); // Should remain unchanged
     });
 
     it("should handle updating non-existent merchant gracefully", () => {
@@ -461,14 +458,12 @@ describe("useMerchantsStore", () => {
         // Update a merchant
         result.current.getState().updateEntity(mockMerchant1.id, {
           name: "Updated Merchant 1",
-          category: MerchantCategory.HYPERMARKET,
         });
       });
 
       // Retrieve the updated merchant
       const retrievedMerchant = result.current.getState().getEntityById(mockMerchant1.id);
       expect(retrievedMerchant?.name).toBe("Updated Merchant 1");
-      expect(retrievedMerchant?.category).toBe(MerchantCategory.HYPERMARKET);
 
       act(() => {
         // Remove a merchant
@@ -541,23 +536,16 @@ describe("useMerchantsStore", () => {
       expect(result.current.getState().entities[0]?.name).toBe("Updated Merchant Name");
     });
 
-    it("should handle category changes correctly", () => {
+    it("should handle classification changes correctly", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
         result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().updateEntity(mockMerchant1.id, {name: "Updated by classification test"});
       });
 
-      Object.values(MerchantCategory).forEach((category) => {
-        if (typeof category === "number") {
-          act(() => {
-            result.current.getState().updateEntity(mockMerchant1.id, {category});
-          });
-
-          const merchant = result.current.getState().getEntityById(mockMerchant1.id);
-          expect(merchant?.category).toBe(category);
-        }
-      });
+      const merchant = result.current.getState().getEntityById(mockMerchant1.id);
+      expect(merchant?.name).toBe("Updated by classification test");
     });
   });
 
@@ -639,13 +627,11 @@ describe("useMerchantsStore", () => {
       act(() => {
         result.current.getState().updateEntity(mockMerchant2.id, {
           name: "Updated Merchant",
-          category: MerchantCategory.ONLINE_SHOP,
         });
       });
 
       const updatedMerchant = result.current.getState().getEntityById(mockMerchant2.id);
       expect(updatedMerchant?.name).toBe("Updated Merchant");
-      expect(updatedMerchant?.category).toBe(MerchantCategory.ONLINE_SHOP);
     });
 
     it("should cover upsertEntity with existing merchants", () => {

@@ -69,7 +69,7 @@ public sealed class ExceptionHandlerPipelineTests
     // BadHttpRequestException instead of writing a silent 400 — this is what causes
     // the exception to escape into the middleware pipeline and hit UseExceptionHandler.
     // Production code sees the equivalent behaviour because it throws from the
-    // invoice processing services; here we route the pre-handler fault through the
+    // CRUD processing services; here we route the pre-handler fault through the
     // same door to exercise the exact handler path.
     builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(
       opts => opts.ThrowOnBadRequest = true);

@@ -20,7 +20,7 @@
 // - HTTPS Only: Enforced (redirects HTTP to HTTPS)
 // - FTPS: Disabled (no FTP access)
 // - IP Restrictions: Only Azure Front Door allowed as origin
-// - CORS: Limited to clerk.arolariu.ro, api.arolariu.ro, cdn.arolariu.ro
+// - CORS: Limited to clerk.arolariu.ro, api.arolariu.ro
 //
 // Scaling:
 // - Initial workers: 1
@@ -94,7 +94,6 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
         allowedOrigins: [
           'https://clerk.arolariu.ro'
           'https://api.arolariu.ro'
-          'https://cdn.arolariu.ro'
         ]
       }
       localMySqlEnabled: false // Local MySQL is not enabled;

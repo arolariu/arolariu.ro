@@ -1,6 +1,5 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Invoice Health Score component for view-invoice domain.
  * @module domains/invoices/view-invoice/[id]/components/cards/InvoiceHealthScore
@@ -34,12 +33,11 @@ import {selectorFromPath} from "next-intl-selector";
  * **Rendering Context:** Client Component (requires useState, useMemo).
  *
  * @see {@link useInvoiceContext} for data access
- * @see {@link InvoiceCategory} for category enum
  * @see {@link Product} for product structure
  * @see {@link ProductMetadata} for completeness flags
  */
 
-import {InvoiceCategory, ProductCategory} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -51,7 +49,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback, useMemo, useState} from "react";
 import {TbAlertCircle, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink, TbSparkles, TbX} from "react-icons/tb";
@@ -128,6 +126,208 @@ type ImprovementSuggestion = {
  */
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
+type HealthMetrics = {
+  readonly items: readonly Product[];
+  readonly totalItems: number;
+  readonly hasProducts: boolean;
+  readonly completeProducts: number;
+  readonly completenessRatio: number;
+  readonly confidenceScores: readonly number[];
+  readonly averageConfidence: number;
+  readonly hasMerchant: boolean;
+  readonly hasCompletePayment: boolean;
+  readonly categorizedProducts: number;
+  readonly categoryRatio: number;
+  readonly hasRecipes: boolean;
+};
+
+type HealthScoreResult = {
+  readonly factors: readonly ScoreFactor[];
+  readonly score: number;
+  readonly maxScore: number;
+  readonly suggestions: readonly ImprovementSuggestion[];
+};
+
+/**
+ * Calculates reusable invoice quality metrics.
+ *
+ * @param invoice - Invoice being evaluated.
+ * @returns Normalized metrics used by factors and suggestions.
+ */
+function calculateHealthMetrics(invoice: Invoice): HealthMetrics {
+  const items = invoice.items.filter((item) => !item.metadata.isSoftDeleted);
+  const totalItems = items.length;
+  const hasProducts = totalItems > 0;
+  const completeProducts = items.filter((item) => item.metadata.isComplete).length;
+  const completenessRatio = hasProducts ? completeProducts / totalItems : 0;
+  const confidenceScores = items.map((item) => item.metadata.confidence).filter((confidence) => confidence > 0);
+  const averageConfidence =
+    confidenceScores.length > 0 ? confidenceScores.reduce((sum, confidence) => sum + confidence, 0) / confidenceScores.length : 0;
+  const hasMerchant = invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0;
+  const hasCompletePayment =
+    Boolean(invoice.paymentInformation.transactionDate)
+    && invoice.paymentInformation.totalCostAmount > 0
+    && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
+  const categorizedProducts = items.filter((item) => item.classification !== null).length;
+  const categoryRatio = hasProducts ? categorizedProducts / totalItems : 0;
+
+  return {
+    items,
+    totalItems,
+    hasProducts,
+    completeProducts,
+    completenessRatio,
+    confidenceScores,
+    averageConfidence,
+    hasMerchant,
+    hasCompletePayment,
+    categorizedProducts,
+    categoryRatio,
+    hasRecipes: invoice.possibleRecipes.length > 0,
+  };
+}
+
+/**
+ * Builds the weighted factor list displayed by the health score card.
+ *
+ * @param invoice - Invoice supplying recipe counts.
+ * @param metrics - Precomputed quality metrics.
+ * @returns Weighted factors in display order.
+ */
+function buildScoreFactors(invoice: Invoice, metrics: HealthMetrics): readonly ScoreFactor[] {
+  const {
+    totalItems,
+    hasProducts,
+    completenessRatio,
+    confidenceScores,
+    averageConfidence,
+    hasMerchant,
+    hasCompletePayment,
+    categoryRatio,
+    hasRecipes,
+  } = metrics;
+
+  return [
+    {
+      key: "productsPresent",
+      maxPoints: 15,
+      earnedPoints: hasProducts ? 15 : 0,
+      achieved: hasProducts,
+      detail: hasProducts ? String(totalItems) : undefined,
+    },
+    {
+      key: "productCompleteness",
+      maxPoints: 20,
+      earnedPoints: Math.round(completenessRatio * 20),
+      achieved: completenessRatio === 1,
+      detail: hasProducts ? `${Math.round(completenessRatio * 100)}%` : undefined,
+    },
+    {
+      key: "ocrConfidence",
+      maxPoints: 20,
+      earnedPoints: Math.round(averageConfidence * 20),
+      achieved: averageConfidence >= 0.9,
+      detail: confidenceScores.length > 0 ? `${Math.round(averageConfidence * 100)}%` : undefined,
+    },
+    {
+      key: "merchantLinked",
+      maxPoints: 10,
+      earnedPoints: hasMerchant ? 10 : 0,
+      achieved: hasMerchant,
+    },
+    {
+      key: "paymentInfo",
+      maxPoints: 15,
+      earnedPoints: hasCompletePayment ? 15 : 0,
+      achieved: hasCompletePayment,
+    },
+    {
+      key: "categoriesAssigned",
+      maxPoints: 10,
+      earnedPoints: Math.round(categoryRatio * 10),
+      achieved: categoryRatio === 1,
+      detail: hasProducts ? `${Math.round(categoryRatio * 100)}%` : undefined,
+    },
+    {
+      key: "recipesGenerated",
+      maxPoints: 10,
+      earnedPoints: hasRecipes ? 10 : 0,
+      achieved: hasRecipes,
+      detail: hasRecipes ? String(invoice.possibleRecipes.length) : undefined,
+    },
+  ];
+}
+
+/**
+ * Builds actionable suggestions for incomplete quality factors.
+ *
+ * @param invoiceId - Invoice identifier used by edit links.
+ * @param metrics - Precomputed quality metrics.
+ * @returns Priority-ordered suggestions.
+ */
+function buildImprovementSuggestions(invoiceId: string, metrics: HealthMetrics): readonly ImprovementSuggestion[] {
+  const suggestions: ImprovementSuggestion[] = [];
+  const editLink = `/domains/invoices/edit-invoice/${invoiceId}`;
+
+  if (!metrics.hasProducts) {
+    suggestions.push({key: "noProducts", icon: TbAlertCircle, link: editLink});
+  }
+  if (metrics.hasProducts && metrics.completenessRatio < 1) {
+    suggestions.push({
+      key: "incompleteProducts",
+      icon: TbAlertCircle,
+      params: {count: metrics.totalItems - metrics.completeProducts},
+      link: editLink,
+    });
+  }
+  if (metrics.confidenceScores.length > 0 && metrics.averageConfidence < 0.8) {
+    const lowConfidenceCount = metrics.items.filter((item) => item.metadata.confidence > 0 && item.metadata.confidence < 0.8).length;
+    suggestions.push({
+      key: "lowOcrConfidence",
+      icon: TbAlertCircle,
+      params: {count: lowConfidenceCount},
+      link: editLink,
+    });
+  }
+  if (!metrics.hasMerchant) {
+    suggestions.push({key: "noMerchant", icon: TbAlertCircle, link: editLink});
+  }
+  if (!metrics.hasCompletePayment) {
+    suggestions.push({key: "incompletePayment", icon: TbAlertCircle, link: editLink});
+  }
+  if (metrics.hasProducts && metrics.categoryRatio < 1) {
+    suggestions.push({
+      key: "uncategorizedProducts",
+      icon: TbAlertCircle,
+      params: {count: metrics.totalItems - metrics.categorizedProducts},
+      link: editLink,
+    });
+  }
+  if (!metrics.hasRecipes) {
+    suggestions.push({key: "noRecipes", icon: TbSparkles});
+  }
+
+  return suggestions;
+}
+
+/**
+ * Calculates the complete health score presentation model.
+ *
+ * @param invoice - Invoice being evaluated.
+ * @returns Factors, totals, and actionable suggestions.
+ */
+function calculateInvoiceHealth(invoice: Invoice): HealthScoreResult {
+  const metrics = calculateHealthMetrics(invoice);
+  const factors = buildScoreFactors(invoice, metrics);
+
+  return {
+    factors,
+    score: factors.reduce((sum, factor) => sum + factor.earnedPoints, 0),
+    maxScore: factors.reduce((sum, factor) => sum + factor.maxPoints, 0),
+    suggestions: buildImprovementSuggestions(invoice.id, metrics),
+  };
+}
+
 /**
  * Invoice Health Score card component.
  *
@@ -188,168 +388,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
    * - Categories assigned (10 pts): Percentage of categorized products
    * - Recipes generated (10 pts): Binary - has at least 1 recipe
    */
-  const {factors, score, maxScore, suggestions} = useMemo(() => {
-    const items = invoice.items.filter((item) => !item.metadata.isSoftDeleted);
-    const totalItems = items.length;
-
-    // Factor 1: Products present (15 points)
-    const hasProducts = totalItems > 0;
-    const productsPoints = hasProducts ? 15 : 0;
-
-    // Factor 2: Product completeness (20 points)
-    const completeProducts = items.filter((item) => item.metadata.isComplete).length;
-    const completenessRatio = totalItems > 0 ? completeProducts / totalItems : 0;
-    const completenessPoints = Math.round(completenessRatio * 20);
-
-    // Factor 3: OCR confidence (20 points)
-    const confidenceScores = items.map((item) => item.metadata.confidence).filter((c) => c > 0);
-    const avgConfidence = confidenceScores.length > 0 ? confidenceScores.reduce((sum, c) => sum + c, 0) / confidenceScores.length : 0;
-    const confidencePoints = Math.round(avgConfidence * 20);
-
-    // Factor 4: Merchant linked (10 points)
-    const hasMerchant = invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0;
-    const merchantPoints = hasMerchant ? 10 : 0;
-
-    // Factor 5: Payment info (15 points)
-    const hasCompletePayment =
-      Boolean(invoice.paymentInformation.transactionDate)
-      && invoice.paymentInformation.totalCostAmount > 0
-      && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
-    const paymentPoints = hasCompletePayment ? 15 : 0;
-
-    // Factor 6: Categories assigned (10 points)
-    const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
-    const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
-    const categoryPoints = Math.round(categoryRatio * 10);
-
-    // Factor 7: Recipes generated (10 points)
-    const hasRecipes = invoice.possibleRecipes.length > 0;
-    const recipesPoints = hasRecipes ? 10 : 0;
-
-    const computedFactors: ScoreFactor[] = [
-      {
-        key: "productsPresent",
-        maxPoints: 15,
-        earnedPoints: productsPoints,
-        achieved: hasProducts,
-        detail: totalItems > 0 ? String(totalItems) : undefined,
-      },
-      {
-        key: "productCompleteness",
-        maxPoints: 20,
-        earnedPoints: completenessPoints,
-        achieved: completenessRatio === 1,
-        detail: totalItems > 0 ? `${Math.round(completenessRatio * 100)}%` : undefined,
-      },
-      {
-        key: "ocrConfidence",
-        maxPoints: 20,
-        earnedPoints: confidencePoints,
-        achieved: avgConfidence >= 0.9,
-        detail: confidenceScores.length > 0 ? `${Math.round(avgConfidence * 100)}%` : undefined,
-      },
-      {
-        key: "merchantLinked",
-        maxPoints: 10,
-        earnedPoints: merchantPoints,
-        achieved: hasMerchant,
-      },
-      {
-        key: "paymentInfo",
-        maxPoints: 15,
-        earnedPoints: paymentPoints,
-        achieved: hasCompletePayment,
-      },
-      {
-        key: "categoriesAssigned",
-        maxPoints: 10,
-        earnedPoints: categoryPoints,
-        achieved: categoryRatio === 1,
-        detail: totalItems > 0 ? `${Math.round(categoryRatio * 100)}%` : undefined,
-      },
-      {
-        key: "recipesGenerated",
-        maxPoints: 10,
-        earnedPoints: recipesPoints,
-        achieved: hasRecipes,
-        detail: invoice.possibleRecipes.length > 0 ? String(invoice.possibleRecipes.length) : undefined,
-      },
-    ];
-
-    const totalScore = computedFactors.reduce((sum, f) => sum + f.earnedPoints, 0);
-    const totalMaxScore = computedFactors.reduce((sum, f) => sum + f.maxPoints, 0);
-
-    // Generate improvement suggestions
-    const improvementSuggestions: ImprovementSuggestion[] = [];
-
-    if (!hasProducts) {
-      improvementSuggestions.push({
-        key: "noProducts",
-        icon: TbAlertCircle,
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (totalItems > 0 && completenessRatio < 1) {
-      const incompleteCount = totalItems - completeProducts;
-      improvementSuggestions.push({
-        key: "incompleteProducts",
-        icon: TbAlertCircle,
-        params: {count: incompleteCount},
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (confidenceScores.length > 0 && avgConfidence < 0.8) {
-      const lowConfidenceCount = items.filter((item) => item.metadata.confidence > 0 && item.metadata.confidence < 0.8).length;
-      improvementSuggestions.push({
-        key: "lowOcrConfidence",
-        icon: TbAlertCircle,
-        params: {count: lowConfidenceCount},
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (!hasMerchant) {
-      improvementSuggestions.push({
-        key: "noMerchant",
-        icon: TbAlertCircle,
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (!hasCompletePayment) {
-      improvementSuggestions.push({
-        key: "incompletePayment",
-        icon: TbAlertCircle,
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (totalItems > 0 && categoryRatio < 1) {
-      const uncategorizedCount = totalItems - categorizedProducts;
-      improvementSuggestions.push({
-        key: "uncategorizedProducts",
-        icon: TbAlertCircle,
-        params: {count: uncategorizedCount},
-        link: `/domains/invoices/edit-invoice/${invoice.id}`,
-      });
-    }
-
-    if (!hasRecipes) {
-      improvementSuggestions.push({
-        key: "noRecipes",
-        icon: TbSparkles,
-      });
-    }
-
-    return {
-      factors: computedFactors,
-      score: totalScore,
-      maxScore: totalMaxScore,
-      suggestions: improvementSuggestions,
-    };
-  }, [invoice]);
+  const {factors, score, maxScore, suggestions} = useMemo(() => calculateInvoiceHealth(invoice), [invoice]);
 
   const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 

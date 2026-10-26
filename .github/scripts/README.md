@@ -1,224 +1,118 @@
-# GitHub Actions Scripts
+# GitHub Actions scripts
 
-This directory contains TypeScript modules used by GitHub Actions workflows for the arolariu.ro monorepo.
+Repository-local brokers and workflow services for GitHub Actions. Runtime, repository, and risk contracts are owned by
+[AGENTS.md](../../AGENTS.md).
 
-## Directory Structure
-
-```text
-.github/scripts/
-├── helpers/           # Shared utility helpers for all scripts
-│   ├── artifacts/     # Artifact upload/download utilities
-│   ├── cache/         # Caching utilities
-│   ├── comments/      # PR comment builder
-│   ├── environment/   # Environment variable helpers
-│   ├── filesystem/    # File system utilities
-│   ├── git/           # Git operations
-│   ├── github/        # GitHub API client
-│   ├── http/          # HTTP client
-│   ├── newman/        # Newman/Postman test parser
-│   ├── playwright/    # Playwright test parser
-│   └── vitest/        # Vitest coverage parser
-├── hygiene/           # (Legacy) Shell scripts directory
-├── src/               # Main script entry points
-│   ├── hygiene/       # Hygiene check modules (v3: domain, providers, projections, pipeline)
-│   ├── runLiveTestAction.ts
-│   └── runUnitTestAction.ts
-└── types/             # Shared TypeScript types
-```
-
-## Scripts
-
-### Hygiene check (v3)
-
-The hygiene check pipeline is split into per-provider entry points and a final
-projection gate. Both are invoked from the workflow `official-hygiene-check-v2.yml`:
-
-- `src/hygiene/pipeline/runProvider.ts <providerId>` -- runs one provider
-  (`format`, `lint`, `test`, `stats`), writes `artifacts/hygiene/outcome-<id>.json`.
-  Exit code is 1 when the provider's gateResult is `failed` or `errored` and 0
-  otherwise; the workflow uses step-level `continue-on-error: true` on each
-  provider step so a non-zero exit shows a warning marker in the step UI without
-  aborting subsequent providers. Workflow pass/fail is decided by `runProjections.ts`.
-- `src/hygiene/pipeline/runProjections.ts` -- loads all outcome JSON files,
-  builds the aggregate `HygieneReport`, fans out to projections (`jsonArtifact`,
-  `stepSummary`, `prComment`, `statusChecks`) via `Promise.allSettled`, and
-  calls `core.setFailed()` if `overallResult` is `failed` or `errored`. This is
-  the single point that turns the workflow red.
-
-Adding a new check: create `src/hygiene/providers/myProvider.ts` exporting a
-`CheckProvider<P>` value, then register it in `src/hygiene/providers/registry.ts`.
-
-### runLiveTestAction.ts
-
-Handles live/E2E test execution and result reporting.
-
-### runUnitTestAction.ts
-
-Handles unit test execution and coverage reporting.
-
----
-
-## Hygiene Check System (V2)
-
-The hygiene check system validates code quality on every PR through parallel checks.
-
-### Architecture
+## Boundaries
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    official-hygiene-check-v2.yml                │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐     │
-│  │  Format  │   │   Lint   │   │   Test   │   │  Stats   │     │
-│  │  Check   │   │  Check   │   │  Check   │   │  Check   │     │
-│  └────┬─────┘   └────┬─────┘   └────┬─────┘   └────┬─────┘     │
-│       │              │              │              │            │
-│       ▼              ▼              ▼              ▼            │
-│  format-result  lint-result   test-result   stats-result       │
-│      .json         .json         .json          .json          │
-│       │              │              │              │            │
-│       └──────────────┴──────────────┴──────────────┘            │
-│                              │                                   │
-│                              ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │  Summary Job    │                          │
-│                    │  (Downloads +   │                          │
-│                    │  PR Comment)    │                          │
-│                    └─────────────────┘                          │
-└─────────────────────────────────────────────────────────────────┘
+src entrypoints -> lib services/contracts -> helpers -> helpers/sdk -> @actions/*
 ```
 
-### Module Structure
+`src` is CLI/imported-workflow glue. `lib` owns immutable context, planning, normalization, evidence, reporting, and publication policy.
+Helpers own external SDK/resource operations and raw reporter decoding; they never import `lib`. Only `helpers/sdk` imports the Actions
+packages, including type-only and dynamic imports. Pure path/URL/data operations remain ordinary code.
 
-```text
-src/hygiene/
-├── index.ts              # Main entry point and exports
-├── types.ts              # Unified type definitions
-├── commentBuilder.ts     # Rich PR comment generator
-└── checks/
-    ├── index.ts          # Check module exports
-    ├── formatCheck.ts    # Prettier format check
-    ├── lintCheck.ts      # ESLint lint check
-    ├── testCheck.ts      # Vitest unit test check
-    └── statsCheck.ts     # Code statistics & bundle analysis
-```
+The [native facade catalog](helpers/sdk/fixtures/public-entrypoints.json) is a test-owned contract checked against the installed public
+export maps. Facades preserve native values, types, overloads, defaults, errors, and sentinels; decorators add documented stricter behavior.
+See the [helper guide](helpers/README.md).
 
-### Data Flow
+| Area                                                          | Owner                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------- |
+| Native Actions APIs                                           | `helpers/sdk/`                                          |
+| Checked exec, Git, filesystem, HTTP, cache, artifacts, GitHub | Narrow helper modules                                   |
+| Serialized Newman/Playwright/Vitest/JUnit/TRX/ESLint decoding | `helpers/newman/`, `playwright/`, `vitest/`, `reports/` |
+| Context, clock, and Actions/local identity                    | `lib/context.ts`                                        |
+| Graph wire validation and affected selection                  | `lib/planning/`                                         |
+| Provider metadata, payloads, execution, outcomes, aggregation | `lib/hygiene/`                                          |
+| Independent required/optional publication                     | `lib/reporting/`                                        |
+| Live and unit report applications                             | `lib/live-tests/`, `lib/unit-tests/`                    |
 
-1. **Parallel Execution**: All check jobs run independently
-2. **Artifact Production**: Each check writes `{check}-result.json`
-3. **Artifact Download**: Summary job downloads all artifacts
-4. **Comment Generation**: `commentBuilder.ts` produces rich PR comment
-5. **Comment Posting**: New comment created per workflow run
-
-### Artifact Format
-
-All check results conform to the `HygieneCheckResult` interface:
+Importing either `runLiveTestAction.ts` or `runUnitTestAction.ts` does not run it. Their default functions retain the existing workflow
+invocation style:
 
 ```typescript
-interface HygieneCheckResult {
-  check: 'format' | 'lint' | 'test' | 'stats';
-  status: 'success' | 'failure' | 'skipped' | 'error';
-  duration: number;
-  summary: string;
-  timestamp: string;
-  // ... check-specific fields
-}
+const {default: runLiveTestAction} = await import("./src/runLiveTestAction.ts");
+await runLiveTestAction();
 ```
 
-### PR Comment Features
+## Hygiene: one plan, six named jobs
 
-The generated PR comment includes:
+[`official-hygiene-check-v2.yml`](../workflows/official-hygiene-check-v2.yml) retains the v3 workflow/check identities and the `detect`,
+`providers`, and `gate` jobs. The detect job bootstraps planning dependencies once, then writes `artifacts/hygiene/plan.json` and uploads
+`hygiene-plan`.
 
-- **Status Summary Table**: Quick overview of all check results
-- **Table of Contents**: Jump links to each section
-- **Code Statistics**: Files changed, lines added/deleted, churn metrics
-- **Bundle Size Analysis**: Comparison vs main branch with file-level details
-- **Formatting Issues**: List of files needing `npm run format`
-- **Lint Errors**: Grouped by file with rule IDs and locations
-- **Test Results**: Pass/fail counts with failed test details
-- **Coverage Report**: Line, statement, function, and branch coverage
+The plan always contains `format`, `lint`, `test-typescript`, `test-dotnet`, `test-python`, and `stats`. It selects their work and expensive
+setup; an unselected job still gets minimal Node/scripts bootstrap and emits an explicit planned-skip outcome. The gate requires all six
+records, including skips.
 
-### Local Development
+Affected mode checks changed supported existing files first. Tests select owners and reverse graph consumers: a component change includes
+website tests. Renames retain both owners; deleted paths still affect tests but are not passed to path-based tools. CI scripts and root
+tooling are explicit suites. The planner reads shared inputs from the live `nx.json`, not a copied root list. Unknown
+diff/graph/shared-input evidence broadens scope with diagnostics. Manual dispatch exposes `scope: affected | full`, defaulting to
+`affected`.
 
-Run individual checks locally:
+These native commands run with valid Actions metadata:
 
-```bash
-# Format check
-npm run format
-
-# Lint check
-npm run lint
-
-# Unit tests
-npm run test:unit
+```powershell
+node --experimental-strip-types .github\scripts\src\hygiene\pipeline\preparePlan.ts --scope affected
+node --experimental-strip-types .github\scripts\src\hygiene\pipeline\runProvider.ts format --plan artifacts\hygiene\plan.json
+node --experimental-strip-types .github\scripts\src\hygiene\pipeline\runProjections.ts --plan artifacts\hygiene\plan.json
 ```
 
----
+Providers and the gate **require** `--plan`; there is no missing-plan fallback. Paths are workspace-relative in artifacts and
+current-directory-relative in CLI arguments. Applications creating local contexts explicitly use `mode: "local"`; local identity never
+publishes placeholder remote URLs.
 
-## Helpers
+Planning invokes only the fixed root `scripts/inspection/workspace-facts.worker.ts`. It reuses the existing Nx provider's isolation, bounded
+timeout, validation, temporary state, and cleanup. Reporting/gate jobs do not load Effect/Nx.
 
-The `helpers/` directory provides reusable utilities:
+## Evidence and failure semantics
 
-| Helper | Description |
-|--------|-------------|
-| `artifacts` | Upload/download GitHub Actions artifacts |
-| `cache` | Cache management with key generation |
-| `comments` | Fluent builder for markdown PR comments |
-| `environment` | Type-safe environment variable access |
-| `filesystem` | File reading, globbing, JSON parsing |
-| `git` | Git operations (diff, fetch, file sizes) |
-| `github` | GitHub API client (issues, comments, PRs) |
-| `http` | HTTP client with retry logic |
-| `newman` | Parse Newman/Postman test results |
-| `playwright` | Parse Playwright test results |
-| `vitest` | Parse Vitest coverage reports |
+Provider envelopes use version `"1"` and bind provider, commit, run, originating attempt, and plan. Execution status, evidence completeness,
+and gate result are separate. Runner errors do not fabricate failed tests. Nonzero process exits cannot pass merely because partial
+assertions passed.
 
-### Usage Example
+Outcome downloads retain artifact directories. Loading validates envelopes, payloads, findings, policy, and required identities before
+aggregation. Same-run/commit/plan earlier-attempt records may be reused; the newest compatible attempt wins. Future, duplicate,
+incompatible, malformed, and missing records remain explicit errors, not silently filtered successes. A known-empty diff passes only after
+six explicit skips.
 
-```typescript
-import { env, git, createGitHubHelper } from '../helpers/index.ts';
+The aggregate remains report version `"3"`, with additive plan/provenance/issues. `artifacts/hygiene/hygiene-report.json` is required
+publication. PR comments, step summaries, and existing `hygiene/<provider>` checks are independent: synchronous or asynchronous notification
+failure cannot starve required JSON. Created check IDs remain available; deferred annotations are not enabled. Only entrypoints map final
+action/exit status after awaited persistence.
 
-// Get environment variables
-const token = env.getRequired('GITHUB_TOKEN');
-const headRef = env.get('HEAD_REF', 'HEAD');
+TypeScript suites run sequentially with their own processes and JSON report files; JSON-only hygiene runs disable coverage. Root tooling
+uses `scripts/vitest.config.ts` with bounded fork workers. Typed ESLint projects remain sequential, retaining the existing heap budget and
+supplied Node options.
 
-// Git operations
-const changedFiles = await git.getChangedFiles('origin/main', headRef);
-const diffStats = await git.getDiffStats('origin/main', headRef);
+## Live and unit reporting
 
-// GitHub API
-const gh = createGitHubHelper(token);
-await gh.upsertComment(prNumber, commentBody, uniqueId);
+Live reporting separates configuration, single-index/bounded evidence reads, execution reduction, pure rendering, and required failure-issue
+publication. An explicit failure/cancellation/skip cannot become success because assertions passed. Existing UTC-date deduplication, labels,
+assignee, template fallback, compact mode, and character overrides remain. Evidence ceilings are 64 MiB JSON and 4 MiB logs; presentation
+redaction precedes new truncation. Root Newman execution still owns its auth transport, artifact sanitization, and cleanup.
+
+Unit reporting retains coverage, Playwright, branch comparison, PR discovery, and timestamp sections through explicit dependencies/context.
+Missing optional reports differ from malformed data; a missing browser report explicitly labels job-status inference instead of claiming
+parsed assertions passed. API lookup failures are not "no PR".
+
+## Verification
+
+From the repository root:
+
+```powershell
+npm --prefix .github\scripts test -- --reporter=dot
+npm --prefix .github\scripts run typecheck
+npm --prefix .github\scripts run test:coverage -- --reporter=dot
+npx --no-install vitest run --config scripts\vitest.config.ts --coverage.enabled=false --pool=forks --maxWorkers=4 scripts\ci-scripts-architecture.test.ts scripts\architecture.test.ts scripts\inspection\workspace-facts.worker.test.ts scripts\inspection\workspace.test.ts
 ```
 
----
+Coverage includes helpers and `lib`, excluding tests/fixtures. Coverage requires a compatible already-installed provider; do not silently
+fetch one. Root lint currently defines Node profiles for root tooling, not this isolated CI package; an ignored/unconfigured-file warning is
+not proof of linting.
 
-## Development
-
-### Prerequisites
-
-```bash
-cd .github/scripts
-npm install
-```
-
-### Type Checking
-
-```bash
-npx tsc --noEmit
-```
-
-### Testing
-
-```bash
-npm test
-```
-
-### Adding a New Script
-
-1. Create module in `src/` directory
-2. Add types to `types/` if needed
-3. Use helpers from `helpers/` for common operations
-4. Export default function for workflow consumption
-5. Update workflow YAML to call the new script
+Tests use real files, local temporary Git repositories, serialized fixtures, native SDK clients, and external boundary doubles. Native smoke
+tests deny Effect/Nx resolution and workflow effects during imported-entrypoint checks. No routine test invokes live GitHub writes, OIDC,
+attestation, or workflow dispatch.

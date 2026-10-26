@@ -354,9 +354,10 @@ type PartialMetadata = Readonly<
  * - `locale` determines OpenGraph locale and alternate locale mapping
  *
  * **Locale Mapping**:
- * - `en` → `en_US` (OpenGraph locale)
- * - `ro` → `ro_RO` (OpenGraph locale)
- * - Unknown locales default to `en_US`
+ * - The supplied locale is assigned to `openGraph.locale`.
+ * - `en` maps to `en_US` in `openGraph.alternateLocale`.
+ * - `ro` maps to `ro_RO` in `openGraph.alternateLocale`.
+ * - Unmapped locales currently fall back to `en_US` for `alternateLocale`.
  *
  * **Type Safety**: Returns readonly metadata to prevent accidental mutations.
  *
@@ -378,12 +379,14 @@ type PartialMetadata = Readonly<
  *
  * @example
  * ```typescript
- * // Dynamic metadata generation
- * export async function generateMetadata({ params }): Promise<Metadata> {
- *   const invoice = await fetchInvoice(params.id);
+ * // Localized metadata generation
+ * export async function generateMetadata(): Promise<Metadata> {
+ *   const t = await getTranslations();
+ *   const locale = await getLocale();
  *   return createMetadata({
- *     title: `Invoice ${invoice.name}`,
- *     description: `Invoice details for ${invoice.merchantName}`,
+ *     locale,
+ *     title: t((messages) => messages.pages.invoices.viewInvoice.metadata.title),
+ *     description: t((messages) => messages.pages.invoices.viewInvoice.metadata.description),
  *   });
  * }
  * ```

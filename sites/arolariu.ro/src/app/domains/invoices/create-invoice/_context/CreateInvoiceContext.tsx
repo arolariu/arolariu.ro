@@ -9,16 +9,29 @@
  * - Step navigation and validation
  * - Scan selection state
  * - Invoice details form state
- * - Invoice creation orchestration
+ * - Invoice creation orchestration with partial-failure recovery
+ *
+ * **Orchestration sequence (RFC contract):**
+ * 1. Create minimal invoice (initialScan + required metadata only)
+ * 2. PATCH name, description, paymentInformation, classificationCode
+ * 3. Attach remaining scans
+ * 4. Fire-and-forget analysis (invoiceClassification disabled when manual classification applied)
+ * 5. Navigate to invoice view
+ *
+ * **Partial-failure recovery:**
+ * If PATCH or an additional scan attachment fails after a successful create, the
+ * invoice id and remaining scans are preserved. A retry detects that state, skips
+ * creation, and retries only the work that did not complete.
  */
 
 import {useScansStore} from "@/stores";
-import {InvoiceAnalysisOptions, InvoiceCategory, PaymentType} from "@/types/invoices";
+import {PaymentType, type ClassificationSelection} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
-import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
+import {analyzeInvoice, attachScanToInvoice, createInvoice, patchInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
 import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
@@ -28,11 +41,79 @@ import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 type WizardStep = "select-scans" | "details" | "review";
 
 /**
+ * Discriminated union modelling every outcome of `createInvoiceWithScans`.
+ *
+ * @remarks
+ * - `"created"` — all steps succeeded; `invoiceIdentifier` is the persisted id.
+ * - `"partial"` — the invoice was created but a later step failed; the id is
+ *   preserved so a retry can skip the create step and reuse the existing record.
+ */
+export type CreateInvoiceOutcome =
+  | {readonly status: "created"; readonly invoiceIdentifier: string}
+  | {
+      readonly status: "partial";
+      readonly invoiceIdentifier: string;
+      readonly failedStep: "patch" | "scans" | "analysis";
+      readonly message: string;
+    };
+
+type AttachAdditionalScansOutcome =
+  {readonly status: "attached"} | {readonly status: "failed"; readonly failedScanIndex: number; readonly message: string};
+
+/**
+ * Attaches additional scans sequentially and identifies the first unfinished scan.
+ *
+ * @remarks
+ * Sequential attachment is intentional: when a request fails, callers retain the
+ * failed scan and every unattempted scan for an exact retry without duplicating
+ * attachments that already succeeded.
+ *
+ * @param invoiceId - Persisted invoice identifier receiving the scans.
+ * @param scans - Additional scans in attachment order.
+ * @param fallbackMessage - Localized message used for untyped failures.
+ * @returns Whether every scan attached, or the index and message of the first failure.
+ */
+async function attachAdditionalScans(
+  invoiceId: string,
+  scans: readonly CachedScan[],
+  fallbackMessage: string,
+): Promise<AttachAdditionalScansOutcome> {
+  for (const [scanIndex, scan] of scans.entries()) {
+    try {
+      const additionalScanType = scanTypeToInvoiceScanType(scan.scanType);
+      const attachResult = await attachScanToInvoice({
+        invoiceId,
+        payload: {
+          type: additionalScanType,
+          location: scan.blobUrl,
+          additionalMetadata: {},
+        },
+      });
+
+      if (!attachResult.success) {
+        return {
+          status: "failed",
+          failedScanIndex: scanIndex,
+          message: attachResult.error?.message ?? fallbackMessage,
+        };
+      }
+    } catch (attachError: unknown) {
+      return {
+        status: "failed",
+        failedScanIndex: scanIndex,
+        message: attachError instanceof Error ? attachError.message : fallbackMessage,
+      };
+    }
+  }
+
+  return {status: "attached"};
+}
+
+/**
  * Invoice details form data.
  */
 interface InvoiceDetails {
   name: string;
-  category: InvoiceCategory;
   paymentType: PaymentType;
   transactionDate: Date;
   description: string;
@@ -59,13 +140,17 @@ interface CreateInvoiceContextValue {
   // Invoice details
   invoiceDetails: InvoiceDetails;
   setName: (name: string) => void;
-  setCategory: (category: InvoiceCategory) => void;
   setPaymentType: (type: PaymentType) => void;
   setTransactionDate: (date: Date) => void;
   setDescription: (desc: string) => void;
 
+  // Classification (replaces legacy category)
+  classificationSelection: ClassificationSelection | null;
+  setClassification: (selection: ClassificationSelection | null) => void;
+
   // Invoice creation
   isCreating: boolean;
+  partialOutcome: CreateInvoiceOutcome | null;
   createInvoiceWithScans: () => Promise<void>;
 }
 
@@ -89,6 +174,7 @@ interface CreateInvoiceProviderProps {
  */
 export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProviderProps>): React.JSX.Element {
   const router = useRouter();
+  const t = useTranslations();
   const {scans, markScansAsUsedByInvoice} = useScansStore();
 
   // Filter to only READY scans
@@ -99,10 +185,17 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [selectedScans, setSelectedScans] = useState<CachedScan[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Classification selection
+  const [classificationSelection, setClassificationSelection] = useState<ClassificationSelection | null>(null);
+
+  // Partial-failure recovery state
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+  const [pendingAdditionalScans, setPendingAdditionalScans] = useState<readonly CachedScan[] | null>(null);
+  const [partialOutcome, setPartialOutcome] = useState<CreateInvoiceOutcome | null>(null);
+
   // Invoice details state
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
     name: "",
-    category: InvoiceCategory.NOT_DEFINED,
     paymentType: PaymentType.Unknown,
     transactionDate: new Date(),
     description: "",
@@ -167,10 +260,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, name}));
   }, []);
 
-  const setCategory = useCallback((category: InvoiceCategory) => {
-    setInvoiceDetails((prev) => ({...prev, category}));
-  }, []);
-
   const setPaymentType = useCallback((paymentType: PaymentType) => {
     setInvoiceDetails((prev) => ({...prev, paymentType}));
   }, []);
@@ -183,50 +272,105 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, description}));
   }, []);
 
-  // Create invoice orchestration
+  const setClassification = useCallback((selection: ClassificationSelection | null) => {
+    setClassificationSelection(selection);
+  }, []);
+
+  // Invoice creation orchestration
   const createInvoiceWithScans = useCallback(async () => {
     setIsCreating(true);
     try {
-      // Use first scan as initial scan for invoice creation
       const [firstScan] = selectedScans;
       if (!firstScan) {
-        throw new Error("No scans selected");
+        throw new Error(t((m) => m.forms.invoices.createInvoice.errors.noScansSelected));
       }
 
-      // Derive the invoice scan type through the centralized MIME utility.
       const scanType = scanTypeToInvoiceScanType(firstScan.scanType);
 
-      // Create invoice with first scan and ALL invoice details in metadata
-      // Note: All form fields (name, category, paymentType, transactionDate, description)
-      // are included in metadata. Backend should extract these to populate top-level Invoice fields.
-      const {
-        success,
-        data: invoice,
-        error,
-      } = await createInvoice({
-        initialScan: {
-          scanType,
-          location: firstScan.blobUrl,
-          metadata: {},
-        },
-        metadata: {
-          isImportant: "false",
-          requiresAnalysis: "true",
+      // ── Step 1: Create minimal invoice ───────────────────────────────────
+      // Skip creation when a prior partial-failure preserved an invoice id.
+      let invoiceId = pendingInvoiceId;
+      if (invoiceId === null) {
+        const {
+          success,
+          data: invoice,
+          error,
+        } = await createInvoice({
+          initialScan: {
+            type: scanType,
+            location: firstScan.blobUrl,
+            metadata: {},
+          },
+          // Metadata carries ONLY housekeeping flags — form data is NOT smuggled here
+          additionalMetadata: {
+            isImportant: "false",
+            requiresAnalysis: "true",
+          },
+        });
+
+        if (!success || !invoice) {
+          throw new Error(error?.message ?? t((m) => m.forms.invoices.createInvoice.errors.createFailed));
+        }
+        invoiceId = invoice.id;
+        // Preserve the id so a later retry can skip this step
+        setPendingInvoiceId(invoiceId);
+      }
+
+      // ── Step 2: PATCH wizard details ─────────────────────────────────────
+      const patchResult = await patchInvoice({
+        invoiceId,
+        payload: {
           name: invoiceDetails.name,
-          category: invoiceDetails.category.toString(),
-          paymentType: invoiceDetails.paymentType.toString(),
-          transactionDate: invoiceDetails.transactionDate.toISOString(),
-          description: invoiceDetails.description,
+          description: invoiceDetails.description.length > 0 ? invoiceDetails.description : undefined,
+          paymentInformation: {
+            transactionDate: invoiceDetails.transactionDate,
+            paymentType: invoiceDetails.paymentType,
+            // Remaining monetary fields default to zero; AI analysis will populate them
+            currency: {code: "", symbol: "", name: ""},
+            totalCostAmount: 0,
+            totalTaxAmount: 0,
+            subtotalAmount: 0,
+            tipAmount: 0,
+          },
+          ...(classificationSelection !== null ? {classificationCode: classificationSelection.code} : {}),
         },
       });
 
-      if (!success || !invoice) {
-        throw new Error(error?.message ?? "Invoice creation failed");
+      if (!patchResult.success) {
+        const message = patchResult.error?.message ?? t((m) => m.forms.invoices.createInvoice.errors.patchFailed);
+        setPartialOutcome({status: "partial", invoiceIdentifier: invoiceId, failedStep: "patch", message});
+        toast.error(t((m) => m.forms.invoices.createInvoice.toasts.patchFailed));
+        return;
       }
 
-      // Mark scans as used in local store (immediate UI update)
-      const scanIds = selectedScans.map((s) => s.id);
-      markScansAsUsedByInvoice(scanIds, invoice.id);
+      // Patch succeeded — clear any previous partial outcome
+      setPartialOutcome(null);
+
+      // ── Step 3: Attach additional scans, preserving only unfinished work ──
+      const additionalScans = pendingAdditionalScans ?? selectedScans.slice(1);
+      const attachOutcome = await attachAdditionalScans(
+        invoiceId,
+        additionalScans,
+        t((m) => m.forms.invoices.createInvoice.errors.scanAttachFailed),
+      );
+      if (attachOutcome.status === "failed") {
+        setPendingInvoiceId(invoiceId);
+        setPendingAdditionalScans(additionalScans.slice(attachOutcome.failedScanIndex));
+        setPartialOutcome({
+          status: "partial",
+          invoiceIdentifier: invoiceId,
+          failedStep: "scans",
+          message: attachOutcome.message,
+        });
+        toast.error(t((m) => m.forms.invoices.createInvoice.toasts.scanAttachFailed));
+        return;
+      }
+
+      setPendingAdditionalScans(null);
+      setPendingInvoiceId(null);
+
+      const scanIds = selectedScans.map((scan) => scan.id);
+      markScansAsUsedByInvoice(scanIds, invoiceId);
 
       // Persist attachment metadata to blob storage (fire-and-forget)
       for (const scan of selectedScans) {
@@ -235,8 +379,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
           metadataAdd: {
             status: ScanMetadataStatus.ATTACHED,
             attachedAt: new Date(),
-            attachedBy: invoice.userIdentifier,
-            attachedTo: invoice.id,
+            attachedBy: scan.userIdentifier,
+            attachedTo: invoiceId,
           },
           metadataRemove: [
             ScanMetadataKey.DETACHED_AT,
@@ -245,27 +389,42 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
             ScanMetadataKey.ARCHIVED_AT,
             ScanMetadataKey.ARCHIVED_BY,
           ],
-        }).catch((error) => {
-          console.warn("Failed to persist scan attachment metadata (non-critical):", error);
+        }).catch((metaError: unknown) => {
+          console.warn("Failed to persist scan attachment metadata (non-critical):", metaError);
         });
       }
 
-      toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
-
-      // Navigate to view invoice page — user can trigger analysis from there
-      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
-
-      // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
-        console.error("Background invoice analysis failed:", error);
+      // ── Step 4: Fire-and-forget analysis ─────────────────────────────────
+      // D4: When a manual classification was applied, disable invoiceClassification
+      // to prevent the analysis pipeline from overwriting the user's explicit choice.
+      analyzeInvoice({
+        invoiceIdentifier: invoiceId,
+        profile: "comprehensive",
+        ...(classificationSelection !== null ? {overrides: {invoiceClassification: false}} : {}),
+      }).catch((analysisError: unknown) => {
+        console.error("Background invoice analysis failed (non-critical):", analysisError);
       });
-    } catch (error) {
+
+      toast.success(t((m) => m.forms.invoices.createInvoice.toasts.created));
+
+      // ── Step 5: Navigate ──────────────────────────────────────────────────
+      router.push(`/domains/invoices/view-invoice/${invoiceId}`);
+    } catch (error: unknown) {
       console.error("Error creating invoice:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");
+      toast.error(error instanceof Error ? error.message : t((m) => m.forms.invoices.createInvoice.errors.createFailed));
     } finally {
       setIsCreating(false);
     }
-  }, [selectedScans, invoiceDetails, markScansAsUsedByInvoice, router]);
+  }, [
+    selectedScans,
+    invoiceDetails,
+    classificationSelection,
+    pendingInvoiceId,
+    pendingAdditionalScans,
+    markScansAsUsedByInvoice,
+    router,
+    t,
+  ]);
 
   const contextValue: CreateInvoiceContextValue = useMemo(
     () => ({
@@ -281,11 +440,13 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       hasScans: readyScans.length > 0,
       invoiceDetails,
       setName,
-      setCategory,
       setPaymentType,
       setTransactionDate,
       setDescription,
+      classificationSelection,
+      setClassification,
       isCreating,
+      partialOutcome,
       createInvoiceWithScans,
     }),
     [
@@ -301,11 +462,13 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       readyScans.length,
       invoiceDetails,
       setName,
-      setCategory,
       setPaymentType,
       setTransactionDate,
       setDescription,
+      classificationSelection,
+      setClassification,
       isCreating,
+      partialOutcome,
       createInvoiceWithScans,
     ],
   );
@@ -326,3 +489,6 @@ export function useCreateInvoiceContext(): CreateInvoiceContextValue {
   }
   return context;
 }
+
+// Re-export ClassificationSystem for use in child components without deep imports
+export {ClassificationSystem} from "@/types/invoices";

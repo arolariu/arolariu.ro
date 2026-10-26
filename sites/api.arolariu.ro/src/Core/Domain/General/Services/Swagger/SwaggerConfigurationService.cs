@@ -76,7 +76,8 @@ internal static class SwaggerConfigurationService
   /// - Shows OpenAPI extensions and common extensions
   /// </para>
   /// </remarks>
-  internal static SwaggerUIOptions GetSwaggerUIOptions()
+  internal static SwaggerUIOptions GetSwaggerUIOptions(
+    LocalDevelopmentSwaggerOptions? localDevelopment = null)
   {
     var options = new SwaggerUIOptions()
     {
@@ -106,6 +107,11 @@ internal static class SwaggerConfigurationService
     // OpenAPI spec endpoints:
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Public API (Swagger OpenAPI 3.0)");
     options.SwaggerEndpoint("/openapi/v1.json", "Public API (MS OpenAPI 3.0)");
+
+    if (localDevelopment is { Enabled: true })
+    {
+      options.InjectJavascript("/swagger/local-development-personas.js");
+    }
 
     return options;
   }

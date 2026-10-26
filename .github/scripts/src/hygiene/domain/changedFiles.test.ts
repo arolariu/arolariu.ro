@@ -1,8 +1,12 @@
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
 import {describe, expect, it} from "vitest";
 import {
   classifyChangedFiles,
   filesForEslint,
   filesForPrettier,
+  filterExistingFiles,
   normalizeChangedFile,
   shouldRunBroadly,
   suitesForTypeScriptChanges,
@@ -46,7 +50,15 @@ describe("classifyChangedFiles", () => {
   });
 
   it("marks root shared config as broad impact", () => {
-    const c = classifyChangedFiles(["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"]);
+    const c = classifyChangedFiles(
+      ["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"],
+      [
+        "{workspaceRoot}/package-lock.json",
+        "{workspaceRoot}/eslint.config.ts",
+        "{workspaceRoot}/vitest.config.ts",
+        "{workspaceRoot}/nx.json",
+      ],
+    );
     expect(c.hasRootSharedChange).toBe(true);
     expect(c.hasJavaScriptSharedChange).toBe(true);
   });
@@ -58,9 +70,9 @@ describe("classifyChangedFiles", () => {
 });
 
 describe("scope helpers", () => {
-  it("runs broadly for unknown scope and root shared changes", () => {
+  it("consumes broad scope resolved by the plan rather than a competing copied root list", () => {
     expect(shouldRunBroadly(unknown())).toBe(true);
-    expect(shouldRunBroadly(known(["package.json"]))).toBe(true);
+    expect(shouldRunBroadly(known(["package.json"]))).toBe(false);
   });
 
   it("does not run broadly for isolated project changes", () => {
@@ -76,6 +88,18 @@ describe("scope helpers", () => {
 });
 
 describe("file filters", () => {
+  it("retains only files that still exist for path-based tools", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "changed-files-test-"));
+    try {
+      await fs.mkdir(path.join(workspaceRoot, "src"), {recursive: true});
+      await fs.writeFile(path.join(workspaceRoot, "src", "existing.ts"), "export {};\n");
+
+      await expect(filterExistingFiles(workspaceRoot, ["src/existing.ts", "src/deleted.ts"])).resolves.toEqual(["src/existing.ts"]);
+    } finally {
+      await fs.rm(workspaceRoot, {recursive: true, force: true});
+    }
+  });
+
   it("filters Prettier-supported changed files", () => {
     expect(filesForPrettier(known(["src/a.ts", "image.png", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"]))).toEqual([
       "src/a.ts",
@@ -92,9 +116,15 @@ describe("file filters", () => {
     ]);
   });
 
+  it("keeps ESLint scoped when Prettier configuration changes", () => {
+    expect(filesForEslint(known([".prettierrc", ".prettierignore", "scripts/commands/generate/artifacts.ts"]))).toEqual([
+      "scripts/commands/generate/artifacts.ts",
+    ]);
+  });
+
   it("returns null filters for unknown or broad scope", () => {
     expect(filesForPrettier(unknown())).toBeNull();
-    expect(filesForEslint(known(["package.json"]))).toBeNull();
+    expect(filesForEslint(unknown())).toBeNull();
   });
 });
 
@@ -112,7 +142,7 @@ describe("suitesForTypeScriptChanges", () => {
 
   it("returns null for broad TypeScript scope", () => {
     expect(suitesForTypeScriptChanges(unknown())).toBeNull();
-    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toBeNull();
+    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toEqual([]);
   });
 });
 
@@ -125,6 +155,6 @@ describe("touchedBundleFolders", () => {
 
   it("returns null for unknown or broad scope", () => {
     expect(touchedBundleFolders(unknown(), bundleFolders)).toBeNull();
-    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toBeNull();
+    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toEqual([]);
   });
 });

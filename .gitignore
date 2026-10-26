@@ -55,6 +55,10 @@ docs/superpowers/
 .impeccable/
 .worktrees/
 
+# --- Local tooling preferences and setup fingerprints ---
+/.arolariu/tooling.local.json
+/.arolariu/tooling.local.json.*.tmp
+
 # --- Windows shell artifacts ---
 nul
 

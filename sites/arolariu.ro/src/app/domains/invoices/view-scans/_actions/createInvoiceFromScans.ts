@@ -22,7 +22,8 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
+import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
+import {parseInvoiceCreationResponse} from "@/types/invoices/transport";
 import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
@@ -63,7 +64,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
   const payload: CreateInvoiceDtoPayload = {
     userIdentifier,
     initialScan: {
-      scanType: scanTypeToInvoiceScanType(scan.scanType),
+      type: scanTypeToInvoiceScanType(scan.scanType),
       location: scan.blobUrl,
       metadata: {
         sourceScanId: scan.metadata.scanId,
@@ -73,7 +74,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
         uploadedAt: scan.metadata.uploadedAt.toISOString(),
       },
     },
-    metadata: {
+    additionalMetadata: {
       isImportant: "false",
       requiresAnalysis: "true",
       sourceScanId: scan.id,
@@ -94,7 +95,8 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     throw new Error(`Failed to create invoice: ${response.status} - ${errorText}`);
   }
 
-  return response.json() as Promise<Invoice>;
+  const responseBody: unknown = await response.json();
+  return parseInvoiceCreationResponse(responseBody);
 }
 
 /** Result type for invoice creation operations */
@@ -148,7 +150,7 @@ async function processSingleScan(
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
     // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({invoiceIdentifier: invoice.id, profile: "comprehensive"}).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
     return {success: true, invoice};
@@ -299,7 +301,7 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     }
 
     // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({invoiceIdentifier: invoice.id, profile: "comprehensive"}).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
 

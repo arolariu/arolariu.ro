@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Tests.Builders;
@@ -25,7 +24,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceOrchestrationServiceExceptionsTests
 {
-  private readonly Mock<IInvoiceAnalysisFoundationService> mockAnalysisService;
   private readonly Mock<IInvoiceStorageFoundationService> mockStorageService;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceOrchestrationService>> mockLogger;
@@ -36,7 +34,6 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
   /// </summary>
   public InvoiceOrchestrationServiceExceptionsTests()
   {
-    mockAnalysisService = new Mock<IInvoiceAnalysisFoundationService>();
     mockStorageService = new Mock<IInvoiceStorageFoundationService>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceOrchestrationService>>();
@@ -46,7 +43,6 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Returns(mockLogger.Object);
 
     orchestrationService = new InvoiceOrchestrationService(
-      mockAnalysisService.Object,
       mockStorageService.Object,
       mockLoggerFactory.Object);
   }

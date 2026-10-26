@@ -47,7 +47,7 @@ type HookOutputType = Readonly<{
  * - Store is not updated on failure (optimistic update not used)
  * - Deletion failures do not trigger `onComplete` callback
  *
- * @param scan - The standalone scan to delete.
+ * @param scan - The standalone scan to delete, or `null` while its dialog is closed.
  * @returns Hook state with deletion progress and the delete callback.
  *
  * @example
@@ -63,12 +63,16 @@ type HookOutputType = Readonly<{
  * );
  * ```
  */
-export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
+export function useScanDelete(scan: CachedScan | null): Readonly<HookOutputType> {
   const removeScanClientSide = useScansStore((state) => state.removeScan);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const t = useTranslations();
 
   const deleteScanCallback = useCallback(async (): Promise<void> => {
+    if (scan === null) {
+      throw new Error("Cannot delete a scan before the dialog payload is available.");
+    }
+
     setIsDeleting(true);
     try {
       const result = await removeScanServerSide({scanId: scan.id});
@@ -84,7 +88,7 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
     } finally {
       setIsDeleting(false);
     }
-  }, [scan.id, removeScanClientSide, t]);
+  }, [scan, removeScanClientSide, t]);
 
   return {isDeleting, deleteScanCallback} as const;
 }

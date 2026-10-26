@@ -36,6 +36,9 @@
  */
 
 import type {IFileSystemHelper} from "../filesystem/index.ts";
+import {MarkdownUtils} from "../comments/index.ts";
+import {redactEvidenceText} from "../reports/redact.ts";
+import {array, count, finite, MAX_REPORT_BYTES, record, text} from "../reports/validation.ts";
 
 /**
  * Test status types in Playwright
@@ -120,6 +123,8 @@ export interface ParsedTestResults {
   readonly flaky: readonly TestCase[];
   /** Categorized failures */
   readonly categories: PlaywrightFailureCategories;
+  /** Global setup/teardown/runner errors, separate from assertion failure counts. */
+  readonly errors?: readonly TestError[];
 }
 
 /**
@@ -143,34 +148,138 @@ export interface PlaywrightMarkdownOptions {
 /**
  * Raw Playwright JSON test result structure (simplified)
  */
+interface PlaywrightResult {
+  readonly status?: TestStatus;
+  readonly duration?: number;
+  readonly error?: TestError;
+  readonly retry?: number;
+}
+interface PlaywrightTest {
+  readonly status?: string;
+  readonly expectedStatus?: string;
+  readonly projectName?: string;
+  readonly results?: readonly PlaywrightResult[];
+}
+interface PlaywrightSpec {
+  readonly title?: string;
+  readonly file?: string;
+  readonly tests?: readonly PlaywrightTest[];
+}
+interface PlaywrightSuite {
+  readonly title?: string;
+  readonly file?: string;
+  readonly specs?: readonly PlaywrightSpec[];
+  readonly suites?: readonly PlaywrightSuite[];
+}
 interface PlaywrightJSONReport {
-  readonly suites?: Array<{
-    readonly title?: string;
-    readonly file?: string;
-    readonly specs?: Array<{
-      readonly title?: string;
-      readonly file?: string;
-      readonly tests?: Array<{
-        readonly status?: string;
-        readonly duration?: number;
-        readonly results?: Array<{
-          readonly status?: string;
-          readonly duration?: number;
-          readonly error?: {
-            readonly message?: string;
-            readonly stack?: string;
-          };
-          readonly retry?: number;
-        }>;
-      }>;
-    }>;
-  }>;
+  readonly suites?: readonly PlaywrightSuite[];
+  readonly errors?: readonly TestError[];
   readonly stats?: {
     readonly expected?: number;
     readonly unexpected?: number;
     readonly flaky?: number;
     readonly skipped?: number;
     readonly duration?: number;
+  };
+}
+
+function optionalText(value: Record<string, unknown>, field: string): string | undefined {
+  return value[field] === undefined ? undefined : text(value[field], `Playwright ${field}`);
+}
+
+function decodeError(value: unknown): TestError {
+  const raw = record(value, "Playwright error");
+  const stack = optionalText(raw, "stack");
+  const snippet = optionalText(raw, "snippet");
+  return {
+    message: optionalText(raw, "message") ?? optionalText(raw, "value") ?? "Unknown error",
+    ...(stack === undefined ? {} : {stack}),
+    ...(snippet === undefined ? {} : {snippet}),
+  };
+}
+
+function decodeResult(value: unknown): PlaywrightResult {
+  const raw = record(value, "Playwright result");
+  const status = optionalText(raw, "status");
+  if (
+    status !== undefined
+    && status !== "passed"
+    && status !== "failed"
+    && status !== "skipped"
+    && status !== "timedOut"
+    && status !== "interrupted"
+    && status !== "flaky"
+  )
+    throw new TypeError("Invalid Playwright result status");
+  const errorValue = raw["error"] ?? (raw["errors"] === undefined ? undefined : array(raw["errors"], "Playwright errors")[0]);
+  const error = errorValue === undefined ? undefined : decodeError(errorValue);
+  return {
+    ...(status === undefined ? {} : {status}),
+    ...(raw["duration"] === undefined ? {} : {duration: finite(raw["duration"], "Playwright duration")}),
+    ...(raw["retry"] === undefined ? {} : {retry: count(raw["retry"], "Playwright retry")}),
+    ...(error === undefined ? {} : {error}),
+  };
+}
+
+function decodeSuite(value: unknown): PlaywrightSuite {
+  const raw = record(value, "Playwright suite");
+  const title = optionalText(raw, "title");
+  const file = optionalText(raw, "file");
+  return {
+    ...(title === undefined ? {} : {title}),
+    ...(file === undefined ? {} : {file}),
+    ...(raw["suites"] === undefined ? {} : {suites: array(raw["suites"], "Playwright suites").map(decodeSuite)}),
+    ...(raw["specs"] === undefined
+      ? {}
+      : {
+          specs: array(raw["specs"], "Playwright specs").map((value): PlaywrightSpec => {
+            const spec = record(value, "Playwright spec");
+            const title = optionalText(spec, "title");
+            const file = optionalText(spec, "file");
+            return {
+              ...(title === undefined ? {} : {title}),
+              ...(file === undefined ? {} : {file}),
+              ...(spec["tests"] === undefined
+                ? {}
+                : {
+                    tests: array(spec["tests"], "Playwright tests").map((value): PlaywrightTest => {
+                      const test = record(value, "Playwright test");
+                      const status = optionalText(test, "status");
+                      const expectedStatus = optionalText(test, "expectedStatus");
+                      const projectName = optionalText(test, "projectName");
+                      return {
+                        ...(status === undefined ? {} : {status}),
+                        ...(expectedStatus === undefined ? {} : {expectedStatus}),
+                        ...(projectName === undefined ? {} : {projectName}),
+                        ...(test["results"] === undefined ? {} : {results: array(test["results"], "Playwright results").map(decodeResult)}),
+                      };
+                    }),
+                  }),
+            };
+          }),
+        }),
+  };
+}
+
+function decodeReport(value: unknown): PlaywrightJSONReport {
+  const raw = record(value, "Playwright report");
+  if (raw["suites"] === undefined && raw["stats"] === undefined && raw["errors"] === undefined)
+    throw new TypeError("Invalid Playwright report: missing suites/stats/errors");
+  const stats = raw["stats"] === undefined ? undefined : record(raw["stats"], "Playwright stats");
+  return {
+    ...(raw["errors"] === undefined ? {} : {errors: array(raw["errors"], "Playwright global errors").map(decodeError)}),
+    ...(raw["suites"] === undefined ? {} : {suites: array(raw["suites"], "Playwright suites").map(decodeSuite)}),
+    ...(stats === undefined
+      ? {}
+      : {
+          stats: {
+            expected: count(stats["expected"] ?? 0, "Playwright expected"),
+            unexpected: count(stats["unexpected"] ?? 0, "Playwright unexpected"),
+            flaky: count(stats["flaky"] ?? 0, "Playwright flaky"),
+            skipped: count(stats["skipped"] ?? 0, "Playwright skipped"),
+            duration: finite(stats["duration"] ?? 0, "Playwright duration"),
+          },
+        }),
   };
 }
 
@@ -255,7 +364,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
       throw new Error(`Playwright results file not found: ${resultsJsonPath}`);
     }
 
-    const rawData = await fs.readJson<PlaywrightJSONReport>(resultsJsonPath);
+    const rawData = await fs.readValidatedJson(resultsJsonPath, decodeReport, MAX_REPORT_BYTES);
 
     // Extract test cases from nested structure
     const tests = this.extractTestCases(rawData);
@@ -264,7 +373,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
     const statistics = this.calculateStatistics(tests, rawData.stats);
 
     // Extract failures and flaky tests
-    const failures = tests.filter((test) => test.status === "failed" || test.status === "timedOut");
+    const failures = tests.filter((test) => test.status === "failed" || test.status === "timedOut" || test.status === "interrupted");
     const flaky = tests.filter((test) => test.status === "flaky");
 
     // Categorize failures
@@ -276,6 +385,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
       failures,
       flaky,
       categories,
+      errors: rawData.errors ?? [],
     };
   }
 
@@ -293,12 +403,20 @@ export class PlaywrightHelper implements IPlaywrightHelper {
     } = options;
 
     const {statistics} = results;
-    const emoji = this.getStatusEmoji(statistics);
+    const errors = results.errors ?? [];
+    const emoji = errors.length > 0 ? "❌" : this.getStatusEmoji(statistics);
 
     let section = `### ${emoji} ${title}\n\n`;
 
     // Add statistics table
     section += this.generateStatisticsTable(statistics, showDuration);
+    if (errors.length > 0) {
+      section += `\n#### ❌ Runner Errors\n\n${errors.length} global runner error(s); assertion counters are unchanged.\n\n`;
+      for (const error of errors.slice(0, maxFailuresToShow))
+        section += `${MarkdownUtils.fence(redactEvidenceText(error.message), "text")}\n\n`;
+      if (errors.length > maxFailuresToShow)
+        section += `_... and ${errors.length - maxFailuresToShow} more runner error(s); see artifacts._\n\n`;
+    }
 
     // Add failure details if requested
     if (includeFailureDetails && results.failures.length > 0) {
@@ -381,7 +499,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
     }
 
     for (const suite of rawData.suites) {
-      this.extractTestsFromSuite(suite, tests);
+      this.extractTestsFromSuite(suite, tests, [], "unknown");
     }
 
     return tests;
@@ -390,22 +508,17 @@ export class PlaywrightHelper implements IPlaywrightHelper {
   /**
    * Extracts test cases from a single suite (extracted for cognitive complexity)
    */
-  private extractTestsFromSuite(suite: any, tests: TestCase[]): void {
-    const file = suite.file ?? "unknown";
-
-    if (!suite.specs) {
-      return;
-    }
-
-    for (const spec of suite.specs) {
-      this.extractTestsFromSpec(spec, suite.title, file, tests);
-    }
+  private extractTestsFromSuite(suite: PlaywrightSuite, tests: TestCase[], parents: readonly string[], inheritedFile: string): void {
+    const file = suite.file ?? inheritedFile;
+    const titles = suite.title ? [...parents, suite.title] : parents;
+    for (const spec of suite.specs ?? []) this.extractTestsFromSpec(spec, titles.join(" › "), spec.file ?? file, tests);
+    for (const child of suite.suites ?? []) this.extractTestsFromSuite(child, tests, titles, file);
   }
 
   /**
    * Extracts test cases from a single spec (extracted for cognitive complexity)
    */
-  private extractTestsFromSpec(spec: any, suiteTitle: string | undefined, file: string, tests: TestCase[]): void {
+  private extractTestsFromSpec(spec: PlaywrightSpec, suiteTitle: string | undefined, file: string, tests: TestCase[]): void {
     const title = spec.title ?? "Untitled Test";
     const fullTitle = suiteTitle ? `${suiteTitle} › ${title}` : title;
 
@@ -424,7 +537,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
   /**
    * Creates a TestCase from Playwright test results (extracted for cognitive complexity)
    */
-  private createTestCaseFromResults(test: any, title: string, fullTitle: string, file: string): TestCase | null {
+  private createTestCaseFromResults(test: PlaywrightTest, title: string, fullTitle: string, file: string): TestCase | null {
     const results = test.results ?? [];
     const lastResult = results.at(-1);
 
@@ -436,11 +549,15 @@ export class PlaywrightHelper implements IPlaywrightHelper {
     const lastStatus = this.normalizeStatus(lastResult.status ?? "skipped");
 
     // Determine if test is flaky: has retries and last result passed
-    const hadFailures = results.slice(0, -1).some((r: any) => {
+    const hadFailures = results.slice(0, -1).some((r) => {
       const s = this.normalizeStatus(r.status ?? "failed");
-      return s === "failed" || s === "timedOut";
+      return s === "failed" || s === "timedOut" || s === "interrupted";
     });
-    const status = retries > 0 && hadFailures && lastStatus === "passed" ? "flaky" : lastStatus;
+    let status: TestStatus = retries > 0 && hadFailures && lastStatus === "passed" ? "flaky" : lastStatus;
+    if (test.status === "flaky") status = "flaky";
+    else if (test.status === "expected") status = lastStatus === "skipped" ? "skipped" : "passed";
+    else if (test.status === "unexpected") status = lastStatus === "timedOut" || lastStatus === "interrupted" ? lastStatus : "failed";
+    else if (test.expectedStatus === lastStatus && lastStatus === "failed") status = "passed";
     const duration = lastResult.duration ?? 0;
 
     return {
@@ -449,13 +566,9 @@ export class PlaywrightHelper implements IPlaywrightHelper {
       file,
       status,
       duration,
+      ...(test.projectName === undefined ? {} : {project: test.projectName}),
       retries: retries > 0 ? retries : undefined,
-      error: lastResult.error
-        ? {
-            message: lastResult.error.message ?? "Unknown error",
-            stack: lastResult.error.stack,
-          }
-        : undefined,
+      error: lastResult.error,
     };
   }
 
@@ -499,7 +612,7 @@ export class PlaywrightHelper implements IPlaywrightHelper {
 
     // Calculate from test cases
     const passed = tests.filter((t) => t.status === "passed").length;
-    const failed = tests.filter((t) => t.status === "failed" || t.status === "timedOut").length;
+    const failed = tests.filter((t) => t.status === "failed" || t.status === "timedOut" || t.status === "interrupted").length;
     const skipped = tests.filter((t) => t.status === "skipped").length;
     const flaky = tests.filter((t) => t.status === "flaky").length;
     const duration = tests.reduce((sum, test) => sum + test.duration, 0);

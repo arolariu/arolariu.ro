@@ -28,7 +28,6 @@ _FULL_WEBSITE_CONFIG: dict[str, str] = {
     "Site:Environment": "Development",
     "Site:Name": "dev.arolariu.ro",
     "Site:Url": "http://localhost:3000",
-    "Site:UseCdn": "false",
 }
 
 _EMPTY_CONFIG: dict[str, str] = {}

@@ -122,20 +122,16 @@ export const SingleMerchant: Story = {
 export const GroceryMerchantsOnly: Story = {
   args: {
     data: computeMerchantTrends(
-      mockInvoices.filter((inv) => inv.category === 100), // GROCERY enum value
+      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("01")),
     ),
     currency: "lei",
   },
 };
 
-/**
- * Fast food merchants.
- * Shows trends for fast food establishments.
- */
 export const FastFoodMerchants: Story = {
   args: {
     data: computeMerchantTrends(
-      mockInvoices.filter((inv) => inv.category === 200), // FAST_FOOD enum value
+      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("11")),
     ),
     currency: "lei",
   },

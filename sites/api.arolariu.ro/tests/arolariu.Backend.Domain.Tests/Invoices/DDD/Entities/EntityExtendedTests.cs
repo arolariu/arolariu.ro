@@ -445,6 +445,9 @@ public sealed class EntityExtendedTests
   [DataRow(ScanType.PDF)]
   [DataRow(ScanType.OTHER)]
   [DataRow(ScanType.UNKNOWN)]
+  [DataRow(ScanType.BMP)]
+  [DataRow(ScanType.TIFF)]
+  [DataRow(ScanType.HEIF)]
   public void InvoiceScan_AllScanTypes_AreSupported(ScanType type)
   {
     // Arrange & Act

@@ -1,11 +1,11 @@
 // =====================================================================================
-// Network Deployment Orchestrator - CDN, WAF, and DNS Infrastructure
+// Network Deployment Orchestrator - Front Door, WAF, and DNS Infrastructure
 // =====================================================================================
 // This orchestrator module deploys the networking infrastructure for the arolariu.ro
-// platform. It provides global content delivery, DDoS protection, and DNS management.
+// platform. It provides global edge routing, DDoS protection, and DNS management.
 //
 // Deployed Resources:
-// - Azure Front Door Standard (global CDN + WAF + load balancing)
+// - Azure Front Door Standard (global edge routing + WAF + load balancing)
 // - Azure DNS Zone (authoritative DNS for arolariu.ro domain)
 //
 // Architecture Pattern:
@@ -14,7 +14,6 @@
 // - SSL/TLS termination (managed certificates)
 // - Web Application Firewall (WAF) rules
 // - Origin health probes and failover
-// - CDN caching for static assets
 //
 // Deployment Order (dependencies):
 // 1. Azure Front Door (provisions edge endpoints)
@@ -34,7 +33,7 @@
 // See: sites/deploymentFile.bicep (origin hosts for Front Door)
 // =====================================================================================
 
-metadata description = 'Network orchestrator deploying Azure Front Door CDN and DNS Zone'
+metadata description = 'Network orchestrator deploying Azure Front Door and DNS Zone'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -80,13 +79,11 @@ module dnsZoneDeployment 'dnsZone.bicep' = {
     frontDoorProductionFqdn: azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
     frontDoorApexCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorApexToken
     frontDoorWwwCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorWwwToken
-    frontDoorCdnCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorCdnToken
   }
 }
 
 // Output the Front Door details for reference
 output frontDoorProductionFqdn string = azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
-output frontDoorCdnFqdn string = azureFrontDoorDeployment.outputs.frontDoorCdnFqdn
 output frontDoorProfileId string = azureFrontDoorDeployment.outputs.frontDoorProfileId
 
 // Output the DNS Zone name for reference

@@ -1,46 +1,170 @@
 /**
- * @fileoverview Engine-aware selfhost orchestration.
+ * @fileoverview Engine-aware selfhost orchestration program.
  * @module scripts/container-runtime/selfhost
+ *
+ * @remarks
+ * {@link runSelfhost} resolves the container engine, runs the shared preflight, and drives the
+ * local compose stacks through the Effect `Process` service from `infra/Local`, echoing each command
+ * as `$ <command>` with tee output. The start action generates the taxonomy and license artifacts
+ * with {@link generateArtifacts} (silently), reads the SQL password as a `Redacted` value, makes
+ * sure the localhost certificates exist, writes the Traefik file-provider config, and bootstraps
+ * SQL Server, Cosmos, Azurite, and the .NET storage provisioner once the storage stack has
+ * settled, retrying the SQL and Cosmos steps for a bounded time while their services still start.
+ * Waits are `Effect.sleep`, so tests drive them with the test clock, and cancellation is fiber
+ * interruption, which stops the current step immediately.
+ *
+ * Started stacks and the generated Traefik file are requested persistent state: neither is cleaned
+ * up when a later step fails or the invocation is interrupted, a partially completed start leaves
+ * everything it already started running, and only the explicit `stop` action removes the generated
+ * Traefik file.
  */
 
-import {BlobServiceClient} from "@azure/storage-blob";
-import {access, mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
-import {setTimeout as delay} from "node:timers/promises";
-import {fileURLToPath} from "node:url";
-import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
-import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
-import {ContainerRuntimeError, exitWithError} from "./types.ts";
+import {join} from "node:path";
+
+import {Duration, Effect, FileSystem, Redacted, Result, type PlatformError} from "effect";
+
+import {generateArtifacts} from "../commands/generate/artifacts.ts";
+import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
+import {silently} from "../commands/generate/index.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
+import {Environment} from "../platform/Environment.ts";
+import type {ReadOnlyFiles} from "../platform/Files.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import {Presenter} from "../platform/Output.ts";
+import {formatProcessRequest, Process, type ProcessError} from "../platform/Process.ts";
+import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import {azuriteDevelopmentConnectionString, ensureAzurite, ensureCosmos, type LocalBlobStorage} from "./selfhost.bootstrap.ts";
+import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
+import {ContainerRuntimeError, type SelfhostAction, type SelfhostInput, type SelfhostResult, type SelfhostStack} from "./types.ts";
 
 /** Time to wait for storage containers to accept bootstrap calls after compose start. */
 const storageReadyDelayMs = 10_000;
 
+/** Attempts of a storage bootstrap step whose service is still starting: the first one plus a minute of retries. */
+const storageStartupAttempts = 13;
+
+/** Time to wait before retrying a storage bootstrap step whose service is still starting. */
+const storageStartupRetryDelayMs = 5_000;
+
 /** Time to wait between compose stack operations to reduce local runtime contention. */
 const stackOperationDelayMs = 3_000;
 
-/**
- * Azurite's documented development storage connection string.
- *
- * @remarks
- * The development account name and key are public Azurite emulator constants,
- * not production credentials. They are used only against localhost Azurite.
- *
- * @see {@link https://learn.microsoft.com/azure/storage/common/storage-use-azurite}
- */
-const azuriteDevelopmentConnectionString = "UseDevelopmentStorage=true";
+/** Working directory every selfhost compose, exec, mkcert, and bootstrap command runs from. */
+const selfhostWorkingDirectory = "infra/Local";
+
 const certFilePath = "Management/certs/local-cert.pem";
 const keyFilePath = "Management/certs/local-key.pem";
 
-/** Supported selfhost orchestration actions. */
-export type SelfhostAction = "start" | "stop" | "logs";
+/** Environment variable holding the local SQL Server `sa` password. */
+const sqlPasswordVariable = "MSSQL_SA_PASSWORD";
+
+/** Variable `sqlcmd` reads the password from when `-P` is absent; only its name reaches an argument vector. */
+const sqlcmdPasswordVariable = "SQLCMDPASSWORD";
+
+const persistentStorageByContainer = {
+  mssql: {destination: "/var/opt/mssql", volume: "arolariu-selfhost-mssql-data"},
+  cosmosdb: {destination: "/data", volume: "arolariu-selfhost-cosmos-data"},
+} as const;
+
+/**
+ * Refuses reconciliation or removal of databases not attached to the intended persistent volumes.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @returns An effect that fails before any Compose operation when existing storage needs migration.
+ */
+function assertPersistentSelfhostStorage(
+  adapter: ContainerRuntimeAdapter,
+): Effect.Effect<void, ContainerRuntimeError | ProcessError, Process> {
+  return Effect.gen(function* () {
+    const runner = yield* Process;
+    const listing = yield* runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
+    const existing = new Set(listing.stdout.split(/\r?\n/).map((name) => name.trim()));
+    for (const [name, {destination, volume}] of Object.entries(persistentStorageByContainer)) {
+      if (!existing.has(name)) continue;
+      const result = yield* runner.run({command: adapter.primaryCli, args: ["inspect", "--format", "{{json .Mounts}}", name]});
+      const mounts = yield* Effect.try({
+        try: (): unknown => JSON.parse(result.stdout),
+        catch: () => new ContainerRuntimeError({message: `Cannot verify persistent storage for ${name}; no containers were reconciled.`}),
+      });
+      const persistent =
+        Array.isArray(mounts)
+        && mounts.some(
+          (mount: unknown) =>
+            typeof mount === "object"
+            && mount !== null
+            && "Type" in mount
+            && mount.Type === "volume"
+            && "Name" in mount
+            && mount.Name === volume
+            && "Destination" in mount
+            && mount.Destination === destination,
+        );
+      if (!persistent) {
+        return yield* new ContainerRuntimeError({
+          message: `${name} is not attached to ${volume} at ${destination}. Refusing Compose reconciliation or removal: preserve the existing container and obtain separate approval for data migration before restarting selfhost.`,
+        });
+      }
+    }
+  });
+}
+
+/**
+ * Requires the private, gitignored files the start stacks read: the exp `config.docker.json` bind
+ * mount and the website `.env` Frontend build secret.
+ *
+ * @remarks
+ * Docker Compose and podman-compose both create a missing bind source as a directory instead of
+ * failing, so start checks these files before generating artifacts or touching any stack.
+ *
+ * @returns An effect failing with {@link ContainerRuntimeError} when a file is missing or not a file.
+ */
+function assertSelfhostPrivateConfiguration(): Effect.Effect<
+  void,
+  ContainerRuntimeError | RepositoryRootNotFound | PlatformError.PlatformError,
+  FileSystem.FileSystem | ReadOnlyFiles
+> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    const requiredFiles = [
+      {path: join(paths.expRoot, "config.docker.json"), remedy: "Copy sites/exp.arolariu.ro/config.template.json to config.docker.json."},
+      {path: paths.websiteEnvironment, remedy: "Run `npm run setup` to create it."},
+    ];
+    for (const {path, remedy} of requiredFiles) {
+      if (!(yield* fs.exists(path))) {
+        return yield* new ContainerRuntimeError({message: `Required private runtime configuration is missing: ${path}. ${remedy}`});
+      }
+      if ((yield* fs.stat(path)).type !== "File") {
+        return yield* new ContainerRuntimeError({
+          message: `Private runtime configuration must be a file: ${path}. Remove it, then: ${remedy}`,
+        });
+      }
+    }
+  });
+}
+
+/** Local stacks each selfhost action operates on, in execution order. */
+const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>> = {
+  start: ["management", "storage", "profile", "backend", "frontend"],
+  stop: ["frontend", "backend", "storage", "management"],
+  logs: ["profile", "backend", "frontend"],
+};
 
 /** Inputs used to build a selfhost command plan. */
 export interface SelfhostPlanInputs {
   readonly action: SelfhostAction;
   readonly adapter: ContainerRuntimeAdapter;
+}
+
+/**
+ * Determines whether a selfhost action builds artifact-consuming images.
+ *
+ * @param action - Selfhost action.
+ * @returns `true` only for start.
+ */
+export function shouldGenerateTaxonomyArtifacts(action: SelfhostAction): boolean {
+  return action === "start";
 }
 
 function composeFile(adapter: ContainerRuntimeAdapter, file: string, args: readonly string[]): RuntimeCommand {
@@ -67,7 +191,7 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
     return [
       composeFile(inputs.adapter, "Frontend/docker-compose.yml", ["down"]),
       composeFile(inputs.adapter, "Backend/docker-compose.yml", ["down"]),
-      composeFile(inputs.adapter, "Storage/docker-compose.yml", ["down"]),
+      composeFile(inputs.adapter, "Storage/docker-compose.yml", ["--profile", "selfhost", "down"]),
       composeFile(inputs.adapter, "Management/docker-compose.yml", ["down"]),
     ];
   }
@@ -79,192 +203,317 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
   ];
 }
 
-async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand): Promise<void> {
-  console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {cwd: "infra/Local", stdio: "tee"});
-  if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
-  }
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function ensureHttpsCertificates(runner: CommandRunner): Promise<void> {
-  if ((await pathExists(`infra/Local/${certFilePath}`)) && (await pathExists(`infra/Local/${keyFilePath}`))) {
-    return;
-  }
-
-  const mkcert = await runner.run({command: "mkcert", args: ["--version"]});
-  if (mkcert.code !== 0) {
-    console.warn(
-      "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
-    );
-    return;
-  }
-
-  await mkdir("infra/Local/Management/certs", {recursive: true});
-  await runCommandOrThrow(runner, {command: "mkcert", args: ["-install"]});
-  await runCommandOrThrow(runner, {
-    command: "mkcert",
-    args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
-  });
-}
-
-async function postCosmosResource(url: string, body: unknown): Promise<void> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok && response.status !== 409) {
-    throw new ContainerRuntimeError(`Cosmos bootstrap failed for ${url}: HTTP ${response.status} ${await response.text()}`);
-  }
-}
-
-async function bootstrapCosmos(): Promise<void> {
-  try {
-    await postCosmosResource("http://localhost:8081/dbs", {id: "primary"});
-    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
-      id: "invoices",
-      partitionKey: {paths: ["/UserIdentifier"], kind: "Hash"},
-    });
-    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
-      id: "merchants",
-      partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"},
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ContainerRuntimeError(
-      `Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: ${message}`,
-    );
-  }
-}
-
-async function bootstrapAzurite(): Promise<void> {
-  try {
-    const client = BlobServiceClient.fromConnectionString(azuriteDevelopmentConnectionString);
-    const container = client.getContainerClient("invoices");
-    await container.createIfNotExists();
-    await container.setAccessPolicy("blob");
-    await client.setProperties({
-      cors: [
-        {
-          allowedOrigins: "*",
-          allowedMethods: "GET,HEAD,OPTIONS",
-          allowedHeaders: "*",
-          exposedHeaders: "*",
-          maxAgeInSeconds: 3600,
-        },
-      ],
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ContainerRuntimeError(
-      `Azurite bootstrap failed. Ensure the azurite container is running and reachable at http://localhost:10000. Original error: ${message}`,
-    );
-  }
-}
-
-async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: CommandRunner): Promise<void> {
-  const sqlPassword = getRequiredSqlPassword();
-
-  await runCommandOrThrow(
-    runner,
-    adapter.exec("mssql", [
-      "/opt/mssql-tools/bin/sqlcmd",
-      "-C",
-      "-S",
-      "localhost",
-      "-U",
-      "sa",
-      "-P",
-      sqlPassword,
-      "-d",
-      "master",
-      "-i",
-      "/usr/sql/sqlSchema.sql",
-      "-No",
-    ]),
-  );
-  await bootstrapCosmos();
-  await bootstrapAzurite();
+/**
+ * Builds the shared storage-only local bootstrap command.
+ *
+ * @returns The command that idempotently provisions Azurite resources.
+ */
+export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
+  return {
+    command: "dotnet",
+    args: ["run", "--project", "../../tooling/src/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+  };
 }
 
 /**
- * Reads the required local SQL Server password from the process environment.
- *
- * @returns The configured local SQL Server password.
- * @throws {ContainerRuntimeError} When the password is not configured.
+ * Reads the required local SQL Server password from the invocation environment.
  *
  * @remarks
- * Keep this value in the shell/session environment only. Do not commit it to
- * `.env` files, VS Code launch profiles, or source control.
+ * Keep this value in the shell/session environment only. Do not commit it to `.env` files, VS Code
+ * launch profiles, or source control. It stays `Redacted` until the `sqlcmd` call that needs it.
  */
-export function getRequiredSqlPassword(): string {
-  const sqlPassword = process.env["MSSQL_SA_PASSWORD"];
-  if (sqlPassword === undefined || sqlPassword.trim() === "") {
-    throw new ContainerRuntimeError(
-      "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
-    );
-  }
+export const getRequiredSqlPassword: Effect.Effect<Redacted.Redacted<string>, ContainerRuntimeError, Environment> = Effect.gen(
+  function* () {
+    const environment = yield* Environment;
+    const sqlPassword = environment.variables[sqlPasswordVariable];
+    if (sqlPassword === undefined || sqlPassword.trim() === "") {
+      return yield* new ContainerRuntimeError({
+        message: `${sqlPasswordVariable} environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.`,
+      });
+    }
+    return Redacted.make(sqlPassword);
+  },
+);
 
-  return sqlPassword;
+/**
+ * Runs one selfhost command from `infra/Local`, echoed as `$ <command>` with tee output.
+ *
+ * @param command - The command to run.
+ * @param env - Optional environment values merged over the inherited environment.
+ * @returns An effect failing with the typed {@link ProcessError} of the run.
+ */
+function runSelfhostCommand(
+  command: Readonly<RuntimeCommand>,
+  env?: Readonly<Record<string, string>>,
+): Effect.Effect<void, ProcessError, Presenter | Process> {
+  return Effect.asVoid(runEchoedRuntimeCommand(command, {cwd: selfhostWorkingDirectory, ...(env === undefined ? {} : {env})}));
 }
 
 /**
- * Runs selfhost orchestration with the selected runtime engine.
+ * Generates trusted localhost certificates for Traefik when they are missing.
  *
- * @param action - Selfhost action to execute.
- * @param runner - Command runner used to execute runtime commands.
+ * @remarks
+ * A missing `mkcert` stays advisory rather than fatal: Traefik then serves its own self-signed
+ * certificate and the start action continues, exactly as the legacy command did.
+ *
+ * @returns An effect failing when `mkcert` is available but certificate generation fails.
  */
-export async function runSelfhost(action: SelfhostAction, runner: CommandRunner = defaultRunner): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
-  const adapter = getContainerAdapter(selection.engine);
-
-  await runSharedPreflight(adapter, runner);
-
-  if (action === "start") {
-    getRequiredSqlPassword();
-    await ensureHttpsCertificates(runner);
-    await writeSelfhostTraefikConfig();
-  }
-
-  const commands = buildSelfhostPlan({action, adapter});
-  for (const command of commands) {
-    await runCommandOrThrow(runner, command);
-    if (action === "start" && command.args.includes("Storage/docker-compose.yml")) {
-      await delay(storageReadyDelayMs);
-      await bootstrapSelfhost(adapter, runner);
+function ensureHttpsCertificates(): Effect.Effect<
+  void,
+  ProcessError | PlatformError.PlatformError,
+  FileSystem.FileSystem | Presenter | Process
+> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    if (
+      (yield* fs.exists(`${selfhostWorkingDirectory}/${certFilePath}`))
+      && (yield* fs.exists(`${selfhostWorkingDirectory}/${keyFilePath}`))
+    ) {
+      return;
     }
-    if (action !== "logs") {
-      await delay(stackOperationDelayMs);
-    }
-  }
 
-  if (action === "stop") {
-    await removeSelfhostTraefikConfig();
+    const runner = yield* Process;
+    const mkcertAvailable = yield* runner.run({command: "mkcert", args: ["--version"]}).pipe(
+      Effect.as(true),
+      Effect.catch(() => Effect.succeed(false)),
+    );
+    if (!mkcertAvailable) {
+      yield* Effect.logWarning(
+        "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
+      );
+      return;
+    }
+
+    yield* fs.makeDirectory(`${selfhostWorkingDirectory}/Management/certs`, {recursive: true});
+    yield* runSelfhostCommand({command: "mkcert", args: ["-install"]});
+    yield* runSelfhostCommand({
+      command: "mkcert",
+      args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
+    });
+  });
+}
+
+/**
+ * Builds the `sqlcmd` schema bootstrap command.
+ *
+ * @remarks
+ * It carries no secret: `exec -e SQLCMDPASSWORD` names the variable only, so the engine client
+ * copies the value from its own environment into the container, where `sqlcmd` reads it.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @returns The engine-owned `exec -e SQLCMDPASSWORD mssql sqlcmd …` command.
+ */
+function sqlSchemaCommand(adapter: ContainerRuntimeAdapter): RuntimeCommand {
+  return adapter.exec(
+    "mssql",
+    ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-d", "master", "-i", "/usr/sql/sqlSchema.sql", "-b"],
+    [sqlcmdPasswordVariable],
+  );
+}
+
+/**
+ * Describes a failed `sqlcmd` run without its command line.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @param error - The process failure; its `message`, `command`, and captured output are never read, so
+ * are never read.
+ * @returns The step-only failure message.
+ */
+function sqlSchemaFailureMessage(adapter: ContainerRuntimeAdapter, error: ProcessError): string {
+  const step = `SQL Server schema bootstrap failed: ${adapter.primaryCli} exec mssql sqlcmd`;
+  switch (error._tag) {
+    case "ProcessExited":
+      return `${step} exited with code ${String(error.exitCode)}.`;
+    case "ProcessSignalled":
+      return `${step} was terminated by ${error.signal}.`;
+    case "ProcessSpawnFailed":
+      return `${step} failed to start.`;
+    case "ProcessTimedOut":
+      return `${step} timed out.`;
   }
 }
 
-const action = process.argv[2];
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+/**
+ * Runs a storage bootstrap step, retrying it while its service is still starting.
+ *
+ * @remarks
+ * A slow engine (for example a container virtual machine that is still warming up) can leave a
+ * storage service unready after the fixed settle. A failure `isStarting` accepts is retried, up to
+ * {@link storageStartupAttempts} attempts in total and {@link storageStartupRetryDelayMs} apart, with
+ * a warning before each retry; any other failure, and the failure of the last attempt, fails the
+ * step unchanged.
+ *
+ * @param service - Service name used in the retry warning.
+ * @param step - The bootstrap step; it must be safe to run again after a failure.
+ * @param isStarting - Decides whether a failure means the service is still starting.
+ * @returns The step, retried while its service is starting.
+ */
+function retryWhileStarting<A, E, R>(
+  service: string,
+  step: Effect.Effect<A, E, R>,
+  isStarting: (error: E) => boolean,
+): Effect.Effect<A, E, R> {
+  return Effect.gen(function* () {
+    for (let attempt = 1; attempt < storageStartupAttempts; attempt += 1) {
+      // Sequential by design: one attempt settles before the next one is considered.
+      const outcome = yield* Effect.result(step);
+      if (Result.isSuccess(outcome)) {
+        return outcome.success;
+      }
+      if (!isStarting(outcome.failure)) {
+        return yield* Effect.fail(outcome.failure);
+      }
+      yield* Effect.logWarning(
+        `${service} is not ready yet. Retrying in ${String(storageStartupRetryDelayMs)}ms (attempt ${String(attempt + 1)}/${String(storageStartupAttempts)}).`,
+      );
+      yield* Effect.sleep(Duration.millis(storageStartupRetryDelayMs));
+    }
+    return yield* step;
+  });
+}
 
-if (isDirectExecution) {
-  try {
-    if (action !== "start" && action !== "stop" && action !== "logs") {
-      throw new ContainerRuntimeError("Usage: node scripts/container-runtime/selfhost.ts <start|stop|logs> --engine rancher|podman");
+/**
+ * Applies the SQL Server schema through `sqlcmd` inside the `mssql` container.
+ *
+ * @remarks
+ * The password is unwrapped only into the `SQLCMDPASSWORD` variable of the spawned engine client
+ * (spec §7: secrets travel through `env`, not arguments), so it never appears in an argument
+ * vector, the host process list, the echoed `$ …` line, or a `--verbose` echo (the run sets
+ * `echo: false`). A non-zero `sqlcmd` exit is retried while SQL Server may still be starting (the
+ * idempotent schema script makes every attempt safe), each attempt echoed again. A failure is
+ * rebuilt as a {@link ContainerRuntimeError} naming the step only, so neither the rendered output
+ * nor a failure document carries process evidence.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @param sqlPassword - The local SQL Server password.
+ * @returns An effect failing with the step-only {@link ContainerRuntimeError}.
+ */
+function runSqlSchemaBootstrap(
+  adapter: ContainerRuntimeAdapter,
+  sqlPassword: Redacted.Redacted<string>,
+): Effect.Effect<void, ContainerRuntimeError, Presenter | Process> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    const runner = yield* Process;
+    const command = sqlSchemaCommand(adapter);
+    const attempt = presenter.line("stdout", `$ ${formatProcessRequest(command)}`).pipe(
+      Effect.andThen(
+        runner.run(command, {
+          cwd: selfhostWorkingDirectory,
+          env: {[sqlcmdPasswordVariable]: Redacted.value(sqlPassword)},
+          output: "tee",
+          echo: false,
+        }),
+      ),
+    );
+    yield* retryWhileStarting("SQL Server", attempt, (error) => error._tag === "ProcessExited").pipe(
+      Effect.mapError((error) => new ContainerRuntimeError({message: sqlSchemaFailureMessage(adapter, error)})),
+    );
+  });
+}
+
+/**
+ * Provisions SQL, Cosmos, Azurite, and local storage once the storage stack is ready.
+ *
+ * @remarks
+ * The Cosmos step is retried while the emulator refuses connections, which an engine reports while
+ * the emulator starts behind its already published port; an HTTP failure still fails at once.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @param sqlPassword - The local SQL Server password.
+ * @returns An effect failing when any provisioning step fails.
+ */
+function bootstrapSelfhost(
+  adapter: ContainerRuntimeAdapter,
+  sqlPassword: Redacted.Redacted<string>,
+): Effect.Effect<void, ContainerRuntimeError | ProcessError, PlatformServices | LocalBlobStorage> {
+  return Effect.gen(function* () {
+    yield* runSqlSchemaBootstrap(adapter, sqlPassword);
+    yield* retryWhileStarting("The Cosmos emulator", ensureCosmos, (error) => error._tag === "CosmosEmulatorUnreachable").pipe(
+      Effect.catchTag("CosmosEmulatorUnreachable", (error) => Effect.fail(new ContainerRuntimeError({message: error.message}))),
+    );
+    yield* ensureAzurite;
+    yield* runSelfhostCommand(buildLocalStorageBootstrapCommand(), {
+      DOTNET_ENVIRONMENT: "Development",
+      INFRA: "local",
+      ConnectionStrings__blobs: Redacted.value(azuriteDevelopmentConnectionString),
+      ConnectionStrings__queues: Redacted.value(azuriteDevelopmentConnectionString),
+    });
+  });
+}
+
+/**
+ * Runs selfhost orchestration with the resolved local container engine.
+ *
+ * @remarks
+ * - **start**: preflight, the private configuration check, silent artifact generation, the SQL
+ *   password, localhost certificates, the Traefik config, then each stack with a 3 s pause after it;
+ *   after the storage stack, a 10 s settle and the SQL/Cosmos/Azurite/storage bootstrap, whose SQL
+ *   and Cosmos steps retry every 5 s, up to 12 times, while their services still start.
+ * - **stop**: preflight, each stack `down` in reverse order with a 3 s pause after it, then the
+ *   Traefik config removal. Storage keeps `--profile selfhost` so its profile-gated `exp` container
+ *   is removed and Management can drop the shared network.
+ * - **logs**: preflight, then the last 100 log lines of each application container.
+ *
+ * @param input - Typed command input.
+ * @returns The action, engine, and ordered stacks this invocation operated on, failing with
+ * {@link ContainerRuntimeError} (engine, preflight, SQL password, or bootstrap), `RepositoryRootNotFound`
+ * (outside a repository), a {@link ProcessError}
+ * (a stack or bootstrap command), a platform error (certificate or Traefik file), or an artifact
+ * generation failure.
+ */
+export const runSelfhost: (
+  input: Readonly<SelfhostInput>,
+) => Effect.Effect<
+  SelfhostResult,
+  | ContainerRuntimeError
+  | RepositoryRootNotFound
+  | ProcessError
+  | PlatformError.PlatformError
+  | TaxonomySourceUnavailable
+  | ArtifactGenerationFailed,
+  PlatformServices | LocalBlobStorage
+> = Effect.fn("containers.selfhost")(function* (input: Readonly<SelfhostInput>) {
+  const adapter = yield* prepareContainerEngine(input, "selfhost");
+
+  if (input.action !== "logs") {
+    yield* assertPersistentSelfhostStorage(adapter);
+  }
+
+  if (input.action === "start") {
+    yield* assertSelfhostPrivateConfiguration();
+  }
+
+  if (shouldGenerateTaxonomyArtifacts(input.action)) {
+    yield* silently(generateArtifacts({verbose: false}));
+  }
+
+  // A defined password is exactly the start action, the only one that runs the storage bootstrap.
+  let sqlPassword: Redacted.Redacted<string> | undefined;
+  if (input.action === "start") {
+    sqlPassword = yield* getRequiredSqlPassword;
+    yield* ensureHttpsCertificates();
+    yield* writeSelfhostTraefikConfig(buildSelfhostTraefikConfig());
+  }
+
+  // Intentionally sequential: each stack depends on the previous one already being up (or, for
+  // stop, already down), and the storage stack must settle before bootstrap runs against it.
+  for (const command of buildSelfhostPlan({action: input.action, adapter})) {
+    yield* runSelfhostCommand(command);
+
+    if (sqlPassword !== undefined && command.args.includes("Storage/docker-compose.yml")) {
+      yield* Effect.sleep(Duration.millis(storageReadyDelayMs));
+      yield* bootstrapSelfhost(adapter, sqlPassword);
     }
 
-    await runSelfhost(action);
-  } catch (error) {
-    exitWithError(error);
+    if (input.action !== "logs") {
+      yield* Effect.sleep(Duration.millis(stackOperationDelayMs));
+    }
   }
-}
+
+  if (input.action === "stop") {
+    yield* removeSelfhostTraefikConfig();
+  }
+
+  return {action: input.action, engine: adapter.engine, stacks: stacksByAction[input.action]};
+});

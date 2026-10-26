@@ -56,10 +56,15 @@ COPY src/Invoices/arolariu.Backend.Domain.Invoices.csproj src/Invoices/
 COPY src/Core/arolariu.Backend.Core.csproj src/Core/
 
 # 3. Restore
-RUN dotnet restore src/Core/arolariu.Backend.Core.csproj
+RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore src/Core/arolariu.Backend.Core.csproj
 
 # 4. Copy the full source tree AFTER restore
 COPY . .
+
+# Fail fast when host-side taxonomy generation was skipped.
+RUN test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'ecoicop-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'nace-*.min.json' -size +0c | wc -l)" -eq 1
 
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
   --no-restore \

@@ -21,13 +21,18 @@ const healthFailureCounter = createCounter(
   "{failure}",
 );
 
-/** Whether we're running with Azure identity (determines exp URL). */
+/** Whether we're running with Azure identity (determines default dependency URLs). */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
 
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker bridge
-const EXP_URL: string = HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp";
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker bridge
-const API_URL: string = HAS_AZURE_CLIENT_ID ? "https://api.arolariu.ro" : "http://api:8080";
+/** Native Aspire endpoints take precedence over the Azure/Docker defaults. */
+const EXP_URL: string = trimTrailingSlashes(
+  // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker bridge
+  process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp"),
+);
+const API_URL: string = trimTrailingSlashes(
+  // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker bridge
+  process.env["API_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? "https://api.arolariu.ro" : "http://api:8080"),
+);
 
 type HealthStatus = "Healthy" | "Degraded" | "Unhealthy";
 
@@ -69,6 +74,12 @@ type HealthResponse = {
 
 const startedAt = Date.now();
 const startedAtISO = new Date(startedAt).toISOString();
+
+function trimTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (url[end - 1] === "/") end -= 1;
+  return url.slice(0, end);
+}
 
 /**
  * Checks a single upstream dependency by issuing an HTTP GET.

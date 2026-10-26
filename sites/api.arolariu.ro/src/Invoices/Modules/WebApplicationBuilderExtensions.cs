@@ -5,21 +5,30 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Workers;
+
+using Azure;
+using Azure.AI.OpenAI;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -87,7 +96,7 @@ public static class WebApplicationBuilderExtensions
       });
     });
 
-    services.AddDbContext<InvoiceNoSqlBroker>(options =>
+    services.AddDbContext<CosmosDatabaseBroker>(options =>
     {
       using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
       string connectionString = new string(optionsManager
@@ -102,22 +111,52 @@ public static class WebApplicationBuilderExtensions
       options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     });
 
+    // Generative AI client. A single long-lived Azure OpenAI client is shared; the Microsoft.Extensions.AI chat
+    // client wraps it so brokers depend on the provider-agnostic abstraction rather than the Azure SDK.
+    services.AddSingleton<AzureOpenAIClient>(serviceProvider =>
+    {
+      ApplicationOptions options = serviceProvider.GetRequiredService<IOptionsManager>().GetApplicationOptions();
+
+      return new AzureOpenAIClient(
+        endpoint: new Uri(options.CognitiveServicesEndpoint),
+        credential: new AzureKeyCredential(options.CognitiveServicesKey));
+    });
+
+    services
+      .AddChatClient(serviceProvider =>
+      {
+        var azureClient = serviceProvider.GetRequiredService<AzureOpenAIClient>();
+        return azureClient.GetChatClient(InvoiceMetrics.ConfiguredGenerativeModelIdentifier).AsIChatClient();
+      })
+      .UseOpenTelemetry(
+        sourceName: InvoiceMetrics.AnalysisTelemetrySourceName,
+        configure: options => options.EnableSensitiveData = false);
+
     // Broker services:
-    services.AddScoped<IClassifierBroker, AzureClassifierBroker>();
-    services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
-    services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
-    services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
+    services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
+    services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
+    services.AddScoped<IGenerativeAnalysisBroker, AzureFoundryBroker>();
+    services.AddScoped<IQueueBroker, AzureStorageQueueBroker>();
+    services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
     // Foundation services:
+    services.AddScoped<IAnalysisQueueFoundationService, AnalysisQueueFoundationService>();
+    services.AddScoped<IAnalysisFoundationService, AnalysisFoundationService>();
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
-    services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
     services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
     // Orchestration services:
+    services.AddScoped<IAnalysisOrchestrationService, AnalysisOrchestrationService>();
     services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
     services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
 
     // Processing services:
     services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
+
+    // Management services:
+    services.AddScoped<IInvoiceManagementService, InvoiceManagementService>();
+
+    // Hosted workers:
+    services.AddHostedService<AnalysisWorker>();
   }
 }

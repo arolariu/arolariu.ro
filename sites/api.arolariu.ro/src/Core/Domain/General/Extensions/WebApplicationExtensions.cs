@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -136,7 +137,23 @@ internal static class WebApplicationExtensions
     app.UseStaticFiles();
     app.UseRequestLocalization();
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
-    app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
+    LocalDevelopmentSwaggerOptions localSwagger =
+      LocalDevelopmentSwagger.Resolve(app.Environment, app.Configuration);
+
+    if (localSwagger is { Enabled: true, IdentityEndpoint: not null })
+    {
+      string personaScript = LocalDevelopmentSwagger.CreateScript(
+        localSwagger.IdentityEndpoint);
+      app.MapGet(
+          "/swagger/local-development-personas.js",
+          () => Results.Text(
+            personaScript,
+            contentType: "application/javascript"))
+        .ExcludeFromDescription();
+    }
+
+    app.UseSwaggerUI(
+      SwaggerConfigurationService.GetSwaggerUIOptions(localSwagger));
     app.MapOpenApi();
     var healthChecks = app.MapHealthChecks("/health", new HealthCheckOptions
     {

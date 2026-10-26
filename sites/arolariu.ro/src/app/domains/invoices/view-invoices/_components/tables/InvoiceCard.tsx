@@ -48,7 +48,7 @@ function resolveInvoiceScanMediaKind(scan: InvoiceScan | undefined): ScanMediaKi
     return "unknown";
   }
 
-  if (scan.scanType === InvoiceScanType.PDF) {
+  if (scan.type === InvoiceScanType.PDF) {
     return "pdf";
   }
 

@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "bash",
       "args": ["infra/Local/selfhost-start.sh"],
-      "windows": { "command": "infra\\Local\\selfhost-start.bat", "args": [] },
+      "windows": {"command": "infra\\Local\\selfhost-start.bat", "args": []},
       "problemMatcher": []
     },
     {
@@ -14,7 +14,7 @@
       "type": "shell",
       "command": "bash",
       "args": ["infra/Local/selfhost-stop.sh"],
-      "windows": { "command": "infra\\Local\\selfhost-stop.bat", "args": [] },
+      "windows": {"command": "infra\\Local\\selfhost-stop.bat", "args": []},
       "problemMatcher": []
     },
     {
@@ -54,40 +54,35 @@
       "problemMatcher": []
     },
     {
-        "label": "build",
-        "command": "dotnet",
-        "type": "process",
-        "args": [
-            "build",
-            "${workspaceFolder}/arolariu.slnx",
-            "/property:GenerateFullPaths=true",
-            "/consoleloggerparameters:NoSummary;ForceNoAlign"
-        ],
-        "problemMatcher": "$msCompile"
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/arolariu.slnx",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
     },
     {
-        "label": "publish",
-        "command": "dotnet",
-        "type": "process",
-        "args": [
-            "publish",
-            "${workspaceFolder}/arolariu.slnx",
-            "/property:GenerateFullPaths=true",
-            "/consoleloggerparameters:NoSummary;ForceNoAlign"
-        ],
-        "problemMatcher": "$msCompile"
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/arolariu.slnx",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
     },
     {
-        "label": "watch",
-        "command": "dotnet",
-        "type": "process",
-        "args": [
-            "watch",
-            "run",
-            "--project",
-            "${workspaceFolder}/tooling/AppHost/AppHost.csproj"
-        ],
-        "problemMatcher": "$msCompile"
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["watch", "run", "--project", "${workspaceFolder}/tooling/src/AppHost/AppHost.csproj"],
+      "problemMatcher": "$msCompile"
     }
   ]
 }

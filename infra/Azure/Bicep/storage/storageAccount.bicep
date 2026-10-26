@@ -195,6 +195,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   resource queueServices 'queueServices@2025-06-01' = {
     name: 'default'
     properties: {}
+
+    resource analysisQueue 'queues@2025-06-01' = {
+      name: 'invoice-analysis'
+      properties: {
+        metadata: {
+          owner: 'api.arolariu.ro'
+          purpose: 'durable-invoice-analysis'
+        }
+      }
+    }
   }
 
   // Table service configuration

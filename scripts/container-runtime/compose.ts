@@ -1,21 +1,31 @@
 /**
- * @fileoverview Engine-aware Compose helper for local spin-ups.
+ * @fileoverview Engine-aware Compose helper program for local spin-ups.
  * @module scripts/container-runtime/compose
+ *
+ * @remarks
+ * {@link runCompose} resolves the container engine, runs the shared preflight, and invokes the
+ * engine's Compose provider through the Effect `Process` service with tee output, so tests script
+ * every process instead of spawning Docker or Podman. Cancellation is fiber interruption, which
+ * terminates the Compose process tree.
  */
 
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
-import {exitWithError} from "./types.ts";
+import {Effect} from "effect";
+
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import type {ProcessError} from "../platform/Process.ts";
+import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import type {ComposeInput, ComposeResult, ContainerRuntimeError} from "./types.ts";
 
 /** Options for invoking an arbitrary Compose file through the selected engine. */
 export interface ComposeOptions {
   readonly file: string;
   readonly args: readonly string[];
 }
+
+/** Usage message shared by every Compose input validation failure. */
+export const COMPOSE_USAGE_MESSAGE = "Use --file <compose-file> -- <compose arguments>";
 
 /**
  * Builds an engine-owned Compose command.
@@ -29,36 +39,23 @@ export function buildComposeCommand(adapter: ContainerRuntimeAdapter, options: C
 }
 
 /**
- * Runs the ad hoc Compose CLI wrapper.
+ * Runs an arbitrary Compose file through the resolved local container engine.
  *
- * @param runner - Command runner used to execute Compose.
+ * @remarks
+ * Preflight runs first; Compose then runs as exactly `compose -f <file> ...passthrough` through the
+ * engine adapter, echoed as `$ <command>` and with tee output.
+ *
+ * @param input - Typed command input.
+ * @returns The engine, file, and pass-through arguments Compose ran with, failing with
+ * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, with
+ * `RepositoryRootNotFound` outside a repository, and with a {@link ProcessError} when Compose fails.
  */
-export async function runComposeCli(runner: CommandRunner = defaultRunner): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
-  const adapter = getContainerAdapter(selection.engine);
-  await runSharedPreflight(adapter, runner);
-
-  const fileIndex = process.argv.indexOf("--file");
-  const separatorIndex = process.argv.indexOf("--");
-  const file = fileIndex === -1 ? undefined : process.argv[fileIndex + 1];
-  const args = separatorIndex === -1 ? [] : process.argv.slice(separatorIndex + 1);
-
-  if (file === undefined || args.length === 0) {
-    throw new Error("Use --file <compose-file> -- <compose arguments>");
-  }
-
-  const command = buildComposeCommand(adapter, {file, args});
-  console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {stdio: "tee"});
-  if (result.code !== 0) throw new Error(result.output);
-}
-
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-if (isDirectExecution) {
-  try {
-    await runComposeCli();
-  } catch (error) {
-    exitWithError(error);
-  }
-}
+export const runCompose: (
+  input: Readonly<ComposeInput>,
+) => Effect.Effect<ComposeResult, ContainerRuntimeError | RepositoryRootNotFound | ProcessError, PlatformServices> = Effect.fn(
+  "containers.compose",
+)(function* (input: Readonly<ComposeInput>) {
+  const adapter = yield* prepareContainerEngine(input, "compose");
+  yield* runEchoedRuntimeCommand(buildComposeCommand(adapter, {file: input.file, args: input.passthrough}));
+  return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
+});

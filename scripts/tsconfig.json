@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {"incremental": false, "types": ["node", "vitest/globals"]},
+  "include": ["./**/*.ts"],
+  "exclude": ["./__generated__/**", "./workers/**", "./format.ts", "./lint.ts"]
+}

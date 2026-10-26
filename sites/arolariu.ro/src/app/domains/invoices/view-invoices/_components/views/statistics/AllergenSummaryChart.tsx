@@ -1,38 +1,39 @@
 "use client";
 
 /**
- * @fileoverview Allergen Summary Chart - displays allergen frequencies with warning badges.
+ * @fileoverview Allergen Summary Chart - displays EU-14 allergen frequencies with warning badges.
  * @module app/domains/invoices/view-invoices/_components/views/statistics/AllergenSummaryChart
  *
  * @remarks
- * This component visualizes allergen occurrences across all products to help users
- * identify dietary risks and allergen exposure patterns.
- *
- * **Features:**
- * - Compact card layout with allergen badges
- * - Color-coded warning levels based on frequency
- * - Shows product count and percentage
- * - Responsive grid layout
- *
- * **Empty State:**
- * Displays a positive message when no allergens are detected.
+ * Visualizes allergen signal occurrences across **assessed** products.
+ * Products with `allergenAssessment: null` are excluded from the denominator —
+ * the chart never implies an absence of allergens for unassessed products.
  */
 
 import {formatAmount} from "@/lib/utils.generic";
+import {getAllergenLabelKey} from "@/types/invoices";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {TbAlertTriangle} from "react-icons/tb";
 import type {AllergenFrequency} from "../../../_utils/statistics";
 import styles from "./AllergenSummaryChart.module.scss";
 
 type Props = {
   readonly data: AllergenFrequency[];
+  /**
+   * Number of products that carried an allergen assessment.
+   *
+   * @remarks
+   * Zero means nothing was assessed. The empty state must then stay neutral rather than
+   * reassuring, because an absence of data is not an absence of allergens.
+   */
+  readonly assessedProductCount: number;
 };
 
 /**
  * Determines the warning level based on allergen frequency percentage.
  *
- * @param percentage - Percentage of products containing the allergen
+ * @param percentage - Percentage of assessed products containing the allergen
  * @returns Warning level: "high", "medium", or "low"
  */
 function getWarningLevel(percentage: number): "high" | "medium" | "low" {
@@ -43,13 +44,11 @@ function getWarningLevel(percentage: number): "high" | "medium" | "low" {
 
 /**
  * Renders an allergen frequency card with badge and statistics.
- *
- * @param allergen - Allergen frequency data
- * @returns Allergen card component
  */
 function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React.JSX.Element {
   const t = useTranslations();
   const warningLevel = getWarningLevel(allergen.percentage);
+  const label = t(selectorFromPath(getAllergenLabelKey(allergen.code)));
 
   return (
     <div
@@ -60,12 +59,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
           <TbAlertTriangle size={20} />
         </div>
         <div className={styles["allergenInfo"]}>
-          <h4
-            className={styles["allergenName"]}
-            title={allergen.description}>
-            {allergen.name}
-          </h4>
-          <p className={styles["allergenDescription"]}>{allergen.description}</p>
+          <h4 className={styles["allergenName"]}>{label}</h4>
         </div>
       </div>
       <div className={styles["allergenStats"]}>
@@ -83,32 +77,25 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
 }
 
 /**
- * Renders a compact summary of allergen frequencies across all products.
+ * Renders a compact summary of EU-14 allergen frequencies across assessed products.
  *
  * @remarks
- * **Performance:**
- * Uses memoized data from parent component. Grid layout is optimized
- * for responsive behavior with CSS Grid.
+ * The denominator for percentages is assessed products only; unassessed products
+ * (`allergenAssessment: null`) are excluded. The chart never implies a product is
+ * allergen-free for products that were not assessed.
  *
- * **Accessibility:**
- * - Semantic HTML with proper heading hierarchy
- * - ARIA labels for screen readers
- * - Color-blind friendly (icons + text)
- * - Keyboard navigation support
- *
- * **Color Scheme:**
- * - High (≥20%): Red warning
- * - Medium (10-19%): Yellow warning
- * - Low (<10%): Blue info
- *
- * @param data - Allergen frequencies sorted by product count
- * @returns Grid of allergen cards
+ * @param data - Allergen frequencies sorted by product count, derived from {@link computeAllergenFrequency}
+ * @param assessedProductCount - Number of products that carried an assessment, from `countAssessedProducts`
+ * @returns Grid of allergen cards, or an empty state.
  */
-export function AllergenSummaryChart({data}: Props): React.JSX.Element {
+export function AllergenSummaryChart({data, assessedProductCount}: Props): React.JSX.Element {
   const t = useTranslations();
 
-  // Empty state - positive message
   if (data.length === 0) {
+    // Two very different situations produce an empty list. Nothing assessed means nothing is
+    // known, so the UI must not show a checkmark or say no allergens were found.
+    const nothingAssessed = assessedProductCount === 0;
+
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
@@ -119,8 +106,12 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <div className={styles["emptyIcon"]}>✓</div>
-            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.empty)}</p>
+            <div className={styles["emptyIcon"]}>{nothingAssessed ? "?" : "✓"}</div>
+            <p className={styles["emptyText"]}>
+              {nothingAssessed
+                ? t((m) => m.cards.invoices.statistics.allergenSummary.notAssessed)
+                : t((m) => m.cards.invoices.statistics.allergenSummary.empty)}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -142,7 +133,7 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
           aria-label={t((m) => m.cards.invoices.statistics.allergenSummary.ariaLabel)}>
           {data.map((allergen) => (
             <AllergenCard
-              key={allergen.name}
+              key={allergen.code}
               allergen={allergen}
             />
           ))}

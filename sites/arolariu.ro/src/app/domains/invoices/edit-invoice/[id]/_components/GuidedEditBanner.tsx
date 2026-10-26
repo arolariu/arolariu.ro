@@ -1,12 +1,30 @@
 "use client";
 
-import {Product, ProductCategory} from "@/types/invoices";
+import {type Product} from "@/types/invoices";
 import {Alert, AlertDescription, AlertTitle, Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState, useSyncExternalStore} from "react";
 import {TbAlertCircle, TbChevronDown, TbX} from "react-icons/tb";
 import styles from "./GuidedEditBanner.module.scss";
+
+const DISMISSAL_STORAGE_KEY = "guidedEditBannerDismissed";
+
+/** Subscribes to dismissal changes made from another browser context. */
+function subscribeToDismissal(onStoreChange: () => void): () => void {
+  globalThis.addEventListener("storage", onStoreChange);
+  return () => globalThis.removeEventListener("storage", onStoreChange);
+}
+
+/** Reads the persisted browser dismissal state. */
+function getDismissalSnapshot(): boolean {
+  return localStorage.getItem(DISMISSAL_STORAGE_KEY) === "true";
+}
+
+/** Provides a hydration-safe server snapshot before browser storage is available. */
+function getServerDismissalSnapshot(): boolean {
+  return false;
+}
 
 type Props = Readonly<{
   /** The invoice items to analyze for completeness */
@@ -24,54 +42,15 @@ type Props = Readonly<{
  * **Purpose**: Surfaces products requiring manual review after AI analysis:
  * - Products with `metadata.isComplete === false`
  * - Products with low OCR confidence (`metadata.confidence < 0.7`)
- * - Products with `category === ProductCategory.NOT_DEFINED`
+ * - Products with `classification === null`
  * - Products with empty `name`
  *
- * **Dismissal Behavior**:
- * - Banner can be dismissed via X button
- * - Dismissal state persists in localStorage per invoice
- * - Can be re-enabled by clearing localStorage or resetting state
- *
- * **Summary Breakdown**:
- * Displays counts for:
- * - Total incomplete products
- * - Uncategorized products
- * - Low confidence extractions
- * - Missing names
- *
- * **Actions**:
- * - "Review All" button scrolls to first flagged item
- * - "Dismiss" button hides banner
- *
- * **Animation**: Uses Framer Motion for smooth entrance/exit transitions.
- *
- * **Domain Context**: Part of guided editing feature for edit-invoice page.
- *
- * @param props - Component properties containing items array and optional callback
- * @returns Client-rendered banner or null if dismissed or no issues found
- *
- * @example
- * ```tsx
- * <GuidedEditBanner
- *   items={invoice.items}
- *   onReviewAll={() => scrollToFirstIncompleteItem()}
- * />
- * ```
- *
  * @see {@link Product} - Product type with metadata
- * @see {@link ProductCategory} - Product category enum
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
   const t = useTranslations();
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  // Check localStorage on mount for dismissal state
-  useEffect(() => {
-    const dismissed = localStorage.getItem("guidedEditBannerDismissed");
-    if (dismissed === "true") {
-      setIsDismissed(true);
-    }
-  }, []);
+  const isPersistentlyDismissed = useSyncExternalStore(subscribeToDismissal, getDismissalSnapshot, getServerDismissalSnapshot);
+  const [isDismissedForSession, setIsDismissedForSession] = useState(false);
 
   // Analyze products for issues
   const analysis = useMemo(() => {
@@ -94,8 +73,8 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
         lowConfidence.push(item);
       }
 
-      // Check for uncategorized products
-      if (item.category === ProductCategory.NOT_DEFINED) {
+      // Check for unclassified products
+      if (item.classification === null) {
         uncategorized.push(item);
       }
 
@@ -116,12 +95,12 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
 
   // Handle dismiss action
   const handleDismiss = useCallback(() => {
-    setIsDismissed(true);
-    localStorage.setItem("guidedEditBannerDismissed", "true");
+    setIsDismissedForSession(true);
+    localStorage.setItem(DISMISSAL_STORAGE_KEY, "true");
   }, []);
 
   // Don't show banner if dismissed or no issues found
-  if (isDismissed || analysis.totalIssues === 0) {
+  if (isPersistentlyDismissed || isDismissedForSession || analysis.totalIssues === 0) {
     return null;
   }
 

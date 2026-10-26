@@ -46,7 +46,6 @@ const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddSca
 const AddRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddRecipeDialog"), {ssr: false});
 const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AllergenDialog"), {ssr: false});
 const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AnalyzeDialog"), {ssr: false});
-const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/BulkCategoryDialog"), {ssr: false});
 const CreateInvoiceDialog = dynamic(() => import("../view-scans/_dialogs/CreateInvoiceDialog"), {ssr: false});
 const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
 const DeleteRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/DeleteRecipeDialog"), {ssr: false});
@@ -66,7 +65,6 @@ const PreviewScanDialog = dynamic(() => import("../_dialogs/PreviewScanDialog"),
 const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RemoveScanDialog"), {ssr: false});
 const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog"), {ssr: false});
 const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
-const ShareRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ShareRecipeDialog"), {ssr: false});
 const UpdateRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/UpdateRecipeDialog"), {ssr: false});
 // view-invoice/[id]/_dialogs/ExportDialog uses a named export
 const ViewInvoiceExportDialog = dynamic(
@@ -80,7 +78,7 @@ const ViewInvoiceExportDialog = dynamic(
  * @remarks
  * **Rendering Context**: Client Component (uses `useDialogs` hook from context).
  *
- * **Dialog Registry Pattern**: Maps 27 dialog type discriminators to their
+ * **Dialog Registry Pattern**: Maps 23 dialog type discriminators to their
  * corresponding lazy-loaded components. Switch expression evaluates `type` from
  * dialog context and returns the appropriate dialog or `null` when no dialog is active.
  *
@@ -99,11 +97,10 @@ const ViewInvoiceExportDialog = dynamic(
  *
  * **Dialog Type Organization**:
  *
- * **edit-invoice/[id] dialogs** (16):
- * - `EDIT_INVOICE__ANALYSIS`: AI-powered invoice analysis with item categorization
+ * **edit-invoice/[id] dialogs** (14):
+ * - `EDIT_INVOICE__ANALYSIS`: AI-powered invoice analysis capability controls
  * - `EDIT_INVOICE__ITEMS`: Invoice line items editor with add/remove/edit
  * - `EDIT_INVOICE__ALLERGENS`: Allergen information for food items
- * - `EDIT_INVOICE__BULK_CATEGORY`: Bulk category assignment for multiple items
  * - `EDIT_INVOICE__FEEDBACK`: User feedback form for invoice accuracy
  * - `EDIT_INVOICE__MERCHANT`: Merchant details editor (name, address, contact)
  * - `EDIT_INVOICE__MERCHANT_INVOICES`: All invoices from same merchant
@@ -115,7 +112,6 @@ const ViewInvoiceExportDialog = dynamic(
  * - `EDIT_INVOICE__RECIPE_UPDATE`: Update a recipe attached to the invoice
  * - `EDIT_INVOICE__RECIPE_DELETE`: Delete a recipe from the invoice
  * - `EDIT_INVOICE__RECIPE_PREVIEW`: Preview recipe details
- * - `EDIT_INVOICE__RECIPE_SHARE`: Share a recipe reference
  *
  * **view-invoice/[id] dialogs** (2):
  * - `VIEW_INVOICE__SHARE_ANALYTICS`: Share invoice analytics charts/insights
@@ -199,17 +195,16 @@ function DialogContainerImpl(): React.JSX.Element | null {
     currentDialog: {type},
   } = useDialogs();
 
+  // Keep the exhaustive dialog mapping colocated with the memoized render, as requested during review.
+  // eslint-disable-next-line complexity
   return useMemo(() => {
     switch (type) {
-      // edit-invoice/[id] Dialogs
       case "EDIT_INVOICE__ANALYSIS":
         return <AnalyzeDialog />;
       case "EDIT_INVOICE__ITEMS":
         return <InvoiceItemsDialog />;
       case "EDIT_INVOICE__ALLERGENS":
         return <AllergenDialog />;
-      case "EDIT_INVOICE__BULK_CATEGORY":
-        return <BulkCategoryDialog />;
       case "EDIT_INVOICE__FEEDBACK":
         return <InvoiceFeedbackDialog />;
       case "EDIT_INVOICE__MERCHANT":
@@ -232,22 +227,16 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <DeleteRecipeDialog />;
       case "EDIT_INVOICE__RECIPE_PREVIEW":
         return <PreviewRecipeDialog />;
-      case "EDIT_INVOICE__RECIPE_SHARE":
-        return <ShareRecipeDialog />;
-      // view-invoice/[id] Dialogs
       case "VIEW_INVOICE__SHARE_ANALYTICS":
         return <ShareAnalyticsDialog />;
       case "VIEW_INVOICE__EXPORT":
         return <ViewInvoiceExportDialog />;
-      // view-invoices Dialogs
       case "VIEW_INVOICES__IMPORT":
         return <InvoicesImportDialog />;
       case "VIEW_INVOICES__EXPORT":
         return <InvoicesExportDialog />;
-      // view-scans Dialogs
       case "VIEW_SCANS__CREATE_INVOICE":
         return <CreateInvoiceDialog />;
-      // shared dialogs
       case "SHARED__INVOICE_DELETE":
         return <DeleteInvoiceDialog />;
       case "SHARED__INVOICE_SHARE":

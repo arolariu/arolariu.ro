@@ -12,7 +12,14 @@
 import {existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {isAggregateFile} from "../src/lib/types/guards.ts";
-import {SERVICE_IDS, type AggregateFile, type Bucket, type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status.ts";
+import {
+  SERVICE_IDS,
+  type AggregateFile,
+  type Bucket,
+  type ProbeResult,
+  type ServiceId,
+  type ServiceSeries,
+} from "../src/lib/types/status.ts";
 import {bucketStart, makeBucket, type BucketAccumulator} from "./aggregateCommon.ts";
 import {groupProbes} from "./aggregateServices.ts";
 import {groupSubChecks} from "./aggregateSubChecks.ts";

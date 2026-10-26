@@ -119,19 +119,38 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       },
       plugins,
     );
-    const [canScrollPrev, setCanScrollPrev] = React.useState(false);
-    const [canScrollNext, setCanScrollNext] = React.useState(false);
+    const subscribe = React.useCallback(
+      (onStoreChange: () => void): (() => void) => {
+        api?.on("reInit", onStoreChange);
+        api?.on("select", onStoreChange);
 
-    const onSelect = React.useCallback((emblaApi: CarouselApi) => {
-      if (!emblaApi) {
-        return;
+        return () => {
+          api?.off("reInit", onStoreChange);
+          api?.off("select", onStoreChange);
+        };
+      },
+      [api],
+    );
+
+    // A primitive snapshot stays referentially stable until scroll availability changes.
+    const getSnapshot = React.useCallback((): "both" | "previous" | "next" | "none" => {
+      const canScrollPrev = api?.canScrollPrev() ?? false;
+      const canScrollNext = api?.canScrollNext() ?? false;
+
+      if (canScrollPrev && canScrollNext) {
+        return "both";
       }
 
-      // eslint-disable-next-line react-x/set-state-in-effect -- syncing embla scroll capability into state is the effect's purpose
-      setCanScrollPrev(emblaApi.canScrollPrev());
-      // eslint-disable-next-line react-x/set-state-in-effect -- syncing embla scroll capability into state is the effect's purpose
-      setCanScrollNext(emblaApi.canScrollNext());
-    }, []);
+      if (canScrollPrev) {
+        return "previous";
+      }
+
+      return canScrollNext ? "next" : "none";
+    }, [api]);
+
+    const scrollAvailability = React.useSyncExternalStore(subscribe, getSnapshot, () => "none");
+    const canScrollPrev = scrollAvailability === "previous" || scrollAvailability === "both";
+    const canScrollNext = scrollAvailability === "next" || scrollAvailability === "both";
 
     const scrollPrev = React.useCallback(() => {
       api?.scrollPrev();
@@ -173,21 +192,6 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 
       setApi(api);
     }, [api, setApi]);
-
-    React.useEffect(() => {
-      if (!api) {
-        return;
-      }
-
-      onSelect(api);
-      api.on("reInit", onSelect);
-      api.on("select", onSelect);
-
-      return () => {
-        api.off("reInit", onSelect);
-        api.off("select", onSelect);
-      };
-    }, [api, onSelect]);
 
     return (
       <CarouselContext.Provider

@@ -12,11 +12,11 @@
  *   component is the single entry point to extend.
  */
 
-import React, {useEffect, useState} from 'react';
-import styles from './styles.module.css';
+import React, {useEffect, useState} from "react";
+import styles from "./styles.module.css";
 
 /** Binary feedback answers; wider schemas are intentionally avoided. */
-type StoredFeedback = 'yes' | 'no';
+type StoredFeedback = "yes" | "no";
 
 declare global {
   interface Window {
@@ -48,7 +48,7 @@ export default function DocFeedback({pagePath}: Readonly<DocFeedbackProps>): Rea
   useEffect(() => {
     try {
       const prior = window.localStorage.getItem(storageKey(pagePath));
-      if (prior === 'yes' || prior === 'no') setRecorded(prior);
+      if (prior === "yes" || prior === "no") setRecorded(prior);
     } catch {
       // storage unavailable — ignore
     }
@@ -60,7 +60,7 @@ export default function DocFeedback({pagePath}: Readonly<DocFeedbackProps>): Rea
     } catch {
       // ignore
     }
-    window.clarity?.('event', 'doc-feedback', {page: pagePath, helpful});
+    window.clarity?.("event", "doc-feedback", {page: pagePath, helpful});
     setRecorded(helpful);
   };
 
@@ -71,8 +71,18 @@ export default function DocFeedback({pagePath}: Readonly<DocFeedbackProps>): Rea
   return (
     <div className={styles.wrap}>
       <span className={styles.prompt}>// was this page useful?</span>
-      <button type="button" className={styles.btn} onClick={() => submit('yes')}>[yes]</button>
-      <button type="button" className={styles.btn} onClick={() => submit('no')}>[no]</button>
+      <button
+        type='button'
+        className={styles.btn}
+        onClick={() => submit("yes")}>
+        [yes]
+      </button>
+      <button
+        type='button'
+        className={styles.btn}
+        onClick={() => submit("no")}>
+        [no]
+      </button>
     </div>
   );
 }

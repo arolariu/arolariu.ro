@@ -16,14 +16,14 @@
  * `npm run build` (or Nx targets that chain through npm).
  */
 
-import {copyFileSync, existsSync, mkdirSync} from 'node:fs';
-import {dirname, resolve} from 'node:path';
-import {generate as generateLlmsTxt} from './generate-llms-txt.ts';
+import {copyFileSync, existsSync, mkdirSync} from "node:fs";
+import {dirname, resolve} from "node:path";
+import {generate as generateLlmsTxt} from "./generate-llms-txt.ts";
 
 /** Absolute path to the docs-site root (the sibling of `build/`). */
-const ROOT = resolve(import.meta.dirname, '..');
+const ROOT = resolve(import.meta.dirname, "..");
 /** Absolute path to the Docusaurus build output. */
-const BUILD = resolve(ROOT, 'build');
+const BUILD = resolve(ROOT, "build");
 
 /**
  * Copy the source-controlled `staticwebapp.config.json` into the
@@ -32,15 +32,15 @@ const BUILD = resolve(ROOT, 'build');
  * local dev build may not care about it.
  */
 function copyStaticWebAppsConfig(): void {
-  const src = resolve(ROOT, 'staticwebapp.config.json');
-  const dest = resolve(BUILD, 'staticwebapp.config.json');
+  const src = resolve(ROOT, "staticwebapp.config.json");
+  const dest = resolve(BUILD, "staticwebapp.config.json");
   if (!existsSync(src)) {
-    console.warn('[postbuild] staticwebapp.config.json not found at', src);
+    console.warn("[postbuild] staticwebapp.config.json not found at", src);
     return;
   }
   mkdirSync(dirname(dest), {recursive: true});
   copyFileSync(src, dest);
-  console.log('[postbuild] copied staticwebapp.config.json -> build/');
+  console.log("[postbuild] copied staticwebapp.config.json -> build/");
 }
 
 /**

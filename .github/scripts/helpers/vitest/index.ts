@@ -36,6 +36,32 @@
 
 import * as path from "node:path";
 import type {IFileSystemHelper} from "../filesystem/index.ts";
+import {count, finite, MAX_REPORT_BYTES, record} from "../reports/validation.ts";
+
+function decodeCoverageFile(value: unknown): CoverageFileSummary {
+  const raw = record(value, "coverage summary");
+  const metric = (name: string): CoverageStats => {
+    const field = record(raw[name], `coverage ${name}`);
+    const total = count(field["total"], `coverage ${name} total`);
+    const covered = count(field["covered"], `coverage ${name} covered`);
+    const skipped = count(field["skipped"], `coverage ${name} skipped`);
+    if (covered > total || skipped > total) throw new TypeError(`Invalid coverage ${name} counters`);
+    return {total, covered, skipped, pct: finite(field["pct"], `coverage ${name} pct`, 100)};
+  };
+  return {lines: metric("lines"), statements: metric("statements"), functions: metric("functions"), branches: metric("branches")};
+}
+
+function decodeCoverage(value: unknown): ParsedCoverageData {
+  const raw = record(value, "coverage report");
+  if (raw["total"] === undefined) throw new TypeError("Coverage data missing 'total' property");
+  return {
+    total: decodeCoverageFile(raw["total"]),
+    files: Object.entries(raw)
+      .filter(([name]) => name !== "total")
+      .map(([filePath, value]) => ({filePath, coverage: decodeCoverageFile(value)}))
+      .sort((a, b) => a.filePath.localeCompare(b.filePath)),
+  };
+}
 
 /**
  * Coverage statistics for a single metric (lines, statements, functions, branches)
@@ -185,27 +211,7 @@ export class VitestHelper implements IVitestHelper {
       throw new Error(`Coverage file not found: ${coverageJsonPath}`);
     }
 
-    const rawData = await fs.readJson<VitestCoverageSummary>(coverageJsonPath);
-
-    // Extract total coverage
-    const total = rawData.total;
-    if (!total) {
-      throw new Error("Coverage data missing 'total' property");
-    }
-
-    // Extract per-file coverage
-    const files = Object.entries(rawData)
-      .filter(([key]) => key !== "total")
-      .map(([filePath, coverage]) => ({
-        filePath,
-        coverage,
-      }))
-      .sort((a, b) => a.filePath.localeCompare(b.filePath));
-
-    return {
-      total,
-      files,
-    };
+    return fs.readValidatedJson(coverageJsonPath, decodeCoverage, MAX_REPORT_BYTES);
   }
 
   /**

@@ -5,6 +5,7 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {InvoiceScanType} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -45,8 +46,10 @@ describe("attachScanToInvoice", () => {
 
     const callArgs = mockFetchWithTimeout.mock.calls[0];
     const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body.type).toBe(InvoiceScanType.JPEG);
     expect(body.location).toBe("https://storage.test/invoices/scan.jpg");
-    expect(body.additionalMetadata).toEqual({page: "1"});
+    expect(body.metadata).toEqual({page: "1"});
+    expect(body).not.toHaveProperty("additionalMetadata");
   });
 
   it("returns an error result for an invalid invoice id", async () => {

@@ -127,17 +127,19 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               <TooltipTrigger
                 render={
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant='destructive'
-                        size='sm'
-                        disabled={isDeleting}>
-                        <TbTrash />
-                        <span className={styles["hiddenMobile"]}>
-                          {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
-                        </span>
-                      </Button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger
+                      render={
+                        <Button
+                          variant='destructive'
+                          size='sm'
+                          disabled={isDeleting}>
+                          <TbTrash />
+                          <span className={styles["hiddenMobile"]}>
+                            {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
+                          </span>
+                        </Button>
+                      }
+                    />
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t((m) => m.pages.invoices.viewScans.toolbar.delete.confirmTitle)}</AlertDialogTitle>

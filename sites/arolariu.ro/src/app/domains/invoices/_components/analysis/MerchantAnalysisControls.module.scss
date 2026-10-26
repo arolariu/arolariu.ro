@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fieldset {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.legend {
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0 0.25rem;
+  color: var(--foreground, #111827);
+}
+
+.radioGroup,
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.radioLabel,
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--foreground, #374151);
+}
+
+.radioLabel:has(input:disabled),
+.checkboxLabel:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radio,
+.checkbox {
+  cursor: pointer;
+  accent-color: var(--primary, #3b82f6);
+}
+
+.customBadge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--muted, #f3f4f6);
+  color: var(--muted-foreground, #6b7280);
+}

@@ -62,17 +62,15 @@ export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;
  *
  * @see {@link TableProps} for available props
  */
-const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({className, ...props}: Readonly<TableProps>, ref): React.JSX.Element => (
-    <div className={styles.container}>
-      <table
-        ref={ref}
-        className={cn(styles.table, className)}
-        {...props}
-      />
-    </div>
-  ),
-);
+const Table = React.forwardRef<HTMLTableElement, TableProps>(({className, ...props}: Readonly<TableProps>, ref): React.JSX.Element => (
+  <div className={styles.container}>
+    <table
+      ref={ref}
+      className={cn(styles.table, className)}
+      {...props}
+    />
+  </div>
+));
 
 /**
  * Renders the table header section.

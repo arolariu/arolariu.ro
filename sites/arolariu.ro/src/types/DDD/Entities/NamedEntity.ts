@@ -32,16 +32,14 @@ import type {BaseEntity} from "./";
  * @example
  * ```typescript
  * interface Merchant extends NamedEntity<string> {
- *   category: MerchantCategory;
- *   address: string;
+ *   classification: StandardClassification | null;
  * }
  *
  * const merchant: Merchant = {
  *   id: "merchant-uuid",
  *   name: "Whole Foods Market",
  *   description: "Organic grocery chain specializing in natural and organic foods",
- *   category: MerchantCategory.SUPERMARKET,
- *   address: "123 Main St, Austin TX",
+ *   classification: null,
  *   createdAt: new Date("2024-01-01"),
  *   createdBy: "admin-user",
  *   lastUpdatedAt: new Date("2024-01-01"),

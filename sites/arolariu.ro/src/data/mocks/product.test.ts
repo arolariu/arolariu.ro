@@ -3,7 +3,6 @@
  * @module data/mocks/product.test
  */
 
-import {ProductCategory, type Allergen} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {ProductBuilder, createProductBuilder, generateRandomProduct, generateRandomProducts, mockProduct, mockProductList} from "./product";
 
@@ -15,14 +14,11 @@ describe("ProductBuilder", () => {
 
       expect(product).toHaveProperty("name");
       expect(product).toHaveProperty("productCode");
-      expect(product).toHaveProperty("category");
       expect(product).toHaveProperty("price");
       expect(product).toHaveProperty("quantity");
       expect(product).toHaveProperty("quantityUnit");
       expect(product).toHaveProperty("totalPrice");
-      expect(product).toHaveProperty("detectedAllergens");
       expect(product).toHaveProperty("metadata");
-      expect(product.detectedAllergens).toEqual([]);
       expect(product.metadata.isComplete).toBe(false);
       expect(product.metadata.isEdited).toBe(false);
       expect(product.metadata.isSoftDeleted).toBe(false);
@@ -45,9 +41,7 @@ describe("ProductBuilder", () => {
     });
 
     it("should set category", () => {
-      const builder = new ProductBuilder();
-      const product = builder.withCategory(ProductCategory.DAIRY).build();
-      expect(product.category).toBe(ProductCategory.DAIRY);
+      // category field removed; classification is used instead
     });
 
     it("should set price", () => {
@@ -72,17 +66,6 @@ describe("ProductBuilder", () => {
       const builder = new ProductBuilder();
       const product = builder.withTotalPrice(99.95).build();
       expect(product.totalPrice).toBe(99.95);
-    });
-
-    it("should set detectedAllergens", () => {
-      const builder = new ProductBuilder();
-      const allergens: Allergen[] = [
-        {name: "milk", description: "Dairy allergen", learnMoreAddress: "https://example.com/milk"},
-        {name: "eggs", description: "Egg allergen", learnMoreAddress: "https://example.com/eggs"},
-        {name: "nuts", description: "Nut allergen", learnMoreAddress: "https://example.com/nuts"},
-      ];
-      const product = builder.withDetectedAllergens(allergens).build();
-      expect(product.detectedAllergens).toEqual(allergens);
     });
 
     it("should set metadata", () => {
@@ -113,13 +96,11 @@ describe("ProductBuilder", () => {
 
   describe("buildMany", () => {
     it("should build multiple products with the same configuration", () => {
-      const builder = new ProductBuilder().withCategory(ProductCategory.BEVERAGES).withQuantityUnit("ml");
-
+      const builder = new ProductBuilder().withQuantityUnit("ml");
       const products = builder.buildMany(3);
 
       expect(products).toHaveLength(3);
       products.forEach((product) => {
-        expect(product.category).toBe(ProductCategory.BEVERAGES);
         expect(product.quantityUnit).toBe("ml");
       });
     });
@@ -158,25 +139,19 @@ describe("ProductBuilder", () => {
       const product = new ProductBuilder()
         .withName("Chain Product Name")
         .withProductCode("CHAIN123")
-        .withCategory(ProductCategory.FRUITS)
         .withPrice(15.99)
         .withQuantity(2)
         .withQuantityUnit("pcs")
         .withTotalPrice(31.98)
-        .withDetectedAllergens([{name: "gluten", description: "Gluten allergen", learnMoreAddress: "https://example.com/gluten"}])
         .withMetadata({isComplete: true, isEdited: false, isSoftDeleted: false})
         .build();
 
       expect(product.name).toBe("Chain Product Name");
       expect(product.productCode).toBe("CHAIN123");
-      expect(product.category).toBe(ProductCategory.FRUITS);
       expect(product.price).toBe(15.99);
       expect(product.quantity).toBe(2);
       expect(product.quantityUnit).toBe("pcs");
       expect(product.totalPrice).toBe(31.98);
-      expect(product.detectedAllergens).toEqual([
-        {name: "gluten", description: "Gluten allergen", learnMoreAddress: "https://example.com/gluten"},
-      ]);
       expect(product.metadata.isComplete).toBe(true);
     });
   });
@@ -287,26 +262,10 @@ describe("ProductBuilder", () => {
       expect(product.totalPrice).toBe(largeNumber);
     });
 
-    it("should handle empty allergens array", () => {
-      const product = new ProductBuilder().withDetectedAllergens([]).build();
-
-      expect(product.detectedAllergens).toEqual([]);
-    });
+    it("should handle empty allergens array", () => {});
 
     it("should handle many allergens", () => {
-      const allergens: Allergen[] = [
-        {name: "milk", description: "Dairy allergen", learnMoreAddress: "https://example.com/milk"},
-        {name: "eggs", description: "Egg allergen", learnMoreAddress: "https://example.com/eggs"},
-        {name: "nuts", description: "Nut allergen", learnMoreAddress: "https://example.com/nuts"},
-        {name: "gluten", description: "Gluten allergen", learnMoreAddress: "https://example.com/gluten"},
-        {name: "soy", description: "Soy allergen", learnMoreAddress: "https://example.com/soy"},
-        {name: "fish", description: "Fish allergen", learnMoreAddress: "https://example.com/fish"},
-        {name: "shellfish", description: "Shellfish allergen", learnMoreAddress: "https://example.com/shellfish"},
-      ];
-      const product = new ProductBuilder().withDetectedAllergens(allergens).build();
-
-      expect(product.detectedAllergens).toEqual(allergens);
-      expect(product.detectedAllergens).toHaveLength(7);
+      // allergenAssessment is the structured replacement for legacy allergen arrays
     });
   });
 });

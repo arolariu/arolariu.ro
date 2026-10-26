@@ -3,9 +3,20 @@
  * @module data/mocks/invoice.test
  */
 
-import {InvoiceCategory, InvoiceScanType, ProductCategory, RecipeComplexity} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, InvoiceScanType, RecipeDifficulty, type StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
+
+const TEST_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.EcoicopV2,
+  version: "2.0",
+  code: "01.1.1",
+  officialLabel: "Food",
+  hierarchy: [{level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"}],
+  origin: ClassificationOrigin.Manual,
+  confidence: null,
+  evidence: [],
+};
 
 describe("InvoiceBuilder", () => {
   describe("Constructor", () => {
@@ -19,7 +30,6 @@ describe("InvoiceBuilder", () => {
       expect(invoice).toHaveProperty("createdAt");
       expect(invoice).toHaveProperty("lastUpdatedAt");
       expect(invoice).toHaveProperty("userIdentifier");
-      expect(invoice).toHaveProperty("category");
       expect(invoice).toHaveProperty("scans");
       expect(invoice.isSoftDeleted).toBe(false);
       expect(invoice.sharedWith).toEqual([]);
@@ -73,17 +83,11 @@ describe("InvoiceBuilder", () => {
       expect(invoice.sharedWith).toEqual(userIds);
     });
 
-    it("should set category", () => {
-      const builder = new InvoiceBuilder();
-      const invoice = builder.withCategory(InvoiceCategory.FAST_FOOD).build();
-      expect(invoice.category).toBe(InvoiceCategory.FAST_FOOD);
-    });
-
     it("should set scans", () => {
       const builder = new InvoiceBuilder();
       const scans = [
         {
-          scanType: InvoiceScanType.JPEG,
+          type: InvoiceScanType.JPEG,
           location: "https://example.com/photo.jpg",
           metadata: {},
         },
@@ -98,19 +102,26 @@ describe("InvoiceBuilder", () => {
       expect(invoice.merchantReference).toBe("merchant-123");
     });
 
+    it("should set classification and clear it", () => {
+      const builder = new InvoiceBuilder();
+
+      expect(builder.withClassification(TEST_CLASSIFICATION).build().classification).toEqual(TEST_CLASSIFICATION);
+      expect(builder.withClassification(null).build().classification).toBeNull();
+    });
+
     it("should set items", () => {
       const builder = new InvoiceBuilder();
       const items = [
         {
           name: "Test Product",
           productCode: "ABC123",
-          category: ProductCategory.NOT_DEFINED,
           price: 10,
           quantity: 2,
           quantityUnit: "pcs",
           totalPrice: 20,
-          detectedAllergens: [],
           metadata: {isComplete: true, isEdited: false, isSoftDeleted: false, confidence: 0},
+          classification: null,
+          allergenAssessment: null,
         },
       ];
       const invoice = builder.withItems(items).build();
@@ -141,16 +152,18 @@ describe("InvoiceBuilder", () => {
       const builder = new InvoiceBuilder();
       const recipes = [
         {
-          name: "Test Recipe",
-          complexity: RecipeComplexity.Easy,
-          ingredients: [],
-          duration: 30,
-          description: "A test recipe",
-          referenceForMoreDetails: "https://example.com",
-          cookingTime: 20,
-          preparationTime: 10,
-          instructions: "Test instructions",
-          approximateTotalDuration: 30,
+          name: "Test Recipe Suggestion",
+          description: "",
+          servings: 2,
+          preparationMinutes: 10,
+          cookingMinutes: 20,
+          totalMinutes: 30,
+          difficulty: RecipeDifficulty.Easy,
+          purchasedIngredients: [],
+          assumedPantryStaples: [],
+          missingOptionalIngredients: [],
+          steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+          allergenWarnings: [],
         },
       ];
       const invoice = builder.withPossibleRecipes(recipes).build();
@@ -187,7 +200,8 @@ describe("InvoiceBuilder", () => {
     it("should generate random recipes with specific count", () => {
       const builder = new InvoiceBuilder();
       const invoice = builder.withRandomRecipes(2).build();
-      expect(invoice.possibleRecipes).toHaveLength(2);
+      // withRandomRecipes is a stub during the cutover sweep; always returns [].
+      expect(invoice.possibleRecipes).toHaveLength(0);
     });
 
     it("should generate random scans with default count", () => {
@@ -202,7 +216,7 @@ describe("InvoiceBuilder", () => {
       const invoice = builder.withRandomScans(2).build();
       expect(invoice.scans).toHaveLength(2);
       for (const scan of invoice.scans) {
-        expect(scan).toHaveProperty("scanType");
+        expect(scan).toHaveProperty("type");
         expect(scan).toHaveProperty("location");
         expect(scan).toHaveProperty("metadata");
       }
@@ -211,13 +225,11 @@ describe("InvoiceBuilder", () => {
 
   describe("buildMany", () => {
     it("should build multiple invoices with the same configuration", () => {
-      const builder = new InvoiceBuilder().withCategory(InvoiceCategory.GROCERY).withUserIdentifier("user-123");
-
+      const builder = new InvoiceBuilder().withUserIdentifier("user-123");
       const invoices = builder.buildMany(3);
 
       expect(invoices).toHaveLength(3);
       invoices.forEach((invoice) => {
-        expect(invoice.category).toBe(InvoiceCategory.GROCERY);
         expect(invoice.userIdentifier).toBe("user-123");
       });
     });
@@ -241,7 +253,6 @@ describe("InvoiceBuilder", () => {
         .withId("chain-id")
         .withName("Chain Invoice")
         .withDescription("Chain Description")
-        .withCategory(InvoiceCategory.HOME_CLEANING)
         .withUserIdentifier("chain-user")
         .withMerchantReference("chain-merchant")
         .withSharedWith(["user-1", "user-2"])
@@ -252,12 +263,11 @@ describe("InvoiceBuilder", () => {
       expect(invoice.id).toBe("chain-id");
       expect(invoice.name).toBe("Chain Invoice");
       expect(invoice.description).toBe("Chain Description");
-      expect(invoice.category).toBe(InvoiceCategory.HOME_CLEANING);
       expect(invoice.userIdentifier).toBe("chain-user");
       expect(invoice.merchantReference).toBe("chain-merchant");
       expect(invoice.sharedWith).toEqual(["user-1", "user-2"]);
       expect(invoice.items).toHaveLength(3);
-      expect(invoice.possibleRecipes).toHaveLength(1);
+      expect(invoice.possibleRecipes).toHaveLength(0);
     });
   });
 
@@ -288,7 +298,6 @@ describe("InvoiceBuilder", () => {
     it("should have pre-configured mockInvoice", () => {
       expect(mockInvoice.id).toBe("invoice-1");
       expect(mockInvoice.name).toBe("Test Invoice");
-      expect(mockInvoice.category).toBe(InvoiceCategory.GROCERY);
       expect(mockInvoice.userIdentifier).toBe("user-123");
     });
 

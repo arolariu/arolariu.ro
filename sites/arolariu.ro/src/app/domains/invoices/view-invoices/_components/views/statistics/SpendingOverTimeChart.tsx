@@ -40,10 +40,16 @@ type CustomTooltipProps = {
   readonly currency: string;
 };
 
+const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
+
 /**
  * Custom tooltip for the spending chart.
  */
-function CustomTooltip({active = false, payload = [], currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
+function CustomTooltip({
+  active = false,
+  payload = EMPTY_TOOLTIP_PAYLOAD,
+  currency,
+}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations();
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;

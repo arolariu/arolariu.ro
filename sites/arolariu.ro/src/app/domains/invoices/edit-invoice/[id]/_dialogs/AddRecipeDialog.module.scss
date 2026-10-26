@@ -19,18 +19,39 @@
   justify-content: space-between;
 }
 
-.ingredientItem {
-  position: relative;
-}
-
 .ingredientRow {
   display: flex;
   gap: space(2);
+  align-items: center;
+  margin-top: space(2);
 }
 
 .ingredientInput {
-  position: relative;
   flex: 1;
+}
+
+.stepRow {
+  display: flex;
+  gap: space(2);
+  align-items: flex-start;
+  margin-top: space(2);
+}
+
+.stepSequence {
+  font-weight: bold;
+  padding-top: space(2);
+  min-width: space(5);
+}
+
+.stepInput {
+  flex: 1;
+}
+
+.allergenGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  margin-top: space(2);
 }
 
 .timeGrid {
@@ -49,16 +70,19 @@
   gap: space(2);
 }
 
-.tooltipText {
-  max-width: 20rem;
+.errorText {
+  color: color("destructive");
+  font-size: font-size("sm");
 }
 
 .dialogContent {
+  max-height: 90vh;
+  overflow-y: auto;
   @include respond-to("sm") {
-    max-width: 28rem;
+    max-width: 32rem;
   }
   @include respond-to("md") {
-    max-width: 32rem;
+    max-width: 40rem;
   }
 }
 
@@ -66,21 +90,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  @include respond-to("sm") {
-    justify-content: space-between;
-  }
 }
 
-.generateButton {
-  display: flex;
-  align-items: center;
-  gap: space(1);
-}
-
-.mutedIcon {
-  color: color("muted-foreground");
-  margin-right: space(2);
+.addIcon {
+  margin-right: space(1);
   width: space(4);
   height: space(4);
 }
@@ -90,19 +103,8 @@
   height: space(4);
 }
 
-.addIcon {
-  margin-right: space(1);
-  width: space(4);
-  height: space(4);
-}
-
 .saveIcon {
   margin-right: space(2);
   width: space(4);
   height: space(4);
-}
-
-.sparklesIcon {
-  width: space(3);
-  height: space(3);
 }

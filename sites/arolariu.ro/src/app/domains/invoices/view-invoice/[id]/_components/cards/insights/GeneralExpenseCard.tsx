@@ -142,6 +142,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <div className={styles["checkboxSection"]}>
               <div className={styles["checkboxRow"]}>
                 <Checkbox
+                  nativeButton
                   id='business'
                   checked={businessExpense}
                   onCheckedChange={handleBusinessExpenseChange}
@@ -150,6 +151,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </div>
               <div className={styles["checkboxRow"]}>
                 <Checkbox
+                  nativeButton
                   id='warranty'
                   checked={trackWarranty}
                   onCheckedChange={handleTrackWarrantyChange}
@@ -158,6 +160,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </div>
               <div className={styles["checkboxRow"]}>
                 <Checkbox
+                  nativeButton
                   id='insurance'
                   checked={insuranceInventory}
                   onCheckedChange={handleInsuranceInventoryChange}

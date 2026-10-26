@@ -38,8 +38,6 @@ export default function ScanSelector(): React.JSX.Element {
   const MOBILE_PAGE_SIZE = 20;
   const DESKTOP_PAGE_SIZE = 50;
 
-  // Pagination state
-  const [page, setPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   // Responsive detection
@@ -53,6 +51,12 @@ export default function ScanSelector(): React.JSX.Element {
   }, []);
 
   const readyScans = scans.filter((scan) => scan.status === ScanStatus.READY);
+  const [pagination, setPagination] = useState({count: readyScans.length, page: 0});
+  const page = pagination.count === readyScans.length ? pagination.page : 0;
+
+  if (pagination.count !== readyScans.length) {
+    setPagination({count: readyScans.length, page: 0});
+  }
   const hasScans = readyScans.length > 0;
   const allSelected = hasScans && selectedScans.length === readyScans.length;
 
@@ -60,11 +64,6 @@ export default function ScanSelector(): React.JSX.Element {
   const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
   const totalPages = Math.ceil(readyScans.length / pageSize);
   const paginatedScans = readyScans.slice(page * pageSize, (page + 1) * pageSize);
-
-  // Reset page when scans change
-  useEffect(() => {
-    setPage(0);
-  }, [readyScans.length]);
 
   /**
    * Factory: returns a stable toggle handler for a specific scan.
@@ -79,13 +78,35 @@ export default function ScanSelector(): React.JSX.Element {
 
   /** Navigates to the previous page of scans. */
   const handlePreviousPage = useCallback(() => {
-    setPage((p) => Math.max(0, p - 1));
+    setPagination((current) => ({...current, page: Math.max(0, current.page - 1)}));
   }, []);
 
   /** Navigates to the next page of scans. */
   const handleNextPage = useCallback(() => {
-    setPage((p) => Math.min(totalPages - 1, p + 1));
+    setPagination((current) => ({...current, page: Math.min(totalPages - 1, current.page + 1)}));
   }, [totalPages]);
+
+  let selectionAction: React.JSX.Element | null = null;
+  if (hasScans) {
+    selectionAction = allSelected ? (
+      <Button
+        variant='outline'
+        size='sm'
+        onClick={clearSelection}>
+        <TbX />
+        {t((m) => m.forms.invoices.createInvoice.scanSelector.clearAll)}
+      </Button>
+    ) : (
+      <Button
+        variant='outline'
+        size='sm'
+        onClick={selectAllScans}
+        disabled={readyScans.length > 5}>
+        <TbCheck />
+        {t((m) => m.forms.invoices.createInvoice.scanSelector.selectAll)}
+      </Button>
+    );
+  }
 
   return (
     <div className={styles["container"]}>
@@ -105,26 +126,7 @@ export default function ScanSelector(): React.JSX.Element {
             </Badge>
           ) : null}
 
-          {hasScans ? (
-            allSelected ? (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={clearSelection}>
-                <TbX />
-                {t((m) => m.forms.invoices.createInvoice.scanSelector.clearAll)}
-              </Button>
-            ) : (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={selectAllScans}
-                disabled={readyScans.length > 5}>
-                <TbCheck />
-                {t((m) => m.forms.invoices.createInvoice.scanSelector.selectAll)}
-              </Button>
-            )
-          ) : null}
+          {selectionAction}
         </div>
       </div>
 

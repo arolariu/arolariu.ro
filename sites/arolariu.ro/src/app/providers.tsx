@@ -14,6 +14,7 @@ import PreferencesSubscriptions from "./_components/PreferencesSubscriptions";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
 const DEFAULT_TIME_ZONE = "Europe/Bucharest";
+const EMPTY_MESSAGES: AbstractIntlMessages = {};
 
 /**
  * Props for the ContextProviders component defining locale, children, and server-derived
@@ -131,15 +132,12 @@ type Props = {
 export default function ContextProviders({locale, messages, featureFlags, children}: Readonly<Props>): React.JSX.Element {
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
   const localization = localizationMap[locale];
-  const [resolvedMessages, setResolvedMessages] = useState<AbstractIntlMessages>(messages ?? ({} satisfies AbstractIntlMessages));
+  const [loadedMessages, setLoadedMessages] = useState<Readonly<{locale: Locale; messages: AbstractIntlMessages}> | null>(null);
+  const resolvedMessages = messages ?? (loadedMessages?.locale === locale ? loadedMessages.messages : EMPTY_MESSAGES);
 
   // Resolve feature flags with safe defaults when not provided (e.g. Storybook / tests).
   const commanderEnabled = featureFlags?.commanderEnabled ?? DEFAULT_FEATURE_FLAGS.commanderEnabled;
   const webVitalsEnabled = featureFlags?.webVitalsEnabled ?? DEFAULT_FEATURE_FLAGS.webVitalsEnabled;
-
-  useEffect(() => {
-    setResolvedMessages(messages ?? ({} satisfies AbstractIntlMessages));
-  }, [messages]);
 
   useEffect(() => {
     if (messages) {
@@ -152,7 +150,7 @@ export default function ContextProviders({locale, messages, featureFlags, childr
       const localeMessagesModule = await import(`../../messages/${locale}.json`);
       const importedMessages = localeMessagesModule.default as AbstractIntlMessages;
       if (isMounted) {
-        setResolvedMessages(importedMessages);
+        setLoadedMessages({locale, messages: importedMessages});
       }
     };
 

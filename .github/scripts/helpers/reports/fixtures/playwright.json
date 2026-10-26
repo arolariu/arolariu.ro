@@ -1,0 +1,52 @@
+{
+  "stats": {"expected": 1, "unexpected": 1, "flaky": 1, "skipped": 0, "duration": 1200},
+  "suites": [
+    {
+      "title": "nested.spec.ts",
+      "file": "tests/nested.spec.ts",
+      "suites": [
+        {
+          "title": "feature",
+          "specs": [
+            {
+              "title": "known failure",
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "status": "expected",
+                  "expectedStatus": "failed",
+                  "results": [{"status": "failed", "duration": 10, "error": {"message": "expected failure"}}]
+                }
+              ]
+            },
+            {
+              "title": "retry",
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "status": "flaky",
+                  "expectedStatus": "passed",
+                  "results": [
+                    {"status": "failed", "duration": 10, "retry": 0},
+                    {"status": "passed", "duration": 20, "retry": 1}
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "interrupted",
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "status": "unexpected",
+                  "expectedStatus": "passed",
+                  "results": [{"status": "interrupted", "duration": 30, "error": {"message": "Worker interrupted"}}]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

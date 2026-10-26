@@ -39,7 +39,7 @@ export type WorkerCapabilities = Readonly<{
  * Safe to call at any time (returns a snapshot, not a live view).
  */
 export function getCapabilities(): WorkerCapabilities {
-  const nav = (globalThis as {navigator?: Navigator & {deviceMemory?: number; gpu?: unknown}}).navigator;
+  const nav = (globalThis as {navigator?: {hardwareConcurrency?: unknown; deviceMemory?: unknown; gpu?: unknown}}).navigator;
   const isolated = (globalThis as {crossOriginIsolated?: boolean}).crossOriginIsolated === true;
 
   const result: {-readonly [K in keyof WorkerCapabilities]: WorkerCapabilities[K]} = {

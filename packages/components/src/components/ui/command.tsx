@@ -283,7 +283,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     },
     ref,
   ) => {
-    const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
+    const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
     const [search, setSearch] = React.useState("");
     const itemOrderRef = React.useRef(0);
     const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());
@@ -302,7 +302,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         || existingItem.disabled !== nextItem.disabled
         || existingItem.forceMount !== nextItem.forceMount
         || existingItem.groupId !== nextItem.groupId
-        || existingItem.keywords.join("\u0000") !== nextItem.keywords.join("\u0000")
+        || existingItem.keywords.join("\0") !== nextItem.keywords.join("\0")
         || existingItem.ref !== nextItem.ref
         || existingItem.textValue !== nextItem.textValue
         || existingItem.value !== nextItem.value;
@@ -354,18 +354,12 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 
     const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
 
-    React.useEffect(() => {
-      if (selectableItems.length === 0) {
-        // eslint-disable-next-line react-x/set-state-in-effect -- clearing active item when no selectable items remain is the effect's purpose
-        setActiveItemId(null);
-        return;
-      }
+    const activeItemId = selectableItems.find((item) => item.id === selectedItemId)?.id ?? selectableItems[0]?.id ?? null;
 
-      if (!activeItemId || !selectableItems.some((item) => item.id === activeItemId)) {
-        // eslint-disable-next-line react-x/set-state-in-effect -- resetting active item to the first selectable is the effect's purpose
-        setActiveItemId(selectableItems[0].id);
-      }
-    }, [activeItemId, selectableItems]);
+    // Remember the fallback so a removed, filtered, or disabled selection cannot reappear later.
+    if (selectedItemId !== activeItemId) {
+      setSelectedItemId(activeItemId);
+    }
 
     React.useEffect(() => {
       if (!activeItemId) {
@@ -378,7 +372,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     }, [activeItemId]);
 
     const selectSpecificItem = React.useCallback((itemId: string | null): void => {
-      setActiveItemId(itemId);
+      setSelectedItemId(itemId);
     }, []);
 
     const selectNextItem = React.useCallback((): void => {
@@ -389,18 +383,18 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
 
       if (currentIndex === -1) {
-        setActiveItemId(selectableItems[0].id);
+        setSelectedItemId(selectableItems[0].id);
         return;
       }
 
       const nextIndex = currentIndex + 1;
 
       if (nextIndex >= selectableItems.length) {
-        setActiveItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
+        setSelectedItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
         return;
       }
 
-      setActiveItemId(selectableItems[nextIndex].id);
+      setSelectedItemId(selectableItems[nextIndex].id);
     }, [activeItemId, loop, selectableItems]);
 
     const selectPreviousItem = React.useCallback((): void => {
@@ -411,18 +405,18 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
 
       if (currentIndex === -1) {
-        setActiveItemId(selectableItems[0].id);
+        setSelectedItemId(selectableItems[0].id);
         return;
       }
 
       const previousIndex = currentIndex - 1;
 
       if (previousIndex < 0) {
-        setActiveItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
+        setSelectedItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
         return;
       }
 
-      setActiveItemId(selectableItems[previousIndex].id);
+      setSelectedItemId(selectableItems[previousIndex].id);
     }, [activeItemId, loop, selectableItems]);
 
     const triggerActiveItem = React.useCallback((): void => {
@@ -514,7 +508,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
                 }
 
                 event.preventDefault();
-                setActiveItemId(selectableItems[0].id);
+                setSelectedItemId(selectableItems[0].id);
                 break;
               }
 
@@ -524,7 +518,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
                 }
 
                 event.preventDefault();
-                setActiveItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
+                setSelectedItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
                 break;
               }
 
@@ -801,7 +795,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
     const groupId = React.useContext(CommandGroupContext);
     const generatedId = React.useId();
     const itemRef = React.useRef<HTMLDivElement | null>(null);
-    const keywordSignature = React.useMemo(() => keywords.join("\u0000"), [keywords]);
+    const keywordSignature = React.useMemo(() => keywords.join("\0"), [keywords]);
 
     React.useLayoutEffect(() => {
       const textValue = value ?? itemRef.current?.textContent?.trim() ?? "";

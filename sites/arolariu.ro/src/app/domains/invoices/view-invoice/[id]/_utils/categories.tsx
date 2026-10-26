@@ -1,4 +1,3 @@
-import {InvoiceCategory} from "@/types/invoices";
 import {
   TbBriefcase,
   TbCar,
@@ -19,72 +18,20 @@ import styles from "./categories.module.scss";
 
 /**
  * Represents a selectable category option for invoice classification.
- *
- * @remarks
- * **Usage Context**: Used in dropdowns, lists, and selection grids for categorizing invoices.
- *
- * **Visuals**: Includes an icon and color styling for UI representation.
- *
- * @property id - The unique identifier for the category (enum value or string key).
- * @property name - The display name of the category.
- * @property icon - The React node representing the category icon.
- * @property color - CSS classes for hover states and coloring.
  */
 type CategoryOption = Readonly<{
-  id: InvoiceCategory | string;
+  id: string;
   name: string;
   icon: React.ReactNode;
   color: string;
 }>;
 
-/**
- * Primary invoice categories displayed prominently in the UI.
- *
- * @remarks
- * **Selection Criteria**: These are the most frequent categories used in the application.
- *
- * **Mapping**: Maps directly to `InvoiceCategory` enum values.
- *
- * **Styling**: Each category has distinct hover colors for better visual distinction.
- *
- * @example
- * ```tsx
- * {mainCategories.map(category => (
- *   <CategoryCard key={category.id} category={category} />
- * ))}
- * ```
- */
 export const mainCategories: CategoryOption[] = [
-  {
-    id: InvoiceCategory.GROCERY,
-    name: "Grocery",
-    icon: <TbShoppingCart className={styles["iconMain"]} />,
-    color: "",
-  },
-  {
-    id: InvoiceCategory.FAST_FOOD,
-    name: "Dining",
-    icon: <TbToolsKitchen className={styles["iconMain"]} />,
-    color: "",
-  },
-  {
-    id: InvoiceCategory.HOME_CLEANING,
-    name: "Home",
-    icon: <TbHome className={styles["iconMain"]} />,
-    color: "",
-  },
-  {
-    id: InvoiceCategory.CAR_AUTO,
-    name: "Auto",
-    icon: <TbCar className={styles["iconMain"]} />,
-    color: "",
-  },
-  {
-    id: InvoiceCategory.OTHER,
-    name: "Other",
-    icon: <TbPackage className={styles["iconMain"]} />,
-    color: "",
-  },
+  {id: "grocery", name: "Grocery", icon: <TbShoppingCart className={styles["iconMain"]} />, color: ""},
+  {id: "dining", name: "Dining", icon: <TbToolsKitchen className={styles["iconMain"]} />, color: ""},
+  {id: "home", name: "Home", icon: <TbHome className={styles["iconMain"]} />, color: ""},
+  {id: "auto", name: "Auto", icon: <TbCar className={styles["iconMain"]} />, color: ""},
+  {id: "other", name: "Other", icon: <TbPackage className={styles["iconMain"]} />, color: ""},
 ];
 
 /**

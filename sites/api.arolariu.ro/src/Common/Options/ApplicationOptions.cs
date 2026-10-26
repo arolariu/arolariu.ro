@@ -148,7 +148,6 @@ public abstract class ApplicationOptions
   /// Performance and reliability considerations:
   /// - Configure appropriate redundancy levels (LRS, GRS, RA-GRS)
   /// - Implement retry policies for transient failures
-  /// - Use CDN integration for global content distribution
   /// - Monitor storage metrics and implement lifecycle policies
   /// </para>
   /// </remarks>

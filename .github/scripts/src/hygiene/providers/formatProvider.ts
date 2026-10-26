@@ -7,29 +7,14 @@
  * Emits one FileFinding per unformatted file.
  */
 
-import * as exec from "@actions/exec";
-import {filesForPrettier} from "../domain/changedFiles.ts";
-import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
+import * as exec from "../../../helpers/sdk/exec.ts";
+import {CommandExecutionError} from "../../../helpers/exec/index.ts";
+import {filesForPrettier, filterExistingFiles} from "../domain/changedFiles.ts";
+import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
 import type {FileFinding, Finding} from "../domain/types.ts";
-
-export interface FormatPayload {
-  readonly unformattedCount: number;
-  readonly unformattedFiles: readonly string[];
-}
-
-const schema: Schema<FormatPayload> = {
-  parse(data: unknown): FormatPayload {
-    if (typeof data !== "object" || data === null) throw new Error("payload not object");
-    const rec = data as Record<string, unknown>;
-    if (typeof rec["unformattedCount"] !== "number") throw new Error("unformattedCount not number");
-    if (!Array.isArray(rec["unformattedFiles"])) throw new Error("unformattedFiles not array");
-    const files = (rec["unformattedFiles"] as unknown[]).map((f) => {
-      if (typeof f !== "string") throw new Error("file not string");
-      return f;
-    });
-    return {unformattedCount: rec["unformattedCount"], unformattedFiles: files};
-  },
-};
+import {formatPayloadSchema, type FormatPayload} from "../../../lib/hygiene/payloads.ts";
+import {providerDescriptor} from "../../../lib/hygiene/registry.ts";
+export type {FormatPayload} from "../../../lib/hygiene/payloads.ts";
 
 /**
  * Parses prettier --check output for unformatted file paths.
@@ -51,22 +36,28 @@ export function parsePrettierCheckOutput(output: string): string[] {
 }
 
 export const formatProvider: CheckProvider<FormatPayload> = {
-  id: "format",
-  name: "Prettier",
-  icon: "🎨",
-  defaultGate: {kind: "blocking", blockOn: "warning"},
-  payloadSchema: schema,
+  ...providerDescriptor("format"),
+  payloadSchema: formatPayloadSchema,
   applicableTo: (input) => {
     const files = filesForPrettier(input);
     return files === null || files.length > 0;
   },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<FormatPayload>> {
-    const scopedFiles = filesForPrettier(input);
+    const candidateFiles = filesForPrettier(input);
+    const scopedFiles = candidateFiles === null ? null : await filterExistingFiles(input.workspaceRoot, candidateFiles);
+    if (scopedFiles !== null && scopedFiles.length === 0) {
+      return {
+        payload: {unformattedCount: 0, unformattedFiles: []},
+        findings: [],
+      };
+    }
+
     const args = scopedFiles === null ? ["prettier", "--check", "."] : ["prettier", "--check", ...scopedFiles];
     const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
 
     const combined = result.stdout + "\n" + result.stderr;
     const files = parsePrettierCheckOutput(combined);
+    if (result.exitCode !== 0 && (result.exitCode !== 1 || files.length === 0)) throw new CommandExecutionError("prettier", result);
 
     const findings: Finding[] = files.map<FileFinding>((file) => ({
       kind: "file",
@@ -79,6 +70,7 @@ export const formatProvider: CheckProvider<FormatPayload> = {
     return {
       payload: {unformattedCount: files.length, unformattedFiles: files},
       findings,
+      executionStatus: result.exitCode === 0 ? "passed" : "failed",
     };
   },
 };

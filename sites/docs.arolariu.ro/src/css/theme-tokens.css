@@ -74,7 +74,7 @@
  * Light mode — cream paper with deep-ink text. Strictly mirrors
  * the status-page light palette so brand continuity is preserved.
  */
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   --bg: #f2e9d8;
   --surface: rgba(21, 16, 10, 0.025);
   --surface-hover: rgba(21, 16, 10, 0.05);

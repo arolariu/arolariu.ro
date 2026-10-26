@@ -104,7 +104,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
       topMerchants,
       topCategories,
       categorySpendBreakdown,
-      categorySpendChartUrl,
+      categorySpendChartUrl = "",
       invoicesUrl,
       createInvoiceUrl,
     } = props;
@@ -177,6 +177,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             <DonutChart
               title={t(selectorFromPath("emails.invoiceStats.donutChartTitle"))}
               data={breakdownForChart}
+              // Keep the nullish fallback for runtime callers that explicitly provide null.
               chartImageUrl={categorySpendChartUrl ?? ""}
               alt={t(selectorFromPath("emails.invoiceStats.donutChartAlt"))}
             />

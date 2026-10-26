@@ -67,7 +67,14 @@
 **/node_modules
 **/npm-debug.log
 **/yarn-error.log
-**/.env
+**/.env*
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.crt
+**/*.cer
+**/NuGet.Config
 **/.DS_Store
 **/Thumbs.db
 

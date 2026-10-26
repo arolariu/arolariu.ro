@@ -155,6 +155,43 @@
   }
 }
 
+// Partial-error card
+.partialErrorContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding: space(4);
+  background-color: color("destructive-foreground");
+  border-left: 4px solid color("destructive");
+  opacity: 0.9;
+}
+
+.partialErrorHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color("destructive");
+  font-weight: font-weight("semibold");
+}
+
+.partialErrorIcon {
+  flex-shrink: 0;
+  width: space(5);
+  height: space(5);
+}
+
+.partialErrorMessage {
+  font-size: font-size("sm");
+  color: color("muted-foreground");
+  margin: 0;
+}
+
+.noClassification {
+  color: color("muted-foreground");
+  font-style: italic;
+  font-size: font-size("sm");
+}
+
 // Create section
 .createSection {
   @include flex-column;

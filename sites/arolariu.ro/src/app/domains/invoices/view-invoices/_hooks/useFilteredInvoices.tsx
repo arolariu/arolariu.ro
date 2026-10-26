@@ -4,7 +4,9 @@ import {getTransactionYear, toRON} from "@/lib/currency";
 import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
+import {getClassificationGroup} from "../../_utils/labelUtilities";
 import type {FilterState} from "./useInvoiceFilters";
+import {UNCLASSIFIED_GROUP} from "../_utils/filterOptions";
 
 /**
  * Custom hook for filtering and sorting invoices based on filter criteria.
@@ -38,7 +40,7 @@ import type {FilterState} from "./useInvoiceFilters";
  *   dateTo: "2024-12-31", // ISO date string
  *   amountMin: 10,
  *   amountMax: 100,
- *   categories: [InvoiceCategory.GROCERY],
+ *   classificationGroups: ["Food and non-alcoholic beverages"],
  *   paymentTypes: [PaymentType.Card],
  *   sortBy: "date",
  *   sortOrder: "desc",
@@ -89,9 +91,13 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => invoice.paymentInformation.totalCostAmount <= filters.amountMax!);
     }
 
-    // Apply category filter (OR logic)
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter((invoice) => filters.categories.includes(invoice.category));
+    // Apply classification group filter (OR logic).
+    // Null classifications use the same stable bucket exposed by the option deriver.
+    if (filters.classificationGroups.length > 0) {
+      filtered = filtered.filter((invoice) => {
+        const group = getClassificationGroup(invoice.classification ?? null) ?? UNCLASSIFIED_GROUP;
+        return filters.classificationGroups.includes(group);
+      });
     }
 
     // Apply payment type filter (OR logic)

@@ -1,9 +1,9 @@
 "use client";
 
 import {toRON} from "@/lib/currency";
-import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
+import {formatCurrency, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
-import {ProductCategory, type Invoice} from "@/types/invoices";
+import {type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useLocale, type TranslationValues} from "next-intl";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
@@ -22,37 +22,27 @@ type Insight = {
 
 type SeasonalTranslateFn = (key: string, values?: TranslationValues) => string;
 
-/**
- * Calculate category spending totals from invoice items.
- */
-function calculateCategorySpending(invoice: Invoice): Record<ProductCategory, number> {
-  const categorySpending: Record<ProductCategory, number> = {} as Record<ProductCategory, number>;
+function calculateCategorySpending(invoice: Invoice): Record<string, number> {
+  const categorySpending: Record<string, number> = {};
   for (const item of invoice.items) {
-    categorySpending[item.category] = (categorySpending[item.category] || 0) + item.totalPrice;
+    const key = item.classification?.code ?? "unclassified";
+    categorySpending[key] = (categorySpending[key] || 0) + item.totalPrice;
   }
   return categorySpending;
 }
 
-/**
- * Calculate historical average spending by category from real invoices.
- */
-function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<ProductCategory, {total: number; count: number}> {
-  const historicalAvg: Record<ProductCategory, {total: number; count: number}> = {} as Record<
-    ProductCategory,
-    {total: number; count: number}
-  >;
+function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<string, {total: number; count: number}> {
+  const historicalAvg: Record<string, {total: number; count: number}> = {};
 
   for (const inv of invoices) {
     for (const item of inv.items) {
-      if (item.metadata.isSoftDeleted) {
-        // Skip soft-deleted items
-      } else {
-        const {category, totalPrice} = item;
-        if (!historicalAvg[category]) {
-          historicalAvg[category] = {total: 0, count: 0};
+      if (!item.metadata.isSoftDeleted) {
+        const key = item.classification?.code ?? "unclassified";
+        if (!historicalAvg[key]) {
+          historicalAvg[key] = {total: 0, count: 0};
         }
-        historicalAvg[category].total += totalPrice ?? 0;
-        historicalAvg[category].count += 1;
+        historicalAvg[key].total += item.totalPrice ?? 0;
+        historicalAvg[key].count += 1;
       }
     }
   }
@@ -63,14 +53,13 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
  * Detect spending spikes compared to historical averages.
  */
 function detectSpendingSpikes(
-  categorySpending: Record<ProductCategory, number>,
-  historicalAvg: Record<ProductCategory, {total: number; count: number}>,
+  categorySpending: Record<string, number>,
+  historicalAvg: Record<string, {total: number; count: number}>,
   translate: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
   for (const [cat, amount] of Object.entries(categorySpending)) {
-    const category = Number.parseInt(cat, 10) as ProductCategory;
-    const avg = historicalAvg[category];
+    const avg = historicalAvg[cat];
     const hasValidAverage = avg && avg.count > 0;
 
     if (hasValidAverage) {
@@ -80,9 +69,9 @@ function detectSpendingSpikes(
 
       if (isSignificantSpike) {
         insights.push({
-          id: `spike-${category}`,
+          id: `spike-${cat}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: translate("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
+          title: translate("insights.spike.title", {category: cat}),
           description: translate("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });

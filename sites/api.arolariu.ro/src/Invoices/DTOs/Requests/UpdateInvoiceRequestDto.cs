@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
@@ -38,10 +39,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="Category">
-/// The invoice category classification (e.g., Groceries, Entertainment, Utilities).
-/// Defaults to <see cref="InvoiceCategory.NOT_DEFINED"/> if not specified.
-/// </param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
 /// Required for proper financial tracking and reporting.
@@ -54,6 +52,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Flag indicating if the invoice is marked as important/favorite.
 /// Important invoices may appear prominently in UI or be excluded from cleanup.
 /// </param>
+/// <param name="PossibleRecipes">
+/// Optional recipe suggestions. Null preserves the persisted collection (the handler
+/// re-adds existing recipes when this field is null, mirroring the Scans preservation
+/// pattern). A supplied list (including an explicitly empty array) replaces the collection
+/// wholesale. An explicitly empty array clears all recipes.
+/// </param>
 /// <param name="AdditionalMetadata">
 /// Extensible key-value metadata for client-specific data.
 /// Null or empty dictionary replaces any existing metadata.
@@ -63,10 +67,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
-///     Category: InvoiceCategory.GROCERIES,
+///     ClassificationCode: "01.1.1",
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
+///     PossibleRecipes: null,    // null preserves existing recipes
 ///     AdditionalMetadata: null);
 ///
 /// var invoice = request.ToInvoice(invoiceId, userId);
@@ -81,10 +86,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  InvoiceCategory Category,
+  string? ClassificationCode,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
+  [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
@@ -122,7 +128,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Category = Category,
+      ClassificationCode = ClassificationCode,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,
@@ -133,6 +139,14 @@ public readonly record struct UpdateInvoiceRequestDto(
       foreach (var (key, value) in AdditionalMetadata)
       {
         invoice.AdditionalMetadata[key] = value;
+      }
+    }
+
+    if (PossibleRecipes is not null)
+    {
+      foreach (var recipe in PossibleRecipes)
+      {
+        invoice.PossibleRecipes.Add(recipe.ToRecipeSuggestion());
       }
     }
 

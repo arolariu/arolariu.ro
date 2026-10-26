@@ -6,8 +6,11 @@
  * Exercises parsing and markdown generation using representative JSON shapes.
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import type {IFileSystemHelper} from "../filesystem/index.ts";
+import {mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {fs} from "../filesystem/index.ts";
 import {
   categorizePlaywrightFailures,
   createPlaywrightHelper,
@@ -131,19 +134,19 @@ function createMockPlaywrightReport(
 }
 
 /**
- * Creates a mock file system helper for testing
+ * Persists actual reporter JSON so parser tests exercise the real broker.
  */
-function createMockFileSystemHelper(mockData: any): IFileSystemHelper {
-  return {
-    exists: vi.fn().mockResolvedValue(true),
-    readJson: vi.fn().mockResolvedValue(mockData),
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-    deleteFile: vi.fn(),
-    createDirectory: vi.fn(),
-    listFiles: vi.fn(),
-    getFileStats: vi.fn(),
-  } as unknown as IFileSystemHelper;
+let directory: string;
+beforeEach(async () => {
+  directory = await mkdtemp(join(tmpdir(), "playwright-report-"));
+});
+afterEach(async () => {
+  await rm(directory, {recursive: true, force: true});
+});
+async function writeReport(value: unknown): Promise<string> {
+  const path = join(directory, "report.json");
+  await writeFile(path, JSON.stringify(value));
+  return path;
 }
 
 describe("PlaywrightHelper", () => {
@@ -156,9 +159,8 @@ describe("PlaywrightHelper", () => {
   describe("parseResults", () => {
     it("should successfully parse valid test results", async () => {
       const mockReport = createMockPlaywrightReport();
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("test-results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.statistics.total).toBe(14);
       expect(results.statistics.passed).toBe(10);
@@ -171,19 +173,13 @@ describe("PlaywrightHelper", () => {
     });
 
     it("should throw error when results file does not exist", async () => {
-      const mockFs = {
-        exists: vi.fn().mockResolvedValue(false),
-        readJson: vi.fn(),
-      } as unknown as IFileSystemHelper;
-
-      await expect(helper.parseResults("missing.json", mockFs)).rejects.toThrow("Playwright results file not found");
+      await expect(helper.parseResults(join(directory, "missing.json"), fs)).rejects.toThrow("Playwright results file not found");
     });
 
     it("should handle report with no suites", async () => {
       const mockReport = {stats: {expected: 0, unexpected: 0, flaky: 0, skipped: 0, duration: 0}};
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("empty.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.tests).toHaveLength(0);
       expect(results.statistics.total).toBe(0);
@@ -204,9 +200,8 @@ describe("PlaywrightHelper", () => {
           },
         ],
       };
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.tests).toHaveLength(1);
       expect(results.statistics.total).toBe(1);
@@ -215,9 +210,8 @@ describe("PlaywrightHelper", () => {
 
     it("should extract error information from failed tests", async () => {
       const mockReport = createMockPlaywrightReport({passed: 0, failed: 1, includeError: true});
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.failures).toHaveLength(2);
       const failureWithError = results.failures[0];
@@ -227,9 +221,8 @@ describe("PlaywrightHelper", () => {
 
     it("should count retries correctly for flaky tests", async () => {
       const mockReport = createMockPlaywrightReport({flaky: 1});
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       const flakyTest = results.flaky[0];
       expect(flakyTest).toBeDefined();
@@ -555,9 +548,8 @@ describe("PlaywrightHelper", () => {
 
     it("should export parsePlaywrightResults convenience function", async () => {
       const mockReport = createMockPlaywrightReport();
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await parsePlaywrightResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await parsePlaywrightResults(reportPath, fs);
 
       expect(results.statistics.total).toBeGreaterThan(0);
     });
@@ -616,9 +608,8 @@ describe("PlaywrightHelper", () => {
           },
         ],
       };
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.tests).toHaveLength(0);
     });
@@ -638,9 +629,8 @@ describe("PlaywrightHelper", () => {
           },
         ],
       };
-      const mockFs = createMockFileSystemHelper(mockReport);
-
-      const results = await helper.parseResults("results.json", mockFs);
+      const reportPath = await writeReport(mockReport);
+      const results = await helper.parseResults(reportPath, fs);
 
       expect(results.tests).toHaveLength(1);
       expect(results.tests[0]?.fullTitle).toBe("test");
