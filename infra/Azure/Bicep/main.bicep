@@ -44,6 +44,10 @@ param resourceGroupLocation string
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
 
+@description('The infrastructure lifecycle stage to execute.')
+@allowed(['foundation', 'domains'])
+param deploymentStage string = 'foundation'
+
 @description('The Entra ID App Registration client ID for exp.arolariu.ro Easy Auth.')
 param expEntraAppClientId string
 
@@ -64,5 +68,8 @@ module mainDeployment 'facade.bicep' = {
     resourceDeploymentDate: resourceDeploymentDate
     resourceLocation: resourceGroupLocation
     expEntraAppClientId: expEntraAppClientId
+    deploymentStage: deploymentStage
   }
 }
+
+output deploymentInfo object = mainDeployment.outputs.deploymentInfo

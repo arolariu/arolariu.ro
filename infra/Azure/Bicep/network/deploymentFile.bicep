@@ -88,3 +88,4 @@ output frontDoorProfileId string = azureFrontDoorDeployment.outputs.frontDoorPro
 
 // Output the DNS Zone name for reference
 output dnsZoneName string = dnsZoneDeployment.outputs.dnsZoneName
+output dnsZoneNameServers array = dnsZoneDeployment.outputs.dnsZoneNameServers
