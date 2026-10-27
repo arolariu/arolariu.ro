@@ -13,9 +13,6 @@ param resourceLocation string
 @allowed(['foundation', 'domains'])
 param deploymentStage string = 'foundation'
 
-@description('The experiments application registration client ID.')
-param expEntraAppClientId string
-
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceGroup().id), 0, 8)}'
 
 module foundationDeployment 'foundation.bicep' = if (deploymentStage == 'foundation') {
@@ -24,7 +21,6 @@ module foundationDeployment 'foundation.bicep' = if (deploymentStage == 'foundat
     resourceConventionPrefix: resourceConventionPrefix
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
-    expEntraAppClientId: expEntraAppClientId
   }
 }
 

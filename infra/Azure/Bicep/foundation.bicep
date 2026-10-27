@@ -16,9 +16,6 @@ param resourceDeploymentDate string = utcNow()
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
-@description('Entra ID App Registration client ID for the exp service Easy Auth.')
-param expEntraAppClientId string
-
 @description('The stable naming prefix derived by the deployment facade.')
 @minLength(3)
 @maxLength(20)
@@ -106,7 +103,7 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     appConfigurationName: configurationDeployment.outputs.appConfigurationName
     appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
-    expEntraAppClientId: expEntraAppClientId
+    expEntraAppClientId: identitiesDeployment.outputs.expEntraAppClientId
     managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
     managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
     managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
@@ -250,6 +247,10 @@ output deploymentInfo object = {
     frontend: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
     backend: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
     infrastructure: identitiesDeployment.outputs.managedIdentitiesList[2].clientId
+  }
+  experiments: {
+    appClientId: identitiesDeployment.outputs.expEntraAppClientId
+    servicePrincipalId: identitiesDeployment.outputs.expEntraServicePrincipalId
   }
   resources: {
     keyVaultName: configurationDeployment.outputs.keyVaultName

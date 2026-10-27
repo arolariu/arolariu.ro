@@ -201,3 +201,61 @@ describe("Bicep deployment stages", {timeout: 120_000}, () => {
     expect(moduleParameters(facade, "domainCompletionDeployment")).not.toHaveProperty("foundationOutputs");
   });
 });
+
+describe("Bicep experiments registration", {timeout: 120_000}, () => {
+  it("provisions a tenant-only application and enabled service principal without client credentials", () => {
+    const identity = compileTemplate(String.raw`infra\Azure\Bicep\identity\deploymentFile.bicep`);
+    const applications = resourcesOfType(identity, "Microsoft.Graph/applications");
+    const principals = resourcesOfType(identity, "Microsoft.Graph/servicePrincipals");
+
+    expect(applications.length).toBeGreaterThan(0);
+    expect(principals).toHaveLength(1);
+    for (const application of applications) {
+      expect(application.properties).toMatchObject({signInAudience: "AzureADMyOrg", api: {requestedAccessTokenVersion: 2}});
+      expect(application.properties?.["passwordCredentials"] ?? []).toHaveLength(0);
+      expect(application.properties?.["keyCredentials"] ?? []).toHaveLength(0);
+    }
+    expect(principals[0]?.properties).toMatchObject({accountEnabled: true, appRoleAssignmentRequired: false});
+  });
+
+  it("exposes the generated application ID only after application creation", () => {
+    const identity = compileTemplate(String.raw`infra\Azure\Bicep\identity\deploymentFile.bicep`);
+    expect(identity.resources["expApplication"]).toBeDefined();
+    expect(identity.resources["expApplicationExposure"]).toBeDefined();
+    const input = moduleParameters(identity, "expApplicationExposure");
+    const exposure = moduleTemplate(identity, "expApplicationExposure");
+    const application = resourcesOfType(exposure, "Microsoft.Graph/applications")[0];
+
+    expect(input["appClientId"]).toEqual(expect.stringContaining("expApplication"));
+    expect(input["appClientId"]).toEqual(expect.stringContaining("appClientId"));
+    expect(application?.properties?.["identifierUris"]).toEqual([expect.stringContaining("api://")]);
+    expect(application?.properties?.["identifierUris"]).toEqual([expect.stringContaining("appClientId")]);
+  });
+
+  it("wires the generated client ID into the site without a required caller-supplied ID", () => {
+    const main = compileTemplate(String.raw`infra\Azure\Bicep\main.bicep`);
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const inputs = moduleParameters(foundation, "websiteDeployment");
+
+    expect(main.parameters).not.toHaveProperty("expEntraAppClientId");
+    expect(inputs["expEntraAppClientId"]).toEqual(expect.stringContaining("identitiesDeployment"));
+    expect(inputs["expEntraAppClientId"]).toEqual(expect.stringContaining("expEntraAppClientId"));
+  });
+
+  it("preserves workload identity positions and the existing GitHub environment trust", () => {
+    const identity = compileTemplate(String.raw`infra\Azure\Bicep\identity\deploymentFile.bicep`);
+    const identities = moduleTemplate(identity, "managedIdentities");
+    const federation = moduleTemplate(identity, "federatedCredentials");
+
+    expect(identities.variables?.["identities"]).toEqual([
+      expect.objectContaining({name: expect.stringContaining("-frontend")}),
+      expect.objectContaining({name: expect.stringContaining("-backend")}),
+      expect.objectContaining({name: expect.stringContaining("-infrastructure")}),
+    ]);
+    expect(moduleParameters(identity, "federatedCredentials")["infrastructureManagedIdentity"]).toEqual(expect.stringContaining("[2]"));
+    expect(federation.variables?.["federatedCredentials"]).toEqual([
+      expect.objectContaining({subject: "repo:arolariu/arolariu.ro:environment:development"}),
+      expect.objectContaining({subject: "repo:arolariu/arolariu.ro:environment:production"}),
+    ]);
+  });
+});
