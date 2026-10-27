@@ -183,7 +183,7 @@ module sqlServerRbac 'rbac/sql-server-rbac.bicep' = {
 
 module backendAccessProbe 'bootstrap/access-probe.bicep' = {
   name: 'backendAccessProbe-${resourceDeploymentDate}'
-  dependsOn: [sqlServerRbac]
+  dependsOn: [sqlServerRbac, cosmosDbRbac]
   params: {
     resourceConventionPrefix: resourceConventionPrefix
     resourceLocation: resourceLocation
@@ -191,6 +191,7 @@ module backendAccessProbe 'bootstrap/access-probe.bicep' = {
     backendManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[1]
     sqlServerFqdn: storageDeployment.outputs.sqlServerFqdn
     sqlDatabaseName: storageDeployment.outputs.sqlDatabasePrimaryName
+    cosmosEndpoint: storageDeployment.outputs.cosmosEndpoint
   }
 }
 

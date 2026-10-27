@@ -12,6 +12,10 @@ SQL uses contained database users instead of a management-plane role assignment.
 infrastructure Entra administrator, creates the backend user by identity SID, and grants `db_datareader`, `db_datawriter`, and
 `db_ddladmin`. A separate script verifies access using the backend identity itself; no manual SQL script is required.
 
+Cosmos uses its native SQL data-contributor role scoped to `/dbs/primary`, not Azure's management-plane Operator role. The backend probe
+reads account/container metadata and runs read-only queries against invoices and merchants. Additional metadata scope is not granted
+implicitly if a live SDK access check fails.
+
 ```
 facade.bicep
   ├── identity/ → creates UAMIs
@@ -29,7 +33,7 @@ facade.bicep
 | `key-vault-rbac.bicep`          | Key Vault                | 3 (backend/infra)                          |
 | `app-configuration-rbac.bicep`  | App Configuration        | 3 (frontend/backend/infra)                 |
 | `sql-server-rbac.bicep`         | SQL application database | 3 contained database memberships (backend) |
-| `cosmos-db-rbac.bicep`          | Cosmos DB                | 1 (backend)                                |
+| `cosmos-db-rbac.bicep`          | Cosmos primary database  | 1 native data-contributor role (backend)   |
 | `openai-rbac.bicep`             | Azure OpenAI             | 1 (backend)                                |
 | `websites-rbac.bicep`           | App Services (looped)    | 1 per web app (infra)                      |
 
@@ -53,7 +57,7 @@ facade.bicep
 | Storage Account    | Queue Data Contributor    | Async processing                   |
 | Storage Account    | Table Data Contributor    | Entity CRUD                        |
 | SQL database       | Reader, writer, DDL admin | Application data and EF migrations |
-| Cosmos DB          | Data Operator             | Document CRUD                      |
+| Cosmos DB          | Native Data Contributor   | Document CRUD in primary database  |
 | App Configuration  | Data Owner                | Read + write settings              |
 | Key Vault          | Secrets User              | Read secrets at runtime            |
 | Azure OpenAI       | OpenAI User               | API inference calls                |

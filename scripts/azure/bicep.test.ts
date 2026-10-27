@@ -132,12 +132,13 @@ function resourcesOfType(template: CompiledTemplate, type: string): readonly Com
 }
 
 type EnvironmentFixture = Readonly<Record<string, string>>;
+type HttpFault = Readonly<{status: number; code: string; attempts: number; body?: string}>;
 type ScriptScenario =
   | Readonly<{kind: "sql"; environment: EnvironmentFixture; existingUserSid: string | null; queryError?: string; queryErrorNumber?: number}>
-  | Readonly<{kind: "probe"; environment: EnvironmentFixture; queryError?: string}>;
+  | Readonly<{kind: "probe"; environment: EnvironmentFixture; queryError?: string; httpFault?: HttpFault}>;
 
 interface ScriptOperation {
-  readonly kind: "sql" | "token" | "module-install" | "sleep";
+  readonly kind: "sql" | "http" | "token" | "module-install" | "sleep";
   readonly target: string;
   readonly value?: string;
   readonly length?: number;
@@ -159,6 +160,7 @@ function scenario<K extends ScriptScenario["kind"]>(kind: K): Extract<ScriptScen
     BACKEND_USER_NAME: "backend",
     BACKEND_CLIENT_ID: "11111111-1111-4111-8111-111111111111",
     BACKEND_PRINCIPAL_ID: "22222222-2222-4222-8222-222222222222",
+    COSMOS_ENDPOINT: "https://cosmos.example.test/",
     AZURE_CLIENT_ID: kind === "probe" ? "11111111-1111-4111-8111-111111111111" : "33333333-3333-4333-8333-333333333333",
   };
   const scenarios: {[Key in ScriptScenario["kind"]]: Extract<ScriptScenario, {kind: Key}>} = {
@@ -175,6 +177,7 @@ foreach ($entry in $case.environment.GetEnumerator()) {
   [Environment]::SetEnvironmentVariable($entry.Key, [string]$entry.Value)
 }
 $script:operations = [Collections.Generic.List[object]]::new()
+$script:httpRequests = 0
 $script:clock = [DateTime]::Parse('2026-01-01T00:00:00Z').ToUniversalTime()
 $script:userSid = if ($case.ContainsKey('existingUserSid') -and $case.existingUserSid) {
   '0x' + [Convert]::ToHexString(([Guid]$case.existingUserSid).ToByteArray())
@@ -206,11 +209,44 @@ function Get-AzContext {
 }
 function Get-AzAccessToken {
   param([string]$ResourceUrl)
-  if ($ResourceUrl -notmatch '^https://database\.windows\.net/?$') { throw 'Unexpected token audience.' }
+  if ($ResourceUrl -notmatch '^https://database\.windows\.net/?$' -and -not ($case.kind -eq 'probe' -and $ResourceUrl -eq 'https://cosmos.azure.com/')) {
+    throw 'Unexpected token audience.'
+  }
   $script:operations.Add(@{kind='token';target=$ResourceUrl;value=$env:AZURE_CLIENT_ID})
   return [pscustomobject]@{Token=(ConvertTo-SecureString 'synthetic-access-token' -AsPlainText -Force)}
 }
-function Invoke-RestMethod { throw 'Unexpected network request in SQL test.' }
+function Invoke-RestMethod {
+  [CmdletBinding()]
+  param([Uri]$Uri,[hashtable]$Headers,[string]$Method='Get',[string]$Body,[string]$ContentType,[int]$TimeoutSec)
+  if ($case.kind -ne 'probe' -or $Uri.Scheme -ne 'https' -or $Uri.Host -ne 'cosmos.example.test') {
+    throw 'Unexpected network target.'
+  }
+  if ([Uri]::UnescapeDataString($Headers.authorization) -ne 'type=aad&ver=1.0&sig=synthetic-access-token' -or -not $Headers['x-ms-date'] -or $Headers['x-ms-version'] -ne '2018-12-31') {
+    throw 'Invalid Cosmos authorization headers.'
+  }
+  $script:operations.Add(@{kind='http';target=$Uri.AbsolutePath;value=$Method.ToUpperInvariant()})
+  $script:httpRequests++
+  if ($case.ContainsKey('httpFault') -and $script:httpRequests -le $case.httpFault.attempts) {
+    $failure = [Exception]::new([string]$case.httpFault.body)
+    Add-Member -InputObject $failure -NotePropertyName Response -NotePropertyValue ([pscustomobject]@{StatusCode=$case.httpFault.status})
+    throw $failure
+  }
+  if ($Method -eq 'Get' -and $Uri.AbsolutePath -eq '/') {
+    return [pscustomobject]@{id='cosmos-test';writableLocations=@([pscustomobject]@{name='Test Region'})}
+  }
+  if ($Method -eq 'Get' -and $Uri.AbsolutePath -match '^/dbs/primary/colls/(invoices|merchants)$') {
+    return [pscustomobject]@{id=$Uri.Segments[-1]}
+  }
+  if ($Method -eq 'Post' -and $Uri.AbsolutePath -match '^/dbs/primary/colls/(invoices|merchants)/docs$') {
+    $query = ConvertFrom-Json -InputObject $Body
+    if ($ContentType -ne 'application/query+json' -or $Headers['x-ms-documentdb-isquery'] -ne 'True' -or $Headers['x-ms-documentdb-query-enablecrosspartition'] -ne 'True' -or $query.query -notmatch '^SELECT TOP 1 c\.id FROM c$') {
+      throw 'Invalid Cosmos read-only query.'
+    }
+    return [pscustomobject]@{Documents=@();_count=0}
+  }
+  throw 'Unexpected Cosmos data operation.'
+}
+function Invoke-WebRequest { throw 'Unexpected web request.' }
 function Invoke-Sqlcmd {
   [CmdletBinding()]
   param([string]$ServerInstance,[string]$Database,[string]$Query,$AccessToken,[int]$ConnectionTimeout,[int]$QueryTimeout)
@@ -305,6 +341,7 @@ function runScript(modulePath: string, resourceSymbol: string, input: ScriptScen
     if (
       !isRecord(operation)
       || (operation["kind"] !== "sql"
+        && operation["kind"] !== "http"
         && operation["kind"] !== "token"
         && operation["kind"] !== "module-install"
         && operation["kind"] !== "sleep")
@@ -547,6 +584,99 @@ describe("Bicep SQL bootstrap", {timeout: 120_000}, () => {
     const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", scenario("probe"));
     expect(result.exitCode).toBe(0);
     expect(result.outputs["completed"]).toBe(true);
-    expect(result.operations.filter((op) => op.kind === "token").map((op) => op.value)).toEqual(["11111111-1111-4111-8111-111111111111"]);
+    expect(
+      result.operations.filter((op) => op.kind === "token" && op.target === "https://database.windows.net/").map((op) => op.value),
+    ).toEqual(["11111111-1111-4111-8111-111111111111"]);
+  });
+});
+
+describe("Bicep Cosmos access", {timeout: 120_000}, () => {
+  it("uses a native data-contributor assignment scoped to the primary database", () => {
+    const template = compileTemplate(String.raw`infra\Azure\Bicep\rbac\cosmos-db-rbac.bicep`);
+    const assignments = resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments");
+
+    expect(assignments).toHaveLength(1);
+    expect(resourcesOfType(template, "Microsoft.Authorization/roleAssignments")).toHaveLength(0);
+    expect(assignments[0]?.properties).toMatchObject({
+      principalId: "[parameters('backendPrincipalId')]",
+      scope: expect.stringContaining("/dbs/primary"),
+      roleDefinitionId: expect.stringContaining("/sqlRoleDefinitions/"),
+    });
+    expect(JSON.stringify(assignments[0])).toContain("cosmosDbSqlDataContributor");
+    expect(Object.values(template.variables ?? {})).toContain("00000000-0000-0000-0000-000000000002");
+  });
+
+  it("preserves managed-identity-only authentication and existing partition contracts", () => {
+    const template = compileTemplate(String.raw`infra\Azure\Bicep\storage\noSqlServer.bicep`);
+    expect(resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts")[0]?.properties?.["disableLocalAuth"]).toBe(true);
+    const containers = resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers");
+    expect(containers.map((container) => container.properties?.["resource"])).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({id: "invoices", partitionKey: {paths: ["/UserIdentifier"], kind: "Hash", version: 2}}),
+        expect.objectContaining({id: "merchants", partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash", version: 2}}),
+      ]),
+    );
+    expect(containers).toHaveLength(2);
+  });
+
+  it("forwards the raw resource endpoint to the backend probe after its native grant", () => {
+    const storage = compileTemplate(String.raw`infra\Azure\Bicep\storage\deploymentFile.bicep`);
+    const leaf = moduleTemplate(storage, "noSqlServerDeployment");
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    expect(JSON.stringify(leaf.outputs?.["cosmosEndpoint"])).toContain("documentEndpoint");
+    expect(JSON.stringify(storage.outputs?.["cosmosEndpoint"])).toContain("cosmosEndpoint");
+    expect(moduleParameters(foundation, "backendAccessProbe")["cosmosEndpoint"]).toEqual(expect.stringContaining("storageDeployment"));
+    expect(moduleParameters(foundation, "cosmosDbRbac")["backendPrincipalId"]).toEqual(expect.stringContaining("[1].principalId"));
+    expect(foundation.resources["backendAccessProbe"]?.dependsOn).toContain("cosmosDbRbac");
+    const probe = compileTemplate(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`).resources["backendAccessProbe"];
+    expect(probe?.properties?.["environmentVariables"]).toEqual(
+      expect.arrayContaining([{name: "COSMOS_ENDPOINT", value: "[parameters('cosmosEndpoint')]"}]),
+    );
+  });
+
+  it("uses the backend token for native metadata and read-only invoice/merchant queries", () => {
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", scenario("probe"));
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outputs["completed"]).toBe(true);
+    const requests = result.operations.filter((op) => op.kind === "http");
+    expect(requests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({target: "/", value: "GET"}),
+        expect.objectContaining({target: "/dbs/primary/colls/invoices", value: "GET"}),
+        expect.objectContaining({target: "/dbs/primary/colls/merchants", value: "GET"}),
+        expect.objectContaining({target: "/dbs/primary/colls/invoices/docs", value: "POST"}),
+        expect.objectContaining({target: "/dbs/primary/colls/merchants/docs", value: "POST"}),
+      ]),
+    );
+    expect(result.operations).toContainEqual({
+      kind: "token",
+      target: "https://cosmos.azure.com/",
+      value: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
+  it("allows bounded native-role propagation before reporting success", () => {
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", {
+      ...scenario("probe"),
+      httpFault: {status: 403, code: "Forbidden", attempts: 2, body: "ROLE_PROPAGATING"},
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outputs["completed"]).toBe(true);
+    expect(result.operations.filter((op) => op.kind === "http" && op.target === "/")).toHaveLength(3);
+    expect(result.operations.filter((op) => op.kind === "sleep")).toHaveLength(2);
+  });
+
+  it("fails denied data-plane access without exposing the service error body", () => {
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", {
+      ...scenario("probe"),
+      httpFault: {status: 403, code: "Forbidden", attempts: 50, body: "DO_NOT_LOG_SECRET_MARKER"},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stdout + result.stderr).not.toContain("DO_NOT_LOG_SECRET_MARKER");
+    expect(result.operations.filter((op) => op.kind === "http").length).toBeGreaterThan(1);
   });
 });

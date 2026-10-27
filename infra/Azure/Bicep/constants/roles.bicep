@@ -52,7 +52,8 @@ var acrRepositoryReader = 'b93aa761-3e63-49ed-ac28-beffa264f7ac'
 // Database Roles
 // -------------------------------------------------------------------------------------
 @export()
-var cosmosDbDataOperator = '230815da-be43-4aae-9cb4-875f7bd000aa'
+@description('Account-relative Cosmos native SQL data-contributor role, not an Azure RBAC role.')
+var cosmosDbSqlDataContributor = '00000000-0000-0000-0000-000000000002'
 
 // -------------------------------------------------------------------------------------
 // Configuration Roles

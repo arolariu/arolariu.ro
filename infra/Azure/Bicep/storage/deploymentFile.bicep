@@ -100,3 +100,4 @@ output sqlServerFqdn string = sqlServerDeployment.outputs.sqlServerFqdn
 output sqlDatabasePrimaryName string = sqlServerDeployment.outputs.sqlDatabasePrimaryName
 output sqlDatabaseSecondaryName string = sqlServerDeployment.outputs.sqlDatabaseSecondaryName
 output cosmosAccountName string = noSqlServerDeployment.outputs.noSqlServerName
+output cosmosEndpoint string = noSqlServerDeployment.outputs.cosmosEndpoint

@@ -26,11 +26,10 @@
 //
 // Security Configuration:
 // - TLS 1.2 minimum (minimalTlsVersion: 'Tls12')
-// - Local authentication enabled (for development)
-// - Consider disabling local auth for production (disableLocalAuth: true)
+// - Local authentication disabled; applications use managed identities
 // - Public network access enabled
 //
-// See: rbac/backend-uami-rbac.bicep (Cosmos DB role assignments)
+// See: rbac/cosmos-db-rbac.bicep (native Cosmos data-plane access)
 // See: docs/rfc/2001-domain-driven-design-architecture.md (data model)
 // =====================================================================================
 
@@ -53,7 +52,7 @@ param noSqlServerDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('storage', noSqlServerDeploymentDate)
 
-resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' = {
+resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
   name: noSqlServerName
   location: noSqlServerLocation
   kind: 'GlobalDocumentDB'
@@ -94,7 +93,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
     capacity: { totalThroughputLimit: 1000 }
   }
 
-  resource primaryNoSqlDatabase 'sqlDatabases@2025-11-01-preview' = {
+  resource primaryNoSqlDatabase 'sqlDatabases@2026-03-15' = {
     name: 'primary'
     location: noSqlServerLocation
     properties: {
@@ -103,7 +102,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
       }
     }
 
-    resource invoicesContainer 'containers@2025-11-01-preview' = {
+    resource invoicesContainer 'containers@2026-03-15' = {
       name: 'invoices'
       properties: {
         resource: {
@@ -126,7 +125,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
       }
     }
 
-    resource merchantsContainer 'containers@2025-11-01-preview' = {
+    resource merchantsContainer 'containers@2026-03-15' = {
       name: 'merchants'
       properties: {
         resource: {
@@ -161,3 +160,4 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
 
 output noSqlServerName string = noSqlServer.name
 output noSqlServerId string = noSqlServer.id
+output cosmosEndpoint string = noSqlServer.properties.documentEndpoint
