@@ -8,6 +8,10 @@ assignments are **scoped to individual Azure resources** (not the resource group
 RBAC assignments are co-located with the resources they protect. Each file assigns roles scoped to a single Azure resource type using the
 `existing` keyword and `scope:` property. Role definition GUIDs are imported from `constants/roles.bicep` (single source of truth).
 
+SQL uses contained database users instead of a management-plane role assignment. Its inline deployment script runs as the permanent
+infrastructure Entra administrator, creates the backend user by identity SID, and grants `db_datareader`, `db_datawriter`, and
+`db_ddladmin`. A separate script verifies access using the backend identity itself; no manual SQL script is required.
+
 ```
 facade.bicep
   ├── identity/ → creates UAMIs
@@ -18,18 +22,16 @@ facade.bicep
 
 ## Module Files
 
-| File                            | Target Resource          | Assignments                                        |
-| ------------------------------- | ------------------------ | -------------------------------------------------- |
-| `storage-rbac.bicep`            | Storage Account          | 9 (frontend/backend/infra)                         |
-| `container-registry-rbac.bicep` | Container Registry       | 4 (frontend/backend/infra)                         |
-| `key-vault-rbac.bicep`          | Key Vault                | 3 (backend/infra)                                  |
-| `app-configuration-rbac.bicep`  | App Configuration        | 3 (frontend/backend/infra)                         |
-| `sql-server-rbac.bicep`         | SQL Server               | 1 (backend)                                        |
-| `cosmos-db-rbac.bicep`          | Cosmos DB                | 1 (backend)                                        |
-| `openai-rbac.bicep`             | Azure OpenAI             | 1 (backend)                                        |
-| `websites-rbac.bicep`           | App Services (looped)    | 1 per web app (infra)                              |
-| `sql-rbac-uami.sql`             | SQL database-level roles | N/A                                                |
-| **Total**                       |                          | **22 fixed + 1 per web app (Website Contributor)** |
+| File                            | Target Resource          | Assignments                                |
+| ------------------------------- | ------------------------ | ------------------------------------------ |
+| `storage-rbac.bicep`            | Storage Account          | 9 (frontend/backend/infra)                 |
+| `container-registry-rbac.bicep` | Container Registry       | 4 (frontend/backend/infra)                 |
+| `key-vault-rbac.bicep`          | Key Vault                | 3 (backend/infra)                          |
+| `app-configuration-rbac.bicep`  | App Configuration        | 3 (frontend/backend/infra)                 |
+| `sql-server-rbac.bicep`         | SQL application database | 3 contained database memberships (backend) |
+| `cosmos-db-rbac.bicep`          | Cosmos DB                | 1 (backend)                                |
+| `openai-rbac.bicep`             | Azure OpenAI             | 1 (backend)                                |
+| `websites-rbac.bicep`           | App Services (looped)    | 1 per web app (infra)                      |
 
 ## Identity Roles Summary
 
@@ -45,17 +47,17 @@ facade.bicep
 
 ### Backend Identity (data plane access)
 
-| Resource           | Role                   | Purpose                 |
-| ------------------ | ---------------------- | ----------------------- |
-| Storage Account    | Blob Data Owner        | Full blob access + ACL  |
-| Storage Account    | Queue Data Contributor | Async processing        |
-| Storage Account    | Table Data Contributor | Entity CRUD             |
-| SQL Server         | SQL DB Contributor     | Database operations     |
-| Cosmos DB          | Data Operator          | Document CRUD           |
-| App Configuration  | Data Owner             | Read + write settings   |
-| Key Vault          | Secrets User           | Read secrets at runtime |
-| Azure OpenAI       | OpenAI User            | API inference calls     |
-| Container Registry | ACR Pull               | Pull container images   |
+| Resource           | Role                      | Purpose                            |
+| ------------------ | ------------------------- | ---------------------------------- |
+| Storage Account    | Blob Data Owner           | Full blob access + ACL             |
+| Storage Account    | Queue Data Contributor    | Async processing                   |
+| Storage Account    | Table Data Contributor    | Entity CRUD                        |
+| SQL database       | Reader, writer, DDL admin | Application data and EF migrations |
+| Cosmos DB          | Data Operator             | Document CRUD                      |
+| App Configuration  | Data Owner                | Read + write settings              |
+| Key Vault          | Secrets User              | Read secrets at runtime            |
+| Azure OpenAI       | OpenAI User               | API inference calls                |
+| Container Registry | ACR Pull                  | Pull container images              |
 
 ### Infrastructure Identity (CI/CD)
 
@@ -64,6 +66,7 @@ facade.bicep
 | Storage Account    | Blob Data Reader    | Deployment verification     |
 | Storage Account    | Queue Data Reader   | Deployment verification     |
 | Storage Account    | Table Data Reader   | Deployment verification     |
+| SQL Server         | Entra administrator | Bootstrap contained users   |
 | App Configuration  | Data Reader         | Deployment settings         |
 | Key Vault          | Reader              | Discover metadata           |
 | Key Vault          | Secrets User        | Read secrets for deployment |

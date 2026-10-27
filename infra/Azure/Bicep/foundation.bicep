@@ -67,11 +67,11 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
 
 module storageDeployment 'storage/deploymentFile.bicep' = {
   name: 'storageDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment]
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
+    infrastructureManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[2]
   }
 }
 
@@ -171,8 +171,26 @@ module containerRegistryRbac 'rbac/container-registry-rbac.bicep' = {
 module sqlServerRbac 'rbac/sql-server-rbac.bicep' = {
   name: 'sqlServerRbac-${resourceDeploymentDate}'
   params: {
-    sqlServerName: storageDeployment.outputs.sqlServerName
-    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    sqlServerFqdn: storageDeployment.outputs.sqlServerFqdn
+    sqlDatabaseNames: [storageDeployment.outputs.sqlDatabasePrimaryName]
+    backendManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[1]
+    infrastructureManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[2]
+  }
+}
+
+module backendAccessProbe 'bootstrap/access-probe.bicep' = {
+  name: 'backendAccessProbe-${resourceDeploymentDate}'
+  dependsOn: [sqlServerRbac]
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    backendManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[1]
+    sqlServerFqdn: storageDeployment.outputs.sqlServerFqdn
+    sqlDatabaseName: storageDeployment.outputs.sqlDatabasePrimaryName
   }
 }
 
@@ -252,6 +270,7 @@ output deploymentInfo object = {
     appClientId: identitiesDeployment.outputs.expEntraAppClientId
     servicePrincipalId: identitiesDeployment.outputs.expEntraServicePrincipalId
   }
+  sqlAccessVerified: backendAccessProbe.outputs.completed
   resources: {
     keyVaultName: configurationDeployment.outputs.keyVaultName
     appConfigurationName: configurationDeployment.outputs.appConfigurationName

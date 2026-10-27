@@ -36,6 +36,11 @@ param resourceConventionPrefix string
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
+import { identity } from '../types/identity.type.bicep'
+
+@description('The infrastructure identity that administers the SQL server.')
+param infrastructureManagedIdentity identity
+
 // Generate names using the existing convention
 var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sacc'
 var containerRegistryName = '${replace(resourceConventionPrefix, '-', '')}acrprod'
@@ -69,9 +74,7 @@ module sqlServerDeployment 'sqlServer.bicep' = {
     sqlServerName: sqlServerName
     sqlServerLocation: resourceLocation
     sqlServerDeploymentDate: resourceDeploymentDate
-    // Note: These credentials should be provided from Key Vault in production
-    sqlServerAdministratorPassword: 'TempP@ssw0rd123!'
-    sqlServerAdministratorUserName: 'sqladmin'
+    infrastructureManagedIdentity: infrastructureManagedIdentity
     // SQL Database parameters:
     sqlDatabaseNamePrefix: '${resourceConventionPrefix}-sqlserver-db'
   }
@@ -93,4 +96,7 @@ output storageAccountId string = storageAccountDeployment.outputs.storageAccount
 output storageAccountBlobEndpoint string = storageAccountDeployment.outputs.storageAccountBlobEndpoint
 output containerRegistryName string = containerRegistryDeployment.outputs.containerRegistryName
 output sqlServerName string = sqlServerDeployment.outputs.sqlServerName
+output sqlServerFqdn string = sqlServerDeployment.outputs.sqlServerFqdn
+output sqlDatabasePrimaryName string = sqlServerDeployment.outputs.sqlDatabasePrimaryName
+output sqlDatabaseSecondaryName string = sqlServerDeployment.outputs.sqlDatabaseSecondaryName
 output cosmosAccountName string = noSqlServerDeployment.outputs.noSqlServerName

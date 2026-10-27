@@ -52,9 +52,6 @@ var acrRepositoryReader = 'b93aa761-3e63-49ed-ac28-beffa264f7ac'
 // Database Roles
 // -------------------------------------------------------------------------------------
 @export()
-var sqlDbContributor = '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec'
-
-@export()
 var cosmosDbDataOperator = '230815da-be43-4aae-9cb4-875f7bd000aa'
 
 // -------------------------------------------------------------------------------------
