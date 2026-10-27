@@ -8,13 +8,6 @@ import {useRef} from "react";
 import {TbQuote} from "react-icons/tb";
 import styles from "./Perspectives.module.scss";
 
-type PerspectiveType = {
-  author: string;
-  position: string;
-  company: string;
-  quote: string;
-};
-
 const containerVariants: Variants = {
   hidden: {opacity: 0},
   visible: {
@@ -35,6 +28,13 @@ const itemVariants: Variants = {
  * @returns A section element containing a grid of perspective cards with animation effects
  */
 export default function Perspectives(): React.JSX.Element {
+  type PerspectiveType = {
+    author: string;
+    position: string;
+    company: string;
+    quote: string;
+  };
+
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: true});

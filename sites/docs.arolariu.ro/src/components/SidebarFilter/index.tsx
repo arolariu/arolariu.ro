@@ -125,10 +125,10 @@ export default function SidebarFilter(): React.JSX.Element {
   useEffect(() => () => restoreExpandedCategories(), []);
 
   return (
-    <div className={styles.wrap}>
-      <span className={styles.label}>[filter:</span>
+    <div className={styles["wrap"]}>
+      <span className={styles["label"]}>[filter:</span>
       <input
-        className={styles.input}
+        className={styles["input"]}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
@@ -138,7 +138,7 @@ export default function SidebarFilter(): React.JSX.Element {
         aria-label='filter sidebar'
         type='search'
       />
-      <span className={styles.label}>]</span>
+      <span className={styles["label"]}>]</span>
     </div>
   );
 }

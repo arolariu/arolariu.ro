@@ -61,6 +61,10 @@
     <PackageReference Include="Azure.Identity" />
   </ItemGroup>
 
+  <ItemGroup Label="Security Packages">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
   
   <ItemGroup Label="Framework References">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

@@ -13,8 +13,6 @@ export type ItemSize = "default" | "sm";
 /** Supported media treatments for {@link ItemMedia}. */
 export type ItemMediaVariant = "default" | "icon" | "image";
 
-type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
-
 /**
  * Props for the {@link ItemGroup} component.
  */
@@ -160,6 +158,8 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
     );
 
     if (asChild && React.isValidElement(children)) {
+      type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
+
       const child = children as React.ReactElement<
         React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
       >;

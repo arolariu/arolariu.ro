@@ -30,10 +30,10 @@ export default function SearchBarWrapper(props: Readonly<Props>): React.JSX.Elem
   }, []);
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles["wrap"]}>
       <SearchBar {...props} />
       <kbd
-        className={styles.hint}
+        className={styles["hint"]}
         aria-hidden='true'>
         {hint}
       </kbd>

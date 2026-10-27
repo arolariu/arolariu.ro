@@ -180,7 +180,6 @@ const variantStyles: Record<ToastVariant, string> = {
 
 const toastManager = Toast.createToastManager<ToastMetadata>();
 type ToastAddOptions = Parameters<typeof toastManager.add>[0];
-type ToastUpdatePayload = Parameters<typeof toastManager.update>[1];
 const toastHistory: ToastSnapshot[] = [];
 const activeToasts = new Map<string, ToastSnapshot>();
 const toastRecords = new Map<string, ToastRecord>();
@@ -381,6 +380,8 @@ function dismissToast(toastId?: ToastIdentifier): string | undefined {
 }
 
 function updateToast(toastId: ToastIdentifier, options: ToastUpdateOptions): string {
+  type ToastUpdatePayload = Parameters<typeof toastManager.update>[1];
+
   const normalizedToastId = String(toastId);
   const existingRecord = toastRecords.get(normalizedToastId);
   const mergedOptions: ToastOptions = {

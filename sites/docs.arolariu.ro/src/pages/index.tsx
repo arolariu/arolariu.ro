@@ -108,17 +108,17 @@ export default function Home(): React.JSX.Element {
     <Layout
       title='docs'
       description='Unified reference for arolariu.ro'>
-      <main className={styles.page}>
-        <section className={styles.hero}>
-          <h1 className={styles.wordmark}>
-            <span className={styles.prefix}>arolariu.ro</span>
-            <span className={styles.slash}>/</span>
-            <span className={styles.accent}>docs</span>
+      <main className={styles["page"]}>
+        <section className={styles["hero"]}>
+          <h1 className={styles["wordmark"]}>
+            <span className={styles["prefix"]}>arolariu.ro</span>
+            <span className={styles["slash"]}>/</span>
+            <span className={styles["accent"]}>docs</span>
           </h1>
-          <p className={styles.tagline}>
-            <span className={styles.comment}>//</span> unified reference for three services
+          <p className={styles["tagline"]}>
+            <span className={styles["comment"]}>//</span> unified reference for three services
             <span
-              className={styles.caret}
+              className={styles["caret"]}
               aria-hidden='true'
             />
           </p>
@@ -143,9 +143,9 @@ export default function Home(): React.JSX.Element {
           cursorOffset={I_WANT_TO.length + START_HERE.length}
         />
 
-        <footer className={styles.footer}>
-          <span className={styles.comment}>//</span> use <kbd className={styles.kbd}>↑</kbd> <kbd className={styles.kbd}>↓</kbd> to
-          navigate, <kbd className={styles.kbd}>↵</kbd> to open
+        <footer className={styles["footer"]}>
+          <span className={styles["comment"]}>//</span> use <kbd className={styles["kbd"]}>↑</kbd> <kbd className={styles["kbd"]}>↓</kbd> to
+          navigate, <kbd className={styles["kbd"]}>↵</kbd> to open
         </footer>
       </main>
     </Layout>
@@ -168,47 +168,47 @@ type SectionProps = {
  */
 function Section({title, rows, cursor, cursorOffset}: Readonly<SectionProps>): React.JSX.Element {
   return (
-    <section className={styles.section}>
-      <h2 className={styles.sectionTitle}>
+    <section className={styles["section"]}>
+      <h2 className={styles["sectionTitle"]}>
         <span
-          className={styles.chevron}
+          className={styles["chevron"]}
           aria-hidden='true'>
           &gt;
         </span>{" "}
         {title}
       </h2>
-      <ul className={styles.rows}>
+      <ul className={styles["rows"]}>
         {rows.map((row, i) => {
           const globalIndex = cursorOffset + i;
           const isActive = cursor === globalIndex;
           return (
             <li
               key={row.href}
-              className={styles.row}
+              className={styles["row"]}
               style={{animationDelay: `${60 + globalIndex * 35}ms`}}>
               <span
-                className={styles.tree}
+                className={styles["tree"]}
                 aria-hidden='true'>
                 {connector(i, rows.length)}
               </span>
               <span
-                className={styles.pointer}
+                className={styles["pointer"]}
                 aria-hidden='true'
                 data-active={isActive}>
                 {isActive ? "▸" : "·"}
               </span>
               <Link
                 to={row.href}
-                className={styles.rowLabel}
+                className={styles["rowLabel"] ?? ""}
                 data-active={isActive}>
                 {row.label}
               </Link>
               <span
-                className={styles.rowArrow}
+                className={styles["rowArrow"]}
                 aria-hidden='true'>
                 →
               </span>
-              <code className={styles.rowPath}>{row.href}</code>
+              <code className={styles["rowPath"]}>{row.href}</code>
             </li>
           );
         })}

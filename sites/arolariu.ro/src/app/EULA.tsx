@@ -34,11 +34,6 @@ import RenderTermsOfServiceScreen from "./(privacy-and-terms)/terms-of-service/i
 import styles from "./EULA.module.scss";
 import EulaShimmer from "./EULA.shimmers";
 
-type CookieState = {
-  essential: boolean;
-  analytics: boolean;
-};
-
 type Props = {locale: Locale};
 
 /**
@@ -47,6 +42,11 @@ type Props = {locale: Locale};
  * @returns The EULA component, CSR'ed.
  */
 export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
+  type CookieState = {
+    essential: boolean;
+    analytics: boolean;
+  };
+
   const t = useTranslations();
   const [eulaCookie, setEulaCookie] = useState<boolean | null>(null);
   const [cookieState, setCookieState] = useState<CookieState>({

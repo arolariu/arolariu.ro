@@ -160,9 +160,6 @@ export const INVOICE_CAPABILITY_KEYS = [
   "recipeGeneration",
 ] as const satisfies readonly (keyof Omit<InvoiceAnalysisCapabilities, "maximumRecipes">)[];
 
-/** Element type of {@link INVOICE_CAPABILITY_KEYS}. */
-type InvoiceCapabilityKey = (typeof INVOICE_CAPABILITY_KEYS)[number];
-
 /**
  * Ordered tuple of every boolean capability key in {@link MerchantAnalysisCapabilities}.
  *
@@ -174,9 +171,6 @@ export const MERCHANT_CAPABILITY_KEYS = [
   "merchantClassification",
   "descriptionGeneration",
 ] as const satisfies readonly (keyof MerchantAnalysisCapabilities)[];
-
-/** Element type of {@link MERCHANT_CAPABILITY_KEYS}. */
-type MerchantCapabilityKey = (typeof MERCHANT_CAPABILITY_KEYS)[number];
 
 // ---------------------------------------------------------------------------
 // Internal preset maps
@@ -391,6 +385,9 @@ export function isMerchantAnalysisCapabilitiesValid(capabilities: MerchantAnalys
  * ```
  */
 function buildInvoiceAnalysisRequest(profile: AnalysisProfile, overrides?: Partial<InvoiceAnalysisCapabilities>): InvoiceAnalysisRequest {
+  /** Element type of {@link INVOICE_CAPABILITY_KEYS}. */
+  type InvoiceCapabilityKey = (typeof INVOICE_CAPABILITY_KEYS)[number];
+
   // No overrides (or empty overrides) → smallest legal body
   if (overrides === undefined || Object.keys(overrides).length === 0) {
     return {profile};
@@ -449,6 +446,9 @@ function buildMerchantAnalysisRequest(
   profile: AnalysisProfile,
   overrides?: Partial<MerchantAnalysisCapabilities>,
 ): MerchantAnalysisRequest {
+  /** Element type of {@link MERCHANT_CAPABILITY_KEYS}. */
+  type MerchantCapabilityKey = (typeof MERCHANT_CAPABILITY_KEYS)[number];
+
   // No overrides (or empty overrides) → smallest legal body
   if (overrides === undefined || Object.keys(overrides).length === 0) {
     return {profile};

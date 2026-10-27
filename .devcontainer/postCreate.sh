@@ -26,7 +26,7 @@ dotnet workload restore || true
 dotnet restore ./arolariu.slnx
 
 echo "=== Installing docfx global tool ==="
-dotnet tool install -g docfx || true
+dotnet tool update -g docfx
 
 echo "=== Installing Playwright browsers ==="
 npx playwright install --with-deps || true

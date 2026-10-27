@@ -13,8 +13,6 @@
 
 type Reject = (err: unknown) => void;
 
-type Entry = Readonly<{method: string; reject: Reject}>;
-
 export type InFlightRegistry = Readonly<{
   /** Number of entries currently registered. */
   size: number;
@@ -25,6 +23,8 @@ export type InFlightRegistry = Readonly<{
 }>;
 
 export function createInFlightRegistry(): InFlightRegistry {
+  type Entry = Readonly<{method: string; reject: Reject}>;
+
   const set = new Set<Entry>();
 
   return {

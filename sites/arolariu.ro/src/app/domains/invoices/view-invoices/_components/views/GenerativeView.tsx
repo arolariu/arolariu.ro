@@ -27,13 +27,6 @@ import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
 import {MessageList} from "../MessageList";
 import styles from "./GenerativeView.module.scss";
 
-type Message = {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: string;
-};
-
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice>;
 }>;
@@ -44,6 +37,13 @@ type Props = Readonly<{
  * @returns This function renders the generative view for invoice analysis.
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
+  type Message = {
+    id: string;
+    content: string;
+    role: "user" | "assistant";
+    timestamp: string;
+  };
+
   const t = useTranslations();
   const [messages, setMessages] = useState<Message[]>(() => [
     {

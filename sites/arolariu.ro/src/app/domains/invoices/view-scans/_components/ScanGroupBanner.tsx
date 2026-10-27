@@ -77,12 +77,8 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     const readyScans = scans.filter((scan) => scan.status === ScanStatus.READY);
 
     // Hide banner entirely when there are too many scans
-    if (readyScans.length > 5) {
-      return null;
-    }
-
     // Need at least 2 scans
-    if (readyScans.length < 2) {
+    if (readyScans.length > 5 || readyScans.length < 2) {
       return null;
     }
 

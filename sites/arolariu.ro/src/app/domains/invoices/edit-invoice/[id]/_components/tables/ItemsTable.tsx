@@ -46,8 +46,6 @@ function isSelectedProduct(product: Product | undefined): product is Product {
 }
 
 type EditingCell = {rowIndex: number; field: "name" | "price" | "quantity" | "quantityUnit"} | null;
-type SortField = "name" | "price" | "quantity" | null;
-type SortDirection = "asc" | "desc";
 
 type ItemNameCellProps = {
   readonly item: Product;
@@ -428,6 +426,9 @@ function ItemTableRow({
  * @returns Client-rendered table with paginated items and edit controls
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
+  type SortField = "name" | "price" | "quantity" | null;
+  type SortDirection = "asc" | "desc";
+
   const locale = useLocale();
   const t = useTranslations();
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);

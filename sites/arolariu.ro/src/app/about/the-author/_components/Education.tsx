@@ -8,22 +8,6 @@ import {useCallback, useRef, useState} from "react";
 import {TbArrowLeft, TbBook, TbBuildingCommunity, TbCalendar, TbInfoCircle, TbMap, TbSchool} from "react-icons/tb";
 import styles from "./Education.module.scss";
 
-type EducationType = {
-  degree: string;
-  institution: string;
-  location: string;
-  period: string;
-  description: string;
-  status: string;
-  coursesTitle: string;
-  courses: string[];
-  aboutTheProgramCta: string;
-  aboutTheProgramTitle: string;
-  aboutTheProgramDescription: string;
-  aboutTheProgramLearningsTitle: string;
-  aboutTheProgramLearnings: string[];
-};
-
 const containerVariants: Variants = {
   hidden: {opacity: 0},
   visible: {
@@ -44,6 +28,22 @@ const itemVariants: Variants = {
  * @returns A section containing the author's education information with animated cards.
  */
 export default function Education(): React.JSX.Element {
+  type EducationType = {
+    degree: string;
+    institution: string;
+    location: string;
+    period: string;
+    description: string;
+    status: string;
+    coursesTitle: string;
+    courses: string[];
+    aboutTheProgramCta: string;
+    aboutTheProgramTitle: string;
+    aboutTheProgramDescription: string;
+    aboutTheProgramLearningsTitle: string;
+    aboutTheProgramLearnings: string[];
+  };
+
   const t = useTranslations();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});

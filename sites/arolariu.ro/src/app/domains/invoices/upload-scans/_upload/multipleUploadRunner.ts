@@ -85,8 +85,7 @@ export async function uploadPendingScanMultiple({
   const allResults = settledResults
     .map((result, index): UploadRunnerResult | undefined => {
       const upload = uploads[index];
-      if (upload === undefined) return undefined;
-      if (result === undefined) return undefined;
+      if (upload === undefined || result === undefined) return undefined;
       return result instanceof Error ? normalizeThrownUpload(upload, result) : result;
     })
     .filter((result): result is UploadRunnerResult => result !== undefined);

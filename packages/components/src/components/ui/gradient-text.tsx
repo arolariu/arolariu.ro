@@ -18,10 +18,6 @@ export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement>
   transition?: Transition;
 }
 
-type GradientStyleProperties = React.CSSProperties & {
-  "--ac-gradient-text-background": string;
-};
-
 /**
  * Renders animated gradient-filled text with an optional neon glow layer.
  *
@@ -50,6 +46,10 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
     },
     ref,
   ) => {
+    type GradientStyleProperties = React.CSSProperties & {
+      "--ac-gradient-text-background": string;
+    };
+
     const baseStyle: GradientStyleProperties = {
       "--ac-gradient-text-background": gradient,
     };

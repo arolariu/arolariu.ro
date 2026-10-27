@@ -8,28 +8,10 @@ import {TbArrowRight, TbLock, TbShield, TbUserPlus} from "react-icons/tb";
 import AuthTrustBadgesRow from "./_components/AuthTrustBadgesRow";
 import styles from "./island.module.scss";
 
-type AuthCardKey = "signUp" | "signIn";
-
 const gradientClassMap = {
   emerald: "gradientEmerald",
   violet: "gradientViolet",
 } as const;
-
-type AuthCard = Readonly<{
-  key: AuthCardKey;
-  href: string;
-  imageSrc: string;
-  illustrationAlt: string;
-  title: string;
-  description: string;
-  bullets: Readonly<[string, string, string]>;
-  cta: string;
-  secondaryPrompt: string;
-  secondaryAction: string;
-  secondaryHref: string;
-  icon: React.ComponentType<{className?: string}>;
-  gradientKey: keyof typeof gradientClassMap;
-}>;
 
 /**
  * Enhanced client-side authentication screen with immersive animations.
@@ -59,6 +41,24 @@ type AuthCard = Readonly<{
  * ```
  */
 export default function RenderAuthScreen(): React.JSX.Element {
+  type AuthCardKey = "signUp" | "signIn";
+
+  type AuthCard = Readonly<{
+    key: AuthCardKey;
+    href: string;
+    imageSrc: string;
+    illustrationAlt: string;
+    title: string;
+    description: string;
+    bullets: Readonly<[string, string, string]>;
+    cta: string;
+    secondaryPrompt: string;
+    secondaryAction: string;
+    secondaryHref: string;
+    icon: React.ComponentType<{className?: string}>;
+    gradientKey: keyof typeof gradientClassMap;
+  }>;
+
   const t = useTranslations();
 
   const trustBadges: Readonly<[string, string, string]> = [

@@ -41,15 +41,6 @@ import {useCallback, useRef, useState} from "react";
 
 import type {PlaygroundWorkerApi} from "./playground.worker";
 
-type Log = Readonly<{ts: number; level: string; line: string}>;
-
-/** Discriminated state machine for the most recent worker call. */
-type CallState =
-  | Readonly<{status: "idle"}>
-  | Readonly<{status: "pending"; method: string}>
-  | Readonly<{status: "success"; method: string; result: unknown}>
-  | Readonly<{status: "error"; method: string; error: Error}>;
-
 /**
  * Map a thrown value to a stable, screen-reader-friendly error category
  * label. Defensive against non-Error throws (rare but possible from
@@ -77,6 +68,15 @@ function asError(err: unknown): Error {
 const MAX_LOG_ENTRIES = 200;
 
 export function WorkerPlaygroundIsland(): React.JSX.Element {
+  type Log = Readonly<{ts: number; level: string; line: string}>;
+
+  /** Discriminated state machine for the most recent worker call. */
+  type CallState =
+    | Readonly<{status: "idle"}>
+    | Readonly<{status: "pending"; method: string}>
+    | Readonly<{status: "success"; method: string; result: unknown}>
+    | Readonly<{status: "error"; method: string; error: Error}>;
+
   const [logs, setLogs] = useState<ReadonlyArray<Log>>([]);
   const [callState, setCallState] = useState<CallState>({status: "idle"});
   const [caps, setCaps] = useState<WorkerCapabilities | null>(null);
