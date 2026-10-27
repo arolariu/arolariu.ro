@@ -31,7 +31,7 @@
 // Observability:
 // - Application Insights instrumentation enabled
 // - HTTP logging enabled
-// - Health check path: /
+// - Health check path: /api/health/
 //
 // Deployment:
 // - SCM Type: GitHub Actions
@@ -54,6 +54,12 @@ param productionWebsiteIdentityId string
 param productionWebsiteIdentityClientId string
 param productionWebsiteDeploymentDate string
 param appInsightsConnectionString string
+
+@description('The generated experiments application client ID used for server-side token acquisition.')
+param expEntraAppClientId string
+
+@description('The actual container registry login server.')
+param containerRegistryLoginServer string
 
 // Common tags for all resources
 import { createTags } from '../constants/tags.bicep'
@@ -85,6 +91,7 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
     scmSiteAlsoStopped: true
     siteConfig: {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
+      acrUserManagedIdentityID: productionWebsiteIdentityClientId
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
@@ -98,7 +105,7 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
       }
       localMySqlEnabled: false // Local MySQL is not enabled;
       ftpsState: 'Disabled' // FTPS is disabled.
-      healthCheckPath: '/'
+      healthCheckPath: '/api/health/'
       http20Enabled: true // HTTP/2 transfer protocol is enabled.
       httpLoggingEnabled: true // HTTP logging is enabled.
       logsDirectorySizeLimit: 50 // Maximum size of the logs directory (in MB).
@@ -144,12 +151,20 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
       appSettings: [
         {
           name: 'NODE_ENV'
-          value: 'Production'
+          value: 'production'
         }
         {
           name: 'AZURE_CLIENT_ID'
           value: productionWebsiteIdentityClientId
         }
+        { name: 'AZURE_TENANT_ID', value: tenant().tenantId }
+        { name: 'AZURE_SUBSCRIPTION_ID', value: subscription().subscriptionId }
+        { name: 'INFRA', value: 'azure' }
+        { name: 'EXP_ENTRA_APP_CLIENT_ID', value: expEntraAppClientId }
+        { name: 'WEBSITES_PORT', value: '3000' }
+        { name: 'PORT', value: '3000' }
+        { name: 'SITE_ENV', value: 'PRODUCTION' }
+        { name: 'DOCKER_REGISTRY_SERVER_URL', value: 'https://${containerRegistryLoginServer}' }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString

@@ -95,6 +95,7 @@ output storageAccountName string = storageAccountDeployment.outputs.storageAccou
 output storageAccountId string = storageAccountDeployment.outputs.storageAccountId
 output storageAccountBlobEndpoint string = storageAccountDeployment.outputs.storageAccountBlobEndpoint
 output containerRegistryName string = containerRegistryDeployment.outputs.containerRegistryName
+output containerRegistryLoginServer string = containerRegistryDeployment.outputs.containerRegistryLoginServer
 output sqlServerName string = sqlServerDeployment.outputs.sqlServerName
 output sqlServerFqdn string = sqlServerDeployment.outputs.sqlServerFqdn
 output sqlDatabasePrimaryName string = sqlServerDeployment.outputs.sqlDatabasePrimaryName

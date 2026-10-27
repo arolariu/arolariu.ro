@@ -79,8 +79,11 @@ param managedIdentityInfrastructurePrincipalId string
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
 param expEntraAppClientId string
 
-@description('The Azure App Configuration store name.')
-param appConfigurationName string
+@description('The actual Azure App Configuration endpoint.')
+param appConfigurationEndpoint string
+
+@description('The generated container registry login server.')
+param containerRegistryLoginServer string
 
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
@@ -91,6 +94,8 @@ module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
     apiWebsiteIdentityId: managedIdentityBackendId
     apiWebsiteIdentityClientId: managedIdentityBackendClientId
     apiWebsiteDeploymentDate: resourceDeploymentDate
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -103,6 +108,8 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
     productionWebsiteIdentityId: managedIdentityFrontendId
     productionWebsiteIdentityClientId: managedIdentityFrontendClientId
     productionWebsiteDeploymentDate: resourceDeploymentDate
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -114,6 +121,9 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
     developmentWebsiteIdentityId: managedIdentityFrontendId
     developmentWebsiteIdentityClientId: managedIdentityFrontendClientId
     developmentWebsiteDeploymentDate: resourceDeploymentDate
+    appInsightsConnectionString: appInsightsConnectionString
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -127,10 +137,16 @@ module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
   params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }
 
+module statusWebsiteDeployment 'status-arolariu-ro.bicep' = {
+  name: 'statusWebsiteDeployment-${resourceDeploymentDate}'
+  params: { staticWebAppDeploymentDate: resourceDeploymentDate }
+}
+
 module expWebsiteDeployment 'exp-arolariu-ro.bicep' = {
   name: 'expWebsiteDeployment-${resourceDeploymentDate}'
   params: {
-    appConfigurationName: appConfigurationName
+    appConfigurationEndpoint: appConfigurationEndpoint
+    containerRegistryLoginServer: containerRegistryLoginServer
     appInsightsConnectionString: appInsightsConnectionString
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: expEntraAppClientId
@@ -151,6 +167,7 @@ output devWebsiteUrl string = devWebsiteDeployment.outputs.devWebsiteUrl
 output docsWebsiteUrl string = docsWebsiteDeployment.outputs.docsWebsiteUrl
 output cvWebsiteUrl string = cvWebsiteDeployment.outputs.cvWebsiteUrl
 output expWebsiteUrl string = expWebsiteDeployment.outputs.expWebsiteUrl
+output statusWebsiteUrl string = statusWebsiteDeployment.outputs.statusWebsiteUrl
 
 // Output all website names for bindings
 output mainWebsiteName string = mainWebsiteDeployment.outputs.mainWebsiteName
@@ -159,3 +176,4 @@ output devWebsiteName string = devWebsiteDeployment.outputs.devWebsiteName
 output docsWebsiteName string = docsWebsiteDeployment.outputs.docsWebsiteName
 output cvWebsiteName string = cvWebsiteDeployment.outputs.cvWebsiteName
 output expWebsiteName string = expWebsiteDeployment.outputs.expWebsiteName
+output statusWebsiteName string = statusWebsiteDeployment.outputs.statusWebsiteName

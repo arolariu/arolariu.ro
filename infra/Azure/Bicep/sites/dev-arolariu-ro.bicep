@@ -57,6 +57,15 @@ param developmentWebsiteIdentityClientId string
 @description('The deployment timestamp.')
 param developmentWebsiteDeploymentDate string
 
+@description('The existing Application Insights connection string.')
+param appInsightsConnectionString string
+
+@description('The generated experiments application client ID used for server-side token acquisition.')
+param expEntraAppClientId string
+
+@description('The actual container registry login server.')
+param containerRegistryLoginServer string
+
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
 var commonTags = union(createTags('sites', developmentWebsiteDeploymentDate), { environment: 'DEVELOPMENT' })
@@ -87,6 +96,7 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
     serverFarmId: developmentWebsiteAppPlanId
     siteConfig: {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
+      acrUserManagedIdentityID: developmentWebsiteIdentityClientId
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
@@ -99,7 +109,7 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
       }
       localMySqlEnabled: false // Local MySQL is not enabled;
       ftpsState: 'Disabled' // FTPS is disabled.
-      healthCheckPath: '/'
+      healthCheckPath: '/api/health/'
       http20Enabled: true // HTTP/2 transfer protocol is enabled.
       httpLoggingEnabled: true // HTTP logging is enabled.
       logsDirectorySizeLimit: 50 // Maximum size of the logs directory (in MB).
@@ -113,6 +123,17 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
           name: 'AZURE_CLIENT_ID'
           value: developmentWebsiteIdentityClientId
         }
+        { name: 'AZURE_TENANT_ID', value: tenant().tenantId }
+        { name: 'AZURE_SUBSCRIPTION_ID', value: subscription().subscriptionId }
+        { name: 'INFRA', value: 'azure' }
+        { name: 'EXP_ENTRA_APP_CLIENT_ID', value: expEntraAppClientId }
+        { name: 'WEBSITES_PORT', value: '3000' }
+        { name: 'PORT', value: '3000' }
+        { name: 'NODE_ENV', value: 'production' }
+        { name: 'SITE_ENV', value: 'DEVELOPMENT' }
+        { name: 'DOCKER_REGISTRY_SERVER_URL', value: 'https://${containerRegistryLoginServer}' }
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
+        { name: 'ApplicationInsightsAgent_EXTENSION_VERSION', value: '~3' }
       ]
       ipSecurityRestrictions: [
         {

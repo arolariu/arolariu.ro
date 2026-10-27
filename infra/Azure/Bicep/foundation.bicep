@@ -96,11 +96,12 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 module websiteDeployment 'sites/deploymentFile.bicep' = {
   name: 'websiteDeployment-${resourceDeploymentDate}'
   dependsOn: [
-    storageDeployment
-    configurationDeployment
+    configurationBootstrap
+    containerRegistryRbac
   ]
   params: {
-    appConfigurationName: configurationDeployment.outputs.appConfigurationName
+    appConfigurationEndpoint: configurationDeployment.outputs.appConfigurationEndpoint
+    containerRegistryLoginServer: storageDeployment.outputs.containerRegistryLoginServer
     appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     expEntraAppClientId: identitiesDeployment.outputs.expEntraAppClientId

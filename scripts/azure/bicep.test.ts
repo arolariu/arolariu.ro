@@ -1061,3 +1061,145 @@ describe("Bicep AI provisioning", {timeout: 120_000}, () => {
     expect(JSON.stringify(ai.outputs?.["aiResources"])).not.toContain("cognitiveServicesKey");
   });
 });
+
+describe("Bicep site wiring", {timeout: 120_000}, () => {
+  const applications = [
+    {
+      symbol: "mainWebsiteDeployment",
+      identity: "productionWebsiteIdentityId",
+      client: "productionWebsiteIdentityClientId",
+      port: "3000",
+      health: "/api/health/",
+    },
+    {
+      symbol: "devWebsiteDeployment",
+      identity: "developmentWebsiteIdentityId",
+      client: "developmentWebsiteIdentityClientId",
+      port: "3000",
+      health: "/api/health/",
+    },
+    {
+      symbol: "apiWebsiteDeployment",
+      identity: "apiWebsiteIdentityId",
+      client: "apiWebsiteIdentityClientId",
+      port: "8080",
+      health: "/health",
+    },
+    {
+      symbol: "expWebsiteDeployment",
+      identity: "expWebsiteIdentityId",
+      client: "expWebsiteIdentityClientId",
+      port: "8080",
+      health: "/api/health",
+    },
+  ] as const;
+
+  function application(symbol: string): CompiledResource {
+    const sites = compileTemplate(String.raw`infra\Azure\Bicep\sites\deploymentFile.bicep`);
+    const resources = resourcesOfType(moduleTemplate(sites, symbol), "Microsoft.Web/sites");
+    expect(resources, `${symbol} must deploy a real web app`).toHaveLength(1);
+    const resource = resources[0];
+    if (!resource) throw new Error(`Missing web application ${symbol}.`);
+    return resource;
+  }
+
+  function siteConfiguration(resource: CompiledResource): Readonly<Record<string, unknown>> {
+    const config = resource.properties?.["siteConfig"];
+    if (!isRecord(config)) throw new Error("Missing web application configuration.");
+    return config;
+  }
+
+  function settings(resource: CompiledResource): Readonly<Record<string, unknown>> {
+    const entries = siteConfiguration(resource)["appSettings"];
+    if (!Array.isArray(entries)) throw new Error("Missing runtime application settings.");
+    const values: Record<string, unknown> = {};
+    for (const entry of entries) {
+      if (!isRecord(entry) || typeof entry["name"] !== "string") throw new Error("Invalid application setting.");
+      values[entry["name"]] = entry["value"];
+    }
+    return values;
+  }
+
+  it("uses each assigned resource ID for attachment and its client ID for ACR pulls", () => {
+    for (const contract of applications) {
+      const app = application(contract.symbol);
+      expect(JSON.stringify(app["identity"])).toContain(`parameters('${contract.identity}')`);
+      expect(JSON.stringify(app["identity"])).not.toContain(`parameters('${contract.client}')`);
+      expect(siteConfiguration(app)["acrUseManagedIdentityCreds"]).toBe(true);
+      expect(siteConfiguration(app)["acrUserManagedIdentityID"]).toBe(`[parameters('${contract.client}')]`);
+    }
+  });
+
+  it("uses real registry/configuration endpoints and waits for configuration completion", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const storage = compileTemplate(String.raw`infra\Azure\Bicep\storage\deploymentFile.bicep`);
+    const sites = compileTemplate(String.raw`infra\Azure\Bicep\sites\deploymentFile.bicep`);
+    const inputs = moduleParameters(foundation, "websiteDeployment");
+
+    expect(JSON.stringify(storage.outputs?.["containerRegistryLoginServer"])).toContain("containerRegistryLoginServer");
+    expect(inputs["containerRegistryLoginServer"]).toEqual(expect.stringContaining("storageDeployment"));
+    expect(inputs["appConfigurationEndpoint"]).toEqual(expect.stringContaining("configurationDeployment"));
+    expect(foundation.resources["websiteDeployment"]?.dependsOn).toEqual(
+      expect.arrayContaining(["configurationBootstrap", "containerRegistryRbac"]),
+    );
+    for (const contract of applications) {
+      expect(settings(application(contract.symbol))["DOCKER_REGISTRY_SERVER_URL"]).toEqual(
+        expect.stringContaining("containerRegistryLoginServer"),
+      );
+      expect(moduleParameters(sites, contract.symbol)["containerRegistryLoginServer"]).toBe("[parameters('containerRegistryLoginServer')]");
+    }
+    expect(settings(application("expWebsiteDeployment"))["AZURE_APPCONFIG_ENDPOINT"]).toBe("[parameters('appConfigurationEndpoint')]");
+  });
+
+  it("sets runtime identity, infrastructure, tenant, audience, ports, and real health paths", () => {
+    for (const contract of applications) {
+      const app = application(contract.symbol);
+      const values = settings(app);
+      expect(values["AZURE_CLIENT_ID"]).toBe(`[parameters('${contract.client}')]`);
+      expect(values["AZURE_TENANT_ID"]).toEqual(expect.stringContaining("tenantId"));
+      expect(values["AZURE_SUBSCRIPTION_ID"]).toEqual(expect.stringContaining("subscriptionId"));
+      expect(values["INFRA"]).toBe("azure");
+      expect(values["EXP_ENTRA_APP_CLIENT_ID"]).toEqual(expect.stringContaining("AppClientId"));
+      expect(values["WEBSITES_PORT"]).toBe(contract.port);
+      expect(siteConfiguration(app)["healthCheckPath"]).toBe(contract.health);
+      expect(values["APPLICATIONINSIGHTS_CONNECTION_STRING"]).toEqual(expect.stringContaining("appInsightsConnectionString"));
+    }
+    for (const symbol of ["mainWebsiteDeployment", "devWebsiteDeployment"]) {
+      expect(settings(application(symbol))["NODE_ENV"]).toBe("production");
+    }
+    expect(settings(application("mainWebsiteDeployment"))["SITE_ENV"]).toBe("PRODUCTION");
+    expect(settings(application("devWebsiteDeployment"))["SITE_ENV"]).toBe("DEVELOPMENT");
+    expect(settings(application("apiWebsiteDeployment"))["ASPNETCORE_ENVIRONMENT"]).toBe("Production");
+  });
+
+  it("retains principal-ID caller policy and invokes the Free status site", () => {
+    const sites = compileTemplate(String.raw`infra\Azure\Bicep\sites\deploymentFile.bicep`);
+    const exp = moduleTemplate(sites, "expWebsiteDeployment");
+    const auth = resourcesOfType(exp, "Microsoft.Web/sites/config").find((resource) => resource.name?.includes("authsettingsV2"));
+    expect(auth).toBeDefined();
+    expect(auth?.properties?.["platform"]).toMatchObject({enabled: true});
+    const policy = JSON.stringify(auth?.properties);
+    for (const principal of ["frontendIdentityPrincipalId", "backendIdentityPrincipalId", "infrastructureIdentityPrincipalId"]) {
+      expect(policy).toContain(principal);
+    }
+    expect(policy).not.toContain("IdentityClientId");
+    expect(sites.resources["statusWebsiteDeployment"]).toBeDefined();
+    const status = resourcesOfType(moduleTemplate(sites, "statusWebsiteDeployment"), "Microsoft.Web/staticSites");
+    expect(status).toHaveLength(1);
+    expect(status[0]?.name).toBe("status-arolariu-ro");
+    expect(status[0]?.["sku"]).toMatchObject({name: "Free"});
+    expect(sites.outputs).toHaveProperty("statusWebsiteUrl");
+    expect(sites.outputs).toHaveProperty("statusWebsiteName");
+  });
+
+  it("retains Basic non-admin registry access and existing scoped pull/push assignments", () => {
+    const registry = compileTemplate(String.raw`infra\Azure\Bicep\storage\containerRegistry.bicep`);
+    const rbac = compileTemplate(String.raw`infra\Azure\Bicep\rbac\container-registry-rbac.bicep`);
+    expect(resourcesOfType(registry, "Microsoft.ContainerRegistry/registries")[0]?.["sku"]).toMatchObject({name: "Basic"});
+    expect(resourcesOfType(registry, "Microsoft.ContainerRegistry/registries")[0]?.properties?.["adminUserEnabled"]).toBe(false);
+    for (const symbol of ["frontendAcrPull", "backendAcrPull", "infrastructureAcrPush"]) {
+      expect(rbac.resources[symbol]).toBeDefined();
+      expect(JSON.stringify(rbac.resources[symbol]?.["scope"])).toContain("containerRegistryName");
+    }
+  });
+});

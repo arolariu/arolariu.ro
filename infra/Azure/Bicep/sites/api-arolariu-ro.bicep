@@ -29,7 +29,7 @@
 // Observability:
 // - Application Insights instrumentation enabled
 // - HTTP logging enabled
-// - Health check path: /
+// - Health check path: /health
 //
 // See: compute/appServicePlans.bicep (hosting plan)
 // See: identity/userAssignedIdentity.bicep (Backend UAMI)
@@ -48,6 +48,12 @@ param apiWebsiteIdentityId string
 param apiWebsiteIdentityClientId string
 param apiWebsiteDeploymentDate string
 param appInsightsConnectionString string
+
+@description('The generated experiments application client ID used for token acquisition.')
+param expEntraAppClientId string
+
+@description('The actual container registry login server.')
+param containerRegistryLoginServer string
 
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
@@ -69,8 +75,9 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
     reserved: true // reserved == linux plan
     hyperV: false
     siteConfig: {
-      healthCheckPath: '/'
+      healthCheckPath: '/health'
       acrUseManagedIdentityCreds: true
+      acrUserManagedIdentityID: apiWebsiteIdentityClientId
       alwaysOn: true
       numberOfWorkers: 1
       http20Enabled: true
@@ -103,6 +110,13 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
           name: 'AZURE_CLIENT_ID'
           value: apiWebsiteIdentityClientId
         }
+        { name: 'AZURE_TENANT_ID', value: tenant().tenantId }
+        { name: 'AZURE_SUBSCRIPTION_ID', value: subscription().subscriptionId }
+        { name: 'INFRA', value: 'azure' }
+        { name: 'EXP_ENTRA_APP_CLIENT_ID', value: expEntraAppClientId }
+        { name: 'WEBSITES_PORT', value: '8080' }
+        { name: 'ASPNETCORE_HTTP_PORTS', value: '8080' }
+        { name: 'DOCKER_REGISTRY_SERVER_URL', value: 'https://${containerRegistryLoginServer}' }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString

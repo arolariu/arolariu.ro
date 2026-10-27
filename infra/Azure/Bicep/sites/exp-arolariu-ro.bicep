@@ -72,14 +72,17 @@ param infrastructureIdentityPrincipalId string
 @description('The Entra ID App Registration client ID for the exp service.')
 param entraAppClientId string
 
-@description('The Azure App Configuration store name for constructing the endpoint URL.')
-param appConfigurationName string
+@description('The actual Azure App Configuration endpoint.')
+param appConfigurationEndpoint string
+
+@description('The actual container registry login server.')
+param containerRegistryLoginServer string
 
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('sites', expWebsiteDeploymentDate)
 
-resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
+resource expWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'exp-arolariu-ro'
   location: expWebsiteLocation
   kind: 'app,linux,container'
@@ -97,6 +100,7 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
     siteConfig: {
       healthCheckPath: '/api/health'
       acrUseManagedIdentityCreds: true
+      acrUserManagedIdentityID: expWebsiteIdentityClientId
       alwaysOn: false // cost optimization — wakes on request
       numberOfWorkers: 1
       http20Enabled: true
@@ -134,6 +138,10 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           name: 'WEBSITES_PORT'
           value: '8080'
         }
+        { name: 'PORT', value: '8080' }
+        { name: 'AZURE_SUBSCRIPTION_ID', value: subscription().subscriptionId }
+        { name: 'EXP_ENVIRONMENT', value: 'Production' }
+        { name: 'DOCKER_REGISTRY_SERVER_URL', value: 'https://${containerRegistryLoginServer}' }
         {
           name: 'AZURE_CLIENT_ID'
           value: expWebsiteIdentityClientId
@@ -148,7 +156,7 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
         }
         {
           name: 'AZURE_APPCONFIG_ENDPOINT'
-          value: 'https://${appConfigurationName}.azconfig.io'
+          value: appConfigurationEndpoint
         }
         {
           name: 'EXP_CALLER_API_IDS'
@@ -188,10 +196,11 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
 }
 
 // Easy Auth v2 — restrict to frontend + backend + infrastructure UAMIs
-resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
+resource authSettings 'Microsoft.Web/sites/config@2025-03-01' = {
   parent: expWebsite
   name: 'authsettingsV2'
   properties: {
+    platform: { enabled: true }
     globalValidation: {
       requireAuthentication: true
       unauthenticatedClientAction: 'Return401'
