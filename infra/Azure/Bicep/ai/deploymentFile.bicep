@@ -47,6 +47,7 @@ module aiFoundryDeployment 'aiFoundry.bicep' = {
   name: 'aiFoundryDeployment-${resourceDeploymentDate}'
   params: {
     aiFoundryName: '${aiConventionPrefix}-foundry'
+    aiFoundryLocation: resourceLocation
     aiFoundryDeploymentDate: resourceDeploymentDate
   }
 }

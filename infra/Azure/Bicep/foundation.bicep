@@ -138,7 +138,7 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 module aiDeployment 'ai/deploymentFile.bicep' = {
   name: 'aiDeployment-${resourceDeploymentDate}'
   params: {
-    resourceLocation: resourceLocation
+    resourceLocation: 'swedencentral'
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
   }

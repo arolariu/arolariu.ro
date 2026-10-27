@@ -1014,3 +1014,50 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
     }
   });
 });
+
+describe("Bicep AI provisioning", {timeout: 120_000}, () => {
+  it("creates the approved model router inside the generated AIServices account graph", () => {
+    const template = compileTemplate(String.raw`infra\Azure\Bicep\ai\aiFoundry.bicep`);
+    const accounts = resourcesOfType(template, "Microsoft.CognitiveServices/accounts");
+    const projects = resourcesOfType(template, "Microsoft.CognitiveServices/accounts/projects");
+    const models = resourcesOfType(template, "Microsoft.CognitiveServices/accounts/deployments");
+
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0]?.["kind"]).toBe("AIServices");
+    expect(accounts[0]?.["sku"]).toMatchObject({name: "S0"});
+    expect(projects).toHaveLength(1);
+    expect(models).toHaveLength(1);
+    expect(models[0]?.name).toContain("model-router");
+    expect(models[0]?.properties?.["model"]).toEqual({format: "OpenAI", name: "model-router", version: "2025-11-18"});
+    expect(models[0]?.["sku"]).toMatchObject({name: "GlobalStandard", capacity: 10});
+    expect(models[0]?.dependsOn).toContain("aiFoundry");
+  });
+
+  it("forwards the explicit Sweden Central placement and retains key authentication", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const orchestrator = compileTemplate(String.raw`infra\Azure\Bicep\ai\deploymentFile.bicep`);
+    const account = moduleTemplate(orchestrator, "aiFoundryDeployment");
+
+    expect(moduleParameters(foundation, "aiDeployment")["resourceLocation"]).toBe("swedencentral");
+    expect(moduleParameters(orchestrator, "aiFoundryDeployment")["aiFoundryLocation"]).toBe("[parameters('resourceLocation')]");
+    expect(resourcesOfType(account, "Microsoft.CognitiveServices/accounts")[0]?.properties?.["disableLocalAuth"]).toBe(false);
+  });
+
+  it("keeps backend roles on the generated account and all key outputs secure", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const parameters = moduleParameters(foundation, "openAiRbac");
+    const rbac = compileTemplate(String.raw`infra\Azure\Bicep\rbac\ai-rbac.bicep`);
+    const ai = compileTemplate(String.raw`infra\Azure\Bicep\ai\deploymentFile.bicep`);
+
+    expect(parameters["aiFoundryAccountName"]).toEqual(expect.stringContaining("aiDeployment"));
+    expect(parameters["backendPrincipalId"]).toEqual(expect.stringContaining("[1].principalId"));
+    const roles = resourcesOfType(rbac, "Microsoft.Authorization/roleAssignments");
+    expect(roles).toHaveLength(2);
+    for (const role of roles) {
+      expect(role.properties?.["principalId"]).toBe("[parameters('backendPrincipalId')]");
+      expect(JSON.stringify(role["scope"])).toContain("aiFoundryAccountName");
+    }
+    expect(ai.outputs?.["cognitiveServicesKey"]).toMatchObject({type: expect.stringMatching(/^securestring$/iu)});
+    expect(JSON.stringify(ai.outputs?.["aiResources"])).not.toContain("cognitiveServicesKey");
+  });
+});
