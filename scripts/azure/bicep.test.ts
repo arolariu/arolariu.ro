@@ -17,7 +17,7 @@ interface CompiledResource {
   readonly name?: string;
   readonly condition?: string | boolean;
   readonly dependsOn?: readonly string[];
-  readonly properties?: Readonly<Record<string, unknown>>;
+  readonly properties?: Readonly<Record<string, unknown>> | string;
 }
 
 interface CompiledTemplate {
@@ -41,10 +41,17 @@ function isResource(value: unknown): value is CompiledResource {
     && (value["apiVersion"] === undefined || typeof value["apiVersion"] === "string")
     && (value["name"] === undefined || typeof value["name"] === "string")
     && (value["condition"] === undefined || typeof value["condition"] === "string" || typeof value["condition"] === "boolean")
-    && (value["properties"] === undefined || isRecord(value["properties"]))
+    && (value["properties"] === undefined
+      || isRecord(value["properties"])
+      || (typeof value["properties"] === "string" && value["properties"].startsWith("[") && value["properties"].endsWith("]")))
     && (value["dependsOn"] === undefined
       || (Array.isArray(value["dependsOn"]) && value["dependsOn"].every((dependency: unknown) => typeof dependency === "string")))
   );
+}
+
+function propertiesOf(resource: CompiledResource | undefined): Readonly<Record<string, unknown>> | undefined {
+  const properties = resource?.properties;
+  return isRecord(properties) ? properties : undefined;
 }
 
 function parseTemplate(value: unknown): CompiledTemplate {
@@ -102,11 +109,11 @@ function moduleTemplate(template: CompiledTemplate, symbolicName: string): Compi
   if (module?.type !== "Microsoft.Resources/deployments") {
     throw new Error(`Missing compiled deployment module: ${symbolicName}.`);
   }
-  return parseTemplate(module.properties?.["template"]);
+  return parseTemplate(propertiesOf(module)?.["template"]);
 }
 
 function moduleParameters(template: CompiledTemplate, symbolicName: string): Readonly<Record<string, unknown>> {
-  const parameters = template.resources[symbolicName]?.properties?.["parameters"];
+  const parameters = propertiesOf(template.resources[symbolicName])?.["parameters"];
   if (!isRecord(parameters)) throw new Error(`Missing compiled module parameters: ${symbolicName}.`);
 
   const values: Record<string, unknown> = {};
@@ -124,8 +131,8 @@ function resourcesOfType(template: CompiledTemplate, type: string): readonly Com
   for (const resource of Object.values(template.resources)) {
     const resourceType = resource.type.split("@")[0]?.toLowerCase();
     if (resourceType === type.toLowerCase()) matches.push(resource);
-    if (resource.type === "Microsoft.Resources/deployments" && isRecord(resource.properties?.["template"])) {
-      matches.push(...resourcesOfType(parseTemplate(resource.properties["template"]), type));
+    if (resource.type === "Microsoft.Resources/deployments" && isRecord(propertiesOf(resource)?.["template"])) {
+      matches.push(...resourcesOfType(parseTemplate(propertiesOf(resource)?.["template"]), type));
     }
   }
   return matches;
@@ -143,13 +150,15 @@ function literalVariable(template: CompiledTemplate, name: string): unknown {
 
 type EnvironmentFixture = Readonly<Record<string, string>>;
 type HttpFault = Readonly<{status: number; code: string; attempts: number; body?: string}>;
+type DnsReply = Readonly<{Status: number; Answer?: readonly Readonly<{type: number; data: string}>[]}>;
 type ScriptScenario =
   | Readonly<{kind: "sql"; environment: EnvironmentFixture; existingUserSid: string | null; queryError?: string; queryErrorNumber?: number}>
   | Readonly<{kind: "probe"; environment: EnvironmentFixture; queryError?: string; httpFault?: HttpFault}>
-  | Readonly<{kind: "configuration"; environment: EnvironmentFixture; secrets: Readonly<Record<string, string>>; httpFault?: HttpFault}>;
+  | Readonly<{kind: "configuration"; environment: EnvironmentFixture; secrets: Readonly<Record<string, string>>; httpFault?: HttpFault}>
+  | Readonly<{kind: "dns"; environment: EnvironmentFixture; replies: Readonly<Record<string, readonly DnsReply[]>>; httpFault?: HttpFault}>;
 
 interface ScriptOperation {
-  readonly kind: "sql" | "http" | "secret-write" | "config-write" | "token" | "module-install" | "sleep";
+  readonly kind: "sql" | "http" | "dns-query" | "secret-write" | "config-write" | "token" | "module-install" | "sleep";
   readonly target: string;
   readonly value?: string;
   readonly length?: number;
@@ -177,6 +186,47 @@ function scenario<K extends ScriptScenario["kind"]>(kind: K): Extract<ScriptScen
   const scenarios: {[Key in ScriptScenario["kind"]]: Extract<ScriptScenario, {kind: Key}>} = {
     sql: {kind: "sql", environment, existingUserSid: null},
     probe: {kind: "probe", environment},
+    get dns(): Extract<ScriptScenario, {kind: "dns"}> {
+      return {
+        kind: "dns",
+        environment: {
+          AZURE_CLIENT_ID: "33333333-3333-4333-8333-333333333333",
+          DNS_EXPECTATIONS: JSON.stringify({
+            zoneName: "public.example.test",
+            authoritativeNameServers: ["ns1.example.test", "ns2.example.test"],
+            records: [
+              {name: "public.example.test", type: "DS", expectedValues: ["12345 13 2 ABCDEF"]},
+              {name: "www.public.example.test", type: "CNAME", expectedValues: ["frontdoor.example.test"]},
+              {name: "asuid.exp.public.example.test", type: "TXT", expectedValues: ["public-verification-token"]},
+              {name: "public.example.test", type: "A", expectedValues: []},
+            ],
+          }),
+        },
+        replies: {
+          "public.example.test|NS": [
+            {
+              Status: 0,
+              Answer: [
+                {type: 2, data: "NS2.EXAMPLE.TEST."},
+                {type: 2, data: "ns1.example.test."},
+              ],
+            },
+          ],
+          "public.example.test|DS": [
+            {
+              Status: 0,
+              Answer: [
+                {type: 43, data: "12345 13 2 abcdef"},
+                {type: 43, data: "54321 13 2 123ABC"},
+              ],
+            },
+          ],
+          "www.public.example.test|CNAME": [{Status: 0, Answer: [{type: 5, data: "FRONTDOOR.EXAMPLE.TEST."}]}],
+          "asuid.exp.public.example.test|TXT": [{Status: 0, Answer: [{type: 16, data: '"public-verification-token"'}]}],
+          "public.example.test|A": [{Status: 0, Answer: [{type: 1, data: "192.0.2.10"}]}],
+        },
+      };
+    },
     get configuration(): Extract<ScriptScenario, {kind: "configuration"}> {
       const template = compileTemplate(String.raw`infra\Azure\Bicep\bootstrap\configuration.bicep`);
       const variables = template.variables;
@@ -224,6 +274,7 @@ foreach ($entry in $case.environment.GetEnumerator()) {
 }
 $script:operations = [Collections.Generic.List[object]]::new()
 $script:httpRequests = 0
+$script:dnsRequests = @{}
 $script:secrets = if ($case.ContainsKey('secrets')) { $case.secrets } else { @{} }
 $script:clock = [DateTime]::Parse('2026-01-01T00:00:00Z').ToUniversalTime()
 $script:userSid = if ($case.ContainsKey('existingUserSid') -and $case.existingUserSid) {
@@ -256,6 +307,7 @@ function Get-AzContext {
 }
 function Get-AzAccessToken {
   param([string]$ResourceUrl)
+  if ($case.kind -eq 'dns') { throw 'DNS queries must not acquire or send credentials.' }
   $configurationAudience = $case.kind -eq 'configuration' -and $ResourceUrl -in @('https://vault.azure.net', 'https://azconfig.io')
   if ($ResourceUrl -notmatch '^https://database\.windows\.net/?$' -and -not ($case.kind -eq 'probe' -and $ResourceUrl -eq 'https://cosmos.azure.com/') -and -not $configurationAudience) {
     throw 'Unexpected token audience.'
@@ -273,6 +325,27 @@ function Throw-HttpFailure([int]$status, [string]$body) {
 function Invoke-RestMethod {
   [CmdletBinding()]
   param([Uri]$Uri,[hashtable]$Headers,[string]$Method='Get',[string]$Body,[string]$ContentType,[int]$TimeoutSec)
+  if ($case.kind -eq 'dns') {
+    $query = [Web.HttpUtility]::ParseQueryString($Uri.Query)
+    if ($Uri.Scheme -ne 'https' -or $Uri.Host -ne 'cloudflare-dns.com' -or $Uri.AbsolutePath -ne '/dns-query' -or $Method -ne 'Get' -or $Body -or $Headers.ContainsKey('Authorization') -or $Headers.Accept -ne 'application/dns-json' -or $query['cd'] -ne 'false' -or $TimeoutSec -ne 10) {
+      throw 'Unexpected DNS resolver boundary.'
+    }
+    if (@($query.AllKeys | Where-Object { $_ -notin @('name','type','cd') }).Count -ne 0) { throw 'Unexpected DNS query data.' }
+    $key = $query['name'].TrimEnd('.').ToLowerInvariant() + '|' + $query['type'].ToUpperInvariant()
+    $script:operations.Add(@{kind='dns-query';target=$key})
+    $script:httpRequests++
+    if ($case.ContainsKey('httpFault') -and $script:httpRequests -le $case.httpFault.attempts) {
+      Throw-HttpFailure $case.httpFault.status $case.httpFault.body
+    }
+    if (-not $script:dnsRequests.ContainsKey($key)) { $script:dnsRequests[$key] = 0 }
+    $index = $script:dnsRequests[$key]
+    $script:dnsRequests[$key]++
+    if (-not $case.replies.ContainsKey($key) -or $case.replies[$key].Count -eq 0) {
+      return [pscustomobject]@{Status=3}
+    }
+    $reply = $case.replies[$key][[Math]::Min($index, $case.replies[$key].Count - 1)]
+    return ConvertFrom-Json -InputObject (ConvertTo-Json -InputObject $reply -Depth 20 -Compress)
+  }
   if ($case.kind -eq 'configuration') {
     if ($Uri.Scheme -ne 'https' -or $Uri.Host -notin @('vault.example.test','config.example.test') -or $Headers.Authorization -ne 'Bearer synthetic-access-token') {
       throw 'Unexpected configuration request target or authorization.'
@@ -374,31 +447,31 @@ function Invoke-Sqlcmd {
   throw 'Unexpected SQL query.'
 }
 
-$exitCode = 0
-$failure = ''
-$captured = [Collections.Generic.List[object]]::new()
+$harnessExitCode = 0
+$harnessFailure = ''
+$harnessCaptured = [Collections.Generic.List[object]]::new()
 try {
-  $source = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:BICEP_TEST_SOURCE))
-  . ([ScriptBlock]::Create($source)) *>&1 | ForEach-Object { $captured.Add($_) }
+  $harnessSource = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:BICEP_TEST_SOURCE))
+  . ([ScriptBlock]::Create($harnessSource)) *>&1 | ForEach-Object { $harnessCaptured.Add($_) }
 } catch {
-  $exitCode = 1
-  $failure = $_.Exception.Message
+  $harnessExitCode = 1
+  $harnessFailure = $_.Exception.Message
 }
 $payload = @{
-  exitCode=$exitCode
-  stdout=($captured.ToArray() | Out-String)
-  stderr=$failure
+  exitCode=$harnessExitCode
+  stdout=($harnessCaptured.ToArray() | Out-String)
+  stderr=$harnessFailure
   outputs=$DeploymentScriptOutputs
   operations=@($script:operations.ToArray())
 }
 [Console]::WriteLine('HARNESS_RESULT:' + (ConvertTo-Json -InputObject $payload -Depth 20 -Compress))
-exit $exitCode
+exit $harnessExitCode
 `;
 
 function runScript(modulePath: string, resourceSymbol: string, input: ScriptScenario): ScriptRunResult {
   const resource = compileTemplate(modulePath).resources[resourceSymbol];
   expect(resource?.type, `${resourceSymbol} must perform the deployment operation`).toBe("Microsoft.Resources/deploymentScripts");
-  const source = resource?.properties?.["scriptContent"];
+  const source = propertiesOf(resource)?.["scriptContent"];
   if (typeof source !== "string") throw new Error(`Missing literal inline script: ${resourceSymbol}.`);
 
   const environment: Record<string, string> = {};
@@ -437,6 +510,7 @@ function runScript(modulePath: string, resourceSymbol: string, input: ScriptScen
       !isRecord(operation)
       || (operation["kind"] !== "sql"
         && operation["kind"] !== "http"
+        && operation["kind"] !== "dns-query"
         && operation["kind"] !== "secret-write"
         && operation["kind"] !== "config-write"
         && operation["kind"] !== "token"
@@ -520,7 +594,8 @@ describe("Bicep deployment stages", {timeout: 120_000}, () => {
     expect(bindings).toMatchObject({
       apiWebsiteHostname: "api-arolariu-ro",
       devWebsiteHostname: "dev-arolariu-ro",
-      prodWebsiteHostname: "www-arolariu-ro",
+      expWebsiteHostname: "exp-arolariu-ro",
+      statusWebsiteName: "status-arolariu-ro",
       cvWebsiteHostname: "cv-arolariu-ro",
       docsWebsiteHostname: "docs-arolariu-ro",
     });
@@ -537,11 +612,11 @@ describe("Bicep experiments registration", {timeout: 120_000}, () => {
     expect(applications.length).toBeGreaterThan(0);
     expect(principals).toHaveLength(1);
     for (const application of applications) {
-      expect(application.properties).toMatchObject({signInAudience: "AzureADMyOrg", api: {requestedAccessTokenVersion: 2}});
-      expect(application.properties?.["passwordCredentials"] ?? []).toHaveLength(0);
-      expect(application.properties?.["keyCredentials"] ?? []).toHaveLength(0);
+      expect(propertiesOf(application)).toMatchObject({signInAudience: "AzureADMyOrg", api: {requestedAccessTokenVersion: 2}});
+      expect(propertiesOf(application)?.["passwordCredentials"] ?? []).toHaveLength(0);
+      expect(propertiesOf(application)?.["keyCredentials"] ?? []).toHaveLength(0);
     }
-    expect(principals[0]?.properties).toMatchObject({accountEnabled: true, appRoleAssignmentRequired: false});
+    expect(propertiesOf(principals[0])).toMatchObject({accountEnabled: true, appRoleAssignmentRequired: false});
   });
 
   it("exposes the generated application ID only after application creation", () => {
@@ -554,8 +629,8 @@ describe("Bicep experiments registration", {timeout: 120_000}, () => {
 
     expect(input["appClientId"]).toEqual(expect.stringContaining("expApplication"));
     expect(input["appClientId"]).toEqual(expect.stringContaining("appClientId"));
-    expect(application?.properties?.["identifierUris"]).toEqual([expect.stringContaining("api://")]);
-    expect(application?.properties?.["identifierUris"]).toEqual([expect.stringContaining("appClientId")]);
+    expect(propertiesOf(application)?.["identifierUris"]).toEqual([expect.stringContaining("api://")]);
+    expect(propertiesOf(application)?.["identifierUris"]).toEqual([expect.stringContaining("appClientId")]);
   });
 
   it("wires the generated client ID into the site without a required caller-supplied ID", () => {
@@ -590,13 +665,13 @@ describe("Bicep SQL bootstrap", {timeout: 120_000}, () => {
   it("uses infrastructure administration and Entra-only SQL without local credentials", () => {
     const template = compileTemplate(String.raw`infra\Azure\Bicep\storage\sqlServer.bicep`);
     const server = resourcesOfType(template, "Microsoft.Sql/servers")[0];
-    const admin = server?.properties?.["administrators"];
+    const admin = propertiesOf(server)?.["administrators"];
     expect(isRecord(admin) && String(admin["sid"]).includes("infrastructureManagedIdentity")).toBe(true);
     expect(admin).toMatchObject({azureADOnlyAuthentication: true, principalType: "Application"});
-    expect(server?.properties).not.toHaveProperty("administratorLoginPassword");
+    expect(propertiesOf(server)).not.toHaveProperty("administratorLoginPassword");
     const firewall = resourcesOfType(template, "Microsoft.Sql/servers/firewallRules");
     expect(firewall).toHaveLength(1);
-    expect(firewall[0]?.properties).toMatchObject({startIpAddress: "0.0.0.0", endIpAddress: "0.0.0.0"});
+    expect(propertiesOf(firewall[0])).toMatchObject({startIpAddress: "0.0.0.0", endIpAddress: "0.0.0.0"});
   });
 
   it("creates an ID-bound contained user and grants only the required database roles", () => {
@@ -672,7 +747,7 @@ describe("Bicep SQL bootstrap", {timeout: 120_000}, () => {
     const probe = template.resources["backendAccessProbe"];
     expect(JSON.stringify(probe?.["identity"])).toContain("backendManagedIdentity");
     expect(JSON.stringify(probe?.["identity"])).not.toContain("infrastructureManagedIdentity");
-    const variables = probe?.properties?.["environmentVariables"];
+    const variables = propertiesOf(probe)?.["environmentVariables"];
     expect(variables).toEqual(
       expect.arrayContaining([
         expect.objectContaining({name: "AZURE_CLIENT_ID", value: expect.stringContaining("backendManagedIdentity")}),
@@ -694,7 +769,7 @@ describe("Bicep Cosmos access", {timeout: 120_000}, () => {
 
     expect(assignments).toHaveLength(1);
     expect(resourcesOfType(template, "Microsoft.Authorization/roleAssignments")).toHaveLength(0);
-    expect(assignments[0]?.properties).toMatchObject({
+    expect(propertiesOf(assignments[0])).toMatchObject({
       principalId: "[parameters('backendPrincipalId')]",
       scope: expect.stringContaining("/dbs/primary"),
       roleDefinitionId: expect.stringContaining("/sqlRoleDefinitions/"),
@@ -705,9 +780,9 @@ describe("Bicep Cosmos access", {timeout: 120_000}, () => {
 
   it("preserves managed-identity-only authentication and existing partition contracts", () => {
     const template = compileTemplate(String.raw`infra\Azure\Bicep\storage\noSqlServer.bicep`);
-    expect(resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts")[0]?.properties?.["disableLocalAuth"]).toBe(true);
+    expect(propertiesOf(resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts")[0])?.["disableLocalAuth"]).toBe(true);
     const containers = resourcesOfType(template, "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers");
-    expect(containers.map((container) => container.properties?.["resource"])).toEqual(
+    expect(containers.map((container) => propertiesOf(container)?.["resource"])).toEqual(
       expect.arrayContaining([
         expect.objectContaining({id: "invoices", partitionKey: {paths: ["/UserIdentifier"], kind: "Hash", version: 2}}),
         expect.objectContaining({id: "merchants", partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash", version: 2}}),
@@ -726,7 +801,7 @@ describe("Bicep Cosmos access", {timeout: 120_000}, () => {
     expect(moduleParameters(foundation, "cosmosDbRbac")["backendPrincipalId"]).toEqual(expect.stringContaining("[1].principalId"));
     expect(foundation.resources["backendAccessProbe"]?.dependsOn).toContain("cosmosDbRbac");
     const probe = compileTemplate(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`).resources["backendAccessProbe"];
-    expect(probe?.properties?.["environmentVariables"]).toEqual(
+    expect(propertiesOf(probe)?.["environmentVariables"]).toEqual(
       expect.arrayContaining([{name: "COSMOS_ENDPOINT", value: "[parameters('cosmosEndpoint')]"}]),
     );
   });
@@ -804,7 +879,7 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
 
     expect(resourcesOfType(vault, "Microsoft.KeyVault/vaults/secrets")).toHaveLength(0);
     expect(resourcesOfType(store, "Microsoft.AppConfiguration/configurationStores/keyValues")).toHaveLength(0);
-    expect(resourcesOfType(store, "Microsoft.AppConfiguration/configurationStores")[0]?.properties).not.toHaveProperty("dataPlaneProxy");
+    expect(propertiesOf(resourcesOfType(store, "Microsoft.AppConfiguration/configurationStores")[0])).not.toHaveProperty("dataPlaneProxy");
     expect(store.outputs).toHaveProperty("appConfigurationEndpoint");
   });
 
@@ -812,9 +887,11 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
     const store = compileTemplate(String.raw`infra\Azure\Bicep\rbac\app-configuration-rbac.bicep`);
     const vault = compileTemplate(String.raw`infra\Azure\Bicep\rbac\key-vault-rbac.bicep`);
 
-    expect(store.resources["infrastructureConfigOwner"]?.properties?.["principalId"]).toBe("[parameters('infrastructurePrincipalId')]");
+    expect(propertiesOf(store.resources["infrastructureConfigOwner"])?.["principalId"]).toBe("[parameters('infrastructurePrincipalId')]");
     expect(JSON.stringify(store.resources["infrastructureConfigOwner"])).toContain("appConfigurationDataOwner");
-    expect(vault.resources["infrastructureSecretsOfficer"]?.properties?.["principalId"]).toBe("[parameters('infrastructurePrincipalId')]");
+    expect(propertiesOf(vault.resources["infrastructureSecretsOfficer"])?.["principalId"]).toBe(
+      "[parameters('infrastructurePrincipalId')]",
+    );
     expect(JSON.stringify(vault.resources["infrastructureSecretsOfficer"])).toContain("keyVaultSecretsOfficer");
     expect(Object.values(vault.variables ?? {})).toContain("b86a8fe4-44ce-4948-aee5-eccb2c155cd7");
     expect(JSON.stringify(vault)).not.toContain("frontendPrincipalId");
@@ -846,7 +923,7 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
       value: expect.stringContaining("listKeys("),
     });
     expect(template.parameters?.["cognitiveServicesKey"]).toMatchObject({type: expect.stringMatching(/^securestring$/iu)});
-    const environment = template.resources["configurationBootstrap"]?.properties?.["environmentVariables"];
+    const environment = propertiesOf(template.resources["configurationBootstrap"])?.["environmentVariables"];
     expect(environment).toEqual(
       expect.arrayContaining([{name: "COGNITIVE_SERVICES_KEY", secureValue: "[parameters('cognitiveServicesKey')]"}]),
     );
@@ -1028,7 +1105,7 @@ describe("Bicep AI provisioning", {timeout: 120_000}, () => {
     expect(projects).toHaveLength(1);
     expect(models).toHaveLength(1);
     expect(models[0]?.name).toContain("model-router");
-    expect(models[0]?.properties?.["model"]).toEqual({format: "OpenAI", name: "model-router", version: "2025-11-18"});
+    expect(propertiesOf(models[0])?.["model"]).toEqual({format: "OpenAI", name: "model-router", version: "2025-11-18"});
     expect(models[0]?.["sku"]).toMatchObject({name: "GlobalStandard", capacity: 10});
     expect(models[0]?.dependsOn).toContain("aiFoundry");
   });
@@ -1040,7 +1117,7 @@ describe("Bicep AI provisioning", {timeout: 120_000}, () => {
 
     expect(moduleParameters(foundation, "aiDeployment")["resourceLocation"]).toBe("swedencentral");
     expect(moduleParameters(orchestrator, "aiFoundryDeployment")["aiFoundryLocation"]).toBe("[parameters('resourceLocation')]");
-    expect(resourcesOfType(account, "Microsoft.CognitiveServices/accounts")[0]?.properties?.["disableLocalAuth"]).toBe(false);
+    expect(propertiesOf(resourcesOfType(account, "Microsoft.CognitiveServices/accounts")[0])?.["disableLocalAuth"]).toBe(false);
   });
 
   it("keeps backend roles on the generated account and all key outputs secure", () => {
@@ -1054,7 +1131,7 @@ describe("Bicep AI provisioning", {timeout: 120_000}, () => {
     const roles = resourcesOfType(rbac, "Microsoft.Authorization/roleAssignments");
     expect(roles).toHaveLength(2);
     for (const role of roles) {
-      expect(role.properties?.["principalId"]).toBe("[parameters('backendPrincipalId')]");
+      expect(propertiesOf(role)?.["principalId"]).toBe("[parameters('backendPrincipalId')]");
       expect(JSON.stringify(role["scope"])).toContain("aiFoundryAccountName");
     }
     expect(ai.outputs?.["cognitiveServicesKey"]).toMatchObject({type: expect.stringMatching(/^securestring$/iu)});
@@ -1104,7 +1181,7 @@ describe("Bicep site wiring", {timeout: 120_000}, () => {
   }
 
   function siteConfiguration(resource: CompiledResource): Readonly<Record<string, unknown>> {
-    const config = resource.properties?.["siteConfig"];
+    const config = propertiesOf(resource)?.["siteConfig"];
     if (!isRecord(config)) throw new Error("Missing web application configuration.");
     return config;
   }
@@ -1177,8 +1254,8 @@ describe("Bicep site wiring", {timeout: 120_000}, () => {
     const exp = moduleTemplate(sites, "expWebsiteDeployment");
     const auth = resourcesOfType(exp, "Microsoft.Web/sites/config").find((resource) => resource.name?.includes("authsettingsV2"));
     expect(auth).toBeDefined();
-    expect(auth?.properties?.["platform"]).toMatchObject({enabled: true});
-    const policy = JSON.stringify(auth?.properties);
+    expect(propertiesOf(auth)?.["platform"]).toMatchObject({enabled: true});
+    const policy = JSON.stringify(propertiesOf(auth));
     for (const principal of ["frontendIdentityPrincipalId", "backendIdentityPrincipalId", "infrastructureIdentityPrincipalId"]) {
       expect(policy).toContain(principal);
     }
@@ -1196,10 +1273,186 @@ describe("Bicep site wiring", {timeout: 120_000}, () => {
     const registry = compileTemplate(String.raw`infra\Azure\Bicep\storage\containerRegistry.bicep`);
     const rbac = compileTemplate(String.raw`infra\Azure\Bicep\rbac\container-registry-rbac.bicep`);
     expect(resourcesOfType(registry, "Microsoft.ContainerRegistry/registries")[0]?.["sku"]).toMatchObject({name: "Basic"});
-    expect(resourcesOfType(registry, "Microsoft.ContainerRegistry/registries")[0]?.properties?.["adminUserEnabled"]).toBe(false);
+    expect(propertiesOf(resourcesOfType(registry, "Microsoft.ContainerRegistry/registries")[0])?.["adminUserEnabled"]).toBe(false);
     for (const symbol of ["frontendAcrPull", "backendAcrPull", "infrastructureAcrPush"]) {
       expect(rbac.resources[symbol]).toBeDefined();
       expect(JSON.stringify(rbac.resources[symbol]?.["scope"])).toContain("containerRegistryName");
     }
+  });
+});
+
+describe("Bicep domain completion", {timeout: 120_000}, () => {
+  const path = String.raw`infra\Azure\Bicep\bootstrap\dns-readiness.bicep`;
+
+  it("uses each service's actual plan and binds SNI to the managed certificate output", () => {
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+    const bindings = moduleTemplate(domains, "bindingsDeployment");
+    const input = moduleParameters(domains, "bindingsDeployment");
+
+    expect(input["apiWebsiteAppServicePlanId"]).toEqual(expect.stringContaining("apiWebsite"));
+    expect(input["apiWebsiteAppServicePlanId"]).not.toEqual(expect.stringContaining("devWebsite"));
+    expect(moduleParameters(bindings, "apiWebsiteBindings")["apiWebsiteAppServicePlanId"]).toBe(
+      "[parameters('apiWebsiteAppServicePlanId')]",
+    );
+    for (const [symbol, certificate] of [
+      ["apiWebsiteBindings", "apiManagedCertificate"],
+      ["devWebsiteBindings", "devManagedCertificate"],
+      ["expWebsiteBindings", "expManagedCertificate"],
+    ]) {
+      const service = moduleTemplate(bindings, symbol ?? "");
+      expect(
+        moduleParameters(service, "certificateBindings")[
+          symbol === "apiWebsiteBindings"
+            ? "apiWebsiteThumbprint"
+            : symbol === "devWebsiteBindings"
+              ? "devWebsiteThumbprint"
+              : "expWebsiteThumbprint"
+        ],
+      ).toEqual(expect.stringContaining(certificate ?? ""));
+      const ssl = resourcesOfType(moduleTemplate(service, "certificateBindings"), "Microsoft.Web/sites/hostNameBindings");
+      expect(ssl).toHaveLength(1);
+      expect(propertiesOf(ssl[0])?.["sslState"]).toBe("SniEnabled");
+    }
+  });
+
+  it("prepares managed DNS in Foundation and completes status/experiments without DNS writes", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const sites = moduleTemplate(foundation, "websiteDeployment");
+    const network = moduleTemplate(foundation, "networkDeployment");
+    const dns = moduleTemplate(network, "dnsZoneDeployment");
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+    const bindings = moduleTemplate(domains, "bindingsDeployment");
+
+    expect(JSON.stringify(sites.outputs?.["applicationDnsRecords"])).toContain("asuid.exp");
+    expect(JSON.stringify(sites.outputs?.["applicationDnsRecords"])).toContain("status");
+    expect(moduleParameters(network, "dnsZoneDeployment")["frontDoorEndpointId"]).toEqual(
+      expect.stringContaining("azureFrontDoorDeployment"),
+    );
+    expect(resourcesOfType(dns, "Microsoft.Network/dnsZones/dnssecConfigs")).toHaveLength(1);
+    expect(dns.outputs).toHaveProperty("dnsZoneDsRecords");
+    expect(JSON.stringify(dns)).not.toMatch(/<your-|clerk\.services|amazonses\.com/iu);
+    const expectations = JSON.stringify(moduleParameters(domains, "dnsReadiness")["expectedRecords"]);
+    expect(expectations).toContain("customDomainVerificationId");
+    expect(expectations).toContain("validationToken");
+    expect(bindings.resources["statusWebsiteBindings"]).toBeDefined();
+    expect(bindings.resources["expWebsiteBindings"]).toBeDefined();
+    for (const type of ["Microsoft.Network/dnsZones/CNAME", "Microsoft.Network/dnsZones/TXT", "Microsoft.Network/dnsZones/A"]) {
+      expect(resourcesOfType(domains, type).filter((resource) => resource["existing"] !== true)).toHaveLength(0);
+    }
+  });
+
+  it("gates Front Door route, WAF domain associations, and bindings on public DNS readiness", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+
+    expect(resourcesOfType(foundation, "Microsoft.Cdn/profiles/afdEndpoints/routes")).toHaveLength(0);
+    expect(resourcesOfType(foundation, "Microsoft.Web/certificates")).toHaveLength(0);
+    expect(domains.resources["dnsReadiness"]).toBeDefined();
+    expect(domains.resources["bindingsDeployment"]?.dependsOn).toContain("dnsReadiness");
+    expect(domains.resources["frontDoorCompletion"]?.dependsOn).toContain("dnsReadiness");
+    const completion = moduleTemplate(domains, "frontDoorCompletion");
+    expect(resourcesOfType(completion, "Microsoft.Cdn/profiles/afdEndpoints/routes")).toHaveLength(1);
+    const policy = resourcesOfType(completion, "Microsoft.Cdn/profiles/securityPolicies");
+    expect(policy).toHaveLength(1);
+    expect(JSON.stringify(policy[0])).toContain("apex-arolariu-ro");
+    expect(JSON.stringify(policy[0])).toContain("www-arolariu-ro");
+  });
+
+  it("refuses unresolved public DNS without making configuration writes", () => {
+    const result = runScript(path, "dnsReadiness", {...scenario("dns"), replies: {}});
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stderr).toContain("DNS_NOT_READY");
+    expect(result.operations.some((operation) => operation.kind === "dns-query")).toBe(true);
+    expect(result.operations.filter((operation) => operation.kind === "secret-write" || operation.kind === "config-write")).toHaveLength(0);
+  });
+
+  it.each([
+    {name: "missing", answer: []},
+    {name: "stale", answer: [{type: 43, data: "12345 13 2 BADBAD"}]},
+  ])("rejects delegated DNS with $name parent DS", ({answer}) => {
+    const input = scenario("dns");
+    const result = runScript(path, "dnsReadiness", {
+      ...input,
+      replies: {...input.replies, "public.example.test|DS": [{Status: 0, Answer: answer}]},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stderr).toContain("DNS_NOT_READY");
+  });
+
+  it("waits for propagation and accepts normalized names plus a current DS during rollover", () => {
+    const input = scenario("dns");
+    const ns = input.replies["public.example.test|NS"];
+    if (!ns) throw new Error("Missing valid DNS fixture.");
+    const result = runScript(path, "dnsReadiness", {
+      ...input,
+      replies: {...input.replies, "public.example.test|NS": [{Status: 3}, ...ns]},
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outputs["completed"]).toBe(true);
+    expect(result.operations.some((operation) => operation.kind === "sleep")).toBe(true);
+    expect(result.operations.filter((operation) => operation.kind === "dns-query")).toContainEqual({
+      kind: "dns-query",
+      target: "public.example.test|DS",
+    });
+  });
+
+  it("refuses a wrong managed CNAME even after delegation and parent DS match", () => {
+    const input = scenario("dns");
+    const result = runScript(path, "dnsReadiness", {
+      ...input,
+      replies: {...input.replies, "www.public.example.test|CNAME": [{Status: 0, Answer: [{type: 5, data: "unrelated.example.test."}]}]},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stderr).toContain("DNS_NOT_READY");
+  });
+
+  it.each(["", "not-an-address"])("does not mistake malformed apex A data for resolution (%s)", (data) => {
+    const input = scenario("dns");
+    const result = runScript(path, "dnsReadiness", {
+      ...input,
+      replies: {...input.replies, "public.example.test|A": [{Status: 0, Answer: [{type: 1, data}]}]},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stderr).toContain("DNS_RESOLVER_UNAVAILABLE");
+  });
+
+  it("compares the complete NS set and filters unrelated DNS answer types", () => {
+    const input = scenario("dns");
+    for (const answer of [
+      [{type: 2, data: "ns1.example.test."}],
+      [
+        {type: 16, data: "ns1.example.test."},
+        {type: 16, data: "ns2.example.test."},
+      ],
+    ]) {
+      const result = runScript(path, "dnsReadiness", {
+        ...input,
+        replies: {...input.replies, "public.example.test|NS": [{Status: 0, Answer: answer}]},
+      });
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("DNS_NOT_READY");
+    }
+  });
+
+  it("distinguishes a failed resolver from negative DNS and caps its wait", () => {
+    const result = runScript(path, "dnsReadiness", {
+      ...scenario("dns"),
+      httpFault: {status: 503, code: "Unavailable", attempts: 100, body: "DO_NOT_LOG_DNS_SERVICE_BODY"},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stderr).toContain("DNS_RESOLVER_UNAVAILABLE");
+    expect(result.operations.filter((operation) => operation.kind === "dns-query").length).toBeLessThanOrEqual(32);
+    expect(result.stdout + result.stderr).not.toContain("DO_NOT_LOG_DNS_SERVICE_BODY");
   });
 });

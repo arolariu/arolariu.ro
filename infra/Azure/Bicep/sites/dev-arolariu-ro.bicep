@@ -158,3 +158,4 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
 
 output devWebsiteUrl string = devWebsite.properties.defaultHostName
 output devWebsiteName string = devWebsite.name
+output domainVerificationId string = devWebsite.properties.customDomainVerificationId

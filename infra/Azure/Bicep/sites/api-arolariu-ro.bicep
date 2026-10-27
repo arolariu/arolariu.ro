@@ -147,3 +147,4 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
 
 output apiWebsiteUrl string = apiWebsite.properties.defaultHostName
 output apiWebsiteName string = apiWebsite.name
+output domainVerificationId string = apiWebsite.properties.customDomainVerificationId

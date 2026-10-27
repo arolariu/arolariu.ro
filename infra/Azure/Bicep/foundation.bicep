@@ -125,10 +125,10 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
 module networkDeployment 'network/deploymentFile.bicep' = {
   name: 'networkDeployment-${resourceDeploymentDate}'
   params: {
-    resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
     mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
+    applicationDnsRecords: websiteDeployment.outputs.applicationDnsRecords
   }
 }
 
@@ -288,6 +288,7 @@ output deploymentInfo object = {
   dnsDelegation: {
     zoneName: networkDeployment.outputs.dnsZoneName
     nameServers: networkDeployment.outputs.dnsZoneNameServers
+    dsRecords: networkDeployment.outputs.dnsZoneDsRecords
   }
   identityClientIds: {
     frontend: identitiesDeployment.outputs.managedIdentitiesList[0].clientId

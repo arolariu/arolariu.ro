@@ -39,18 +39,19 @@ metadata version = '2.0.0'
 
 targetScope = 'resourceGroup'
 
+import { dnsRecord } from '../types/dns.type.bicep'
+
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string
-
-@description('The location for the resources.')
-@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
-param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
 @description('The hostname of the main production website.')
 param mainWebsiteHostname string
+
+@description('Azure-owned application records resolved by the sites producer.')
+param applicationDnsRecords dnsRecord[]
 
 // -------------------------------------------------------------------------------------
 // Resource Naming Variables
@@ -75,17 +76,20 @@ module dnsZoneDeployment 'dnsZone.bicep' = {
   params: {
     dnsZoneName: dnsZoneName
     dnsZoneDeploymentDate: resourceDeploymentDate
-    frontDoorName: azureFrontDoorName
+    frontDoorEndpointId: azureFrontDoorDeployment.outputs.frontDoorEndpointId
     frontDoorProductionFqdn: azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
     frontDoorApexCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorApexToken
     frontDoorWwwCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorWwwToken
+    applicationDnsRecords: applicationDnsRecords
   }
 }
 
 // Output the Front Door details for reference
 output frontDoorProductionFqdn string = azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
 output frontDoorProfileId string = azureFrontDoorDeployment.outputs.frontDoorProfileId
+output frontDoorEndpointId string = azureFrontDoorDeployment.outputs.frontDoorEndpointId
 
 // Output the DNS Zone name for reference
 output dnsZoneName string = dnsZoneDeployment.outputs.dnsZoneName
 output dnsZoneNameServers array = dnsZoneDeployment.outputs.dnsZoneNameServers
+output dnsZoneDsRecords string[] = dnsZoneDeployment.outputs.dnsZoneDsRecords

@@ -236,3 +236,4 @@ resource authSettings 'Microsoft.Web/sites/config@2025-03-01' = {
 
 output expWebsiteUrl string = expWebsite.properties.defaultHostName
 output expWebsiteName string = expWebsite.name
+output domainVerificationId string = expWebsite.properties.customDomainVerificationId

@@ -37,6 +37,8 @@ metadata description = 'Sites orchestrator deploying all web applications and st
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
+import { dnsRecord } from '../types/dns.type.bicep'
+
 targetScope = 'resourceGroup'
 
 @description('The date when the deployment is executed.')
@@ -177,3 +179,15 @@ output docsWebsiteName string = docsWebsiteDeployment.outputs.docsWebsiteName
 output cvWebsiteName string = cvWebsiteDeployment.outputs.cvWebsiteName
 output expWebsiteName string = expWebsiteDeployment.outputs.expWebsiteName
 output statusWebsiteName string = statusWebsiteDeployment.outputs.statusWebsiteName
+
+output applicationDnsRecords dnsRecord[] = [
+  { name: 'api', type: 'CNAME', expectedValues: [apiWebsiteDeployment.outputs.apiWebsiteUrl] }
+  { name: 'asuid.api', type: 'TXT', expectedValues: [apiWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'dev', type: 'CNAME', expectedValues: [devWebsiteDeployment.outputs.devWebsiteUrl] }
+  { name: 'asuid.dev', type: 'TXT', expectedValues: [devWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'exp', type: 'CNAME', expectedValues: [expWebsiteDeployment.outputs.expWebsiteUrl] }
+  { name: 'asuid.exp', type: 'TXT', expectedValues: [expWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'docs', type: 'CNAME', expectedValues: [docsWebsiteDeployment.outputs.docsWebsiteUrl] }
+  { name: 'cv', type: 'CNAME', expectedValues: [cvWebsiteDeployment.outputs.cvWebsiteUrl] }
+  { name: 'status', type: 'CNAME', expectedValues: [statusWebsiteDeployment.outputs.statusWebsiteUrl] }
+]
