@@ -152,7 +152,7 @@
     "@storybook/addon-themes": "10.6.4",
     "@storybook/addon-vitest": "10.6.4",
     "@storybook/nextjs-vite": "10.6.4",
-    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/kit": "3.1.0",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
