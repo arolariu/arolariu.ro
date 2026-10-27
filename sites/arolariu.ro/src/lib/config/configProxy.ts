@@ -133,11 +133,22 @@ const INFRASTRUCTURE = process.env["INFRA"]?.trim().toLowerCase();
 const IS_CLOUD_DEPLOYMENT =
   INFRASTRUCTURE === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]) || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
 
+const LEGACY_EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
+
 /**
- * Azure AD token scope for the experiments service.
- * Used for Managed Identity bearer-token acquisition in Azure deployments.
+ * Resolves the experiments audience from a canonical Entra application client ID.
+ * @param clientId - Runtime application ID; blank values retain the legacy audience.
+ * @returns The normalized application scope used for Azure token acquisition.
+ * @throws Error when non-empty configuration is not a canonical GUID.
  */
-export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default" as const;
+export function resolveExpServiceTokenScope(clientId: string | undefined): string {
+  const normalized = clientId?.trim().toLowerCase();
+  if (!normalized) return LEGACY_EXP_SERVICE_TOKEN_SCOPE;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(normalized)) {
+    throw new Error("EXP_ENTRA_APP_CLIENT_ID must be a canonical GUID.");
+  }
+  return `api://${normalized}/.default`;
+}
 
 /** Azure-hosted exp service URL. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
@@ -155,6 +166,11 @@ const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (IS_CLOUD_D
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
 const USE_AZURE_AUTH = URL.canParse(EXP_BASE_URL) && new URL(EXP_BASE_URL).origin === AZURE_EXP_URL;
+
+/** Runtime Azure audience; unused Azure configuration cannot break local proxy routing. */
+export const EXP_SERVICE_TOKEN_SCOPE: string = USE_AZURE_AUTH
+  ? resolveExpServiceTokenScope(process.env["EXP_ENTRA_APP_CLIENT_ID"])
+  : LEGACY_EXP_SERVICE_TOKEN_SCOPE;
 
 const WEBSITE_TARGET = "website" as const;
 

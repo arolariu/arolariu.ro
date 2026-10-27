@@ -59,6 +59,21 @@ internal static class WebApplicationBuilderExtensions
   /// <summary>Entra ID scope for the exp service bearer-token flow.</summary>
   private const string ExpScope = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 
+  /// <summary>Resolves a canonical runtime experiments application ID without exposing malformed configuration.</summary>
+  /// <param name="applicationClientId">The runtime Entra application ID; blank values retain the legacy audience.</param>
+  /// <returns>The normalized application scope used for Azure token acquisition.</returns>
+  /// <exception cref="ArgumentException">Non-empty configuration is not a canonical GUID.</exception>
+  internal static string ResolveExpTokenScope(string? applicationClientId)
+  {
+    if (string.IsNullOrWhiteSpace(applicationClientId)) return ExpScope;
+    if (!Guid.TryParseExact(applicationClientId.Trim(), "D", out var clientId))
+    {
+      throw new ArgumentException("EXP_ENTRA_APP_CLIENT_ID must be a canonical GUID.", nameof(applicationClientId));
+    }
+
+    return $"api://{clientId:D}/.default";
+  }
+
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
   /// Retained as an explicit override for special test or tooling scenarios only.
@@ -129,8 +144,9 @@ internal static class WebApplicationBuilderExtensions
     var useAzureAuth = baseUrl == ConfigProxyUrlAzure;
     if (useAzureAuth)
     {
+      var expScope = ResolveExpTokenScope(Environment.GetEnvironmentVariable("EXP_ENTRA_APP_CLIENT_ID"));
       httpClientBuilder.AddHttpMessageHandler(() =>
-        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
+        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), expScope));
     }
 
     // Fetch config values at startup with retry.
