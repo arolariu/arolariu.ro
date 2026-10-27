@@ -88,7 +88,7 @@ jobs:
           ref: ${{ env.HEAD_REF }}
 
       - name: 📥 Download shared hygiene plan
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: hygiene-plan
           path: artifacts/hygiene
@@ -156,13 +156,13 @@ jobs:
           install-scripts-deps: "true"
 
       - name: 📥 Download shared hygiene plan
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: hygiene-plan
           path: artifacts/hygiene
 
       - name: 📥 Download outcome evidence with provenance
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         # The verifier still runs on download failure so it can publish a
         # required errored report for missing evidence, never a false pass.
         continue-on-error: true
