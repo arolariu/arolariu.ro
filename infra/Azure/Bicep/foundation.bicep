@@ -222,6 +222,32 @@ module appConfigRbac 'rbac/app-configuration-rbac.bicep' = {
   }
 }
 
+module configurationBootstrap 'bootstrap/configuration.bicep' = {
+  name: 'configurationBootstrap-${resourceDeploymentDate}'
+  dependsOn: [appConfigRbac, keyVaultRbac, backendAccessProbe]
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    infrastructureManagedIdentity: identitiesDeployment.outputs.managedIdentitiesList[2]
+    keyVaultUri: configurationDeployment.outputs.keyVaultUri
+    appConfigurationEndpoint: configurationDeployment.outputs.appConfigurationEndpoint
+    cognitiveServicesKey: aiDeployment.outputs.cognitiveServicesKey
+    configuration: {
+      tenantId: subscription().tenantId
+      subscriptionId: subscription().subscriptionId
+      sqlServerFqdn: storageDeployment.outputs.sqlServerFqdn
+      sqlDatabaseName: storageDeployment.outputs.sqlDatabasePrimaryName
+      backendManagedIdentityClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
+      cosmosEndpoint: storageDeployment.outputs.cosmosEndpoint
+      blobEndpoint: storageDeployment.outputs.storageAccountBlobEndpoint
+      telemetryConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
+      cognitiveServicesEndpoint: aiDeployment.outputs.aiResources.aiFoundryEndpoint
+      apiUrl: 'https://api.arolariu.ro'
+    }
+  }
+}
+
 module openAiRbac 'rbac/ai-rbac.bicep' = {
   name: 'openAiRbac-${resourceDeploymentDate}'
   params: {
@@ -272,6 +298,8 @@ output deploymentInfo object = {
     servicePrincipalId: identitiesDeployment.outputs.expEntraServicePrincipalId
   }
   sqlAccessVerified: backendAccessProbe.outputs.completed
+  configurationPopulated: configurationBootstrap.outputs.completed
+  pendingExternalSecretNames: configurationBootstrap.outputs.pendingExternalSecretNames
   resources: {
     keyVaultName: configurationDeployment.outputs.keyVaultName
     appConfigurationName: configurationDeployment.outputs.appConfigurationName

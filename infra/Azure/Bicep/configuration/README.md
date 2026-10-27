@@ -14,13 +14,17 @@ The configuration infrastructure implements a secure, centralized configuration 
 
 ## 📁 Module Files
 
-| File                     | Purpose                                  |
-| ------------------------ | ---------------------------------------- |
-| `deploymentFile.bicep`   | Orchestrates configuration deployments   |
-| `keyVault.bicep`         | Azure Key Vault for secrets              |
-| `keyVault.json`          | Key Vault secrets data (imported)        |
-| `appConfiguration.bicep` | Azure App Configuration store            |
-| `appConfiguration.json`  | App Configuration values data (imported) |
+| File                               | Purpose                                                      |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `deploymentFile.bicep`             | Orchestrates configuration deployments                       |
+| `keyVault.bicep`                   | Azure Key Vault for secrets                                  |
+| `appConfiguration.bicep`           | Azure App Configuration store                                |
+| `appConfiguration.json`            | Meaningful non-secret static defaults                        |
+| `../bootstrap/configuration.bicep` | Resolved values, generated JWTs, and typed secret references |
+
+Store provisioning does not seed placeholders. Foundation invokes the inline configuration bootstrap after resource-scoped writer grants and
+data-access checks. Existing real JWTs and operator-owned Clerk/Resend credentials are preserved; missing vendor values are reported by
+secret name. Infrastructure retains its approved App Configuration Data Owner and Key Vault Secrets Officer roles.
 
 ## Architecture Diagram
 

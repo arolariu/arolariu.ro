@@ -65,18 +65,18 @@ facade.bicep
 
 ### Infrastructure Identity (CI/CD)
 
-| Resource           | Role                | Purpose                     |
-| ------------------ | ------------------- | --------------------------- |
-| Storage Account    | Blob Data Reader    | Deployment verification     |
-| Storage Account    | Queue Data Reader   | Deployment verification     |
-| Storage Account    | Table Data Reader   | Deployment verification     |
-| SQL Server         | Entra administrator | Bootstrap contained users   |
-| App Configuration  | Data Reader         | Deployment settings         |
-| Key Vault          | Reader              | Discover metadata           |
-| Key Vault          | Secrets User        | Read secrets for deployment |
-| Container Registry | ACR Push            | Push built images           |
-| Container Registry | ACR Pull            | Pull base images            |
-| App Services       | Website Contributor | Deploy web apps (per app)   |
+| Resource           | Role                | Purpose                         |
+| ------------------ | ------------------- | ------------------------------- |
+| Storage Account    | Blob Data Reader    | Deployment verification         |
+| Storage Account    | Queue Data Reader   | Deployment verification         |
+| Storage Account    | Table Data Reader   | Deployment verification         |
+| SQL Server         | Entra administrator | Bootstrap contained users       |
+| App Configuration  | Data Owner          | Permanent IaC settings writer   |
+| Key Vault          | Reader              | Discover metadata               |
+| Key Vault          | Secrets Officer     | Permanent IaC secret management |
+| Container Registry | ACR Push            | Push built images               |
+| Container Registry | ACR Pull            | Pull base images                |
+| App Services       | Website Contributor | Deploy web apps (per app)       |
 
 ## How to Add a New Role Assignment
 

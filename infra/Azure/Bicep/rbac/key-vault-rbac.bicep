@@ -9,7 +9,7 @@ targetScope = 'resourceGroup'
 //
 // Assigned Roles:
 // - Backend: Key Vault Secrets User
-// - Infrastructure: Key Vault Secrets User, Key Vault Reader
+// - Infrastructure: Key Vault Secrets Officer, Key Vault Reader
 // =====================================================================================
 
 metadata description = 'Resource-scoped RBAC role assignments for the Key Vault, granting secret read access to backend and infrastructure managed identities.'
@@ -18,6 +18,7 @@ metadata version = '1.0.0'
 
 import {
   keyVaultSecretsUser
+  keyVaultSecretsOfficer
   keyVaultReader
 } from '../constants/roles.bicep'
 
@@ -38,7 +39,7 @@ param infrastructurePrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' existing = {
+resource keyVault 'Microsoft.KeyVault/vaults@2026-05-15' existing = {
   name: keyVaultName
 }
 
@@ -62,15 +63,15 @@ resource backendSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01'
 // Infrastructure Role Assignments
 // =====================================================================================
 
-// Grants infrastructure read access to Key Vault secrets for CI/CD deployment credentials
-resource infrastructureSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+// The infrastructure identity retains scoped secret management after bootstrap.
+resource infrastructureSecretsOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: keyVault
-  name: guid(keyVault.id, infrastructurePrincipalId, keyVaultSecretsUser)
+  name: guid(keyVault.id, infrastructurePrincipalId, keyVaultSecretsOfficer)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUser)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsOfficer)
     principalId: infrastructurePrincipalId
     principalType: 'ServicePrincipal'
-    description: 'Infrastructure: read secrets from key vault'
+    description: 'Infrastructure: permanent scoped secret management'
   }
 }
 

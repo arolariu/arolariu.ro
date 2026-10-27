@@ -68,6 +68,9 @@ var appConfigurationDataOwner = 'fe86443c-f201-4fc4-9d2a-ac61149fbda0'
 var keyVaultSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6'
 
 @export()
+var keyVaultSecretsOfficer = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
+
+@export()
 var keyVaultReader = '21090545-7ca7-4776-b22c-e363652d74d2'
 
 // -------------------------------------------------------------------------------------

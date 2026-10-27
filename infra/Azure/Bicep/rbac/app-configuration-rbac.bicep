@@ -10,7 +10,7 @@ targetScope = 'resourceGroup'
 // Assigned Roles:
 // - Frontend: App Configuration Data Reader
 // - Backend: App Configuration Data Owner
-// - Infrastructure: App Configuration Data Reader
+// - Infrastructure: App Configuration Data Owner (permanent IaC writer)
 // =====================================================================================
 
 metadata description = 'Resource-scoped RBAC role assignments for the App Configuration store, granting configuration data access to each managed identity.'
@@ -42,7 +42,7 @@ param infrastructurePrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-06-01-preview' existing = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-06-01' existing = {
   name: appConfigurationName
 }
 
@@ -93,14 +93,14 @@ resource backendConfigOwner 'Microsoft.Authorization/roleAssignments@2022-04-01'
 // Infrastructure Role Assignments
 // =====================================================================================
 
-// Grants infrastructure read access to configuration data for deployment validation
-resource infrastructureConfigReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+// The infrastructure identity retains scoped configuration management after bootstrap.
+resource infrastructureConfigOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: appConfiguration
-  name: guid(appConfiguration.id, infrastructurePrincipalId, appConfigurationDataReader)
+  name: guid(appConfiguration.id, infrastructurePrincipalId, appConfigurationDataOwner)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', appConfigurationDataReader)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', appConfigurationDataOwner)
     principalId: infrastructurePrincipalId
     principalType: 'ServicePrincipal'
-    description: 'Infrastructure: read configuration data from app configuration store'
+    description: 'Infrastructure: permanent scoped configuration data management'
   }
 }

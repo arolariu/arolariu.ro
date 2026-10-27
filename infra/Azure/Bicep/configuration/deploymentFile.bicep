@@ -60,4 +60,6 @@ module appConfigurationDeployment 'appConfiguration.bicep' = {
 
 // Outputs for RBAC scoping
 output keyVaultName string = keyVaultDeployment.outputs.mainKeyVaultName
+output keyVaultUri string = keyVaultDeployment.outputs.mainKeyVaultUri
 output appConfigurationName string = appConfigurationDeployment.outputs.appConfigurationName
+output appConfigurationEndpoint string = appConfigurationDeployment.outputs.appConfigurationEndpoint
