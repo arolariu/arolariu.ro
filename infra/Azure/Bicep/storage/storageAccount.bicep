@@ -52,7 +52,7 @@ param storageAccountDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('storage', storageAccountDeploymentDate)
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2026-06-01' = {
   name: storageAccountName
   location: storageAccountLocation
   sku: { name: 'Standard_LRS' }
@@ -99,7 +99,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   })
 
   // Blob service configuration with security enhancements
-  resource blobServices 'blobServices@2025-06-01' = {
+  resource blobServices 'blobServices@2026-06-01' = {
     name: 'default'
     properties: {
       changeFeed: {
@@ -163,7 +163,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
     }
 
     // Invoices blob container (private access)
-    resource invoicesContainer 'containers@2025-06-01' = {
+    resource invoicesContainer 'containers@2026-06-01' = {
       name: 'invoices'
       properties: {
         publicAccess: 'None'
@@ -172,7 +172,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   }
 
   // File service configuration
-  resource fileServices 'fileServices@2025-06-01' = {
+  resource fileServices 'fileServices@2026-06-01' = {
     name: 'default'
     properties: {
       shareDeleteRetentionPolicy: {
@@ -192,11 +192,11 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   }
 
   // Queue service configuration
-  resource queueServices 'queueServices@2025-06-01' = {
+  resource queueServices 'queueServices@2026-06-01' = {
     name: 'default'
     properties: {}
 
-    resource analysisQueue 'queues@2025-06-01' = {
+    resource analysisQueue 'queues@2026-06-01' = {
       name: 'invoice-analysis'
       properties: {
         metadata: {
@@ -208,14 +208,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   }
 
   // Table service configuration
-  resource tableServices 'tableServices@2025-06-01' = {
+  resource tableServices 'tableServices@2026-06-01' = {
     name: 'default'
     properties: {}
   }
 }
 
 // Lifecycle management policy for cost optimization
-resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2025-06-01' = {
+resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2026-06-01' = {
   parent: storageAccount
   name: 'default'
   properties: {

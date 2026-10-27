@@ -2,6 +2,10 @@
 
 A comprehensive guide for optimizing Azure infrastructure costs while maintaining performance, security, and reliability standards.
 
+> Historical reference only: the figures below use June 2025 assumptions and do not price the current fresh-deployment graph, its France
+> Central regional profile, Sweden Central AI deployment, or bootstrap execution. Obtain a current quote and explicit cost approval using
+> the [deployment guide](DEPLOYMENT_GUIDE.md). Examples here do not authorize resource/SKU or automation changes.
+
 ## 📋 **Table of Contents**
 
 - [💡 Cost Overview](#-cost-overview)

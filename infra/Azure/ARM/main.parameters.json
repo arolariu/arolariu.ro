@@ -6,7 +6,10 @@
       "value": "arolariu-rg"
     },
     "resourceGroupLocation": {
-      "value": "swedencentral"
+      "value": "francecentral"
+    },
+    "deploymentStage": {
+      "value": "foundation"
     },
     "resourceGroupAuthor": {
       "value": "Alexandru-Razvan Olariu <admin@arolariu.ro>"

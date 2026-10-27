@@ -153,7 +153,7 @@ type HttpFault = Readonly<{status: number; code: string; attempts: number; body?
 type DnsReply = Readonly<{Status: number; Answer?: readonly Readonly<{type: number; data: string}>[]}>;
 type ScriptScenario =
   | Readonly<{kind: "sql"; environment: EnvironmentFixture; existingUserSid: string | null; queryError?: string; queryErrorNumber?: number}>
-  | Readonly<{kind: "probe"; environment: EnvironmentFixture; queryError?: string; httpFault?: HttpFault}>
+  | Readonly<{kind: "probe"; environment: EnvironmentFixture; queryError?: string; httpFault?: HttpFault; storageFault?: HttpFault}>
   | Readonly<{kind: "configuration"; environment: EnvironmentFixture; secrets: Readonly<Record<string, string>>; httpFault?: HttpFault}>
   | Readonly<{kind: "dns"; environment: EnvironmentFixture; replies: Readonly<Record<string, readonly DnsReply[]>>; httpFault?: HttpFault}>;
 
@@ -181,6 +181,8 @@ function scenario<K extends ScriptScenario["kind"]>(kind: K): Extract<ScriptScen
     BACKEND_CLIENT_ID: "11111111-1111-4111-8111-111111111111",
     BACKEND_PRINCIPAL_ID: "22222222-2222-4222-8222-222222222222",
     COSMOS_ENDPOINT: "https://cosmos.example.test/",
+    BLOB_ENDPOINT: "https://blob.example.test/",
+    QUEUE_ENDPOINT: "https://queue.example.test/",
     AZURE_CLIENT_ID: kind === "probe" ? "11111111-1111-4111-8111-111111111111" : "33333333-3333-4333-8333-333333333333",
   };
   const scenarios: {[Key in ScriptScenario["kind"]]: Extract<ScriptScenario, {kind: Key}>} = {
@@ -274,6 +276,7 @@ foreach ($entry in $case.environment.GetEnumerator()) {
 }
 $script:operations = [Collections.Generic.List[object]]::new()
 $script:httpRequests = 0
+$script:storageRequests = 0
 $script:dnsRequests = @{}
 $script:secrets = if ($case.ContainsKey('secrets')) { $case.secrets } else { @{} }
 $script:clock = [DateTime]::Parse('2026-01-01T00:00:00Z').ToUniversalTime()
@@ -309,7 +312,7 @@ function Get-AzAccessToken {
   param([string]$ResourceUrl)
   if ($case.kind -eq 'dns') { throw 'DNS queries must not acquire or send credentials.' }
   $configurationAudience = $case.kind -eq 'configuration' -and $ResourceUrl -in @('https://vault.azure.net', 'https://azconfig.io')
-  if ($ResourceUrl -notmatch '^https://database\.windows\.net/?$' -and -not ($case.kind -eq 'probe' -and $ResourceUrl -eq 'https://cosmos.azure.com/') -and -not $configurationAudience) {
+  if ($ResourceUrl -notmatch '^https://database\.windows\.net/?$' -and -not ($case.kind -eq 'probe' -and $ResourceUrl -in @('https://cosmos.azure.com/','https://storage.azure.com/')) -and -not $configurationAudience) {
     throw 'Unexpected token audience.'
   }
   $script:operations.Add(@{kind='token';target=$ResourceUrl;value=$env:AZURE_CLIENT_ID})
@@ -414,7 +417,26 @@ function Invoke-RestMethod {
   }
   throw 'Unexpected Cosmos data operation.'
 }
-function Invoke-WebRequest { throw 'Unexpected web request.' }
+function Invoke-WebRequest {
+  [CmdletBinding()]
+  param([Uri]$Uri,[hashtable]$Headers,[string]$Method='Get',[int]$TimeoutSec)
+  if ($case.kind -ne 'probe' -or $Uri.Scheme -ne 'https' -or $Uri.Host -notin @('blob.example.test','queue.example.test') -or $Method -ne 'Get' -or $Headers.Authorization -ne 'Bearer synthetic-access-token' -or $Headers['x-ms-version'] -ne '2026-10-06') {
+    throw 'Unexpected storage data-plane request.'
+  }
+  $script:operations.Add(@{kind='http';target=$Uri.AbsolutePath;value='GET'})
+  $script:storageRequests++
+  if ($case.ContainsKey('storageFault') -and $script:storageRequests -le $case.storageFault.attempts) {
+    Throw-HttpFailure $case.storageFault.status $case.storageFault.body
+  }
+  $query = [Web.HttpUtility]::ParseQueryString($Uri.Query)
+  if ($Uri.Host -eq 'blob.example.test' -and $Uri.AbsolutePath -eq '/invoices' -and $query['restype'] -eq 'container' -and $query['comp'] -eq 'list') {
+    return [pscustomobject]@{StatusCode=200;Content='<EnumerationResults><Blobs /></EnumerationResults>'}
+  }
+  if ($Uri.Host -eq 'queue.example.test' -and $Uri.AbsolutePath -eq '/invoice-analysis/messages' -and $query['peekonly'] -eq 'true') {
+    return [pscustomobject]@{StatusCode=200;Content='<QueueMessagesList />'}
+  }
+  throw 'Unexpected storage or queue operation.'
+}
 function Invoke-Sqlcmd {
   [CmdletBinding()]
   param([string]$ServerInstance,[string]$Database,[string]$Query,$AccessToken,[int]$ConnectionTimeout,[int]$QueryTimeout)
@@ -483,9 +505,16 @@ function runScript(modulePath: string, resourceSymbol: string, input: ScriptScen
   environment["BICEP_TEST_SOURCE"] = Buffer.from(source).toString("base64");
   const result = spawnSync(
     "pwsh",
-    ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Buffer.from(powershellHarness, "utf16le").toString("base64")],
+    [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-EncodedCommand",
+      Buffer.from(". ([ScriptBlock]::Create([Console]::In.ReadToEnd()))", "utf16le").toString("base64"),
+    ],
     {
       encoding: "utf8",
+      input: powershellHarness,
       env: environment,
       timeout: 30_000,
       maxBuffer: 4 * 1024 * 1024,
@@ -1284,6 +1313,28 @@ describe("Bicep site wiring", {timeout: 120_000}, () => {
 describe("Bicep domain completion", {timeout: 120_000}, () => {
   const path = String.raw`infra\Azure\Bicep\bootstrap\dns-readiness.bicep`;
 
+  it("selects the same infrastructure identity created by Foundation for the DNS gate", () => {
+    const identity = compileTemplate(String.raw`infra\Azure\Bicep\identity\deploymentFile.bicep`);
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+    const identities = literalVariable(moduleTemplate(identity, "managedIdentities"), "identities");
+    const selected = moduleParameters(domains, "dnsReadiness")["infrastructureManagedIdentity"];
+    if (!Array.isArray(identities) || !isRecord(identities[2]) || !isRecord(selected)) {
+      throw new Error("Missing compiled infrastructure identity wiring.");
+    }
+
+    function nameFor(expression: unknown, parameter: string, value: string): string {
+      if (typeof expression !== "string") throw new Error("Expected a compiled resource name.");
+      const start = "[format('{0}";
+      const end = `', parameters('${parameter}'))]`;
+      expect(expression.startsWith(start) && expression.endsWith(end)).toBe(true);
+      return value + expression.slice(start.length, -end.length);
+    }
+
+    const prefix = nameFor(identity.variables?.["managedIdentitiesNamePrefix"], "resourceConventionPrefix", "freshscope");
+    const created = nameFor(identities[2]["name"], "userAssignedManagedIdentityNamePrefix", prefix);
+    expect(nameFor(selected["name"], "resourceConventionPrefix", "freshscope")).toBe(created);
+  });
+
   it("uses each service's actual plan and binds SNI to the managed certificate output", () => {
     const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
     const bindings = moduleTemplate(domains, "bindingsDeployment");
@@ -1454,5 +1505,120 @@ describe("Bicep domain completion", {timeout: 120_000}, () => {
     expect(result.stderr).toContain("DNS_RESOLVER_UNAVAILABLE");
     expect(result.operations.filter((operation) => operation.kind === "dns-query").length).toBeLessThanOrEqual(32);
     expect(result.stdout + result.stderr).not.toContain("DO_NOT_LOG_DNS_SERVICE_BODY");
+  });
+});
+
+describe("Bicep deployment lifecycle", {timeout: 120_000}, () => {
+  it("uses only disposable provider-backed inline scripts with stable identities and bounded cleanup", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+    const scripts = [
+      ...resourcesOfType(foundation, "Microsoft.Resources/deploymentScripts"),
+      ...resourcesOfType(domains, "Microsoft.Resources/deploymentScripts"),
+    ];
+
+    expect(scripts).toHaveLength(4);
+    for (const script of scripts) {
+      expect(propertiesOf(script)).toMatchObject({
+        cleanupPreference: "Always",
+        retentionInterval: "PT1H",
+        azPowerShellVersion: "16.2",
+        forceUpdateTag: "[parameters('resourceDeploymentDate')]",
+      });
+      expect(propertiesOf(script)).not.toHaveProperty("storageAccountSettings");
+      expect(propertiesOf(script)).not.toHaveProperty("supportingScriptUris");
+      expect(typeof propertiesOf(script)?.["scriptContent"]).toBe("string");
+      expect(script.name).toContain("resourceConventionPrefix");
+      expect(script.name).not.toContain("resourceDeploymentDate");
+    }
+  });
+
+  it("uses the backend identity for real read-only blob and queue access after their grants", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const input = moduleParameters(foundation, "backendAccessProbe");
+    expect(input["blobEndpoint"]).toEqual(expect.stringContaining("storageAccountBlobEndpoint"));
+    expect(input["queueEndpoint"]).toEqual(expect.stringContaining("storageAccountQueueEndpoint"));
+    expect(foundation.resources["backendAccessProbe"]?.dependsOn).toContain("storageRbac");
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", scenario("probe"));
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outputs["completed"]).toBe(true);
+    expect(result.operations).toEqual(
+      expect.arrayContaining([
+        {kind: "http", target: "/invoices", value: "GET"},
+        {kind: "http", target: "/invoice-analysis/messages", value: "GET"},
+        {kind: "token", target: "https://storage.azure.com/", value: "11111111-1111-4111-8111-111111111111"},
+      ]),
+    );
+  });
+
+  it("does not publish completed access after a data-plane storage failure", () => {
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", {
+      ...scenario("probe"),
+      storageFault: {status: 403, code: "AuthorizationPermissionMismatch", attempts: 50, body: "DO_NOT_LOG_STORAGE_ERROR_BODY"},
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+    expect(result.stdout + result.stderr).not.toContain("DO_NOT_LOG_STORAGE_ERROR_BODY");
+  });
+
+  it("requires successful bootstrap outputs and never claims unreleased applications are healthy", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const info = foundation.outputs?.["deploymentInfo"];
+    if (!isRecord(info) || !isRecord(info["value"])) throw new Error("Missing deployment handoff.");
+    const readiness = info["value"]["readiness"];
+    expect(readiness).toMatchObject({applicationHealthVerified: false, applicationReleaseRequired: true, domainCompletionRequired: true});
+    expect(isRecord(readiness)).toBe(true);
+    if (!isRecord(readiness)) throw new Error("Missing typed readiness handoff.");
+    for (const dependency of ["sqlServerRbac", "backendAccessProbe", "configurationBootstrap"]) {
+      expect(String(readiness["azureBootstrapComplete"])).toContain(dependency);
+    }
+    expect(info["value"]).toHaveProperty("executionResourceIds");
+    expect(info["value"]).toHaveProperty("githubConnectionValues");
+    const result = runScript(String.raw`infra\Azure\Bicep\bootstrap\access-probe.bicep`, "backendAccessProbe", {
+      ...scenario("probe"),
+      queryError: "DO_NOT_LOG_SQL_BODY",
+    });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.outputs["completed"]).not.toBe(true);
+  });
+
+  it("does not write the resource group or Foundation during domain completion", () => {
+    const main = compileTemplate(String.raw`infra\Azure\Bicep\main.bicep`);
+    const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
+
+    expect(main.resources["resourceGroup"]?.condition).toEqual(expect.stringContaining("'foundation'"));
+    for (const type of [
+      "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "Microsoft.Storage/storageAccounts",
+      "Microsoft.KeyVault/vaults",
+      "Microsoft.Sql/servers",
+      "Microsoft.Web/serverfarms",
+    ]) {
+      expect(resourcesOfType(domains, type).filter((resource) => resource["existing"] !== true)).toHaveLength(0);
+    }
+  });
+
+  it("uses the approved exact APIs for remaining service and existing-resource declarations", () => {
+    const foundation = compileTemplate(String.raw`infra\Azure\Bicep\foundation.bicep`);
+    const expected = new Map([
+      ["Microsoft.ManagedIdentity/userAssignedIdentities", "2024-11-30"],
+      ["Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials", "2024-11-30"],
+      ["Microsoft.OperationalInsights/workspaces", "2026-03-01"],
+      ["Microsoft.Storage/storageAccounts", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/blobServices", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/blobServices/containers", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/queueServices", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/queueServices/queues", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/fileServices", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/tableServices", "2026-06-01"],
+      ["Microsoft.Storage/storageAccounts/managementPolicies", "2026-06-01"],
+    ]);
+    for (const [type, version] of expected) {
+      const resources = resourcesOfType(foundation, type);
+      expect(resources.length, `Missing API owner for ${type}`).toBeGreaterThan(0);
+      for (const resource of resources) expect(resource.apiVersion, type).toBe(version);
+    }
   });
 });

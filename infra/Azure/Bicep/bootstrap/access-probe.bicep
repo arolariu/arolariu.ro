@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'Proves SQL and Cosmos data-plane access using the actual non-administrative backend identity.'
+metadata description = 'Proves SQL, Cosmos, blob, and queue data-plane access using the actual non-administrative backend identity.'
 
 import { identity } from '../types/identity.type.bicep'
 import { createTags } from '../constants/tags.bicep'
@@ -26,6 +26,12 @@ param sqlDatabaseName string
 @description('The raw HTTPS Cosmos account endpoint.')
 param cosmosEndpoint string
 
+@description('The actual blob service endpoint.')
+param blobEndpoint string
+
+@description('The actual queue service endpoint.')
+param queueEndpoint string
+
 resource backendAccessProbe 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: '${resourceConventionPrefix}-backend-probe'
   location: resourceLocation
@@ -49,6 +55,8 @@ resource backendAccessProbe 'Microsoft.Resources/deploymentScripts@2023-08-01' =
       { name: 'SQL_DATABASE_NAME', value: sqlDatabaseName }
       { name: 'BACKEND_USER_NAME', value: backendManagedIdentity.name }
       { name: 'COSMOS_ENDPOINT', value: cosmosEndpoint }
+      { name: 'BLOB_ENDPOINT', value: blobEndpoint }
+      { name: 'QUEUE_ENDPOINT', value: queueEndpoint }
     ]
     scriptContent: '''
 $ErrorActionPreference = 'Stop'
@@ -102,6 +110,46 @@ function Invoke-CosmosRead([string]$path, [switch]$query) {
   throw 'COSMOS_PROBE_RETRY_EXHAUSTED'
 }
 
+function Invoke-StorageRead([Uri]$uri, [string]$rootElement) {
+  for ($attempt = 0; $attempt -lt 24; $attempt++) {
+    if ((Get-Date) -ge $deadline) { throw 'STORAGE_PROBE_DEADLINE_EXCEEDED' }
+    try {
+      $token = (Get-AzAccessToken -ResourceUrl 'https://storage.azure.com/').Token
+      if ($token -is [Security.SecureString]) { $token = ConvertFrom-SecureString -SecureString $token -AsPlainText }
+      $response = Invoke-WebRequest -Uri $uri -Method Get -Headers @{
+        Authorization = 'Bearer ' + $token
+        'x-ms-date' = (Get-Date).ToUniversalTime().ToString('r', [Globalization.CultureInfo]::InvariantCulture)
+        'x-ms-version' = '2026-10-06'
+      } -TimeoutSec 30 -ErrorAction Stop
+      if ($response.StatusCode -ne 200) { throw 'STORAGE_PROBE_INVALID_RESPONSE' }
+      $document = [Xml.XmlDocument]::new()
+      $document.XmlResolver = $null
+      $settings = [Xml.XmlReaderSettings]::new()
+      $settings.DtdProcessing = [Xml.DtdProcessing]::Prohibit
+      $reader = [Xml.XmlReader]::Create([IO.StringReader]::new([string]$response.Content), $settings)
+      try { $document.Load($reader) } finally { $reader.Dispose() }
+      if ($document.DocumentElement.LocalName -ne $rootElement) { throw 'STORAGE_PROBE_INVALID_RESPONSE' }
+      return
+    } catch {
+      $status = 0
+      $exception = $_.Exception
+      for ($depth = 0; $depth -lt 5 -and $exception; $depth++) {
+        $responseProperty = $exception.PSObject.Properties['Response']
+        if ($responseProperty -and $responseProperty.Value -and $responseProperty.Value.PSObject.Properties['StatusCode']) {
+          $status = [int]$responseProperty.Value.StatusCode
+          break
+        }
+        $exception = $exception.InnerException
+      }
+      if ($status -notin @(0, 401, 403, 408, 429, 500, 502, 503, 504) -or $attempt -eq 23 -or (Get-Date) -ge $deadline) {
+        throw 'STORAGE_PROBE_REQUEST_FAILED'
+      }
+      Start-Sleep -Seconds ([Math]::Min(30, [Math]::Pow(2, [Math]::Min($attempt + 1, 5))))
+    }
+  }
+  throw 'STORAGE_PROBE_RETRY_EXHAUSTED'
+}
+
 try {
   if ([string]::IsNullOrWhiteSpace($env:SQL_SERVER_FQDN) -or [string]::IsNullOrWhiteSpace($env:SQL_DATABASE_NAME)) {
     throw 'SQL_PROBE_INVALID_INPUT'
@@ -109,6 +157,13 @@ try {
   try { $cosmosUri = [Uri]::new($env:COSMOS_ENDPOINT, [UriKind]::Absolute) } catch { throw 'COSMOS_PROBE_INVALID_ENDPOINT' }
   if ($cosmosUri.Scheme -ne 'https' -or $cosmosUri.UserInfo -or $cosmosUri.Query -or $cosmosUri.Fragment -or $cosmosUri.AbsolutePath -ne '/') {
     throw 'COSMOS_PROBE_INVALID_ENDPOINT'
+  }
+  try {
+    $blobUri = [Uri]::new($env:BLOB_ENDPOINT, [UriKind]::Absolute)
+    $queueUri = [Uri]::new($env:QUEUE_ENDPOINT, [UriKind]::Absolute)
+  } catch { throw 'STORAGE_PROBE_INVALID_ENDPOINT' }
+  foreach ($uri in @($blobUri, $queueUri)) {
+    if ($uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/') { throw 'STORAGE_PROBE_INVALID_ENDPOINT' }
   }
   if (-not (Get-Module -ListAvailable -Name SqlServer | Where-Object Version -EQ ([Version]'22.4.5.1'))) {
     Install-Module -Name SqlServer -RequiredVersion '22.4.5.1' -Scope CurrentUser -Repository PSGallery -Force -AllowClobber -AcceptLicense
@@ -141,10 +196,12 @@ try {
     $documents = Invoke-CosmosRead ($path + '/docs') -query
     if (-not $documents -or -not $documents.PSObject.Properties['Documents']) { throw 'COSMOS_PROBE_INVALID_RESPONSE' }
   }
+  Invoke-StorageRead ([Uri]::new($blobUri, 'invoices?restype=container&comp=list&maxresults=1')) 'EnumerationResults'
+  Invoke-StorageRead ([Uri]::new($queueUri, 'invoice-analysis/messages?peekonly=true&numofmessages=1')) 'QueueMessagesList'
   $DeploymentScriptOutputs = @{ completed = $true }
 } catch {
   $category = $_.Exception.Message
-  if ($category -notmatch '^(SQL|COSMOS)_PROBE_[A-Z_]+$') { $category = 'BACKEND_PROBE_FAILED' }
+  if ($category -notmatch '^(SQL|COSMOS|STORAGE)_PROBE_[A-Z_]+$') { $category = 'BACKEND_PROBE_FAILED' }
   throw $category
 }
 '''

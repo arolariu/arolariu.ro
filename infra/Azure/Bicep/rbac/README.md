@@ -17,7 +17,7 @@ reads account/container metadata and runs read-only queries against invoices and
 implicitly if a live SDK access check fails.
 
 ```
-facade.bicep
+foundation.bicep
   ├── identity/ → creates UAMIs
   ├── storage/  → creates resources
   ├── ...
@@ -34,7 +34,7 @@ facade.bicep
 | `app-configuration-rbac.bicep`  | App Configuration        | 3 (frontend/backend/infra)                 |
 | `sql-server-rbac.bicep`         | SQL application database | 3 contained database memberships (backend) |
 | `cosmos-db-rbac.bicep`          | Cosmos primary database  | 1 native data-contributor role (backend)   |
-| `openai-rbac.bicep`             | Azure OpenAI             | 1 (backend)                                |
+| `ai-rbac.bicep`                 | AI Foundry account       | 2 (backend)                                |
 | `websites-rbac.bicep`           | App Services (looped)    | 1 per web app (infra)                      |
 
 ## Identity Roles Summary
@@ -51,17 +51,17 @@ facade.bicep
 
 ### Backend Identity (data plane access)
 
-| Resource           | Role                      | Purpose                            |
-| ------------------ | ------------------------- | ---------------------------------- |
-| Storage Account    | Blob Data Owner           | Full blob access + ACL             |
-| Storage Account    | Queue Data Contributor    | Async processing                   |
-| Storage Account    | Table Data Contributor    | Entity CRUD                        |
-| SQL database       | Reader, writer, DDL admin | Application data and EF migrations |
-| Cosmos DB          | Native Data Contributor   | Document CRUD in primary database  |
-| App Configuration  | Data Owner                | Read + write settings              |
-| Key Vault          | Secrets User              | Read secrets at runtime            |
-| Azure OpenAI       | OpenAI User               | API inference calls                |
-| Container Registry | ACR Pull                  | Pull container images              |
+| Resource           | Role                                   | Purpose                            |
+| ------------------ | -------------------------------------- | ---------------------------------- |
+| Storage Account    | Blob Data Owner                        | Full blob access + ACL             |
+| Storage Account    | Queue Data Contributor                 | Async processing                   |
+| Storage Account    | Table Data Contributor                 | Entity CRUD                        |
+| SQL database       | Reader, writer, DDL admin              | Application data and EF migrations |
+| Cosmos DB          | Native Data Contributor                | Document CRUD in primary database  |
+| App Configuration  | Data Owner                             | Read + write settings              |
+| Key Vault          | Secrets User                           | Read secrets at runtime            |
+| AI Foundry         | Cognitive Services User, Azure AI User | Document analysis and inference    |
+| Container Registry | ACR Pull                               | Pull container images              |
 
 ### Infrastructure Identity (CI/CD)
 
@@ -100,20 +100,15 @@ resource myAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 ```
 
-## Cleanup: Remove Old RG-Scoped Assignments
+## Fresh-deployment and cleanup boundary
 
-After deploying the new resource-scoped RBAC, remove the orphaned resource-group-level assignments:
+This graph does not reconcile old resource-group-scoped assignments or migrate production permissions. Every permanent role above remains
+after bootstrap, including SQL administration and configuration-writer access. No bootstrap-only identity or grant is created.
 
-```bash
-# List all RG-scoped role assignments for managed identities
-az role assignment list --resource-group arolariu-rg --query "[?principalType=='ServicePrincipal']" --output table
-
-# Delete a specific old assignment by ID
-az role assignment delete --ids <assignment-id>
-```
-
-The old assignments use `guid(resourceGroup().id, ...)` as their name seed; the new ones use `guid(resource.id, ...)`. Both may coexist
-temporarily — the old ones are redundant but not harmful.
+The backend access script verifies its own SQL login, native Cosmos metadata/data, blob list, and queue peek after the respective grants. A
+failed operation does not authorize broader permissions. Provider-created script containers/backing storage are the disposable resources;
+follow the [exact-ID cleanup checks](../DEPLOYMENT_GUIDE.md#6-observe-execution-resource-cleanup-on-success-and-failure) for both success
+and controlled failure.
 
 ## References
 

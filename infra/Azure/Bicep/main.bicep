@@ -1,10 +1,11 @@
 targetScope = 'subscription'
 
 // =====================================================================================
-// Main Bicep Entry Point - Zero-Touch Deployment
+// Main Bicep Entry Point - Fresh Deployment Stages
 // =====================================================================================
 // This is the root entry point for deploying the entire arolariu.ro infrastructure.
-// It creates the resource group and delegates all resource provisioning to facade.bicep.
+// Foundation creates the resource group; Domains uses the existing group.
+// facade.bicep selects the requested stage without rerunning Foundation in Domains.
 //
 // Deployment Command:
 // az deployment sub create --location francecentral --template-file main.bicep \
@@ -23,7 +24,7 @@ targetScope = 'subscription'
 //       └── observability/- Monitoring, logging
 // =====================================================================================
 
-metadata description = 'Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.'
+metadata description = 'Root entry point for fresh foundation provisioning and separate domain completion.'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -48,7 +49,7 @@ param resourceDeploymentDate string = utcNow()
 @allowed(['foundation', 'domains'])
 param deploymentStage string = 'foundation'
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = if (deploymentStage == 'foundation') {
   name: resourceGroupName
   location: resourceGroupLocation
   tags: {
@@ -58,9 +59,14 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   }
 }
 
+resource existingResourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' existing = {
+  name: resourceGroupName
+}
+
 module mainDeployment 'facade.bicep' = {
   name: 'mainDeployment-${resourceDeploymentDate}'
-  scope: resourceGroup
+  scope: existingResourceGroup
+  dependsOn: [resourceGroup]
   params: {
     resourceDeploymentDate: resourceDeploymentDate
     resourceLocation: resourceGroupLocation

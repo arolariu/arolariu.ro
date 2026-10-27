@@ -94,6 +94,7 @@ module noSqlServerDeployment 'noSqlServer.bicep' = {
 output storageAccountName string = storageAccountDeployment.outputs.storageAccountName
 output storageAccountId string = storageAccountDeployment.outputs.storageAccountId
 output storageAccountBlobEndpoint string = storageAccountDeployment.outputs.storageAccountBlobEndpoint
+output storageAccountQueueEndpoint string = storageAccountDeployment.outputs.storageAccountQueueEndpoint
 output containerRegistryName string = containerRegistryDeployment.outputs.containerRegistryName
 output containerRegistryLoginServer string = containerRegistryDeployment.outputs.containerRegistryLoginServer
 output sqlServerName string = sqlServerDeployment.outputs.sqlServerName

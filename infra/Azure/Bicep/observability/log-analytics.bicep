@@ -49,7 +49,7 @@ param logAnalyticsWorkspaceDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('observability', logAnalyticsWorkspaceDeploymentDate)
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-07-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
   name: logAnalyticsWorkspaceName
   location: logAnalyticsWorkspaceLocation
   properties: {

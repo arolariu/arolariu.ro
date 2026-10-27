@@ -184,7 +184,7 @@ module sqlServerRbac 'rbac/sql-server-rbac.bicep' = {
 
 module backendAccessProbe 'bootstrap/access-probe.bicep' = {
   name: 'backendAccessProbe-${resourceDeploymentDate}'
-  dependsOn: [sqlServerRbac, cosmosDbRbac]
+  dependsOn: [sqlServerRbac, cosmosDbRbac, storageRbac]
   params: {
     resourceConventionPrefix: resourceConventionPrefix
     resourceLocation: resourceLocation
@@ -193,6 +193,8 @@ module backendAccessProbe 'bootstrap/access-probe.bicep' = {
     sqlServerFqdn: storageDeployment.outputs.sqlServerFqdn
     sqlDatabaseName: storageDeployment.outputs.sqlDatabasePrimaryName
     cosmosEndpoint: storageDeployment.outputs.cosmosEndpoint
+    blobEndpoint: storageDeployment.outputs.storageAccountBlobEndpoint
+    queueEndpoint: storageDeployment.outputs.storageAccountQueueEndpoint
   }
 }
 
@@ -302,6 +304,25 @@ output deploymentInfo object = {
   sqlAccessVerified: backendAccessProbe.outputs.completed
   configurationPopulated: configurationBootstrap.outputs.completed
   pendingExternalSecretNames: configurationBootstrap.outputs.pendingExternalSecretNames
+  readiness: {
+    azureBootstrapComplete: sqlServerRbac.outputs.completed && backendAccessProbe.outputs.completed && configurationBootstrap.outputs.completed
+    applicationHealthVerified: false
+    applicationReleaseRequired: true
+    domainCompletionRequired: true
+  }
+  executionResourceIds: concat(
+    sqlServerRbac.outputs.executionResourceIds,
+    backendAccessProbe.outputs.executionResourceIds,
+    configurationBootstrap.outputs.executionResourceIds
+  )
+  githubConnectionValues: {
+    AZURE_TENANT_ID: subscription().tenantId
+    AZURE_SUBSCRIPTION_ID: subscription().subscriptionId
+    AZURE_CONTAINER_REGISTRY_ADDRESS: storageDeployment.outputs.containerRegistryLoginServer
+    AZURE_CLIENT_ID: identitiesDeployment.outputs.managedIdentitiesList[2].clientId
+    AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID: identitiesDeployment.outputs.managedIdentitiesList[2].clientId
+    AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID: identitiesDeployment.outputs.managedIdentitiesList[2].clientId
+  }
   resources: {
     keyVaultName: configurationDeployment.outputs.keyVaultName
     appConfigurationName: configurationDeployment.outputs.appConfigurationName

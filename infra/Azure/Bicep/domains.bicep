@@ -20,7 +20,7 @@ resource docsWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: '
 resource statusWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: 'status-arolariu-ro' }
 
 resource infrastructure 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
-  name: '${resourceConventionPrefix}-infrastructure'
+  name: '${resourceConventionPrefix}-uami-infrastructure'
 }
 
 resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' existing = { name: 'arolariu.ro' }
