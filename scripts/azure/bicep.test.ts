@@ -8,6 +8,7 @@ import {spawnSync} from "node:child_process";
 import {existsSync} from "node:fs";
 import {homedir} from "node:os";
 import {join, resolve} from "node:path";
+import {SignJWT, jwtVerify} from "jose";
 import {describe, expect, it} from "vitest";
 
 interface CompiledResource {
@@ -985,7 +986,7 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
       (operation) => operation.kind === "secret-write" && operation.target.endsWith("/PRODUCTION-JWT-SECRET"),
     );
 
-    expect(result.exitCode).toBe(0);
+    expect(result.exitCode, JSON.stringify({error: result.stderr, lastOperations: result.operations.slice(-4)})).toBe(0);
     expect(result.outputs["completed"]).toBe(true);
     expect(writes).toHaveLength(shouldWrite ? 1 : 0);
     if (shouldWrite) expect(writes[0]?.length).toBeGreaterThanOrEqual(88);
@@ -993,7 +994,7 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
       const generated = result.operations.filter(
         (operation) => operation.kind === "secret-write" && operation.target.endsWith("-JWT-SECRET"),
       );
-      expect(new Set(generated.map((operation) => operation.value)).size).toBe(2);
+      expect(generated).toHaveLength(1);
     }
     expect(settingsWritten(result)).toContainEqual(
       expect.objectContaining({
@@ -1003,6 +1004,49 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
         value: JSON.stringify({uri: "https://vault.example.test/secrets/PRODUCTION-JWT-SECRET"}),
       }),
     );
+  });
+
+  it("authenticates both website labels against their shared API without replacing existing keys", async () => {
+    const secrets: Readonly<Record<string, string>> = {
+      "PRODUCTION-JWT-SECRET": "production-fixture-".padEnd(88, "p"),
+      "DEVELOPMENT-JWT-SECRET": "development-fixture-".padEnd(88, "d"),
+    };
+    const result = runScript(path, "configurationBootstrap", {...scenario("configuration"), secrets});
+    const settings = settingsWritten(result);
+    const readSetting = (key: string, label: string): string => {
+      const value = settings.find((setting) => setting["key"] === key && setting["label"] === label)?.["value"];
+      if (typeof value !== "string") throw new Error(`Missing fixture setting ${key}/${label}.`);
+      return value;
+    };
+    const signingKey = (label: string): Uint8Array => {
+      const reference: unknown = JSON.parse(readSetting("Auth:JWT:Secret", label));
+      if (!isRecord(reference) || typeof reference["uri"] !== "string") throw new Error("Missing JWT reference.");
+      const name = new URL(reference["uri"]).pathname.split("/").at(-1) ?? "";
+      const value = secrets[name];
+      if (!value) throw new Error("JWT reference did not preserve an existing fixture key.");
+      return new TextEncoder().encode(value);
+    };
+
+    expect(result.exitCode).toBe(0);
+    for (const label of ["DEVELOPMENT", "PRODUCTION"]) {
+      expect(readSetting("Endpoints:Service:Api", label)).toBe(readSetting("Endpoints:Service:Api", "PRODUCTION"));
+      const token = await new SignJWT({sub: "fixture-user"})
+        .setProtectedHeader({alg: "HS256"})
+        .setIssuer(readSetting("Auth:JWT:Issuer", label))
+        .setAudience(readSetting("Auth:JWT:Audience", label))
+        .setExpirationTime("1m")
+        .sign(signingKey(label));
+      await expect(
+        jwtVerify(token, signingKey("PRODUCTION"), {
+          issuer: readSetting("Auth:JWT:Issuer", "PRODUCTION"),
+          audience: readSetting("Auth:JWT:Audience", "PRODUCTION"),
+          algorithms: ["HS256"],
+        }),
+      ).resolves.toHaveProperty("payload.sub", "fixture-user");
+    }
+    expect(
+      result.operations.filter((operation) => operation.kind === "secret-write" && operation.target.endsWith("-JWT-SECRET")),
+    ).toHaveLength(0);
   });
 
   it("fails an invalid non-placeholder JWT rather than rotating it", () => {
@@ -1036,6 +1080,26 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
         result.operations.filter((operation) => operation.kind === "secret-write" && /Clerk|Resend/u.test(operation.target)),
       ).toHaveLength(0);
     }
+  });
+
+  it.each([null, "<your-resend-key>"])("keeps optional email disabled without a dangling secret reference: %s", (resend) => {
+    const secrets = Object.fromEntries(
+      ["DEVELOPMENT", "PRODUCTION"].flatMap((label) => [
+        [`${label}-ClerkPublishableKey`, "operator-publishable-key"],
+        [`${label}-ClerkSecretKey`, "operator-clerk-secret-key"],
+        ...(resend === null ? [] : [[`${label}-ResendKey`, resend]]),
+      ]),
+    );
+    const result = runScript(path, "configurationBootstrap", {...scenario("configuration"), secrets});
+    const settings = settingsWritten(result);
+
+    expect(result.exitCode).toBe(0);
+    for (const label of ["DEVELOPMENT", "PRODUCTION"]) {
+      expect(settings).toContainEqual(expect.objectContaining({key: "Communication:Email:ApiKey", label, value: "", content_type: ""}));
+    }
+    expect(
+      result.operations.filter((operation) => operation.kind === "secret-write" && operation.target.endsWith("-ResendKey")),
+    ).toHaveLength(0);
   });
 
   it("does not mistake forbidden secret reads for missing secrets", () => {
@@ -1101,7 +1165,7 @@ describe("Bicep configuration bootstrap", {timeout: 120_000}, () => {
         }),
       );
     }
-    expect(settings.some((setting) => setting["value"] === "")).toBe(false);
+    expect(settings.some((setting) => setting["key"] !== "Communication:Email:ApiKey" && setting["value"] === "")).toBe(false);
   });
 
   it("does not expose JWT, AI key, access-token, or vendor values in output or diagnostics", () => {

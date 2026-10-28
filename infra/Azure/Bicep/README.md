@@ -44,7 +44,7 @@ availability, quota, or approval for another profile.
 
 Azure-owned configuration and permissions are populated by inline deployment scripts. The remaining operator handoffs are:
 
-- Supply the DEVELOPMENT/PRODUCTION Clerk and Resend Key Vault secrets named in the guide.
+- Supply the DEVELOPMENT/PRODUCTION Clerk secrets; supply Resend keys only when email delivery is wanted.
 - Publish the emitted DNS nameservers and current parent DS records at the registrar.
 - Update the existing GitHub connection settings/secrets once, then use the existing release workflows.
 

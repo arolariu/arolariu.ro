@@ -89,6 +89,23 @@ internal static class WebApplicationBuilderExtensions
     return match.Success ? new Uri(match.Groups[1].Value) : null;
   }
 
+  /// <summary>Registers authenticated cloud database health or the existing local emulator probe.</summary>
+  /// <param name="healthBuilder">The application's health-check registrations.</param>
+  /// <param name="cosmosEndpoint">The configured service URI, or null when unconfigured.</param>
+  internal static void AddCosmosHealthCheck(IHealthChecksBuilder healthBuilder, Uri? cosmosEndpoint)
+  {
+    if (cosmosEndpoint is null) return;
+
+    if (cosmosEndpoint.AbsoluteUri.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
+    {
+      healthBuilder.AddCheck<CosmosDbHealthCheck>("cosmosdb", tags: ["db", "nosql"], timeout: TimeSpan.FromSeconds(10));
+    }
+    else
+    {
+      healthBuilder.AddUrlGroup(name: "cosmosdb", uri: cosmosEndpoint, tags: ["db", "nosql"]);
+    }
+  }
+
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
   /// Retained as an explicit override for special test or tooling scenarios only.
@@ -278,22 +295,7 @@ internal static class WebApplicationBuilderExtensions
         name: "exp",
         tags: ["config"]);
 
-    if (cosmosEndpoint is not null)
-    {
-      if (cosmosEndpoint.AbsoluteUri.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
-      {
-        // Azure Cosmos DB — use the already-registered CosmosClient singleton for health checks.
-        healthBuilder.AddCheck("cosmosdb", new CosmosDbHealthCheck(cosmosEndpoint.AbsoluteUri), tags: ["db", "nosql"]);
-      }
-      else
-      {
-        // Local emulator — unauthenticated URL probe is sufficient.
-        healthBuilder.AddUrlGroup(
-          name: "cosmosdb",
-          uri: cosmosEndpoint,
-          tags: ["db", "nosql"]);
-      }
-    }
+    AddCosmosHealthCheck(healthBuilder, cosmosEndpoint);
   }
 
   /// <summary>

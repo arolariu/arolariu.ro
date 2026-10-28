@@ -47,10 +47,10 @@ var runtimeSettings = [
   { key: 'Endpoints:Service:Api', value: configuration.apiUrl }
 ]
 var secretReferences = [
-  { key: 'Auth:JWT:Secret', name: 'JWT-SECRET', owner: 'internal' }
+  { key: 'Auth:JWT:Secret', name: 'PRODUCTION-JWT-SECRET', owner: 'internal' }
   { key: 'Auth:Clerk:PublishableKey', name: 'ClerkPublishableKey', owner: 'external' }
   { key: 'Auth:Clerk:SecretKey', name: 'ClerkSecretKey', owner: 'external' }
-  { key: 'Communication:Email:ApiKey', name: 'ResendKey', owner: 'external' }
+  { key: 'Communication:Email:ApiKey', name: 'ResendKey', owner: 'external', optional: true }
   { key: 'Endpoints:AI:OCR:Key', name: 'CognitiveServicesKey', owner: 'azure' }
 ]
 var configurationManifest = {
@@ -164,7 +164,8 @@ function Set-Secret([string]$name, [string]$value) {
 }
 
 function Set-Configuration([string]$key, [string]$label, [string]$value, [string]$contentType = '', [hashtable]$tags = @{}) {
-  if ([string]::IsNullOrWhiteSpace($key) -or $label -notin @('DEVELOPMENT','PRODUCTION') -or [string]::IsNullOrWhiteSpace($value)) {
+  $disabledEmail = $key -eq 'Communication:Email:ApiKey' -and $value -ceq '' -and $contentType -eq ''
+  if ([string]::IsNullOrWhiteSpace($key) -or $label -notin @('DEVELOPMENT','PRODUCTION') -or ([string]::IsNullOrWhiteSpace($value) -and -not $disabledEmail)) {
     throw 'CONFIG_BOOTSTRAP_INVALID_SETTING'
   }
   $path = 'kv/' + [Uri]::EscapeDataString($key) + '?label=' + [Uri]::EscapeDataString($label) + '&api-version=2026-04-01'
@@ -186,25 +187,29 @@ try {
   }
 
   $pending = [Collections.Generic.List[string]]::new()
-  foreach ($label in $manifest.labels) {
-    $jwtName = $label + '-JWT-SECRET'
-    $jwt = Get-Secret $jwtName
-    if ($null -eq $jwt -or $jwt.value -in @('<your-jwt-secret>', '<replace-with-jwt-secret>')) {
-      $generated = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
-      Set-Secret $jwtName $generated
-    } elseif ($jwt.value -isnot [string] -or [string]::IsNullOrWhiteSpace($jwt.value) -or [Text.Encoding]::UTF8.GetByteCount($jwt.value) -lt 32) {
-      throw 'CONFIG_BOOTSTRAP_INVALID_EXISTING_JWT'
-    }
+  $jwtName = ($manifest.references | Where-Object key -EQ 'Auth:JWT:Secret').name
+  $jwt = Get-Secret $jwtName
+  if ($null -eq $jwt -or $jwt.value -in @('<your-jwt-secret>', '<replace-with-jwt-secret>')) {
+    $generated = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+    Set-Secret $jwtName $generated
+  } elseif ($jwt.value -isnot [string] -or [string]::IsNullOrWhiteSpace($jwt.value) -or [Text.Encoding]::UTF8.GetByteCount($jwt.value) -lt 32) {
+    throw 'CONFIG_BOOTSTRAP_INVALID_EXISTING_JWT'
+  }
 
+  foreach ($label in $manifest.labels) {
     $aiName = $label + '-CognitiveServicesKey'
     $ai = Get-Secret $aiName
     if ($null -eq $ai -or $ai.value -cne $env:COGNITIVE_SERVICES_KEY) { Set-Secret $aiName $env:COGNITIVE_SERVICES_KEY }
     foreach ($reference in $manifest.references) {
-      $name = $label + '-' + $reference.name
+      $name = if ($reference.owner -eq 'internal') { $reference.name } else { $label + '-' + $reference.name }
       if ($reference.owner -eq 'external') {
         $external = Get-Secret $name
         if ($null -eq $external -or [string]::IsNullOrWhiteSpace($external.value) -or $external.value -match '^<(your|replace-with)-[a-z-]+>$') {
           $pending.Add($name)
+          if ($reference.ContainsKey('optional') -and $reference.optional) {
+            Set-Configuration $reference.key $label ''
+            continue
+          }
         }
       }
       $value = ConvertTo-Json -Compress -InputObject @{uri=[Uri]::new($vaultUri, 'secrets/' + [Uri]::EscapeDataString($name)).AbsoluteUri}

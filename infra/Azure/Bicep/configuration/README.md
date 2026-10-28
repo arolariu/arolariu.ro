@@ -26,18 +26,23 @@ endpoint, blob endpoint, AI endpoint, telemetry, and application URLs. The boots
 empty Azure endpoint placeholders. The experiments registration ID is also supplied directly to the website/API runtime through
 `EXP_ENTRA_APP_CLIENT_ID`.
 
-| Secret names                                                          | Owner and rerun behavior                                                                                                                           |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEVELOPMENT-JWT-SECRET`, `PRODUCTION-JWT-SECRET`                     | Independently generated from 64 random bytes when absent/known placeholders. Real existing values are preserved and must meet the signing minimum. |
-| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual deployed AI account key, supplied through secure template output/parameter/environment channels.                                            |
-| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned; never overwritten.                                                                                                                 |
-| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned; never overwritten.                                                                                                                 |
-| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Operator-owned; never overwritten.                                                                                                                 |
+| Secret names                                                          | Owner and rerun behavior                                                                                                                             |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PRODUCTION-JWT-SECRET`                                               | Shared API signing material for both website labels; generated from 64 random bytes only when absent/known-placeholder. Existing keys are preserved. |
+| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual deployed AI account key, supplied through secure template output/parameter/environment channels.                                              |
+| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned; never overwritten.                                                                                                                   |
+| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned; never overwritten.                                                                                                                   |
+| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Optional operator-owned email credentials; never overwritten. Missing/known-placeholder values produce an ordinary empty setting, disabling email.   |
 
 The bootstrap reports missing/known-placeholder external values by **name only** in `pendingExternalSecretNames`. A secret-GET 404 can mean
 absence; a 403 or generic service failure cannot. Real JWTs are not automatically rotated on a deployment rerun. Versionless references
 allow later secret versions to be resolved, but consumers still need their normal refresh/restart behavior; zero-downtime rotation is not
 implied.
+
+Both website labels call the same API and therefore use its signing key. Any previously stored `DEVELOPMENT-JWT-SECRET` is left untouched,
+not deleted or rotated; a fresh deployment does not generate an unused development key. Missing optional Resend values are still reported by
+name, but their ordinary empty settings do not cause eager Key Vault resolution failures or block startup once required Clerk values are
+supplied.
 
 The infrastructure identity intentionally retains App Configuration Data Owner and Key Vault Secrets Officer for repeatable configuration
 ownership. The backend retains its existing Data Owner/Secrets User access; the frontend reads permitted configuration through the

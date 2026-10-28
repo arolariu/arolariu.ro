@@ -112,10 +112,15 @@ Never put their values in parameters, source, deployment outputs, tickets, or te
 Missing/known-placeholder values appear in `pendingExternalSecretNames`; an authorization/service failure is not classified as a missing
 secret. Rerun Foundation with a new deployment attempt after supplying missing values to refresh that report.
 
-Internal `DEVELOPMENT-JWT-SECRET` and `PRODUCTION-JWT-SECRET` values are generated independently when absent/known placeholders; real
-existing values are preserved. AI keys come from the actual deployed account through secure template channels. Endpoints, managed identity
-selectors, telemetry, and versionless Key Vault references are populated automatically. Do not manually patch Azure endpoint placeholders or
-run SQL grant files.
+Resend is optional: when its value is absent/known-placeholder, the bootstrap writes an ordinary empty email setting instead of a dangling
+Key Vault reference. Email stays disabled and configuration startup can proceed once required Clerk values exist. A real operator-supplied
+Resend key remains a typed reference and is never overwritten.
+
+Both website labels call the same API and therefore reference its `PRODUCTION-JWT-SECRET`. It is generated from 64 random bytes only when
+absent/known-placeholder; real existing values are preserved. Any old `DEVELOPMENT-JWT-SECRET` is left untouched, not rotated or deleted.
+This profile does not deploy independent development API authentication. AI keys come from the actual deployed account through secure
+template channels. Endpoints, managed identity selectors, telemetry, and versionless Key Vault references are populated automatically. Do
+not manually patch Azure endpoint placeholders or run SQL grant files.
 
 ### Registrar delegation and DNSSEC
 
@@ -163,6 +168,10 @@ runtime settings are not released applications.
 After releases, check the website `/api/health/`, API `/health`, and experiments `/api/health`, actual container pulls, experiments
 audience/caller authorization, and a real permitted application flow. Verify AI inference against the pinned model separately. A successful
 Bicep deployment never implies these application checks passed.
+
+The cloud Cosmos check reuses the application's authenticated singleton client to read the `primary` database, with a ten-second
+health-check timeout and cancellation. Denied data access reports unhealthy; it is not an anonymous endpoint-reachability check. The
+existing local emulator URL probe is unchanged.
 
 ## 6. Observe execution-resource cleanup on success and failure
 
