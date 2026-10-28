@@ -1,95 +1,158 @@
-# Azure Bicep infrastructure
+# 🚀 Azure Bicep Infrastructure
 
-These templates provision a **fresh** arolariu.ro environment in two stages. They are not a migration or production-reconciliation
-procedure. Application images and static content remain owned by the existing build/release workflows.
+Azure resource definitions for arolariu.ro, organized into cohesive modules with managed identities, resource-scoped grants, and stable
+naming. Bicep provisions resources; configuration population, SQL contained users, and operational probes are separate tasks.
 
-## Entry points and stages
+> **Scope:** This is a fresh-infrastructure definition, not an approved migration of the existing production resource group. Bootstrap is
+> being redesigned around standalone PowerShell 7 tasks. No inline bootstrap deployment scripts or Foundation/Domains wrapper files remain.
 
-| File                                 | Responsibility                                                                                                                   |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| [main.bicep](main.bicep)             | Subscription entry point; creates the resource group only for Foundation.                                                        |
-| [facade.bicep](facade.bicep)         | Derives the stable namespace and selects exactly one stage.                                                                      |
-| [foundation.bicep](foundation.bicep) | Resources, identities, permissions, resolved configuration, backend access probes, and Azure-owned DNS preparation.              |
-| [domains.bicep](domains.bicep)       | Reads the existing foundation, checks public DNS, then completes bindings, certificates, and Front Door routing/WAF association. |
-| [main.bicepparam](main.bicepparam)   | Existing-pipeline profile: `arolariu-rg`, France Central, Foundation.                                                            |
+## 📋 **Table of Contents**
 
-```mermaid
-flowchart LR
-    Entry[main / facade] --> Foundation
-    Foundation --> Resources[Resources and resource-scoped grants]
-    Resources --> Probes[Backend SQL / Cosmos / blob / queue probes]
-    Probes --> Configuration[Resolved configuration and secrets]
-    Configuration --> Sites[Application hosts and Azure DNS records]
-    Sites --> Registrar[Operator publishes registrar NS and current DS]
-    Registrar --> Domains[Public DNS gate]
-    Domains --> Completion[Bindings / certificates / Front Door completion]
-```
+- [🏗️ Architecture Overview](#️-architecture-overview)
+- [🚀 Quick Start](#-quick-start)
+- [📁 Module Structure](#-module-structure)
+- [🔧 Configuration](#-configuration)
+- [📊 Deployment Flow](#-deployment-flow)
+- [🛠️ Development](#️-development)
+- [📖 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
 
-Foundation creates three user-assigned managed identities, an experiments Entra application/service principal, App Configuration, Key Vault,
-SQL, Cosmos, Storage, ACR, AI Foundry/model deployment, monitoring, App Service plans/apps, Static Web Apps, DNS, and Front Door. It does
-not deploy Grafana or release the application.
+## 🏗️ **Architecture Overview**
 
-The namespace is `q` plus eight characters of `uniqueString(resourceGroup().id)`. Deployment timestamps affect audit tags, nested deployment
-names, and script attempts, not persistent resource names. Existing fixed application names and `arolariu.ro` are retained for pipeline
-compatibility; their global availability is a preflight requirement.
+| Area                 | Resources                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Identity             | Three user-assigned managed identities, GitHub federation, Graph groups, experiments app registration/service principal. |
+| Configuration        | RBAC-enabled Key Vault and managed-identity-only App Configuration.                                                      |
+| Compute and sites    | Linux B2/B1 plans, four App Services, CV/docs/status Free Static Web Apps.                                               |
+| Data and images      | StorageV2, Basic ACR, Entra-only SQL, Cosmos database/containers and native data grant.                                  |
+| Network              | Front Door Standard, custom-rule WAF, Azure DNS/DNSSEC, hostname/certificate bindings.                                   |
+| Observability and AI | Log Analytics, Application Insights, AI Foundry/project/model-router deployment.                                         |
 
-## Deployment contract
+### **🎯 Key Features**
 
-See the [deployment guide](DEPLOYMENT_GUIDE.md) for approval boundaries, compiler selection, local checks, stage commands, and cleanup
-verification. Do not copy deployment commands into an unapproved subscription or an existing production resource group.
+- ✅ Stable resource namespace derived from the resource-group ID, not a deployment timestamp.
+- ✅ Correct resource/client/principal identity-ID wiring.
+- ✅ Resource-scoped permissions and supported, explicitly pinned APIs.
+- ✅ Existing application delivery workflows remain unchanged.
+- ✅ Separate resource provisioning from operational configuration and health evidence.
 
-The checked-in profile uses France Central for regional resources, Sweden Central for the explicitly pinned AI model, and West Europe for
-Static Web Apps. The entry point also accepts North Europe, West Europe, and Sweden Central; this does not establish service/model
-availability, quota, or approval for another profile.
+## 🚀 **Quick Start**
 
-Azure-owned configuration and permissions are populated by inline deployment scripts. The remaining operator handoffs are:
+### **Prerequisites**
 
-- Supply the DEVELOPMENT/PRODUCTION Clerk secrets; supply Resend keys only when email delivery is wanted.
-- Publish the emitted DNS nameservers and current parent DS records at the registrar.
-- Update the existing GitHub connection settings/secrets once, then use the existing release workflows.
+Use the repository runtimes in root `AGENTS.md`, Azure CLI, and a verified Bicep executable. Current schema validation uses Bicep 0.48.1.
+The [deployment guide](DEPLOYMENT_GUIDE.md) covers target approval, Graph permissions, provider/quota checks, DNS, and external setup.
 
-`deploymentInfo.readiness.azureBootstrapComplete` means that the SQL bootstrap, backend data-access probes, and configuration bootstrap
-succeeded. Missing external secret names are reported separately. It **does not** mean that applications are released, HTTP-healthy, or that
-Domains has completed; `applicationHealthVerified` remains false.
+### **Deployment**
 
-## Security and lifecycle
-
-SQL is Entra-only. The infrastructure identity remains its administrator and owns the approved configuration-writer permissions. SQL's
-`AllowAzureServices` firewall rule is a deliberate public-network tradeoff, not a restriction to this subscription. Cosmos uses native
-database-scoped data permissions, not management-plane Operator access. The backend probe authenticates as the backend identity and performs
-read-only SQL/Cosmos/blob/queue checks.
-
-Every inline script requests `cleanupPreference: 'Always'` and `retentionInterval: 'PT1H'`. Its ACI container and backing storage are
-provider-created execution resources, never application storage. These settings are **not observed cleanup evidence**: verify absence of the
-exact emitted/status resource IDs after success and controlled failure, and verify script-record expiry separately.
-
-API pins are validated with stable Bicep 0.48.1. Storage deliberately uses `2026-06-01`: the newer published `2026-09-01` types are not
-recognized by that compiler. No BCP081 warning is accepted or suppressed. DNSSEC retains its required preview API and SQL retains the
-supported legacy auditing-policy API; other exact parent/child pins live in their owning source files.
-
-## Source map
-
-| Directory                                                    | Owner                                                                          |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| [identity](identity/README.md)                               | Managed identities, GitHub federation, Graph groups, experiments registration. |
-| [configuration](configuration/README.md)                     | App Configuration and Key Vault provisioning.                                  |
-| `bootstrap`                                                  | Inline configuration, backend-access, and public-DNS scripts.                  |
-| [storage](storage/README.md)                                 | Storage services, ACR, SQL, and Cosmos.                                        |
-| [rbac](rbac/README.md)                                       | Resource-scoped grants and SQL contained-user bootstrap.                       |
-| [ai](ai/README.md)                                           | AI account/project and the pinned model-router deployment.                     |
-| [compute](compute/README.md), [sites](sites/README.md)       | Plans, application hosts, runtime identities/settings, and static sites.       |
-| [network](network/README.md), [bindings](bindings/README.md) | Azure DNS, staged Front Door, hostname bindings, and certificates.             |
-| [observability](observability/README.md)                     | Log Analytics and Application Insights.                                        |
-| [types](types/README.md)                                     | Shared Bicep contracts.                                                        |
-
-[bicepconfig.json](bicepconfig.json) is the lint configuration. The real-compiler and inline-script regression suite is
-[`scripts/azure/bicep.test.ts`](../../../scripts/azure/bicep.test.ts). The [cost guide](COST_OPTIMIZATION.md) contains historical estimates,
-not a current quote or permission to resize/add resources.
-
-The tracked ARM template/parameter snapshots are generated by Bicep, not `npm run generate`. After changing the entry graph/profile,
-regenerate them with the same verified compiler selected in the deployment guide; never hand-edit generated templates:
+Validate locally before any approved Azure operation:
 
 ```powershell
-& $env:BICEP_CLI_PATH build .\infra\Azure\Bicep\main.bicep --no-restore --outfile .\infra\Azure\ARM\main.json
-& $env:BICEP_CLI_PATH build-params .\infra\Azure\Bicep\main.bicepparam --no-restore --outfile .\infra\Azure\ARM\main.parameters.json
+& $env:BICEP_CLI_PATH build .\infra\Azure\Bicep\main.bicep --no-restore --stdout
+& $env:BICEP_CLI_PATH build-params .\infra\Azure\Bicep\main.bicepparam --no-restore --stdout
 ```
+
+These are compilation commands, not deployments. Do not apply a fresh profile to an occupied production scope.
+
+### **Parameters**
+
+| Parameter                | Contract                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| `resourceGroupName`      | Required target resource group; existing application names remain globally fixed. |
+| `resourceGroupAuthor`    | Required audit tag.                                                               |
+| `resourceGroupLocation`  | France Central, North Europe, West Europe, or Sweden Central.                     |
+| `resourceDeploymentDate` | Audit/deployment-name timestamp, default `utcNow()`.                              |
+
+There is no `deploymentStage` parameter. `main.bicepparam` retains France Central; the restored legacy JSON parameter profile retains Sweden
+Central. Choose the intended profile explicitly rather than assuming they are interchangeable. AI is explicitly in Sweden Central; Static
+Web Apps are in West Europe.
+
+## 📁 **Module Structure**
+
+```text
+main.bicep
+  -> facade.bicep
+       -> identity / configuration / storage / compute / observability / ai
+       -> resource-scoped rbac
+       -> sites -> network -> bindings
+```
+
+### **Module Dependencies**
+
+```mermaid
+flowchart TD
+    Entry[main.bicep] --> Facade[facade.bicep]
+    Facade --> Identities[Identity]
+    Facade --> Stores[Configuration and data resources]
+    Identities --> Grants[Scoped RBAC]
+    Stores --> Grants
+    Grants --> Sites[Sites and runtime settings]
+    Sites --> Network[Front Door and Azure DNS]
+    Network --> Bindings[Domains and certificates]
+    External[Registrar/public DNS prerequisites] --> Bindings
+```
+
+The facade owns composition directly. Front Door routing/WAF association is back in its existing resource module; DNS records have one owner
+in `network/dnsZone.bicep`.
+
+## 🔧 **Configuration**
+
+### **Bicep Configuration**
+
+[bicepconfig.json](bicepconfig.json) retains existing lint rules. Source mapping and unused user-defined constraints are supported but
+experimental; enabling source mapping produces the compiler's production-use warning, so neither is enabled. No missing-schema warning is
+suppressed.
+
+### **Naming Convention**
+
+The prefix is `q` plus eight characters of `uniqueString(resourceGroup().id)`. Resource-family suffixes are defined by their modules. App
+Service/Static Web App names and `arolariu.ro` stay fixed for existing workflow compatibility.
+
+## 📊 **Deployment Flow**
+
+1. Approve a target and confirm global names, providers, permissions, quota, and cost.
+2. Provision resources and scoped grants through `main.bicep` → `facade.bicep`.
+3. Complete operational SQL/configuration setup separately; public DNS must be ready for hostname/certificate completion.
+4. Release experiments, API, then websites through the existing workflows.
+5. Verify real authenticated access, dependencies, and application health.
+
+Resource provisioning does not assert bootstrap completion or application readiness.
+
+## 🛠️ **Development**
+
+### **Local Development**
+
+Use native Bicep build/lint and parameter compilation. The former ARM/bootstrap-specific TypeScript harness has been removed as requested;
+application audience and authenticated Cosmos-health regressions remain with their owning projects.
+
+### **Best Practices**
+
+Preserve TLS, retention, partitions, SKUs, and approved access boundaries. Keep credentials out of templates and logs. A new API version
+must have recognized schemas and an intentional compatibility review.
+
+## 📖 **Documentation**
+
+| Guide                                                                                      | Purpose                                                              |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| [Deployment](DEPLOYMENT_GUIDE.md)                                                          | Approval boundaries, provisioning, operational handoffs, validation. |
+| [Costs](COST_OPTIMIZATION.md)                                                              | Current public retail meters and explicit example assumptions.       |
+| [Identity](identity/README.md), [RBAC](rbac/README.md)                                     | IDs, federation, Entra, scoped grants.                               |
+| [Configuration](configuration/README.md), [Storage](storage/README.md), [AI](ai/README.md) | Service contracts and separate configuration ownership.              |
+| [Sites](sites/README.md), [Bindings](bindings/README.md), [Network](network/README.md)     | Runtime hosting, DNS, WAF, TLS.                                      |
+| [Compute](compute/README.md), [Observability](observability/README.md)                     | Plans and telemetry resources.                                       |
+
+The files under `infra\Azure\ARM` are restored reference artifacts, not regenerated outputs of this PR. Compile current Bicep to a separate
+temporary/session artifact when validating or deploying; do not treat the legacy ARM snapshot as the current source.
+
+## 🤝 **Contributing**
+
+### **Code Quality Standards**
+
+Keep changes surgical, document actual behavior, test changed application contracts, and obtain approval before cloud mutations. Never use
+resource-group deletion as an automatic rollback.
+
+---
+
+**Version**: 3.0.0\
+**Last Updated**: October 2026\
+**Status**: Resource provisioning; PowerShell bootstrap design pending

@@ -1,0 +1,249 @@
+{
+  "items": [
+    {
+      "key": "Options:Site:Environment",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Site:Environment",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Site:Name",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Site:Name",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Site:Url",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Site:Url",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Environment",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Environment",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Name",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Name",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Url",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Api:Url",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Audience",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Audience",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Subject",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Subject",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Issuer",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Issuer",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Secret",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:Secret",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:ClerkPublishableKey",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:ClerkPublishableKey",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:ClerkSecretKey",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Auth:ClerkSecretKey",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Azure:TenantId",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Azure:SubscriptionId",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Azure:FrontendIdentityClientId",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Azure:BackendIdentityClientId",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Azure:InfrastructureIdentityClientId",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:CognitiveServices",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:KeyVault",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:OpenAI",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:StorageAccount",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:ApplicationInsights",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Options:Common:ApplicationAuthor",
+      "value": "",
+      "label": null,
+      "content_type": "",
+      "tags": {}
+    }
+  ]
+}

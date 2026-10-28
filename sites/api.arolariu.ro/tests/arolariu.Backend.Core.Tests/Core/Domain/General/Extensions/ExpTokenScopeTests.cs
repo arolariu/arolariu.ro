@@ -6,7 +6,7 @@ using arolariu.Backend.Core.Domain.General.Extensions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-/// <summary>Verifies deployment-configured experiments audiences and compatible legacy fallback.</summary>
+/// <summary>Verifies required deployment-configured experiments audiences.</summary>
 [TestClass]
 public sealed class ExpTokenScopeTests
 {
@@ -28,17 +28,15 @@ public sealed class ExpTokenScopeTests
     Assert.AreEqual("api://aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/.default", scope);
   }
 
-  /// <summary>Absent configuration preserves existing deployments' audience.</summary>
+  /// <summary>Absent configuration must not select an unrelated legacy registration.</summary>
   /// <param name="value">The absent or blank environment value.</param>
   [TestMethod]
   [DataRow(null)]
   [DataRow("")]
   [DataRow("   ")]
-  public void ResolveExpTokenScope_MissingId_ReturnsLegacyScope(string? value)
+  public void ResolveExpTokenScope_MissingId_ThrowsArgumentException(string? value)
   {
-    var scope = WebApplicationBuilderExtensions.ResolveExpTokenScope(value);
-
-    Assert.AreEqual("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default", scope);
+    Assert.ThrowsExactly<ArgumentException>(() => WebApplicationBuilderExtensions.ResolveExpTokenScope(value));
   }
 
   /// <summary>Malformed non-empty values fail without including their contents.</summary>

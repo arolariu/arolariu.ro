@@ -1,11 +1,11 @@
 targetScope = 'subscription'
 
 // =====================================================================================
-// Main Bicep Entry Point - Fresh Deployment Stages
+// Main Bicep Entry Point - Declarative Resource Provisioning
 // =====================================================================================
 // This is the root entry point for deploying the entire arolariu.ro infrastructure.
-// Foundation creates the resource group; Domains uses the existing group.
-// facade.bicep selects the requested stage without rerunning Foundation in Domains.
+// It creates the resource group and delegates resource provisioning to facade.bicep.
+// Configuration population, SQL users, and access probes are separate operational tasks.
 //
 // Deployment Command:
 // az deployment sub create --location francecentral --template-file main.bicep \
@@ -24,7 +24,7 @@ targetScope = 'subscription'
 //       └── observability/- Monitoring, logging
 // =====================================================================================
 
-metadata description = 'Root entry point for fresh foundation provisioning and separate domain completion.'
+metadata description = 'Root entry point for declarative Azure resource provisioning.'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -45,11 +45,7 @@ param resourceGroupLocation string
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
 
-@description('The infrastructure lifecycle stage to execute.')
-@allowed(['foundation', 'domains'])
-param deploymentStage string = 'foundation'
-
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = if (deploymentStage == 'foundation') {
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: resourceGroupLocation
   tags: {
@@ -61,12 +57,10 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = if (dep
 
 module mainDeployment 'facade.bicep' = {
   name: 'mainDeployment-${resourceDeploymentDate}'
-  scope: az.resourceGroup(resourceGroupName)
-  dependsOn: [resourceGroup]
+  scope: resourceGroup
   params: {
     resourceDeploymentDate: resourceDeploymentDate
     resourceLocation: resourceGroupLocation
-    deploymentStage: deploymentStage
   }
 }
 

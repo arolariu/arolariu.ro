@@ -51,7 +51,7 @@ param appConfigurationDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('configuration', appConfigurationDeploymentDate)
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-06-01' = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-08-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }

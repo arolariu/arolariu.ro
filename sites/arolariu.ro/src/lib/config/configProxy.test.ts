@@ -51,7 +51,7 @@ beforeEach(() => {
   vi.stubEnv("INFRA", "");
   vi.stubEnv("WEBSITE_INSTANCE_ID", "");
   vi.stubEnv("EXP_PROXY_URL", "");
-  vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "");
+  vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "11111111-2222-4333-8444-555555555555");
 });
 
 afterEach(() => {
@@ -222,10 +222,10 @@ describe("experiments token scope", () => {
     vi.doUnmock("@azure/identity");
   });
 
-  it.each([undefined, "", "   "])("retains the legacy audience when the configured ID is absent (%s)", async (value) => {
+  it.each([undefined, "", "   "])("rejects an absent configured application ID (%s)", async (value) => {
     const {resolveExpServiceTokenScope} = await import("./configProxy");
 
-    expect(resolveExpServiceTokenScope(value)).toBe("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
+    expect(() => resolveExpServiceTokenScope(value)).toThrow("EXP_ENTRA_APP_CLIENT_ID");
   });
 
   it.each([
@@ -259,11 +259,10 @@ describe("experiments token scope", () => {
       "fetch",
       vi.fn().mockResolvedValue(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.example.test"))),
     );
-    const {EXP_SERVICE_TOKEN_SCOPE, fetchConfigValue} = await import("./configProxy");
+    const {fetchConfigValue} = await import("./configProxy");
 
     await fetchConfigValue("Endpoints:Service:Api");
 
-    expect(EXP_SERVICE_TOKEN_SCOPE).toBe("api://11111111-2222-4333-8444-555555555555/.default");
     expect(getToken).toHaveBeenCalledWith("api://11111111-2222-4333-8444-555555555555/.default");
   });
 
@@ -283,11 +282,10 @@ describe("experiments token scope", () => {
     }));
     const fetch = vi.fn().mockResolvedValue(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "http://api")));
     vi.stubGlobal("fetch", fetch);
-    const {EXP_SERVICE_TOKEN_SCOPE, fetchConfigValue} = await import("./configProxy");
+    const {fetchConfigValue} = await import("./configProxy");
 
     await expect(fetchConfigValue("Endpoints:Service:Api")).resolves.toBe("http://api");
 
-    expect(EXP_SERVICE_TOKEN_SCOPE).toBe("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
     expect(credentialCreated).not.toHaveBeenCalled();
     expect(fetch.mock.calls[0]?.[0]).toContain("http://exp/");
   });
@@ -298,7 +296,31 @@ describe("experiments token scope", () => {
     const fetch = vi.fn();
     vi.stubGlobal("fetch", fetch);
 
-    await expect(import("./configProxy")).rejects.toThrow("EXP_ENTRA_APP_CLIENT_ID");
+    const {fetchConfigValue} = await import("./configProxy");
+    await expect(fetchConfigValue("Endpoints:Service:Api")).rejects.toThrow("EXP_ENTRA_APP_CLIENT_ID");
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, "", "   "])("rejects absent cloud configuration before HTTP is used (%s)", async (value) => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", value);
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+
+    const {fetchConfigValue} = await import("./configProxy");
+    await expect(fetchConfigValue("Endpoints:Service:Api")).rejects.toThrow("EXP_ENTRA_APP_CLIENT_ID");
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("can import cloud routing during build before the runtime application ID is supplied", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "");
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(import("./configProxy")).resolves.toHaveProperty("fetchConfigValue");
 
     expect(fetch).not.toHaveBeenCalled();
   });

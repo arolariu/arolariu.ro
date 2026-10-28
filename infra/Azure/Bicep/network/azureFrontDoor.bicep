@@ -97,6 +97,26 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2026-07-01' = {
     resourceType: 'Front Door Profile'
   })
 
+  resource wafPolicy 'securityPolicies@2026-07-01' = {
+    name: 'productionWAF'
+    properties: {
+      parameters: {
+        wafPolicy: { id: frontDoorWebApplicationFirewall.id }
+        type: 'WebApplicationFirewall'
+        associations: [
+          {
+            domains: [
+              { id: productionEndpoint.id }
+              { id: apexCustomDomain.id }
+              { id: wwwCustomDomain.id }
+            ]
+            patternsToMatch: ['/*']
+          }
+        ]
+      }
+    }
+  }
+
   // Custom Domain for APEX
   resource apexCustomDomain 'customDomains@2026-07-01' = {
     name: 'apex-arolariu-ro'
@@ -165,6 +185,31 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2026-07-01' = {
     tags: union(commonTags, {
       displayName: 'Production Endpoint'
     })
+
+    resource productionRoute 'routes@2026-07-01' = {
+      name: 'production-route'
+      dependsOn: [productionOriginGroup::productionOrigin, wafPolicy]
+      properties: {
+        cacheConfiguration: {
+          compressionSettings: {
+            isCompressionEnabled: false
+            contentTypesToCompress: []
+          }
+          queryStringCachingBehavior: 'IgnoreQueryString'
+        }
+        customDomains: [
+          { id: apexCustomDomain.id }
+          { id: wwwCustomDomain.id }
+        ]
+        originGroup: { id: productionOriginGroup.id }
+        supportedProtocols: ['Https']
+        patternsToMatch: ['/*']
+        httpsRedirect: 'Enabled'
+        linkToDefaultDomain: 'Enabled'
+        forwardingProtocol: 'HttpsOnly'
+        enabledState: 'Enabled'
+      }
+    }
   }
 }
 

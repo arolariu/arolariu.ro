@@ -56,17 +56,13 @@ internal static class WebApplicationBuilderExtensions
   /// <summary>Config proxy URL when running in a local Docker environment (service name resolution via Docker DNS).</summary>
   private const string ConfigProxyUrlDocker = "http://exp";
 
-  /// <summary>Entra ID scope for the exp service bearer-token flow.</summary>
-  private const string ExpScope = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
-
   /// <summary>Resolves a canonical runtime experiments application ID without exposing malformed configuration.</summary>
-  /// <param name="applicationClientId">The runtime Entra application ID; blank values retain the legacy audience.</param>
+  /// <param name="applicationClientId">The required runtime Entra application ID for Azure requests.</param>
   /// <returns>The normalized application scope used for Azure token acquisition.</returns>
-  /// <exception cref="ArgumentException">Non-empty configuration is not a canonical GUID.</exception>
+  /// <exception cref="ArgumentException">Configuration is absent or is not a canonical GUID.</exception>
   internal static string ResolveExpTokenScope(string? applicationClientId)
   {
-    if (string.IsNullOrWhiteSpace(applicationClientId)) return ExpScope;
-    if (!Guid.TryParseExact(applicationClientId.Trim(), "D", out var clientId))
+    if (!Guid.TryParseExact(applicationClientId?.Trim(), "D", out var clientId))
     {
       throw new ArgumentException("EXP_ENTRA_APP_CLIENT_ID must be a canonical GUID.", nameof(applicationClientId));
     }

@@ -1,46 +1,141 @@
-# Identity module
+# 🔐 Identity Module
 
-[deploymentFile.bicep](deploymentFile.bicep) creates managed identities, existing GitHub environment federation, Graph security groups, and
-the experiments Entra application/service principal. Azure RBAC and SQL grants are owned by the dependent resource modules.
+Managed identities, GitHub federation, Graph groups, and the tenant-only experiments application registration/service principal.
 
-## Managed-identity contract
+## 📋 Overview
 
-The `managedIdentitiesList` order is fixed:
+- Three user-assigned managed identities with a fixed positional output contract.
+- Existing development/production GitHub environment federation on the infrastructure identity only.
+- Manually managed Graph security groups.
+- Generated experiments application client ID supplied to Easy Auth and its callers.
 
-| Index | Name                                   | Role                                                                                  |
-| ----- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| 0     | `<resourcePrefix>-uami-frontend`       | Production/development website runtime.                                               |
-| 1     | `<resourcePrefix>-uami-backend`        | API/experiments runtime and backend data-access probe.                                |
-| 2     | `<resourcePrefix>-uami-infrastructure` | GitHub CI login, SQL administration, configuration ownership, and applicable scripts. |
+## 📁 Module Files
 
-Each entry includes `name`, `displayName`, `resourceId`, `clientId`, and `principalId`. Use **resource IDs** for identity attachment,
-**client IDs** for credential/ACR selection, and **principal IDs** for RBAC, SQL administrator, and allowed-caller policy. These values are
-not interchangeable. Domains must look up the same infrastructure identity created by Foundation.
+| File                                                         | Purpose                                                                    |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep)                 | Compose identities, federation, groups, registration/exposure.             |
+| [userAssignedIdentity.bicep](userAssignedIdentity.bicep)     | Three UAMIs.                                                               |
+| [federatedCredentials.bicep](federatedCredentials.bicep)     | Serialized GitHub federated credentials.                                   |
+| [securityGroups.bicep](securityGroups.bicep)                 | Existing manually managed Graph groups.                                    |
+| [expApplication.bicep](expApplication.bicep)                 | Create the stable-keyed application and obtain its generated client ID.    |
+| [expApplicationExposure.bicep](expApplicationExposure.bicep) | Set the generated identifier URI and create the enabled service principal. |
 
-Only the infrastructure identity receives GitHub federation, with issuer `https://token.actions.githubusercontent.com`, audience
-`api://AzureADTokenExchange`, and the existing subjects:
+## 🏗️ Resources Created
+
+| Index/resource     | Name                                     | Purpose                                                       |
+| ------------------ | ---------------------------------------- | ------------------------------------------------------------- |
+| UAMI 0             | `<prefix>-uami-frontend`                 | Production/development website runtime.                       |
+| UAMI 1             | `<prefix>-uami-backend`                  | API/experiments runtime.                                      |
+| UAMI 2             | `<prefix>-uami-infrastructure`           | Existing CI login and approved infrastructure administration. |
+| Federation         | Development/Production named credentials | Exact existing GitHub environment subjects.                   |
+| Experiments app/SP | `<prefix>-exp` alternate key             | Tenant-only v2-token API resource.                            |
+
+UAMI and federated-credential declarations/reference use latest published `2025-05-31-preview`. The reviewed compiler recognizes the exact
+types. The Graph `v1.0` registry's latest published extension tag is `1.0.0`, already used here.
+
+## 📊 Architecture
+
+```mermaid
+flowchart TD
+    Websites[Production/development websites] --> Frontend[Frontend UAMI]
+    Services[API / experiments] --> Backend[Backend UAMI]
+    GitHub[Existing GitHub environments] --> Federation[OIDC federation]
+    Federation --> Infrastructure[Infrastructure UAMI]
+    Registration[Generated experiments registration] --> Audience[api://generated-client-id]
+    Audience --> EasyAuth[Experiments Easy Auth v2]
+    Frontend --> EasyAuth
+    Backend --> EasyAuth
+    Infrastructure --> EasyAuth
+```
+
+## 🔧 Parameters
+
+`resourceConventionPrefix`, `resourceLocation`, and `resourceDeploymentDate`. The registration client ID is generated, not a required
+operator placeholder.
+
+## 📤 Outputs
+
+`managedIdentitiesList` has `name`, `displayName`, `resourceId`, `clientId`, and `principalId`. Index ordering must remain 0/1/2.
+`expEntraAppClientId` and `expEntraServicePrincipalId` describe the API registration and enterprise application.
+
+## 👥 Security Groups
+
+`arolariu-JIT-Users` and `arolariu-JIT-Apps` retain manual membership. Creating these groups does not automatically implement PIM,
+membership provisioning, or tenant-wide rights.
+
+## 🛡️ Security & RBAC
+
+| Value                             | Use                                                              |
+| --------------------------------- | ---------------------------------------------------------------- |
+| UAMI resource ID                  | Identity attachment dictionaries.                                |
+| UAMI client ID                    | Credential selection, ACR pulls, CI login.                       |
+| UAMI principal/object ID          | RBAC, SQL administrator, Easy Auth allowed-principal identities. |
+| Experiments application client ID | Token resource/audience, not a UAMI selector.                    |
+
+No client secret or certificate is needed for API bearer-token validation. This is not an interactive user-sign-in registration.
+
+## 🚀 Example Usage
+
+The facade consumes identity outputs and supplies `EXP_ENTRA_APP_CLIENT_ID` to the website/API runtime. Azure callers require a canonical
+configured GUID; missing/malformed values fail without a legacy registration fallback. Local proxy routing does not acquire Azure tokens.
+
+## 🔒 **Identity Details**
+
+Frontend, backend, and infrastructure grants are deliberately asymmetric; the [RBAC guide](../rbac/README.md) lists actual scopes.
+Infrastructure SQL administration and configuration-writer permissions remain permanent, not disposable bootstrap resources.
+
+## 🌐 **Federated Identity**
+
+### **GitHub Actions Integration**
+
+Issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`, and exact subjects:
 
 - `repo:arolariu/arolariu.ro:environment:development`
 - `repo:arolariu/arolariu.ro:environment:production`
 
-The two credentials are serialized to avoid concurrent child-write conflicts. Legacy frontend/backend GitHub secret names used for Azure
-login must contain the **infrastructure** client ID; runtime identities are separately supplied by App Service settings.
+Only the infrastructure UAMI has these credentials. Legacy frontend/backend-named GitHub secrets used for Azure login therefore contain the
+infrastructure client ID; runtime identities are separately provided in App Service settings.
 
-## Experiments registration
+## 🔧 **Security Features**
 
-[expApplication.bicep](expApplication.bicep) creates the stable namespace-keyed application;
-[expApplicationExposure.bicep](expApplicationExposure.bicep) configures `api://<generated-client-id>` and the enabled service principal. The
-registration is tenant-only, requests v2 access tokens, and has no password/certificate credential. Outputs are `expEntraAppClientId` and
-`expEntraServicePrincipalId`.
+The experiments app is `AzureADMyOrg` with `requestedAccessTokenVersion: 2` and identifier URI `api://<generated-client-id>`. Its enabled
+service principal has assignment requirements disabled for the documented app-only ACL pattern. Easy Auth requires authentication, validates
+the tenant issuer/application audience, and restricts callers by the three approved UAMI object IDs.
 
-The generated application client ID is the experiments audience, not a UAMI selector. Foundation supplies it as `EXP_ENTRA_APP_CLIENT_ID` to
-the experiments site and its website/API callers. Blank legacy configuration retains the existing legacy audience in those consumers;
-malformed nonempty Azure configuration fails safely. Local proxy behavior is unchanged.
+Microsoft permits role-less app-only tokens for ACL-based APIs; delegated scopes/app-role grants are not invented here. The app client ID is
+accepted by Easy Auth by default for v2 tokens. Actual tenant permissions/token issuance still require live proof; documentation and schema
+checks are not a claim of 100% deployed correctness.
 
-[securityGroups.bicep](securityGroups.bicep) preserves the manually managed Graph groups. It does not automate membership, PIM, or
-tenant-wide deployment authority. Graph resources use the stable `v1.0:1.0.0` extension and `@v1.0` API; the deployer needs separately
-approved Graph permissions.
+## 🛠️ **Maintenance**
 
-Permanent workload/CI identities, server administration, and resource-scoped grants are not disposable bootstrap resources. Entra
-application/group lifecycle is also distinct from resource-group deletion. Follow the [deployment guide](../DEPLOYMENT_GUIDE.md) for
-approved targets, handoffs, and observed cleanup of only the exact script execution resources.
+Preserve stable alternate keys and positional identity outputs. Entra application/group lifecycle differs from resource-group lifecycle;
+never delete production identities or broaden tenant permissions to work around an unverified deployment.
+
+## 🔄 **Dependencies**
+
+Azure resource rights and separately approved Graph application/service-principal/group rights. RBAC/resource modules consume the outputs.
+
+## 📊 **Deployment Flow**
+
+Create UAMIs → serialize federation; create app → use generated client ID to expose it/create SP → wire site/caller settings.
+
+## 🚨 Troubleshooting
+
+| Issue                         | Check                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| GitHub OIDC login rejected    | Exact repository/environment subject and infrastructure client ID.               |
+| Azure caller missing audience | Required runtime `EXP_ENTRA_APP_CLIENT_ID`, not an old hardcoded ID.             |
+| Easy Auth 403                 | `oid` principal allowlist; client IDs and principal IDs are not interchangeable. |
+| Graph create/update rejected  | Exact tenant authority/operation; do not add blanket directory permissions.      |
+
+## 📚 References
+
+- [Managed identities](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview)
+- [Easy Auth Entra configuration and ACL policy](https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad)
+- [App-only ACL authorization](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-client-creds-grant-flow)
+- [Graph Bicep](https://learn.microsoft.com/graph/templates/bicep/quickstart-create-bicep-interactive-mode)
+
+---
+
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

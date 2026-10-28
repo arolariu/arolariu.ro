@@ -5,7 +5,7 @@
 // connection strings, API keys, and certificates. Key Vault is the single source
 // of truth for all sensitive configuration data in the arolariu.ro platform.
 //
-// Secret population is owned by bootstrap/configuration.bicep. It preserves real
+// Secret population is a separate operational task. It must preserve real
 // internal secrets and never writes operator-owned third-party credentials.
 //
 // Security Configuration:

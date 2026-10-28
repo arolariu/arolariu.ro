@@ -1,62 +1,175 @@
-# Configuration module
+# ⚙️ Configuration Module
 
-This module provisions App Configuration and Key Vault. [Foundation](../foundation.bicep) separately invokes the inline
-[configuration bootstrap](../bootstrap/configuration.bicep) after resolved resources, scoped writer grants, and backend access probes are
-ready. Provisioning a store is not the same as populating it.
+Provision centralized configuration resources without coupling their contents to an ARM deployment. Operational population is separate; the
+replacement standalone PowerShell bootstrap is being designed after the PR review.
 
-## Ownership
+## 📋 Overview
 
-| File                                                                                                                                       | Responsibility                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [deploymentFile.bicep](deploymentFile.bicep)                                                                                               | Compose the two stores and emit their names/endpoints.                                                   |
-| [appConfiguration.bicep](appConfiguration.bicep)                                                                                           | Free store, local authentication disabled, managed-identity access.                                      |
-| [keyVault.bicep](keyVault.bicep)                                                                                                           | Standard vault, RBAC authorization, soft delete (90 days), purge protection.                             |
-| [appConfiguration.json](appConfiguration.json)                                                                                             | Meaningful non-secret static defaults.                                                                   |
-| [../bootstrap/configuration.bicep](../bootstrap/configuration.bicep)                                                                       | Resolved runtime values, internal JWT generation, secure AI-key storage, and typed Key Vault references. |
-| [../rbac/app-configuration-rbac.bicep](../rbac/app-configuration-rbac.bicep), [../rbac/key-vault-rbac.bicep](../rbac/key-vault-rbac.bicep) | Resource-scoped permanent application/bootstrap permissions.                                             |
+- Key Vault owns secrets; App Configuration owns non-secret settings and typed references.
+- Managed identities and resource-scoped RBAC control access.
+- Environment labels remain `DEVELOPMENT` and `PRODUCTION`.
+- Store provisioning does not seed placeholders, rotate credentials, or imply application readiness.
 
-Stores retain their current public-network posture. This graph does not create access policies, connection-string authentication,
-configuration snapshots, or private endpoints. Consumers resolve the required Key Vault references with their permitted identity; App
-Configuration does not grant secret access simply because it stores a reference.
+## 📁 Module Files
 
-## Populated values
+| File                                                                         | Purpose                                                                    |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep)                                 | Compose the stores and return actual names/endpoints.                      |
+| [keyVault.bicep](keyVault.bicep)                                             | Standard, RBAC-enabled vault with soft delete/purge protection.            |
+| [appConfiguration.bicep](appConfiguration.bicep)                             | Free store, local authentication disabled, current preview management API. |
+| [appConfiguration.json](appConfiguration.json)                               | Meaningful non-secret defaults; not automatically upserted by Bicep.       |
+| [../rbac/key-vault-rbac.bicep](../rbac/key-vault-rbac.bicep)                 | Resource-scoped vault roles.                                               |
+| [../rbac/app-configuration-rbac.bicep](../rbac/app-configuration-rbac.bicep) | Resource-scoped configuration roles.                                       |
 
-DEVELOPMENT and PRODUCTION receive actual tenant/subscription IDs, backend managed-identity selection, passwordless SQL settings, raw Cosmos
-endpoint, blob endpoint, AI endpoint, telemetry, and application URLs. The bootstrap writes typed versionless Key Vault references, not
-empty Azure endpoint placeholders. The experiments registration ID is also supplied directly to the website/API runtime through
-`EXP_ENTRA_APP_CLIENT_ID`.
+## Architecture Diagram
 
-| Secret names                                                          | Owner and rerun behavior                                                                                                                             |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PRODUCTION-JWT-SECRET`                                               | Shared API signing material for both website labels; generated from 64 random bytes only when absent/known-placeholder. Existing keys are preserved. |
-| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual deployed AI account key, supplied through secure template output/parameter/environment channels.                                              |
-| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned; never overwritten.                                                                                                                   |
-| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned; never overwritten.                                                                                                                   |
-| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Optional operator-owned email credentials; never overwritten. Missing/known-placeholder values produce an ordinary empty setting, disabling email.   |
+```mermaid
+flowchart TD
+    Facade[Infrastructure facade] --> Vault[Key Vault resource]
+    Facade --> Store[App Configuration resource]
+    Facade --> RBAC[Scoped roles]
+    Operator[Separate approved operational setup] --> Vault
+    Operator --> Store
+    Store --> References[Typed versionless references]
+    References --> Vault
+    Proxy[Experiments configuration proxy] --> Store
+    Proxy --> Vault
+```
 
-The bootstrap reports missing/known-placeholder external values by **name only** in `pendingExternalSecretNames`. A secret-GET 404 can mean
-absence; a 403 or generic service failure cannot. Real JWTs are not automatically rotated on a deployment rerun. Versionless references
-allow later secret versions to be resolved, but consumers still need their normal refresh/restart behavior; zero-downtime rotation is not
-implied.
+## Components
 
-Both website labels call the same API and therefore use its signing key. Any previously stored `DEVELOPMENT-JWT-SECRET` is left untouched,
-not deleted or rotated; a fresh deployment does not generate an unused development key. Missing optional Resend values are still reported by
-name, but their ordinary empty settings do not cause eager Key Vault resolution failures or block startup once required Clerk values are
-supplied.
+### Azure Key Vault
 
-The infrastructure identity intentionally retains App Configuration Data Owner and Key Vault Secrets Officer for repeatable configuration
-ownership. The backend retains its existing Data Owner/Secrets User access; the frontend reads permitted configuration through the
-established proxy path. There is no temporary configuration-writer identity or role to clean up.
+#### Specifications
 
-## Inputs, outputs, and failures
+Standard SKU, RBAC authorization, 90-day soft delete, purge protection, existing public-network posture. There are no access policies.
 
-The provisioning orchestrator accepts `resourceConventionPrefix`, `resourceLocation`, and `resourceDeploymentDate`. It emits `keyVaultName`,
-`keyVaultUri`, `appConfigurationName`, and `appConfigurationEndpoint`; the bootstrap emits completion, pending external secret names, and
-exact execution-resource IDs. Ordinary deployment outputs do not expose credentials or deployment tokens.
+#### Stored Secrets
 
-Propagation retries and execution deadlines are bounded. Classified authorization/service failures fail Foundation rather than returning a
-success-shaped empty configuration. Inspect safe failure categories and exact scoped grants; do not print secret bodies, enable local
-authentication, grant subscription-wide permissions, or silently replace operator values.
+| Names                                                                 | Required ownership/behavior                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `PRODUCTION-JWT-SECRET`                                               | Shared API signing key for both current website labels; preserve real values.  |
+| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned.                                                                |
+| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned.                                                                |
+| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Optional operator-owned email credentials.                                     |
+| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual AI account credential for existing SDK consumers, populated separately. |
 
-For deployment, registrar/GitHub handoffs, approved reruns, and observed ACI/backing-storage cleanup on success and failure, follow the
-[fresh deployment guide](../DEPLOYMENT_GUIDE.md).
+The old placeholder `keyVault.json` is not a source of real secrets. Never write its placeholder values into a vault or replace real
+operator credentials on a rerun. No secret values are emitted by this module.
+
+### Azure App Configuration
+
+#### Specifications
+
+Free SKU, managed-identity authentication, public access retained. API `2025-08-01-preview` is the latest published management version
+checked during review. Local authentication stays disabled.
+
+#### Configuration Types
+
+Resolved service endpoints/identity selectors are ordinary values. Secret references use the Key Vault reference content type and a
+versionless `uri`, not plaintext credentials. Store creation does not populate either kind.
+
+### Configuration Snapshots
+
+Snapshots are not provisioned. Do not describe the live labels as immutable snapshots or promise automatic rollback/refresh.
+
+### Managed Identities
+
+#### Infrastructure Identity
+
+Permanent App Configuration Data Owner and Key Vault Secrets Officer, scoped to these resources; not subscription-wide administration.
+
+#### Frontend Identity
+
+App Configuration Reader; private runtime settings are obtained through the established proxy path, not new frontend vault-write access.
+
+#### Backend Identity
+
+Existing App Configuration Data Owner and Key Vault Secrets User permissions support the experiments/configuration path.
+
+## Security Model
+
+### Access Control
+
+An App Configuration reference does not itself grant vault access. The resolving identity needs its own scoped Key Vault permission. The
+preview `dataPlaneProxy` setting is not enabled: separate tasks can use native authenticated data-plane APIs without it.
+
+### Secret Rotation
+
+Versionless references allow later versions to be resolved, subject to consumer refresh/restart behavior. No zero-downtime rotation,
+automatic credential generation, or preservation proof is implied by resource provisioning.
+
+## Configuration Flow
+
+1. Bicep creates stores and scoped grants.
+2. A separately approved operational task resolves actual resource values and populates configuration.
+3. The experiments provider eagerly resolves referenced secrets.
+4. Website/API consumers request their configured label/target.
+
+Missing optional email must be an ordinary empty value, disabling delivery. A dangling optional Key Vault reference can prevent the eager
+provider from starting. Required Clerk/JWT/endpoint values must be valid.
+
+## Best Practices
+
+Use actual endpoints, correct DEVELOPMENT/PRODUCTION labels, and the same API signing key for the one shared API. Preserve existing unused
+development signing material rather than deleting it. Never store account-key connection-string fallbacks.
+
+## 🔧 Parameters
+
+`resourceConventionPrefix`, `resourceLocation`, and `resourceDeploymentDate`; exact validation lives in the orchestrator.
+
+## 📤 Outputs
+
+`keyVaultName`, `keyVaultUri`, `appConfigurationName`, and `appConfigurationEndpoint`.
+
+## 🛠️ Usage Example
+
+```bicep
+module configuration 'configuration/deploymentFile.bicep' = {
+  name: 'configuration-${resourceDeploymentDate}'
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+  }
+}
+```
+
+## 🔄 Dependencies
+
+### **Required Dependencies**
+
+Store creation is independent; facade role assignments depend on resource and identity outputs.
+
+### **Dependent Modules**
+
+Sites consume the actual App Configuration endpoint. Application startup additionally depends on separately populated data.
+
+## 📊 Deployment Flow
+
+Provision stores → assign scoped roles → perform approved operational population → release/verify applications.
+
+## 🚨 Troubleshooting
+
+| Symptom                             | Check                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Forbidden configuration/secret read | Exact caller identity, resource scope, and classified propagation; do not enable account keys. |
+| Missing secret                      | Distinguish 404 from authorization/service failure.                                            |
+| Startup failure with email disabled | Empty optional email setting, not a reference to an absent Resend secret.                      |
+| Empty Azure endpoints               | Resource provisioning did not run configuration population.                                    |
+
+## Deployment Considerations
+
+The Free store has service limits and no soft-delete/purge-protection support. Public networking remains intentional; private endpoints or a
+paid SKU need separate scope/cost approval.
+
+## 📚 References
+
+- [App Configuration template reference](https://learn.microsoft.com/azure/templates/microsoft.appconfiguration/configurationstores)
+- [Key Vault references](https://learn.microsoft.com/azure/azure-app-configuration/use-key-vault-references)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
+
+---
+
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

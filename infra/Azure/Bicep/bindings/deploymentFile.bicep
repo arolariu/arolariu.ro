@@ -2,8 +2,8 @@
 // Custom Domain Bindings Deployment Orchestrator - DNS and SSL Configuration
 // =====================================================================================
 // This orchestrator module deploys custom domain bindings for all arolariu.ro
-// subdomains. It configures DNS records, SSL certificates, and hostname bindings
-// for each web application in the platform.
+// subdomains. It configures SSL certificates and hostname bindings.
+// Azure-owned DNS records are provisioned by network/dnsZone.bicep.
 //
 // Deployed Bindings:
 // - dev.arolariu.ro → Development website (App Service)

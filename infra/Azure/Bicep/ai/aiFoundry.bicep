@@ -111,7 +111,3 @@ output aiFoundryId string = aiFoundry.id
 output aiFoundryName string = aiFoundry.name
 output aiFoundryEndpoint string = aiFoundry.properties.endpoint
 output aiProjectId string = aiFoundry::aiProject.id
-
-@secure()
-@description('The account key forwarded only through secure deployment channels.')
-output cognitiveServicesKey string = aiFoundry.listKeys().key1

@@ -1,25 +1,94 @@
-# AI module
+# 🤖 AI Module
 
-[deploymentFile.bicep](deploymentFile.bicep) provisions the [AI Foundry account/project](aiFoundry.bicep). Foundation explicitly places it
-in **Sweden Central**, independently of the regional resource-group profile.
+Azure AI Foundry resources for the platform's existing model-routing and document-analysis consumers.
 
-| Setting                        | Contract                                                                   |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| Account                        | `<resourcePrefix>-ai-foundry`, `AIServices`, S0, system-assigned identity. |
-| Project                        | `arolariu-ro`, system-assigned identity.                                   |
-| Deployment/model               | `model-router`.                                                            |
-| Model format/version           | `OpenAI` / `2025-11-18`.                                                   |
-| Deployment SKU/capacity        | `GlobalStandard` / `10`.                                                   |
-| Account/project/deployment API | `2026-09-01`, recognized by stable Bicep 0.48.1.                           |
+## 📋 Overview
 
-Public network access and key authentication remain enabled for the existing SDK consumers. The actual account key is resolved in its owning
-leaf and forwarded only through secure outputs, a secure bootstrap parameter, and a secure environment value. The configuration bootstrap
-stores environment-specific CognitiveServicesKey secrets and versionless references; the public `aiResources` object contains only
-account/project IDs and endpoint.
+- One `AIServices` account with S0 SKU and system-assigned identity.
+- The `arolariu-ro` project and pinned `model-router` deployment.
+- Explicit Sweden Central placement from the facade.
+- Resource provisioning does not retrieve or emit account keys.
 
-[ai-rbac.bicep](../rbac/ai-rbac.bicep) preserves account-scoped Cognitive Services User and Azure AI User assignments for the backend
-principal. There is no separate legacy OpenAI account or Machine Learning hub in this graph.
+## 🏗️ Resources Created
 
-Before deploying, obtain approval for the exact target, model, region, SKU/capacity, and cost. Live quota, model availability, and inference
-are not proven by a successful compile. Stop rather than selecting a paid/region/model alternative automatically. Follow the
-[fresh deployment guide](../DEPLOYMENT_GUIDE.md) for prerequisites, bootstrap evidence, and post-release inference checks.
+| Resource            | Current contract                                              |
+| ------------------- | ------------------------------------------------------------- |
+| AI account          | `<prefix>-ai-foundry`, AIServices/S0, public access retained. |
+| Project             | `arolariu-ro`, system-assigned identity.                      |
+| Model deployment    | `model-router`, format `OpenAI`, version `2025-11-18`.        |
+| Deployment capacity | GlobalStandard, capacity 10.                                  |
+| APIs                | Account/project/deployment `2026-09-01`.                      |
+
+This is not a separate legacy OpenAI account or Machine Learning hub.
+
+## 📊 Architecture
+
+```mermaid
+flowchart TD
+    Facade[Facade: explicit Sweden Central] --> Account[AI Foundry AIServices account]
+    Account --> Project[arolariu-ro project]
+    Project --> Model[model-router deployment]
+    Backend[Backend UAMI] --> Roles[Account-scoped inference roles]
+    Roles --> Account
+    Operations[Separate credential/configuration task] --> Configuration[Key Vault and App Configuration]
+    API[Existing API SDK clients] --> Configuration
+    API --> Account
+```
+
+## 🔧 Parameters
+
+| Parameter                  | Meaning                                                                     |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `resourceConventionPrefix` | Stable namespace.                                                           |
+| `resourceLocation`         | Account/project/model location; facade deliberately passes `swedencentral`. |
+| `resourceDeploymentDate`   | Audit/deployment-name timestamp.                                            |
+
+## 📤 Outputs
+
+`aiFoundryName` and non-secret `aiResources` containing account/project IDs and endpoint. No `listKeys()` or secure key-forwarding output
+remains; credential population is a separate task.
+
+## 🛡️ Security & RBAC
+
+The [AI RBAC module](../rbac/ai-rbac.bicep) grants the backend Cognitive Services User and Azure AI User at account scope. Existing SDK key
+authentication and public-network posture remain; secrets must be populated through a separately approved process without logging.
+
+## 🚀 Example Usage
+
+```bicep
+module ai 'ai/deploymentFile.bicep' = {
+  name: 'ai-${resourceDeploymentDate}'
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceLocation: 'swedencentral'
+  }
+}
+```
+
+## 📁 Module Files
+
+| File                                         | Purpose                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep) | Compose the account/project/model and expose non-secret outputs. |
+| [aiFoundry.bicep](aiFoundry.bicep)           | Actual AI resources and exact model contract.                    |
+
+## 🚨 Troubleshooting
+
+| Issue                                    | Response                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| Model/SKU unavailable or quota exhausted | Stop for the exact target/cost decision; do not silently substitute models or regions. |
+| Missing SDK key                          | Bicep does not populate configuration; inspect separately approved operational setup.  |
+| Authorization failure                    | Check the actual identity, key mode, and account-scoped grant.                         |
+| Successful compile but inference fails   | Real model availability and inference remain live validation requirements.             |
+
+## 📚 References
+
+- [AI account template reference](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/accounts)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
+- [Cost assumptions](../COST_OPTIMIZATION.md)
+
+---
+
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

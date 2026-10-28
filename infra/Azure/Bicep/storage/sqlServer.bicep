@@ -22,7 +22,7 @@
 // Note: Advanced Threat Protection and Auditing are disabled to reduce costs.
 // Enable these features for production workloads with compliance requirements.
 //
-// See: rbac/sql-server-rbac.bicep (automatic contained-user grants)
+// See: rbac/sql-rbac-uami.sql (manual reference; database-user provisioning is separate)
 // See: configuration/keyVault.bicep (connection strings stored securely)
 // =====================================================================================
 
