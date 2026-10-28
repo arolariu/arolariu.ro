@@ -59,13 +59,9 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = if (dep
   }
 }
 
-resource existingResourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' existing = {
-  name: resourceGroupName
-}
-
 module mainDeployment 'facade.bicep' = {
   name: 'mainDeployment-${resourceDeploymentDate}'
-  scope: existingResourceGroup
+  scope: az.resourceGroup(resourceGroupName)
   dependsOn: [resourceGroup]
   params: {
     resourceDeploymentDate: resourceDeploymentDate

@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.48.1.52935",
-      "templateHash": "7535648239997784197"
+      "templateHash": "15484771105047045290"
     },
     "description": "Root entry point for fresh foundation provisioning and separate domain completion.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -64,12 +64,6 @@
         "deploymentAuthor": "[parameters('resourceGroupAuthor')]",
         "deploymentDate": "[parameters('resourceDeploymentDate')]"
       }
-    },
-    "existingResourceGroup": {
-      "existing": true,
-      "type": "Microsoft.Resources/resourceGroups",
-      "apiVersion": "2025-04-01",
-      "name": "[parameters('resourceGroupName')]"
     },
     "mainDeployment": {
       "type": "Microsoft.Resources/deployments",

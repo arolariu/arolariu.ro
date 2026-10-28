@@ -1652,6 +1652,7 @@ describe("Bicep deployment lifecycle", {timeout: 120_000}, () => {
     const main = compileTemplate(String.raw`infra\Azure\Bicep\main.bicep`);
     const domains = compileTemplate(String.raw`infra\Azure\Bicep\domains.bicep`);
 
+    expect(resourcesOfType(main, "Microsoft.Resources/resourceGroups")).toHaveLength(1);
     expect(main.resources["resourceGroup"]?.condition).toEqual(expect.stringContaining("'foundation'"));
     for (const type of [
       "Microsoft.ManagedIdentity/userAssignedIdentities",
