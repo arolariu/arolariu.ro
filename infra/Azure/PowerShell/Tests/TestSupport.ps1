@@ -144,6 +144,7 @@ function New-TaskFixture {
         GraphChangePrincipalOnRead = 0
         GraphDeletedReads = 0
         GraphChangeDeletedOnRead = 0
+        GraphRestoreDeletedOnRead = 0
         GraphRequests = [Collections.Generic.List[object]]::new()
         AuthReadStatus = 0
         AuthSettings = @{
@@ -726,6 +727,12 @@ function Invoke-TaskUnderTest {
                     if ($Method -eq 'GET') {
                         $Fixture.GraphDeletedReads++
                         if ($Fixture.GraphChangeDeletedOnRead -and $Fixture.GraphDeletedReads -ge $Fixture.GraphChangeDeletedOnRead -and $null -ne $object) { $object.deletedDateTime = '2026-03-01T00:00:00Z' }
+                        if ($Fixture.GraphRestoreDeletedOnRead -and $Fixture.GraphDeletedReads -ge $Fixture.GraphRestoreDeletedOnRead -and $null -ne $object) {
+                            $null = $Fixture.EntraDeletedObjects.Remove($object)
+                            if ($object['@odata.type'] -eq '#microsoft.graph.servicePrincipal') { $Fixture.EntraServicePrincipalDeleted = $false }
+                            else { $Fixture.EntraApplicationDeleted = $false }
+                            $object = $null
+                        }
                     }
                 }
                 elseif ($path -match '^/v1.0/directory/deletedItems/microsoft.graph.(application|servicePrincipal)$') {
