@@ -80,9 +80,15 @@ function New-TaskFixture {
         VaultId = $vaultId
         StoreId = $storeId
         DatabaseId = $databaseId
+        PrincipalId = '44444444-4444-4444-8444-444444444444'
+        ClientId = '55555555-5555-4555-8555-555555555555'
+        ActorKind = 'User'
+        OmitIdentityType = $false
+        LastToken = ''
         Context = [pscustomobject]@{
             Tenant = [pscustomobject]@{ Id = $tenant }
             Subscription = [pscustomobject]@{ Id = $subscription }
+            Account = [pscustomobject]@{ Type = 'User'; Id = 'test-only-account' }
             Environment = [pscustomobject]@{
                 Name = 'AzureCloud'
                 AzureKeyVaultDnsSuffix = 'vault.azure.net'
@@ -131,6 +137,16 @@ function New-TaskFixture {
         SqlCreateRace = $false
         SqlRoleRace = $false
         TokenReadStatus = 0
+        RoleAssignments = [Collections.Generic.List[object]]::new()
+        AccessMutations = [Collections.Generic.List[object]]::new()
+        ArmRequests = [Collections.Generic.List[object]]::new()
+        RoleGrantStatus = 0
+        RoleCleanupStatus = 0
+        FailAfterRoleGrant = $false
+        AddConcurrentRoleOnSecretWrite = $false
+        ExpectedReceiptPath = ''
+        ReceiptPhasesAtGrant = [Collections.Generic.List[string]]::new()
+        Clock = [datetime]::UtcNow
         Calls = [Collections.Generic.List[object]]::new()
         Mutations = [Collections.Generic.List[object]]::new()
         Approve = $false
@@ -138,6 +154,21 @@ function New-TaskFixture {
         ConfirmPreference = 'None'
         DefaultParameterValues = @{}
     }
+}
+
+function New-TestAccessToken {
+    param($Fixture, [string] $ResourceUrl)
+    $claims = @{
+        tid = $Fixture.Tenant; oid = $Fixture.PrincipalId; azp = $Fixture.ClientId
+        idtyp = $(if ($Fixture.ActorKind -eq 'User') { 'user' } else { 'app' })
+        aud = $(if ($ResourceUrl) { $ResourceUrl } else { 'https://management.azure.com/' })
+        exp = [datetimeoffset]::UtcNow.AddMinutes(10).ToUnixTimeSeconds()
+    }
+    if ($Fixture.OmitIdentityType) { $claims.Remove('idtyp') }
+    $header = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"alg":"none"}')).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($claims | ConvertTo-Json -Compress))).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $Fixture.LastToken = "$header.$payload.test"
+    ConvertTo-SecureString $Fixture.LastToken -AsPlainText -Force
 }
 
 function New-Setting {
@@ -201,7 +232,13 @@ function Invoke-TaskUnderTest {
         'Get-AzKeyVaultSecret' = {
             [CmdletBinding()] param($VaultName, $Name, [switch] $IncludeVersions, [switch] $InRemovedState, $DefaultProfile)
             Trace-Boundary 'Get-AzKeyVaultSecret' $PSBoundParameters
-            if ($Fixture.SecretReadStatus) { Throw-BoundaryError $Fixture.SecretReadStatus }
+            if ($Fixture.SecretReadStatus) {
+                $access = @($Fixture.RoleAssignments | Where-Object {
+                    $_.ObjectId -eq $Fixture.PrincipalId -and $_.Scope -eq $Fixture.VaultId -and
+                    $_.RoleDefinitionId -match 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7$'
+                }).Count -gt 0
+                if (-not ($Fixture.SecretReadStatus -eq 403 -and $access)) { Throw-BoundaryError $Fixture.SecretReadStatus }
+            }
             if ($InRemovedState) {
                 if ($Fixture.RemovedNotFoundThrows -and -not $Fixture.RemovedSecrets.Count) { Throw-BoundaryError 404 }
                 return $Fixture.RemovedSecrets
@@ -220,6 +257,13 @@ function Invoke-TaskUnderTest {
             if ($Fixture.SecretWriteStatus) { Throw-BoundaryError $Fixture.SecretWriteStatus }
             $Fixture.Mutations.Add([pscustomobject]@{ Name = 'SetSecret'; Arguments = $PSBoundParameters })
             $Fixture.SecretVersions = @(New-SecretMetadata -Name $Name)
+            if ($Fixture.AddConcurrentRoleOnSecretWrite) {
+                $Fixture.RoleAssignments.Add([pscustomobject]@{
+                    RoleAssignmentId = "$($Fixture.VaultId)/providers/Microsoft.Authorization/roleAssignments/77777777-7777-4777-8777-777777777777"
+                    Scope = $Fixture.VaultId; ObjectId = $Fixture.PrincipalId
+                    RoleDefinitionId = '21090545-7ca7-4776-b22c-e363652d74d2'; Description = 'concurrent'; Condition = ''
+                })
+            }
             [pscustomobject]@{ SecretValueText = 'SENSITIVE-PROVIDER-BODY'; SecretValue = $SecretValue }
         }
         'Get-AzAppConfigurationKeyValue' = {
@@ -253,10 +297,73 @@ function Invoke-TaskUnderTest {
             Trace-Boundary 'Get-AzAccessToken' $PSBoundParameters
             if ($Fixture.TokenReadStatus) { Throw-BoundaryError $Fixture.TokenReadStatus }
             [pscustomobject]@{
-                Token = ConvertTo-SecureString 'SENSITIVE-PROVIDER-BODY' -AsPlainText -Force
+                Token = New-TestAccessToken -Fixture $Fixture -ResourceUrl $ResourceUrl
                 ExpiresOn = [datetimeoffset]::UtcNow.AddMinutes(10)
                 TenantId = $Fixture.Tenant; UserId = 'synthetic'; Type = 'Bearer'
             }
+        }
+        'Get-AzRoleAssignment' = {
+            [CmdletBinding()] param($ObjectId, $Scope, $DefaultProfile)
+            Trace-Boundary 'Get-AzRoleAssignment' $PSBoundParameters
+            $Fixture.RoleAssignments | Where-Object {
+                $_.ObjectId -eq $ObjectId -and ($Scope -eq $_.Scope -or $Scope.StartsWith($_.Scope + '/', [StringComparison]::OrdinalIgnoreCase))
+            }
+        }
+        'Invoke-AzRestMethod' = {
+            [CmdletBinding()] param($Path, $Method, $Payload, $DefaultProfile)
+            Trace-Boundary 'Invoke-AzRestMethod' $PSBoundParameters
+            $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
+            $id = ($Path -split '\?')[0]
+            if ($id -notmatch '/providers/Microsoft\.Authorization/roleAssignments/[0-9a-f-]+$') {
+                throw 'Unexpected ARM operation.'
+            }
+            $existing = @($Fixture.RoleAssignments | Where-Object RoleAssignmentId -eq $id)
+            switch ($Method) {
+                'GET' {
+                    if (-not $existing.Count) { Throw-BoundaryError 404 }
+                    $role = $existing[0]
+                    return [pscustomobject]@{
+                        StatusCode = 200
+                        Content = (@{
+                            id = $id
+                            properties = @{
+                                scope = $role.Scope; principalId = $role.ObjectId; roleDefinitionId = $role.RoleDefinitionId
+                                description = $role.Description; principalType = 'User'
+                            }
+                        } | ConvertTo-Json -Depth 6 -Compress)
+                    }
+                }
+                'PUT' {
+                    if ($Fixture.RoleGrantStatus) { Throw-BoundaryError $Fixture.RoleGrantStatus }
+                    if ($Fixture.ExpectedReceiptPath) {
+                        $receipt = Get-Content -LiteralPath $Fixture.ExpectedReceiptPath -Raw | ConvertFrom-Json
+                        $Fixture.ReceiptPhasesAtGrant.Add($receipt.Phase)
+                    }
+                    $body = $Payload | ConvertFrom-Json
+                    $principalType = if ($Fixture.ActorKind -eq 'User') { 'User' } else { 'ServicePrincipal' }
+                    if ($body.properties.principalType -cne $principalType) { Throw-BoundaryError 400 }
+                    $scope = $id.Substring(0, $id.LastIndexOf('/providers/Microsoft.Authorization/roleAssignments/', [StringComparison]::OrdinalIgnoreCase))
+                    $Fixture.RoleAssignments.Add([pscustomobject]@{
+                        RoleAssignmentId = $id; Scope = $scope; ObjectId = $body.properties.principalId
+                        RoleDefinitionId = $body.properties.roleDefinitionId; Description = $body.properties.description; Condition = ''
+                    })
+                    $Fixture.AccessMutations.Add([pscustomobject]@{ Name = 'Grant'; Id = $id })
+                    if ($Fixture.FailAfterRoleGrant) { Throw-BoundaryError 500 }
+                    return [pscustomobject]@{ StatusCode = 201; Content = '{}' }
+                }
+                'DELETE' {
+                    if ($Fixture.RoleCleanupStatus) { Throw-BoundaryError $Fixture.RoleCleanupStatus }
+                    if ($existing.Count) { $null = $Fixture.RoleAssignments.Remove($existing[0]) }
+                    $Fixture.AccessMutations.Add([pscustomobject]@{ Name = 'Revoke'; Id = $id })
+                    return [pscustomobject]@{ StatusCode = 204; Content = '' }
+                }
+                default { throw 'Unexpected ARM method.' }
+            }
+        }
+        'Get-Date' = { $Fixture.Clock }
+        'Start-Sleep' = {
+            param([double] $Seconds, [double] $Milliseconds)
+            $Fixture.Clock = $Fixture.Clock.AddSeconds($Seconds).AddMilliseconds($Milliseconds)
         }
         'Invoke-Sqlcmd' = {
             [CmdletBinding()]
@@ -319,6 +426,7 @@ function Invoke-TaskUnderTest {
     }
     $definitions['New-SecretMetadata'] = ${function:New-SecretMetadata}
     $definitions['New-Setting'] = ${function:New-Setting}
+    $definitions['New-TestAccessToken'] = ${function:New-TestAccessToken}
     foreach ($entry in $definitions.GetEnumerator()) {
         $state.Commands.Add([Management.Automation.Runspaces.SessionStateFunctionEntry]::new($entry.Key, $entry.Value.ToString()))
     }
@@ -338,10 +446,13 @@ function Invoke-TaskUnderTest {
         $failure = ''
         try { $output = @($powershell.Invoke()) } catch { $output = @(); $failure = $_.Exception.Message }
         $errors = @($powershell.Streams.Error | ForEach-Object { $_.ToString() })
+        $information = @($powershell.Streams.Information | ForEach-Object { $_.MessageData })
         [pscustomobject]@{
             Output = $output
             ErrorText = ($errors + $failure) -join "`n"
-            AllText = (@($output | Out-String) + $errors + $failure + $operator.RecordingUI.Messages) -join "`n"
+            AllText = (@($output | Out-String) + $errors + $failure + $operator.RecordingUI.Messages +
+                @($information | ConvertTo-Json -Depth 8 -Compress)) -join "`n"
+            Information = $information
             Prompts = $operator.RecordingUI.Prompts
             Messages = @($operator.RecordingUI.Messages)
         }

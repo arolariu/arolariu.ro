@@ -2,6 +2,25 @@ BeforeAll {
     . (Join-Path $PSScriptRoot 'TestSupport.ps1')
 }
 
+Describe 'Secret access and recovery mode defaults' {
+    It 'DoesNotAcceptAccessControlDefaults: <DefaultKey>' -ForEach @(
+        @{ DefaultKey = '*:ManageTemporaryAccess'; DefaultValue = $true },
+        @{ DefaultKey = '*:ManageTemp*'; DefaultValue = $true },
+        @{ DefaultKey = '*:ResumeCleanup'; DefaultValue = $false }
+    ) {
+        $fixture = New-TaskFixture
+        $fixture.DefaultParameterValues[$DefaultKey] = $DefaultValue
+        $result = Invoke-TaskUnderTest (Join-Path (Split-Path $PSScriptRoot) 'Ensure-KeyVaultSecret.ps1') @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.VaultId
+            SecretName = 'api-jwt'; SecretValue = (ConvertTo-SecureString 'synthetic' -AsPlainText -Force)
+            NonInteractive = $true; Confirm = $false
+        } $fixture
+        $result.ErrorText | Should -Match 'ConfirmationRequired'
+        $fixture.Mutations.Count | Should -Be 0
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+}
+
 Describe 'Per-invocation consent: <TaskName>' -ForEach @(
     @{ TaskName = 'Ensure-KeyVaultSecret' },
     @{ TaskName = 'Ensure-SqlContainedUser' },

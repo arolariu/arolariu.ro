@@ -6,8 +6,9 @@ is self-contained: copy or host that same file without a repository module, boot
 ## Prerequisites and authority
 
 Use an existing authenticated Az context matching the explicit `TenantId` and `SubscriptionId`. Tasks never log in, change contexts, install
-modules, provision resources, or grant access to themselves. Supply the least privilege needed to read the selected target and perform the
-requested operation. A forbidden or unreadable lookup is an error, not proof of absence.
+modules, or provision a hosting environment. Supply the least privilege needed to read the selected target and perform the requested
+operation. Only tasks with the explicitly documented `ManageTemporaryAccess` interface may acquire bounded, owned temporary access. A
+forbidden or unreadable lookup is an error, not proof of absence.
 
 | Module              | Validated version | Used for                                              |
 | ------------------- | ----------------- | ----------------------------------------------------- |
@@ -31,9 +32,10 @@ require exact names or an exact ID and never prompt.
 a write; an ambient preference is not consent. WhatIf does not require mutation consent.
 
 PowerShell also inserts `$PSDefaultParameterValues` into bound parameters, without exposing their origin. Automation writes therefore fail
-closed when enabled defaults can supply `Confirm`, its `cf` alias, or `NonInteractive`, including wildcard parameter names. This
-intentionally also rejects otherwise explicit calls while such defaults exist, even if a default appears scoped to another command. Disable
-defaults in a caller-owned child scope; the task never modifies the caller's dictionary:
+closed when enabled defaults can supply `Confirm`, its `cf` alias, or `NonInteractive`, including wildcard parameter names. Access-managed
+tasks also protect `ManageTemporaryAccess` and `ResumeCleanup`. This intentionally also rejects otherwise explicit calls while such defaults
+exist, even if a default appears scoped to another command. Disable defaults in a caller-owned child scope; the task never modifies the
+caller's dictionary:
 
 ```powershell
 & {
@@ -46,6 +48,37 @@ defaults in a caller-owned child scope; the task never modifies the caller's dic
 One non-secret result is emitted: `Task`, `Status` (`Changed`, `NoChange`, `WouldChange`, `Declined`), `Changed`, `TargetResourceId`,
 `Subject`, and `Fields` (owned field names, never values). A terminating classified error fails `pwsh -File`; SDK objects, secret values,
 tokens, and provider error bodies are not emitted. A no-op is not proof of downstream access.
+
+### Owned temporary access and recovery
+
+`Ensure-KeyVaultSecret.ps1` additionally accepts `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and a bounded
+`AccessPropagationTimeoutSeconds` (default 120). The flag is opt-in: existing authorized callers need no lease. Existing recognized Secrets
+Officer/Key Vault Administrator assignments are preserved. When needed, the task confirms a Secrets Officer grant for the actual verified
+principal on the selected vault only, records its preselected assignment ID and ownership marker before requesting it, waits for metadata
+access, and removes only that assignment in `finally`. Existing role-assignment authority must already be present.
+
+The caller supplies a **new file in an existing durable directory** for `RecoveryReceiptPath`. It contains safe resource/principal IDs,
+phases and cleanup metadata, never secret values or tokens. Do not share a receipt between concurrent invocations, edit its ownership
+records, or discard it before verified cleanup. It is not a distributed lock. A process kill or ephemeral host loss can bypass `finally`;
+retain the receipt outside an ephemeral deploymentScripts host and reconcile it separately.
+
+```powershell
+.\Ensure-KeyVaultSecret.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $vaultId -SecretName 'api-jwt' -ManageTemporaryAccess -RecoveryReceiptPath $receiptPath
+
+# Cleanup only: never creates or updates the secret, and refuses changed assignment ownership.
+.\Ensure-KeyVaultSecret.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $vaultId -ResumeCleanup -RecoveryReceiptPath $receiptPath
+```
+
+Results add `AccessChanged`, `CleanupStatus` (`NotNeeded` or `Completed`), `TargetStateKnown` and an optional receipt path. `Changed`
+describes the business target only: leased inspection can return `NoChange`, `AccessChanged=true`, `CleanupStatus=Completed`. No success
+result is emitted if cleanup cannot be verified; `CleanupFailed` identifies the receipt to reconcile. Removing the assignment verifies
+controller state, not immediate eviction of cached authorization.
+
+WhatIf never creates a receipt or grants access. Unreadable protected state is `WouldChange`, `TargetStateKnown=false` and deferred fields,
+not an absent or verified secret. Structured Information events include only safe actor/scope metadata, never the Az profile or raw claims.
+An actual principal that cannot be verified cannot acquire temporary access.
 
 ## Preserve or create one secret
 
