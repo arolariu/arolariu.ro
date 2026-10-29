@@ -14,19 +14,20 @@ assert.ok(image, "Supply the final website image to test.");
 assert.ok(environment === "PRODUCTION" || environment === "DEVELOPMENT", "Supply the expected build-time SITE_ENV.");
 assert.equal(process.platform, "linux", "This smoke test uses Linux Docker host networking.");
 
-async function runStartupSmoke(managedIdentity, identityDelayMs) {
+async function runStartupSmoke(managedIdentity, identityDelayMs, experimentsClientId) {
   const imageEnvironment = JSON.parse(
     execFileSync("docker", ["image", "inspect", "--format", "{{json .Config.Env}}", image], {
       encoding: "utf8",
     }),
   );
-  for (const variable of ["SITE_ENV", "CLERK_SECRET_KEY", "API_JWT", "RESEND_API_KEY"]) {
+  for (const variable of ["SITE_ENV", "EXP_ENTRA_APP_CLIENT_ID", "CLERK_SECRET_KEY", "API_JWT", "RESEND_API_KEY"]) {
     assert.ok(!imageEnvironment.some((entry) => entry.startsWith(`${variable}=`)), `${variable} must not be set in the runner image.`);
   }
 
   const requests = [];
   const identityRequests = [];
   const identityClientId = "11111111-2222-3333-4444-555555555555";
+  const experimentsResource = `api://${experimentsClientId}`;
   const identityHeader = "smoke-test-only-identity-header";
   const accessToken = "smoke-test-only-exp-access-token";
   let fixtureOrigin = "";
@@ -45,7 +46,7 @@ async function runStartupSmoke(managedIdentity, identityDelayMs) {
             access_token: accessToken,
             expires_on: String(Math.floor(Date.now() / 1000) + 3600),
             token_type: "Bearer",
-            resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
+            resource: experimentsResource,
           }),
         );
       });
@@ -122,6 +123,8 @@ async function runStartupSmoke(managedIdentity, identityDelayMs) {
       "--env",
       "INFRA=azure",
       "--env",
+      `EXP_ENTRA_APP_CLIENT_ID=${experimentsClientId}`,
+      "--env",
       `AZURE_CLIENT_ID=${managedIdentity ? identityClientId : ""}`,
       ...(managedIdentity
         ? [
@@ -189,7 +192,7 @@ async function runStartupSmoke(managedIdentity, identityDelayMs) {
         ? [
             {
               clientId: identityClientId,
-              resource: "api://950ac239-5c2c-4759-bd83-911e68f6a8c9",
+              resource: experimentsResource,
               identityHeader,
             },
           ]
@@ -204,13 +207,13 @@ async function runStartupSmoke(managedIdentity, identityDelayMs) {
   }
 }
 
-for (const {managedIdentity, identityDelayMs} of [
-  {managedIdentity: false, identityDelayMs: 0},
-  {managedIdentity: true, identityDelayMs: 0},
-  {managedIdentity: true, identityDelayMs: 11_000},
+for (const {managedIdentity, identityDelayMs, experimentsClientId} of [
+  {managedIdentity: false, identityDelayMs: 0, experimentsClientId: ""},
+  {managedIdentity: true, identityDelayMs: 0, experimentsClientId: "22222222-2222-4222-8222-222222222222"},
+  {managedIdentity: true, identityDelayMs: 11_000, experimentsClientId: "33333333-3333-4333-8333-333333333333"},
 ]) {
   const scenario = managedIdentity ? `App Service identity, ${identityDelayMs}ms cold start` : "local exp fixture";
   test(`the final image loads runtime configuration (${scenario})`, {timeout: 60_000}, () =>
-    runStartupSmoke(managedIdentity, identityDelayMs),
+    runStartupSmoke(managedIdentity, identityDelayMs, experimentsClientId),
   );
 }
