@@ -154,6 +154,12 @@ function New-TaskFixture {
         SqlRequireFirewall = $false
         SqlCanManage = $true
         SqlCanInspect = $true
+        SqlProbeUserName = 'backend'
+        SqlProbeUserType = 'E'
+        SqlProbeSid = '0x33221100554477668899AABBCCDDEEFF'
+        SqlProbePermissions = @{ CanConnect = 1; CanSelect = 1; CanInsert = 1; CanUpdate = 1; CanDelete = 1 }
+        SqlRequiredTables = @('dbo.AspNetUsers', 'dbo.AspNetRoles')
+        SqlObjectDenied = $false
         SqlAdministratorUnknown = $false
         SqlConcurrentAdministratorChange = $false
         SqlRestoreStatus = 0
@@ -504,6 +510,22 @@ function Invoke-TaskUnderTest {
             if ($Fixture.SqlRequireAdministrator -and $Fixture.SqlAdministrator.ObjectId -ine $Fixture.PrincipalId) {
                 throw [TaskTestSqlException]::new(18456)
             }
+            if ($Query -match 'AS \[ProbeUserName\]') {
+                return [pscustomobject]@{
+                    ProbeDatabase = $Database; ProbeUserName = $Fixture.SqlProbeUserName
+                    ProbeUserType = $Fixture.SqlProbeUserType; ProbeSid = $Fixture.SqlProbeSid
+                }
+            }
+            if ($Query -match 'AS \[TableExists\]') {
+                if ($Query -notmatch "OBJECT_ID\(N'((?:''|[^'])*)'") { throw 'Unexpected table probe.' }
+                $table = $Matches[1].Replace("''", "'")
+                return [pscustomobject]@{
+                    TableExists = $Fixture.SqlRequiredTables -ccontains $table
+                    CanSelect = $(if ($Fixture.SqlObjectDenied) { 0 } else { 1 })
+                    CanInsert = 1; CanUpdate = 1; CanDelete = 1
+                }
+            }
+            if ($Query -match 'AS \[CanSelect\]') { return [pscustomobject] $Fixture.SqlProbePermissions }
             if ($Query -match 'AS \[CanManage\]') {
                 return [pscustomobject]@{ CanManage = $Fixture.SqlCanManage -or $Fixture.SqlAdministrator.ObjectId -ieq $Fixture.PrincipalId }
             }
