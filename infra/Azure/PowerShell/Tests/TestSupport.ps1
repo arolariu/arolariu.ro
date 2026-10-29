@@ -142,6 +142,8 @@ function New-TaskFixture {
         GraphChangeApplicationOnRead = 0
         GraphPrincipalReads = 0
         GraphChangePrincipalOnRead = 0
+        GraphDeletedReads = 0
+        GraphChangeDeletedOnRead = 0
         GraphRequests = [Collections.Generic.List[object]]::new()
         AuthReadStatus = 0
         AuthSettings = @{
@@ -721,6 +723,10 @@ function Invoke-TaskUnderTest {
                 }
                 elseif ($path -match '^/v1.0/directory/deletedItems/([0-9a-f-]+)$') {
                     $matchId = $Matches[1]; $object = @($Fixture.EntraDeletedObjects | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'deletedItems'
+                    if ($Method -eq 'GET') {
+                        $Fixture.GraphDeletedReads++
+                        if ($Fixture.GraphChangeDeletedOnRead -and $Fixture.GraphDeletedReads -ge $Fixture.GraphChangeDeletedOnRead -and $null -ne $object) { $object.deletedDateTime = '2026-03-01T00:00:00Z' }
+                    }
                 }
                 elseif ($path -match '^/v1.0/directory/deletedItems/microsoft.graph.(application|servicePrincipal)$') {
                     $type = '#microsoft.graph.' + $Matches[1]
