@@ -105,6 +105,23 @@ fail without dropping/remapping anything. No Graph lookup, role grant, business-
 **The caller owns SID correctness.** Matching catalog metadata is not proof of real managed-identity login; that needs a separately approved
 live identity test.
 
+## Ensure one SQL role membership
+
+[`Ensure-SqlRoleMembership.ps1`](Ensure-SqlRoleMembership.ps1) uses the same database targeting and encrypted connection contract. Pass an
+existing `UserName` and one `RoleName`: `db_datareader`, `db_datawriter`, or `db_ddladmin`.
+
+```powershell
+.\Ensure-SqlRoleMembership.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -UserName 'backend' -RoleName 'db_datareader' -WhatIf
+
+.\Ensure-SqlRoleMembership.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -UserName 'backend' -RoleName 'db_datareader' -NonInteractive -Confirm:$false
+```
+
+An existing membership is `NoChange`; otherwise exactly one membership is added and verified. Both principals must exist. All unrelated
+memberships are preserved. No user/role creation, nested role/group membership, revocation, `db_owner`, custom role, or broader substitute
+grant is supported. A concurrent matching membership is a no-op, not another grant.
+
 ## Tests
 
 Tests invoke the real files in isolated runspaces with fake Azure/SQL/operator boundaries, disabled module autoloading, and no developer

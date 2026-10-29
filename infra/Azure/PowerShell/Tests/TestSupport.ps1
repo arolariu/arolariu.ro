@@ -120,11 +120,14 @@ function New-TaskFixture {
         AppWriteStatus = 0
         AppConflictSatisfies = $false
         Principals = [Collections.Generic.List[object]]::new()
+        Roles = @('db_datareader', 'db_datawriter', 'db_ddladmin')
+        Memberships = [Collections.Generic.List[object]]::new()
         SqlReads = 0
         SqlAppearsOnRead = 0
         SqlReadStatus = 0
         SqlWriteStatus = 0
         SqlCreateRace = $false
+        SqlRoleRace = $false
         TokenReadStatus = 0
         Calls = [Collections.Generic.List[object]]::new()
         Mutations = [Collections.Generic.List[object]]::new()
@@ -257,6 +260,21 @@ function Invoke-TaskUnderTest {
             if ($Query -match '^\s*SELECT') {
                 if ($Fixture.SqlReadStatus) { Throw-BoundaryError $Fixture.SqlReadStatus }
                 $Fixture.SqlReads++
+                if ($Query -match 'AS \[IsMember\]') {
+                    if ($Query -notmatch "WHERE name = N'((?:''|[^'])*)'") { throw 'Unexpected user lookup.' }
+                    $name = $Matches[1].Replace("''", "'")
+                    if ($Query -notmatch "DATABASE_PRINCIPAL_ID\(N'(db_datareader|db_datawriter|db_ddladmin)'\)") { throw 'Unexpected role lookup.' }
+                    $role = $Matches[1]
+                    $users = @($Fixture.Principals | Where-Object Name -ieq $name)
+                    $member = @($Fixture.Memberships | Where-Object { $_.User -ceq $name -and $_.Role -ceq $role }).Count -gt 0
+                    if ($Fixture.SqlAppearsOnRead -and $Fixture.SqlReads -ge $Fixture.SqlAppearsOnRead) { $member = $true }
+                    return [pscustomobject]@{
+                        UserName = $(if ($users.Count) { $users[0].Name } else { $null })
+                        UserType = $(if ($users.Count) { $users[0].Type } else { $null })
+                        RoleName = $(if ($Fixture.Roles -contains $role) { $role } else { $null })
+                        IsMember = $member
+                    }
+                }
                 if ($Query -notmatch "WHERE name = N'((?:''|[^'])*)' OR sid = (0x[0-9a-fA-F]{32});") {
                     throw 'Unexpected metadata read.'
                 }
@@ -266,6 +284,15 @@ function Invoke-TaskUnderTest {
                     return [pscustomobject]@{ Name = $name; Type = 'E'; Sid = $sid }
                 }
                 return $Fixture.Principals | Where-Object { $_.Name -ieq $name -or $_.Sid -ieq $sid }
+            }
+            if ($Query -match '^ALTER ROLE \[(db_datareader|db_datawriter|db_ddladmin)\] ADD MEMBER \[((?:[^\]]|\]\])*)\];$') {
+                $role = $Matches[1]
+                $name = $Matches[2].Replace(']]', ']')
+                if ($Fixture.SqlWriteStatus) { Throw-BoundaryError $Fixture.SqlWriteStatus }
+                $Fixture.Memberships.Add([pscustomobject]@{ User = $name; Role = $role })
+                if ($Fixture.SqlRoleRace) { Throw-BoundaryError 409 }
+                $Fixture.Mutations.Add([pscustomobject]@{ Name = 'AddMembership'; Arguments = $PSBoundParameters })
+                return 'SENSITIVE-PROVIDER-BODY'
             }
             if ($Query -notmatch '^CREATE USER \[((?:[^\]]|\]\])*)\] WITH SID = (0x[0-9a-fA-F]{32}), TYPE = E;$') {
                 throw 'Unexpected SQL mutation.'
