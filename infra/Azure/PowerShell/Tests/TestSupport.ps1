@@ -81,6 +81,13 @@ function New-TaskFixture {
     $applicationClientId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     $aiAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.CognitiveServices/accounts/task-ai"
     $aiDeployments = [Collections.Generic.List[object]]::new()
+    $aiAccounts = [Collections.Generic.List[object]]::new()
+    $aiAccounts.Add(@{
+        id = $aiAccountId; name = 'task-ai'; type = 'Microsoft.CognitiveServices/accounts'; kind = 'OpenAI'; location = 'swedencentral'
+        etag = 'account-first'; sku = @{ name = 'S0' }
+        properties = @{ dateCreated = '2026-01-01T00:00:00Z'; provisioningState = 'Succeeded' }
+        systemData = @{ createdAt = '2026-01-01T00:00:00Z' }
+    })
     $aiDeployments.Add(@{
         id = "$aiAccountId/deployments/main"; name = 'main'; type = 'Microsoft.CognitiveServices/accounts/deployments'; etag = 'deployment-first'
         sku = @{ name = 'GlobalStandard'; capacity = 1 }
@@ -97,6 +104,12 @@ function New-TaskFixture {
         CosmosEndpoint = 'https://task-cosmos.documents.azure.com/'
         ExpSiteId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Web/sites/task-exp"
         AiAccountId = $aiAccountId
+        AiAccounts = $aiAccounts
+        AiDeletedAccounts = [Collections.Generic.List[object]]::new()
+        AiAccountReads = 0
+        AiChangeAccountOnRead = 0
+        AiAddDeploymentOnAccountRead = 0
+        AiRecreateAccountAfterDelete = $false
         AiDeployments = $aiDeployments
         AiReadStatus = 0
         AiDeleteStatus = 0
@@ -444,6 +457,44 @@ function Invoke-TaskUnderTest {
             $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
             $id = ($Path -split '\?')[0]
             if (-not $PSCmdlet.ShouldProcess($id, $Method)) { return }
+            if ($id -match '/providers/Microsoft\.CognitiveServices/accounts(?:/[^/]+)?$') {
+                if ($Method -eq 'GET') {
+                    if ($Fixture.AiReadStatus) { Throw-BoundaryError $Fixture.AiReadStatus }
+                    if ($id -like '*/accounts') {
+                        $items = @($Fixture.AiAccounts | Where-Object { $_.id.StartsWith($id + '/', [StringComparison]::OrdinalIgnoreCase) })
+                        return [pscustomobject]@{ StatusCode = 200; Content = (@{ value = $items } | ConvertTo-Json -Depth 10 -Compress) }
+                    }
+                    $Fixture.AiAccountReads++
+                    $items = @($Fixture.AiAccounts | Where-Object { $_.id -ieq $id })
+                    if (-not $items.Count) { Throw-BoundaryError 404 }
+                    if ($Fixture.AiChangeAccountOnRead -and $Fixture.AiAccountReads -ge $Fixture.AiChangeAccountOnRead) {
+                        $items[0].etag = 'account-recreated'; $items[0].properties.dateCreated = '2026-02-01T00:00:00Z'
+                    }
+                    if ($Fixture.AiAddDeploymentOnAccountRead -and $Fixture.AiAccountReads -ge $Fixture.AiAddDeploymentOnAccountRead -and -not $Fixture.AiDeployments.Count) {
+                        $Fixture.AiDeployments.Add(@{
+                            id = "$id/deployments/concurrent"; name = 'concurrent'; type = 'Microsoft.CognitiveServices/accounts/deployments'
+                            sku = @{ name = 'GlobalStandard'; capacity = 1 }; properties = @{ model = @{ name = 'concurrent' }; provisioningState = 'Succeeded' }
+                        })
+                    }
+                    return [pscustomobject]@{ StatusCode = 200; Content = ($items[0] | ConvertTo-Json -Depth 10 -Compress) }
+                }
+                if ($Method -eq 'DELETE') {
+                    if ($Fixture.AiDeleteStatus) { Throw-BoundaryError $Fixture.AiDeleteStatus }
+                    $items = @($Fixture.AiAccounts | Where-Object { $_.id -ieq $id })
+                    if ($items.Count) {
+                        $null = $Fixture.AiAccounts.Remove($items[0])
+                        $Fixture.AiDeletedAccounts.Add($items[0])
+                        if ($Fixture.AiRecreateAccountAfterDelete) {
+                            $replacement = $items[0].Clone()
+                            $replacement.properties = @{ dateCreated = '2026-02-01T00:00:00Z'; provisioningState = 'Succeeded' }
+                            $replacement.etag = 'new-account'; $Fixture.AiAccounts.Add($replacement)
+                        }
+                    }
+                    $Fixture.Mutations.Add([pscustomobject]@{ Name = 'DeleteAiAccount'; Id = $id })
+                    return [pscustomobject]@{ StatusCode = 204; Content = '' }
+                }
+                throw 'Unexpected AI account operation.'
+            }
             if ($id -match '/providers/Microsoft\.CognitiveServices/accounts/[^/]+/deployments(?:/[^/]+)?$') {
                 if ($Method -eq 'GET') {
                     if ($Fixture.AiReadStatus) { Throw-BoundaryError $Fixture.AiReadStatus }
