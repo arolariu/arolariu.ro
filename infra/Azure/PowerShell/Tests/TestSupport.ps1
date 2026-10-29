@@ -84,6 +84,10 @@ function New-TaskFixture {
         VaultId = $vaultId
         StoreId = $storeId
         DatabaseId = $databaseId
+        CosmosAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.DocumentDB/databaseAccounts/task-cosmos"
+        CosmosEndpoint = 'https://task-cosmos.documents.azure.com/'
+        HttpRequests = [Collections.Generic.List[object]]::new()
+        HttpResponses = @{}
         PrincipalId = '44444444-4444-4444-8444-444444444444'
         ClientId = '55555555-5555-4555-8555-555555555555'
         ActorKind = 'User'
@@ -160,6 +164,7 @@ function New-TaskFixture {
         SqlAdministratorPatches = [Collections.Generic.List[object]]::new()
         SqlAccessReceiptPhases = [Collections.Generic.List[string]]::new()
         TokenReadStatus = 0
+        OpaqueAccessToken = $false
         RoleAssignments = [Collections.Generic.List[object]]::new()
         AccessMutations = [Collections.Generic.List[object]]::new()
         ArmRequests = [Collections.Generic.List[object]]::new()
@@ -336,8 +341,10 @@ function Invoke-TaskUnderTest {
             [CmdletBinding()] param($ResourceUrl, $DefaultProfile)
             Trace-Boundary 'Get-AzAccessToken' $PSBoundParameters
             if ($Fixture.TokenReadStatus) { Throw-BoundaryError $Fixture.TokenReadStatus }
+            $secureToken = if ($Fixture.OpaqueAccessToken) { ConvertTo-SecureString 'opaque-test-credential' -AsPlainText -Force }
+                else { New-TestAccessToken -Fixture $Fixture -ResourceUrl $ResourceUrl }
             [pscustomobject]@{
-                Token = New-TestAccessToken -Fixture $Fixture -ResourceUrl $ResourceUrl
+                Token = $secureToken
                 ExpiresOn = [datetimeoffset]::UtcNow.AddMinutes(10)
                 TenantId = $Fixture.Tenant; UserId = 'synthetic'; Type = 'Bearer'
             }
@@ -436,6 +443,23 @@ function Invoke-TaskUnderTest {
         'Start-Sleep' = {
             param([double] $Seconds, [double] $Milliseconds)
             $Fixture.Clock = $Fixture.Clock.AddSeconds($Seconds).AddMilliseconds($Milliseconds)
+        }
+        'Invoke-WebRequest' = {
+            [CmdletBinding()]
+            param([uri] $Uri, [string] $Method = 'GET', [hashtable] $Headers, [int] $MaximumRedirection,
+                [switch] $SkipHttpErrorCheck, [int] $TimeoutSec, [string] $Body, [string] $ContentType)
+            Trace-Boundary 'Invoke-WebRequest' $PSBoundParameters
+            $Fixture.HttpRequests.Add([pscustomobject]@{
+                Method = $Method; Uri = $Uri.AbsoluteUri; Headers = $(if ($null -ne $Headers) { @{} + $Headers } else { @{} })
+                MaximumRedirection = $MaximumRedirection; TimeoutSec = $TimeoutSec
+            })
+            if (-not $Fixture.HttpResponses.ContainsKey($Uri.AbsoluteUri)) { throw 'Unexpected HTTP target.' }
+            $response = $Fixture.HttpResponses[$Uri.AbsoluteUri]
+            if ($response -is [exception]) { throw $response }
+            return [pscustomobject]@{
+                StatusCode = $response.StatusCode; Content = $response.Content
+                Headers = $(if ($response.ContainsKey('Headers')) { $response.Headers } else { @{} })
+            }
         }
         'Get-AzSqlServerActiveDirectoryOnlyAuthentication' = {
             [CmdletBinding()] param($ResourceGroupName, $ServerName, $DefaultProfile)
