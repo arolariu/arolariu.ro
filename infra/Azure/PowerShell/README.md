@@ -9,12 +9,13 @@ Use an existing authenticated Az context matching the explicit `TenantId` and `S
 modules, provision resources, or grant access to themselves. Supply the least privilege needed to read the selected target and perform the
 requested operation. A forbidden or unreadable lookup is an error, not proof of absence.
 
-| Module       | Validated version | Used for                              |
-| ------------ | ----------------- | ------------------------------------- |
-| Az.Accounts  | 5.5.3             | Existing context                      |
-| Az.Resources | 6.7.0             | Scoped resource lookup                |
-| Az.KeyVault  | 6.6.1             | Secret metadata and explicit creation |
-| Pester       | 6.2.0             | Tests only                            |
+| Module              | Validated version | Used for                                          |
+| ------------------- | ----------------- | ------------------------------------------------- |
+| Az.Accounts         | 5.5.3             | Existing context                                  |
+| Az.Resources        | 6.7.0             | Scoped resource lookup                            |
+| Az.KeyVault         | 6.6.1             | Secret metadata and explicit creation             |
+| Az.AppConfiguration | 2.2.0             | Data-plane key/label reads and conditional writes |
+| Pester              | 6.2.0             | Tests only                                        |
 
 Install prerequisites separately using your approved package-management process. No dependency installer runs inside a task.
 
@@ -56,6 +57,28 @@ deleted secret. An existing usable secret needs no replacement value.
 Successful sequential reruns return `NoChange` with no new version. **Serialize writers for the same secret.** The cmdlet exposes no atomic
 create-if-absent condition: the task rereads immediately before creation, but cannot prevent another writer between read and write. This is
 sequential idempotency, not distributed locking.
+
+## Upsert one ordinary configuration value
+
+[`Set-AppConfigurationValue.ps1`](Set-AppConfigurationValue.ps1) accepts `Key`, explicitly supplied `Label`, `Value`, and `ContentType`,
+plus optional `Tags`. For name lookup, pass `ResourceGroupName` and `StoreName`. Empty label means no label; empty ordinary values are
+valid. Key/label comparisons preserve case, and literal filter characters are escaped.
+
+```powershell
+.\Set-AppConfigurationValue.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $storeId -Key 'Feature:Name' -Label '' -Value '' -ContentType '' -WhatIf
+
+.\Set-AppConfigurationValue.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $storeId -Key 'Feature:Name' -Label 'DEVELOPMENT' -Value 'enabled' `
+    -ContentType 'text/plain' -Tags @{ owner = 'website' } -NonInteractive -Confirm:$false
+```
+
+Only provided tag names are owned; other tags and the description are preserved. Locked or unreadable settings and Key Vault reference types
+are refused, never unlocked or flattened. Ordinary values are not emitted; use the reference task for credentials.
+
+Creates use `If-None-Match: *`; updates use the observed ETag. A precondition failure permits one reread: `NoChange` if another writer
+already satisfied the request, otherwise `StaleState` without a second write. Rerun to inspect and confirm the new state. The module's
+`DefaultProfile` is nonfunctional for data-plane commands; tasks verify the active context, not a pretend context switch.
 
 ## Tests
 

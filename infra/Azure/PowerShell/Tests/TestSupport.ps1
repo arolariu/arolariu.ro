@@ -71,10 +71,12 @@ function New-TaskFixture {
     $subscription = '11111111-1111-4111-8111-111111111111'
     $tenant = '22222222-2222-4222-8222-222222222222'
     $vaultId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.KeyVault/vaults/task-vault"
+    $storeId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.AppConfiguration/configurationStores/task-store"
     [pscustomobject]@{
         Tenant = $tenant
         Subscription = $subscription
         VaultId = $vaultId
+        StoreId = $storeId
         Context = [pscustomobject]@{
             Tenant = [pscustomobject]@{ Id = $tenant }
             Subscription = [pscustomobject]@{ Id = $subscription }
@@ -90,6 +92,12 @@ function New-TaskFixture {
             ResourceGroupName = 'task-tests'
             Name = 'task-vault'
             Properties = [pscustomobject]@{ vaultUri = 'https://task-vault.vault.azure.net/' }
+        }, [pscustomobject]@{
+            ResourceId = $storeId
+            ResourceType = 'Microsoft.AppConfiguration/configurationStores'
+            ResourceGroupName = 'task-tests'
+            Name = 'task-store'
+            Properties = [pscustomobject]@{ endpoint = 'https://task-store.azconfig.io' }
         })
         SecretVersions = @()
         RemovedSecrets = @()
@@ -98,11 +106,25 @@ function New-TaskFixture {
         ResourceReadStatus = 0
         SecretReadStatus = 0
         SecretWriteStatus = 0
+        Settings = [Collections.Generic.List[object]]::new()
+        AppReadStatus = 0
+        AppWriteStatus = 0
+        AppConflictSatisfies = $false
         Calls = [Collections.Generic.List[object]]::new()
         Mutations = [Collections.Generic.List[object]]::new()
         Approve = $false
         Inputs = @()
         ConfirmPreference = 'None'
+    }
+}
+
+function New-Setting {
+    param([string] $Key = 'Feature:Name', [string] $Label = 'DEVELOPMENT', [string] $Value = 'before',
+        [string] $ContentType = '', [hashtable] $Tag = @{}, [bool] $Locked = $false)
+    [pscustomobject]@{
+        Key = $Key; Label = $(if ($Label.Length) { $Label } else { $null }); Value = $Value
+        ContentType = $ContentType; Tag = $Tag; Locked = $Locked; Etag = 'first-etag'
+        Description = 'Unowned description'; LastModified = [datetime] '2026-01-01Z'; SyncToken = $null; XmsRequestId = 'test'
     }
 }
 
@@ -174,12 +196,39 @@ function Invoke-TaskUnderTest {
             $Fixture.SecretVersions = @(New-SecretMetadata -Name $Name)
             [pscustomobject]@{ SecretValueText = 'SENSITIVE-PROVIDER-BODY'; SecretValue = $SecretValue }
         }
+        'Get-AzAppConfigurationKeyValue' = {
+            [CmdletBinding()] param($Endpoint, $Key, $Label, $After)
+            Trace-Boundary 'Get-AzAppConfigurationKeyValue' $PSBoundParameters
+            if ($Fixture.AppReadStatus) { Throw-BoundaryError $Fixture.AppReadStatus }
+            $literalKey = [regex]::Replace($Key, '\\([\\*,])', '$1')
+            $literalLabel = if ($Label -eq [string][char] 0) { '' } else { [regex]::Replace($Label, '\\([\\*,])', '$1') }
+            $Fixture.Settings | Where-Object { $_.Key -ceq $literalKey -and [string] $_.Label -ceq $literalLabel }
+        }
+        'Set-AzAppConfigurationKeyValue' = {
+            [CmdletBinding(SupportsShouldProcess)]
+            param($Endpoint, $Key, $Label, $Value, $ContentType, [hashtable] $Tag, $Description, $IfMatch, $IfNoneMatch)
+            Trace-Boundary 'Set-AzAppConfigurationKeyValue' $PSBoundParameters
+            $existing = @($Fixture.Settings | Where-Object { $_.Key -ceq $Key -and [string] $_.Label -ceq [string] $Label })
+            if ($Fixture.AppWriteStatus -and -not $Fixture.AppConflictSatisfies) { Throw-BoundaryError $Fixture.AppWriteStatus }
+            if (($existing.Count -and $IfMatch -cne ('"' + $existing[0].Etag + '"')) -or (-not $existing.Count -and $IfNoneMatch -ne '*')) {
+                Throw-BoundaryError 412
+            }
+            $next = New-Setting -Key $Key -Label $Label -Value $Value -ContentType $ContentType -Tag $Tag
+            $next.Description = $Description
+            $next.Etag = 'next-etag'
+            if ($existing.Count) { $null = $Fixture.Settings.Remove($existing[0]) }
+            $Fixture.Settings.Add($next)
+            if ($Fixture.AppConflictSatisfies) { Throw-BoundaryError 412 }
+            $Fixture.Mutations.Add([pscustomobject]@{ Name = 'SetSetting'; Arguments = $PSBoundParameters })
+            $next
+        }
         'Connect-AzAccount' = { throw 'Forbidden login.' }
         'Set-AzContext' = { throw 'Forbidden context switch.' }
         'Install-Module' = { throw 'Forbidden installation.' }
         'Install-PSResource' = { throw 'Forbidden installation.' }
     }
     $definitions['New-SecretMetadata'] = ${function:New-SecretMetadata}
+    $definitions['New-Setting'] = ${function:New-Setting}
     foreach ($entry in $definitions.GetEnumerator()) {
         $state.Commands.Add([Management.Automation.Runspaces.SessionStateFunctionEntry]::new($entry.Key, $entry.Value.ToString()))
     }
