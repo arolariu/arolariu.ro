@@ -3,17 +3,22 @@
 These PowerShell 7 files perform separate, explicit post-provisioning operations. Normal Bicep provisioning does not invoke them. Each file
 is self-contained: copy or host that same file without a repository module, bootstrap context, or implicit initializer.
 
+For the complete setting inventory, actor/release order, live-proof limits and selective cleanup, use the
+[rebuild and teardown runbook](RUNBOOK.md). Provisioning, bootstrap success and application readiness are distinct.
+
 ## Prerequisites and authority
 
 Use an existing authenticated Az context matching the explicit `TenantId` and `SubscriptionId`. Tasks never log in, change contexts, install
-modules, provision resources, or grant access to themselves. Supply the least privilege needed to read the selected target and perform the
-requested operation. A forbidden or unreadable lookup is an error, not proof of absence.
+modules, or provision a hosting environment. Supply the least privilege needed to read the selected target and perform the requested
+operation. Only tasks with the explicitly documented `ManageTemporaryAccess` interface may acquire bounded, owned temporary access. A
+forbidden or unreadable lookup is an error, not proof of absence.
 
 | Module              | Validated version | Used for                                              |
 | ------------------- | ----------------- | ----------------------------------------------------- |
 | Az.Accounts         | 5.5.3             | Existing context                                      |
 | Az.Resources        | 6.7.0             | Scoped resource lookup                                |
 | Az.KeyVault         | 6.6.1             | Secret metadata and explicit creation                 |
+| Az.Sql              | 4.7.0             | Optional owned SQL operator-access lifecycle          |
 | Az.AppConfiguration | 2.2.0             | Data-plane key/label reads and conditional writes     |
 | SqlServer           | 22.4.5.1          | Encrypted SQL execution with a secure Az access token |
 | Pester              | 6.2.0             | Tests only                                            |
@@ -22,18 +27,20 @@ Install prerequisites separately using your approved package-management process.
 
 ## Shared interface
 
-Pass `TenantId`, `SubscriptionId`, and either an exact `TargetResourceId` or the task's resource-group/name inputs. Manual name patterns
-remain scoped to one exact resource group; multiple candidates require numbered selection, never first-match guessing. Noninteractive calls
-require exact names or an exact ID and never prompt.
+ARM mutation tasks take `TenantId`, `SubscriptionId`, and either an exact `TargetResourceId` or the task's resource-group/name inputs.
+Directory tasks take explicit tenant scope and actual Graph object/client IDs, not a subscription. Probe signatures are listed below. Manual
+name patterns remain scoped to one exact resource group; multiple candidates require numbered selection, never first-match guessing.
+Noninteractive calls require exact names or an exact ID and never prompt.
 
 `-WhatIf` reads scoped state but never writes. Manual changes always require native confirmation, even under an ambient
 `ConfirmPreference = 'None'` or a manual `-Confirm:$false`. Automation must explicitly pass both `-NonInteractive` and `-Confirm:$false` for
 a write; an ambient preference is not consent. WhatIf does not require mutation consent.
 
 PowerShell also inserts `$PSDefaultParameterValues` into bound parameters, without exposing their origin. Automation writes therefore fail
-closed when enabled defaults can supply `Confirm`, its `cf` alias, or `NonInteractive`, including wildcard parameter names. This
-intentionally also rejects otherwise explicit calls while such defaults exist, even if a default appears scoped to another command. Disable
-defaults in a caller-owned child scope; the task never modifies the caller's dictionary:
+closed when enabled defaults can supply `Confirm`, its `cf` alias, or `NonInteractive`, including wildcard parameter names. Access-managed
+tasks also protect `ManageTemporaryAccess` and `ResumeCleanup`. This intentionally also rejects otherwise explicit calls while such defaults
+exist, even if a default appears scoped to another command. Disable defaults in a caller-owned child scope; the task never modifies the
+caller's dictionary:
 
 ```powershell
 & {
@@ -46,6 +53,53 @@ defaults in a caller-owned child scope; the task never modifies the caller's dic
 One non-secret result is emitted: `Task`, `Status` (`Changed`, `NoChange`, `WouldChange`, `Declined`), `Changed`, `TargetResourceId`,
 `Subject`, and `Fields` (owned field names, never values). A terminating classified error fails `pwsh -File`; SDK objects, secret values,
 tokens, and provider error bodies are not emitted. A no-op is not proof of downstream access.
+
+### Owned temporary access and recovery
+
+All five mutation tasks additionally accept `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and a bounded
+`AccessPropagationTimeoutSeconds` (120 seconds for the secret task, 900 for configuration, 180 for SQL). The flag is opt-in: existing
+authorized callers need no lease. Existing recognized Secrets Officer/Key Vault Administrator assignments are preserved. When needed, the
+secret task confirms a Secrets Officer grant for the actual verified principal on the selected vault only, records its preselected
+assignment ID and ownership marker before requesting it, waits for metadata/write access, and removes only that assignment in `finally`.
+Existing role-assignment authority must already be present.
+
+The ordinary setter can acquire only App Configuration Data Owner on the selected store. The reference setter can additionally acquire only
+Key Vault Reader on its selected source vault; this role reads metadata, not secret contents. Both setters keep conditional ETags, unowned
+tags and descriptions, and recheck the active actor because the data-plane module's `DefaultProfile` is nonfunctional. Multiple owned grants
+are cleaned independently, including after a failure or a changed active context. App Configuration permissions can take
+[up to 15 minutes to propagate](https://learn.microsoft.com/azure/azure-app-configuration/concept-enable-rbac); timeout is a failure with
+cleanup, not proof of missing target data.
+
+Each newly acquired grant has one fixed propagation budget shared by its reads and writes. Write 403 responses are retried only for the
+appropriate owned writer grant, with actor/state rereads before another attempt. Existing-authority failures and other write errors are not
+propagation retries. Configuration keeps the original conditional ETag and rejects concurrent changes; secret creation rechecks usable and
+deleted metadata and never replaces an appearing secret.
+
+The caller supplies a **new file in an existing durable directory** for `RecoveryReceiptPath`. It contains safe resource/principal IDs,
+phases and cleanup metadata, never secret values or tokens. Do not share a receipt between concurrent invocations, edit its ownership
+records, or discard it before verified cleanup. It is not a distributed lock. A process kill or ephemeral host loss can bypass `finally`;
+retain the receipt outside an ephemeral deploymentScripts host and reconcile it separately.
+
+```powershell
+.\Ensure-KeyVaultSecret.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $vaultId -SecretName 'api-jwt' -ManageTemporaryAccess -RecoveryReceiptPath $receiptPath
+
+# Cleanup only: never creates or updates the secret, and refuses changed assignment ownership.
+.\Ensure-KeyVaultSecret.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $vaultId -ResumeCleanup -RecoveryReceiptPath $receiptPath
+```
+
+Results add `AccessChanged`, `CleanupStatus` (`NotNeeded` or `Completed`), `TargetStateKnown` and an optional receipt path. `Changed`
+describes the business target only: leased inspection can return `NoChange`, `AccessChanged=true`, `CleanupStatus=Completed`. No success
+result is emitted if cleanup cannot be verified; `CleanupFailed` identifies the receipt to reconcile. Removing the assignment verifies
+controller state, not immediate eviction of cached authorization.
+
+WhatIf never creates a receipt or grants access. Unreadable protected state is `WouldChange`, `TargetStateKnown=false` and deferred fields,
+not an absent or verified secret. Structured Information events include only safe actor/scope metadata, never the Az profile or raw claims.
+An actual principal that cannot be verified cannot acquire temporary access.
+
+For either setter, use the same access/recovery flags with the selected store's exact `TargetResourceId`. Reference-task recovery reads its
+validated source-vault ID from the receipt; `ResumeCleanup` needs no key, label, value, or secret parameters and never rewrites them.
 
 ## Preserve or create one secret
 
@@ -93,6 +147,39 @@ are refused, never unlocked or flattened. Ordinary values are not emitted; use t
 Creates use `If-None-Match: *`; updates use the observed ETag. A precondition failure permits one reread: `NoChange` if another writer
 already satisfied the request, otherwise `StaleState` without a second write. Rerun to inspect and confirm the new state. The module's
 `DefaultProfile` is nonfunctional for data-plane commands; tasks verify the active context, not a pretend context switch.
+
+### Temporary SQL operator access
+
+Both SQL tasks additionally accept optional `ClientIPAddress` and `OperatorLoginName`. Without `ManageTemporaryAccess`, existing SQL
+authority is still required. With it, the task verifies catalog visibility and effective write authority first; a sufficient current
+infrastructure identity performs no administrator or firewall change.
+
+When needed, a verified user can explicitly lease the selected server's Entra administrator. A typed, known prior administrator is required,
+recorded before mutation and restored in `finally` only while the temporary state remains owned. The ARM `2025-01-01` PATCH contains only
+the administrator identity/type fields and waits for provider completion. Entra-only enforcement is observed and must remain unchanged; it
+is never included in the PATCH or toggled.
+
+A firewall lease is created only after a typed SQL firewall rejection and only for an explicitly supplied exact IPv4 address. No external-IP
+discovery, range, `0.0.0.0` Azure-services rule, or public-network-policy change is performed. Existing adequate rules are preserved.
+Cleanup restores the administrator before removing the exact owned firewall rule, attempting both even if one fails. Concurrent changes are
+preserved and reported as `CleanupFailed`, never overwritten.
+
+**Serialize operator administration on the server.** A temporary administrator replaces the existing one and can temporarily affect its
+connections; use a maintenance/bootstrap window. Conflict checks are not a distributed lock. Preserve the receipt for interrupted execution
+and cleanup-only recovery, which works without opening the database or repeating user/membership writes:
+
+```powershell
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -UserName 'backend' -ExpectedSid $expectedSid `
+    -ManageTemporaryAccess -RecoveryReceiptPath $receiptPath -ClientIPAddress $approvedClientIPv4
+
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -ResumeCleanup -RecoveryReceiptPath $receiptPath
+```
+
+The membership task has the same access/recovery flags. Its allowlisted fixed-role changes require effective `db_owner` authority;
+`ALTER ANY ROLE` alone is not sufficient. A valid but visibility-limited catalog result is unknown, not proof that a principal is absent.
+Receipts may contain the necessary prior/temporary administrator login metadata; protect them as operator artifacts and never commit them.
 
 ## Ensure one explicit SQL contained user
 
@@ -157,6 +244,47 @@ typed references are no-ops; unrelated keys/tags and descriptions remain untouch
 missing, disabled, expired, or forbidden source fails instead of creating a dangling reference or secret. Source validation is an
 observation, not a cross-service transaction or a guarantee against later secret deletion.
 
+## Read-only identity-specific probes
+
+These files never grant tested permissions, repair policy, use account keys, change identity or create a host. They require a genuinely
+existing matching actor; a client-ID argument cannot impersonate it. WhatIf returns `WouldRun` without token acquisition or data/auth
+requests. Successful executed checks return `Verified`, `Changed=false` and a `Checks` map; failed required assertions terminate.
+Unavailable optional negative/schema proof remains `NotVerified`, never green by inference.
+
+| File                                                             | Explicit target/expectation                                                                                                 | Proof and limits                                                                                                   |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [Test-CosmosDataAccess.ps1](Test-CosmosDataAccess.ps1)           | Tenant/subscription, expected principal, account resource ID/endpoint, database/container                                   | AAD account/database/container/partition metadata only; AzureCloud contract; no documents/CRUD claim               |
+| [Test-SqlDataAccess.ps1](Test-SqlDataAccess.ps1)                 | Tenant/subscription, expected principal/client, database resource ID/FQDN/name/user; optional required tables               | Actual external-user/client-GUID SID, effective database and supplied-object permissions; no schema initialization |
+| [Test-EasyAuthConfiguration.ps1](Test-EasyAuthConfiguration.ps1) | Tenant/subscription, site ID, expected registration client ID and caller object IDs                                         | ARM/Graph config and linkage only; unsafe admin exclusions fail; runtime access stays unverified                   |
+| [Test-EasyAuthAccess.ps1](Test-EasyAuthAccess.ps1)               | Tenant, expected current principal, approved service URI/client ID, Allowed or Denied; optional secure wrong-audience token | Ready host, anonymous rejection and protected nonexistent-path status; no secret response or redirects             |
+
+Auth negative tokens are forwarded only when current matching-context v2 metadata and the Entra RSA signature are verified using fixed
+tenant-specific HTTPS keys. No unrelated powerful token is acquired implicitly. See the
+[actor-specific invocations](RUNBOOK.md#8-obtain-actual-identity-specific-proof).
+
+## Separate deletion and permanent-purge tasks
+
+Every file operates on one selected object, with its own discovery, context, consent and reread guards. Automation needs exact IDs (or the
+exact supported ARM tuple), expected application client ID for directory objects, `NonInteractive`, and `Confirm:false`. Permanent purge
+also requires `AcknowledgePermanentDeletion` matching the exact selected canonical resource/object ID. Session defaults, including wildcard
+acknowledgement defaults, cannot authorize it. WhatIf/decline never deletes.
+
+| File                                                                               | Operation                                            | Preserved/rejected boundaries                                                      |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Remove-AiDeployment.ps1](Remove-AiDeployment.ps1)                                 | One account's selected model deployment              | Other deployments/account; actual model/SKU/capacity shown                         |
+| [Remove-AiAccount.ps1](Remove-AiAccount.ps1)                                       | One empty active Cognitive Services AI account       | Remaining deployments block; no purge/recovery/cascade                             |
+| [Remove-DeletedAiAccount.ps1](Remove-DeletedAiAccount.ps1)                         | One retained record at original region/group         | Group need not exist; active/recovered account rejected; no broad purge-role grant |
+| [Remove-EntraApplication.ps1](Remove-EntraApplication.ps1)                         | One home-tenant registration soft-delete             | Linked-SP effects observed, not implicitly purged                                  |
+| [Remove-EntraServicePrincipal.ps1](Remove-EntraServicePrincipal.ps1)               | One eligible application principal                   | Registration preserved; backing MI/foreign/first-party/gallery rejected            |
+| [Remove-DeletedEntraApplication.ps1](Remove-DeletedEntraApplication.ps1)           | One typed deleted application permanent purge        | Live/recovered, foreign/mismatched and other deleted types rejected                |
+| [Remove-DeletedEntraServicePrincipal.ps1](Remove-DeletedEntraServicePrincipal.ps1) | One typed eligible deleted principal permanent purge | Registration, new principals and unrelated deleted items preserved                 |
+
+AI management uses native Az.Accounts REST with the documented `2024-10-01` inventory/delete shape; the inspected installed
+CognitiveServices object drops modern SKU metadata. This does not change Bicep provisioning versions. Graph calls use v1.0 and selected
+non-credential properties, with existing authority only. No global Force, subscription elevation, tenant consent or automatic recreation is
+provided. Observable state/actor/generation changes stop a destructive call; serialize lifecycle writers. See the
+[independent lifecycle invocations](RUNBOOK.md#9-selectively-delete-or-permanently-purge).
+
 ## Manual and deploymentScripts hosting
 
 The canonical files above work with explicit parameters in either host. For a terminal invocation, use PowerShell 7 and an already selected
@@ -217,8 +345,10 @@ finally {
 }
 ```
 
-For the other files, change only the canonical filename and its explicit parameter map. Keep `NonInteractive = $true` and
-`Confirm = $false`; do not embed a copied task implementation, infer missing targets, or install dependencies inside the task.
+For other mutation files, change only the canonical filename and explicit parameter map. Keep `NonInteractive = $true` and
+`Confirm = $false`; permanent purges additionally require their exact acknowledgement. Probes have their own read-only signatures. Do not
+embed copied implementations, infer missing targets, install dependencies, or assume Cloud Shell can inject an arbitrary MI. If access
+management is enabled, preserve its receipt outside the ephemeral host before relying on cleanup-only recovery.
 
 A separately approved deploymentScripts resource must use `cleanupPreference: 'Always'` and minimum script-record retention
 `retentionInterval: 'PT1H'`. Its owner must observe the exact execution ID, record the actual provider ACI/backing-storage IDs, and verify

@@ -2,6 +2,60 @@ BeforeAll {
     . (Join-Path $PSScriptRoot 'TestSupport.ps1')
 }
 
+Describe 'Secret access and recovery mode defaults' {
+    It 'DoesNotAcceptAccessControlDefaults: <DefaultKey>' -ForEach @(
+        @{ DefaultKey = '*:ManageTemporaryAccess'; DefaultValue = $true },
+        @{ DefaultKey = '*:ManageTemp*'; DefaultValue = $true },
+        @{ DefaultKey = '*:ResumeCleanup'; DefaultValue = $false }
+    ) {
+        $fixture = New-TaskFixture
+        $fixture.DefaultParameterValues[$DefaultKey] = $DefaultValue
+        $result = Invoke-TaskUnderTest (Join-Path (Split-Path $PSScriptRoot) 'Ensure-KeyVaultSecret.ps1') @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.VaultId
+            SecretName = 'api-jwt'; SecretValue = (ConvertTo-SecureString 'synthetic' -AsPlainText -Force)
+            NonInteractive = $true; Confirm = $false
+        } $fixture
+        $result.ErrorText | Should -Match 'ConfirmationRequired'
+        $fixture.Mutations.Count | Should -Be 0
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+}
+
+Describe 'Owned leases do not delegate confirmation to SDK cleanup: <TaskName>' -ForEach @(
+    @{ TaskName = 'Ensure-KeyVaultSecret'; ExpectedPrompts = 2 },
+    @{ TaskName = 'Set-AppConfigurationValue'; ExpectedPrompts = 2 },
+    @{ TaskName = 'Set-AppConfigurationKeyVaultReference'; ExpectedPrompts = 3 }
+) {
+    It 'UsesOnlyTaskConfirmationsAndCleansWithoutAnotherPrompt' {
+        $fixture = New-TaskFixture
+        $fixture.Approve = $true
+        $receiptPath = Join-Path $TestDrive "$([guid]::NewGuid()).json"
+        $parameters = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription
+            ManageTemporaryAccess = $true; RecoveryReceiptPath = $receiptPath; Confirm = $false
+        }
+        if ($TaskName -eq 'Ensure-KeyVaultSecret') {
+            $fixture.SecretReadStatus = 403
+            $parameters.TargetResourceId = $fixture.VaultId; $parameters.SecretName = 'api-jwt'
+            $parameters.SecretValue = ConvertTo-SecureString 'synthetic' -AsPlainText -Force
+        }
+        else {
+            $fixture.AppReadStatus = 403
+            $parameters.TargetResourceId = $fixture.StoreId; $parameters.Key = 'Feature:Name'; $parameters.Label = ''
+            if ($TaskName -eq 'Set-AppConfigurationValue') { $parameters.Value = 'enabled'; $parameters.ContentType = '' }
+            else {
+                $fixture.SecretVersions = @(New-SecretMetadata); $fixture.SecretReadStatus = 403
+                $parameters.VaultResourceId = $fixture.VaultId; $parameters.SecretName = 'api-jwt'
+            }
+        }
+        $result = Invoke-TaskUnderTest (Join-Path (Split-Path $PSScriptRoot) "$TaskName.ps1") $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $result.Prompts | Should -Be $ExpectedPrompts
+        $fixture.RoleAssignments.Count | Should -Be 0
+    }
+}
+
 Describe 'Per-invocation consent: <TaskName>' -ForEach @(
     @{ TaskName = 'Ensure-KeyVaultSecret' },
     @{ TaskName = 'Ensure-SqlContainedUser' },

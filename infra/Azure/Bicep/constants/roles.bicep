@@ -62,7 +62,7 @@ var cosmosDbSqlDataContributor = '00000000-0000-0000-0000-000000000002'
 var appConfigurationDataReader = '516239f1-63e1-4d78-a4de-a74fb236a071'
 
 @export()
-var appConfigurationDataOwner = 'fe86443c-f201-4fc4-9d2a-ac61149fbda0'
+var appConfigurationDataOwner = '5ae67dd6-50cb-40e7-96ff-dc2bfa4b606b'
 
 @export()
 var keyVaultSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6'

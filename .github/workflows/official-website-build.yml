@@ -39,6 +39,7 @@
 #      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
 #      - AZURE_CONTAINER_REGISTRY_ADDRESS
 #      - CODECOV_TOKEN (for coverage reporting)
+#   4. Public repository variable EXP_ENTRA_APP_CLIENT_ID for the experiments app registration
 #
 # Related Workflows:
 #   - official-website-release.yml: Deploys built container to Azure
@@ -102,6 +103,8 @@ env:
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+  # Resource registration, not a caller managed-identity client ID.
+  EXP_ENTRA_APP_CLIENT_ID: ${{ vars.EXP_ENTRA_APP_CLIENT_ID }}
   # Build-time injections: inlined by next.config.ts env block (SITE_*)
   # These must be present when `npm run build` executes inside the Docker builder stage.
   SITE_ENV: ${{ inputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}

@@ -22,6 +22,20 @@ Describe 'Ensure-SqlRoleMembership' {
         $fixture.Mutations.Count | Should -Be 0
     }
 
+    It 'InsufficientFixedRoleAuthorityUsesAndRestoresOperatorLease' {
+        $fixture.SqlCanManage = $false
+        $fixture.SqlCanInspect = $false
+        $parameters.ManageTemporaryAccess = $true
+        $parameters.RecoveryReceiptPath = Join-Path $TestDrive 'membership-access.json'
+        $parameters.OperatorLoginName = 'test-only-operator'
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'Changed'
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+        ($fixture.AccessMutations.Name -join ',') | Should -Be 'SetSqlAdministrator,RestoreSqlAdministrator'
+    }
+
     It 'AddsExactlyOneRequestedMembershipAndPreservesOtherMemberships' {
         $fixture.Memberships.Add([pscustomobject]@{ User = 'backend'; Role = 'db_datawriter' })
         $fixture.Memberships.Add([pscustomobject]@{ User = 'other'; Role = 'db_datareader' })

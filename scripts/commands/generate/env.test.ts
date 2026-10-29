@@ -646,7 +646,10 @@ describe("generateEnvironment characterization", () => {
   {
     const harness = expHarness(
       {status: 200, body: JSON.stringify({config: expConfig})},
-      {variables: {AZURE_CLIENT_ID: "client"}, verbose: true},
+      {
+        variables: {AZURE_CLIENT_ID: "client", EXP_ENTRA_APP_CLIENT_ID: "33333333-3333-4333-8333-333333333333"},
+        verbose: true,
+      },
     );
     effectTest(
       "never logs the exp token and sends it only as the bearer header",
@@ -667,7 +670,7 @@ describe("generateEnvironment characterization", () => {
           yield* generateEnvironment;
 
           // Assert
-          expect(getToken).toHaveBeenCalledWith("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
+          expect(getToken).toHaveBeenCalledWith("api://33333333-3333-4333-8333-333333333333/.default");
           expect(harness.httpCalls().map((request) => [request.url, request.headers["authorization"]])).toEqual([
             [AZURE_EXP_URL, "Bearer tok-123"],
           ]);
@@ -682,7 +685,10 @@ describe("generateEnvironment characterization", () => {
   }
 
   {
-    const harness = expHarness({status: 200, body: JSON.stringify({config: expConfig})}, {variables: {AZURE_CLIENT_ID: "client"}});
+    const harness = expHarness(
+      {status: 200, body: JSON.stringify({config: expConfig})},
+      {variables: {AZURE_CLIENT_ID: "client", EXP_ENTRA_APP_CLIENT_ID: "33333333-3333-4333-8333-333333333333"}},
+    );
     effectTest(
       "warns and sends no bearer header when token acquisition fails",
       () =>
@@ -727,10 +733,10 @@ describe("parseEnvironmentFile - semantic characterization", () => {
 });
 
 describe("azure mapping source-of-truth", () => {
-  it("exports AZURE_RUNTIME_IDENTITY_KEYS with the three standard Azure identity keys", async () => {
+  it("includes the configured experiments registration among preserved Azure runtime values", async () => {
     const azureModule = await import("../../azure/index.ts");
     const runtimeKeys = (azureModule as Record<string, unknown>)["AZURE_RUNTIME_IDENTITY_KEYS"];
-    expect(runtimeKeys).toEqual(["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"]);
+    expect(runtimeKeys).toEqual(["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID", "EXP_ENTRA_APP_CLIENT_ID"]);
   });
 
   it("preserves APP_CONFIGURATION_MAPPING key/value pairs byte-for-byte", async () => {
@@ -743,4 +749,142 @@ describe("azure mapping source-of-truth", () => {
       ["Auth:Clerk:SecretKey", "CLERK_SECRET_KEY"],
     ]);
   });
+});
+
+describe("configured experiments registration", () => {
+  const config = {
+    "Site:Environment": "DEVELOPMENT",
+    "Site:Name": "dev.arolariu.ro",
+    "Site:Url": "https://localhost:3000",
+    "Auth:Clerk:PublishableKey": "pk_test_example",
+    "Auth:Clerk:SecretKey": "sk_test_example",
+  };
+
+  for (const {appId, expectedScope} of [
+    {appId: "33333333-3333-4333-8333-333333333333", expectedScope: "api://33333333-3333-4333-8333-333333333333/.default"},
+    {appId: " ABCDEFAB-1234-4567-89AB-1234567890AB ", expectedScope: "api://abcdefab-1234-4567-89ab-1234567890ab/.default"},
+  ]) {
+    const harness = makeTestLayer({
+      files: {".env": ""},
+      environment: {isCI: true, variables: {INFRA: "azure", AZURE_CLIENT_ID: "client", EXP_ENTRA_APP_CLIENT_ID: appId}},
+      http: [{match: () => true, respond: {status: 200, body: JSON.stringify({config})}}],
+    });
+    effectTest(
+      `requests the explicitly configured registration scope ${expectedScope}`,
+      () =>
+        Effect.gen(function* () {
+          const getToken = vi.fn(async () => ({token: "test-only-token", expiresOnTimestamp: 0}));
+          vi.doMock("@azure/identity", () => ({
+            AzureCliCredential: class {
+              public getToken = getToken;
+            },
+            DefaultAzureCredential: class {
+              public getToken = getToken;
+            },
+          }));
+
+          yield* generateEnvironment;
+
+          expect(getToken).toHaveBeenCalledExactlyOnceWith(expectedScope);
+          expect(harness.httpCalls()).toHaveLength(1);
+          expect(
+            harness
+              .output()
+              .map((entry) => entry.text)
+              .join(""),
+          ).not.toContain("test-only-token");
+        }),
+      harness.layer,
+    );
+  }
+
+  for (const appId of [undefined, "", "not-a-guid", "33333333-3333-4333-8333-333333333333/.default"]) {
+    const harness = makeTestLayer({
+      files: {".env": ""},
+      environment: {
+        isCI: true,
+        variables: {INFRA: "azure", AZURE_CLIENT_ID: "client", ...(appId === undefined ? {} : {EXP_ENTRA_APP_CLIENT_ID: appId})},
+      },
+      http: [{match: () => true, respond: {status: 200, body: JSON.stringify({config})}}],
+    });
+    effectTest(
+      `rejects invalid registration ${String(appId)} before credentials or HTTP`,
+      () =>
+        Effect.gen(function* () {
+          let credentialLoads = 0;
+          vi.doMock("@azure/identity", () => {
+            credentialLoads++;
+            return {
+              AzureCliCredential: class {
+                public getToken = async (): Promise<{token: string}> => ({token: "test-only-token"});
+              },
+            };
+          });
+
+          const error = yield* Effect.flip(generateEnvironment);
+
+          expect(error).toBeInstanceOf(MissingEnvironmentValues);
+          if (error instanceof MissingEnvironmentValues) {
+            expect(error.keys).toEqual(["EXP_ENTRA_APP_CLIENT_ID"]);
+          }
+          expect(credentialLoads).toBe(0);
+          expect(harness.httpCalls()).toHaveLength(0);
+          expect(yield* readText(".env")).toBe("");
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({
+      files: {".env": ""},
+      environment: {isCI: true, variables: {INFRA: "azure", AZURE_CLIENT_ID: "client", EXP_PROXY_URL: "http://exp"}},
+      http: [{match: () => true, respond: {status: 200, body: JSON.stringify({config})}}],
+    });
+    effectTest(
+      "does not require a cloud registration or credentials for an explicit local proxy",
+      () =>
+        Effect.gen(function* () {
+          vi.doMock("@azure/identity", () => {
+            throw new Error("Local proxy must not import Azure credentials");
+          });
+
+          yield* generateEnvironment;
+
+          expect(harness.httpCalls()).toHaveLength(1);
+          expect(harness.httpCalls()[0]?.headers["authorization"]).toBeUndefined();
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({
+      files: {
+        ".env": [
+          "SITE_ENV=DEVELOPMENT",
+          "SITE_NAME=dev.arolariu.ro",
+          "SITE_URL=https://localhost:3000",
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_example",
+          "CLERK_SECRET_KEY=sk_test_example",
+          "AZURE_CLIENT_ID=existing-client",
+          "EXP_ENTRA_APP_CLIENT_ID=33333333-3333-4333-8333-333333333333",
+        ].join("\n"),
+      },
+      environment: {stdinIsTTY: true},
+    });
+    effectTest(
+      "preserves the configured registration through local regeneration without changing identity",
+      () =>
+        Effect.gen(function* () {
+          yield* generateEnvironment;
+
+          const generated = yield* readText(".env");
+          expect(generated).toContain("EXP_ENTRA_APP_CLIENT_ID=33333333-3333-4333-8333-333333333333");
+          expect(generated).toContain("AZURE_CLIENT_ID=existing-client");
+          expect(harness.httpCalls()).toHaveLength(0);
+        }),
+      harness.layer,
+    );
+  }
 });

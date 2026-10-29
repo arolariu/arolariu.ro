@@ -4,6 +4,120 @@ BeforeAll {
     $referenceType = 'application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8'
 }
 
+Describe 'Set-AppConfigurationKeyVaultReference scoped access' {
+    BeforeEach {
+        $fixture = New-TaskFixture
+        $fixture.SecretVersions = @(New-SecretMetadata)
+        $fixture.SecretReadStatus = 403
+        $fixture.AppReadStatus = 403
+        $receiptPath = Join-Path $TestDrive "$([guid]::NewGuid()).json"
+        $fixture.ExpectedReceiptPath = $receiptPath
+        $parameters = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.StoreId
+            Key = 'Auth:JWT:Secret'; Label = 'PRODUCTION'; VaultResourceId = $fixture.VaultId; SecretName = 'api-jwt'
+            ManageTemporaryAccess = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        }
+    }
+
+    It 'ReferenceAcquiresOnlyMetadataSourceAccess' {
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'Changed'
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+        $receipt.OwnedRoleAssignments.Count | Should -Be 2
+        $source = @($receipt.OwnedRoleAssignments | Where-Object Scope -eq $fixture.VaultId)
+        $source.Count | Should -Be 1
+        $source[0].RoleDefinitionId | Should -Match '/21090545-7ca7-4776-b22c-e363652d74d2$'
+        $fixture.RoleAssignments.Count | Should -Be 0
+        @($fixture.Calls | Where-Object Name -eq 'Set-AzKeyVaultSecret').Count | Should -Be 0
+    }
+
+    It 'FailureCleansEveryOwnedLease' {
+        $fixture.AppWriteStatus = 500
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'SettingWriteFailed'
+        $result.Output.Count | Should -Be 0
+        $fixture.RoleAssignments.Count | Should -Be 0
+        @($fixture.AccessMutations | Where-Object Name -eq 'Revoke').Count | Should -Be 2
+        (Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).Cleanup.Status | Should -Be 'Completed'
+    }
+
+    It 'StoreLeasePreservesTagsAndEtagBehavior' {
+        $fixture.Settings.Add((New-Setting -Key 'Auth:JWT:Secret' -Label 'PRODUCTION' -Tag @{ owner = 'keep' }))
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $fixture.Settings[0].Tag.owner | Should -Be 'keep'
+        $fixture.Mutations[0].Arguments.IfMatch | Should -Be '"first-etag"'
+    }
+
+    It 'PreexistingRolesAreNotRemoved' {
+        foreach ($scope in $fixture.StoreId, $fixture.VaultId) {
+            $role = if ($scope -eq $fixture.StoreId) { '5ae67dd6-50cb-40e7-96ff-dc2bfa4b606b' } else { '21090545-7ca7-4776-b22c-e363652d74d2' }
+            $fixture.RoleAssignments.Add([pscustomobject]@{
+                RoleAssignmentId = "$scope/providers/Microsoft.Authorization/roleAssignments/$([guid]::NewGuid())"
+                ObjectId = $fixture.PrincipalId; Scope = $scope
+                RoleDefinitionId = $role; Description = 'pre-existing'; Condition = ''
+            })
+        }
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $fixture.RoleAssignments.Count | Should -Be 2
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+
+    It 'ContextChangeStopsTargetWritesAndStillCleansSourceAccess' {
+        $fixture.ChangeContextAfterAppRead = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'ContextMismatch'
+        $fixture.Mutations.Count | Should -Be 0
+        $fixture.RoleAssignments.Count | Should -Be 0
+    }
+
+    It 'ReceiptContainsNoValues' {
+        $fixture.Settings.Add((New-Setting -Key 'Auth:JWT:Secret' -Label 'PRODUCTION' -Value 'test-only-private-value'))
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        (Get-Content -LiteralPath $receiptPath -Raw) | Should -Not -Match 'test-only-private-value|test-only-account|SENSITIVE-PROVIDER-BODY'
+        $result.AllText | Should -Not -Match 'test-only-private-value|test-only-account|SENSITIVE-PROVIDER-BODY'
+    }
+
+    It 'WhatIfDefersUnreadableSourceWithoutGrantingOrWriting' {
+        $parameters.Remove('Confirm')
+        $parameters.WhatIf = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'WouldChange'
+        $result.Output[0].TargetStateKnown | Should -BeFalse
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.Mutations.Count | Should -Be 0
+        Test-Path -LiteralPath $receiptPath | Should -BeFalse
+    }
+
+    It 'ResumeCleanupNeverRepeatsTheReferenceWrite' {
+        $fixture.RoleCleanupStatus = 500
+        $first = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $first.ErrorText | Should -Match 'CleanupFailed'
+        $first.Output.Count | Should -Be 0
+        $fixture.RoleCleanupStatus = 0
+        $result = Invoke-TaskUnderTest $taskPath @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.StoreId
+            ResumeCleanup = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        } $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $fixture.Mutations.Count | Should -Be 1
+        $fixture.RoleAssignments.Count | Should -Be 0
+    }
+
+    It 'DefaultsCannotAuthorizeTemporaryAccess' {
+        $parameters.Remove('ManageTemporaryAccess')
+        $fixture.DefaultParameterValues['*:ManageTemp*'] = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'ConfirmationRequired'
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+}
+
 Describe 'Set-AppConfigurationKeyVaultReference' {
     BeforeEach {
         $fixture = New-TaskFixture

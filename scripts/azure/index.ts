@@ -43,10 +43,15 @@ export const APP_CONFIGURATION_MAPPING = {
 export type AppConfigurationEnvironmentKey = (typeof APP_CONFIGURATION_MAPPING)[keyof typeof APP_CONFIGURATION_MAPPING];
 
 /**
- * Azure Managed Identity / WorkloadIdentity environment variable names that
+ * Azure identity and experiments-registration environment variable names that
  * are preserved verbatim from an existing `.env` file into the generated one.
  */
-export const AZURE_RUNTIME_IDENTITY_KEYS = ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"] as const;
+export const AZURE_RUNTIME_IDENTITY_KEYS = [
+  "AZURE_CLIENT_ID",
+  "AZURE_TENANT_ID",
+  "AZURE_SUBSCRIPTION_ID",
+  "EXP_ENTRA_APP_CLIENT_ID",
+] as const;
 
 /**
  * Union of all environment variable names that may appear in a generated `.env`

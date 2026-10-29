@@ -106,6 +106,11 @@ Microsoft permits role-less app-only tokens for ACL-based APIs; delegated scopes
 accepted by Easy Auth by default for v2 tokens. Actual tenant permissions/token issuance still require live proof; documentation and schema
 checks are not a claim of 100% deployed correctness.
 
+The [management inspector and actual-caller probe](../../PowerShell/RUNBOOK.md#8-obtain-actual-identity-specific-proof) distinguish
+configuration from runtime access. Current `/admin` exclusions are a failed readiness assertion, not a silently accepted policy. The
+[separate registration/SP delete and purge tasks](../../PowerShell/RUNBOOK.md#9-selectively-delete-or-permanently-purge) preserve the
+registration by default, reject backing MI/foreign/first-party objects, and require independent exact acknowledgement for permanent purge.
+
 ## 🛠️ **Maintenance**
 
 Preserve stable alternate keys and positional identity outputs. Entra application/group lifecycle differs from resource-group lifecycle;
