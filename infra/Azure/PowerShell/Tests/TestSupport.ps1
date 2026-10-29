@@ -79,6 +79,14 @@ function New-TaskFixture {
     $serverId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Sql/servers/task-sql"
     $databaseId = "$serverId/databases/invoices"
     $applicationClientId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    $aiAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.CognitiveServices/accounts/task-ai"
+    $aiDeployments = [Collections.Generic.List[object]]::new()
+    $aiDeployments.Add(@{
+        id = "$aiAccountId/deployments/main"; name = 'main'; type = 'Microsoft.CognitiveServices/accounts/deployments'; etag = 'deployment-first'
+        sku = @{ name = 'GlobalStandard'; capacity = 1 }
+        properties = @{ model = @{ format = 'OpenAI'; name = 'gpt-4.1-mini'; version = '2025-04-14' }; provisioningState = 'Succeeded' }
+        systemData = @{ createdAt = '2026-01-01T00:00:00Z' }
+    })
     [pscustomobject]@{
         Tenant = $tenant
         Subscription = $subscription
@@ -88,6 +96,15 @@ function New-TaskFixture {
         CosmosAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.DocumentDB/databaseAccounts/task-cosmos"
         CosmosEndpoint = 'https://task-cosmos.documents.azure.com/'
         ExpSiteId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Web/sites/task-exp"
+        AiAccountId = $aiAccountId
+        AiDeployments = $aiDeployments
+        AiReadStatus = 0
+        AiDeleteStatus = 0
+        AiDeploymentReads = 0
+        AiChangeDeploymentOnRead = 0
+        AiDeletePendingReads = 0
+        AiPendingDeletionId = ''
+        AiRecreateAfterDelete = $false
         ExpServiceUri = 'https://task-exp.azurewebsites.net/'
         EasyAuthReadyStatus = 200
         EasyAuthAnonymousStatus = 401
@@ -427,6 +444,51 @@ function Invoke-TaskUnderTest {
             $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
             $id = ($Path -split '\?')[0]
             if (-not $PSCmdlet.ShouldProcess($id, $Method)) { return }
+            if ($id -match '/providers/Microsoft\.CognitiveServices/accounts/[^/]+/deployments(?:/[^/]+)?$') {
+                if ($Method -eq 'GET') {
+                    if ($Fixture.AiReadStatus) { Throw-BoundaryError $Fixture.AiReadStatus }
+                    if ($id -like '*/deployments') {
+                        $items = @($Fixture.AiDeployments | Where-Object { $_.id.StartsWith($id + '/', [StringComparison]::OrdinalIgnoreCase) })
+                        return [pscustomobject]@{ StatusCode = 200; Content = (@{ value = $items } | ConvertTo-Json -Depth 10 -Compress) }
+                    }
+                    $Fixture.AiDeploymentReads++
+                    if ($Fixture.AiPendingDeletionId -eq $id) {
+                        if ($Fixture.AiDeletePendingReads -gt 0) { $Fixture.AiDeletePendingReads-- }
+                        else {
+                            $old = @($Fixture.AiDeployments | Where-Object { $_.id -ieq $id })
+                            if ($old.Count) { $null = $Fixture.AiDeployments.Remove($old[0]) }
+                            $Fixture.AiPendingDeletionId = ''
+                        }
+                    }
+                    $items = @($Fixture.AiDeployments | Where-Object { $_.id -ieq $id })
+                    if (-not $items.Count) { Throw-BoundaryError 404 }
+                    if ($Fixture.AiChangeDeploymentOnRead -and $Fixture.AiDeploymentReads -ge $Fixture.AiChangeDeploymentOnRead) {
+                        $items[0].sku.capacity = 2; $items[0].etag = 'deployment-changed'
+                    }
+                    return [pscustomobject]@{ StatusCode = 200; Content = ($items[0] | ConvertTo-Json -Depth 10 -Compress) }
+                }
+                if ($Method -eq 'DELETE') {
+                    if ($Fixture.AiDeleteStatus) { Throw-BoundaryError $Fixture.AiDeleteStatus }
+                    $items = @($Fixture.AiDeployments | Where-Object { $_.id -ieq $id })
+                    if ($items.Count) {
+                        if ($Fixture.AiDeletePendingReads -gt 0) {
+                            $Fixture.AiPendingDeletionId = $id
+                            $items[0].properties.provisioningState = 'Deleting'
+                        }
+                        else {
+                            $null = $Fixture.AiDeployments.Remove($items[0])
+                            if ($Fixture.AiRecreateAfterDelete) {
+                                $replacement = $items[0].Clone()
+                                $replacement.systemData = @{ createdAt = '2026-02-01T00:00:00Z' }; $replacement.etag = 'recreated'
+                                $Fixture.AiDeployments.Add($replacement)
+                            }
+                        }
+                    }
+                    $Fixture.Mutations.Add([pscustomobject]@{ Name = 'DeleteAiDeployment'; Id = $id })
+                    return [pscustomobject]@{ StatusCode = 204; Content = '' }
+                }
+                throw 'Unexpected AI deployment method.'
+            }
             if ($id -match '/providers/Microsoft\.Web/sites/[^/]+/config/authsettingsV2/list$' -and $Method -eq 'GET') {
                 if ($Fixture.AuthReadStatus) { Throw-BoundaryError $Fixture.AuthReadStatus }
                 return [pscustomobject]@{ StatusCode = 200; Content = (@{ properties = $Fixture.AuthSettings } | ConvertTo-Json -Depth 15 -Compress) }
