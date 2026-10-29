@@ -110,6 +110,10 @@ function New-TaskFixture {
         AiChangeAccountOnRead = 0
         AiAddDeploymentOnAccountRead = 0
         AiRecreateAccountAfterDelete = $false
+        AiPurgeStatus = 0
+        AiDeletedReads = 0
+        AiChangeDeletedOnRead = 0
+        AiListDeletedOriginalIds = $false
         AiDeployments = $aiDeployments
         AiReadStatus = 0
         AiDeleteStatus = 0
@@ -457,6 +461,36 @@ function Invoke-TaskUnderTest {
             $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
             $id = ($Path -split '\?')[0]
             if (-not $PSCmdlet.ShouldProcess($id, $Method)) { return }
+            if ($id -match '/providers/Microsoft\.CognitiveServices/(?:deletedAccounts|locations/[^/]+/resourceGroups/[^/]+/deletedAccounts/[^/]+)$') {
+                if ($Method -eq 'GET') {
+                    if ($Fixture.AiReadStatus) { Throw-BoundaryError $Fixture.AiReadStatus }
+                    if ($id -match '/providers/Microsoft\.CognitiveServices/deletedAccounts$') {
+                        $records = @($Fixture.AiDeletedAccounts | ForEach-Object {
+                            $record = $_.Clone()
+                            if ($Fixture.AiListDeletedOriginalIds -and $record.id -match '^/subscriptions/([^/]+)/providers/Microsoft.CognitiveServices/locations/[^/]+/resourceGroups/([^/]+)/deletedAccounts/([^/]+)$') {
+                                $record.id = "/subscriptions/$($Matches[1])/resourceGroups/$($Matches[2])/providers/Microsoft.CognitiveServices/accounts/$($Matches[3])"
+                            }
+                            $record
+                        })
+                        return [pscustomobject]@{ StatusCode = 200; Content = (@{ value = $records } | ConvertTo-Json -Depth 10 -Compress) }
+                    }
+                    $Fixture.AiDeletedReads++
+                    $items = @($Fixture.AiDeletedAccounts | Where-Object { $_.id -ieq $id })
+                    if (-not $items.Count) { Throw-BoundaryError 404 }
+                    if ($Fixture.AiChangeDeletedOnRead -and $Fixture.AiDeletedReads -ge $Fixture.AiChangeDeletedOnRead) {
+                        $items[0].properties.deletionDate = '2026-03-01T00:00:00Z'; $items[0].etag = 'new-deletion'
+                    }
+                    return [pscustomobject]@{ StatusCode = 200; Content = ($items[0] | ConvertTo-Json -Depth 10 -Compress) }
+                }
+                if ($Method -eq 'DELETE') {
+                    if ($Fixture.AiPurgeStatus) { Throw-BoundaryError $Fixture.AiPurgeStatus }
+                    $items = @($Fixture.AiDeletedAccounts | Where-Object { $_.id -ieq $id })
+                    if ($items.Count) { $null = $Fixture.AiDeletedAccounts.Remove($items[0]) }
+                    $Fixture.Mutations.Add([pscustomobject]@{ Name = 'PurgeDeletedAiAccount'; Id = $id })
+                    return [pscustomobject]@{ StatusCode = 204; Content = '' }
+                }
+                throw 'Unexpected deleted AI operation.'
+            }
             if ($id -match '/providers/Microsoft\.CognitiveServices/accounts(?:/[^/]+)?$') {
                 if ($Method -eq 'GET') {
                     if ($Fixture.AiReadStatus) { Throw-BoundaryError $Fixture.AiReadStatus }
