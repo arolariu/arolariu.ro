@@ -366,7 +366,8 @@ function Restore-OwnedAccess {
             $rule = $receipt.OwnedFirewallRule
             if ($rule.Name -cne ('arolariu-task-' + ([guid] $receipt.InvocationId).ToString('N')) -or
                 $rule.StartIpAddress -cne $rule.EndIpAddress -or (Get-Ipv4Number $rule.StartIpAddress) -eq 0) { throw 'Invalid firewall ownership.' }
-            $observed = @(Get-AzSqlServerFirewallRule -ResourceGroupName $serverGroup -ServerName $serverResourceName -FirewallRuleName $rule.Name -DefaultProfile $accessContext @quiet)
+            $observed = @(Get-AzSqlServerFirewallRule -ResourceGroupName $serverGroup -ServerName $serverResourceName -DefaultProfile $accessContext @quiet |
+                Where-Object FirewallRuleName -CEQ $rule.Name)
             if ($observed.Count) {
                 if ($observed.Count -ne 1 -or $observed[0].StartIpAddress -cne $rule.StartIpAddress -or $observed[0].EndIpAddress -cne $rule.EndIpAddress) {
                     throw 'Concurrent firewall change.'

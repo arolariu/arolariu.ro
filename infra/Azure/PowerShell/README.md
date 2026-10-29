@@ -60,8 +60,8 @@ All five mutation tasks additionally accept `ManageTemporaryAccess`, `RecoveryRe
 `AccessPropagationTimeoutSeconds` (120 seconds for the secret task, 900 for configuration, 180 for SQL). The flag is opt-in: existing
 authorized callers need no lease. Existing recognized Secrets Officer/Key Vault Administrator assignments are preserved. When needed, the
 secret task confirms a Secrets Officer grant for the actual verified principal on the selected vault only, records its preselected
-assignment ID and ownership marker before requesting it, waits for metadata access, and removes only that assignment in `finally`. Existing
-role-assignment authority must already be present.
+assignment ID and ownership marker before requesting it, waits for metadata/write access, and removes only that assignment in `finally`.
+Existing role-assignment authority must already be present.
 
 The ordinary setter can acquire only App Configuration Data Owner on the selected store. The reference setter can additionally acquire only
 Key Vault Reader on its selected source vault; this role reads metadata, not secret contents. Both setters keep conditional ETags, unowned
@@ -69,6 +69,11 @@ tags and descriptions, and recheck the active actor because the data-plane modul
 are cleaned independently, including after a failure or a changed active context. App Configuration permissions can take
 [up to 15 minutes to propagate](https://learn.microsoft.com/azure/azure-app-configuration/concept-enable-rbac); timeout is a failure with
 cleanup, not proof of missing target data.
+
+Each newly acquired grant has one fixed propagation budget shared by its reads and writes. Write 403 responses are retried only for the
+appropriate owned writer grant, with actor/state rereads before another attempt. Existing-authority failures and other write errors are not
+propagation retries. Configuration keeps the original conditional ETag and rejects concurrent changes; secret creation rechecks usable and
+deleted metadata and never replaces an appearing secret.
 
 The caller supplies a **new file in an existing durable directory** for `RecoveryReceiptPath`. It contains safe resource/principal IDs,
 phases and cleanup metadata, never secret values or tokens. Do not share a receipt between concurrent invocations, edit its ownership

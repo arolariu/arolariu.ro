@@ -127,6 +127,18 @@ Resource provisioning does not assert bootstrap completion or application readin
 Use native Bicep build/lint and parameter compilation. The former ARM/bootstrap-specific TypeScript harness has been removed as requested;
 application audience and authenticated Cosmos-health regressions remain with their owning projects.
 
+With the existing verified compiler selected by `BICEP_CLI_PATH` and approved Pester available, run the
+[compiled RBAC regression](tests/AppConfigurationRbac.Tests.ps1):
+
+```powershell
+Import-Module Pester -RequiredVersion 6.2.0 -ErrorAction Stop
+Invoke-Pester -Path .\infra\Azure\Bicep\tests -CI -Output Detailed
+```
+
+The test compiles the actual store module and verifies its writer roles, principal bindings and store scope without Azure access. Correcting
+a role GUID changes deterministic assignment names; an incremental deployment does not revoke an old Contributor assignment. Reconcile
+pre-existing grants only through a separately approved exact-target operation.
+
 ### **Best Practices**
 
 Preserve TLS, retention, partitions, SKUs, and approved access boundaries. Keep credentials out of templates and logs. A new API version

@@ -40,6 +40,7 @@ $receipt = $null
 $receiptFile = ''
 $receiptWritten = $false
 $accessAttempted = $false
+$accessDeadlines = @{}
 $accessChanged = $false
 $cleanupStatus = 'NotNeeded'
 $targetStateKnown = $true
@@ -332,6 +333,7 @@ function Request-ScopedAccess([string] $Scope) {
         } } | ConvertTo-Json -Depth 5 -Compress
         $created = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method PUT -Payload $payload -DefaultProfile $accessContext -Confirm:$false @quiet
         if ([int] $created.StatusCode -notin 200, 201) { throw 'Role creation not confirmed.' }
+        $script:accessDeadlines[$Scope] = (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds)
         $receipt.Phase = 'AccessAcquired'
         Save-AccessReceipt
     }
@@ -348,7 +350,7 @@ function Read-AccessibleState([scriptblock] $Read, [string] $Scope) {
             $script:deferredStatus = if ($WhatIfPreference) { 'WouldChange' } else { 'Declined' }
             return $null
         }
-        $deadline = (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds)
+        $deadline = if ($accessDeadlines.ContainsKey($Scope)) { $accessDeadlines[$Scope] } else { (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds) }
         while ($true) {
             try { $state = & $Read; $script:targetStateKnown = $true; return $state }
             catch {
@@ -383,14 +385,29 @@ function Invoke-ReferenceOperation {
         $write.IfMatch = '"' + $current.Etag.Trim('"') + '"'
         if ($null -ne $current.Description) { $write.Description = $current.Description }
     }
-    Assert-CurrentActor
-    try { $null = Set-AzAppConfigurationKeyValue @write @quiet }
-    catch {
-        if ((Get-HttpStatus $_) -eq 412) {
-            if (Test-DesiredState (Get-CurrentSetting)) { return 'NoChange' }
-            throw 'StaleState: the setting changed; rerun to inspect and confirm the new state.'
+    while ($true) {
+        Assert-CurrentActor
+        Assert-UsableSecret
+        try { $null = Set-AzAppConfigurationKeyValue @write @quiet; break }
+        catch {
+            $status = Get-HttpStatus $_
+            if ($status -eq 412) {
+                if (Test-DesiredState (Get-CurrentSetting)) { return 'NoChange' }
+                throw 'StaleState: the setting changed; rerun to inspect and confirm the new state.'
+            }
+            if ($status -ne 403 -or -not $accessDeadlines.ContainsKey($target.ResourceId)) {
+                throw 'SettingWriteFailed: the conditional reference write failed; inspect the exact key/label before retrying.'
+            }
+            if ((Get-Date) -ge $accessDeadlines[$target.ResourceId]) { throw 'AccessPropagationTimeout: owned configuration write permission did not become available.' }
+            Start-Sleep -Seconds 2
+            Assert-CurrentActor
+            $observed = Get-CurrentSetting
+            if (Test-DesiredState $observed) { return 'NoChange' }
+            if (($write.ContainsKey('IfNoneMatch') -and $null -ne $observed) -or
+                ($write.ContainsKey('IfMatch') -and ($null -eq $observed -or ('"' + $observed.Etag.Trim('"') + '"') -cne $write.IfMatch))) {
+                throw 'StaleState: the setting changed during permission propagation; rerun to inspect and confirm the new state.'
+            }
         }
-        throw 'SettingWriteFailed: the conditional reference write failed; inspect the exact key/label before retrying.'
     }
     if ($receipt) { $receipt.BusinessResult = @{ Status = 'Changed'; Changed = $true }; Save-AccessReceipt }
     if (-not (Test-DesiredState (Get-CurrentSetting))) { throw 'VerificationFailed: intended typed reference was not observed.' }

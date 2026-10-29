@@ -121,6 +121,28 @@ Describe 'SQL temporary access: <TaskName>' -ForEach @(
         (Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).Cleanup.Status | Should -Be 'Completed'
     }
 
+    It 'PartialCleanupRecoveryIsIdempotentAfterTheFirewallWasAlreadyRemoved' {
+        $fixture.SqlRequireFirewall = $true
+        $parameters.ClientIPAddress = '203.0.113.17'
+        $fixture.SqlRestoreStatus = 500
+        $first = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $first.ErrorText | Should -Match 'CleanupFailed'
+        $fixture.SqlFirewallRules.Count | Should -Be 0
+        $fixture.SqlRestoreStatus = 0
+        $recovery = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.DatabaseId
+            ResumeCleanup = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        }
+        $second = Invoke-TaskUnderTest $taskPath $recovery $fixture
+        $third = Invoke-TaskUnderTest $taskPath $recovery $fixture
+        $second.ErrorText | Should -BeNullOrEmpty
+        $third.ErrorText | Should -BeNullOrEmpty
+        $second.Output[0].CleanupStatus | Should -Be 'Completed'
+        $third.Output[0].AccessChanged | Should -BeFalse
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+        $fixture.Mutations.Count | Should -Be 1
+    }
+
     It 'WhatIfDefersProtectedSqlStateWithoutAccessWrites' {
         $parameters.Remove('Confirm')
         $parameters.WhatIf = $true

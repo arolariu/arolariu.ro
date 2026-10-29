@@ -36,6 +36,7 @@ $receipt = $null
 $receiptFile = ''
 $receiptWritten = $false
 $accessAttempted = $false
+$accessPropagationDeadline = $null
 $accessChanged = $false
 $cleanupStatus = 'NotNeeded'
 $targetStateKnown = $true
@@ -295,6 +296,7 @@ function Request-TemporaryAccess {
         } } | ConvertTo-Json -Depth 5 -Compress
         $created = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method PUT -Payload $payload -DefaultProfile $context -Confirm:$false @quiet
         if ([int] $created.StatusCode -notin 200, 201) { throw 'Role creation not confirmed.' }
+        $script:accessPropagationDeadline = (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds)
         $receipt.Phase = 'AccessAcquired'
         Save-AccessReceipt
     }
@@ -303,7 +305,7 @@ function Request-TemporaryAccess {
 }
 
 function Read-AccessibleSecret {
-    $deadline = (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds)
+    $deadline = if ($null -ne $accessPropagationDeadline) { $accessPropagationDeadline } else { (Get-Date).AddSeconds($AccessPropagationTimeoutSeconds) }
     while ($true) {
         try { return Get-UsableSecret }
         catch {
@@ -337,10 +339,29 @@ function Invoke-SecretOperation {
     else { $value = $SecretValue }
     if ($null -eq $value -or -not $value.Length) { throw 'SecretValueRequired: the secure value must not be empty.' }
     if (-not (Request-TemporaryAccess)) { return 'Declined' }
-    $null = Get-VerifiedContext
-    if ($null -ne (Read-AccessibleSecret)) { return 'NoChange' }
-    try { $null = Set-AzKeyVaultSecret -VaultName $target.Name -Name $SecretName -SecretValue $value -DefaultProfile $context -Confirm:$false @quiet }
-    catch { throw 'SecretWriteFailed: creation failed; inspect the exact secret state before retrying.' }
+    while ($true) {
+        $script:context = Get-VerifiedContext
+        $actual = Read-AuthContext
+        if ($actor.PrincipalId -and $actual.PrincipalId -ine $actor.PrincipalId) { throw 'ContextActorChanged: the executing principal changed.' }
+        if ($null -ne (Read-AccessibleSecret)) { return 'NoChange' }
+        try { $removed = @(Get-AzKeyVaultSecret -VaultName $target.Name -Name $SecretName -InRemovedState -DefaultProfile $context @quiet) }
+        catch {
+            if ((Get-HttpStatus $_) -eq 404) { $removed = @() }
+            else { throw 'SecretReadFailed: deleted-secret metadata could not be checked; no change was made.' }
+        }
+        if ($removed.Count) { throw 'SecretSoftDeleted: recovery, purge, and replacement are outside this task.' }
+        try {
+            $null = Set-AzKeyVaultSecret -VaultName $target.Name -Name $SecretName -SecretValue $value -DefaultProfile $context -Confirm:$false @quiet
+            break
+        }
+        catch {
+            if ((Get-HttpStatus $_) -ne 403 -or $null -eq $accessPropagationDeadline) {
+                throw 'SecretWriteFailed: creation failed; inspect the exact secret state before retrying.'
+            }
+            if ((Get-Date) -ge $accessPropagationDeadline) { throw 'AccessPropagationTimeout: owned secret write permission did not become available.' }
+            Start-Sleep -Seconds 2
+        }
+    }
     if ($null -ne $receipt) {
         $receipt.BusinessResult = @{ Status = 'Changed'; Changed = $true }
         Save-AccessReceipt

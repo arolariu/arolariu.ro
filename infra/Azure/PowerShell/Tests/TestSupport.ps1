@@ -212,11 +212,16 @@ function New-TaskFixture {
         ResourceReadStatus = 0
         SecretReadStatus = 0
         SecretWriteStatus = 0
+        SecretWriteForbiddenUntil = $null
+        SecretAppearsOnPropagationSleep = $false
         SecretNotFoundThrows = $false
         RemovedNotFoundThrows = $false
         Settings = [Collections.Generic.List[object]]::new()
         AppReadStatus = 0
         AppWriteStatus = 0
+        AppWriteForbiddenUntil = $null
+        ConcurrentSettingOnPropagationSleep = $false
+        ChangePrincipalOnPropagationSleep = $false
         AppConflictSatisfies = $false
         ChangeContextAfterAppRead = $false
         Principals = [Collections.Generic.List[object]]::new()
@@ -404,6 +409,7 @@ function Invoke-TaskUnderTest {
         'Set-AzKeyVaultSecret' = {
             [CmdletBinding(SupportsShouldProcess)] param($VaultName, $Name, [securestring] $SecretValue, $DefaultProfile)
             Trace-Boundary 'Set-AzKeyVaultSecret' $PSBoundParameters
+            if ($null -ne $Fixture.SecretWriteForbiddenUntil -and $Fixture.Clock -lt $Fixture.SecretWriteForbiddenUntil) { Throw-BoundaryError 403 }
             if ($Fixture.SecretWriteStatus) { Throw-BoundaryError $Fixture.SecretWriteStatus }
             $Fixture.Mutations.Add([pscustomobject]@{ Name = 'SetSecret'; Arguments = $PSBoundParameters })
             $Fixture.SecretVersions = @(New-SecretMetadata -Name $Name)
@@ -439,6 +445,7 @@ function Invoke-TaskUnderTest {
             [CmdletBinding(SupportsShouldProcess)]
             param($Endpoint, $Key, $Label, $Value, $ContentType, [hashtable] $Tag, $Description, $IfMatch, $IfNoneMatch)
             Trace-Boundary 'Set-AzAppConfigurationKeyValue' $PSBoundParameters
+            if ($null -ne $Fixture.AppWriteForbiddenUntil -and $Fixture.Clock -lt $Fixture.AppWriteForbiddenUntil) { Throw-BoundaryError 403 }
             $existing = @($Fixture.Settings | Where-Object { $_.Key -ceq $Key -and [string] $_.Label -ceq [string] $Label })
             if ($Fixture.AppWriteStatus -and -not $Fixture.AppConflictSatisfies) { Throw-BoundaryError $Fixture.AppWriteStatus }
             if (($existing.Count -and $IfMatch -cne ('"' + $existing[0].Etag + '"')) -or (-not $existing.Count -and $IfNoneMatch -ne '*')) {
@@ -676,6 +683,19 @@ function Invoke-TaskUnderTest {
         'Start-Sleep' = {
             param([double] $Seconds, [double] $Milliseconds)
             $Fixture.Clock = $Fixture.Clock.AddSeconds($Seconds).AddMilliseconds($Milliseconds)
+            if ($Fixture.ChangePrincipalOnPropagationSleep) {
+                $Fixture.PrincipalId = '99999999-9999-4999-8999-999999999999'
+                $Fixture.ChangePrincipalOnPropagationSleep = $false
+            }
+            if ($Fixture.SecretAppearsOnPropagationSleep) {
+                $Fixture.SecretVersions = @(New-SecretMetadata)
+                $Fixture.SecretAppearsOnPropagationSleep = $false
+            }
+            if ($Fixture.ConcurrentSettingOnPropagationSleep -and $Fixture.Settings.Count) {
+                $Fixture.Settings[0].Value = 'concurrently changed'
+                $Fixture.Settings[0].Etag = 'concurrent-etag'
+                $Fixture.ConcurrentSettingOnPropagationSleep = $false
+            }
         }
         'Invoke-WebRequest' = {
             [CmdletBinding()]
