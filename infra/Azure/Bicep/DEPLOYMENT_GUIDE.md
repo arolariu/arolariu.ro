@@ -1,8 +1,8 @@
 # 🚀 Deployment Guide
 
-Deploy the declarative resource graph through `main.bicep` and its single facade. Bootstrap is a separate operational concern; its
-replacement PowerShell 7 design is pending. This guide does not claim that provisioning creates SQL users, populates configuration, checks
-public DNS, or proves application readiness.
+Deploy the declarative resource graph through `main.bicep` and its single facade. The
+[standalone PowerShell toolkit](../PowerShell/README.md) and [rebuild/teardown runbook](../PowerShell/RUNBOOK.md) own separate operational
+steps. Provisioning does not create SQL users, populate configuration, check public DNS, or prove application readiness.
 
 ## 🗺️ **Deployment Process Overview**
 
@@ -34,12 +34,12 @@ flowchart TD
 
 ### **Required Tools**
 
-| Tool                | Purpose                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------- |
-| Azure CLI           | Explicit-target validation, what-if, and separately approved deployments.           |
-| Bicep 0.48.1        | Verified compiler recognizing the selected resource schemas.                        |
-| PowerShell 7        | Local operator commands; future standalone bootstrap tasks are not implemented yet. |
-| Repository runtimes | Root `AGENTS.md` owns application runtime versions and tests.                       |
+| Tool                | Purpose                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| Azure CLI           | Explicit-target validation, what-if, and separately approved deployments.          |
+| Bicep 0.48.1        | Verified compiler recognizing the selected resource schemas.                       |
+| PowerShell 7        | Standalone setup, identity-specific proof, recovery and selective lifecycle tasks. |
+| Repository runtimes | Root `AGENTS.md` owns application runtime versions and tests.                      |
 
 ### **Azure Requirements**
 
@@ -156,12 +156,9 @@ placeholder vendor records are emitted. Do not silently bypass a failed binding 
 
 ### **2. Application Settings**
 
-Separate operational setup must populate actual runtime settings, correct typed versionless references, and real signing/AI material:
-
-| Environment | Operator-owned Key Vault values                                                                    |
-| ----------- | -------------------------------------------------------------------------------------------------- |
-| DEVELOPMENT | `DEVELOPMENT-ClerkPublishableKey`, `DEVELOPMENT-ClerkSecretKey`, optional `DEVELOPMENT-ResendKey`. |
-| PRODUCTION  | `PRODUCTION-ClerkPublishableKey`, `PRODUCTION-ClerkSecretKey`, optional `PRODUCTION-ResendKey`.    |
+Follow the [complete inventory and executable sequence](../PowerShell/RUNBOOK.md#4-populate-secrets-before-references): four required secret
+inputs, 16 PRODUCTION and 10 DEVELOPMENT required key/label settings, plus optional email/features. Clerk publishable keys are ordinary
+public inputs; existing legacy public-key secrets are preserved rather than deleted.
 
 Both website labels call the same API and must use its `PRODUCTION-JWT-SECRET`; preserve real keys and any unused legacy development key.
 Missing optional Resend must be an ordinary empty setting, not a dangling reference. No placeholders should be written as credentials.
@@ -170,9 +167,10 @@ Missing optional Resend must be an ordinary empty setting, not a dangling refere
 tokens. Existing frontend/backend-named CI-login secrets still select the infrastructure UAMI; application runtime settings select the
 actual frontend/backend identities.
 
-SQL is Entra-only. The restored `rbac/sql-rbac-uami.sql` is an unchanged manual reference, not an idempotent replacement bootstrap and not
-authority to run it against production. Actual identity-bound user creation, existing-user conflict checks, and backend login proof remain
-separate tasks for the PowerShell design.
+SQL is Entra-only. The restored `rbac/sql-rbac-uami.sql` is an unchanged manual reference, not idempotent bootstrap or production authority.
+The [SQL sequence](../PowerShell/RUNBOOK.md#5-ensure-backend-sql-binding-and-memberships) derives the explicit SID from the backend client
+ID and uses independently callable ensure tasks. Real backend login/permissions and the missing auth-schema initialization gate remain
+separate; health/SELECT 1 is not schema proof.
 
 ### **3. Scaling Configuration**
 
@@ -227,7 +225,9 @@ Use actual application telemetry before proposing SKU changes. Stopping an app d
 
 There is no automatic resource-group-delete rollback. Preserve data, unrelated users, permanent identities/grants, and protected vaults. Any
 exact-resource cleanup needs separate authorization. No deployment script/ACI/backing storage is created by the current graph; cleanup
-behavior for future optional script hosting must be designed and observed separately.
+behavior for optional script hosting must be approved and observed separately. Use the
+[selective AI/Entra lifecycle tasks](../PowerShell/RUNBOOK.md#9-selectively-delete-or-permanently-purge), not a group sweep. Permanent purge
+is an independently acknowledged action; preserved DNS/data/protected vaults are not incidental cleanup.
 
 ## 📞 **Support**
 

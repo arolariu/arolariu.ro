@@ -1,7 +1,8 @@
 # ⚙️ Configuration Module
 
-Provision centralized configuration resources without coupling their contents to an ARM deployment. Operational population is separate; the
-replacement standalone PowerShell bootstrap is being designed after the PR review.
+Provision centralized configuration resources without coupling their contents to an ARM deployment. Operational population uses the
+[standalone PowerShell tasks](../../PowerShell/README.md) and [complete runbook](../../PowerShell/RUNBOOK.md), not automatic Bicep
+execution.
 
 ## 📋 Overview
 
@@ -46,13 +47,14 @@ Standard SKU, RBAC authorization, 90-day soft delete, purge protection, existing
 
 #### Stored Secrets
 
-| Names                                                                 | Required ownership/behavior                                                    |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `PRODUCTION-JWT-SECRET`                                               | Shared API signing key for both current website labels; preserve real values.  |
-| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned.                                                                |
-| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned.                                                                |
-| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Optional operator-owned email credentials.                                     |
-| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual AI account credential for existing SDK consumers, populated separately. |
+| Names                                                               | Required ownership/behavior                                                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `PRODUCTION-JWT-SECRET`                                             | Shared API signing key for both current website labels; preserve real values.                                |
+| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey` | Preserve legacy values if present; new publishable inputs are ordinary settings, not required vault secrets. |
+| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`           | Required operator-owned private Clerk credentials.                                                           |
+| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                     | Optional operator-owned email credentials.                                                                   |
+| `PRODUCTION-CognitiveServicesKey`                                   | Required actual AI account credential for current API SDK consumers.                                         |
+| `DEVELOPMENT-CognitiveServicesKey`                                  | Preserve unused legacy material; the shared API consumes PRODUCTION.                                         |
 
 The old placeholder `keyVault.json` is not a source of real secrets. Never write its placeholder values into a vault or replace real
 operator credentials on a rerun. No secret values are emitted by this module.
@@ -108,6 +110,10 @@ automatic credential generation, or preservation proof is implied by resource pr
 
 Missing optional email must be an ordinary empty value, disabling delivery. A dangling optional Key Vault reference can prevent the eager
 provider from starting. Required Clerk/JWT/endpoint values must be valid.
+
+The [runbook inventory](../../PowerShell/RUNBOOK.md#6-complete-the-configuration-inventory) contains all 26 required key/label entries and
+four required secret inputs, actual value sources and typed reference sequencing. New temporary-access flags are explicit opt-in and require
+durable per-invocation receipts/verified cleanup; they do not grant subscription or directory administration.
 
 ## Best Practices
 

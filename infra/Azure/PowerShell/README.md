@@ -3,6 +3,9 @@
 These PowerShell 7 files perform separate, explicit post-provisioning operations. Normal Bicep provisioning does not invoke them. Each file
 is self-contained: copy or host that same file without a repository module, bootstrap context, or implicit initializer.
 
+For the complete setting inventory, actor/release order, live-proof limits and selective cleanup, use the
+[rebuild and teardown runbook](RUNBOOK.md). Provisioning, bootstrap success and application readiness are distinct.
+
 ## Prerequisites and authority
 
 Use an existing authenticated Az context matching the explicit `TenantId` and `SubscriptionId`. Tasks never log in, change contexts, install
@@ -24,9 +27,10 @@ Install prerequisites separately using your approved package-management process.
 
 ## Shared interface
 
-Pass `TenantId`, `SubscriptionId`, and either an exact `TargetResourceId` or the task's resource-group/name inputs. Manual name patterns
-remain scoped to one exact resource group; multiple candidates require numbered selection, never first-match guessing. Noninteractive calls
-require exact names or an exact ID and never prompt.
+ARM mutation tasks take `TenantId`, `SubscriptionId`, and either an exact `TargetResourceId` or the task's resource-group/name inputs.
+Directory tasks take explicit tenant scope and actual Graph object/client IDs, not a subscription. Probe signatures are listed below. Manual
+name patterns remain scoped to one exact resource group; multiple candidates require numbered selection, never first-match guessing.
+Noninteractive calls require exact names or an exact ID and never prompt.
 
 `-WhatIf` reads scoped state but never writes. Manual changes always require native confirmation, even under an ambient
 `ConfirmPreference = 'None'` or a manual `-Confirm:$false`. Automation must explicitly pass both `-NonInteractive` and `-Confirm:$false` for
@@ -235,6 +239,47 @@ typed references are no-ops; unrelated keys/tags and descriptions remain untouch
 missing, disabled, expired, or forbidden source fails instead of creating a dangling reference or secret. Source validation is an
 observation, not a cross-service transaction or a guarantee against later secret deletion.
 
+## Read-only identity-specific probes
+
+These files never grant tested permissions, repair policy, use account keys, change identity or create a host. They require a genuinely
+existing matching actor; a client-ID argument cannot impersonate it. WhatIf returns `WouldRun` without token acquisition or data/auth
+requests. Successful executed checks return `Verified`, `Changed=false` and a `Checks` map; failed required assertions terminate.
+Unavailable optional negative/schema proof remains `NotVerified`, never green by inference.
+
+| File                                                             | Explicit target/expectation                                                                                                 | Proof and limits                                                                                                   |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [Test-CosmosDataAccess.ps1](Test-CosmosDataAccess.ps1)           | Tenant/subscription, expected principal, account resource ID/endpoint, database/container                                   | AAD account/database/container/partition metadata only; AzureCloud contract; no documents/CRUD claim               |
+| [Test-SqlDataAccess.ps1](Test-SqlDataAccess.ps1)                 | Tenant/subscription, expected principal/client, database resource ID/FQDN/name/user; optional required tables               | Actual external-user/client-GUID SID, effective database and supplied-object permissions; no schema initialization |
+| [Test-EasyAuthConfiguration.ps1](Test-EasyAuthConfiguration.ps1) | Tenant/subscription, site ID, expected registration client ID and caller object IDs                                         | ARM/Graph config and linkage only; unsafe admin exclusions fail; runtime access stays unverified                   |
+| [Test-EasyAuthAccess.ps1](Test-EasyAuthAccess.ps1)               | Tenant, expected current principal, approved service URI/client ID, Allowed or Denied; optional secure wrong-audience token | Ready host, anonymous rejection and protected nonexistent-path status; no secret response or redirects             |
+
+Auth negative tokens are forwarded only when current matching-context v2 metadata and the Entra RSA signature are verified using fixed
+tenant-specific HTTPS keys. No unrelated powerful token is acquired implicitly. See the
+[actor-specific invocations](RUNBOOK.md#8-obtain-actual-identity-specific-proof).
+
+## Separate deletion and permanent-purge tasks
+
+Every file operates on one selected object, with its own discovery, context, consent and reread guards. Automation needs exact IDs (or the
+exact supported ARM tuple), expected application client ID for directory objects, `NonInteractive`, and `Confirm:false`. Permanent purge
+also requires `AcknowledgePermanentDeletion` matching the exact selected canonical resource/object ID. Session defaults, including wildcard
+acknowledgement defaults, cannot authorize it. WhatIf/decline never deletes.
+
+| File                                                                               | Operation                                            | Preserved/rejected boundaries                                                      |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Remove-AiDeployment.ps1](Remove-AiDeployment.ps1)                                 | One account's selected model deployment              | Other deployments/account; actual model/SKU/capacity shown                         |
+| [Remove-AiAccount.ps1](Remove-AiAccount.ps1)                                       | One empty active Cognitive Services AI account       | Remaining deployments block; no purge/recovery/cascade                             |
+| [Remove-DeletedAiAccount.ps1](Remove-DeletedAiAccount.ps1)                         | One retained record at original region/group         | Group need not exist; active/recovered account rejected; no broad purge-role grant |
+| [Remove-EntraApplication.ps1](Remove-EntraApplication.ps1)                         | One home-tenant registration soft-delete             | Linked-SP effects observed, not implicitly purged                                  |
+| [Remove-EntraServicePrincipal.ps1](Remove-EntraServicePrincipal.ps1)               | One eligible application principal                   | Registration preserved; backing MI/foreign/first-party/gallery rejected            |
+| [Remove-DeletedEntraApplication.ps1](Remove-DeletedEntraApplication.ps1)           | One typed deleted application permanent purge        | Live/recovered, foreign/mismatched and other deleted types rejected                |
+| [Remove-DeletedEntraServicePrincipal.ps1](Remove-DeletedEntraServicePrincipal.ps1) | One typed eligible deleted principal permanent purge | Registration, new principals and unrelated deleted items preserved                 |
+
+AI management uses native Az.Accounts REST with the documented `2024-10-01` inventory/delete shape; the inspected installed
+CognitiveServices object drops modern SKU metadata. This does not change Bicep provisioning versions. Graph calls use v1.0 and selected
+non-credential properties, with existing authority only. No global Force, subscription elevation, tenant consent or automatic recreation is
+provided. Observable state/actor/generation changes stop a destructive call; serialize lifecycle writers. See the
+[independent lifecycle invocations](RUNBOOK.md#9-selectively-delete-or-permanently-purge).
+
 ## Manual and deploymentScripts hosting
 
 The canonical files above work with explicit parameters in either host. For a terminal invocation, use PowerShell 7 and an already selected
@@ -295,8 +340,10 @@ finally {
 }
 ```
 
-For the other files, change only the canonical filename and its explicit parameter map. Keep `NonInteractive = $true` and
-`Confirm = $false`; do not embed a copied task implementation, infer missing targets, or install dependencies inside the task.
+For other mutation files, change only the canonical filename and explicit parameter map. Keep `NonInteractive = $true` and
+`Confirm = $false`; permanent purges additionally require their exact acknowledgement. Probes have their own read-only signatures. Do not
+embed copied implementations, infer missing targets, install dependencies, or assume Cloud Shell can inject an arbitrary MI. If access
+management is enabled, preserve its receipt outside the ephemeral host before relying on cleanup-only recovery.
 
 A separately approved deploymentScripts resource must use `cleanupPreference: 'Always'` and minimum script-record retention
 `retentionInterval: 'PT1H'`. Its owner must observe the exact execution ID, record the actual provider ACI/backing-storage IDs, and verify

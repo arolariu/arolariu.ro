@@ -4,7 +4,8 @@ Azure resource definitions for arolariu.ro, organized into cohesive modules with
 naming. Bicep provisions resources; configuration population, SQL contained users, and operational probes are separate tasks.
 
 > **Scope:** This is a fresh-infrastructure definition, not an approved migration of the existing production resource group. Bootstrap is
-> being redesigned around standalone PowerShell 7 tasks. No inline bootstrap deployment scripts or Foundation/Domains wrapper files remain.
+> implemented as [standalone PowerShell 7 tasks](../PowerShell/README.md), with an [operator runbook](../PowerShell/RUNBOOK.md). No inline
+> bootstrap deployment scripts or Foundation/Domains wrapper files remain.
 
 ## 📋 **Table of Contents**
 
@@ -112,7 +113,8 @@ Service/Static Web App names and `arolariu.ro` stay fixed for existing workflow 
 
 1. Approve a target and confirm global names, providers, permissions, quota, and cost.
 2. Provision resources and scoped grants through `main.bicep` → `facade.bicep`.
-3. Complete operational SQL/configuration setup separately; public DNS must be ready for hostname/certificate completion.
+3. Follow the [operational runbook](../PowerShell/RUNBOOK.md) for SQL/configuration setup and separate actor-specific proof; public DNS must
+   be ready for hostname/certificate completion.
 4. Release experiments, API, then websites through the existing workflows.
 5. Verify real authenticated access, dependencies, and application health.
 
@@ -132,14 +134,15 @@ must have recognized schemas and an intentional compatibility review.
 
 ## 📖 **Documentation**
 
-| Guide                                                                                      | Purpose                                                              |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| [Deployment](DEPLOYMENT_GUIDE.md)                                                          | Approval boundaries, provisioning, operational handoffs, validation. |
-| [Costs](COST_OPTIMIZATION.md)                                                              | Current public retail meters and explicit example assumptions.       |
-| [Identity](identity/README.md), [RBAC](rbac/README.md)                                     | IDs, federation, Entra, scoped grants.                               |
-| [Configuration](configuration/README.md), [Storage](storage/README.md), [AI](ai/README.md) | Service contracts and separate configuration ownership.              |
-| [Sites](sites/README.md), [Bindings](bindings/README.md), [Network](network/README.md)     | Runtime hosting, DNS, WAF, TLS.                                      |
-| [Compute](compute/README.md), [Observability](observability/README.md)                     | Plans and telemetry resources.                                       |
+| Guide                                                                                      | Purpose                                                                                       |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| [Deployment](DEPLOYMENT_GUIDE.md)                                                          | Approval boundaries, provisioning, operational handoffs, validation.                          |
+| [PowerShell runbook](../PowerShell/RUNBOOK.md)                                             | Complete settings, real actors, cleanup receipts, selective delete/purge and remaining gates. |
+| [Costs](COST_OPTIMIZATION.md)                                                              | Current public retail meters and explicit example assumptions.                                |
+| [Identity](identity/README.md), [RBAC](rbac/README.md)                                     | IDs, federation, Entra, scoped grants.                                                        |
+| [Configuration](configuration/README.md), [Storage](storage/README.md), [AI](ai/README.md) | Service contracts and separate configuration ownership.                                       |
+| [Sites](sites/README.md), [Bindings](bindings/README.md), [Network](network/README.md)     | Runtime hosting, DNS, WAF, TLS.                                                               |
+| [Compute](compute/README.md), [Observability](observability/README.md)                     | Plans and telemetry resources.                                                                |
 
 The files under `infra\Azure\ARM` are restored reference artifacts, not regenerated outputs of this PR. Compile current Bicep to a separate
 temporary/session artifact when validating or deploying; do not treat the legacy ARM snapshot as the current source.
@@ -155,4 +158,4 @@ resource-group deletion as an automatic rollback.
 
 **Version**: 3.0.0\
 **Last Updated**: October 2026\
-**Status**: Resource provisioning; PowerShell bootstrap design pending
+**Status**: Resource provisioning and standalone operations toolkit; live readiness remains unverified

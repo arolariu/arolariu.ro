@@ -106,10 +106,17 @@ secondary database is independent, not a replica.
 Contained backend users/memberships and real identity login must be provisioned/proved separately. The restored manual SQL file is a
 reference, not an idempotent bootstrap or a name/SID correctness guarantee. SQL's Azure-services firewall is not subscription isolation.
 
+Use the [standalone SQL ensure tasks and client-ID SID sequence](../../PowerShell/RUNBOOK.md#5-ensure-backend-sql-binding-and-memberships).
+The [actual-backend probe](../../PowerShell/RUNBOOK.md#8-obtain-actual-identity-specific-proof) checks login/effective permissions and
+optional named tables without fixing them. The uninitialized auth-schema gate remains separate.
+
 ### **Access Control**
 
 Cosmos local authentication is disabled. The backend receives native Data Contributor at `/dbs/primary`; management-plane Operator access
 does not substitute for data access. Actual SDK metadata/data behavior at this scope remains a live proof requirement.
+
+The [Cosmos metadata probe](../../PowerShell/Test-CosmosDataAccess.ps1) requires the actual expected actor and never grants a wider scope,
+reads account keys/documents, or claims metadata checks prove all SDK CRUD.
 
 ### **Encryption Standards**
 
