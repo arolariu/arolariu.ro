@@ -50,6 +50,19 @@ Describe 'Ensure-KeyVaultSecret' {
         $fixture.Mutations.Count | Should -Be 0
     }
 
+    It 'CreatesAfterTypedNotFoundMetadata: <Case>' -ForEach @(
+        @{ Case = 'active versions'; Active = $true; Removed = $false },
+        @{ Case = 'deleted metadata'; Active = $false; Removed = $true }
+    ) {
+        $fixture.SecretNotFoundThrows = $Active
+        $fixture.RemovedNotFoundThrows = $Removed
+        $parameters.SecretValue = ConvertTo-SecureString 'synthetic' -AsPlainText -Force
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'Changed'
+        $fixture.Mutations.Count | Should -Be 1
+    }
+
     It 'RejectsDisabledOrExpiredExistingSecret: <Case>' -ForEach @(
         @{ Case = 'disabled'; Enabled = $false; Expires = $null; NotBefore = $null },
         @{ Case = 'expired'; Enabled = $true; Expires = [datetime] '2000-01-01Z'; NotBefore = $null },

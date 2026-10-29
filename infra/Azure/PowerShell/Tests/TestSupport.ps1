@@ -115,6 +115,8 @@ function New-TaskFixture {
         ResourceReadStatus = 0
         SecretReadStatus = 0
         SecretWriteStatus = 0
+        SecretNotFoundThrows = $false
+        RemovedNotFoundThrows = $false
         Settings = [Collections.Generic.List[object]]::new()
         AppReadStatus = 0
         AppWriteStatus = 0
@@ -199,12 +201,16 @@ function Invoke-TaskUnderTest {
             [CmdletBinding()] param($VaultName, $Name, [switch] $IncludeVersions, [switch] $InRemovedState, $DefaultProfile)
             Trace-Boundary 'Get-AzKeyVaultSecret' $PSBoundParameters
             if ($Fixture.SecretReadStatus) { Throw-BoundaryError $Fixture.SecretReadStatus }
-            if ($InRemovedState) { return $Fixture.RemovedSecrets }
+            if ($InRemovedState) {
+                if ($Fixture.RemovedNotFoundThrows -and -not $Fixture.RemovedSecrets.Count) { Throw-BoundaryError 404 }
+                return $Fixture.RemovedSecrets
+            }
             if (-not $IncludeVersions) { throw 'Tests forbid retrieving secret material.' }
             $Fixture.SecretReads++
             if ($Fixture.SecretAppearsOnRead -and $Fixture.SecretReads -ge $Fixture.SecretAppearsOnRead) {
                 return New-SecretMetadata -Name $Name
             }
+            if ($Fixture.SecretNotFoundThrows -and -not $Fixture.SecretVersions.Count) { Throw-BoundaryError 404 }
             $Fixture.SecretVersions
         }
         'Set-AzKeyVaultSecret' = {

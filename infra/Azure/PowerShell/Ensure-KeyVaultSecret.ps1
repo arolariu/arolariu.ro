@@ -40,9 +40,23 @@ function Assert-VaultId([string] $Id) {
     }
 }
 
+function Get-HttpStatus($Record) {
+    $exception = $Record.Exception
+    while ($null -ne $exception) {
+        if ($exception.PSObject.Properties['StatusCode'] -and $null -ne $exception.StatusCode) { return [int] $exception.StatusCode }
+        if ($exception.PSObject.Properties['Response'] -and $null -ne $exception.Response -and
+            $exception.Response.PSObject.Properties['StatusCode']) { return [int] $exception.Response.StatusCode }
+        $exception = $exception.InnerException
+    }
+    return 0
+}
+
 function Get-UsableSecret {
     try { $versions = @(Get-AzKeyVaultSecret -VaultName $target.Name -Name $SecretName -IncludeVersions -DefaultProfile $context @quiet) }
-    catch { throw 'SecretReadFailed: secret version metadata could not be read; no change was made.' }
+    catch {
+        if ((Get-HttpStatus $_) -eq 404) { return $null }
+        throw 'SecretReadFailed: secret version metadata could not be read; no change was made.'
+    }
     if (-not $versions.Count) { return $null }
     foreach ($version in $versions) {
         if ($version.Name -ine $SecretName -or $version.VaultName -ine $target.Name -or
@@ -115,7 +129,10 @@ else { $target = $candidates[0] }
 
 if ($null -ne (Get-UsableSecret)) { Write-TaskResult 'NoChange'; return }
 try { $removed = @(Get-AzKeyVaultSecret -VaultName $target.Name -Name $SecretName -InRemovedState -DefaultProfile $context @quiet) }
-catch { throw 'SecretReadFailed: deleted-secret metadata could not be checked; no change was made.' }
+catch {
+    if ((Get-HttpStatus $_) -eq 404) { $removed = @() }
+    else { throw 'SecretReadFailed: deleted-secret metadata could not be checked; no change was made.' }
+}
 if ($removed.Count) { throw 'SecretSoftDeleted: recovery, purge, and replacement are outside this task.' }
 if ($NonInteractive -and -not $WhatIfPreference -and
     (-not $PSBoundParameters.ContainsKey('Confirm') -or [bool] $PSBoundParameters['Confirm'])) {
