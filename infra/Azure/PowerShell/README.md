@@ -15,6 +15,7 @@ forbidden or unreadable lookup is an error, not proof of absence.
 | Az.Accounts         | 5.5.3             | Existing context                                      |
 | Az.Resources        | 6.7.0             | Scoped resource lookup                                |
 | Az.KeyVault         | 6.6.1             | Secret metadata and explicit creation                 |
+| Az.Sql              | 4.7.0             | Optional owned SQL operator-access lifecycle          |
 | Az.AppConfiguration | 2.2.0             | Data-plane key/label reads and conditional writes     |
 | SqlServer           | 22.4.5.1          | Encrypted SQL execution with a secure Az access token |
 | Pester              | 6.2.0             | Tests only                                            |
@@ -51,8 +52,8 @@ tokens, and provider error bodies are not emitted. A no-op is not proof of downs
 
 ### Owned temporary access and recovery
 
-The secret task and both App Configuration setters additionally accept `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and
-a bounded `AccessPropagationTimeoutSeconds` (120 seconds for the secret task, 900 for configuration tasks). The flag is opt-in: existing
+All five mutation tasks additionally accept `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and a bounded
+`AccessPropagationTimeoutSeconds` (120 seconds for the secret task, 900 for configuration, 180 for SQL). The flag is opt-in: existing
 authorized callers need no lease. Existing recognized Secrets Officer/Key Vault Administrator assignments are preserved. When needed, the
 secret task confirms a Secrets Officer grant for the actual verified principal on the selected vault only, records its preselected
 assignment ID and ownership marker before requesting it, waits for metadata access, and removes only that assignment in `finally`. Existing
@@ -137,6 +138,39 @@ are refused, never unlocked or flattened. Ordinary values are not emitted; use t
 Creates use `If-None-Match: *`; updates use the observed ETag. A precondition failure permits one reread: `NoChange` if another writer
 already satisfied the request, otherwise `StaleState` without a second write. Rerun to inspect and confirm the new state. The module's
 `DefaultProfile` is nonfunctional for data-plane commands; tasks verify the active context, not a pretend context switch.
+
+### Temporary SQL operator access
+
+Both SQL tasks additionally accept optional `ClientIPAddress` and `OperatorLoginName`. Without `ManageTemporaryAccess`, existing SQL
+authority is still required. With it, the task verifies catalog visibility and effective write authority first; a sufficient current
+infrastructure identity performs no administrator or firewall change.
+
+When needed, a verified user can explicitly lease the selected server's Entra administrator. A typed, known prior administrator is required,
+recorded before mutation and restored in `finally` only while the temporary state remains owned. The ARM `2025-01-01` PATCH contains only
+the administrator identity/type fields and waits for provider completion. Entra-only enforcement is observed and must remain unchanged; it
+is never included in the PATCH or toggled.
+
+A firewall lease is created only after a typed SQL firewall rejection and only for an explicitly supplied exact IPv4 address. No external-IP
+discovery, range, `0.0.0.0` Azure-services rule, or public-network-policy change is performed. Existing adequate rules are preserved.
+Cleanup restores the administrator before removing the exact owned firewall rule, attempting both even if one fails. Concurrent changes are
+preserved and reported as `CleanupFailed`, never overwritten.
+
+**Serialize operator administration on the server.** A temporary administrator replaces the existing one and can temporarily affect its
+connections; use a maintenance/bootstrap window. Conflict checks are not a distributed lock. Preserve the receipt for interrupted execution
+and cleanup-only recovery, which works without opening the database or repeating user/membership writes:
+
+```powershell
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -UserName 'backend' -ExpectedSid $expectedSid `
+    -ManageTemporaryAccess -RecoveryReceiptPath $receiptPath -ClientIPAddress $approvedClientIPv4
+
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -ResumeCleanup -RecoveryReceiptPath $receiptPath
+```
+
+The membership task has the same access/recovery flags. Its allowlisted fixed-role changes require effective `db_owner` authority;
+`ALTER ANY ROLE` alone is not sufficient. A valid but visibility-limited catalog result is unknown, not proof that a principal is absent.
+Receipts may contain the necessary prior/temporary administrator login metadata; protect them as operator artifacts and never commit them.
 
 ## Ensure one explicit SQL contained user
 

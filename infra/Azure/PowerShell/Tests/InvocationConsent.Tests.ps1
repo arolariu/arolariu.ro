@@ -21,6 +21,41 @@ Describe 'Secret access and recovery mode defaults' {
     }
 }
 
+Describe 'Owned leases do not delegate confirmation to SDK cleanup: <TaskName>' -ForEach @(
+    @{ TaskName = 'Ensure-KeyVaultSecret'; ExpectedPrompts = 2 },
+    @{ TaskName = 'Set-AppConfigurationValue'; ExpectedPrompts = 2 },
+    @{ TaskName = 'Set-AppConfigurationKeyVaultReference'; ExpectedPrompts = 3 }
+) {
+    It 'UsesOnlyTaskConfirmationsAndCleansWithoutAnotherPrompt' {
+        $fixture = New-TaskFixture
+        $fixture.Approve = $true
+        $receiptPath = Join-Path $TestDrive "$([guid]::NewGuid()).json"
+        $parameters = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription
+            ManageTemporaryAccess = $true; RecoveryReceiptPath = $receiptPath; Confirm = $false
+        }
+        if ($TaskName -eq 'Ensure-KeyVaultSecret') {
+            $fixture.SecretReadStatus = 403
+            $parameters.TargetResourceId = $fixture.VaultId; $parameters.SecretName = 'api-jwt'
+            $parameters.SecretValue = ConvertTo-SecureString 'synthetic' -AsPlainText -Force
+        }
+        else {
+            $fixture.AppReadStatus = 403
+            $parameters.TargetResourceId = $fixture.StoreId; $parameters.Key = 'Feature:Name'; $parameters.Label = ''
+            if ($TaskName -eq 'Set-AppConfigurationValue') { $parameters.Value = 'enabled'; $parameters.ContentType = '' }
+            else {
+                $fixture.SecretVersions = @(New-SecretMetadata); $fixture.SecretReadStatus = 403
+                $parameters.VaultResourceId = $fixture.VaultId; $parameters.SecretName = 'api-jwt'
+            }
+        }
+        $result = Invoke-TaskUnderTest (Join-Path (Split-Path $PSScriptRoot) "$TaskName.ps1") $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $result.Prompts | Should -Be $ExpectedPrompts
+        $fixture.RoleAssignments.Count | Should -Be 0
+    }
+}
+
 Describe 'Per-invocation consent: <TaskName>' -ForEach @(
     @{ TaskName = 'Ensure-KeyVaultSecret' },
     @{ TaskName = 'Ensure-SqlContainedUser' },

@@ -8,6 +8,10 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Security;
 
+public sealed class TaskTestSqlException : Exception {
+    public int Number { get; }
+    public TaskTestSqlException(int number) : base("SENSITIVE-PROVIDER-BODY") { Number = number; }
+}
 public sealed class TaskTestHost : PSHost {
     private readonly TaskTestUI ui;
     public TaskTestHost(bool approve, string[] inputs) { ui = new TaskTestUI(approve, inputs); }
@@ -137,6 +141,24 @@ function New-TaskFixture {
         SqlWriteStatus = 0
         SqlCreateRace = $false
         SqlRoleRace = $false
+        SqlAdministrator = [pscustomobject]@{
+            ObjectId = '88888888-8888-4888-8888-888888888888'; PrincipalType = 'Application'
+            Login = 'infrastructure'; TenantId = $tenant; AdministratorType = 'ActiveDirectory'
+        }
+        SqlEntraOnly = $true
+        SqlRequireAdministrator = $false
+        SqlRequireFirewall = $false
+        SqlCanManage = $true
+        SqlCanInspect = $true
+        SqlAdministratorUnknown = $false
+        SqlConcurrentAdministratorChange = $false
+        SqlRestoreStatus = 0
+        SqlPatchFailsAfterChange = $false
+        SqlFirewallRemovalStatus = 0
+        SqlClientIPAddress = '203.0.113.17'
+        SqlFirewallRules = [Collections.Generic.List[object]]::new()
+        SqlAdministratorPatches = [Collections.Generic.List[object]]::new()
+        SqlAccessReceiptPhases = [Collections.Generic.List[string]]::new()
         TokenReadStatus = 0
         RoleAssignments = [Collections.Generic.List[object]]::new()
         AccessMutations = [Collections.Generic.List[object]]::new()
@@ -212,6 +234,12 @@ function Invoke-TaskUnderTest {
         'Throw-BoundaryError' = {
             param([int] $Status)
             throw [Net.Http.HttpRequestException]::new('SENSITIVE-PROVIDER-BODY', $null, [Net.HttpStatusCode] $Status)
+        }
+        'Record-SqlAccessPhase' = {
+            if ($Fixture.ExpectedReceiptPath) {
+                $stored = Get-Content -LiteralPath $Fixture.ExpectedReceiptPath -Raw | ConvertFrom-Json
+                $Fixture.SqlAccessReceiptPhases.Add($stored.Phase)
+            }
         }
         'Get-AzContext' = {
             [CmdletBinding()] param()
@@ -322,10 +350,42 @@ function Invoke-TaskUnderTest {
             }
         }
         'Invoke-AzRestMethod' = {
-            [CmdletBinding()] param($Path, $Method, $Payload, $DefaultProfile)
+            [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+            param($Path, $Method, $Payload, $DefaultProfile, [switch] $WaitForCompletion)
             Trace-Boundary 'Invoke-AzRestMethod' $PSBoundParameters
             $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
             $id = ($Path -split '\?')[0]
+            if (-not $PSCmdlet.ShouldProcess($id, $Method)) { return }
+            if ($id -match '/providers/Microsoft\.Sql/servers/[^/]+$') {
+                if ($Method -eq 'GET') {
+                    $admin = $Fixture.SqlAdministrator
+                    $properties = @{ publicNetworkAccess = 'Enabled'; state = 'Ready'; administrators = $null }
+                    if (-not $Fixture.SqlAdministratorUnknown -and $Path -match '\$expand=administrators/activedirectory') {
+                        $properties.administrators = @{
+                            principalType = $admin.PrincipalType
+                            login = $admin.Login; sid = $admin.ObjectId; tenantId = $admin.TenantId
+                        }
+                    }
+                    return [pscustomobject]@{ StatusCode = 200; Content = (@{ id = $id; properties = $properties } | ConvertTo-Json -Depth 6 -Compress) }
+                }
+                if ($Method -ne 'PATCH' -or -not $WaitForCompletion) { throw 'Expected completed typed administrator PATCH.' }
+                $body = $Payload | ConvertFrom-Json
+                if (@($body.properties.PSObject.Properties.Name).Count -ne 1 -or
+                    $body.properties.PSObject.Properties.Name -cne 'administrators' -or
+                    $body.properties.administrators.PSObject.Properties['azureADOnlyAuthentication']) { Throw-BoundaryError 400 }
+                $admin = $body.properties.administrators
+                $restoring = $admin.sid -ine $Fixture.PrincipalId
+                if ($restoring -and $Fixture.SqlRestoreStatus) { Throw-BoundaryError $Fixture.SqlRestoreStatus }
+                Record-SqlAccessPhase
+                $Fixture.SqlAdministrator = [pscustomobject]@{
+                    AdministratorType = $admin.administratorType; PrincipalType = $admin.principalType
+                    Login = $admin.login; ObjectId = $admin.sid; TenantId = $admin.tenantId
+                }
+                $Fixture.SqlAdministratorPatches.Add($body)
+                $Fixture.AccessMutations.Add([pscustomobject]@{ Name = $(if ($restoring) { 'RestoreSqlAdministrator' } else { 'SetSqlAdministrator' }); Id = $id })
+                if (-not $restoring -and $Fixture.SqlPatchFailsAfterChange) { Throw-BoundaryError 500 }
+                return [pscustomobject]@{ StatusCode = 200; Content = '{}' }
+            }
             if ($id -notmatch '/providers/Microsoft\.Authorization/roleAssignments/[0-9a-f-]+$') {
                 throw 'Unexpected ARM operation.'
             }
@@ -377,12 +437,55 @@ function Invoke-TaskUnderTest {
             param([double] $Seconds, [double] $Milliseconds)
             $Fixture.Clock = $Fixture.Clock.AddSeconds($Seconds).AddMilliseconds($Milliseconds)
         }
+        'Get-AzSqlServerActiveDirectoryOnlyAuthentication' = {
+            [CmdletBinding()] param($ResourceGroupName, $ServerName, $DefaultProfile)
+            Trace-Boundary 'Get-AzSqlServerActiveDirectoryOnlyAuthentication' $PSBoundParameters
+            [pscustomobject]@{ AzureADOnlyAuthentication = $Fixture.SqlEntraOnly }
+        }
+        'Get-AzSqlServerFirewallRule' = {
+            [CmdletBinding()] param($ResourceGroupName, $ServerName, $FirewallRuleName, $DefaultProfile)
+            Trace-Boundary 'Get-AzSqlServerFirewallRule' $PSBoundParameters
+            $rules = @($Fixture.SqlFirewallRules | Where-Object { -not $FirewallRuleName -or $_.FirewallRuleName -ceq $FirewallRuleName })
+            if ($FirewallRuleName -and -not $rules.Count) { Throw-BoundaryError 404 }
+            $rules
+        }
+        'New-AzSqlServerFirewallRule' = {
+            [CmdletBinding(SupportsShouldProcess)] param($ResourceGroupName, $ServerName, $FirewallRuleName, $StartIpAddress, $EndIpAddress, $DefaultProfile)
+            Trace-Boundary 'New-AzSqlServerFirewallRule' $PSBoundParameters
+            if (-not $PSCmdlet.ShouldProcess($FirewallRuleName, 'Create firewall rule')) { return }
+            Record-SqlAccessPhase
+            $rule = [pscustomobject]@{ FirewallRuleName = $FirewallRuleName; StartIpAddress = $StartIpAddress; EndIpAddress = $EndIpAddress }
+            $Fixture.SqlFirewallRules.Add($rule)
+            $Fixture.AccessMutations.Add([pscustomobject]@{ Name = 'AddSqlFirewall'; Id = $FirewallRuleName })
+            $rule
+        }
+        'Remove-AzSqlServerFirewallRule' = {
+            [CmdletBinding(SupportsShouldProcess)] param($ResourceGroupName, $ServerName, $FirewallRuleName, $DefaultProfile, [switch] $Force)
+            Trace-Boundary 'Remove-AzSqlServerFirewallRule' $PSBoundParameters
+            if (-not $PSCmdlet.ShouldProcess($FirewallRuleName, 'Remove firewall rule')) { return }
+            if ($Fixture.SqlFirewallRemovalStatus) { Throw-BoundaryError $Fixture.SqlFirewallRemovalStatus }
+            $existing = @($Fixture.SqlFirewallRules | Where-Object FirewallRuleName -ceq $FirewallRuleName)
+            if ($existing.Count) { $null = $Fixture.SqlFirewallRules.Remove($existing[0]) }
+            $Fixture.AccessMutations.Add([pscustomobject]@{ Name = 'RemoveSqlFirewall'; Id = $FirewallRuleName })
+        }
         'Invoke-Sqlcmd' = {
             [CmdletBinding()]
             param($ServerInstance, $Database, $AccessToken, $Query, $Encrypt, [switch] $TrustServerCertificate,
                 $HostNameInCertificate, $ConnectionTimeout, $QueryTimeout, [switch] $AbortOnError,
                 [switch] $DisableVariables, [switch] $DisableCommands, [bool] $OutputSqlErrors)
             Trace-Boundary 'Invoke-Sqlcmd' $PSBoundParameters
+            if ($Fixture.SqlRequireFirewall -and -not @($Fixture.SqlFirewallRules | Where-Object {
+                $_.StartIpAddress -eq $Fixture.SqlClientIPAddress -and $_.EndIpAddress -eq $Fixture.SqlClientIPAddress
+            }).Count) { throw [TaskTestSqlException]::new(40615) }
+            if ($Fixture.SqlRequireAdministrator -and $Fixture.SqlAdministrator.ObjectId -ine $Fixture.PrincipalId) {
+                throw [TaskTestSqlException]::new(18456)
+            }
+            if ($Query -match 'AS \[CanManage\]') {
+                return [pscustomobject]@{ CanManage = $Fixture.SqlCanManage -or $Fixture.SqlAdministrator.ObjectId -ieq $Fixture.PrincipalId }
+            }
+            if ($Query -match 'AS \[CanInspect\]') {
+                return [pscustomobject]@{ CanInspect = $Fixture.SqlCanInspect -or $Fixture.SqlAdministrator.ObjectId -ieq $Fixture.PrincipalId }
+            }
             if ($Query -match '^\s*SELECT') {
                 if ($Fixture.SqlReadStatus) { Throw-BoundaryError $Fixture.SqlReadStatus }
                 $Fixture.SqlReads++
@@ -392,6 +495,7 @@ function Invoke-TaskUnderTest {
                     if ($Query -notmatch "DATABASE_PRINCIPAL_ID\(N'(db_datareader|db_datawriter|db_ddladmin)'\)") { throw 'Unexpected role lookup.' }
                     $role = $Matches[1]
                     $users = @($Fixture.Principals | Where-Object Name -ieq $name)
+                    if (-not $Fixture.SqlCanInspect -and $Fixture.SqlAdministrator.ObjectId -ine $Fixture.PrincipalId) { $users = @() }
                     $member = @($Fixture.Memberships | Where-Object { $_.User -ceq $name -and $_.Role -ceq $role }).Count -gt 0
                     if ($Fixture.SqlAppearsOnRead -and $Fixture.SqlReads -ge $Fixture.SqlAppearsOnRead) { $member = $true }
                     return [pscustomobject]@{
@@ -409,7 +513,17 @@ function Invoke-TaskUnderTest {
                 if ($Fixture.SqlAppearsOnRead -and $Fixture.SqlReads -ge $Fixture.SqlAppearsOnRead) {
                     return [pscustomobject]@{ Name = $name; Type = 'E'; Sid = $sid }
                 }
+                if (-not $Fixture.SqlCanInspect -and $Fixture.SqlAdministrator.ObjectId -ine $Fixture.PrincipalId) { return @() }
                 return $Fixture.Principals | Where-Object { $_.Name -ieq $name -or $_.Sid -ieq $sid }
+            }
+            if (-not $Fixture.SqlCanManage -and $Fixture.SqlAdministrator.ObjectId -ine $Fixture.PrincipalId) {
+                throw [TaskTestSqlException]::new(229)
+            }
+            if ($Fixture.SqlConcurrentAdministratorChange) {
+                $Fixture.SqlAdministrator = [pscustomobject]@{
+                    ObjectId = '99999999-9999-4999-8999-999999999999'; PrincipalType = 'Group'
+                    Login = 'concurrent administrator'; TenantId = $Fixture.Tenant; AdministratorType = 'ActiveDirectory'
+                }
             }
             if ($Query -match '^ALTER ROLE \[(db_datareader|db_datawriter|db_ddladmin)\] ADD MEMBER \[((?:[^\]]|\]\])*)\];$') {
                 $role = $Matches[1]

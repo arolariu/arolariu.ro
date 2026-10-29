@@ -3,6 +3,177 @@ BeforeAll {
     $taskPath = Join-Path (Split-Path $PSScriptRoot) 'Ensure-SqlContainedUser.ps1'
 }
 
+Describe 'SQL temporary access: <TaskName>' -ForEach @(
+    @{ TaskName = 'Ensure-SqlContainedUser' }, @{ TaskName = 'Ensure-SqlRoleMembership' }
+) {
+    BeforeEach {
+        $fixture = New-TaskFixture
+        $fixture.SqlRequireAdministrator = $true
+        $receiptPath = Join-Path $TestDrive "$([guid]::NewGuid()).json"
+        $fixture.ExpectedReceiptPath = $receiptPath
+        $taskPath = Join-Path (Split-Path $PSScriptRoot) "$TaskName.ps1"
+        $parameters = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.DatabaseId
+            UserName = 'backend'; ManageTemporaryAccess = $true; RecoveryReceiptPath = $receiptPath
+            OperatorLoginName = 'test-only-operator'; NonInteractive = $true; Confirm = $false
+        }
+        if ($TaskName -eq 'Ensure-SqlContainedUser') { $parameters.ExpectedSid = '0x11111111111111418111111111111111' }
+        else {
+            $parameters.RoleName = 'db_datareader'
+            $fixture.Principals.Add([pscustomobject]@{ Name = 'backend'; Type = 'E'; Sid = '0x11111111111111418111111111111111' })
+        }
+    }
+
+    It 'ExistingSqlAuthorityNeedsNoLease' {
+        $fixture.SqlRequireAdministrator = $false
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'Changed'
+        $result.Output[0].AccessChanged | Should -BeFalse
+        $result.Output[0].CleanupStatus | Should -Be 'NotNeeded'
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+
+    It 'RestoresExactPriorAdministratorAndEntraOnlyState' {
+        $prior = $fixture.SqlAdministrator.PSObject.Copy()
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $result.Output[0].AccessChanged | Should -BeTrue
+        $fixture.SqlAdministrator.ObjectId | Should -Be $prior.ObjectId
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+        $fixture.SqlAdministrator.Login | Should -Be $prior.Login
+        $fixture.SqlEntraOnly | Should -BeTrue
+        $fixture.SqlAdministratorPatches.Count | Should -Be 2
+        $fixture.SqlAccessReceiptPhases[0] | Should -Match 'Prepared'
+    }
+
+    It 'CreatesOnlyExactOwnedIpv4RuleWhenNeeded' {
+        $fixture.SqlRequireFirewall = $true
+        $fixture.SqlFirewallRules.Add([pscustomobject]@{
+            FirewallRuleName = 'unrelated'; StartIpAddress = '203.0.113.99'; EndIpAddress = '203.0.113.99'
+        })
+        $parameters.ClientIPAddress = '203.0.113.17'
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $add = @($fixture.Calls | Where-Object Name -eq 'New-AzSqlServerFirewallRule')
+        $add.Count | Should -Be 1
+        $add[0].Arguments.StartIpAddress | Should -Be '203.0.113.17'
+        $add[0].Arguments.EndIpAddress | Should -Be '203.0.113.17'
+        $fixture.SqlFirewallRules.Count | Should -Be 1
+        $fixture.SqlFirewallRules[0].FirewallRuleName | Should -Be 'unrelated'
+    }
+
+    It 'FailureRestoresAdminBeforeDroppingOwnedAccess' {
+        $fixture.SqlRequireFirewall = $true
+        $fixture.SqlWriteStatus = 500
+        $parameters.ClientIPAddress = '203.0.113.17'
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'SqlWriteFailed'
+        $result.Output.Count | Should -Be 0
+        ($fixture.AccessMutations.Name -join ',') | Should -Be 'AddSqlFirewall,SetSqlAdministrator,RestoreSqlAdministrator,RemoveSqlFirewall'
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+        $fixture.SqlFirewallRules.Count | Should -Be 0
+    }
+
+    It 'ConcurrentAdminChangeIsNotOverwritten' {
+        $fixture.SqlConcurrentAdministratorChange = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'CleanupFailed'
+        $result.Output.Count | Should -Be 0
+        $fixture.SqlAdministrator.ObjectId | Should -Be '99999999-9999-4999-8999-999999999999'
+        @($fixture.AccessMutations | Where-Object Name -eq 'RestoreSqlAdministrator').Count | Should -Be 0
+    }
+
+    It 'UnknownPriorAdminRefusesSwap' {
+        $fixture.SqlAdministratorUnknown = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'SqlAdministratorUnknown'
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.Mutations.Count | Should -Be 0
+    }
+
+    It 'ResumeCleanupNeverCreatesUserOrMembership' {
+        $fixture.SqlRestoreStatus = 500
+        $first = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $first.ErrorText | Should -Match 'CleanupFailed'
+        $first.Output.Count | Should -Be 0
+        $reads = $fixture.SqlReads
+        $fixture.SqlRestoreStatus = 0
+        $fixture.Resources = @($fixture.Resources | Where-Object ResourceId -ne $fixture.DatabaseId)
+        $result = Invoke-TaskUnderTest $taskPath @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.DatabaseId
+            ResumeCleanup = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        } $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Changed | Should -BeFalse
+        $fixture.Mutations.Count | Should -Be 1
+        $fixture.SqlReads | Should -Be $reads
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+    }
+
+    It 'CleansAnAdministratorPatchThatFailedAfterApplying' {
+        $fixture.SqlPatchFailsAfterChange = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'SqlAccessSetupFailed'
+        $fixture.SqlAdministrator.PrincipalType | Should -Be 'Application'
+        $fixture.Mutations.Count | Should -Be 0
+        (Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).Cleanup.Status | Should -Be 'Completed'
+    }
+
+    It 'WhatIfDefersProtectedSqlStateWithoutAccessWrites' {
+        $parameters.Remove('Confirm')
+        $parameters.WhatIf = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'WouldChange'
+        $result.Output[0].TargetStateKnown | Should -BeFalse
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.Mutations.Count | Should -Be 0
+        Test-Path -LiteralPath $receiptPath | Should -BeFalse
+    }
+
+    It 'ReceiptAndDiagnosticsContainOnlySafeMetadata' {
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        (Get-Content -LiteralPath $receiptPath -Raw) | Should -Not -Match 'SENSITIVE-PROVIDER-BODY|test-only-account|eyJ'
+        $result.AllText | Should -Not -Match 'SENSITIVE-PROVIDER-BODY|test-only-account'
+        $result.AllText | Should -Match ([regex]::Escape($fixture.PrincipalId))
+    }
+
+    It 'WhatIfDoesNotMistakeCatalogInvisibilityForAnAbsentTarget' {
+        $fixture.SqlRequireAdministrator = $false
+        $fixture.SqlCanInspect = $false
+        $fixture.SqlCanManage = $false
+        $parameters.WhatIf = $true
+        $parameters.Remove('Confirm')
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'WouldChange'
+        $result.Output[0].TargetStateKnown | Should -BeFalse
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.Mutations.Count | Should -Be 0
+    }
+
+    It 'DefaultsCannotAuthorizeSqlAccessManagement' {
+        $parameters.Remove('ManageTemporaryAccess')
+        $fixture.DefaultParameterValues['*:ManageTemp*'] = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'ConfirmationRequired'
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+
+    It 'RejectsNonExactIpv4AccessRules: <Address>' -ForEach @(
+        @{ Address = '::1' }, @{ Address = '0.0.0.0' }
+    ) {
+        $parameters.ClientIPAddress = $Address
+        $fixture.SqlRequireFirewall = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'InvalidClientIPAddress'
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+}
+
 Describe 'Ensure-SqlContainedUser' {
     BeforeEach {
         $fixture = New-TaskFixture

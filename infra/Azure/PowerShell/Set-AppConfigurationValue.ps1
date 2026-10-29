@@ -197,7 +197,7 @@ function Save-AccessReceipt {
 
 function Get-RecordedRole($Role) {
     try {
-        $response = Invoke-AzRestMethod -Path "$($Role.Id)?api-version=2022-04-01" -Method GET -DefaultProfile $accessContext @quiet
+        $response = Invoke-AzRestMethod -Path "$($Role.Id)?api-version=2022-04-01" -Method GET -DefaultProfile $accessContext -Confirm:$false @quiet
         if ([int] $response.StatusCode -eq 404) { return $null }
         if ([int] $response.StatusCode -ne 200) { throw 'Role unreadable.' }
         return ($response.Content | ConvertFrom-Json -AsHashtable)
@@ -228,7 +228,7 @@ function Restore-OwnedAccess {
                 $properties['roleDefinitionId'] -ine $role.RoleDefinitionId -or $properties['description'] -cne $role.Description) {
                 throw 'Assignment ownership changed.'
             }
-            $removed = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method DELETE -DefaultProfile $accessContext @quiet
+            $removed = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method DELETE -DefaultProfile $accessContext -Confirm:$false @quiet
             if ([int] $removed.StatusCode -notin 200, 204 -or $null -ne (Get-RecordedRole $role)) { throw 'Removal not verified.' }
             $script:accessChanged = $true
         }
@@ -292,7 +292,7 @@ function Request-ScopedAccess([string] $Scope) {
             principalId = $role.PrincipalId; roleDefinitionId = $role.RoleDefinitionId; description = $role.Description
             principalType = $(if ($actor.ActorKind -eq 'User') { 'User' } else { 'ServicePrincipal' })
         } } | ConvertTo-Json -Depth 5 -Compress
-        $created = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method PUT -Payload $payload -DefaultProfile $accessContext @quiet
+        $created = Invoke-AzRestMethod -Path "$($role.Id)?api-version=2022-04-01" -Method PUT -Payload $payload -DefaultProfile $accessContext -Confirm:$false @quiet
         if ([int] $created.StatusCode -notin 200, 201) { throw 'Role creation not confirmed.' }
         $receipt.Phase = 'AccessAcquired'
         Save-AccessReceipt
