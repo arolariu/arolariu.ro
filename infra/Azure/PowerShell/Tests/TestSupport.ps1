@@ -78,6 +78,7 @@ function New-TaskFixture {
     $storeId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.AppConfiguration/configurationStores/task-store"
     $serverId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Sql/servers/task-sql"
     $databaseId = "$serverId/databases/invoices"
+    $applicationClientId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     [pscustomobject]@{
         Tenant = $tenant
         Subscription = $subscription
@@ -86,6 +87,29 @@ function New-TaskFixture {
         DatabaseId = $databaseId
         CosmosAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.DocumentDB/databaseAccounts/task-cosmos"
         CosmosEndpoint = 'https://task-cosmos.documents.azure.com/'
+        ExpSiteId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Web/sites/task-exp"
+        ApplicationClientId = $applicationClientId
+        GraphReadStatus = 0
+        GraphRequests = [Collections.Generic.List[object]]::new()
+        AuthReadStatus = 0
+        AuthSettings = @{
+            platform = @{ enabled = $true }
+            globalValidation = @{ requireAuthentication = $true; unauthenticatedClientAction = 'Return401'; excludedPaths = @('/api/health', '/api/ready') }
+            identityProviders = @{ azureActiveDirectory = @{
+                enabled = $true
+                registration = @{ clientId = $applicationClientId; openIdIssuer = "https://login.microsoftonline.com/$tenant/v2.0" }
+                validation = @{ defaultAuthorizationPolicy = @{ allowedPrincipals = @{ identities = @('44444444-4444-4444-8444-444444444444') } } }
+            } }
+        }
+        EntraApplication = @{
+            id = 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'; appId = $applicationClientId; displayName = 'Task experiments'
+            uniqueName = 'task-experiments'; signInAudience = 'AzureADMyOrg'
+            identifierUris = @("api://$applicationClientId"); api = @{ requestedAccessTokenVersion = 2 }
+        }
+        EntraServicePrincipal = @{
+            id = 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb'; appId = $applicationClientId; displayName = 'Task experiments'
+            servicePrincipalType = 'Application'; appOwnerOrganizationId = $tenant; accountEnabled = $true; appRoleAssignmentRequired = $false
+        }
         HttpRequests = [Collections.Generic.List[object]]::new()
         HttpResponses = @{}
         PrincipalId = '44444444-4444-4444-8444-444444444444'
@@ -369,6 +393,10 @@ function Invoke-TaskUnderTest {
             $Fixture.ArmRequests.Add([pscustomobject]@{ Method = $Method; Path = $Path })
             $id = ($Path -split '\?')[0]
             if (-not $PSCmdlet.ShouldProcess($id, $Method)) { return }
+            if ($id -match '/providers/Microsoft\.Web/sites/[^/]+/config/authsettingsV2/list$' -and $Method -eq 'GET') {
+                if ($Fixture.AuthReadStatus) { Throw-BoundaryError $Fixture.AuthReadStatus }
+                return [pscustomobject]@{ StatusCode = 200; Content = (@{ properties = $Fixture.AuthSettings } | ConvertTo-Json -Depth 15 -Compress) }
+            }
             if ($id -match '/providers/Microsoft\.Sql/servers/[^/]+$') {
                 if ($Method -eq 'GET') {
                     $admin = $Fixture.SqlAdministrator
@@ -459,6 +487,18 @@ function Invoke-TaskUnderTest {
                 Method = $Method; Uri = $Uri.AbsoluteUri; Headers = $(if ($null -ne $Headers) { @{} + $Headers } else { @{} })
                 MaximumRedirection = $MaximumRedirection; TimeoutSec = $TimeoutSec
             })
+            if ($Uri.Host -eq 'graph.microsoft.com') {
+                $Fixture.GraphRequests.Add([pscustomobject]@{ Method = $Method; Path = $Uri.PathAndQuery })
+                if ($Fixture.GraphReadStatus) { return [pscustomobject]@{ StatusCode = $Fixture.GraphReadStatus; Content = 'SENSITIVE-PROVIDER-BODY'; Headers = @{} } }
+                $object = $null
+                if ($Uri.AbsolutePath -match "^/v1.0/applications\(appId='([^']+)'\)$" -and $Matches[1] -eq $Fixture.EntraApplication.appId) {
+                    $object = $Fixture.EntraApplication
+                }
+                elseif ($Uri.AbsolutePath -match "^/v1.0/servicePrincipals\(appId='([^']+)'\)$" -and $Matches[1] -eq $Fixture.EntraServicePrincipal.appId) {
+                    $object = $Fixture.EntraServicePrincipal
+                }
+                if ($null -ne $object) { return [pscustomobject]@{ StatusCode = 200; Content = ($object | ConvertTo-Json -Depth 12 -Compress); Headers = @{} } }
+            }
             if (-not $Fixture.HttpResponses.ContainsKey($Uri.AbsoluteUri)) { throw 'Unexpected HTTP target.' }
             $response = $Fixture.HttpResponses[$Uri.AbsoluteUri]
             if ($response -is [exception]) { throw $response }
