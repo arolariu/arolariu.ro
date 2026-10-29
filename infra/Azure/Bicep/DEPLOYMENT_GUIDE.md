@@ -1,19 +1,23 @@
 # 🚀 Deployment Guide
 
+Deploy the declarative resource graph through `main.bicep` and its single facade. Bootstrap is a separate operational concern; its
+replacement PowerShell 7 design is pending. This guide does not claim that provisioning creates SQL users, populates configuration, checks
+public DNS, or proves application readiness.
+
 ## 🗺️ **Deployment Process Overview**
 
 ```mermaid
 flowchart TD
-    A[Pre-Deployment Setup] --> B[Validate Templates]
-    B --> C[Choose Deployment Method]
-    C --> D[Deploy Infrastructure]
-    D --> E[Validate Deployment]
-    E --> F[Post-Deployment Configuration]
-    F --> G[Monitoring Setup]
-    G --> H[Ongoing Maintenance]
+    Approval[Approve scope and cost] --> Local[Compile and lint]
+    Local --> Impact[Validate and review what-if]
+    Impact --> Provision[Approved resource provisioning]
+    Provision --> Operations[Separate SQL and configuration setup]
+    Provision --> DNS[Registrar and public DNS prerequisites]
+    DNS --> TLS[Domain and certificate completion]
+    Operations --> Release[Existing release workflows]
+    TLS --> Release
+    Release --> Verify[Authenticated dependency and application checks]
 ```
-
-A comprehensive guide for deploying the Azure Bicep infrastructure, from prerequisites to post-deployment validation.
 
 ## 📋 **Table of Contents**
 
@@ -24,339 +28,167 @@ A comprehensive guide for deploying the Azure Bicep infrastructure, from prerequ
 - [🔄 Post-Deployment Configuration](#-post-deployment-configuration)
 - [📈 Monitoring Setup](#-monitoring-setup)
 - [🚨 Troubleshooting](#-troubleshooting)
+- [📞 Support](#-support)
 
 ## 📋 **Prerequisites**
 
 ### **Required Tools**
 
-| Tool       | Version | Purpose                             |
-| ---------- | ------- | ----------------------------------- |
-| Azure CLI  | ≥2.50.0 | Azure resource management           |
-| Bicep CLI  | ≥0.24.0 | Template compilation and deployment |
-| PowerShell | ≥7.0    | Script execution (optional)         |
-| Git        | ≥2.30.0 | Source code management              |
+| Tool                | Purpose                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| Azure CLI           | Explicit-target validation, what-if, and separately approved deployments.           |
+| Bicep 0.48.1        | Verified compiler recognizing the selected resource schemas.                        |
+| PowerShell 7        | Local operator commands; future standalone bootstrap tasks are not implemented yet. |
+| Repository runtimes | Root `AGENTS.md` owns application runtime versions and tests.                       |
 
 ### **Azure Requirements**
 
-- **Azure Subscription** with appropriate permissions
-- **Resource Provider Registration** for required services
-- **Service Principal** or **User Account** with sufficient RBAC
-- **Network Access** to Azure endpoints
+- Record the tenant, subscription, resource group, regions, authority, and acceptable cost before cloud operations.
+- Confirm globally fixed application names and `arolariu.ro` ownership. A new resource group alone does not isolate those names.
+- Confirm provider registration, regional service support, free-tier eligibility, and model quota. Registration itself needs approval.
+- Confirm public DNS/registrar prerequisites before hostname bindings and managed certificates. There is no hidden DNS-wait deployment
+  script.
 
 ### **Permission Requirements**
 
-| Scope          | Role                    | Purpose                         |
-| -------------- | ----------------------- | ------------------------------- |
-| Subscription   | Contributor             | Create resource groups          |
-| Resource Group | Owner                   | Deploy all resources            |
-| Key Vault      | Key Vault Administrator | Manage secrets and certificates |
+The deployer needs approved resource-creation and scoped-role-assignment rights. Azure RBAC does not provide Graph permissions: application,
+service-principal, and group operations need separate tenant authorization. Runtime identities retain their resource-scoped permissions. The
+infrastructure UAMI remains the SQL Entra administrator and retains approved configuration-writer roles.
 
 ## 🔧 **Pre-Deployment Setup**
 
 ### **1. Install Required Tools**
 
-```bash
-# Install Azure CLI (Windows)
-winget install Microsoft.AzureCLI
-
-# Install Azure CLI (macOS)
-brew install azure-cli
-
-# Install Azure CLI (Linux)
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-# Install Bicep CLI
-az bicep install
-
-# Verify installations
-az --version
-az bicep version
-```
+Use approved existing tools; do not silently replace the global compiler. Set `BICEP_CLI_PATH` to the verified executable. Restore the
+existing pinned Graph extension only if it is missing from the cache.
 
 ### **2. Azure Authentication**
 
-```bash
-# Login to Azure
-az login
+After explicit target approval:
 
-# Set subscription (if you have multiple)
-az account set --subscription "your-subscription-id"
-
-# Verify current subscription
-az account show --output table
+```powershell
+$SubscriptionId = '<approved-subscription-id>'
+az account show --subscription $SubscriptionId --query '{tenant:tenantId,subscription:id}' --output table
 ```
+
+Verify the expected tenant. Do not guess from or change the default account.
 
 ### **3. Register Resource Providers**
 
-```bash
-# Register required resource providers
-az provider register --namespace Microsoft.Web
-az provider register --namespace Microsoft.Storage
-az provider register --namespace Microsoft.KeyVault
-az provider register --namespace Microsoft.ManagedIdentity
-az provider register --namespace Microsoft.Insights
-az provider register --namespace Microsoft.OperationalInsights
-az provider register --namespace Microsoft.Cdn
-az provider register --namespace Microsoft.AppConfiguration
-
-# Check registration status
-az provider list --query "[?namespace=='Microsoft.Web'].registrationState" --output table
-```
+Check the required namespaces: Resources, ManagedIdentity, KeyVault, AppConfiguration, Storage, ContainerRegistry, Sql, DocumentDB, Web,
+Insights, OperationalInsights, Network, Cdn, and CognitiveServices. Do not register missing providers without that approval.
 
 ### **4. Validate Bicep Templates**
 
-```bash
-# Clone the repository
-git clone https://github.com/arolariu/arolariu.ro.git
-cd arolariu.ro/infra/Azure/Bicep
+Run from the repository root:
 
-# Validate main template
-az bicep build --file main.bicep
-
-# Run linting
-az bicep lint --file main.bicep
-
-# Check for errors
-echo $? # Should return 0 if successful
+```powershell
+$bicep = $env:BICEP_CLI_PATH
+if ([string]::IsNullOrWhiteSpace($bicep)) { throw 'Select the verified Bicep executable.' }
+$Artifacts = Join-Path $env:TEMP ('arolariu-infra-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $Artifacts | Out-Null
+$Template = Join-Path $Artifacts 'main.json'
+$Parameters = Join-Path $Artifacts 'main.parameters.json'
+& $bicep build .\infra\Azure\Bicep\main.bicep --no-restore --outfile $Template
+if ($LASTEXITCODE -ne 0) { throw 'Template compilation failed.' }
+& $bicep build-params .\infra\Azure\Bicep\main.bicepparam --no-restore --outfile $Parameters
+if ($LASTEXITCODE -ne 0) { throw 'Parameter compilation failed.' }
+& $bicep lint .\infra\Azure\Bicep\main.bicep --no-restore
 ```
+
+Inspect diagnostics as well as exit codes; BCP081 is a failing schema gate. Do not regenerate the restored ARM reference artifacts. The
+Bicep parameter profile uses France Central; the legacy JSON parameter file retains Sweden Central. AI is Sweden Central and Static Web Apps
+are West Europe regardless of the regional profile.
 
 ## 🚀 **Deployment Methods**
 
 ### **Method 1: Azure CLI (Recommended)**
 
-#### **Basic Deployment**
+Use the same compiled JSON/hash for approved validation and any later create operation; this avoids Azure CLI selecting another compiler.
 
-```bash
-# Deploy with default parameters
-az deployment sub create \
-  --location swedencentral \
-  --template-file main.bicep \
-  --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
+```powershell
+az deployment sub validate --subscription $SubscriptionId --location francecentral --template-file $Template --parameters "@$Parameters"
+az deployment sub what-if --subscription $SubscriptionId --location francecentral --template-file $Template --parameters "@$Parameters"
 ```
 
-#### **Custom Parameters**
+Review the actual proposed IDs, permissions, DNS, hosting changes, and cost. The existing production group is not an approved migration
+target. A separate concrete checkpoint is required before:
 
-```bash
-# Deploy with custom parameters
-az deployment sub create \
-  --location swedencentral \
-  --template-file main.bicep \
-  --parameters \
-    resourceGroupName="arolariu-rg-prod" \
-    resourceGroupLocation="swedencentral" \
-    resourceGroupAuthor="Your Name <your.email@domain.com>" \
-  --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
-```
-
-#### **Parameters File**
-
-Create `main.parameters.json`:
-
-```json
-{
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "resourceGroupName": {
-      "value": "arolariu-rg-prod"
-    },
-    "resourceGroupLocation": {
-      "value": "swedencentral"
-    },
-    "resourceGroupAuthor": {
-      "value": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
-    }
-  }
-}
-```
-
-Deploy with parameters file:
-
-```bash
-az deployment sub create \
-  --location swedencentral \
-  --template-file main.bicep \
-  --parameters @main.parameters.json \
-  --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
+```powershell
+az deployment sub create --subscription $SubscriptionId --location francecentral --template-file $Template --parameters "@$Parameters"
 ```
 
 ### **Method 2: Azure PowerShell**
 
-```powershell
-# Connect to Azure
-Connect-AzAccount
-
-# Set subscription
-Set-AzContext -SubscriptionId "your-subscription-id"
-
-# Deploy template
-New-AzSubscriptionDeployment `
-  -Location "swedencentral" `
-  -TemplateFile "main.bicep" `
-  -resourceGroupName "arolariu-rg-prod" `
-  -resourceGroupLocation "swedencentral" `
-  -Name "arolariu-infra-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-```
+An operator can submit the same compiled artifact with Azure PowerShell under the same target/cost/authority checkpoints. No implicit login,
+context switch, or alternate deployment behavior is part of the template.
 
 ### **Method 3: GitHub Actions (CI/CD)**
 
-Create `.github/workflows/deploy-infrastructure.yml`:
-
-```yaml
-name: Deploy Azure Infrastructure
-
-on:
-  push:
-    branches: [main]
-    paths: ["infra/Azure/Bicep/**"]
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy Bicep Template
-        uses: azure/arm-deploy@v1
-        with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          scope: subscription
-          region: swedencentral
-          template: ./infra/Azure/Bicep/main.bicep
-          parameters: |
-            resourceGroupName=arolariu-rg-prod
-            resourceGroupLocation=swedencentral
-```
+Existing workflows deliver application images/static content. This PR adds no infrastructure workflow and dispatches no release. Normal
+release order is experiments, API, then production/development website; CV/docs/status content can be delivered independently.
 
 ## 📊 **Deployment Validation**
 
 ### **1. Check Deployment Status**
 
-```bash
-# List recent deployments
-az deployment sub list \
-  --query "[?contains(name, 'arolariu-infra')].{Name:name, State:properties.provisioningState, Timestamp:properties.timestamp}" \
-  --output table
-
-# Get deployment details
-az deployment sub show \
-  --name "your-deployment-name" \
-  --query "properties.{State:provisioningState, Duration:duration, Outputs:outputs}"
-```
+Inspect the approved deployment's provisioning result and non-secret `deploymentInfo` identifiers. No bootstrap/data-access/health
+completion result is emitted by the facade.
 
 ### **2. Validate Resources**
 
-```bash
-# List all resources in the resource group
-az resource list \
-  --resource-group "arolariu-rg-prod" \
-  --output table
-
-# Check specific resource types
-az appservice plan list \
-  --resource-group "arolariu-rg-prod" \
-  --output table
-
-az webapp list \
-  --resource-group "arolariu-rg-prod" \
-  --output table
-```
+Confirm actual plans, attached UAMIs, registry selection, endpoints, role scopes, and Graph application/service-principal IDs. A successful
+what-if does not prove Graph operations, data-plane access, or quota.
 
 ### **3. Test Connectivity**
 
-```bash
-# Test web application endpoints
-curl -I https://your-webapp-name.azurewebsites.net
-
-# Check SSL certificate
-openssl s_client -connect your-webapp-name.azurewebsites.net:443 -servername your-webapp-name.azurewebsites.net
-```
+After configuration and releases, verify website `/api/health/`, API `/health`, experiments `/api/health` and `/api/ready`, actual image
+pulls, permitted configuration access, and a real authorized application flow. Cloud Cosmos health uses the shared authenticated client for
+a bounded `primary` database read; emulator URL probing remains unchanged.
 
 ## 🔄 **Post-Deployment Configuration**
 
 ### **1. DNS Configuration**
 
-If using custom domains:
-
-```bash
-# Add custom domain to web app
-az webapp config hostname add \
-  --webapp-name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod" \
-  --hostname "yourdomain.com"
-
-# Configure SSL binding
-az webapp config ssl bind \
-  --certificate-thumbprint "cert-thumbprint" \
-  --ssl-type SNI \
-  --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod"
-```
+`network/dnsZone.bicep` owns Azure CNAME/TXT/apex records. Publish emitted registrar NS/current parent DS carefully; stale DS can break
+resolution. Binding and Front Door modules retain declarative TLS/routing, but public DNS must already be propagated for completion. No
+placeholder vendor records are emitted. Do not silently bypass a failed binding or modify production registrar settings.
 
 ### **2. Application Settings**
 
-```bash
-# Configure application settings
-az webapp config appsettings set \
-  --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod" \
-  --settings \
-    "ENVIRONMENT=Production" \
-    "APPINSIGHTS_INSTRUMENTATIONKEY=your-key"
-```
+Separate operational setup must populate actual runtime settings, correct typed versionless references, and real signing/AI material:
+
+| Environment | Operator-owned Key Vault values                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| DEVELOPMENT | `DEVELOPMENT-ClerkPublishableKey`, `DEVELOPMENT-ClerkSecretKey`, optional `DEVELOPMENT-ResendKey`. |
+| PRODUCTION  | `PRODUCTION-ClerkPublishableKey`, `PRODUCTION-ClerkSecretKey`, optional `PRODUCTION-ResendKey`.    |
+
+Both website labels call the same API and must use its `PRODUCTION-JWT-SECRET`; preserve real keys and any unused legacy development key.
+Missing optional Resend must be an ordinary empty setting, not a dangling reference. No placeholders should be written as credentials.
+
+`EXP_ENTRA_APP_CLIENT_ID` is required for Azure callers; there is no legacy registration fallback. Local proxy requests do not acquire Azure
+tokens. Existing frontend/backend-named CI-login secrets still select the infrastructure UAMI; application runtime settings select the
+actual frontend/backend identities.
+
+SQL is Entra-only. The restored `rbac/sql-rbac-uami.sql` is an unchanged manual reference, not an idempotent replacement bootstrap and not
+authority to run it against production. Actual identity-bound user creation, existing-user conflict checks, and backend login proof remain
+separate tasks for the PowerShell design.
 
 ### **3. Scaling Configuration**
 
-```bash
-# Configure auto-scaling (if using Standard/Premium plans)
-az monitor autoscale create \
-  --resource-group "arolariu-rg-prod" \
-  --resource "your-app-service-plan" \
-  --resource-type Microsoft.Web/serverfarms \
-  --name "autoscale-rules" \
-  --min-count 1 \
-  --max-count 5 \
-  --count 2
-```
+No autoscaling or new paid tier is introduced. Changing SKUs, regions, plans, capacity, or network posture needs its own approval.
 
 ## 📈 **Monitoring Setup**
 
 ### **1. Configure Alerts**
 
-```bash
-# Create resource health alert
-az monitor activity-log alert create \
-  --resource-group "arolariu-rg-prod" \
-  --name "webapp-health-alert" \
-  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod" \
-  --condition category=ResourceHealth
-
-# Create metric alert for high CPU
-az monitor metrics alert create \
-  --name "high-cpu-alert" \
-  --resource-group "arolariu-rg-prod" \
-  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/serverfarms/your-plan" \
-  --condition "avg Percentage CPU > 80" \
-  --description "High CPU usage alert"
-```
+Log Analytics and Application Insights exist; arbitrary alert rules and a standalone Managed Grafana instance do not. New monitoring
+resources/costs require approval.
 
 ### **2. Enable Diagnostics**
 
-```bash
-# Enable diagnostics for App Service
-az monitor diagnostic-settings create \
-  --name "webapp-diagnostics" \
-  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/sites/your-webapp" \
-  --workspace "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.OperationalInsights/workspaces/your-workspace" \
-  --logs '[{"category":"AppServiceHTTPLogs","enabled":true}]' \
-  --metrics '[{"category":"AllMetrics","enabled":true}]'
-```
+Do not assume every resource sends diagnostics merely because the workspace exists. Validate real telemetry after release. Preserve the
+workspace's 30-day retention/3 GB daily cap and the component's source-defined settings unless separately approved.
 
 ## 🚨 **Troubleshooting**
 
@@ -364,111 +196,53 @@ az monitor diagnostic-settings create \
 
 ```mermaid
 flowchart TD
-    A[Deployment Issue Detected] --> B{Type of Issue}
-    B -->|Resource Provider| C[Register Provider]
-    B -->|Permissions| D[Check RBAC]
-    B -->|Name Conflict| E[Use Unique Names]
-    B -->|Location| F[Check Allowed Regions]
-    B -->|Validation| G[Run Lint & Fix]
-    B -->|Other| H[Check Logs]
-    C --> I[Retry Deployment]
-    D --> I
-    E --> I
-    F --> I
-    G --> I
-    H --> I
-    I --> J{Resolved?}
-    J -->|Yes| K[Continue]
-    J -->|No| L[Rollback]
-    L --> M[Delete Resource Group]
-    M --> N[Redeploy Previous Version]
+    Failure[Validation or deployment failure] --> Inspect[Inspect safe error category and exact IDs]
+    Inspect --> Classify{Resource or operational prerequisite?}
+    Classify --> Source[Correct source under approved scope]
+    Classify --> Setup[Complete approved SQL/configuration/DNS setup]
+    Source --> Review[Review impact again]
+    Setup --> Review
 ```
 
 ### **Common Deployment Issues**
 
-| Issue                                | Symptoms                                                              | Solution                                                                |
-| ------------------------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Resource Provider Not Registered** | `The subscription is not registered to use namespace 'Microsoft.Web'` | Run `az provider register --namespace Microsoft.Web`                    |
-| **Insufficient Permissions**         | `Authorization failed`                                                | Verify RBAC permissions at subscription/resource group level            |
-| **Resource Name Conflicts**          | `Resource name already exists`                                        | Use unique resource names or delete existing resources                  |
-| **Location Constraints**             | `Location not available for subscription`                             | Use allowed regions: swedencentral, norwayeast, westeurope, northeurope |
-| **Template Validation Errors**       | `Template validation failed`                                          | Run `az bicep lint` and fix syntax errors                               |
+| Issue                                        | Response                                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Occupied names or existing production group  | Stop; do not rename, delete, or reconcile production implicitly.                            |
+| Missing Graph/RBAC rights                    | Identify the exact operation; do not grant broad tenant/subscription permissions.           |
+| Empty configuration or unavailable API login | Provisioning does not run bootstrap; perform separately approved operational setup.         |
+| Public DNS/certificate not ready             | Check delegation/current DS and records; do not claim readiness from control-plane success. |
+| Unsupported what-if changes                  | Treat them as unevaluated, not safe/no-change results.                                      |
 
 ### **Debugging Commands**
 
-```bash
-# Get detailed error information
-az deployment sub show \
-  --name "failed-deployment-name" \
-  --query "properties.error"
-
-# Check activity log
-az monitor activity-log list \
-  --resource-group "arolariu-rg-prod" \
-  --start-time "2024-01-01T00:00:00Z" \
-  --query "[?level=='Error']"
-
-# Validate specific resource
-az resource show \
-  --resource-group "arolariu-rg-prod" \
-  --name "resource-name" \
-  --resource-type "Microsoft.Web/sites"
-```
+Use explicit subscription scope and select non-secret status/IDs. Never dump tokens, Key Vault values, secure environments, or raw
+credential-containing service responses into logs.
 
 ### **Performance Troubleshooting**
 
-```bash
-# Check App Service Plan metrics
-az monitor metrics list \
-  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/serverfarms/your-plan" \
-  --metric "CpuPercentage" \
-  --start-time "2024-01-01T00:00:00Z" \
-  --end-time "2024-01-01T23:59:59Z"
-
-# View application logs
-az webapp log tail \
-  --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod"
-```
+Use actual application telemetry before proposing SKU changes. Stopping an app does not stop App Service plan billing.
 
 ### **Rollback Procedures**
 
-If deployment fails or causes issues:
-
-```bash
-# Delete the resource group (complete rollback)
-az group delete \
-  --name "arolariu-rg-prod" \
-  --yes \
-  --no-wait
-
-# Redeploy previous version
-git checkout previous-commit
-az deployment sub create \
-  --location swedencentral \
-  --template-file main.bicep \
-  --parameters @main.parameters.json
-```
+There is no automatic resource-group-delete rollback. Preserve data, unrelated users, permanent identities/grants, and protected vaults. Any
+exact-resource cleanup needs separate authorization. No deployment script/ACI/backing storage is created by the current graph; cleanup
+behavior for future optional script hosting must be designed and observed separately.
 
 ## 📞 **Support**
 
 ### **Getting Help**
 
-1. **Documentation**: Check module-specific README files
-2. **Issues**: Create GitHub issues for bugs or feature requests
-3. **Community**: Azure Bicep community forums
-4. **Microsoft Support**: For Azure-specific issues
+Read the current module sources and README contracts before changing configuration. Report material drift and blocked evidence explicitly.
 
 ### **Useful Resources**
 
-- [Azure Bicep Documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
-- [Azure CLI Reference](https://docs.microsoft.com/en-us/cli/azure/)
-- [Azure Resource Manager Templates](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/)
+- [Azure Bicep](https://learn.microsoft.com/azure/azure-resource-manager/bicep/)
+- [App Service Entra authentication](https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad)
+- [Azure CLI deployment reference](https://learn.microsoft.com/cli/azure/deployment/sub)
+- [Cost guide](COST_OPTIMIZATION.md)
 
 ---
 
----
-
-**Last Updated**: July 2025  
-**Version**: 2.1.0  
-**Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: October 2026\
+**Version**: 3.0.0

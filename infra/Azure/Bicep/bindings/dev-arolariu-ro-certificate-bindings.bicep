@@ -44,6 +44,7 @@ metadata version = '2.0.0'
 param devWebsiteHostname string
 
 @description('The certificate thumbprint for SSL binding.')
+@minLength(1)
 param devWebsiteThumbprint string
 
 resource devWebsite 'Microsoft.Web/sites@2025-03-01' existing = { name: devWebsiteHostname }

@@ -10,8 +10,8 @@
 //
 // Security Model:
 // - Backend UAMI receives Cognitive Services User + Azure AI User roles on AI Foundry
-// - No API keys are used; authentication is via managed identity
-// - Models are accessed through Azure RBAC, not shared keys
+// - Current SDK clients use the account key stored securely in Key Vault
+// - Populating that key in configuration is a separate post-provisioning task
 //
 // Integration Points:
 // - Backend API calls AI Foundry for invoice analysis and model routing (RFC 2001)
@@ -47,6 +47,7 @@ module aiFoundryDeployment 'aiFoundry.bicep' = {
   name: 'aiFoundryDeployment-${resourceDeploymentDate}'
   params: {
     aiFoundryName: '${aiConventionPrefix}-foundry'
+    aiFoundryLocation: resourceLocation
     aiFoundryDeploymentDate: resourceDeploymentDate
   }
 }

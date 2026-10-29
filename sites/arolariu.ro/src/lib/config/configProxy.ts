@@ -134,10 +134,18 @@ const IS_CLOUD_DEPLOYMENT =
   INFRASTRUCTURE === "azure" || Boolean(process.env["WEBSITE_INSTANCE_ID"]) || (INFRASTRUCTURE !== "local" && HAS_AZURE_CLIENT_ID);
 
 /**
- * Azure AD token scope for the experiments service.
- * Used for Managed Identity bearer-token acquisition in Azure deployments.
+ * Resolves the experiments audience from a canonical Entra application client ID.
+ * @param clientId - Required runtime application ID for Azure requests.
+ * @returns The normalized application scope used for Azure token acquisition.
+ * @throws Error when configuration is absent or not a canonical GUID.
  */
-export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default" as const;
+export function resolveExpServiceTokenScope(clientId: string | undefined): string {
+  const normalized = clientId?.trim().toLowerCase() ?? "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(normalized)) {
+    throw new Error("EXP_ENTRA_APP_CLIENT_ID must be a canonical GUID.");
+  }
+  return `api://${normalized}/.default`;
+}
 
 /** Azure-hosted exp service URL. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
@@ -240,11 +248,10 @@ const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").trim().toUpperCase(
 async function getBearerToken(signal?: AbortSignal): Promise<string> {
   if (!USE_AZURE_AUTH) return "";
 
+  const tokenScope = resolveExpServiceTokenScope(process.env["EXP_ENTRA_APP_CLIENT_ID"]);
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
-  const token = signal
-    ? await credential.getToken(EXP_SERVICE_TOKEN_SCOPE, {abortSignal: signal})
-    : await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
+  const token = signal ? await credential.getToken(tokenScope, {abortSignal: signal}) : await credential.getToken(tokenScope);
 
   if (signal && !token?.token) {
     throw new Error("Azure credential returned no exp access token.");

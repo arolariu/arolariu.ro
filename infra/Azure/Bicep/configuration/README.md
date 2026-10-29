@@ -1,247 +1,136 @@
 # ⚙️ Configuration Module
 
-This module deploys the configuration management infrastructure for the arolariu.ro platform, providing centralized configuration and
-secrets management through Azure App Configuration and Key Vault.
+Provision centralized configuration resources without coupling their contents to an ARM deployment. Operational population is separate; the
+replacement standalone PowerShell bootstrap is being designed after the PR review.
 
 ## 📋 Overview
 
-The configuration infrastructure implements a secure, centralized configuration management system that:
-
-- Separates sensitive secrets (Key Vault) from application configuration (App Configuration)
-- Provides configuration snapshots for consistent deployments
-- Enables secure access through Managed Identities
-- Supports environment-specific configurations
+- Key Vault owns secrets; App Configuration owns non-secret settings and typed references.
+- Managed identities and resource-scoped RBAC control access.
+- Environment labels remain `DEVELOPMENT` and `PRODUCTION`.
+- Store provisioning does not seed placeholders, rotate credentials, or imply application readiness.
 
 ## 📁 Module Files
 
-| File                     | Purpose                                  |
-| ------------------------ | ---------------------------------------- |
-| `deploymentFile.bicep`   | Orchestrates configuration deployments   |
-| `keyVault.bicep`         | Azure Key Vault for secrets              |
-| `keyVault.json`          | Key Vault secrets data (imported)        |
-| `appConfiguration.bicep` | Azure App Configuration store            |
-| `appConfiguration.json`  | App Configuration values data (imported) |
+| File                                                                         | Purpose                                                                    |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep)                                 | Compose the stores and return actual names/endpoints.                      |
+| [keyVault.bicep](keyVault.bicep)                                             | Standard, RBAC-enabled vault with soft delete/purge protection.            |
+| [appConfiguration.bicep](appConfiguration.bicep)                             | Free store, local authentication disabled, current preview management API. |
+| [appConfiguration.json](appConfiguration.json)                               | Meaningful non-secret defaults; not automatically upserted by Bicep.       |
+| [../rbac/key-vault-rbac.bicep](../rbac/key-vault-rbac.bicep)                 | Resource-scoped vault roles.                                               |
+| [../rbac/app-configuration-rbac.bicep](../rbac/app-configuration-rbac.bicep) | Resource-scoped configuration roles.                                       |
 
 ## Architecture Diagram
 
 ```mermaid
-graph TB
-    subgraph "Consumers"
-        WA_PROD[arolariu.ro]
-        WA_DEV[dev.arolariu.ro]
-        WA_API[api.arolariu.ro]
-    end
-
-    subgraph "App Configuration"
-        SNAPSHOT[Configuration Snapshots<br/>Combined Values]
-        AC[App Configuration Store<br/>Free SKU]
-        subgraph "Configuration Sources"
-            KVR[Key Vault References<br/>Sensitive Values]
-            CONFIG[Standard Configuration<br/>Non-Sensitive Values]
-        end
-    end
-
-    subgraph "Key Vault"
-        KV[Key Vault<br/>Standard SKU]
-        SECRETS[Secrets:<br/>- JWT Secret<br/>- Storage Connection Strings<br/>- SQL Connection Strings<br/>- NoSQL Connection Strings<br/>- Cognitive Services Keys<br/>- OpenAI Keys]
-        AP[Access Policies]
-    end
-
-    subgraph "Managed Identities"
-        MI_INFRA[Infrastructure Identity]
-        MI_FRONTEND[Frontend Identity]
-        MI_BACKEND[Backend Identity]
-    end
-
-    WA_PROD ==>|Serves Configuration| SNAPSHOT
-    WA_DEV ==>|Serves Configuration| SNAPSHOT
-    WA_API ==>|Serves Configuration| SNAPSHOT
-
-    SNAPSHOT --> AC
-    AC --> KVR
-    AC --> CONFIG
-
-    KVR -.->|Retrieves Secrets| KV
-    CONFIG -.->|Standard Values| SNAPSHOT
-    KVR -.->|Resolved Secrets| SNAPSHOT
-
-    KV --> SECRETS
-    KV --> AP
-
-    MI_INFRA --> AP
-    MI_FRONTEND --> AP
-    MI_BACKEND --> AP
-
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef snapshot fill:#9f9,stroke:#333,stroke-width:2px
-    classDef config fill:#fbf,stroke:#333,stroke-width:2px
-    classDef vault fill:#f66,stroke:#333,stroke-width:2px
-    classDef identity fill:#f9f,stroke:#333,stroke-width:2px
-
-    class WA_PROD,WA_DEV,WA_API consumer
-    class SNAPSHOT snapshot
-    class AC,KVR,CONFIG config
-    class KV,SECRETS,AP vault
-    class MI_INFRA,MI_FRONTEND,MI_BACKEND identity
+flowchart TD
+    Facade[Infrastructure facade] --> Vault[Key Vault resource]
+    Facade --> Store[App Configuration resource]
+    Facade --> RBAC[Scoped roles]
+    Operator[Separate approved operational setup] --> Vault
+    Operator --> Store
+    Store --> References[Typed versionless references]
+    References --> Vault
+    Proxy[Experiments configuration proxy] --> Store
+    Proxy --> Vault
 ```
 
 ## Components
 
 ### Azure Key Vault
 
-The Key Vault serves as the secure secrets store for all sensitive configuration values.
-
 #### Specifications
 
-- **SKU**: Standard
-- **Soft Delete**: Enabled (90 days retention)
-- **Purge Protection**: Enabled
-- **Access Model**: Access Policies (not RBAC)
+Standard SKU, RBAC authorization, 90-day soft delete, purge protection, existing public-network posture. There are no access policies.
 
 #### Stored Secrets
 
-##### Authentication Secrets
+| Names                                                                 | Required ownership/behavior                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `PRODUCTION-JWT-SECRET`                                               | Shared API signing key for both current website labels; preserve real values.  |
+| `DEVELOPMENT-ClerkPublishableKey`, `PRODUCTION-ClerkPublishableKey`   | Operator-owned.                                                                |
+| `DEVELOPMENT-ClerkSecretKey`, `PRODUCTION-ClerkSecretKey`             | Operator-owned.                                                                |
+| `DEVELOPMENT-ResendKey`, `PRODUCTION-ResendKey`                       | Optional operator-owned email credentials.                                     |
+| `DEVELOPMENT-CognitiveServicesKey`, `PRODUCTION-CognitiveServicesKey` | Actual AI account credential for existing SDK consumers, populated separately. |
 
-- **jwt-secret**: JWT token signing key for authentication services
-
-##### Storage Connection Strings
-
-- **DEV-AzureOptions-StorageAccountConnectionString**: Development storage account
-- **PROD-AzureOptions-StorageAccountConnectionString**: Production storage account
-
-##### Database Connection Strings
-
-- **DEV-AzureOptions-SqlConnectionString**: Development SQL database
-- **PROD-AzureOptions-SqlConnectionString**: Production SQL database
-- **DEV-AzureOptions-NoSqlConnectionString**: Development NoSQL database
-- **PROD-AzureOptions-NoSqlConnectionString**: Production NoSQL database
-
-##### External Service Keys
-
-- **DEV-AzureOptions-CognitiveServicesKey**: Development Cognitive Services
-- **PROD-AzureOptions-CognitiveServicesKey**: Production Cognitive Services
-- **DEV-AzureOptions-OpenAIKey**: Development OpenAI API
-- **PROD-AzureOptions-OpenAIKey**: Production OpenAI API
-
-##### Configuration Store
-
-- **ConfigurationStore**: App Configuration connection string
+The old placeholder `keyVault.json` is not a source of real secrets. Never write its placeholder values into a vault or replace real
+operator credentials on a rerun. No secret values are emitted by this module.
 
 ### Azure App Configuration
 
-The App Configuration service provides centralized configuration management with versioning and feature flags.
-
 #### Specifications
 
-- **SKU**: Free (1000 requests/day, 10MB storage)
-- **Authentication**: Local authentication enabled
-- **Features**: Configuration snapshots, Key Vault references
+Free SKU, managed-identity authentication, public access retained. API `2025-08-01-preview` is the latest published management version
+checked during review. Local authentication stays disabled.
 
 #### Configuration Types
 
-##### Key Vault References
-
-References to secrets stored in Key Vault, automatically resolved at runtime:
-
-- Connection strings
-- API keys
-- Authentication secrets
-
-##### Standard Configuration
-
-Non-sensitive application settings:
-
-- Feature flags
-- Application settings
-- Environment-specific configurations
-- Service endpoints
+Resolved service endpoints/identity selectors are ordinary values. Secret references use the Key Vault reference content type and a
+versionless `uri`, not plaintext credentials. Store creation does not populate either kind.
 
 ### Configuration Snapshots
 
-Configuration snapshots provide:
-
-- **Immutable configuration sets**: Point-in-time configuration state
-- **Consistent deployments**: All services receive the same configuration
-- **Rollback capability**: Easy reversion to previous configurations
-- **Environment isolation**: Separate snapshots for dev/prod
+Snapshots are not provisioned. Do not describe the live labels as immutable snapshots or promise automatic rollback/refresh.
 
 ### Managed Identities
 
-Three managed identities provide secure, passwordless access:
-
 #### Infrastructure Identity
 
-- **Purpose**: Deployment and infrastructure management
-- **Access**: Full permissions on Key Vault (all operations)
-- **Usage**: CI/CD pipelines, infrastructure provisioning
+Permanent App Configuration Data Owner and Key Vault Secrets Officer, scoped to these resources; not subscription-wide administration.
 
 #### Frontend Identity
 
-- **Purpose**: Frontend application access
-- **Access**: Read-only for secrets and certificates
-- **Usage**: Web applications (arolariu.ro, dev.arolariu.ro)
+App Configuration Reader; private runtime settings are obtained through the established proxy path, not new frontend vault-write access.
 
 #### Backend Identity
 
-- **Purpose**: Backend services and APIs
-- **Access**: Read/write for secrets, read-only for certificates
-- **Usage**: API services (api.arolariu.ro)
+Existing App Configuration Data Owner and Key Vault Secrets User permissions support the experiments/configuration path.
 
 ## Security Model
 
 ### Access Control
 
-1. **No direct Key Vault access**: Applications only access App Configuration
-2. **Managed Identity authentication**: No passwords or keys in code
-3. **Least privilege**: Each identity has minimal required permissions
-4. **Network restrictions**: Can be configured for private endpoint access
+An App Configuration reference does not itself grant vault access. The resolving identity needs its own scoped Key Vault permission. The
+preview `dataPlaneProxy` setting is not enabled: separate tasks can use native authenticated data-plane APIs without it.
 
 ### Secret Rotation
 
-- Secrets can be rotated in Key Vault without application changes
-- App Configuration automatically picks up new secret versions
-- Zero-downtime secret rotation capability
+Versionless references allow later versions to be resolved, subject to consumer refresh/restart behavior. No zero-downtime rotation,
+automatic credential generation, or preservation proof is implied by resource provisioning.
 
 ## Configuration Flow
 
-1. **Secret Storage**: Sensitive values stored in Key Vault
-2. **Reference Creation**: App Configuration creates Key Vault references
-3. **Snapshot Generation**: Configuration snapshot combines all values
-4. **Application Request**: Consumer requests configuration
-5. **Secret Resolution**: App Configuration resolves Key Vault references
-6. **Configuration Delivery**: Complete configuration returned to consumer
+1. Bicep creates stores and scoped grants.
+2. A separately approved operational task resolves actual resource values and populates configuration.
+3. The experiments provider eagerly resolves referenced secrets.
+4. Website/API consumers request their configured label/target.
+
+Missing optional email must be an ordinary empty value, disabling delivery. A dangling optional Key Vault reference can prevent the eager
+provider from starting. Required Clerk/JWT/endpoint values must be valid.
 
 ## Best Practices
 
-1. **Environment Separation**: Use prefixes (DEV-, PROD-) for environment-specific settings
-2. **Secret Rotation**: Regularly rotate secrets and API keys
-3. **Access Auditing**: Monitor Key Vault access logs
-4. **Configuration Versioning**: Use snapshots for deployment consistency
-5. **Minimal Permissions**: Grant only required permissions to each identity
+Use actual endpoints, correct DEVELOPMENT/PRODUCTION labels, and the same API signing key for the one shared API. Preserve existing unused
+development signing material rather than deleting it. Never store account-key connection-string fallbacks.
 
 ## 🔧 Parameters
 
-| Parameter                  | Type       | Required | Description                            |
-| -------------------------- | ---------- | -------- | -------------------------------------- |
-| `resourceConventionPrefix` | string     | ✅       | Prefix for resource names              |
-| `resourceLocation`         | string     | ✅       | Azure region for deployment            |
-| `resourceDeploymentDate`   | string     | ✅       | Deployment timestamp                   |
-| `identities`               | identity[] | ✅       | Array of managed identities for access |
+`resourceConventionPrefix`, `resourceLocation`, and `resourceDeploymentDate`; exact validation lives in the orchestrator.
 
 ## 📤 Outputs
 
-This module does not produce outputs as it configures foundational services.
+`keyVaultName`, `keyVaultUri`, `appConfigurationName`, and `appConfigurationEndpoint`.
 
 ## 🛠️ Usage Example
 
 ```bicep
-module configurationDeployment 'configuration/deploymentFile.bicep' = {
-  name: 'configurationDeployment'
+module configuration 'configuration/deploymentFile.bicep' = {
+  name: 'configuration-${resourceDeploymentDate}'
   params: {
-    resourceConventionPrefix: 'arolariu'
-    resourceLocation: 'swedencentral'
-    resourceDeploymentDate: utcNow()
-    identities: identitiesDeployment.outputs.managedIdentitiesList
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
   }
 }
 ```
@@ -250,43 +139,37 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
 
 ### **Required Dependencies**
 
-- **Identity Module**: Must deploy managed identities before configuration access policies
+Store creation is independent; facade role assignments depend on resource and identity outputs.
 
 ### **Dependent Modules**
 
-- **All application modules**: Rely on configuration services for settings and secrets
+Sites consume the actual App Configuration endpoint. Application startup additionally depends on separately populated data.
 
 ## 📊 Deployment Flow
 
-1. **Identity Module** creates managed identities
-2. **Configuration Module** deploys Key Vault and App Configuration
-3. **All other modules** access configuration through managed identities
+Provision stores → assign scoped roles → perform approved operational population → release/verify applications.
 
 ## 🚨 Troubleshooting
 
-| Issue                       | Symptoms                     | Solution                                      |
-| --------------------------- | ---------------------------- | --------------------------------------------- |
-| **Key Vault access denied** | Configuration load failures  | Check managed identity access policies        |
-| **App Config not found**    | Service discovery failures   | Verify App Configuration deployment           |
-| **Secret not found**        | Application startup failures | Check secret exists in Key Vault              |
-| **Permission errors**       | RBAC assignment failures     | Verify identity permissions and principal IDs |
+| Symptom                             | Check                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Forbidden configuration/secret read | Exact caller identity, resource scope, and classified propagation; do not enable account keys. |
+| Missing secret                      | Distinguish 404 from authorization/service failure.                                            |
+| Startup failure with email disabled | Empty optional email setting, not a reference to an absent Resend secret.                      |
+| Empty Azure endpoints               | Resource provisioning did not run configuration population.                                    |
 
 ## Deployment Considerations
 
-- Key Vault must be deployed before App Configuration
-- Managed Identities must be created before access policy assignment
-- Configuration values should be loaded after infrastructure deployment
-- Consider using deployment slots for zero-downtime configuration updates
+The Free store has service limits and no soft-delete/purge-protection support. Public networking remains intentional; private endpoints or a
+paid SKU need separate scope/cost approval.
 
 ## 📚 References
 
-- [Azure Key Vault Documentation](https://docs.microsoft.com/en-us/azure/key-vault/)
-- [Azure App Configuration Documentation](https://docs.microsoft.com/en-us/azure/azure-app-configuration/)
-- [Key Vault References in App Configuration](https://docs.microsoft.com/en-us/azure/azure-app-configuration/use-key-vault-references)
-- [Managed Identity Authentication](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
+- [App Configuration template reference](https://learn.microsoft.com/azure/templates/microsoft.appconfiguration/configurationstores)
+- [Key Vault references](https://learn.microsoft.com/azure/azure-app-configuration/use-key-vault-references)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
 
 ---
 
-**Module Version**: 2.0.0  
-**Last Updated**: December 2025  
-**Maintainer**: Alexandru-Razvan Olariu
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

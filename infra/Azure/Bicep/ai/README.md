@@ -1,107 +1,94 @@
 # 🤖 AI Module
 
-This module deploys Azure AI services including Azure OpenAI and AI Foundry for the arolariu.ro platform.
+Azure AI Foundry resources for the platform's existing model-routing and document-analysis consumers.
 
 ## 📋 Overview
 
-- Deploys Azure OpenAI (Cognitive Services) with S0 SKU
-- Deploys Azure AI Foundry hub for advanced AI workloads
-- Configures custom subdomain, public network access, and tags
-- RBAC assignments are centralized in `rbac/backend-uami-rbac.bicep`
+- One `AIServices` account with S0 SKU and system-assigned identity.
+- The `arolariu-ro` project and pinned `model-router` deployment.
+- Explicit Sweden Central placement from the facade.
+- Resource provisioning does not retrieve or emit account keys.
 
 ## 🏗️ Resources Created
 
-| Resource Type     | Name Pattern      | Purpose                        |
-| ----------------- | ----------------- | ------------------------------ |
-| CognitiveServices | `{prefix}-openai` | Azure OpenAI resource          |
-| AI Foundry Hub    | `{prefix}-ai-hub` | AI Foundry hub for AI services |
+| Resource            | Current contract                                              |
+| ------------------- | ------------------------------------------------------------- |
+| AI account          | `<prefix>-ai-foundry`, AIServices/S0, public access retained. |
+| Project             | `arolariu-ro`, system-assigned identity.                      |
+| Model deployment    | `model-router`, format `OpenAI`, version `2025-11-18`.        |
+| Deployment capacity | GlobalStandard, capacity 10.                                  |
+| APIs                | Account/project/deployment `2026-09-01`.                      |
+
+This is not a separate legacy OpenAI account or Machine Learning hub.
 
 ## 📊 Architecture
 
 ```mermaid
-graph TB
-    subgraph "AI Module"
-        OPENAI[Azure OpenAI<br/>Cognitive Services S0]
-        FOUNDRY[AI Foundry Hub<br/>Advanced AI Workloads]
-    end
-
-    subgraph "Security (Centralized RBAC)"
-        RBAC[backend-uami-rbac.bicep]
-        BE_ID[Backend Managed Identity]
-    end
-
-    subgraph "Consumers"
-        API[api.arolariu.ro]
-    end
-
-    RBAC --> OPENAI
-    RBAC --> FOUNDRY
-    BE_ID --> RBAC
-    API --> OPENAI
-    API --> FOUNDRY
+flowchart TD
+    Facade[Facade: explicit Sweden Central] --> Account[AI Foundry AIServices account]
+    Account --> Project[arolariu-ro project]
+    Project --> Model[model-router deployment]
+    Backend[Backend UAMI] --> Roles[Account-scoped inference roles]
+    Roles --> Account
+    Operations[Separate credential/configuration task] --> Configuration[Key Vault and App Configuration]
+    API[Existing API SDK clients] --> Configuration
+    API --> Account
 ```
 
 ## 🔧 Parameters
 
-| Parameter                  | Type   | Required | Description                          |
-| -------------------------- | ------ | -------- | ------------------------------------ |
-| `resourceLocation`         | string | ✅       | Azure region for the OpenAI resource |
-| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                 |
-| `resourceConventionPrefix` | string | ✅       | Prefix for resource names            |
+| Parameter                  | Meaning                                                                     |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `resourceConventionPrefix` | Stable namespace.                                                           |
+| `resourceLocation`         | Account/project/model location; facade deliberately passes `swedencentral`. |
+| `resourceDeploymentDate`   | Audit/deployment-name timestamp.                                            |
 
 ## 📤 Outputs
 
-| Output           | Type   | Description                        |
-| ---------------- | ------ | ---------------------------------- |
-| `openAiId`       | string | Resource ID of the OpenAI account  |
-| `openAiEndpoint` | string | Endpoint URL of the OpenAI account |
-| `resource`       | object | Full OpenAI resource object        |
+`aiFoundryName` and non-secret `aiResources` containing account/project IDs and endpoint. No `listKeys()` or secure key-forwarding output
+remains; credential population is a separate task.
 
 ## 🛡️ Security & RBAC
 
-> **Note**: RBAC assignments are centralized in the `rbac/` module for better maintainability.
-
-- The backend managed identity is granted the **Cognitive Services User** role via `rbac/backend-uami-rbac.bicep`
-- No inline RBAC assignments in this module
-- See: [rbac/README.md](../rbac/README.md) for complete RBAC documentation
+The [AI RBAC module](../rbac/ai-rbac.bicep) grants the backend Cognitive Services User and Azure AI User at account scope. Existing SDK key
+authentication and public-network posture remain; secrets must be populated through a separately approved process without logging.
 
 ## 🚀 Example Usage
 
 ```bicep
-module aiDeployment 'ai/deploymentFile.bicep' = {
-  name: 'aiDeployment'
+module ai 'ai/deploymentFile.bicep' = {
+  name: 'ai-${resourceDeploymentDate}'
   params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    resourceDeploymentDate: resourceDeploymentDate
     resourceLocation: 'swedencentral'
-    resourceDeploymentDate: '2025-07-03'
-    resourceConventionPrefix: 'arolariu'
   }
 }
 ```
 
 ## 📁 Module Files
 
-| File                   | Purpose                             |
-| ---------------------- | ----------------------------------- |
-| `deploymentFile.bicep` | Orchestrates AI service deployments |
-| `openai.bicep`         | Azure OpenAI Cognitive Services     |
-| `aiFoundry.bicep`      | Azure AI Foundry hub                |
+| File                                         | Purpose                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep) | Compose the account/project/model and expose non-secret outputs. |
+| [aiFoundry.bicep](aiFoundry.bicep)           | Actual AI resources and exact model contract.                    |
 
 ## 🚨 Troubleshooting
 
-| Issue                | Solution                                     |
-| -------------------- | -------------------------------------------- |
-| Access denied        | Check RBAC in `rbac/backend-uami-rbac.bicep` |
-| Quota exceeded       | Request quota increase in Azure portal       |
-| Region not available | OpenAI is only available in select regions   |
+| Issue                                    | Response                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| Model/SKU unavailable or quota exhausted | Stop for the exact target/cost decision; do not silently substitute models or regions. |
+| Missing SDK key                          | Bicep does not populate configuration; inspect separately approved operational setup.  |
+| Authorization failure                    | Check the actual identity, key mode, and account-scoped grant.                         |
+| Successful compile but inference fails   | Real model availability and inference remain live validation requirements.             |
 
 ## 📚 References
 
-- [Azure OpenAI Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
-- [Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-studio/)
-- [Cognitive Services RBAC](https://learn.microsoft.com/en-us/azure/cognitive-services/authorizing-users)
+- [AI account template reference](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/accounts)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
+- [Cost assumptions](../COST_OPTIMIZATION.md)
 
 ---
 
-**Module Version**: 2.0.0  
-**Last Updated**: December 2025  
-**Maintainer**: Alexandru-Razvan Olariu
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

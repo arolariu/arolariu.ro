@@ -1,448 +1,206 @@
 # 🌐 Network Module
 
-This module provisions the global networking infrastructure for the arolariu.ro platform, including Azure Front Door for global edge
-routing, WAF protection, load balancing, and DNS management.
+Azure Front Door, WAF, Azure DNS, and DNSSEC for arolariu.ro. The existing resource modules own provisioning directly; there is no separate
+Front Door completion file or automatic public-DNS readiness deployment script.
 
 ## 📋 **Overview**
 
-The network module creates a comprehensive global networking solution that:
-
-- **Provides global edge routing** through Azure Front Door
-- **Enables high availability** with load balancing and failover
-- **Implements security features** with a WAF policy and managed TLS certificates
-- **Manages DNS** for the domain
-- **Optimizes performance** with edge caching and routing
+- Global HTTPS routing to the actual main-site default hostname.
+- Front Door Standard custom-rule WAF association and managed custom domains.
+- One Azure owner for application CNAME/TXT/apex records.
+- Registrar/public DNS remains an external prerequisite for successful domain/certificate completion.
 
 ## 🏗️ **Resources Created**
 
-| Resource Type      | Name Pattern    | Purpose                           |
-| ------------------ | --------------- | --------------------------------- |
-| Front Door Profile | `{prefix}-afd`  | Azure Front Door Standard profile |
-| WAF Policy         | `productionWAF` | Web Application Firewall policy   |
-| AFD Endpoint       | `production`    | Production traffic endpoint       |
-| Origin Group       | `production`    | Production origin servers         |
-| DNS Zone           | `{domain-name}` | Public DNS zone management        |
-| DNSSEC Config      | `default`       | Cryptographic DNS security        |
+| Resource                        | Name/contract                                                          |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| Front Door profile              | `<prefix>-afd`, Standard_AzureFrontDoor.                               |
+| Endpoint                        | `<prefix>-afd-production`, namespace-derived.                          |
+| Origin group/origin             | `production` / `production-origin`, actual main-site hostname.         |
+| WAF policy/security association | `productionWAF`, custom rules, endpoint plus apex/www domains.         |
+| Route                           | `production-route`, HTTPS redirect/forwarding and both custom domains. |
+| DNS zone/DNSSEC                 | `arolariu.ro` / `default`.                                             |
 
 ## 📁 **Module Files**
 
-| File                   | Purpose                          |
-| ---------------------- | -------------------------------- |
-| `deploymentFile.bicep` | Orchestrates network deployments |
-| `azureFrontDoor.bicep` | Azure Front Door profile and WAF |
-| `dnsZone.bicep`        | DNS Zone with all records        |
+| File                                         | Purpose                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------- |
+| [deploymentFile.bicep](deploymentFile.bicep) | Compose Front Door and DNS from actual site outputs.                          |
+| [azureFrontDoor.bicep](azureFrontDoor.bicep) | Profile, WAF, domains, endpoint, origin, security policy, and HTTPS route.    |
+| [dnsZone.bicep](dnsZone.bicep)               | Public zone, DNSSEC, Azure-owned application records, and delegation outputs. |
 
 ## 📊 **Architecture**
 
 ```mermaid
-graph TB
-    subgraph "Global Users"
-        USERS[Global Users<br/>Worldwide]
-    end
-
-    subgraph "Azure Front Door"
-        AFD_PROFILE[Front Door Profile<br/>Standard_AzureFrontDoor]
-
-        subgraph "Endpoints"
-            EP_PROD[Production Endpoint<br/>Global Edge Locations]
-        end
-
-        subgraph "Security"
-            WAF[WAF Policy<br/>Prevention Mode]
-        end
-
-        subgraph "Origin Groups"
-            OG_PROD[Production Origins<br/>Session Affinity: Enabled]
-        end
-    end
-
-    subgraph "Origins"
-        APEX[arolariu.ro<br/>Apex Domain<br/>Priority 1, Weight 1000]
-        WWW[www.arolariu.ro<br/>WWW Domain<br/>Priority 2, Weight 1000]
-    end
-
-    subgraph "DNS Management"
-        DNS_ZONE[Public DNS Zone<br/>arolariu.ro]
-    end
-
-    subgraph "Backend Services"
-        APP_PROD[App Service<br/>Production]
-        APP_API[App Service<br/>API]
-        APP_DEV[App Service<br/>Development]
-    end
-
-    USERS --> AFD_PROFILE
-    AFD_PROFILE --> EP_PROD
-
-    EP_PROD --> WAF
-
-    WAF --> OG_PROD
-
-    OG_PROD --> APEX
-    OG_PROD --> WWW
-
-    APEX --> APP_PROD
-    WWW --> APP_PROD
-
-    DNS_ZONE --> APEX
-    DNS_ZONE --> WWW
-
-    classDef user fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef frontdoor fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
-    classDef endpoint fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef origin fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef dns fill:#fce4ec,stroke:#ad1457,stroke-width:2px
-    classDef backend fill:#e0f2f1,stroke:#00695c,stroke-width:2px
-
-    class USERS user
-    class AFD_PROFILE,WAF frontdoor
-    class EP_PROD,OG_PROD endpoint
-    class APEX,WWW origin
-    class DNS_ZONE dns
-    class APP_PROD,APP_API,APP_DEV backend
+flowchart TD
+    Users[Public clients] --> Endpoint[Front Door endpoint]
+    Endpoint --> WAF[Standard custom-rule WAF]
+    WAF --> Route[HTTPS production route]
+    Route --> Origin[Main App Service default hostname]
+    Sites[Site hostnames and verification IDs] --> DNS[Azure DNS record owner]
+    Tokens[Front Door validation tokens] --> DNS
+    DNS --> Registrar[Operator NS and current parent DS publication]
+    Registrar --> Validation[Public domain and certificate validation]
 ```
 
 ## 🔧 **Configuration**
 
 ### **Parameters**
 
-| Parameter                  | Type   | Required | Description                                   |
-| -------------------------- | ------ | -------- | --------------------------------------------- |
-| `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (e.g., "arolariu") |
-| `resourceLocation`         | string | ✅       | Azure region for deployment                   |
-| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                          |
-| `mainWebsiteHostname`      | string | ✅       | Hostname of the main production website       |
+`resourceConventionPrefix`, `resourceDeploymentDate`, `mainWebsiteHostname`, and typed `applicationDnsRecords`. The network group is global;
+the site origin is a resolved default hostname, not a guessed production DNS target.
 
 ### **Example Usage**
 
-```bicep
-module networkDeployment 'network/deploymentFile.bicep' = {
-  name: 'networkDeployment'
-  params: {
-    resourceConventionPrefix: 'arolariu'
-    resourceLocation: 'swedencentral'
-    resourceDeploymentDate: utcNow()
-    mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
-  }
-}
-```
+The facade passes `websiteDeployment.outputs.mainWebsiteUrl` and `applicationDnsRecords` directly. Do not independently recreate those
+record values in binding modules.
 
 ## 📤 **Outputs**
 
-| Output                    | Type   | Description                         |
-| ------------------------- | ------ | ----------------------------------- |
-| `frontDoorProductionFqdn` | string | Front Door production endpoint FQDN |
-| `frontDoorProfileId`      | string | Front Door profile resource ID      |
-| `dnsZoneName`             | string | DNS zone name (arolariu.ro)         |
+`frontDoorProductionFqdn`, profile/endpoint IDs, `dnsZoneName`, `dnsZoneNameServers`, and current `dnsZoneDsRecords`.
 
 ## 🌍 **Front Door Configuration**
 
 ### **Profile Settings**
 
-**SKU**: Standard_AzureFrontDoor
-
-- **Global presence**: 200+ edge locations worldwide
-- **Response timeout**: 16 seconds
-- **Load balancing**: Advanced health probes and failover
+Standard SKU, global location, source-defined timeout. There is no Premium/private-link origin or managed-rule-set deployment.
 
 ### **Endpoints**
 
 #### **Production Endpoint**
 
-- **Purpose**: Primary application traffic
-- **Session affinity**: Enabled (sticky sessions)
-- **Load balancing**: 4 samples, 3 successful required
-- **Additional latency**: 50ms tolerance
+The globally unique endpoint name uses the stable namespace. The default domain and apex/www custom domains share the WAF security policy.
 
 ### **Origin Configuration**
 
 #### **Apex Domain (arolariu.ro)**
 
-- **Priority**: 1 (primary)
-- **Weight**: 1000
-- **Ports**: HTTP (80), HTTPS (443)
-- **Host header**: arolariu.ro
-- **Certificate check**: Disabled for flexibility
+Front Door routes to the main App Service's actual default hostname with certificate-name checking enabled.
 
 #### **WWW Subdomain (www.arolariu.ro)**
 
-- **Priority**: 2 (secondary)
-- **Weight**: 1000
-- **Ports**: HTTP (80), HTTPS (443)
-- **Host header**: www.arolariu.ro
-- **Certificate check**: Disabled for flexibility
+Shares the same origin/HTTPS route; it is not a second production backend.
 
 ## 🔒 **Security & Performance**
 
 ### **Web Application Firewall**
 
-The `productionWAF` policy is attached to the production endpoint for all paths (`/*`):
-
-- **Mode**: Prevention (matching requests are blocked)
-- **Request body inspection**: Enabled
-- **Rules**: Custom rules only; managed rule sets (DRS, Bot Manager) require the Premium SKU
+The association and route are present in `azureFrontDoor.bicep`; they were not removed from the intended resource set. Standard supports
+custom rules, not Premium managed DRS/Bot Manager rule sets. An empty custom-rule list is not a configured application attack ruleset.
 
 ### **SSL/TLS**
 
-- **HTTPS enforcement**: Automatic redirect from HTTP
-- **Certificate management**: Azure-managed certificates
-- **TLS versions**: Modern TLS support (1.2+)
-- **HSTS**: Can be configured for enhanced security
+Managed custom-domain certificates, TLS12 minimum on Front Door domains, HTTPS-only forwarding and redirect. Public ownership/validation is
+still required; template existence alone is not certificate readiness.
 
 ## 🌐 **DNS Management**
 
 ### **Public DNS Zone**
 
-The module creates a public DNS zone with DNSSEC enabled for the arolariu.ro domain:
-
-- **Zone type**: Public
-- **Global scope**: Worldwide DNS resolution
-- **DNSSEC**: Enabled for cryptographic DNS security
-- **TTL**: 3600 seconds (1 hour) for most records
+Azure DNSSEC produces the actual signer records. The operator publishes NS/current DS at the registrar; stale DS can break resolution.
 
 ### **DNS Records**
 
-| Record Type | Name                     | Purpose                             |
-| ----------- | ------------------------ | ----------------------------------- |
-| **A**       | `@`                      | Apex domain → Front Door (ALIAS)    |
-| **CNAME**   | `www`                    | WWW subdomain → Front Door          |
-| **CNAME**   | `api`                    | API subdomain → App Service         |
-| **CNAME**   | `dev`                    | Dev subdomain → App Service         |
-| **CNAME**   | `cv`                     | CV subdomain → Static Web App       |
-| **CNAME**   | `docs`                   | Docs subdomain → Static Web App     |
-| **TXT**     | `_dnsauth`               | Front Door apex domain validation   |
-| **TXT**     | `_dnsauth.www`           | Front Door WWW domain validation    |
-| **TXT**     | `asuid.api`              | App Service API domain verification |
-| **TXT**     | `asuid.dev`              | App Service Dev domain verification |
-| **TXT**     | `_dmarc`                 | DMARC email authentication policy   |
-| **TXT**     | `send.mail`              | SPF record for Resend email         |
-| **TXT**     | `resend._domainkey.mail` | DKIM record for Resend email        |
-| **MX**      | `send.mail`              | MX record for Amazon SES            |
-| **CNAME**   | `clerk`                  | Clerk authentication service        |
-| **CNAME**   | `accounts`               | Clerk accounts service              |
-| **CNAME**   | `clkmail`                | Clerk mail service                  |
-| **CNAME**   | `clk._domainkey`         | Clerk DKIM key 1                    |
-| **CNAME**   | `clk2._domainkey`        | Clerk DKIM key 2                    |
+| Record                                    | Owner/source                             |
+| ----------------------------------------- | ---------------------------------------- |
+| Apex A alias and www CNAME                | Actual Front Door endpoint.              |
+| API/dev/exp CNAME                         | Actual App Service default hostnames.    |
+| CV/docs/status CNAME                      | Actual Static Web App default hostnames. |
+| `asuid.api`, `asuid.dev`, `asuid.exp` TXT | Current App Service verification IDs.    |
+| `_dnsauth`, `_dnsauth.www` TXT            | Current Front Door validation tokens.    |
 
 ### **Third-Party Service Integration**
 
 #### **Clerk Authentication**
 
-- `clerk.arolariu.ro` → `frontend-api.clerk.services`
-- `accounts.arolariu.ro` → `accounts.clerk.services`
-- DKIM records for email authentication
+No guessed vendor CNAME/DKIM targets are emitted. Any actual vendor-domain configuration needs approved provider-specific values.
 
 #### **Resend Email Service**
 
-- SPF record: `v=spf1 include:amazonses.com ~all`
-- DKIM public key for email signing
-- MX record pointing to Amazon SES
+No placeholder DKIM/MX records are seeded. Email credentials/configuration are a separate optional application integration.
 
 #### **DMARC Policy**
 
-- `v=DMARC1; p=none; rua=mailto:admin@arolariu.ro`
-- Policy: None (monitoring mode)
-- Reports sent to admin@arolariu.ro
+Do not treat an unprovisioned mail-policy example as a deployed record; the zone source is authoritative.
 
 ### **DNS Configuration Example**
 
-```bash
-# Example DNS records for the zone
-# A record for apex domain (ALIAS to Front Door)
-az network dns record-set a add-record \
-  --resource-group "arolariu-rg" \
-  --zone-name "arolariu.ro" \
-  --record-set-name "@" \
-  --ipv4-address "20.103.85.180"
-
-# CNAME for www subdomain
-az network dns record-set cname set-record \
-  --resource-group "arolariu-rg" \
-  --zone-name "arolariu.ro" \
-  --record-set-name "www" \
-  --cname "arolariu.ro"
-```
+Use emitted values and inspect public records. Do not manually replace the apex alias with a hardcoded IP or point www at the apex.
 
 ## 💰 **Cost Considerations**
 
-| Resource                  | Tier/SKU                | Estimated Monthly Cost\* |
-| ------------------------- | ----------------------- | ------------------------ |
-| Azure Front Door (Legacy) | Standard                | €5-15                    |
-| Front Door Profile        | Standard_AzureFrontDoor | €20-50                   |
-| DNS Zone                  | Public zone             | €0.50                    |
-| **Data Transfer**         | Global egress           | €5-20                    |
-| **Total**                 |                         | **€30-85**               |
-
-\*Estimates based on moderate traffic (1-10GB/month). Costs vary significantly with traffic volume.
-
-### **Cost Optimization**
-
-- **Caching strategies**: Reduce origin requests
-- **Compression**: Enable gzip/brotli for bandwidth savings
-- **Geographic routing**: Route traffic to nearest origins
-- **Health probes**: Minimize health check frequency
+The [cost guide](../COST_OPTIMIZATION.md) records current retail base/request/transfer rates and explicitly assumed traffic. Front Door base
+fees and WAF policy fees are separate; no Legacy Front Door resource is added.
 
 ## 🔧 **Customization Options**
 
 ### **Adding Custom Domains**
 
-```bicep
-// Add custom domain to Front Door endpoint
-resource customDomain 'Microsoft.Cdn/profiles/customDomains@2024-05-01-preview' = {
-  parent: frontDoorProfile
-  name: 'custom-domain'
-  properties: {
-    hostName: 'api.arolariu.ro'
-    tlsSettings: {
-      certificateType: 'ManagedCertificate'
-      minimumTlsVersion: 'TLS12'
-    }
-  }
-}
-```
+Update the existing module, matching DNS records and certificate prerequisites under an approved public-domain change.
 
 ### **Advanced Routing Rules**
 
-```bicep
-// Example: API routing rule
-resource apiRoutingRule 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-05-01-preview' = {
-  parent: frontDoorProductionEndpoint
-  name: 'api-route'
-  properties: {
-    customDomains: [{ id: apiCustomDomain.id }]
-    originGroup: { id: apiOriginGroup.id }
-    patternsToMatch: ['/api/*']
-    supportedProtocols: ['Https']
-    httpsRedirect: 'Enabled'
-  }
-}
-```
+Keep route/origin identity and HTTPS behavior consistent; do not introduce a second completion owner.
 
 ### **WAF Integration**
 
-```bicep
-// Web Application Firewall policy
-resource wafPolicy 'Microsoft.Network/frontDoorWebApplicationFirewallPolicies@2022-05-01' = {
-  name: 'waf-policy'
-  location: 'Global'
-  sku: { name: 'Standard_AzureFrontDoor' }
-  properties: {
-    policySettings: {
-      enabledState: 'Enabled'
-      mode: 'Prevention'
-    }
-  }
-}
-```
+Rules, managed-rule availability, SKU, and cost are distinct decisions. Do not upgrade to Premium implicitly.
 
 ## 🛠️ **Maintenance**
 
 ### **Monitoring & Alerting**
 
-- **Health probes**: Automatic endpoint health monitoring
-- **Metrics**: Traffic, latency, error rates via Azure Monitor
-- **Alerts**: Configure alerts for high latency or failures
-- **Logs**: Access logs and diagnostic data
+Check actual origin health, TLS, DNS, and application response behavior after release. Arbitrary diagnostic settings/alerts are not created.
 
 ### **Performance Optimization**
 
-```bash
-# Monitor Front Door performance
-az monitor metrics list \
-  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Cdn/profiles/arolariu-afd" \
-  --metric "OriginLatency,OriginHealthPercentage" \
-  --start-time "2024-01-01T00:00:00Z"
-
-# Check endpoint health
-az network front-door show \
-  --name "arolariu-afd" \
-  --resource-group "arolariu-rg" \
-  --query "backendPools[].backends[].backendHostHeader"
-```
+Use measured request/transfer/cache data before changing compression or caching policy.
 
 ## 🔄 **Dependencies**
 
 ### **Required Dependencies**
 
-**None** - The network module can be deployed independently.
+Actual site hostnames/verification IDs from Sites. DNS consumes Front Door tokens and endpoint IDs.
 
 ### **Dependent Modules**
 
-- **Sites Module**: Web applications that serve as origins
-- **Observability Module**: Monitoring and logging integration
+Bindings consumes the zone name after Azure-owned records are provisioned.
 
 ### **External Dependencies**
 
-- **Domain ownership**: Valid ownership of the domain
-- **DNS delegation**: Nameserver delegation to Azure DNS
-- **SSL certificates**: Domain validation for managed certificates
+Domain ownership, registrar delegation/current DS, public propagation, and managed-certificate eligibility.
 
 ## 📊 **Deployment Flow**
 
-1. **Network Module**: Deploy Front Door and DNS infrastructure
-2. **Sites Module**: Deploy origin applications
-3. **DNS Configuration**: Configure A/CNAME records
-4. **SSL/TLS Setup**: Enable managed certificates
-5. **Custom Domains**: Add additional domains if needed
-6. **Routing Rules**: Configure advanced routing
-7. **WAF Policies**: Add security policies (optional)
+Sites → Front Door definitions → Azure DNS records → public registrar prerequisites → successful binding/TLS completion. The single facade
+does not wait for public DNS in a hidden script; incomplete prerequisites must remain visible failures.
 
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues**
 
-| Issue                      | Symptoms                      | Solution                                           |
-| -------------------------- | ----------------------------- | -------------------------------------------------- |
-| **DNS propagation delays** | Domain not resolving          | Wait 24-48h for global DNS propagation             |
-| **SSL certificate issues** | HTTPS errors or warnings      | Verify domain ownership and certificate validation |
-| **Origin health failures** | 502/503 errors                | Check backend application health and accessibility |
-| **CORS errors**            | Cross-origin request failures | Review App Service CORS origins in `sites/*.bicep` |
-| **High latency**           | Slow response times           | Check origin performance and Front Door routing    |
+| Issue                       | Check                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------- |
+| Missing application records | Sites → typed record list → `dnsZone.bicep`; do not add duplicate binding-module owners. |
+| Domain/certificate pending  | Public NS/current DS, CNAME/TXT values, and provider validation state.                   |
+| Origin unhealthy            | Actual released main-site response and allowed access path.                              |
+| Unexpected what-if changes  | Fresh-only profile is not a migration plan.                                              |
 
 ### **Validation Commands**
 
-```bash
-# Test Front Door endpoint
-curl -I https://arolariu-afd-production.azurefd.net
-
-# Check DNS resolution
-nslookup arolariu.ro
-dig arolariu.ro
-
-# Verify SSL certificate
-openssl s_client -connect arolariu.ro:443 -servername arolariu.ro
-
-# Test CORS headers
-curl -H "Origin: https://arolariu.ro" \
-     -H "Access-Control-Request-Method: GET" \
-     -H "Access-Control-Request-Headers: X-Requested-With" \
-     -X OPTIONS \
-     https://arolariu.ro
-```
+Use read-only DNS/HTTPS checks against approved names; Azure commands must use the approved subscription explicitly.
 
 ### **Performance Testing**
 
-```bash
-# Load test Front Door endpoint
-ab -n 1000 -c 10 https://arolariu.ro/
-
-# Test from different geographic locations
-# Use tools like GTmetrix, Pingdom, or WebPageTest
-
-# Monitor real-time performance
-az monitor metrics list \
-  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Cdn/profiles/arolariu-afd" \
-  --metric "RequestCount,ResponseSize,OriginLatency"
-```
+Load tests and paid/third-party monitoring require a separate approved scope; they are not deployment prerequisites.
 
 ## 📚 **References**
 
-- [Azure Front Door](https://docs.microsoft.com/en-us/azure/frontdoor/)
-- [Azure DNS](https://docs.microsoft.com/en-us/azure/dns/)
-- [Front Door Routing](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-routing-architecture)
-- [Azure Front Door Security](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-faq)
+- [Azure Front Door](https://learn.microsoft.com/azure/frontdoor/)
+- [Azure DNS](https://learn.microsoft.com/azure/dns/)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
 
 ---
 
-**Module Version**: 2.0.0  
-**Last Updated**: December 2025 **Maintainer**: Alexandru-Razvan Olariu
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

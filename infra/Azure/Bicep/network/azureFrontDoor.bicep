@@ -56,7 +56,7 @@ param mainWebsiteHostname string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('network', frontDoorDeploymentDate)
 
-resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2025-10-01' = {
+resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2026-04-01' = {
   name: 'productionWAF'
   location: 'Global'
   sku: {
@@ -85,7 +85,7 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicat
 }
 
 // Azure Front Door Profile with nested resources
-resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
+resource frontDoorProfile 'Microsoft.Cdn/profiles@2026-07-01' = {
   name: frontDoorName
   location: 'Global'
   sku: { name: 'Standard_AzureFrontDoor' }
@@ -97,8 +97,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
     resourceType: 'Front Door Profile'
   })
 
-  // WAF Policy Attachment
-  resource wafPolicy 'securityPolicies@2025-09-01-preview' = {
+  resource wafPolicy 'securityPolicies@2026-07-01' = {
     name: 'productionWAF'
     properties: {
       parameters: {
@@ -108,10 +107,10 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
           {
             domains: [
               { id: productionEndpoint.id }
+              { id: apexCustomDomain.id }
+              { id: wwwCustomDomain.id }
             ]
-            patternsToMatch: [
-              '/*'
-            ]
+            patternsToMatch: ['/*']
           }
         ]
       }
@@ -119,7 +118,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   }
 
   // Custom Domain for APEX
-  resource apexCustomDomain 'customDomains@2025-09-01-preview' = {
+  resource apexCustomDomain 'customDomains@2026-07-01' = {
     name: 'apex-arolariu-ro'
     properties: {
       hostName: 'arolariu.ro'
@@ -131,7 +130,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   }
 
   // Custom Domain for WWW
-  resource wwwCustomDomain 'customDomains@2025-09-01-preview' = {
+  resource wwwCustomDomain 'customDomains@2026-07-01' = {
     name: 'www-arolariu-ro'
     properties: {
       hostName: 'www.arolariu.ro'
@@ -143,7 +142,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   }
 
   // Production Origin Group
-  resource productionOriginGroup 'originGroups@2025-09-01-preview' = {
+  resource productionOriginGroup 'originGroups@2026-07-01' = {
     name: 'production'
     properties: {
       sessionAffinityState: 'Enabled'
@@ -161,7 +160,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
     }
 
     // Production Origin (nested within origin group)
-    resource productionOrigin 'origins@2025-09-01-preview' = {
+    resource productionOrigin 'origins@2026-07-01' = {
       name: 'production-origin'
       properties: {
         hostName: mainWebsiteHostname
@@ -177,8 +176,8 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   }
 
   // Production Endpoint
-  resource productionEndpoint 'afdEndpoints@2025-09-01-preview' = {
-    name: 'production'
+  resource productionEndpoint 'afdEndpoints@2026-07-01' = {
+    name: '${frontDoorName}-production'
     location: 'Global'
     properties: {
       enabledState: 'Enabled'
@@ -187,9 +186,9 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
       displayName: 'Production Endpoint'
     })
 
-    // Production Route (nested within endpoint)
-    resource productionRoute 'routes@2025-09-01-preview' = {
+    resource productionRoute 'routes@2026-07-01' = {
       name: 'production-route'
+      dependsOn: [productionOriginGroup::productionOrigin, wafPolicy]
       properties: {
         cacheConfiguration: {
           compressionSettings: {
@@ -210,15 +209,13 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
         forwardingProtocol: 'HttpsOnly'
         enabledState: 'Enabled'
       }
-      dependsOn: [
-        productionOriginGroup::productionOrigin
-      ]
     }
   }
 }
 
 output frontDoorProductionFqdn string = frontDoorProfile::productionEndpoint.properties.hostName
 output frontDoorProfileId string = frontDoorProfile.id
+output frontDoorEndpointId string = frontDoorProfile::productionEndpoint.id
 
 output frontDoorApexToken string = frontDoorProfile::apexCustomDomain.properties.validationProperties.validationToken
 output frontDoorWwwToken string = frontDoorProfile::wwwCustomDomain.properties.validationProperties.validationToken

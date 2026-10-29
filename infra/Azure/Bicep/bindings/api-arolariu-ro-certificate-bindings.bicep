@@ -44,6 +44,7 @@ metadata version = '2.0.0'
 param apiWebsiteHostname string
 
 @description('The api website certificate thumbprint for SSL binding.')
+@minLength(1)
 param apiWebsiteThumbprint string
 
 resource apiWebsite 'Microsoft.Web/sites@2025-03-01' existing = { name: apiWebsiteHostname }

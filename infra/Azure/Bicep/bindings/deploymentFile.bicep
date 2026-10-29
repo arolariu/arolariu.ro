@@ -2,8 +2,8 @@
 // Custom Domain Bindings Deployment Orchestrator - DNS and SSL Configuration
 // =====================================================================================
 // This orchestrator module deploys custom domain bindings for all arolariu.ro
-// subdomains. It configures DNS records, SSL certificates, and hostname bindings
-// for each web application in the platform.
+// subdomains. It configures SSL certificates and hostname bindings.
+// Azure-owned DNS records are provisioned by network/dnsZone.bicep.
 //
 // Deployed Bindings:
 // - dev.arolariu.ro → Development website (App Service)
@@ -44,17 +44,17 @@ param resourceDeploymentDate string
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
-@description('The prefix to use for the names of the resources.')
-param resourceConventionPrefix string
-
 @description('The name of the Azure DNS Zone resource.')
 param dnsZoneName string
 
 @description('The development app service farm plan ID.')
 param devWebsiteAppServicePlanId string
 
-@description('The production app service farm plan ID.')
-param prodWebsiteAppServicePlanId string
+@description('The actual API App Service Plan ID.')
+param apiWebsiteAppServicePlanId string
+
+@description('The actual experiments App Service Plan ID.')
+param expWebsiteAppServicePlanId string
 
 @description('The hostname of the API website.')
 param apiWebsiteHostname string
@@ -68,8 +68,11 @@ param docsWebsiteHostname string
 @description('The hostname of the cv website.')
 param cvWebsiteHostname string
 
-@description('The hostname of the production website.')
-param prodWebsiteHostname string
+@description('The experiments App Service name.')
+param expWebsiteHostname string
+
+@description('The status Static Web App name.')
+param statusWebsiteName string
 
 module devWebsiteBindings 'dev-arolariu-ro-bindings.bicep' = {
   name: 'devWebsiteBindings-${resourceDeploymentDate}'
@@ -88,7 +91,7 @@ module apiWebsiteBindings 'api-arolariu-ro-bindings.bicep' = {
     dnsZoneName: dnsZoneName
     apiWebsiteHostname: apiWebsiteHostname
     apiWebsiteLocation: resourceLocation
-    apiWebsiteAppServicePlanId: devWebsiteAppServicePlanId
+    apiWebsiteAppServicePlanId: apiWebsiteAppServicePlanId
     apiWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
@@ -106,5 +109,24 @@ module cvWebsiteBindings 'cv-arolariu-ro-bindings.bicep' = {
   params: {
     dnsZoneName: dnsZoneName
     cvWebsiteHostname: cvWebsiteHostname
+  }
+}
+
+module statusWebsiteBindings 'status-arolariu-ro-bindings.bicep' = {
+  name: 'statusWebsiteBindings-${resourceDeploymentDate}'
+  params: {
+    dnsZoneName: dnsZoneName
+    statusWebsiteName: statusWebsiteName
+  }
+}
+
+module expWebsiteBindings 'exp-arolariu-ro-bindings.bicep' = {
+  name: 'expWebsiteBindings-${resourceDeploymentDate}'
+  params: {
+    dnsZoneName: dnsZoneName
+    expWebsiteHostname: expWebsiteHostname
+    expWebsiteLocation: resourceLocation
+    expWebsiteAppServicePlanId: expWebsiteAppServicePlanId
+    expWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
