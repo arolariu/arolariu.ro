@@ -72,11 +72,14 @@ function New-TaskFixture {
     $tenant = '22222222-2222-4222-8222-222222222222'
     $vaultId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.KeyVault/vaults/task-vault"
     $storeId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.AppConfiguration/configurationStores/task-store"
+    $serverId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Sql/servers/task-sql"
+    $databaseId = "$serverId/databases/invoices"
     [pscustomobject]@{
         Tenant = $tenant
         Subscription = $subscription
         VaultId = $vaultId
         StoreId = $storeId
+        DatabaseId = $databaseId
         Context = [pscustomobject]@{
             Tenant = [pscustomobject]@{ Id = $tenant }
             Subscription = [pscustomobject]@{ Id = $subscription }
@@ -98,6 +101,12 @@ function New-TaskFixture {
             ResourceGroupName = 'task-tests'
             Name = 'task-store'
             Properties = [pscustomobject]@{ endpoint = 'https://task-store.azconfig.io' }
+        }, [pscustomobject]@{
+            ResourceId = $serverId; ResourceType = 'Microsoft.Sql/servers'; ResourceGroupName = 'task-tests'; Name = 'task-sql'
+            Properties = [pscustomobject]@{ fullyQualifiedDomainName = 'task-sql.database.windows.net' }
+        }, [pscustomobject]@{
+            ResourceId = $databaseId; ResourceType = 'Microsoft.Sql/servers/databases'
+            ResourceGroupName = 'task-tests'; Name = 'task-sql/invoices'; Properties = [pscustomobject]@{}
         })
         SecretVersions = @()
         RemovedSecrets = @()
@@ -110,6 +119,13 @@ function New-TaskFixture {
         AppReadStatus = 0
         AppWriteStatus = 0
         AppConflictSatisfies = $false
+        Principals = [Collections.Generic.List[object]]::new()
+        SqlReads = 0
+        SqlAppearsOnRead = 0
+        SqlReadStatus = 0
+        SqlWriteStatus = 0
+        SqlCreateRace = $false
+        TokenReadStatus = 0
         Calls = [Collections.Generic.List[object]]::new()
         Mutations = [Collections.Generic.List[object]]::new()
         Approve = $false
@@ -221,6 +237,46 @@ function Invoke-TaskUnderTest {
             if ($Fixture.AppConflictSatisfies) { Throw-BoundaryError 412 }
             $Fixture.Mutations.Add([pscustomobject]@{ Name = 'SetSetting'; Arguments = $PSBoundParameters })
             $next
+        }
+        'Get-AzAccessToken' = {
+            [CmdletBinding()] param($ResourceUrl, $DefaultProfile)
+            Trace-Boundary 'Get-AzAccessToken' $PSBoundParameters
+            if ($Fixture.TokenReadStatus) { Throw-BoundaryError $Fixture.TokenReadStatus }
+            [pscustomobject]@{
+                Token = ConvertTo-SecureString 'SENSITIVE-PROVIDER-BODY' -AsPlainText -Force
+                ExpiresOn = [datetimeoffset]::UtcNow.AddMinutes(10)
+                TenantId = $Fixture.Tenant; UserId = 'synthetic'; Type = 'Bearer'
+            }
+        }
+        'Invoke-Sqlcmd' = {
+            [CmdletBinding()]
+            param($ServerInstance, $Database, $AccessToken, $Query, $Encrypt, [switch] $TrustServerCertificate,
+                $HostNameInCertificate, $ConnectionTimeout, $QueryTimeout, [switch] $AbortOnError,
+                [switch] $DisableVariables, [switch] $DisableCommands, [bool] $OutputSqlErrors)
+            Trace-Boundary 'Invoke-Sqlcmd' $PSBoundParameters
+            if ($Query -match '^\s*SELECT') {
+                if ($Fixture.SqlReadStatus) { Throw-BoundaryError $Fixture.SqlReadStatus }
+                $Fixture.SqlReads++
+                if ($Query -notmatch "WHERE name = N'((?:''|[^'])*)' OR sid = (0x[0-9a-fA-F]{32});") {
+                    throw 'Unexpected metadata read.'
+                }
+                $name = $Matches[1].Replace("''", "'")
+                $sid = $Matches[2]
+                if ($Fixture.SqlAppearsOnRead -and $Fixture.SqlReads -ge $Fixture.SqlAppearsOnRead) {
+                    return [pscustomobject]@{ Name = $name; Type = 'E'; Sid = $sid }
+                }
+                return $Fixture.Principals | Where-Object { $_.Name -ieq $name -or $_.Sid -ieq $sid }
+            }
+            if ($Query -notmatch '^CREATE USER \[((?:[^\]]|\]\])*)\] WITH SID = (0x[0-9a-fA-F]{32}), TYPE = E;$') {
+                throw 'Unexpected SQL mutation.'
+            }
+            $name = $Matches[1].Replace(']]', ']')
+            $sid = $Matches[2]
+            if ($Fixture.SqlWriteStatus) { Throw-BoundaryError $Fixture.SqlWriteStatus }
+            $Fixture.Principals.Add([pscustomobject]@{ Name = $name; Type = 'E'; Sid = $sid })
+            if ($Fixture.SqlCreateRace) { Throw-BoundaryError 409 }
+            $Fixture.Mutations.Add([pscustomobject]@{ Name = 'CreateUser'; Arguments = $PSBoundParameters })
+            'SENSITIVE-PROVIDER-BODY'
         }
         'Connect-AzAccount' = { throw 'Forbidden login.' }
         'Set-AzContext' = { throw 'Forbidden context switch.' }

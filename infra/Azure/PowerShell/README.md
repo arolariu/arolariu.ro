@@ -9,13 +9,14 @@ Use an existing authenticated Az context matching the explicit `TenantId` and `S
 modules, provision resources, or grant access to themselves. Supply the least privilege needed to read the selected target and perform the
 requested operation. A forbidden or unreadable lookup is an error, not proof of absence.
 
-| Module              | Validated version | Used for                                          |
-| ------------------- | ----------------- | ------------------------------------------------- |
-| Az.Accounts         | 5.5.3             | Existing context                                  |
-| Az.Resources        | 6.7.0             | Scoped resource lookup                            |
-| Az.KeyVault         | 6.6.1             | Secret metadata and explicit creation             |
-| Az.AppConfiguration | 2.2.0             | Data-plane key/label reads and conditional writes |
-| Pester              | 6.2.0             | Tests only                                        |
+| Module              | Validated version | Used for                                              |
+| ------------------- | ----------------- | ----------------------------------------------------- |
+| Az.Accounts         | 5.5.3             | Existing context                                      |
+| Az.Resources        | 6.7.0             | Scoped resource lookup                                |
+| Az.KeyVault         | 6.6.1             | Secret metadata and explicit creation                 |
+| Az.AppConfiguration | 2.2.0             | Data-plane key/label reads and conditional writes     |
+| SqlServer           | 22.4.5.1          | Encrypted SQL execution with a secure Az access token |
+| Pester              | 6.2.0             | Tests only                                            |
 
 Install prerequisites separately using your approved package-management process. No dependency installer runs inside a task.
 
@@ -79,6 +80,30 @@ are refused, never unlocked or flattened. Ordinary values are not emitted; use t
 Creates use `If-None-Match: *`; updates use the observed ETag. A precondition failure permits one reread: `NoChange` if another writer
 already satisfied the request, otherwise `StaleState` without a second write. Rerun to inspect and confirm the new state. The module's
 `DefaultProfile` is nonfunctional for data-plane commands; tasks verify the active context, not a pretend context switch.
+
+## Ensure one explicit SQL contained user
+
+[`Ensure-SqlContainedUser.ps1`](Ensure-SqlContainedUser.ps1) accepts `UserName` (nonempty, at most 128 SQL identifier characters) and
+`ExpectedSid` (`0x` plus exactly 32 hex characters). For name lookup, pass `ResourceGroupName`, `ServerName`, and `DatabaseName`. The target
+ID must identify a database, never a server or a default database.
+
+```powershell
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -TargetResourceId $databaseId -UserName 'backend' -ExpectedSid $expectedSid -WhatIf
+
+.\Ensure-SqlContainedUser.ps1 -TenantId $tenant -SubscriptionId $subscription `
+    -ResourceGroupName $resourceGroup -ServerName $sqlServer -DatabaseName $database `
+    -UserName 'backend' -ExpectedSid $expectedSid -NonInteractive -Confirm:$false
+```
+
+The script validates the actual parent FQDN, obtains the current environment's SQL token from the verified context, and uses encrypted
+transport with certificate validation, explicit database, 15-second connection and 30-second query timeouts. SQLCMD commands and variable
+expansion are disabled; SQL literals and identifiers are escaped separately.
+
+Only an external user (`TYPE = E`) with the exact expected name/SID/type is a no-op. Conflicting bindings or a SID owned by another user
+fail without dropping/remapping anything. No Graph lookup, role grant, business-data query, or hidden client-ID/object-ID conversion occurs.
+**The caller owns SID correctness.** Matching catalog metadata is not proof of real managed-identity login; that needs a separately approved
+live identity test.
 
 ## Tests
 
