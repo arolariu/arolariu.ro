@@ -136,6 +136,7 @@ function New-TaskFixture {
         Approve = $false
         Inputs = @()
         ConfirmPreference = 'None'
+        DefaultParameterValues = @{}
     }
 }
 
@@ -331,6 +332,7 @@ function Invoke-TaskUnderTest {
             param($TaskPath, $TaskParameters, $Preference)
             $PSModuleAutoLoadingPreference = 'None'
             $ConfirmPreference = $Preference
+            $PSDefaultParameterValues = $Fixture.DefaultParameterValues
             & $TaskPath @TaskParameters
         }).AddArgument($Path).AddArgument($Parameters).AddArgument($Fixture.ConfirmPreference)
         $failure = ''

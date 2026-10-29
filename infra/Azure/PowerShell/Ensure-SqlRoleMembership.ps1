@@ -33,6 +33,19 @@ function Get-VerifiedContext {
     return $context
 }
 
+function Test-AmbientConsentDefault {
+    if ($null -eq $PSDefaultParameterValues -or
+        ($PSDefaultParameterValues['Disabled'] -is [bool] -and $PSDefaultParameterValues['Disabled'])) { return $false }
+    # Session defaults also enter PSBoundParameters; their presence cannot prove invocation-level consent.
+    foreach ($key in $PSDefaultParameterValues.Keys) {
+        $separator = $key.LastIndexOf(':')
+        if ($separator -lt 0) { continue }
+        $pattern = [WildcardPattern]::new($key.Substring($separator + 1).Trim(), [Management.Automation.WildcardOptions]::IgnoreCase)
+        if ($pattern.IsMatch('Confirm') -or $pattern.IsMatch('cf') -or $pattern.IsMatch('NonInteractive')) { return $true }
+    }
+    return $false
+}
+
 function Assert-DatabaseId([string] $Id) {
     if ($Id -notmatch '^/subscriptions/([^/]+)/resourceGroups/([^/]+)/providers/Microsoft\.Sql/servers/([a-zA-Z0-9-]+)/databases/([^/\x00-\x1f]+)$' -or
         $Matches[1] -ine $SubscriptionId.ToString() -or $Id -match '[*?]') {
@@ -140,8 +153,8 @@ $literalName = $UserName.Replace("'", "''")
 $identifier = '[' + $UserName.Replace(']', ']]') + ']'
 if (Get-MembershipState) { Write-TaskResult 'NoChange'; return }
 if ($NonInteractive -and -not $WhatIfPreference -and
-    (-not $PSBoundParameters.ContainsKey('Confirm') -or [bool] $PSBoundParameters['Confirm'])) {
-    throw 'ConfirmationRequired: noninteractive writes require explicit -Confirm:$false.'
+    ((Test-AmbientConsentDefault) -or -not $PSBoundParameters.ContainsKey('Confirm') -or [bool] $PSBoundParameters['Confirm'])) {
+    throw 'ConfirmationRequired: supply explicit -NonInteractive -Confirm:$false with session consent defaults disabled.'
 }
 $ConfirmPreference = if ($NonInteractive) { 'None' } else { 'Low' }
 $confirmationTarget = "tenant=$TenantId subscription=$SubscriptionId $($target.ResourceId) user=$UserName role=$RoleName"

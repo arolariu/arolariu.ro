@@ -30,6 +30,19 @@ require exact names or an exact ID and never prompt.
 `ConfirmPreference = 'None'` or a manual `-Confirm:$false`. Automation must explicitly pass both `-NonInteractive` and `-Confirm:$false` for
 a write; an ambient preference is not consent. WhatIf does not require mutation consent.
 
+PowerShell also inserts `$PSDefaultParameterValues` into bound parameters, without exposing their origin. Automation writes therefore fail
+closed when enabled defaults can supply `Confirm`, its `cf` alias, or `NonInteractive`, including wildcard parameter names. This
+intentionally also rejects otherwise explicit calls while such defaults exist, even if a default appears scoped to another command. Disable
+defaults in a caller-owned child scope; the task never modifies the caller's dictionary:
+
+```powershell
+& {
+    $PSDefaultParameterValues = @{ Disabled = $true }
+    .\Ensure-SqlRoleMembership.ps1 -TenantId $tenant -SubscriptionId $subscription `
+        -TargetResourceId $databaseId -UserName 'backend' -RoleName 'db_datareader' -NonInteractive -Confirm:$false
+}
+```
+
 One non-secret result is emitted: `Task`, `Status` (`Changed`, `NoChange`, `WouldChange`, `Declined`), `Changed`, `TargetResourceId`,
 `Subject`, and `Fields` (owned field names, never values). A terminating classified error fails `pwsh -File`; SDK objects, secret values,
 tokens, and provider error bodies are not emitted. A no-op is not proof of downstream access.
@@ -179,6 +192,7 @@ The following thin `scriptContent` wrapper invokes the same secret file:
 ```powershell
 # Example only: stage Ensure-KeyVaultSecret.ps1 beside this wrapper.
 $ErrorActionPreference = 'Stop'
+$PSDefaultParameterValues = @{ Disabled = $true }
 $secureValue = $null
 try {
     $call = @{
@@ -220,8 +234,9 @@ References:
 ## Tests
 
 Tests invoke the real files in isolated runspaces with fake Azure/SQL/operator boundaries, disabled module autoloading, and no developer
-Azure credentials. They do not prove live permissions, identity login, propagation, or hosting cleanup. Run from this directory
-(`infra\Azure\PowerShell`):
+Azure credentials. The cross-owner consent suite covers session defaults, aliases, wildcard patterns, script scoping, manual confirmation,
+WhatIf, and explicit calls with disabled defaults. Tests do not prove live permissions, identity login, propagation, or hosting cleanup. Run
+from this directory (`infra\Azure\PowerShell`):
 
 ```powershell
 Import-Module Pester -RequiredVersion 6.2.0 -ErrorAction Stop
