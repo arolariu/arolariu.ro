@@ -88,6 +88,13 @@ function New-TaskFixture {
         CosmosAccountId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.DocumentDB/databaseAccounts/task-cosmos"
         CosmosEndpoint = 'https://task-cosmos.documents.azure.com/'
         ExpSiteId = "/subscriptions/$subscription/resourceGroups/task-tests/providers/Microsoft.Web/sites/task-exp"
+        ExpServiceUri = 'https://task-exp.azurewebsites.net/'
+        EasyAuthReadyStatus = 200
+        EasyAuthAnonymousStatus = 401
+        EasyAuthAllowedStatus = 404
+        EasyAuthDeniedStatus = 403
+        EasyAuthWrongAudienceStatus = 401
+        EasyAuthAllowedPrincipalIds = @('44444444-4444-4444-8444-444444444444')
         ApplicationClientId = $applicationClientId
         GraphReadStatus = 0
         GraphRequests = [Collections.Generic.List[object]]::new()
@@ -221,12 +228,39 @@ function New-TestAccessToken {
         idtyp = $(if ($Fixture.ActorKind -eq 'User') { 'user' } else { 'app' })
         aud = $(if ($ResourceUrl) { $ResourceUrl } else { 'https://management.azure.com/' })
         exp = [datetimeoffset]::UtcNow.AddMinutes(10).ToUnixTimeSeconds()
+        iss = "https://login.microsoftonline.com/$($Fixture.Tenant)/v2.0"; ver = '2.0'
     }
     if ($Fixture.OmitIdentityType) { $claims.Remove('idtyp') }
     $header = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"alg":"none"}')).TrimEnd('=').Replace('+', '-').Replace('/', '_')
     $payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($claims | ConvertTo-Json -Compress))).TrimEnd('=').Replace('+', '-').Replace('/', '_')
     $Fixture.LastToken = "$header.$payload.test"
     ConvertTo-SecureString $Fixture.LastToken -AsPlainText -Force
+}
+
+function New-SignedWrongAudienceToken {
+    param($Fixture, [switch] $BadSignature, [switch] $Expired)
+    $rsa = [Security.Cryptography.RSA]::Create(2048)
+    try {
+        $public = $rsa.ExportParameters($false)
+        $encode = { param([byte[]] $Bytes) [Convert]::ToBase64String($Bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_') }
+        $jwk = @{ kty = 'RSA'; use = 'sig'; kid = 'test-key'; n = (& $encode $public.Modulus); e = (& $encode $public.Exponent) }
+        $Fixture.HttpResponses["https://login.microsoftonline.com/$($Fixture.Tenant)/discovery/v2.0/keys"] = @{
+            StatusCode = 200; Content = (@{ keys = @($jwk) } | ConvertTo-Json -Depth 6 -Compress)
+        }
+        $header = & $encode ([Text.Encoding]::UTF8.GetBytes('{"alg":"RS256","kid":"test-key","typ":"JWT"}'))
+        $claims = @{
+            tid = $Fixture.Tenant; oid = $Fixture.PrincipalId; azp = $Fixture.ClientId
+            iss = "https://login.microsoftonline.com/$($Fixture.Tenant)/v2.0"; ver = '2.0'
+            aud = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'; nbf = [datetimeoffset]::UtcNow.AddMinutes(-1).ToUnixTimeSeconds()
+            exp = [datetimeoffset]::UtcNow.AddMinutes($(if ($Expired) { -1 } else { 10 })).ToUnixTimeSeconds()
+        }
+        $payload = & $encode ([Text.Encoding]::UTF8.GetBytes(($claims | ConvertTo-Json -Compress)))
+        $data = [Text.Encoding]::UTF8.GetBytes("$header.$payload")
+        $signature = $rsa.SignData($data, [Security.Cryptography.HashAlgorithmName]::SHA256, [Security.Cryptography.RSASignaturePadding]::Pkcs1)
+        if ($BadSignature) { $signature[0] = $signature[0] -bxor 1 }
+        ConvertTo-SecureString "$header.$payload.$(& $encode $signature)" -AsPlainText -Force
+    }
+    finally { $rsa.Dispose() }
 }
 
 function New-Setting {
@@ -498,6 +532,22 @@ function Invoke-TaskUnderTest {
                     $object = $Fixture.EntraServicePrincipal
                 }
                 if ($null -ne $object) { return [pscustomobject]@{ StatusCode = 200; Content = ($object | ConvertTo-Json -Depth 12 -Compress); Headers = @{} } }
+            }
+            if ($Uri.Host -eq 'task-exp.azurewebsites.net') {
+                if ($Uri.AbsolutePath -eq '/api/ready') {
+                    return [pscustomobject]@{ StatusCode = $Fixture.EasyAuthReadyStatus; Content = 'SENSITIVE-PROVIDER-BODY'; Headers = @{} }
+                }
+                if ($Uri.AbsolutePath -like '/__arolariu-auth-probe-*') {
+                    $status = $Fixture.EasyAuthAnonymousStatus
+                    if ($null -ne $Headers -and $Headers.ContainsKey('Authorization')) {
+                        $encoded = ($Headers.Authorization -replace '^Bearer ', '').Split('.')[1].Replace('-', '+').Replace('_', '/')
+                        $encoded = $encoded.PadRight($encoded.Length + ((4 - $encoded.Length % 4) % 4), '=')
+                        $claims = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded)) | ConvertFrom-Json
+                        $status = if ($claims.aud -notin $Fixture.ApplicationClientId, "api://$($Fixture.ApplicationClientId)") { $Fixture.EasyAuthWrongAudienceStatus }
+                            elseif ($Fixture.EasyAuthAllowedPrincipalIds -contains $claims.oid) { $Fixture.EasyAuthAllowedStatus } else { $Fixture.EasyAuthDeniedStatus }
+                    }
+                    return [pscustomobject]@{ StatusCode = $status; Content = 'SENSITIVE-PROVIDER-BODY'; Headers = @{} }
+                }
             }
             if (-not $Fixture.HttpResponses.ContainsKey($Uri.AbsoluteUri)) { throw 'Unexpected HTTP target.' }
             $response = $Fixture.HttpResponses[$Uri.AbsoluteUri]
