@@ -140,6 +140,8 @@ function New-TaskFixture {
         EntraDeletedObjects = [Collections.Generic.List[object]]::new()
         GraphApplicationReads = 0
         GraphChangeApplicationOnRead = 0
+        GraphPrincipalReads = 0
+        GraphChangePrincipalOnRead = 0
         GraphRequests = [Collections.Generic.List[object]]::new()
         AuthReadStatus = 0
         AuthSettings = @{
@@ -162,6 +164,7 @@ function New-TaskFixture {
             '@odata.type' = '#microsoft.graph.servicePrincipal'
             id = 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb'; appId = $applicationClientId; displayName = 'Task experiments'
             servicePrincipalType = 'Application'; appOwnerOrganizationId = $tenant; accountEnabled = $true; appRoleAssignmentRequired = $false
+            signInAudience = 'AzureADMyOrg'; applicationTemplateId = $null; publisherName = 'Task publisher'
         }
         HttpRequests = [Collections.Generic.List[object]]::new()
         HttpResponses = @{}
@@ -711,6 +714,10 @@ function Invoke-TaskUnderTest {
                 }
                 elseif ($path -match '^/v1.0/servicePrincipals/([0-9a-f-]+)$') {
                     $matchId = $Matches[1]; $object = @($principals | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'servicePrincipals'
+                    if ($Method -eq 'GET') {
+                        $Fixture.GraphPrincipalReads++
+                        if ($Fixture.GraphChangePrincipalOnRead -and $Fixture.GraphPrincipalReads -ge $Fixture.GraphChangePrincipalOnRead -and $null -ne $object) { $object.displayName = 'concurrently changed' }
+                    }
                 }
                 elseif ($path -match '^/v1.0/directory/deletedItems/([0-9a-f-]+)$') {
                     $matchId = $Matches[1]; $object = @($Fixture.EntraDeletedObjects | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'deletedItems'
