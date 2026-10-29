@@ -51,11 +51,19 @@ tokens, and provider error bodies are not emitted. A no-op is not proof of downs
 
 ### Owned temporary access and recovery
 
-`Ensure-KeyVaultSecret.ps1` additionally accepts `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and a bounded
-`AccessPropagationTimeoutSeconds` (default 120). The flag is opt-in: existing authorized callers need no lease. Existing recognized Secrets
-Officer/Key Vault Administrator assignments are preserved. When needed, the task confirms a Secrets Officer grant for the actual verified
-principal on the selected vault only, records its preselected assignment ID and ownership marker before requesting it, waits for metadata
-access, and removes only that assignment in `finally`. Existing role-assignment authority must already be present.
+The secret task and both App Configuration setters additionally accept `ManageTemporaryAccess`, `RecoveryReceiptPath`, `ResumeCleanup`, and
+a bounded `AccessPropagationTimeoutSeconds` (120 seconds for the secret task, 900 for configuration tasks). The flag is opt-in: existing
+authorized callers need no lease. Existing recognized Secrets Officer/Key Vault Administrator assignments are preserved. When needed, the
+secret task confirms a Secrets Officer grant for the actual verified principal on the selected vault only, records its preselected
+assignment ID and ownership marker before requesting it, waits for metadata access, and removes only that assignment in `finally`. Existing
+role-assignment authority must already be present.
+
+The ordinary setter can acquire only App Configuration Data Owner on the selected store. The reference setter can additionally acquire only
+Key Vault Reader on its selected source vault; this role reads metadata, not secret contents. Both setters keep conditional ETags, unowned
+tags and descriptions, and recheck the active actor because the data-plane module's `DefaultProfile` is nonfunctional. Multiple owned grants
+are cleaned independently, including after a failure or a changed active context. App Configuration permissions can take
+[up to 15 minutes to propagate](https://learn.microsoft.com/azure/azure-app-configuration/concept-enable-rbac); timeout is a failure with
+cleanup, not proof of missing target data.
 
 The caller supplies a **new file in an existing durable directory** for `RecoveryReceiptPath`. It contains safe resource/principal IDs,
 phases and cleanup metadata, never secret values or tokens. Do not share a receipt between concurrent invocations, edit its ownership
@@ -79,6 +87,9 @@ controller state, not immediate eviction of cached authorization.
 WhatIf never creates a receipt or grants access. Unreadable protected state is `WouldChange`, `TargetStateKnown=false` and deferred fields,
 not an absent or verified secret. Structured Information events include only safe actor/scope metadata, never the Az profile or raw claims.
 An actual principal that cannot be verified cannot acquire temporary access.
+
+For either setter, use the same access/recovery flags with the selected store's exact `TargetResourceId`. Reference-task recovery reads its
+validated source-vault ID from the receipt; `ResumeCleanup` needs no key, label, value, or secret parameters and never rewrites them.
 
 ## Preserve or create one secret
 

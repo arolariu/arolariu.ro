@@ -127,6 +127,7 @@ function New-TaskFixture {
         AppReadStatus = 0
         AppWriteStatus = 0
         AppConflictSatisfies = $false
+        ChangeContextAfterAppRead = $false
         Principals = [Collections.Generic.List[object]]::new()
         Roles = @('db_datareader', 'db_datawriter', 'db_ddladmin')
         Memberships = [Collections.Generic.List[object]]::new()
@@ -235,7 +236,7 @@ function Invoke-TaskUnderTest {
             if ($Fixture.SecretReadStatus) {
                 $access = @($Fixture.RoleAssignments | Where-Object {
                     $_.ObjectId -eq $Fixture.PrincipalId -and $_.Scope -eq $Fixture.VaultId -and
-                    $_.RoleDefinitionId -match 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7$'
+                    $_.RoleDefinitionId -match '(b86a8fe4-44ce-4948-aee5-eccb2c155cd7|21090545-7ca7-4776-b22c-e363652d74d2|00482a5a-887f-4fb3-b363-3b7fe8e74483)$'
                 }).Count -gt 0
                 if (-not ($Fixture.SecretReadStatus -eq 403 -and $access)) { Throw-BoundaryError $Fixture.SecretReadStatus }
             }
@@ -269,10 +270,21 @@ function Invoke-TaskUnderTest {
         'Get-AzAppConfigurationKeyValue' = {
             [CmdletBinding()] param($Endpoint, $Key, $Label, $After)
             Trace-Boundary 'Get-AzAppConfigurationKeyValue' $PSBoundParameters
-            if ($Fixture.AppReadStatus) { Throw-BoundaryError $Fixture.AppReadStatus }
+            if ($Fixture.AppReadStatus) {
+                $access = @($Fixture.RoleAssignments | Where-Object {
+                    $_.ObjectId -eq $Fixture.PrincipalId -and $_.Scope -eq $Fixture.StoreId -and
+                    $_.RoleDefinitionId -match '5ae67dd6-50cb-40e7-96ff-dc2bfa4b606b$'
+                }).Count -gt 0
+                if (-not ($Fixture.AppReadStatus -eq 403 -and $access)) { Throw-BoundaryError $Fixture.AppReadStatus }
+            }
             $literalKey = [regex]::Replace($Key, '\\([\\*,])', '$1')
             $literalLabel = if ($Label -eq [string][char] 0) { '' } else { [regex]::Replace($Label, '\\([\\*,])', '$1') }
-            $Fixture.Settings | Where-Object { $_.Key -ceq $literalKey -and [string] $_.Label -ceq $literalLabel }
+            $items = @($Fixture.Settings | Where-Object { $_.Key -ceq $literalKey -and [string] $_.Label -ceq $literalLabel })
+            if ($Fixture.ChangeContextAfterAppRead) {
+                $Fixture.Context.Subscription.Id = '33333333-3333-4333-8333-333333333333'
+                $Fixture.ChangeContextAfterAppRead = $false
+            }
+            $items
         }
         'Set-AzAppConfigurationKeyValue' = {
             [CmdletBinding(SupportsShouldProcess)]

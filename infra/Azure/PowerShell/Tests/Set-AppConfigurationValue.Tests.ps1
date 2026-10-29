@@ -3,6 +3,109 @@ BeforeAll {
     $taskPath = Join-Path (Split-Path $PSScriptRoot) 'Set-AppConfigurationValue.ps1'
 }
 
+Describe 'Set-AppConfigurationValue scoped access' {
+    BeforeEach {
+        $fixture = New-TaskFixture
+        $fixture.AppReadStatus = 403
+        $receiptPath = Join-Path $TestDrive "$([guid]::NewGuid()).json"
+        $fixture.ExpectedReceiptPath = $receiptPath
+        $parameters = @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.StoreId
+            Key = 'Feature:Name'; Label = 'DEVELOPMENT'; Value = 'test-only-private-value'; ContentType = ''
+            ManageTemporaryAccess = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        }
+    }
+
+    It 'StoreLeasePreservesTagsAndEtagBehavior' {
+        $fixture.Settings.Add((New-Setting -Tag @{ owner = 'keep' }))
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].CleanupStatus | Should -Be 'Completed'
+        $result.Output[0].AccessChanged | Should -BeTrue
+        $fixture.Settings[0].Tag.owner | Should -Be 'keep'
+        $fixture.Mutations[0].Arguments.IfMatch | Should -Be '"first-etag"'
+        $fixture.RoleAssignments.Count | Should -Be 0
+        $result.AllText | Should -Not -Match 'test-only-private-value'
+    }
+
+    It 'FailureCleansEveryOwnedLease' {
+        $fixture.AppWriteStatus = 500
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'SettingWriteFailed'
+        $result.Output.Count | Should -Be 0
+        $fixture.RoleAssignments.Count | Should -Be 0
+        ($fixture.AccessMutations.Name -join ',') | Should -Be 'Grant,Revoke'
+    }
+
+    It 'PreexistingRolesAreNotRemoved' {
+        $fixture.RoleAssignments.Add([pscustomobject]@{
+            RoleAssignmentId = "$($fixture.StoreId)/providers/Microsoft.Authorization/roleAssignments/66666666-6666-4666-8666-666666666666"
+            ObjectId = $fixture.PrincipalId; Scope = $fixture.StoreId
+            RoleDefinitionId = '5ae67dd6-50cb-40e7-96ff-dc2bfa4b606b'; Description = 'pre-existing'; Condition = ''
+        })
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.RoleAssignments.Count | Should -Be 1
+        $result.Output[0].AccessChanged | Should -BeFalse
+    }
+
+    It 'ContextChangeStopsTargetWrites' {
+        $fixture.AppReadStatus = 0
+        $fixture.ChangeContextAfterAppRead = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'ContextMismatch'
+        $fixture.Mutations.Count | Should -Be 0
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+
+    It 'ReceiptContainsNoValues' {
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $text = Get-Content -LiteralPath $receiptPath -Raw
+        $text | Should -Not -Match 'test-only-private-value|SENSITIVE-PROVIDER-BODY|test-only-account'
+        $receipt = $text | ConvertFrom-Json
+        $receipt.OwnedRoleAssignments[0].Scope | Should -Be $fixture.StoreId
+        $receipt.Cleanup.Status | Should -Be 'Completed'
+    }
+
+    It 'WhatIfDefersProtectedStateWithoutAccessOrReceiptWrites' {
+        $parameters.Remove('Confirm')
+        $parameters.WhatIf = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $result.Output[0].Status | Should -Be 'WouldChange'
+        $result.Output[0].TargetStateKnown | Should -BeFalse
+        $fixture.AccessMutations.Count | Should -Be 0
+        $fixture.Mutations.Count | Should -Be 0
+        Test-Path -LiteralPath $receiptPath | Should -BeFalse
+    }
+
+    It 'ResumeCleanupNeverRepeatsTheSettingWrite' {
+        $fixture.RoleCleanupStatus = 500
+        $first = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $first.ErrorText | Should -Match 'CleanupFailed'
+        $first.Output.Count | Should -Be 0
+        $fixture.RoleCleanupStatus = 0
+        $result = Invoke-TaskUnderTest $taskPath @{
+            TenantId = $fixture.Tenant; SubscriptionId = $fixture.Subscription; TargetResourceId = $fixture.StoreId
+            ResumeCleanup = $true; RecoveryReceiptPath = $receiptPath; NonInteractive = $true; Confirm = $false
+        } $fixture
+        $result.ErrorText | Should -BeNullOrEmpty
+        $fixture.Mutations.Count | Should -Be 1
+        $fixture.RoleAssignments.Count | Should -Be 0
+        $result.Output[0].Changed | Should -BeFalse
+    }
+
+    It 'DefaultsCannotAuthorizeTemporaryAccess' {
+        $parameters.Remove('ManageTemporaryAccess')
+        $fixture.DefaultParameterValues['*:ManageTemp*'] = $true
+        $result = Invoke-TaskUnderTest $taskPath $parameters $fixture
+        $result.ErrorText | Should -Match 'ConfirmationRequired'
+        $fixture.AccessMutations.Count | Should -Be 0
+    }
+}
+
 Describe 'Set-AppConfigurationValue' {
     BeforeEach {
         $fixture = New-TaskFixture
