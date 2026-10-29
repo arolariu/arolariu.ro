@@ -48,9 +48,6 @@ const LOG_CONTEXT = "generate:env";
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
 
-/** Azure AD token scope for authenticating to the exp service. */
-const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
-
 /** Upper bound of the exp build-time request. */
 const EXP_REQUEST_TIMEOUT = "30 seconds";
 
@@ -214,15 +211,16 @@ export function quoteIfNeeded(value: string): string {
  * request is then sent without an `Authorization` header, as before.
  *
  * @param isCI - Whether the command runs in CI.
+ * @param scope - The validated experiments registration's token scope.
  * @returns The redacted token, or `undefined` when none was acquired.
  */
-function acquireBearerToken(isCI: boolean): Effect.Effect<Redacted.Redacted<string> | undefined, never, Presenter> {
+function acquireBearerToken(isCI: boolean, scope: string): Effect.Effect<Redacted.Redacted<string> | undefined, never, Presenter> {
   const describe = (error: unknown): string => (error instanceof Error ? error.message : String(error));
   return Effect.gen(function* () {
     const identity = yield* Effect.tryPromise({try: () => import("@azure/identity"), catch: describe});
     const credential = isCI ? new identity.AzureCliCredential() : new identity.DefaultAzureCredential();
-    yield* Effect.logInfo(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
-    const token = yield* Effect.tryPromise({try: () => credential.getToken(EXP_TOKEN_SCOPE), catch: describe});
+    yield* Effect.logInfo(`Acquiring token for scope ${scope} via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
+    const token = yield* Effect.tryPromise({try: () => credential.getToken(scope), catch: describe});
     if (!token?.token) {
       yield* Effect.logWarning("Token acquisition returned an empty token.");
       return undefined;
@@ -245,81 +243,90 @@ function acquireBearerToken(isCI: boolean): Effect.Effect<Redacted.Redacted<stri
  *
  * @returns The mapped configuration.
  */
-const fetchConfigurationFromExp: Effect.Effect<EnvironmentValues, ExpConfigurationUnavailable, GenerateRequirements> = Effect.gen(
-  function* () {
-    const environment = yield* Environment;
-    const presenter = yield* Presenter;
-    const client = yield* HttpClient.HttpClient;
-    const expBaseUrl =
-      environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
-    const configLabel = (environment.variables["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+const fetchConfigurationFromExp: Effect.Effect<
+  EnvironmentValues,
+  ExpConfigurationUnavailable | MissingEnvironmentValues,
+  GenerateRequirements
+> = Effect.gen(function* () {
+  const environment = yield* Environment;
+  const presenter = yield* Presenter;
+  const client = yield* HttpClient.HttpClient;
+  const expBaseUrl =
+    environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
+  const configLabel = (environment.variables["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
-    yield* Effect.logDebug(`Exp service URL: ${expBaseUrl}`);
+  yield* Effect.logDebug(`Exp service URL: ${expBaseUrl}`);
 
-    // Acquire a bearer token only when targeting the Azure-hosted exp service.
-    let token: Redacted.Redacted<string> | undefined;
-    if (expBaseUrl === AZURE_EXP_URL) {
-      token = yield* acquireBearerToken(environment.isCI);
-    } else {
-      yield* Effect.logInfo("No AZURE_CLIENT_ID; skipping bearer token acquisition.");
-    }
-
-    const url = `${expBaseUrl}/api/v1/build-time?for=website&label=${configLabel}`;
-    yield* Effect.logInfo(`Fetching ${url}.`);
-
-    const request = HttpClientRequest.get(url, {headers: {"X-Exp-Target": "website"}});
-    const unavailable = (error: {readonly message: string}): ExpConfigurationUnavailable =>
-      new ExpConfigurationUnavailable({message: `exp request to ${url} failed: ${error.message}`});
-    // One timeout covers the request and the bounded body read, like the legacy client's single deadline.
-    const {response, body} = yield* Effect.gen(function* () {
-      const sent = yield* client.execute(token === undefined ? request : HttpClientRequest.bearerToken(request, token));
-      return {response: sent, body: yield* readBoundedText(sent)};
-    }).pipe(
-      // Keep the legacy request headers exactly: no trace propagation headers to the exp service.
-      Effect.provideService(HttpClient.TracerPropagationEnabled, false),
-      Effect.timeout(EXP_REQUEST_TIMEOUT),
-      Effect.mapError(unavailable),
-    );
-
-    if (response.status < 200 || response.status >= 300) {
-      yield* Effect.logError(`exp returned ${response.status} for ${url}.`);
-      if (body !== "") {
-        yield* Effect.logDebug(`exp response included a non-empty error body (${body.length} characters).`);
-      }
-      return yield* new ExpConfigurationUnavailable({
-        message: `exp returned ${response.status} for /api/v1/build-time?for=website`,
-        status: response.status,
+  // Acquire a bearer token only when targeting the Azure-hosted exp service.
+  let token: Redacted.Redacted<string> | undefined;
+  if (expBaseUrl === AZURE_EXP_URL) {
+    const appClientId = environment.variables["EXP_ENTRA_APP_CLIENT_ID"]?.trim();
+    if (!appClientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(appClientId)) {
+      return yield* new MissingEnvironmentValues({
+        message: "EXP_ENTRA_APP_CLIENT_ID must be configured as a canonical GUID for Azure experiments authentication.",
+        keys: ["EXP_ENTRA_APP_CLIENT_ID"],
       });
     }
+    token = yield* acquireBearerToken(environment.isCI, `api://${appClientId.toLowerCase()}/.default`);
+  } else {
+    yield* Effect.logInfo("No AZURE_CLIENT_ID; skipping bearer token acquisition.");
+  }
 
-    const payload = yield* Effect.try({
-      try: (): unknown => JSON.parse(body),
-      catch: (error) =>
-        new ExpConfigurationUnavailable({message: error instanceof Error ? error.message : String(error), status: response.status}),
+  const url = `${expBaseUrl}/api/v1/build-time?for=website&label=${configLabel}`;
+  yield* Effect.logInfo(`Fetching ${url}.`);
+
+  const request = HttpClientRequest.get(url, {headers: {"X-Exp-Target": "website"}});
+  const unavailable = (error: {readonly message: string}): ExpConfigurationUnavailable =>
+    new ExpConfigurationUnavailable({message: `exp request to ${url} failed: ${error.message}`});
+  // One timeout covers the request and the bounded body read, like the legacy client's single deadline.
+  const {response, body} = yield* Effect.gen(function* () {
+    const sent = yield* client.execute(token === undefined ? request : HttpClientRequest.bearerToken(request, token));
+    return {response: sent, body: yield* readBoundedText(sent)};
+  }).pipe(
+    // Keep the legacy request headers exactly: no trace propagation headers to the exp service.
+    Effect.provideService(HttpClient.TracerPropagationEnabled, false),
+    Effect.timeout(EXP_REQUEST_TIMEOUT),
+    Effect.mapError(unavailable),
+  );
+
+  if (response.status < 200 || response.status >= 300) {
+    yield* Effect.logError(`exp returned ${response.status} for ${url}.`);
+    if (body !== "") {
+      yield* Effect.logDebug(`exp response included a non-empty error body (${body.length} characters).`);
+    }
+    return yield* new ExpConfigurationUnavailable({
+      message: `exp returned ${response.status} for /api/v1/build-time?for=website`,
+      status: response.status,
     });
-    const config = typeof payload === "object" && payload !== null && "config" in payload ? payload.config : undefined;
-    if (typeof config !== "object" || config === null) {
-      return yield* new ExpConfigurationUnavailable({message: "exp build-time response missing 'config' object", status: response.status});
+  }
+
+  const payload = yield* Effect.try({
+    try: (): unknown => JSON.parse(body),
+    catch: (error) =>
+      new ExpConfigurationUnavailable({message: error instanceof Error ? error.message : String(error), status: response.status}),
+  });
+  const config = typeof payload === "object" && payload !== null && "config" in payload ? payload.config : undefined;
+  if (typeof config !== "object" || config === null) {
+    return yield* new ExpConfigurationUnavailable({message: "exp build-time response missing 'config' object", status: response.status});
+  }
+  const received = config as Readonly<Record<string, unknown>>;
+
+  yield* Effect.logDebug(`Received ${Object.keys(received).length} config keys from exp.`);
+
+  const values: EnvironmentValues = {};
+  for (const [expKey, envVar] of Object.entries(APP_CONFIGURATION_MAPPING)) {
+    const value = received[expKey];
+    if (value !== undefined && value !== null) {
+      values[envVar] = readValue(envVar, String(value));
+      yield* Effect.logInfo(`Mapped ${expKey} to ${envVar}.`);
+    } else {
+      yield* Effect.logWarning(`Key ${expKey} was not found in the exp build-time response.`);
     }
-    const received = config as Readonly<Record<string, unknown>>;
+  }
 
-    yield* Effect.logDebug(`Received ${Object.keys(received).length} config keys from exp.`);
-
-    const values: EnvironmentValues = {};
-    for (const [expKey, envVar] of Object.entries(APP_CONFIGURATION_MAPPING)) {
-      const value = received[expKey];
-      if (value !== undefined && value !== null) {
-        values[envVar] = readValue(envVar, String(value));
-        yield* Effect.logInfo(`Mapped ${expKey} to ${envVar}.`);
-      } else {
-        yield* Effect.logWarning(`Key ${expKey} was not found in the exp build-time response.`);
-      }
-    }
-
-    yield* presenter.success(`Fetched ${Object.keys(values).length} configuration values from exp.`);
-    return values;
-  },
-);
+  yield* presenter.success(`Fetched ${Object.keys(values).length} configuration values from exp.`);
+  return values;
+});
 
 /**
  * Parses an existing `.env` file and keeps only the re-emittable keys.
