@@ -131,6 +131,15 @@ function New-TaskFixture {
         EasyAuthAllowedPrincipalIds = @('44444444-4444-4444-8444-444444444444')
         ApplicationClientId = $applicationClientId
         GraphReadStatus = 0
+        GraphWriteStatus = 0
+        EntraApplicationDeleted = $false
+        EntraServicePrincipalDeleted = $false
+        EntraAutoDeleteLinkedSp = $true
+        OtherEntraApplications = [Collections.Generic.List[object]]::new()
+        OtherEntraServicePrincipals = [Collections.Generic.List[object]]::new()
+        EntraDeletedObjects = [Collections.Generic.List[object]]::new()
+        GraphApplicationReads = 0
+        GraphChangeApplicationOnRead = 0
         GraphRequests = [Collections.Generic.List[object]]::new()
         AuthReadStatus = 0
         AuthSettings = @{
@@ -143,11 +152,14 @@ function New-TaskFixture {
             } }
         }
         EntraApplication = @{
+            '@odata.type' = '#microsoft.graph.application'
             id = 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'; appId = $applicationClientId; displayName = 'Task experiments'
             uniqueName = 'task-experiments'; signInAudience = 'AzureADMyOrg'
             identifierUris = @("api://$applicationClientId"); api = @{ requestedAccessTokenVersion = 2 }
+            publisherDomain = 'task.onmicrosoft.com'
         }
         EntraServicePrincipal = @{
+            '@odata.type' = '#microsoft.graph.servicePrincipal'
             id = 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb'; appId = $applicationClientId; displayName = 'Task experiments'
             servicePrincipalType = 'Application'; appOwnerOrganizationId = $tenant; accountEnabled = $true; appRoleAssignmentRequired = $false
         }
@@ -671,14 +683,73 @@ function Invoke-TaskUnderTest {
             if ($Uri.Host -eq 'graph.microsoft.com') {
                 $Fixture.GraphRequests.Add([pscustomobject]@{ Method = $Method; Path = $Uri.PathAndQuery })
                 if ($Fixture.GraphReadStatus) { return [pscustomobject]@{ StatusCode = $Fixture.GraphReadStatus; Content = 'SENSITIVE-PROVIDER-BODY'; Headers = @{} } }
+                $path = [uri]::UnescapeDataString($Uri.AbsolutePath)
+                $apps = @($(if (-not $Fixture.EntraApplicationDeleted) { $Fixture.EntraApplication })) + @($Fixture.OtherEntraApplications)
+                $principals = @($(if (-not $Fixture.EntraServicePrincipalDeleted) { $Fixture.EntraServicePrincipal })) + @($Fixture.OtherEntraServicePrincipals)
+                $apps = @($apps | Where-Object { $null -ne $_ })
+                $principals = @($principals | Where-Object { $null -ne $_ })
                 $object = $null
-                if ($Uri.AbsolutePath -match "^/v1.0/applications\(appId='([^']+)'\)$" -and $Matches[1] -eq $Fixture.EntraApplication.appId) {
-                    $object = $Fixture.EntraApplication
+                $collection = ''
+                if ($path -eq '/v1.0/applications') {
+                    return [pscustomobject]@{ StatusCode = 200; Content = (@{ value = $apps } | ConvertTo-Json -Depth 12 -Compress); Headers = @{} }
                 }
-                elseif ($Uri.AbsolutePath -match "^/v1.0/servicePrincipals\(appId='([^']+)'\)$" -and $Matches[1] -eq $Fixture.EntraServicePrincipal.appId) {
-                    $object = $Fixture.EntraServicePrincipal
+                if ($path -eq '/v1.0/servicePrincipals') {
+                    return [pscustomobject]@{ StatusCode = 200; Content = (@{ value = $principals } | ConvertTo-Json -Depth 12 -Compress); Headers = @{} }
                 }
-                if ($null -ne $object) { return [pscustomobject]@{ StatusCode = 200; Content = ($object | ConvertTo-Json -Depth 12 -Compress); Headers = @{} } }
+                if ($path -match "^/v1.0/applications\(appId='([^']+)'\)$") {
+                    $matchId = $Matches[1]; $object = @($apps | Where-Object appId -eq $matchId) | Select-Object -First 1; $collection = 'applications'
+                }
+                elseif ($path -match '^/v1.0/applications/([0-9a-f-]+)$') {
+                    $matchId = $Matches[1]; $object = @($apps | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'applications'
+                    if ($Method -eq 'GET') {
+                        $Fixture.GraphApplicationReads++
+                        if ($Fixture.GraphChangeApplicationOnRead -and $Fixture.GraphApplicationReads -ge $Fixture.GraphChangeApplicationOnRead -and $null -ne $object) { $object.displayName = 'concurrently changed' }
+                    }
+                }
+                elseif ($path -match "^/v1.0/servicePrincipals\(appId='([^']+)'\)$") {
+                    $matchId = $Matches[1]; $object = @($principals | Where-Object appId -eq $matchId) | Select-Object -First 1; $collection = 'servicePrincipals'
+                }
+                elseif ($path -match '^/v1.0/servicePrincipals/([0-9a-f-]+)$') {
+                    $matchId = $Matches[1]; $object = @($principals | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'servicePrincipals'
+                }
+                elseif ($path -match '^/v1.0/directory/deletedItems/([0-9a-f-]+)$') {
+                    $matchId = $Matches[1]; $object = @($Fixture.EntraDeletedObjects | Where-Object id -eq $matchId) | Select-Object -First 1; $collection = 'deletedItems'
+                }
+                elseif ($path -match '^/v1.0/directory/deletedItems/microsoft.graph.(application|servicePrincipal)$') {
+                    $type = '#microsoft.graph.' + $Matches[1]
+                    return [pscustomobject]@{
+                        StatusCode = 200; Content = (@{ value = @($Fixture.EntraDeletedObjects | Where-Object { $_['@odata.type'] -ceq $type }) } | ConvertTo-Json -Depth 12 -Compress); Headers = @{}
+                    }
+                }
+                if (-not $collection) { throw 'Unexpected Graph target.' }
+                if ($null -eq $object) { return [pscustomobject]@{ StatusCode = 404; Content = ''; Headers = @{} } }
+                if ($Method -eq 'DELETE') {
+                    if ($Fixture.GraphWriteStatus) { return [pscustomobject]@{ StatusCode = $Fixture.GraphWriteStatus; Content = 'SENSITIVE-PROVIDER-BODY'; Headers = @{} } }
+                    if ($collection -eq 'deletedItems') {
+                        $null = $Fixture.EntraDeletedObjects.Remove($object)
+                        $Fixture.Mutations.Add([pscustomobject]@{ Name = 'PurgeEntraObject'; Id = $object.id })
+                    }
+                    else {
+                        $deleted = $object.Clone(); $deleted.deletedDateTime = '2026-02-01T00:00:00Z'; $Fixture.EntraDeletedObjects.Add($deleted)
+                        if ($collection -eq 'applications') {
+                            if ($object.id -eq $Fixture.EntraApplication.id) { $Fixture.EntraApplicationDeleted = $true }
+                            else { $null = $Fixture.OtherEntraApplications.Remove($object) }
+                            if ($Fixture.EntraAutoDeleteLinkedSp -and $Fixture.EntraServicePrincipal.appId -eq $object.appId -and -not $Fixture.EntraServicePrincipalDeleted) {
+                                $Fixture.EntraServicePrincipalDeleted = $true
+                                $deletedSp = $Fixture.EntraServicePrincipal.Clone(); $deletedSp.deletedDateTime = '2026-02-01T00:00:00Z'; $Fixture.EntraDeletedObjects.Add($deletedSp)
+                            }
+                            $Fixture.Mutations.Add([pscustomobject]@{ Name = 'DeleteEntraApplication'; Id = $object.id })
+                        }
+                        else {
+                            if ($object.id -eq $Fixture.EntraServicePrincipal.id) { $Fixture.EntraServicePrincipalDeleted = $true }
+                            else { $null = $Fixture.OtherEntraServicePrincipals.Remove($object) }
+                            $Fixture.Mutations.Add([pscustomobject]@{ Name = 'DeleteEntraServicePrincipal'; Id = $object.id })
+                        }
+                    }
+                    return [pscustomobject]@{ StatusCode = 204; Content = ''; Headers = @{} }
+                }
+                if ($Method -ne 'GET') { throw 'Unexpected Graph mutation.' }
+                return [pscustomobject]@{ StatusCode = 200; Content = ($object | ConvertTo-Json -Depth 12 -Compress); Headers = @{} }
             }
             if ($Uri.Host -eq 'task-exp.azurewebsites.net') {
                 if ($Uri.AbsolutePath -eq '/api/ready') {
