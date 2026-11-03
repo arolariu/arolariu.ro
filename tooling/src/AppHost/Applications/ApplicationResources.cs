@@ -1,5 +1,6 @@
 namespace AppHost.Applications;
 
+using AppHost.Applications.JavaScript;
 using AppHost.LocalDevelopment;
 using AppHost.Repository;
 using Aspire.Hosting;
@@ -14,6 +15,8 @@ internal static class ApplicationResources
   internal static void AddApplications(this IDistributedApplicationBuilder builder,
     RepositoryLayout layout, IResourceBuilder<PythonAppResource> exp, LocalResources local)
   {
+    // One install for the whole npm workspace; per-app installers would race over the shared node_modules.
+    var npmInstall = builder.AddSharedNpmInstall(layout.RootDirectory);
     var api = builder.AddProject<Projects.arolariu_Backend_Core>("api")
       .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
@@ -34,19 +37,23 @@ internal static class ApplicationResources
       .WaitFor(api)
       .WithIconName("Globe")
       // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.
-      .WithHttpHealthCheck("/api/health/");
+      .WithHttpHealthCheck("/api/health/")
+      .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("cv", layout.CvDirectory)
       .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
       .WithIconName("PersonAccounts")
-      .WithHttpHealthCheck("/");
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
     builder.AddJavaScriptApp("docs", layout.DocsDirectory, runScriptName: "start")
       // Docusaurus already pins its port; a DCP proxy would bind it first.
       .WithHttpEndpoint(port: Constants.DocsPort, isProxied: false)
       .WithIconName("BookOpenGlobe")
-      .WithHttpHealthCheck("/");
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("status", layout.StatusDirectory)
       .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
       .WithIconName("PulseSquare")
-      .WithHttpHealthCheck("/");
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
   }
 }

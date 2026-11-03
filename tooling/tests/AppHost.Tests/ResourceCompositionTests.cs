@@ -2,6 +2,7 @@ namespace AppHost.Tests;
 
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.JavaScript;
 using Aspire.Hosting.Python;
 using global::AppHost.Applications;
 using global::AppHost.Applications.Exp;
@@ -42,7 +43,7 @@ public sealed class ResourceCompositionTests
     string[] names = graph.Builder.Resources.Select(resource => resource.Name).ToArray();
     string[] expected = ["mssql", "arolariu-sql", "cosmos", "primary", "invoices", "merchants",
       "storage", "blobs", "queues", "redis", "local-bootstrap", "exp", "local-identities",
-      "api", "website", "cv", "docs", "status"];
+      "api", "website", "cv", "docs", "status", "npm-install"];
     foreach (string name in expected) { CollectionAssert.Contains(names, name); }
   }
 
@@ -102,6 +103,38 @@ public sealed class ResourceCompositionTests
     var graph = CreateGraph();
     IResource resource = graph.Builder.Resources.Single(item => item.Name == resourceName);
     Assert.IsTrue(resource.Annotations.OfType<HealthCheckAnnotation>().Any(check => check.Key == key));
+  }
+
+  /// <summary>Verifies the JS apps share one workspace install and none keeps a racing per-app installer.</summary>
+  [TestMethod]
+  public void Compose_JavaScriptApps_ShareOneWorkspaceInstall()
+  {
+    var graph = CreateGraph();
+    JavaScriptInstallerResource install = graph.Builder.Resources.OfType<JavaScriptInstallerResource>().Single();
+    Assert.AreEqual("npm-install", install.Name);
+    Assert.AreEqual("npm", install.Command);
+    Assert.AreEqual(RepositoryLayout.Resolve(HostDirectory()).RootDirectory, install.WorkingDirectory);
+    foreach (string name in new[] { "website", "cv", "docs", "status" })
+    {
+      IResource app = graph.Builder.Resources.Single(resource => resource.Name == name);
+      Assert.IsTrue(app.Annotations.OfType<WaitAnnotation>().Any(wait => ReferenceEquals(wait.Resource, install)
+        && wait.WaitType == WaitType.WaitForCompletion && wait.ExitCode == 0));
+      Assert.IsFalse(app.Annotations.OfType<JavaScriptPackageInstallerAnnotation>().Any());
+      Assert.IsFalse(app.Annotations.OfType<ResourceRelationshipAnnotation>()
+        .Any(relationship => relationship.Resource.Name == $"{name}-installer"));
+      Assert.IsTrue(app.Annotations.OfType<JavaScriptPackageManagerAnnotation>().Any());
+    }
+  }
+
+  /// <summary>Verifies the shared install skips audit/fund output and never inherits debugger NODE_OPTIONS.</summary>
+  [TestMethod]
+  public async Task Compose_SharedInstall_RunsNpmInstallWithoutAuditOrNodeOptions()
+  {
+    var graph = CreateGraph();
+    JavaScriptInstallerResource install = graph.Builder.Resources.OfType<JavaScriptInstallerResource>()
+      .Single(resource => resource.Name == "npm-install");
+    CollectionAssert.AreEqual(new object[] { "install", "--no-audit", "--no-fund" }, await ResolveArgumentsAsync(install));
+    Assert.AreEqual(string.Empty, (await ResolveEnvironmentAsync(graph.Builder, install))["NODE_OPTIONS"]);
   }
 
   /// <summary>Verifies fixed ports and transport/proxy choices.</summary>
@@ -210,6 +243,17 @@ public sealed class ResourceCompositionTests
     return values;
   }
 
+  private static async Task<List<object>> ResolveArgumentsAsync(IResource resource)
+  {
+    var values = new List<object>();
+    var context = new CommandLineArgsCallbackContext(values, resource, CancellationToken.None);
+    foreach (CommandLineArgsCallbackAnnotation callback in resource.Annotations.OfType<CommandLineArgsCallbackAnnotation>())
+    {
+      await callback.Callback(context);
+    }
+    return values;
+  }
+
   private static void AssertWaits(IResource resource, params IResource[] dependencies)
   {
     foreach (IResource dependency in dependencies)
@@ -219,12 +263,17 @@ public sealed class ResourceCompositionTests
     }
   }
 
-  private static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
-    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph()
+  private static string HostDirectory()
   {
     string bootstrapDirectory = Path.GetDirectoryName(new Projects.LocalDevelopment_Bootstrap().ProjectPath)
       ?? throw new InvalidOperationException("Bootstrap metadata requires a directory.");
-    string hostDirectory = Path.GetFullPath(Path.Combine(bootstrapDirectory, "..", "AppHost"));
+    return Path.GetFullPath(Path.Combine(bootstrapDirectory, "..", "AppHost"));
+  }
+
+  private static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
+    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph()
+  {
+    string hostDirectory = HostDirectory();
     var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
     {
       ProjectDirectory = hostDirectory,
