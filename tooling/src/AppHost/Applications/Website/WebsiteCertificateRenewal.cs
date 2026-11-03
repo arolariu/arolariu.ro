@@ -59,8 +59,11 @@ internal static class WebsiteCertificateRenewal
   /// <summary>How long before expiry the certificate is renewed.</summary>
   internal static readonly TimeSpan RenewalWindow = TimeSpan.FromDays(14);
 
-  /// <summary>The lifetime of an issued certificate, matching mkcert's 2 years and 3 months.</summary>
-  internal static readonly TimeSpan CertificateLifetime = TimeSpan.FromDays(825);
+  /// <summary>
+  /// The lifetime of an issued certificate in months: mkcert's 2 years and 3 months, which always stays under the 825-day limit
+  /// Apple platforms enforce for TLS server certificates, including ones issued by custom roots.
+  /// </summary>
+  internal const int CertificateLifetimeMonths = 27;
 
   private const string PendingSuffix = ".renewing";
 
@@ -202,13 +205,19 @@ internal static class WebsiteCertificateRenewal
     request.CertificateExtensions.Add(
       new X509EnhancedKeyUsageExtension([new Oid("1.3.6.1.5.5.7.3.1", "Server Authentication")], false));
 
+    // A certificate can't start before its CA (one setup created moments ago) or outlive it.
+    DateTimeOffset authorityStart = new(authority.NotBefore);
+    DateTimeOffset notBefore = now.AddMinutes(-5) > authorityStart ? now.AddMinutes(-5) : authorityStart;
     DateTimeOffset authorityExpiry = new(authority.NotAfter);
-    DateTimeOffset notAfter = now + CertificateLifetime < authorityExpiry ? now + CertificateLifetime : authorityExpiry;
+    DateTimeOffset fullLifetime = notBefore.AddMonths(CertificateLifetimeMonths);
+    DateTimeOffset notAfter = fullLifetime < authorityExpiry ? fullLifetime : authorityExpiry;
     byte[] serialNumber = RandomNumberGenerator.GetBytes(16);
     serialNumber[0] &= 0x7F;
-    using X509Certificate2 certificate = request.Create(authority, now.AddMinutes(-5), notAfter, serialNumber);
+    using X509Certificate2 certificate = request.Create(authority, notBefore, notAfter, serialNumber);
 
-    // Write the complete new pair first, then replace the old files, so the website never loses its certificate.
+    // The directory is git-ignored, so a fresh clone doesn't have it yet. Write the complete new pair first, then replace the
+    // old files, so the website never loses its certificate.
+    Directory.CreateDirectory(certificatesDirectory);
     string keyPath = Path.Combine(certificatesDirectory, KeyFileName);
     string certificatePath = Path.Combine(certificatesDirectory, CertificateFileName);
     File.WriteAllText(keyPath + PendingSuffix, key.ExportPkcs8PrivateKeyPem());

@@ -160,6 +160,91 @@ public sealed class WebsiteCertificateRenewalTests
     Assert.HasCount(0, Directory.GetFiles(certificates));
   }
 
+  /// <summary>Verifies a fresh clone, where the git-ignored certificates directory does not exist yet, still gets a certificate.</summary>
+  [TestMethod]
+  public void Renew_CertificatesDirectoryMissingWithTrustedAuthority_IssuesCertificate()
+  {
+    using X509Certificate2 authority = WriteAuthority();
+    Directory.Delete(certificates);
+
+    CertificateRenewalResult result = WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true);
+
+    Assert.AreEqual(CertificateRenewalOutcome.Issued, result.Outcome);
+    AssertIssuedBy(authority);
+  }
+
+  /// <summary>Verifies a CA created moments ago, right after setup, can issue: the certificate never starts before its CA.</summary>
+  [TestMethod]
+  public void Renew_AuthorityCreatedMomentsAgo_IssuesCertificateStartingNoEarlierThanAuthority()
+  {
+    using X509Certificate2 authority = WriteAuthority(notBefore: Now.AddMinutes(-1));
+
+    CertificateRenewalResult result = WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true);
+
+    Assert.AreEqual(CertificateRenewalOutcome.Issued, result.Outcome);
+    AssertIssuedBy(authority);
+    using X509Certificate2 issued = ReadCertificate();
+    Assert.IsTrue(issued.NotBefore.ToUniversalTime() >= authority.NotBefore.ToUniversalTime());
+  }
+
+  /// <summary>Verifies an issued certificate stays within the 825-day limit Apple platforms enforce even for custom roots.</summary>
+  [TestMethod]
+  public void Renew_TrustedAuthority_IssuesCertificateValidForAtMost825Days()
+  {
+    using X509Certificate2 authority = WriteAuthority();
+
+    WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true);
+
+    using X509Certificate2 issued = ReadCertificate();
+    TimeSpan validity = issued.NotAfter.ToUniversalTime() - issued.NotBefore.ToUniversalTime();
+    Assert.IsTrue(validity <= TimeSpan.FromDays(825), $"The certificate is valid for {validity}.");
+    Assert.IsTrue(validity > TimeSpan.FromDays(800), $"The certificate is valid for {validity}.");
+  }
+
+  /// <summary>Verifies an issued certificate never outlives the CA that issued it.</summary>
+  [TestMethod]
+  public void Renew_AuthorityExpiringBeforeFullLifetime_CapsCertificateAtAuthorityExpiry()
+  {
+    using X509Certificate2 authority = WriteAuthority(notAfter: Now.AddDays(100));
+
+    CertificateRenewalResult result = WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true);
+
+    Assert.AreEqual(CertificateRenewalOutcome.Issued, result.Outcome);
+    using X509Certificate2 issued = ReadCertificate();
+    Assert.AreEqual(authority.NotAfter.ToUniversalTime(), issued.NotAfter.ToUniversalTime());
+  }
+
+  /// <summary>Verifies renewal from a CA that itself expires within the renewal window fails clearly and changes nothing.</summary>
+  [TestMethod]
+  public void Renew_CertificateExpiringWithAuthorityExpiringWithinWindow_ThrowsAndKeepsFiles()
+  {
+    using X509Certificate2 authority = WriteAuthority(notAfter: Now.AddDays(10));
+    WriteLeaf(authority, Now.AddDays(3));
+    (byte[] Certificate, byte[] Key) before = ReadFiles();
+
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true));
+
+    AssertUnchanged(before);
+  }
+
+  /// <summary>Verifies a CA key that does not belong to the CA certificate fails clearly and changes nothing.</summary>
+  [TestMethod]
+  public void Renew_CertificateExpiringWithMismatchedAuthorityKey_ThrowsAndKeepsFiles()
+  {
+    using X509Certificate2 authority = WriteAuthority();
+    WriteLeaf(authority, Now.AddDays(3));
+    using RSA otherKey = RSA.Create(2048);
+    File.WriteAllText(Path.Combine(authorityDirectory, WebsiteCertificateRenewal.AuthorityKeyFileName),
+      otherKey.ExportPkcs8PrivateKeyPem());
+    (byte[] Certificate, byte[] Key) before = ReadFiles();
+
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true));
+
+    AssertUnchanged(before);
+  }
+
   /// <summary>Verifies a CA that is not in the machine's trust store is reported as untrusted.</summary>
   [TestMethod]
   public void IsAuthorityTrusted_FreshSelfSignedAuthority_ReturnsFalse()
@@ -192,9 +277,9 @@ public sealed class WebsiteCertificateRenewalTests
     Assert.IsTrue(ReadExpiry() > Now + WebsiteCertificateRenewal.RenewalWindow);
   }
 
-  private X509Certificate2 WriteAuthority()
+  private X509Certificate2 WriteAuthority(DateTimeOffset? notBefore = null, DateTimeOffset? notAfter = null)
   {
-    X509Certificate2 authority = CreateAuthority("CN=Test mkcert development CA");
+    X509Certificate2 authority = CreateAuthority("CN=Test mkcert development CA", notBefore, notAfter);
     File.WriteAllText(Path.Combine(authorityDirectory, WebsiteCertificateRenewal.AuthorityCertificateFileName),
       authority.ExportCertificatePem());
     using RSA key = authority.GetRSAPrivateKey()
@@ -204,14 +289,15 @@ public sealed class WebsiteCertificateRenewalTests
     return authority;
   }
 
-  private static X509Certificate2 CreateAuthority(string subject)
+  private static X509Certificate2 CreateAuthority(
+    string subject, DateTimeOffset? notBefore = null, DateTimeOffset? notAfter = null)
   {
     using RSA key = RSA.Create(2048);
     var request = new CertificateRequest(subject, key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
     request.CertificateExtensions.Add(
       new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
-    return request.CreateSelfSigned(Now.AddYears(-1), Now.AddYears(10));
+    return request.CreateSelfSigned(notBefore ?? Now.AddYears(-1), notAfter ?? Now.AddYears(10));
   }
 
   private DateTimeOffset WriteLeaf(X509Certificate2 authority, DateTimeOffset notAfter)
@@ -232,6 +318,8 @@ public sealed class WebsiteCertificateRenewalTests
     CollectionAssert.AreEqual(before.Key, File.ReadAllBytes(KeyPath));
     Assert.HasCount(2, Directory.GetFiles(certificates));
   }
+
+  private X509Certificate2 ReadCertificate() => X509Certificate2.CreateFromPem(File.ReadAllText(CertificatePath));
 
   private DateTimeOffset ReadExpiry()
   {
