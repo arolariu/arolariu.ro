@@ -36,6 +36,6 @@ internal static class ExpResources
       ["Endpoints:Database:SQL"] =
         SqlResources.CreateConnectionString(sqlPassword, Constants.SqlDatabaseName),
       ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
-      ["Endpoints:Service:Api"] = $"http://localhost:{Constants.ApiPort}",
+      ["Endpoints:Service:Api"] = $"https://localhost:{Constants.ApiPort}",
     };
 }

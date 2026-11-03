@@ -97,7 +97,7 @@ Use these when narrowly iterating on a single service and you don't need cross-s
 | Service | URL                    | Mode                              |
 | ------- | ---------------------- | --------------------------------- |
 | Website | https://localhost:3000 | ✅ Native, Turbopack hot reload   |
-| API     | http://localhost:5000  | ✅ Native, .NET Hot Reload        |
+| API     | https://localhost:5000 | ✅ Native, .NET Hot Reload        |
 | exp     | http://localhost:5002  | ✅ Native, uvicorn --reload       |
 | CV      | http://localhost:4173  | ✅ Native, Vite HMR               |
 | docs    | http://localhost:3100  | ✅ Native, Docusaurus dev         |
@@ -126,7 +126,7 @@ After starting, run these checks:
 ```bash
 # Check service health
 curl -k http://localhost:5002/api/health     # exp: should return {"status":"Healthy"}
-curl -k http://localhost:5000/health          # API: should return {"status":"Healthy"}
+curl -k https://localhost:5000/health         # API: should return {"status":"Healthy"}
 curl -k https://localhost:3000               # Website: should return HTML
 
 # Check container status (Aspire-managed) — use the command for your selected engine

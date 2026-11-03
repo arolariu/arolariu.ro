@@ -92,6 +92,19 @@ public sealed class ResourceCompositionTests
       .Any(wait => ReferenceEquals(wait.Resource, graph.Exp.Resource)));
   }
 
+  /// <summary>Verifies the API exposes a single HTTPS endpoint served with Aspire's developer certificate.</summary>
+  [TestMethod]
+  public void Compose_Api_ExposesOnlyItsHttpsEndpoint()
+  {
+    var graph = CreateGraph();
+    IResource api = graph.Builder.Resources.Single(resource => resource.Name == "api");
+    EndpointAnnotation endpoint = api.Annotations.OfType<EndpointAnnotation>().Single();
+    Assert.AreEqual("http", endpoint.Name);
+    Assert.AreEqual("https", endpoint.UriScheme);
+    Assert.AreEqual(5000, endpoint.Port);
+    Assert.IsTrue(endpoint.IsProxied);
+  }
+
   /// <summary>Verifies the website exposes a single HTTPS endpoint, so the dashboard shows no dead HTTP link.</summary>
   [TestMethod]
   public void Compose_Website_ExposesOnlyItsHttpsEndpoint()
@@ -159,7 +172,7 @@ public sealed class ResourceCompositionTests
   [DataRow("redis", "tcp", 6379, "redis", true)]
   [DataRow("exp", "http", 5002, "http", false)]
   [DataRow("local-identities", "http", 5011, "http", false)]
-  [DataRow("api", "http", 5000, "http", true)]
+  [DataRow("api", "http", 5000, "https", true)]
   [DataRow("website", "http", 3000, "https", true)]
   [DataRow("cv", "http", 4173, "http", true)]
   [DataRow("docs", "http", 3100, "http", false)]
@@ -236,7 +249,7 @@ public sealed class ResourceCompositionTests
     var identity = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Identity.Resource);
     Assert.AreEqual("Development", identity["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", identity["INFRA"]);
-    Assert.AreEqual("http://localhost:5000", identity["LOCAL_SWAGGER_ORIGIN"]);
+    Assert.AreEqual("https://localhost:5000", identity["LOCAL_SWAGGER_ORIGIN"]);
     StringAssert.EndsWith((string)identity["LOCAL_CONFIG_PATH"], "config.aspire.json");
     var exp = await ResolveEnvironmentAsync(graph.Builder, graph.Exp.Resource);
     Assert.AreEqual("http/protobuf", exp["OTEL_EXPORTER_OTLP_PROTOCOL"]);

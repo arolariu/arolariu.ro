@@ -19,7 +19,12 @@ internal static class ApplicationResources
     // One install for the whole npm workspace; per-app installers would race over the shared node_modules.
     var npmInstall = builder.AddSharedNpmInstall(layout.RootDirectory);
     var api = builder.AddProject<Projects.arolariu_Backend_Core>("api")
-      .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
+      // Upgrading the launch profile's "http" endpoint makes Aspire hand Kestrel its trusted developer certificate.
+      .WithEndpoint("http", endpoint =>
+      {
+        endpoint.UriScheme = "https";
+        endpoint.Port = Constants.ApiPort;
+      })
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
       .WithEnvironment("LOCAL_DEVELOPMENT_IDENTITY_URL", local.Identity.GetEndpoint("http"))
       .WithReference(exp)

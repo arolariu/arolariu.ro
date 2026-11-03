@@ -31,9 +31,9 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
   workspace; the apps do not run their own installers.
 - **Cosmos emulator data**: the Aspire Cosmos emulator keeps no data between runs; bootstrap reseeds it on every start. The old
   `arolariu-cosmos-data` volume is no longer used and can be deleted manually.
-- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
+- **Direct service URLs**: api → `https://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
   `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies
-  HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
+  HTTPS to exp and the API; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers

@@ -248,7 +248,7 @@ npm run setup
 # 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
 npm run dev
 # → Aspire dashboard auto-opens at https://localhost:17080
-# → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
+# → Website https://localhost:3000 · API https://localhost:5000 · CV http://localhost:4173
 #   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
 
 # Or start a single service standalone (no orchestration):
@@ -406,7 +406,7 @@ verification commands.
 | -------------------- | ------------------------------ | ----------------------------------------------------- |
 | Aspire dashboard     | `https://localhost:17080`      | OTel traces · metrics · logs · resource graph         |
 | Website (Next.js)    | `https://localhost:3000`       | HTTPS via `--experimental-https` (mkcert root CA)     |
-| API (.NET)           | `http://localhost:5000`        | Swagger UI at `/`                                     |
+| API (.NET)           | `https://localhost:5000`       | Swagger UI at `/`                                     |
 | CV (SvelteKit)       | `http://localhost:4173`        | Preview server                                        |
 | Docs (Docusaurus)    | `http://localhost:3100`        |                                                       |
 | Status               | `http://localhost:3002`        |                                                       |
@@ -471,7 +471,7 @@ Each resource has a health check; check the dashboard's **Health** column for th
 
 | Resource   | Health endpoint                     | What it checks                                            |
 | ---------- | ----------------------------------- | --------------------------------------------------------- |
-| API        | `http://localhost:5000/health`      | DB + Cosmos + Azurite + Redis + exp connectivity          |
+| API        | `https://localhost:5000/health`     | DB + Cosmos + Azurite + Redis + exp connectivity          |
 | Website    | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
 | exp        | `https://localhost:5002/api/ready`  | FastAPI ready + runtime configuration available           |
 | SQL Server | TDS handshake                       | Aspire's built-in `WaitFor` gate (`sql-ready`)            |
