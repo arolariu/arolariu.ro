@@ -101,8 +101,8 @@ Rancher Desktop or Podman Desktop. The Aspire dashboard is available at `https:/
 
 Aspire's local bootstrap restores deterministic Alice, Bob, and Charlie scenarios. Before seeding, it deletes **all** documents from the
 guarded local invoice and merchant Cosmos containers, removes the entire local invoice blob container, and clears the `invoice-analysis`
-queue while preserving warm infrastructure state. Selfhost instead performs SQL/Cosmos/Azurite provisioning without the Aspire scenario
-reset. No development token or signing secret is committed.
+queue. Aspire's Cosmos emulator keeps no data between runs, while SQL, Azurite, and Redis keep their volumes. Selfhost instead performs
+SQL/Cosmos/Azurite provisioning without the Aspire scenario reset. No development token or signing secret is committed.
 
 ## Agent Operating Contract
 

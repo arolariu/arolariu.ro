@@ -18,8 +18,17 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
   then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
 - **Native website HTTPS**: Aspire runs the website's `next dev --experimental-https` script. On a certificate-free first run, Next.js can
   download/run certificate tooling and install a local CA; confirm that trust-store change before starting.
+- **Website certificate renewal**: right before the website starts, the AppHost removes `sites/arolariu.ro/certificates/localhost.pem` and
+  its key when the certificate is within 14 days of expiry and its mkcert CA is already trusted, so Next.js re-issues it from that CA.
+  Renewal never changes trust; if the CA is not trusted, the website fails to start with the reason in its console log.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`),
   CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
+- **Startup order**: containers → `local-bootstrap` (must exit 0) → exp → `local-identities` → api → website. cv, docs, and status start
+  once `npm-install` finishes; every app has an HTTP health check, so green means it actually serves requests.
+- **One npm install**: a single `npm-install` resource runs `npm install --no-audit --no-fund` at the repository root for the whole npm
+  workspace; the apps do not run their own installers.
+- **Cosmos emulator data**: the Aspire Cosmos emulator keeps no data between runs; bootstrap reseeds it on every start. The old
+  `arolariu-cosmos-data` volume is no longer used and can be deleted manually.
 - **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
   `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies
   HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
