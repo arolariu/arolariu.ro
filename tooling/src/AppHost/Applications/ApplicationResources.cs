@@ -40,7 +40,8 @@ internal static class ApplicationResources
       // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.
       .WithHttpHealthCheck("/api/health/")
       .WithDevelopmentCertificateRenewal(
-        Path.Combine(layout.WebsiteDirectory, "certificates"), TimeProvider.System, WebsiteCertificateRenewal.IsIssuerTrusted)
+        Path.Combine(layout.WebsiteDirectory, "certificates"), WebsiteCertificateRenewal.ResolveAuthorityDirectory(),
+        TimeProvider.System, WebsiteCertificateRenewal.IsAuthorityTrusted)
       .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("cv", layout.CvDirectory)
       .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")

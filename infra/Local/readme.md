@@ -18,9 +18,11 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
   then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
 - **Native website HTTPS**: Aspire runs the website's `next dev --experimental-https` script. On a certificate-free first run, Next.js can
   download/run certificate tooling and install a local CA; confirm that trust-store change before starting.
-- **Website certificate renewal**: right before the website starts, the AppHost removes `sites/arolariu.ro/certificates/localhost.pem` and
-  its key when the certificate is within 14 days of expiry and its mkcert CA is already trusted, so Next.js re-issues it from that CA.
-  Renewal never changes trust; if the CA is not trusted, the website fails to start with the reason in its console log.
+- **Website certificate renewal**: right before the website starts, the AppHost issues `sites/arolariu.ro/certificates/localhost.pem` and
+  its key from the already-trusted local mkcert CA (`CAROOT`, by default `%LOCALAPPDATA%\mkcert` on Windows) when the certificate is missing
+  or within 14 days of expiry. The new pair is written before the old one is replaced, and no trust store is touched (unlike
+  `mkcert -install`, which also targets the Java store). If renewal is due but the CA is missing or untrusted, nothing changes and the
+  website fails to start with the reason in its console log.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`),
   CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
 - **Startup order**: containers → `local-bootstrap` (must exit 0) → exp → `local-identities` → api → website. cv, docs, and status start
