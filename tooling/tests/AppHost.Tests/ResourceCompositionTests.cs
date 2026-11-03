@@ -92,9 +92,22 @@ public sealed class ResourceCompositionTests
       .Any(wait => ReferenceEquals(wait.Resource, graph.Exp.Resource)));
   }
 
+  /// <summary>Verifies the website exposes a single HTTPS endpoint, so the dashboard shows no dead HTTP link.</summary>
+  [TestMethod]
+  public void Compose_Website_ExposesOnlyItsHttpsEndpoint()
+  {
+    var graph = CreateGraph();
+    IResource website = graph.Builder.Resources.Single(resource => resource.Name == "website");
+    EndpointAnnotation endpoint = website.Annotations.OfType<EndpointAnnotation>().Single();
+    Assert.AreEqual("http", endpoint.Name);
+    Assert.AreEqual("https", endpoint.UriScheme);
+    Assert.AreEqual(3000, endpoint.Port);
+    Assert.IsTrue(endpoint.IsProxied);
+  }
+
   /// <summary>Verifies each web app reports health from a real HTTP response, not just a started process.</summary>
   [TestMethod]
-  [DataRow("website", "website_https_/api/health/_200_check")]
+  [DataRow("website", "website_http_/api/health/_200_check")]
   [DataRow("cv", "cv_http_/_200_check")]
   [DataRow("docs", "docs_http_/_200_check")]
   [DataRow("status", "status_http_/_200_check")]
@@ -147,7 +160,7 @@ public sealed class ResourceCompositionTests
   [DataRow("exp", "http", 5002, "http", false)]
   [DataRow("local-identities", "http", 5011, "http", false)]
   [DataRow("api", "http", 5000, "http", true)]
-  [DataRow("website", "https", 3000, "https", true)]
+  [DataRow("website", "http", 3000, "https", true)]
   [DataRow("cv", "http", 4173, "http", true)]
   [DataRow("docs", "http", 3100, "http", false)]
   [DataRow("status", "http", 3002, "http", true)]

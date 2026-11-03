@@ -29,8 +29,13 @@ internal static class ApplicationResources
       .WithIconName("CodeBlock")
       .WithHttpHealthCheck("/health");
     builder.AddNextJsApp("website", layout.WebsiteDirectory)
-      // Next owns HTTPS; NODE_OPTIONS must not reach the npm installer resource.
-      .WithHttpsEndpoint(port: Constants.WebsitePort, env: "PORT")
+      // Next owns HTTPS; NODE_OPTIONS must not reach the npm installer resource. Upgrading the integration's own
+      // PORT-bound "http" endpoint in place (as Aspire does for Vite and uvicorn) avoids a second, dead endpoint.
+      .WithEndpoint("http", endpoint =>
+      {
+        endpoint.UriScheme = "https";
+        endpoint.Port = Constants.WebsitePort;
+      })
       .WithReference(api)
       .WithReference(exp)
       .WithEnvironment("API_URL", api.GetEndpoint("http"))
