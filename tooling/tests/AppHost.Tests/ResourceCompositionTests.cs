@@ -79,6 +79,18 @@ public sealed class ResourceCompositionTests
     }
   }
 
+  /// <summary>Verifies the strict startup chain: exp starts only after the scenario bootstrap exits successfully.</summary>
+  [TestMethod]
+  public void Compose_StartupChain_ExpWaitsForSuccessfulBootstrap()
+  {
+    var graph = CreateGraph();
+    Assert.IsTrue(graph.Exp.Resource.Annotations.OfType<WaitAnnotation>().Any(wait =>
+      ReferenceEquals(wait.Resource, graph.Local.Bootstrap.Resource)
+      && wait.WaitType == WaitType.WaitForCompletion && wait.ExitCode == 0));
+    Assert.IsFalse(graph.Local.Bootstrap.Resource.Annotations.OfType<WaitAnnotation>()
+      .Any(wait => ReferenceEquals(wait.Resource, graph.Exp.Resource)));
+  }
+
   /// <summary>Verifies fixed ports and transport/proxy choices.</summary>
   [TestMethod]
   [DataRow("mssql", "tcp", 8082, "tcp", false)]

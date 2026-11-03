@@ -32,6 +32,8 @@ internal static class LocalDevelopmentResources
       .WaitFor(infrastructure.Queues)
       .ExcludeFromManifest()
       .WithIconName("DatabaseLightning");
+    // Strict startup chain: exp (and everything after it) starts only once the scenario reset succeeded.
+    exp.WaitForCompletion(bootstrap);
     var identityEnvironment = LocalDevelopmentResourceConfiguration.CreateIdentityEnvironment(
       layout.GeneratedConfigPath, $"http://localhost:{Constants.ApiPort}");
     var identity = builder.AddProject<Projects.LocalDevelopment_Identity>("local-identities")
