@@ -1,6 +1,7 @@
 namespace AppHost.Applications;
 
 using AppHost.Applications.JavaScript;
+using AppHost.Applications.Website;
 using AppHost.LocalDevelopment;
 using AppHost.Repository;
 using Aspire.Hosting;
@@ -38,6 +39,8 @@ internal static class ApplicationResources
       .WithIconName("Globe")
       // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.
       .WithHttpHealthCheck("/api/health/")
+      .WithDevelopmentCertificateRenewal(
+        Path.Combine(layout.WebsiteDirectory, "certificates"), TimeProvider.System, WebsiteCertificateRenewal.IsIssuerTrusted)
       .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("cv", layout.CvDirectory)
       .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
