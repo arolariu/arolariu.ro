@@ -91,6 +91,19 @@ public sealed class ResourceCompositionTests
       .Any(wait => ReferenceEquals(wait.Resource, graph.Exp.Resource)));
   }
 
+  /// <summary>Verifies each web app reports health from a real HTTP response, not just a started process.</summary>
+  [TestMethod]
+  [DataRow("website", "website_https_/api/health/_200_check")]
+  [DataRow("cv", "cv_http_/_200_check")]
+  [DataRow("docs", "docs_http_/_200_check")]
+  [DataRow("status", "status_http_/_200_check")]
+  public void Compose_WebApps_HaveHttpHealthChecks(string resourceName, string key)
+  {
+    var graph = CreateGraph();
+    IResource resource = graph.Builder.Resources.Single(item => item.Name == resourceName);
+    Assert.IsTrue(resource.Annotations.OfType<HealthCheckAnnotation>().Any(check => check.Key == key));
+  }
+
   /// <summary>Verifies fixed ports and transport/proxy choices.</summary>
   [TestMethod]
   [DataRow("mssql", "tcp", 8082, "tcp", false)]

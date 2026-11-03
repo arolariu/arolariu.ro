@@ -32,16 +32,21 @@ internal static class ApplicationResources
       .WithEnvironment("API_URL", api.GetEndpoint("http"))
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
       .WaitFor(api)
-      .WithIconName("Globe");
+      .WithIconName("Globe")
+      // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.
+      .WithHttpHealthCheck("/api/health/");
     builder.AddViteApp("cv", layout.CvDirectory)
       .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
-      .WithIconName("PersonAccounts");
+      .WithIconName("PersonAccounts")
+      .WithHttpHealthCheck("/");
     builder.AddJavaScriptApp("docs", layout.DocsDirectory, runScriptName: "start")
       // Docusaurus already pins its port; a DCP proxy would bind it first.
       .WithHttpEndpoint(port: Constants.DocsPort, isProxied: false)
-      .WithIconName("BookOpenGlobe");
+      .WithIconName("BookOpenGlobe")
+      .WithHttpHealthCheck("/");
     builder.AddViteApp("status", layout.StatusDirectory)
       .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
-      .WithIconName("PulseSquare");
+      .WithIconName("PulseSquare")
+      .WithHttpHealthCheck("/");
   }
 }
