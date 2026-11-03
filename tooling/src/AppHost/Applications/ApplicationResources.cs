@@ -45,6 +45,9 @@ internal static class ApplicationResources
       .WithReference(exp)
       .WithEnvironment("API_URL", api.GetEndpoint("http"))
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
+      // Next replaces NODE_EXTRA_CA_CERTS with the mkcert root in its server process, dropping Aspire's bundle. The OS store
+      // already trusts both the mkcert CA and the API's ASP.NET development certificate (Node 22.19+ and 24.6+).
+      .WithEnvironment("NODE_USE_SYSTEM_CA", "1")
       .WaitFor(api)
       .WithIconName("Globe")
       // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.

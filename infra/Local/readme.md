@@ -17,7 +17,9 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
 - **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`,
   then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
 - **Native website HTTPS**: Aspire runs the website's `next dev --experimental-https` script. On a certificate-free first run, Next.js can
-  download/run certificate tooling and install a local CA; confirm that trust-store change before starting.
+  download/run certificate tooling and install a local CA; confirm that trust-store change before starting. Next.js replaces
+  `NODE_EXTRA_CA_CERTS` with the mkcert root in its server process, so the AppHost sets `NODE_USE_SYSTEM_CA=1`: the website's server then
+  trusts the operating-system store, which already trusts the API's ASP.NET development certificate (`dotnet dev-certs https --trust`).
 - **Website certificate renewal**: right before the website starts, the AppHost issues `sites/arolariu.ro/certificates/localhost.pem` and
   its key from the already-trusted local mkcert CA (`CAROOT`, by default `%LOCALAPPDATA%\mkcert` on Windows) when the certificate is missing
   or within 14 days of expiry. The new pair is written before the old one is replaced, and no trust store is touched (unlike

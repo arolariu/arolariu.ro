@@ -118,6 +118,20 @@ public sealed class ResourceCompositionTests
     Assert.IsTrue(endpoint.IsProxied);
   }
 
+  /// <summary>
+  /// Verifies the website's server trusts the OS certificate store. Next.js replaces Aspire's NODE_EXTRA_CA_CERTS with the
+  /// mkcert root in its server process, which would otherwise reject the API's development certificate.
+  /// </summary>
+  [TestMethod]
+  public async Task Compose_Website_TrustsTheSystemCertificateStore()
+  {
+    var graph = CreateGraph();
+    IResource website = graph.Builder.Resources.Single(resource => resource.Name == "website");
+    Dictionary<string, object> environment = await ResolveEnvironmentAsync(graph.Builder, website);
+    Assert.IsTrue(environment.TryGetValue("NODE_USE_SYSTEM_CA", out object? value));
+    Assert.AreEqual("1", value);
+  }
+
   /// <summary>Verifies each web app reports health from a real HTTP response, not just a started process.</summary>
   [TestMethod]
   [DataRow("website", "website_http_/api/health/_200_check")]
