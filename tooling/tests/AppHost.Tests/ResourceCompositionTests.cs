@@ -118,18 +118,30 @@ public sealed class ResourceCompositionTests
       .OfType<HealthCheckAnnotation>().Any(annotation => annotation.Key == "azurite-bootstrap"));
   }
 
-  /// <summary>Verifies restarts retain all four named infrastructure volumes.</summary>
+  /// <summary>Verifies restarts retain all three named infrastructure volumes.</summary>
   [TestMethod]
   public void Compose_Infrastructure_PreservesDataVolumes()
   {
     var graph = CreateGraph();
     string?[] volumes = graph.Builder.Resources.SelectMany(resource => resource.Annotations
       .OfType<ContainerMountAnnotation>()).Select(mount => mount.Source).ToArray();
-    foreach (string volume in new[] { "arolariu-mssql-data", "arolariu-cosmos-data",
-      "arolariu-azurite-data", "arolariu-redis-data" })
+    foreach (string volume in new[] { "arolariu-mssql-data", "arolariu-azurite-data", "arolariu-redis-data" })
     {
       CollectionAssert.Contains(volumes, volume);
     }
+  }
+
+  /// <summary>Verifies the Cosmos emulator starts empty so a newer emulator never reads older stored data.</summary>
+  [TestMethod]
+  public async Task Compose_CosmosEmulator_KeepsNoDataBetweenRuns()
+  {
+    var graph = CreateGraph();
+    IResource cosmos = graph.Infrastructure.Cosmos.Resource;
+    Assert.IsFalse(cosmos.Annotations.OfType<ContainerMountAnnotation>().Any());
+    Assert.IsFalse((await ResolveEnvironmentAsync(graph.Builder, cosmos))
+      .ContainsKey("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE"));
+    Assert.IsFalse(graph.Builder.Resources.SelectMany(resource => resource.Annotations.OfType<ContainerMountAnnotation>())
+      .Any(mount => mount.Source == "arolariu-cosmos-data"));
   }
 
   /// <summary>Verifies Cosmos ownership partition paths stay unchanged.</summary>
@@ -146,30 +158,31 @@ public sealed class ResourceCompositionTests
   public async Task Compose_Environment_PreservesSafetyAndTelemetryContracts()
   {
     var graph = CreateGraph();
-    async Task<Dictionary<string, object>> Environment(IResource resource)
-    {
-      var values = new Dictionary<string, object>();
-      var context = new EnvironmentCallbackContext(
-        graph.Builder.ExecutionContext, resource, values, CancellationToken.None);
-      foreach (EnvironmentCallbackAnnotation callback in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
-      {
-        await callback.Callback(context);
-      }
-      return values;
-    }
-    var bootstrap = await Environment(graph.Local.Bootstrap.Resource);
+    var bootstrap = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Bootstrap.Resource);
     Assert.AreEqual("Development", bootstrap["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", bootstrap["INFRA"]);
     Assert.AreEqual("SeedData/scenario.v1.json", bootstrap["SEED_MANIFEST_PATH"]);
-    var identity = await Environment(graph.Local.Identity.Resource);
+    var identity = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Identity.Resource);
     Assert.AreEqual("Development", identity["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", identity["INFRA"]);
     Assert.AreEqual("http://localhost:5000", identity["LOCAL_SWAGGER_ORIGIN"]);
     StringAssert.EndsWith((string)identity["LOCAL_CONFIG_PATH"], "config.aspire.json");
-    var exp = await Environment(graph.Exp.Resource);
+    var exp = await ResolveEnvironmentAsync(graph.Builder, graph.Exp.Resource);
     Assert.AreEqual("http/protobuf", exp["OTEL_EXPORTER_OTLP_PROTOCOL"]);
     Assert.AreEqual("https://localhost:21031", exp["OTEL_EXPORTER_OTLP_ENDPOINT"]);
     Assert.AreEqual("config.aspire.json", exp["EXP_LOCAL_CONFIG_PATH"]);
+  }
+
+  private static async Task<Dictionary<string, object>> ResolveEnvironmentAsync(
+    IDistributedApplicationBuilder builder, IResource resource)
+  {
+    var values = new Dictionary<string, object>();
+    var context = new EnvironmentCallbackContext(builder.ExecutionContext, resource, values, CancellationToken.None);
+    foreach (EnvironmentCallbackAnnotation callback in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
+    {
+      await callback.Callback(context);
+    }
+    return values;
   }
 
   private static void AssertWaits(IResource resource, params IResource[] dependencies)

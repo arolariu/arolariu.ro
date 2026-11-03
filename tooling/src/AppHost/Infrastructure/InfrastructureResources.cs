@@ -31,8 +31,6 @@ internal static class InfrastructureResources
       .RunAsEmulator(emulator => emulator
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
-        .WithDataVolume(Constants.CosmosDataVolume)
-        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = false)
       .WithIconName("DatabaseMultiple");

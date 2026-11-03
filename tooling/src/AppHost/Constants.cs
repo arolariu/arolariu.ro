@@ -28,7 +28,6 @@ internal static class Constants
 
   // ── Volume names (data persistence across container restarts) ──
   public const string SqlDataVolume = "arolariu-mssql-data";
-  public const string CosmosDataVolume = "arolariu-cosmos-data";
   public const string RedisDataVolume = "arolariu-redis-data";
   public const string AzuriteDataVolume = "arolariu-azurite-data";
 
