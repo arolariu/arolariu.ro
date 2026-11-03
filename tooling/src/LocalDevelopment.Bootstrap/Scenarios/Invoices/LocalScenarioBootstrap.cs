@@ -1,5 +1,6 @@
 namespace LocalDevelopment.Bootstrap.Scenarios.Invoices;
 
+using LocalDevelopment.Bootstrap.Resilience;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
 
 /// <summary>
@@ -8,7 +9,8 @@ using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
 internal sealed class LocalScenarioBootstrap(
   ILocalCosmosResetter cosmos,
   ILocalAzuriteResetter storage,
-  TimeProvider timeProvider)
+  TimeProvider timeProvider,
+  TransientRetry? retry = null)
 {
   internal async Task RunAsync(
     string manifestPath,
@@ -21,11 +23,15 @@ internal sealed class LocalScenarioBootstrap(
     MaterializedSeedScenario scenario =
       SeedData.Materialize(manifest, anchor);
 
-    cancellationToken.ThrowIfCancellationRequested();
-    await cosmos.ClearAsync(cancellationToken).ConfigureAwait(false);
-    cancellationToken.ThrowIfCancellationRequested();
-    await storage.ResetAsync(scenario, cancellationToken).ConfigureAwait(false);
-    cancellationToken.ThrowIfCancellationRequested();
-    await cosmos.WriteAsync(scenario, cancellationToken).ConfigureAwait(false);
+    // Each attempt restarts from the clear phase, so a temporary failure never leaves partial seed data behind.
+    await (retry ?? TransientRetry.None).ExecuteAsync(async token =>
+    {
+      token.ThrowIfCancellationRequested();
+      await cosmos.ClearAsync(token).ConfigureAwait(false);
+      token.ThrowIfCancellationRequested();
+      await storage.ResetAsync(scenario, token).ConfigureAwait(false);
+      token.ThrowIfCancellationRequested();
+      await cosmos.WriteAsync(scenario, token).ConfigureAwait(false);
+    }, cancellationToken).ConfigureAwait(false);
   }
 }

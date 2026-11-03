@@ -1,8 +1,12 @@
 namespace LocalDevelopment.Bootstrap.Tests.Scenarios.Invoices;
 
+using System.Net;
+
+using global::LocalDevelopment.Bootstrap.Resilience;
 using global::LocalDevelopment.Bootstrap.Scenarios.Invoices;
 using global::LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
 
+using Microsoft.Azure.Cosmos;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
@@ -131,11 +135,33 @@ public sealed class LocalScenarioBootstrapTests
       operations);
   }
 
+  /// <summary>
+  /// Verifies a temporary failure during seed writes restarts the whole reset instead of writing over partial data.
+  /// </summary>
+  [TestMethod]
+  public async Task RunAsync_TransientWriteFailure_RestartsFromClear()
+  {
+    var operations = new List<string>();
+    var failures = new Queue<Exception>([new CosmosException("busy", HttpStatusCode.ServiceUnavailable, 0, "activity", 0)]);
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations, writeFailures: failures),
+      new RecordingAzuriteResetter(operations),
+      TimeProvider.System,
+      new TransientRetry(5, TimeSpan.Zero, (_, _) => Task.CompletedTask, TextWriter.Null));
+
+    await bootstrap.RunAsync(ScenarioPath, CancellationToken.None);
+
+    CollectionAssert.AreEqual(
+      new[] { "cosmos-clear", "storage-reset", "cosmos-write", "cosmos-clear", "storage-reset", "cosmos-write" },
+      operations);
+  }
+
   private sealed class RecordingCosmosResetter(
     List<string> operations,
     Exception? clearException = null,
     Action? afterClear = null,
-    List<CancellationToken>? tokens = null) : ILocalCosmosResetter
+    List<CancellationToken>? tokens = null,
+    Queue<Exception>? writeFailures = null) : ILocalCosmosResetter
   {
     public Task ClearAsync(CancellationToken cancellationToken)
     {
@@ -153,7 +179,9 @@ public sealed class LocalScenarioBootstrapTests
     {
       operations.Add("cosmos-write");
       tokens?.Add(cancellationToken);
-      return Task.CompletedTask;
+      return writeFailures is { Count: > 0 }
+        ? Task.FromException(writeFailures.Dequeue())
+        : Task.CompletedTask;
     }
   }
 

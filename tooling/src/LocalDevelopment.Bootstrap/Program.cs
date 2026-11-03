@@ -2,6 +2,7 @@ namespace LocalDevelopment.Bootstrap;
 
 using System.Runtime.InteropServices;
 using LocalDevelopment.Bootstrap.Configuration;
+using LocalDevelopment.Bootstrap.Resilience;
 using LocalDevelopment.Bootstrap.Safety;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
@@ -98,7 +99,8 @@ internal static class Program
       var bootstrap = new LocalScenarioBootstrap(
         new LocalCosmosResetter(cosmosClient),
         storage,
-        TimeProvider.System);
+        TimeProvider.System,
+        TransientRetry.CreateDefault(Console.Out, TimeProvider.System));
       await bootstrap
         .RunAsync(options.ManifestPath, cancellationToken)
         .ConfigureAwait(false);
