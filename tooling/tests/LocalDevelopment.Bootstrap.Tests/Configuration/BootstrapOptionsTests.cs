@@ -18,7 +18,7 @@ public sealed class BootstrapOptionsTests
     Assert.AreEqual("Development", options.EnvironmentName);
     Assert.AreEqual("local", options.Infra);
     Assert.IsNull(options.CosmosConnectionString);
-    Assert.AreEqual(Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"), options.ManifestPath);
+    Assert.AreEqual(Path.Combine(AppContext.BaseDirectory, "SeedData"), options.SeedDataDirectory);
   }
 
   /// <summary>Verifies the ASP.NET environment is used only when DOTNET is absent.</summary>
@@ -27,10 +27,10 @@ public sealed class BootstrapOptionsTests
   {
     var values = StorageValues();
     values["ASPNETCORE_ENVIRONMENT"] = "Development";
-    values["SEED_MANIFEST_PATH"] = "custom-fixture.json";
+    values["SEED_DATA_DIRECTORY"] = "custom-fixtures";
     BootstrapOptions options = BootstrapOptions.FromEnvironment(key => values.GetValueOrDefault(key));
     Assert.AreEqual("Development", options.EnvironmentName);
-    Assert.AreEqual("custom-fixture.json", options.ManifestPath);
+    Assert.AreEqual("custom-fixtures", options.SeedDataDirectory);
   }
 
   /// <summary>Verifies required storage inputs fail explicitly.</summary>
@@ -44,6 +44,31 @@ public sealed class BootstrapOptionsTests
     InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
       BootstrapOptions.FromEnvironment(name => values.GetValueOrDefault(name)));
     StringAssert.Contains(exception.Message, key);
+  }
+
+  /// <summary>Verifies obsolete file overrides cannot silently select another dataset.</summary>
+  [TestMethod]
+  [DataRow(false)]
+  [DataRow(true)]
+  public void FromEnvironment_LegacyManifestOverride_ThrowsMigrationGuidance(bool includeDirectory)
+  {
+    var values = StorageValues();
+    values["SEED_MANIFEST_PATH"] = "scenario.v1.json";
+    if (includeDirectory) { values["SEED_DATA_DIRECTORY"] = "SeedData"; }
+
+    InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
+      BootstrapOptions.FromEnvironment(values.GetValueOrDefault));
+
+    StringAssert.Contains(exception.Message, "SEED_DATA_DIRECTORY");
+  }
+
+  /// <summary>An explicitly blank directory cannot fall back to another source bundle.</summary>
+  [TestMethod]
+  public void FromEnvironment_BlankDirectory_ThrowsInvalidOperationException()
+  {
+    var values = StorageValues();
+    values["SEED_DATA_DIRECTORY"] = " ";
+    Assert.ThrowsExactly<InvalidOperationException>(() => BootstrapOptions.FromEnvironment(values.GetValueOrDefault));
   }
 
   private static Dictionary<string, string> StorageValues() => new()

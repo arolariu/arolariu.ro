@@ -22,23 +22,54 @@ internal static class SeedData
   private static readonly JsonSerializerOptions SerializerOptions = new()
   {
     PropertyNameCaseInsensitive = true,
+    RespectRequiredConstructorParameters = true,
+    RespectNullableAnnotations = true,
     Converters = { new JsonStringEnumConverter() },
   };
 
-  internal static SeedScenarioManifest LoadManifest(string path)
+  internal static SeedScenarioManifest LoadScenario(string directoryPath)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(path);
+    ArgumentException.ThrowIfNullOrWhiteSpace(directoryPath);
 
-    if (!File.Exists(path))
+    if (!Directory.Exists(directoryPath))
     {
-      throw new InvalidDataException($"Seed manifest was not found at '{path}'.");
+      throw new InvalidDataException(
+        $"Seed data directory was not found at '{directoryPath}'. Use SEED_DATA_DIRECTORY with the four persona files, not a single manifest.");
     }
 
-    SeedScenarioManifest manifest =
-      JsonSerializer.Deserialize<SeedScenarioManifest>(
-        File.ReadAllText(path),
-        SerializerOptions)
-      ?? throw new InvalidDataException("Seed manifest could not be deserialized.");
+    var personas = new List<SeedPersonaDefinition>();
+    var merchants = new List<SeedMerchantDefinition>();
+    var invoices = new List<SeedInvoiceDefinition>();
+    var blobs = new List<SeedBlobDefinition>();
+    foreach (string owner in new[] { "alice", "bob", "charlie", "dmitryi" })
+    {
+      string path = Path.Combine(directoryPath, $"{owner}.json");
+      if (!File.Exists(path)) { throw new InvalidDataException($"Required seed file '{path}' was not found."); }
+      SeedScenarioManifest part;
+      try
+      {
+        part = JsonSerializer.Deserialize<SeedScenarioManifest>(File.ReadAllText(path), SerializerOptions)
+          ?? throw new InvalidDataException($"Seed file '{path}' is empty.");
+      }
+      catch (Exception exception) when (exception is JsonException or ArgumentException)
+      {
+        throw new InvalidDataException($"Seed file '{path}' is malformed: {exception.Message}", exception);
+      }
+
+      if (part.Version != SeedScenarioManifest.CurrentVersion || part.Personas.Count != 1 || part.Personas[0] is null || part.Personas[0].Key != owner
+          || part.Merchants.Any(merchant => merchant is null || merchant.OwnerKey != owner)
+          || part.Invoices.Any(invoice => invoice is null || invoice.OwnerKey != owner))
+      {
+        throw new InvalidDataException($"Seed file '{path}' must contain version {SeedScenarioManifest.CurrentVersion} and only its '{owner}' owner.");
+      }
+
+      personas.AddRange(part.Personas);
+      merchants.AddRange(part.Merchants);
+      invoices.AddRange(part.Invoices);
+      blobs.AddRange(part.Blobs);
+    }
+
+    var manifest = new SeedScenarioManifest(SeedScenarioManifest.CurrentVersion, personas, merchants, invoices, blobs);
 
     SeedManifestValidator.Validate(manifest);
     return manifest;
@@ -54,13 +85,17 @@ internal static class SeedData
       manifest.Personas.ToDictionary(persona => persona.Key, StringComparer.Ordinal);
     Dictionary<string, SeedMerchantDefinition> merchantDefinitions =
       manifest.Merchants.ToDictionary(merchant => merchant.Key, StringComparer.Ordinal);
+    Dictionary<string, int> oldestInvoiceDays = manifest.Invoices
+      .GroupBy(invoice => invoice.MerchantKey, StringComparer.Ordinal)
+      .ToDictionary(group => group.Key, group => group.Max(invoice => invoice.DaysAgo), StringComparer.Ordinal);
 
     List<Merchant> merchants = manifest.Merchants
       .Select(definition => CreateMerchant(
         definition,
         personas[definition.OwnerKey],
         manifest.Version,
-        utcAnchorDate))
+        utcAnchorDate,
+        oldestInvoiceDays.GetValueOrDefault(definition.Key)))
       .ToList();
     Dictionary<Guid, Merchant> merchantsById =
       merchants.ToDictionary(merchant => merchant.id);
@@ -75,7 +110,7 @@ internal static class SeedData
       Invoice invoice = CreateInvoice(
         definition,
         owner,
-        merchantDefinition.Id,
+        merchantDefinition,
         personas,
         manifest.Version,
         utcAnchorDate);
@@ -97,7 +132,8 @@ internal static class SeedData
     SeedMerchantDefinition definition,
     SeedPersonaDefinition owner,
     string version,
-    DateOnly utcAnchorDate) =>
+    DateOnly utcAnchorDate,
+    int oldestInvoiceDays) =>
     new()
     {
       id = definition.Id,
@@ -109,32 +145,36 @@ internal static class SeedData
         "2.1",
         definition.ClassificationCode,
         definition.ClassificationLabel,
+        definition.ClassificationPath,
         ClassificationOrigin.Analysis),
       Address = new ContactInformation
       {
         FullName = definition.Name,
-        Address = "Bucharest, Romania",
+        Address = $"{definition.StreetAddress}, {definition.City}, {definition.Region}, {definition.CountryCode}",
         EmailAddress = $"{definition.Key.Replace('/', '.')}@example.test",
       },
-      CreatedAt = ResolveDate(utcAnchorDate, 120),
+      CreatedAt = ResolveDate(utcAnchorDate, oldestInvoiceDays + 1),
       CreatedBy = owner.UserIdentifier,
       AdditionalMetadata =
       {
         ["seed.origin"] = SeedOrigin,
         ["seed.version"] = version,
         ["seed.key"] = definition.Key,
+        ["seed.country"] = definition.CountryCode,
+        ["seed.region"] = definition.Region,
+        ["seed.city"] = definition.City,
       },
     };
 
   private static Invoice CreateInvoice(
     SeedInvoiceDefinition definition,
     SeedPersonaDefinition owner,
-    Guid merchantIdentifier,
+    SeedMerchantDefinition merchant,
     Dictionary<string, SeedPersonaDefinition> personas,
     string version,
     DateOnly utcAnchorDate)
   {
-    DateTimeOffset transactionDate = ResolveDate(utcAnchorDate, definition.DaysAgo);
+    DateTimeOffset transactionDate = ResolveDate(utcAnchorDate, definition.DaysAgo, definition.TransactionTimeUtc);
     Currency currency = CreateCurrency(definition.CurrencyCode);
     var invoice = new Invoice
     {
@@ -145,7 +185,7 @@ internal static class SeedData
       CreatedAt = transactionDate,
       CreatedBy = owner.UserIdentifier,
       IsImportant = definition.IsImportant,
-      MerchantReference = merchantIdentifier,
+      MerchantReference = merchant.Id,
       Classification = definition.ClassificationCode is null
         ? null
         : CreateClassification(
@@ -154,6 +194,8 @@ internal static class SeedData
           definition.ClassificationCode,
           definition.ClassificationLabel
             ?? definition.ClassificationCode,
+          definition.ClassificationPath
+            ?? throw new InvalidDataException($"Invoice '{definition.Key}' has no classification path."),
           ClassificationOrigin.Analysis),
       PaymentInformation = new PaymentInformation
       {
@@ -167,21 +209,12 @@ internal static class SeedData
       Items = definition.Products
         .Select(product => CreateProduct(product))
         .ToList(),
-      PossibleRecipes = definition.IncludeRecipe
-        ? [CreateRecipe(definition)]
+      PossibleRecipes = definition.Recipe is { } recipe
+        ? [CreateRecipe(recipe, definition.Products)]
         : [],
       ReceiptType = "Itemized",
-      CountryRegion = "RO",
-      TaxDetails =
-      [
-        new TaxDetail
-        {
-          Amount = definition.TaxAmount,
-          Rate = 19,
-          NetAmount = definition.TotalAmount - definition.TaxAmount,
-          Description = "VAT",
-        },
-      ],
+      CountryRegion = merchant.CountryCode,
+      TaxDetails = SeedFinancials.CreateTaxDetails(definition.Products),
       Payments = CreatePayments(definition),
     };
 
@@ -205,6 +238,9 @@ internal static class SeedData
     invoice.AdditionalMetadata["seed.origin"] = SeedOrigin;
     invoice.AdditionalMetadata["seed.version"] = version;
     invoice.AdditionalMetadata["seed.key"] = definition.Key;
+    invoice.AdditionalMetadata["seed.country"] = merchant.CountryCode;
+    invoice.AdditionalMetadata["seed.region"] = merchant.Region;
+    invoice.AdditionalMetadata["seed.city"] = merchant.City;
 
     if (definition.IsSoftDeleted)
     {
@@ -236,10 +272,12 @@ internal static class SeedData
           definition.ClassificationCode,
           definition.ClassificationLabel
             ?? definition.ClassificationCode,
+          definition.ClassificationPath
+            ?? throw new InvalidDataException($"Product '{definition.ProductCode}' has no classification path."),
           definition.IsEdited
             ? ClassificationOrigin.Manual
             : ClassificationOrigin.Analysis),
-      AllergenAssessment = CreateAllergenAssessment(definition.AllergenState),
+      AllergenAssessment = CreateAllergenAssessment(definition),
       Metadata = new ProductMetadata
       {
         IsEdited = definition.IsEdited,
@@ -253,53 +291,54 @@ internal static class SeedData
     string version,
     string code,
     string label,
+    IReadOnlyList<ClassificationNode> path,
     ClassificationOrigin origin) =>
     new(
       system,
       version,
       code,
       label,
-      [new ClassificationNode("leaf", code, label)],
+      path,
       origin,
       origin == ClassificationOrigin.Analysis ? 0.91 : null,
       origin == ClassificationOrigin.Analysis
         ? [new ClassificationEvidence("seed.fixture", label)]
         : []);
 
-  private static AllergenAssessment? CreateAllergenAssessment(string state) =>
-    state.ToLowerInvariant() switch
+  private static AllergenAssessment? CreateAllergenAssessment(SeedProductDefinition definition) =>
+    definition.AllergenState.ToLowerInvariant() switch
     {
       "detected" => AllergenAssessment.Detected(
-        [
-          new AllergenSignal(
-            AllergenCode.Milk,
+        definition.AllergenCodes.Select(code => new AllergenSignal(
+            code,
             AllergenEvidenceLevel.Explicit,
             0.95,
-            [new AllergenEvidence("seed.fixture", "milk")]),
-        ]),
+            [new AllergenEvidence("seed.fixture", definition.Name)])).ToArray()),
       "none" => AllergenAssessment.NoSignals(),
       "insufficient" => AllergenAssessment.Insufficient(),
       "unassessed" => null,
       _ => throw new InvalidDataException(
-        $"Unsupported allergen seed state '{state}'."),
+        $"Unsupported allergen seed state '{definition.AllergenState}'."),
     };
 
-  private static RecipeSuggestion CreateRecipe(SeedInvoiceDefinition invoice) =>
+  private static RecipeSuggestion CreateRecipe(
+    SeedRecipeDefinition recipe,
+    IReadOnlyList<SeedProductDefinition> products) =>
     new(
-      $"{invoice.Name} bowl",
-      "A deterministic local development recipe.",
-      servings: 2,
-      preparationMinutes: 5,
-      cookingMinutes: 10,
-      totalMinutes: 15,
-      RecipeDifficulty.Easy,
-      invoice.Products.Count == 0
-        ? []
-        : [new RecipeIngredient(invoice.Products[0].Name, "1 portion", null)],
-      [new RecipeIngredient("Water", "250 ml", null)],
+      recipe.Name,
+      recipe.Description,
+      recipe.Servings,
+      recipe.PreparationMinutes,
+      recipe.CookingMinutes,
+      recipe.PreparationMinutes + recipe.CookingMinutes,
+      recipe.Difficulty,
+      recipe.PurchasedIngredients.Select(ingredient => new RecipeIngredient(
+        products.Single(product => product.ProductCode == ingredient.ProductCode).Name, ingredient.Quantity, null)).ToArray(),
+      recipe.PantryIngredients.Select(ingredient => new RecipeIngredient(ingredient.Name, ingredient.Quantity, null)).ToArray(),
       [],
-      [new RecipeStep(1, "Combine the ingredients and cook gently.", null)],
-      []);
+      recipe.Steps.Select((instruction, index) => new RecipeStep(index + 1, instruction, null)).ToArray(),
+      products.Where(product => recipe.PurchasedIngredients.Any(ingredient => ingredient.ProductCode == product.ProductCode))
+        .SelectMany(product => product.AllergenCodes).Distinct().Order().ToArray());
 
   private static Currency CreateCurrency(string code) =>
     code.ToUpperInvariant() switch
@@ -349,6 +388,7 @@ internal static class SeedData
 
   private static DateTimeOffset ResolveDate(
     DateOnly anchor,
-    int daysAgo) =>
-    new(anchor.AddDays(-daysAgo), TimeOnly.MinValue, TimeSpan.Zero);
+    int daysAgo,
+    TimeOnly time = default) =>
+    new(anchor.AddDays(-daysAgo), time, TimeSpan.Zero);
 }

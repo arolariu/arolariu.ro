@@ -22,8 +22,8 @@ metadata, secret identifiers, local target guards, scenario order/content, and p
 - Every tooling test project ends in `.Tests`; the one root props file uses that intrinsic project-name convention for early test-policy
   selection.
 - Each test project directly references only its owning executable.
-- Bootstrap owns the single source seed fixture. Identity's consistency test links that JSON as data; do not create a model/project
-  dependency just to parse it or duplicate the fixture.
+- Bootstrap owns the four persona source seed fixtures. Identity's consistency test links those JSON files as data; do not create a
+  model/project dependency just to parse it or duplicate the fixture.
 - Keep platform-specific file-access and real child-process signal coverage with their owners. A platform skip is not executed proof.
 
 Compiler-policy changes must be checked through effective properties and actual diagnostics. Preserve runtime/error contracts while

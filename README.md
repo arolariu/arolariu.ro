@@ -230,8 +230,9 @@ installs or upgrades Git, Node.js, or npm:
 
 ### Quick Start
 
-> [!WARNING] The Aspire start command below resets all guarded local invoice/merchant documents, invoice blobs, and analysis queue messages
-> before restoring the deterministic local scenarios.
+> [!NOTE] Aspire initializes the local scenarios once and preserves custom data on restart. Only the dashboard's confirmed **Reset local
+> data** command clears the local stores; review its
+> [scope and recovery instructions](infra/Local/readme.md#persistent-data-and-explicit-reset).
 
 ```bash
 # 1️⃣ Clone the repository
@@ -248,7 +249,7 @@ npm run setup
 # 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
 npm run dev
 # → Aspire dashboard auto-opens at https://localhost:17080
-# → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
+# → Website https://localhost:3000 · API https://localhost:5000 · CV http://localhost:4173
 #   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
 
 # Or start a single service standalone (no orchestration):
@@ -374,9 +375,9 @@ npx nx show project website      # 🔍 Show project details
 `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The
 AppHost orchestrates the entire dev stack:
 
-- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and Charlie, Aspire deletes all documents in the guarded local
-  invoice/merchant Cosmos containers, removes the local invoice blob container, and clears the analysis queue. Preserve local work before
-  starting.
+- **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
+  dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
+  scenario.
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via
@@ -406,7 +407,7 @@ verification commands.
 | -------------------- | ------------------------------ | ----------------------------------------------------- |
 | Aspire dashboard     | `https://localhost:17080`      | OTel traces · metrics · logs · resource graph         |
 | Website (Next.js)    | `https://localhost:3000`       | HTTPS via `--experimental-https` (mkcert root CA)     |
-| API (.NET)           | `http://localhost:5000`        | Swagger UI at `/`                                     |
+| API (.NET)           | `https://localhost:5000`       | Swagger UI at `/`                                     |
 | CV (SvelteKit)       | `http://localhost:4173`        | Preview server                                        |
 | Docs (Docusaurus)    | `http://localhost:3100`        |                                                       |
 | Status               | `http://localhost:3002`        |                                                       |
@@ -471,7 +472,7 @@ Each resource has a health check; check the dashboard's **Health** column for th
 
 | Resource   | Health endpoint                     | What it checks                                            |
 | ---------- | ----------------------------------- | --------------------------------------------------------- |
-| API        | `http://localhost:5000/health`      | DB + Cosmos + Azurite + Redis + exp connectivity          |
+| API        | `https://localhost:5000/health`     | DB + Cosmos + Azurite + Redis + exp connectivity          |
 | Website    | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
 | exp        | `https://localhost:5002/api/ready`  | FastAPI ready + runtime configuration available           |
 | SQL Server | TDS handshake                       | Aspire's built-in `WaitFor` gate (`sql-ready`)            |

@@ -1,5 +1,7 @@
 namespace AppHost.Applications;
 
+using AppHost.Applications.JavaScript;
+using AppHost.Applications.Website;
 using AppHost.LocalDevelopment;
 using AppHost.Repository;
 using Aspire.Hosting;
@@ -8,14 +10,24 @@ using Aspire.Hosting.Python;
 
 #pragma warning disable ASPIREJAVASCRIPT001
 
+/// <summary>Contains application handles whose lifecycle participates in a local data reset.</summary>
+internal sealed record LocalApplicationResources(IResource Api, IResource Website, IResource Exp);
+
 /// <summary>Registers applications and their explicit native startup dependencies.</summary>
 internal static class ApplicationResources
 {
-  internal static void AddApplications(this IDistributedApplicationBuilder builder,
+  internal static LocalApplicationResources AddApplications(this IDistributedApplicationBuilder builder,
     RepositoryLayout layout, IResourceBuilder<PythonAppResource> exp, LocalResources local)
   {
+    // One install for the whole npm workspace; per-app installers would race over the shared node_modules.
+    var npmInstall = builder.AddSharedNpmInstall(layout.RootDirectory);
     var api = builder.AddProject<Projects.arolariu_Backend_Core>("api")
-      .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
+      // Upgrading the launch profile's "http" endpoint makes Aspire hand Kestrel its trusted developer certificate.
+      .WithEndpoint("http", endpoint =>
+      {
+        endpoint.UriScheme = "https";
+        endpoint.Port = Constants.ApiPort;
+      })
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
       .WithEnvironment("LOCAL_DEVELOPMENT_IDENTITY_URL", local.Identity.GetEndpoint("http"))
       .WithReference(exp)
@@ -24,24 +36,45 @@ internal static class ApplicationResources
       .WaitFor(exp)
       .WithIconName("CodeBlock")
       .WithHttpHealthCheck("/health");
-    builder.AddNextJsApp("website", layout.WebsiteDirectory)
-      // Next owns HTTPS; NODE_OPTIONS must not reach the npm installer resource.
-      .WithHttpsEndpoint(port: Constants.WebsitePort, env: "PORT")
+    var website = builder.AddNextJsApp("website", layout.WebsiteDirectory)
+      // Next owns HTTPS; NODE_OPTIONS must not reach the npm installer resource. Upgrading the integration's own
+      // PORT-bound "http" endpoint in place (as Aspire does for Vite and uvicorn) avoids a second, dead endpoint.
+      .WithEndpoint("http", endpoint =>
+      {
+        endpoint.UriScheme = "https";
+        endpoint.Port = Constants.WebsitePort;
+      })
       .WithReference(api)
       .WithReference(exp)
       .WithEnvironment("API_URL", api.GetEndpoint("http"))
       .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
+      // Next replaces NODE_EXTRA_CA_CERTS with the mkcert root in its server process, dropping Aspire's bundle. The OS store
+      // already trusts both the mkcert CA and the API's ASP.NET development certificate (Node 22.19+ and 24.6+).
+      .WithEnvironment("NODE_USE_SYSTEM_CA", "1")
       .WaitFor(api)
-      .WithIconName("Globe");
+      .WithIconName("Globe")
+      // 200 only when exp and the API are healthy; the trailing slash avoids Next's 308 redirect.
+      .WithHttpHealthCheck("/api/health/")
+      .WithDevelopmentCertificateRenewal(
+        Path.Combine(layout.WebsiteDirectory, "certificates"), WebsiteCertificateRenewal.ResolveAuthorityDirectory(),
+        TimeProvider.System, WebsiteCertificateRenewal.IsAuthorityTrusted)
+      .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("cv", layout.CvDirectory)
       .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
-      .WithIconName("PersonAccounts");
+      .WithIconName("PersonAccounts")
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
     builder.AddJavaScriptApp("docs", layout.DocsDirectory, runScriptName: "start")
       // Docusaurus already pins its port; a DCP proxy would bind it first.
       .WithHttpEndpoint(port: Constants.DocsPort, isProxied: false)
-      .WithIconName("BookOpenGlobe");
+      .WithIconName("BookOpenGlobe")
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
     builder.AddViteApp("status", layout.StatusDirectory)
       .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
-      .WithIconName("PulseSquare");
+      .WithIconName("PulseSquare")
+      .WithHttpHealthCheck("/")
+      .UseSharedNpmInstall(npmInstall);
+    return new(api.Resource, website.Resource, exp.Resource);
   }
 }

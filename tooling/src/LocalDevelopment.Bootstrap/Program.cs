@@ -2,6 +2,7 @@ namespace LocalDevelopment.Bootstrap;
 
 using System.Runtime.InteropServices;
 using LocalDevelopment.Bootstrap.Configuration;
+using LocalDevelopment.Bootstrap.Resilience;
 using LocalDevelopment.Bootstrap.Safety;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
@@ -98,16 +99,17 @@ internal static class Program
       var bootstrap = new LocalScenarioBootstrap(
         new LocalCosmosResetter(cosmosClient),
         storage,
-        TimeProvider.System);
+        TimeProvider.System,
+        TransientRetry.CreateDefault(Console.Out, TimeProvider.System));
       await bootstrap
-        .RunAsync(options.ManifestPath, cancellationToken)
+        .RunAsync(options.SeedDataDirectory, cancellationToken)
         .ConfigureAwait(false);
       cancellationToken.ThrowIfCancellationRequested();
       return 0;
     }
     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
     {
-      Console.Error.WriteLine("Local development bootstrap cancelled; completed reset phases are not rolled back.");
+      Console.Error.WriteLine("Local development bootstrap cancelled; completed initialization operations are not rolled back.");
       return 1;
     }
     catch (Exception exception)

@@ -8,21 +8,24 @@ using Microsoft.Extensions.DependencyInjection;
 /// <summary>Owns the local SQL connection contract.</summary>
 internal static class SqlResources
 {
+  internal static string DatabaseCreationScript => $"""
+    IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
+        CREATE DATABASE [{Constants.SqlDatabaseName}];
+    """;
+
   internal static IResourceBuilder<SqlServerDatabaseResource> AddLocalSql(
     this IDistributedApplicationBuilder builder, string sqlPassword)
   {
     string readinessConnection = CreateConnectionString(sqlPassword, "master", 5);
     var password = builder.AddParameter("sql-password", secret: true);
     var sql = builder.AddSqlServer("mssql", password: password, port: Constants.SqlPort)
-      .WithDataVolume(Constants.SqlDataVolume)
-      // TDS uses direct TCP rather than DCP's application proxy.
-      .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
+      .WithImageSHA256(Constants.SqlServerImageSha256)
+      .WithDataVolume(Constants.SqlDataVolumeV16_0_4305_5)
+      // DCP forwards TDS to the allocated container port while keeping the public port fixed.
+      .WithEndpoint("tcp", endpoint => endpoint.IsProxied = true)
       .WithIconName("Database");
     var database = sql.AddDatabase(Constants.SqlDatabaseName)
-      .WithCreationScript($"""
-        IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
-            CREATE DATABASE [{Constants.SqlDatabaseName}];
-        """);
+      .WithCreationScript(DatabaseCreationScript);
     builder.Services.AddHealthChecks().AddCheck("sql-ready",
       new SqlReadinessHealthCheck(() => new SqlConnection(readinessConnection)));
     sql.WithHealthCheck("sql-ready");

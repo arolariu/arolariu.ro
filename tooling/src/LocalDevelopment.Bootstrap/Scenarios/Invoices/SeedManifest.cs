@@ -2,6 +2,9 @@ namespace LocalDevelopment.Bootstrap.Scenarios.Invoices;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 
 /// <summary>
 /// Identifiers shared by the development identity and seed-data contracts.
@@ -11,6 +14,7 @@ internal static class PersonaIds
   internal static readonly Guid Alice = Guid.Parse("7574070c-3ee9-5031-9b1b-0dc08c61ee86");
   internal static readonly Guid Bob = Guid.Parse("6a40503e-c1af-51b0-8b60-3c6648b3724e");
   internal static readonly Guid Charlie = Guid.Parse("fc687d5c-39d5-5541-868c-f76a3fdbd4e4");
+  internal static readonly Guid Dmitryi = Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6");
 }
 
 /// <summary>
@@ -21,7 +25,10 @@ internal sealed record SeedScenarioManifest(
   IReadOnlyList<SeedPersonaDefinition> Personas,
   IReadOnlyList<SeedMerchantDefinition> Merchants,
   IReadOnlyList<SeedInvoiceDefinition> Invoices,
-  IReadOnlyList<SeedBlobDefinition> Blobs);
+  IReadOnlyList<SeedBlobDefinition> Blobs)
+{
+  internal const string CurrentVersion = "v3";
+}
 
 internal sealed record SeedPersonaDefinition(
   string Key,
@@ -36,7 +43,12 @@ internal sealed record SeedMerchantDefinition(
   string Description,
   Guid ParentCompanyId,
   string ClassificationCode,
-  string ClassificationLabel);
+  string ClassificationLabel,
+  string CountryCode,
+  string Region,
+  string City,
+  string StreetAddress,
+  IReadOnlyList<ClassificationNode> ClassificationPath);
 
 internal sealed record SeedInvoiceDefinition(
   string Key,
@@ -56,8 +68,10 @@ internal sealed record SeedInvoiceDefinition(
   string? ClassificationCode,
   string? ClassificationLabel,
   IReadOnlyList<SeedProductDefinition> Products,
-  bool IncludeRecipe,
-  string? BlobKey);
+  SeedRecipeDefinition? Recipe,
+  string? BlobKey,
+  TimeOnly TransactionTimeUtc,
+  IReadOnlyList<ClassificationNode>? ClassificationPath);
 
 internal sealed record SeedProductDefinition(
   string Name,
@@ -68,7 +82,25 @@ internal sealed record SeedProductDefinition(
   string? ClassificationCode,
   string? ClassificationLabel,
   string AllergenState,
-  bool IsEdited);
+  bool IsEdited,
+  decimal TaxRate,
+  IReadOnlyList<AllergenCode> AllergenCodes,
+  IReadOnlyList<ClassificationNode>? ClassificationPath);
+
+internal sealed record SeedRecipeIngredientDefinition(string ProductCode, string Quantity);
+
+internal sealed record SeedPantryIngredientDefinition(string Name, string Quantity);
+
+internal sealed record SeedRecipeDefinition(
+  string Name,
+  string Description,
+  int Servings,
+  int PreparationMinutes,
+  int CookingMinutes,
+  RecipeDifficulty Difficulty,
+  IReadOnlyList<SeedRecipeIngredientDefinition> PurchasedIngredients,
+  IReadOnlyList<SeedPantryIngredientDefinition> PantryIngredients,
+  IReadOnlyList<string> Steps);
 
 internal sealed record SeedBlobDefinition(
   string Key,

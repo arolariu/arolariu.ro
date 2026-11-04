@@ -256,5 +256,14 @@
     "eslint-plugin-jsx-a11y": {
       "eslint": "$eslint"
     }
+  },
+  "allowScripts": {
+    "@parcel/watcher": true,
+    "@swc/core": true,
+    "core-js": true,
+    "esbuild": true,
+    "fsevents": true,
+    "nx": true,
+    "protobufjs": true
   }
 }

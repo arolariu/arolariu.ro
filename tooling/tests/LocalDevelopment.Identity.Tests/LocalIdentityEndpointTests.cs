@@ -34,8 +34,8 @@ public sealed class LocalIdentityEndpointTests
     await using var fixture = new IdentityApplication();
     using JsonDocument json = ReadBody(await fixture.InvokeAsync("/personas"));
     JsonElement[] personas = json.RootElement.EnumerateArray().ToArray();
-    Assert.HasCount(3, personas);
-    CollectionAssert.AreEqual(new[] { "alice", "bob", "charlie" },
+    Assert.HasCount(4, personas);
+    CollectionAssert.AreEqual(new[] { "alice", "bob", "charlie", "dmitryi" },
       personas.Select(persona => persona.GetProperty("key").GetString()).ToArray());
     foreach (JsonElement persona in personas)
     {
@@ -47,17 +47,21 @@ public sealed class LocalIdentityEndpointTests
 
   /// <summary>Verifies signed token response shape and no-store without changing claims.</summary>
   [TestMethod]
-  public async Task Token_KnownPersona_ReturnsSignedTokenAndNoStore()
+  [DataRow("alice")]
+  [DataRow("bob")]
+  [DataRow("charlie")]
+  [DataRow("dmitryi")]
+  public async Task Token_KnownPersona_ReturnsSignedTokenAndNoStore(string key)
   {
     await using var fixture = new IdentityApplication();
-    DefaultHttpContext context = await fixture.InvokeAsync("/personas/{key}/token", "alice");
+    DefaultHttpContext context = await fixture.InvokeAsync("/personas/{key}/token", key);
     Assert.AreEqual(200, context.Response.StatusCode);
     Assert.AreEqual("no-store", context.Response.Headers.CacheControl.ToString());
     using JsonDocument json = ReadBody(context);
-    Assert.AreEqual("alice", json.RootElement.GetProperty("persona").GetString());
+    Assert.AreEqual(key, json.RootElement.GetProperty("persona").GetString());
     Assert.AreEqual(2, json.RootElement.EnumerateObject().Count());
     JwtSecurityToken token = new JwtSecurityTokenHandler().ReadJwtToken(json.RootElement.GetProperty("token").GetString());
-    Assert.AreEqual("alice@arolariu.ro", token.Subject);
+    Assert.AreEqual($"{key}@arolariu.ro", token.Subject);
     Assert.AreEqual("HS256", token.Header.Alg);
     Assert.AreEqual("issuer", token.Issuer);
     CollectionAssert.AreEqual(new[] { "audience" }, token.Audiences.ToArray());

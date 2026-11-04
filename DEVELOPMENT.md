@@ -77,6 +77,10 @@ npm run dev          # ← This is what you'll use every day (alias: npm run dev
 4. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
 5. 📊 Exposes the Aspire dashboard at `https://localhost:17080` with live OTel traces / metrics / logs
 
+Local data persists across restarts. First use initializes the three-persona scenario; the dashboard's confirmed **Reset local data** action
+is the destructive path. Review the [owned-store scope and recovery behavior](infra/Local/readme.md#persistent-data-and-explicit-reset)
+before using it.
+
 > **Pressing F5 in VS Code / Visual Studio 2026** runs the same AppHost — the only difference is the IDE attaches a debugger.
 
 **Single-service standalone (no AppHost coordination — fallback only):**
@@ -97,7 +101,7 @@ Use these when narrowly iterating on a single service and you don't need cross-s
 | Service | URL                    | Mode                              |
 | ------- | ---------------------- | --------------------------------- |
 | Website | https://localhost:3000 | ✅ Native, Turbopack hot reload   |
-| API     | http://localhost:5000  | ✅ Native, .NET Hot Reload        |
+| API     | https://localhost:5000 | ✅ Native, .NET Hot Reload        |
 | exp     | http://localhost:5002  | ✅ Native, uvicorn --reload       |
 | CV      | http://localhost:4173  | ✅ Native, Vite HMR               |
 | docs    | http://localhost:3100  | ✅ Native, Docusaurus dev         |
@@ -126,7 +130,7 @@ After starting, run these checks:
 ```bash
 # Check service health
 curl -k http://localhost:5002/api/health     # exp: should return {"status":"Healthy"}
-curl -k http://localhost:5000/health          # API: should return {"status":"Healthy"}
+curl -k https://localhost:5000/health         # API: should return {"status":"Healthy"}
 curl -k https://localhost:3000               # Website: should return HTML
 
 # Check container status (Aspire-managed) — use the command for your selected engine
