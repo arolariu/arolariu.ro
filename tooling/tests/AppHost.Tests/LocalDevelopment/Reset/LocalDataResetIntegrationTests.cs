@@ -213,9 +213,11 @@ public sealed class LocalDataResetIntegrationTests
     await invoices.CreateItemAsync(new { id = "custom-invoice", UserIdentifier = "custom-owner", Name = "preserve" },
       new PartitionKey("custom-owner"), cancellationToken: token);
     using JsonDocument manifest = JsonDocument.Parse(await File.ReadAllTextAsync(
-      Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"), token));
-    JsonElement first = manifest.RootElement.GetProperty("invoices")[0];
-    JsonElement deleted = manifest.RootElement.GetProperty("invoices")[1];
+      Path.Combine(AppContext.BaseDirectory, "SeedData", "alice.json"), token));
+    JsonElement first = manifest.RootElement.GetProperty("invoices").EnumerateArray()
+      .Single(invoice => invoice.GetProperty("key").GetString() == "invoice/alice-weekly-groceries");
+    JsonElement deleted = manifest.RootElement.GetProperty("invoices").EnumerateArray()
+      .Single(invoice => invoice.GetProperty("key").GetString() == "invoice/alice-riverside-topup");
     string owner = manifest.RootElement.GetProperty("personas").EnumerateArray()
       .Single(persona => persona.GetProperty("key").GetString() == first.GetProperty("ownerKey").GetString())
       .GetProperty("userIdentifier").GetString() ?? throw new InvalidOperationException();
@@ -250,7 +252,7 @@ public sealed class LocalDataResetIntegrationTests
     using FeedIterator<JObject> iterator = invoices.GetItemQueryIterator<JObject>("SELECT * FROM c");
     while (iterator.HasMoreResults) { records.AddRange(await iterator.ReadNextAsync(token)); }
     Assert.IsTrue(records.Any(record => record.Value<string>("Name") == "edited by developer"));
-    Assert.HasCount(11, records);
+    Assert.HasCount(1326, records);
     var blobs = new BlobServiceClient(await fixture.ConnectionAsync(fixture.Resources.Infrastructure.Blobs.Resource, token));
     Assert.AreEqual("preserve", (await blobs.GetBlobContainerClient("invoices").GetBlobClient("custom.bin")
       .DownloadContentAsync(token)).Value.Content.ToString());
@@ -279,17 +281,20 @@ public sealed class LocalDataResetIntegrationTests
     {
       while (iterator.HasMoreResults) { merchants.AddRange(await iterator.ReadNextAsync(token)); }
     }
-    using JsonDocument manifest = JsonDocument.Parse(await File.ReadAllTextAsync(
-      Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"), token));
-    foreach (JsonElement persona in manifest.RootElement.GetProperty("personas").EnumerateArray())
+    foreach (string key in new[] { "alice", "bob", "charlie", "dmitryi" })
     {
-      string? key = persona.GetProperty("key").GetString();
+      using JsonDocument manifest = JsonDocument.Parse(await File.ReadAllTextAsync(
+        Path.Combine(AppContext.BaseDirectory, "SeedData", $"{key}.json"), token));
+      JsonElement persona = manifest.RootElement.GetProperty("personas").EnumerateArray().Single();
       string? owner = persona.GetProperty("userIdentifier").GetString();
-      Assert.AreEqual(key == "alice" ? 8 : key == "bob" ? 0 : 3, invoices.Count(invoice => invoice.Value<string>("UserIdentifier") == owner));
-      Assert.AreEqual(key == "alice" ? 5 : key == "bob" ? 0 : 2, merchants.Count(merchant => merchant.Value<string>("CreatedBy") == owner));
+      int expectedActive = key switch { "alice" => 300, "bob" => 5, "charlie" => 20, _ => 1000 };
+      int expectedMerchants = key switch { "alice" => 100, "bob" => 4, "charlie" => 7, _ => 250 };
+      Assert.AreEqual(expectedActive, invoices.Count(invoice =>
+        invoice.Value<string>("UserIdentifier") == owner && !invoice.Value<bool>("IsSoftDeleted")));
+      Assert.AreEqual(expectedMerchants, merchants.Count(merchant => merchant.Value<string>("CreatedBy") == owner));
     }
-    Assert.HasCount(11, invoices);
-    Assert.HasCount(7, merchants);
+    Assert.HasCount(1326, invoices);
+    Assert.HasCount(361, merchants);
     Assert.IsFalse(invoices.Any(invoice => invoice.Value<string>("id") == "custom-invoice"));
     var blobs = new BlobServiceClient(await fixture.ConnectionAsync(fixture.Resources.Infrastructure.Blobs.Resource, token));
     Assert.IsFalse((await blobs.GetBlobContainerClient("invoices").GetBlobClient("custom.bin").ExistsAsync(token)).Value);

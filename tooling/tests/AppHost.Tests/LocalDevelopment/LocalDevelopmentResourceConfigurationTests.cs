@@ -18,13 +18,13 @@ public sealed class LocalDevelopmentResourceConfigurationTests
   {
     IReadOnlyDictionary<string, string> environment =
       LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment(
-        manifestPath: "SeedData/scenario.v1.json");
+        seedDataDirectory: "SeedData");
 
     Assert.AreEqual("Development", environment["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", environment["INFRA"]);
     Assert.AreEqual(
-      "SeedData/scenario.v1.json",
-      environment["SEED_MANIFEST_PATH"]);
+      "SeedData",
+      environment["SEED_DATA_DIRECTORY"]);
     Assert.IsFalse(environment.ContainsKey("AZURE_CLIENT_ID"));
   }
 

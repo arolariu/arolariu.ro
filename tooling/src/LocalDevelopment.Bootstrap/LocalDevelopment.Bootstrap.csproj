@@ -11,7 +11,7 @@
     <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SeedData\scenario.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="SeedData\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="LocalDevelopment.Bootstrap.Tests" />

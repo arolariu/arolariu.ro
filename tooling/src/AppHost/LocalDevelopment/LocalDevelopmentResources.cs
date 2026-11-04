@@ -18,14 +18,14 @@ internal static class LocalDevelopmentResources
     LocalInfrastructure infrastructure, IResourceBuilder<PythonAppResource> exp, RepositoryLayout layout)
   {
     var bootstrapEnvironment =
-      LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment("SeedData/scenario.v1.json");
+      LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment("SeedData");
     var bootstrap = builder.AddProject<Projects.LocalDevelopment_Bootstrap>("local-bootstrap")
       .WithReference(infrastructure.CosmosDatabase)
       .WithReference(infrastructure.Blobs)
       .WithReference(infrastructure.Queues)
       .WithEnvironment("DOTNET_ENVIRONMENT", bootstrapEnvironment["DOTNET_ENVIRONMENT"])
       .WithEnvironment("INFRA", bootstrapEnvironment["INFRA"])
-      .WithEnvironment("SEED_MANIFEST_PATH", bootstrapEnvironment["SEED_MANIFEST_PATH"])
+      .WithEnvironment("SEED_DATA_DIRECTORY", bootstrapEnvironment["SEED_DATA_DIRECTORY"])
       .WaitFor(infrastructure.CosmosInvoices)
       .WaitFor(infrastructure.CosmosMerchants)
       .WaitFor(infrastructure.Blobs)

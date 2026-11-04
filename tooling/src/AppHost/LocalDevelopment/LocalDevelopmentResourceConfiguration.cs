@@ -6,15 +6,15 @@ namespace AppHost.LocalDevelopment;
 internal static class LocalDevelopmentResourceConfiguration
 {
   internal static IReadOnlyDictionary<string, string> CreateBootstrapEnvironment(
-    string manifestPath)
+    string seedDataDirectory)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+    ArgumentException.ThrowIfNullOrWhiteSpace(seedDataDirectory);
 
     return new Dictionary<string, string>(StringComparer.Ordinal)
     {
       ["DOTNET_ENVIRONMENT"] = "Development",
       ["INFRA"] = "local",
-      ["SEED_MANIFEST_PATH"] = manifestPath,
+      ["SEED_DATA_DIRECTORY"] = seedDataDirectory,
     };
   }
 

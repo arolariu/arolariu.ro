@@ -58,7 +58,7 @@ internal sealed class LocalDataResetCoordinator
       phase = "application resumption";
       await operations.Resume(operation.Token).ConfigureAwait(false);
       operation.Token.ThrowIfCancellationRequested();
-      return CommandResults.Success("Local data reset completed; Alice, Bob, and Charlie restored.");
+      return CommandResults.Success("Local data reset completed; Alice, Bob, Charlie, and Dmitryi restored.");
     }
     catch (Exception exception)
     {

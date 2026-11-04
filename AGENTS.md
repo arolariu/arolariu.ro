@@ -99,9 +99,9 @@ Rancher Desktop or Podman Desktop. The Aspire dashboard is available at `https:/
 
 **Standalone service scripts are narrow fallbacks.** Use one when full-stack coordination is unnecessary.
 
-Aspire persists local data and initializes deterministic Alice, Bob, and Charlie scenarios once. Ordinary restarts preserve custom data and
-seed edits/deletions. The dashboard's confirmed **Reset local data** command clears the owned Cosmos, storage, and SQL user data before
-restoring the scenario; see the [local-environment runbook](infra/Local/readme.md) for exact scope and recovery. Selfhost performs
+Aspire persists local data and initializes deterministic Alice, Bob, Charlie, and Dmitryi scenarios once. Ordinary restarts preserve custom
+data and seed edits/deletions. The dashboard's confirmed **Reset local data** command clears the owned Cosmos, storage, and SQL user data
+before restoring the scenario; see the [local-environment runbook](infra/Local/readme.md) for exact scope and recovery. Selfhost performs
 SQL/Cosmos/Azurite provisioning without scenario initialization or dashboard reset. No development token or signing secret is committed.
 
 ## Agent Operating Contract

@@ -328,7 +328,7 @@ public sealed class ResourceCompositionTests
     var bootstrap = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Bootstrap.Resource);
     Assert.AreEqual("Development", bootstrap["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", bootstrap["INFRA"]);
-    Assert.AreEqual("SeedData/scenario.v1.json", bootstrap["SEED_MANIFEST_PATH"]);
+    Assert.AreEqual("SeedData", bootstrap["SEED_DATA_DIRECTORY"]);
     var identity = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Identity.Resource);
     Assert.AreEqual("Development", identity["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", identity["INFRA"]);

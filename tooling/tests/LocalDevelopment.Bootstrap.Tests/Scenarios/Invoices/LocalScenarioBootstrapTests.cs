@@ -60,16 +60,36 @@ public sealed class LocalScenarioBootstrapTests
   public async Task RunAsync_InvalidManifest_PerformsNoOperations()
   {
     var operations = new List<string>();
-    string path = Path.GetTempFileName();
-    File.WriteAllText(path, """{"Version":""}""");
-    try
+    using var files = new SeedScenarioDirectory();
+    files.Mutate("bob", part => part["version"] = "");
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations), new RecordingAzuriteResetter(operations), TimeProvider.System);
+    await Assert.ThrowsExactlyAsync<InvalidDataException>(() => bootstrap.RunAsync(files.Path, CancellationToken.None));
+    Assert.HasCount(0, operations);
+  }
+
+  /// <summary>Partial or malformed persona bundles cannot create even an initialization receipt.</summary>
+  [TestMethod]
+  [DataRow("missing")]
+  [DataRow("owner")]
+  [DataRow("version")]
+  [DataRow("required")]
+  public async Task RunAsync_InvalidBundle_PerformsNoOperations(string defect)
+  {
+    using var files = new SeedScenarioDirectory();
+    switch (defect)
     {
-      var bootstrap = new LocalScenarioBootstrap(
-        new RecordingCosmosResetter(operations), new RecordingAzuriteResetter(operations), TimeProvider.System);
-      await Assert.ThrowsExactlyAsync<InvalidDataException>(() => bootstrap.RunAsync(path, CancellationToken.None));
-      Assert.HasCount(0, operations);
+      case "missing": files.Remove("dmitryi"); break;
+      case "owner": files.Mutate("bob", part => SeedScenarioDirectory.FirstInvoice(part)["ownerKey"] = "alice"); break;
+      case "version": files.Mutate("bob", part => part["version"] = "v1"); break;
+      case "required": files.Mutate("bob", part => SeedScenarioDirectory.FirstInvoice(part).Remove("totalAmount")); break;
     }
-    finally { File.Delete(path); }
+    var operations = new List<string>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations), new RecordingAzuriteResetter(operations), TimeProvider.System);
+
+    await Assert.ThrowsExactlyAsync<InvalidDataException>(() => bootstrap.RunAsync(files.Path, CancellationToken.None));
+    Assert.HasCount(0, operations);
   }
 
   /// <summary>Verifies all external phase boundaries receive the same caller token.</summary>
@@ -87,7 +107,7 @@ public sealed class LocalScenarioBootstrapTests
   }
 
   private static readonly string ScenarioPath =
-    Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
+    Path.Combine(AppContext.BaseDirectory, "SeedData");
 
   /// <summary>
   /// Verifies initialization is marked complete only after both storage and Cosmos seed writes.

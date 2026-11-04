@@ -13,11 +13,11 @@ internal sealed class LocalScenarioBootstrap(
   TransientRetry? retry = null)
 {
   internal async Task RunAsync(
-    string manifestPath,
+    string seedDataDirectory,
     CancellationToken cancellationToken)
   {
     cancellationToken.ThrowIfCancellationRequested();
-    SeedScenarioManifest manifest = SeedData.LoadManifest(manifestPath);
+    SeedScenarioManifest manifest = SeedData.LoadScenario(seedDataDirectory);
     DateOnly anchor = DateOnly.FromDateTime(
       timeProvider.GetUtcNow().UtcDateTime);
     MaterializedSeedScenario proposedScenario =

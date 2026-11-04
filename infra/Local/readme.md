@@ -6,8 +6,8 @@ Two coexisting modes for local development.
 
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
-> [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, and Charlie; an explicit, confirmed **Reset local
-> data** dashboard action is available when you intentionally want to erase custom data and restore the scenario.
+> [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, Charlie, and Dmitryi; an explicit, confirmed
+> **Reset local data** dashboard action is available when you intentionally want to erase custom data and restore the scenario.
 
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`) declares and orchestrates everything natively:
 
@@ -39,6 +39,28 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers
 directly.
+
+#### Four-persona development data
+
+Bootstrap loads the fully expanded `alice.json`, `bob.json`, `charlie.json`, and `dmitryi.json` files from its `SeedData` directory as one
+coordinated `v2` scenario. `SEED_DATA_DIRECTORY` may override that directory; `SEED_MANIFEST_PATH` and a single-file override are no longer
+supported. A missing, malformed, misowned, or mixed-version persona file blocks initialization before scenario writes.
+
+| Persona         | Active owned invoices | Merchants | Product lines per invoice | Nominal history | Geography                               |
+| --------------- | --------------------: | --------: | ------------------------: | --------------- | --------------------------------------- |
+| Bob, inactive   |                     5 |         4 |                      1-10 | 30 days         | One Romanian region                     |
+| Charlie, rare   |                    20 |         7 |                      1-20 | 60 days         | Two Romanian regions                    |
+| Alice, uncommon |                   300 |       100 |                      2-50 | 365 days        | Three regions across Romania and France |
+| Dmitryi, loyal  |                 1,000 |       250 |                     1-100 | 1,095 days      | Romania, France, Germany, Italy, Spain  |
+
+Dmitryi has 18,000 active product lines, with repeated SKUs representing repeat purchases rather than unique products. The complete scenario
+has 1,325 active invoices, one additional soft-deleted Alice invoice, and 361 merchants. Sharing does not inflate ownership counts.
+Histories use the original persisted UTC anchor rather than moving forward on every restart. Names, purchases, and addresses are fictional;
+tax amounts are arithmetically reconciled development examples, not a historical tax-compliance corpus.
+
+An existing `v1` initialization receipt is deliberately not upgraded automatically. Export data you need, then use the existing confirmed
+**Reset local data** action if you intend to erase the owned local Cosmos, storage, and SQL user data and adopt `v2`. Otherwise preserve the
+old store and use the matching code/fixture version. Normal startup never merges or overwrites it.
 
 #### Persistent data and explicit reset
 
@@ -82,7 +104,7 @@ command is local Development/run-mode only; headless invocations without interac
 
 | Owned service | Data removed                                                         | Preserved or restored                                                                           |
 | ------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the three-persona seed.            |
+| `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the four-persona seed.             |
 | `storage`     | Every blob container/blob, queue/message, and table/entity           | Keep service configuration/CORS; restore invoice scans/container and the empty analysis queue.  |
 | `mssql`       | Every non-system user database, schema, and row                      | Keep `master`, `model`, `msdb`, `tempdb`, server configuration/logins; recreate `arolariu-sql`. |
 

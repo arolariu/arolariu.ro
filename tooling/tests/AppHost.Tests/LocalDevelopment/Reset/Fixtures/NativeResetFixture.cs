@@ -67,14 +67,14 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     ReplaceVolume(infrastructure.Cosmos.Resource, volumes.Cosmos);
     ReplaceVolume(infrastructure.Storage.Resource, volumes.Storage);
     ReplaceVolume(infrastructure.SqlDatabase.Resource.Parent, volumes.Sql);
-    string manifest = Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
+    string seedDirectory = Path.Combine(AppContext.BaseDirectory, "SeedData");
     var bootstrap = builder.AddProject<Projects.LocalDevelopment_Bootstrap>("local-bootstrap")
       .WithReference(infrastructure.CosmosDatabase)
       .WithReference(infrastructure.Blobs)
       .WithReference(infrastructure.Queues)
       .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
       .WithEnvironment("INFRA", "local")
-      .WithEnvironment("SEED_MANIFEST_PATH", manifest)
+      .WithEnvironment("SEED_DATA_DIRECTORY", seedDirectory)
       .WaitFor(infrastructure.CosmosInvoices).WaitFor(infrastructure.CosmosMerchants)
       .WaitFor(infrastructure.Blobs).WaitFor(infrastructure.Queues).ExcludeFromManifest();
     if (bootstrapGate is not null)

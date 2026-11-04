@@ -10,7 +10,7 @@ internal sealed record BootstrapOptions(
   string? CosmosConnectionString,
   string BlobStorageConnectionString,
   string QueueStorageConnectionString,
-  string ManifestPath)
+  string SeedDataDirectory)
 {
   internal static BootstrapOptions FromEnvironment() =>
     FromEnvironment(Environment.GetEnvironmentVariable);
@@ -18,6 +18,17 @@ internal sealed record BootstrapOptions(
   internal static BootstrapOptions FromEnvironment(Func<string, string?> readVariable)
   {
     ArgumentNullException.ThrowIfNull(readVariable);
+    if (!string.IsNullOrWhiteSpace(readVariable("SEED_MANIFEST_PATH")))
+    {
+      throw new InvalidOperationException("SEED_MANIFEST_PATH is obsolete. Set SEED_DATA_DIRECTORY to the directory containing all four persona JSON files.");
+    }
+
+    string directory = readVariable("SEED_DATA_DIRECTORY") ?? Path.Combine(AppContext.BaseDirectory, "SeedData");
+    if (string.IsNullOrWhiteSpace(directory))
+    {
+      throw new InvalidOperationException("SEED_DATA_DIRECTORY must not be blank.");
+    }
+
     return new(
       readVariable("DOTNET_ENVIRONMENT")
         ?? readVariable("ASPNETCORE_ENVIRONMENT")
@@ -31,7 +42,6 @@ internal sealed record BootstrapOptions(
       readVariable("ConnectionStrings__queues")
         ?? throw new InvalidOperationException(
           "ConnectionStrings__queues is required."),
-      readVariable("SEED_MANIFEST_PATH")
-        ?? Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"));
+      directory);
   }
 }

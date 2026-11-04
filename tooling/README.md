@@ -31,8 +31,10 @@ loopback-only persona lookup and token creation. The helper executables do not r
 Invoices service-layer hierarchy.
 
 Each test project directly references only its production owner. AppHost's native project-resource references remain necessary for its
-graph. Bootstrap owns the single `SeedData\scenario.v1.json` source fixture; Identity tests link that same JSON as contract data instead of
-depending on Bootstrap's model implementation.
+graph. Bootstrap owns the fully expanded `SeedData\alice.json`, `bob.json`, `charlie.json`, and `dmitryi.json` source fixtures; Identity
+tests link those same JSON files as contract data instead of depending on Bootstrap's model implementation. `SEED_DATA_DIRECTORY` selects
+the directory containing all four version-matched files. The obsolete `SEED_MANIFEST_PATH` override fails with migration guidance. Profile
+sizes and existing-store adoption are documented in the local-environment runbook.
 
 ## Build and package policy
 

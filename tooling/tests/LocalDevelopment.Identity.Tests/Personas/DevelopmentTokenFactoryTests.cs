@@ -30,21 +30,26 @@ public sealed class DevelopmentTokenFactoryTests
   /// Verifies Alice's token validates and carries the exact API claims.
   /// </summary>
   [TestMethod]
-  public void Create_Alice_ReturnsValidSignedTokenWithExpectedClaims()
+  [DataRow("alice")]
+  [DataRow("bob")]
+  [DataRow("charlie")]
+  [DataRow("dmitryi")]
+  public void Create_KnownPersona_ReturnsValidSignedTokenWithExpectedClaims(string key)
   {
     var timeProvider = new FixedTimeProvider(Anchor);
     var factory = new DevelopmentTokenFactory(
       Options,
       timeProvider);
 
-    string token = factory.Create(DevelopmentPersonaCatalog.Alice);
+    DevelopmentPersona persona = DevelopmentPersonaCatalog.All.Single(candidate => candidate.Key == key);
+    string token = factory.Create(persona);
     ClaimsPrincipal principal = ValidateToken(token, timeProvider);
 
     Assert.AreEqual(
-      DevelopmentPersonaCatalog.Alice.UserIdentifier.ToString(),
+      persona.UserIdentifier.ToString(),
       principal.FindFirst("userIdentifier")?.Value);
     Assert.AreEqual("user", principal.FindFirst("role")?.Value);
-    Assert.AreEqual("alice@arolariu.ro", principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
+    Assert.AreEqual($"{key}@arolariu.ro", principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
   }
 
   /// <summary>

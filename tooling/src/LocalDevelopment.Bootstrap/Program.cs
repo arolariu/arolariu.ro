@@ -102,7 +102,7 @@ internal static class Program
         TimeProvider.System,
         TransientRetry.CreateDefault(Console.Out, TimeProvider.System));
       await bootstrap
-        .RunAsync(options.ManifestPath, cancellationToken)
+        .RunAsync(options.SeedDataDirectory, cancellationToken)
         .ConfigureAwait(false);
       cancellationToken.ThrowIfCancellationRequested();
       return 0;

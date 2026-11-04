@@ -28,7 +28,7 @@ internal static class LocalDataResetResourceExtensions
       context => ExecuteAsync(context, resources, coordinator),
       commandOptions: new CommandOptions
       {
-        Description = "Delete local custom Cosmos, storage, and SQL data, then restore Alice, Bob, and Charlie.",
+        Description = "Delete local custom Cosmos, storage, and SQL data, then restore Alice, Bob, Charlie, and Dmitryi.",
         IconName = "ArrowReset",
         Visibility = ResourceCommandVisibility.UI,
         UpdateState = _ => coordinator.IsBusy ? ResourceCommandState.Disabled : ResourceCommandState.Enabled,
@@ -114,7 +114,7 @@ internal static class LocalDataResetResourceExtensions
           "Permanently delete ALL user databases in `cosmos` and `mssql`, and ALL blob containers, queues, "
           + "tables, and contents in `storage`? Custom data cannot be recovered by this action.\n\n"
           + "Stop external clients that write directly to these services. The API, website, and initializer "
-          + "will be stopped; Alice, Bob, and Charlie will be restored before the API and website restart.\n\n"
+          + "will be stopped; Alice, Bob, Charlie, and Dmitryi will be restored before the API and website restart.\n\n"
           + "SQL system databases, server configuration/logins, Redis, selfhost, and the archived "
           + "`arolariu-cosmos-data` volume are NOT targets.",
           new MessageBoxInteractionOptions

@@ -17,7 +17,7 @@ using Newtonsoft.Json.Linq;
 [DoNotParallelize]
 public sealed class LocalScenarioBootstrapPersistenceTests
 {
-  private static readonly string ScenarioPath = Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
+  private static readonly string ScenarioPath = Path.Combine(AppContext.BaseDirectory, "SeedData");
   private CosmosClient? cosmos;
   private BlobServiceClient? blobs;
   private QueueServiceClient? queues;
@@ -82,10 +82,10 @@ public sealed class LocalScenarioBootstrapPersistenceTests
   public async Task RunAsync_CompletedInitialization_PerformsNoSeedWrites()
   {
     CosmosClient client = cosmos ?? throw new InvalidOperationException();
-    SeedScenarioManifest manifest = SeedData.LoadManifest(ScenarioPath);
+    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
     await CreateBootstrap(new DateOnly(2026, 11, 3)).RunAsync(ScenarioPath, CancellationToken.None);
-    SeedInvoiceDefinition edited = manifest.Invoices[0];
-    SeedInvoiceDefinition deleted = manifest.Invoices[1];
+    SeedInvoiceDefinition edited = manifest.Invoices.Single(invoice => invoice.Key == "invoice/alice-weekly-groceries");
+    SeedInvoiceDefinition deleted = manifest.Invoices.Single(invoice => invoice.Key == "invoice/alice-riverside-topup");
     Guid owner = manifest.Personas.Single(persona => persona.Key == edited.OwnerKey).UserIdentifier;
     Container invoices = client.GetContainer("primary", "invoices");
     var partition = new PartitionKey(owner.ToString());
@@ -112,15 +112,15 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     await state.CreateItemAsync(new
     {
       id = "invoice-scenario",
-      manifestVersion = "v1",
+      manifestVersion = "v2",
       anchorDateUtc = "2026-11-03",
       completed = false,
     }, new PartitionKey("invoice-scenario"));
 
     await CreateBootstrap(new DateOnly(2026, 11, 4)).RunAsync(ScenarioPath, CancellationToken.None);
 
-    SeedScenarioManifest manifest = SeedData.LoadManifest(ScenarioPath);
-    SeedInvoiceDefinition invoice = manifest.Invoices[0];
+    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
+    SeedInvoiceDefinition invoice = manifest.Invoices.Single(definition => definition.Key == "invoice/alice-weekly-groceries");
     Guid owner = manifest.Personas.Single(persona => persona.Key == invoice.OwnerKey).UserIdentifier;
     JObject document = (await database.GetContainer("invoices")
       .ReadItemAsync<JObject>(invoice.Id.ToString(), new PartitionKey(owner.ToString()))).Resource;
@@ -132,18 +132,22 @@ public sealed class LocalScenarioBootstrapPersistenceTests
   [TestMethod]
   public async Task RunAsync_ManifestVersionChanged_RefusesMutation()
   {
-    await CreateBootstrap(new DateOnly(2026, 11, 3)).RunAsync(ScenarioPath, CancellationToken.None);
-    string path = Path.GetTempFileName();
-    try
+    CosmosClient client = cosmos ?? throw new InvalidOperationException();
+    Container state = (await client.GetDatabase("primary").CreateContainerAsync("local-development", "/id")).Container;
+    await state.CreateItemAsync(new
     {
-      JObject manifest = JObject.Parse(await File.ReadAllTextAsync(ScenarioPath));
-      manifest["version"] = "v2";
-      await File.WriteAllTextAsync(path, manifest.ToString());
+      id = "invoice-scenario",
+      manifestVersion = "v1",
+      anchorDateUtc = "2026-11-03",
+      completed = true,
+    }, new PartitionKey("invoice-scenario"));
 
-      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-        CreateBootstrap(new DateOnly(2026, 11, 4)).RunAsync(path, CancellationToken.None));
-    }
-    finally { File.Delete(path); }
+    await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+      CreateBootstrap(new DateOnly(2026, 11, 4)).RunAsync(ScenarioPath, CancellationToken.None));
+
+    JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario", new PartitionKey("invoice-scenario"))).Resource;
+    Assert.AreEqual("v1", receipt.Value<string>("manifestVersion"));
+    Assert.IsTrue(receipt.Value<bool>("completed"));
   }
 
   /// <summary>First-use seeding must not overwrite an existing seed scan or its headers.</summary>
@@ -151,7 +155,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
   public async Task RunAsync_ExistingSeedBlob_PreservesBytesAndHeaders()
   {
     BlobServiceClient client = blobs ?? throw new InvalidOperationException();
-    string key = SeedData.LoadManifest(ScenarioPath).Blobs[0].Key;
+    string key = SeedData.LoadScenario(ScenarioPath).Blobs[0].Key;
     BlobClient blob = client.GetBlobContainerClient("invoices").GetBlobClient($"seed/{key}.png");
     using var content = new MemoryStream([1, 2, 3]);
     await blob.UploadAsync(content, new BlobUploadOptions
@@ -170,7 +174,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
   public async Task RunAsync_UnexpectedItemConflict_PropagatesConflict()
   {
     CosmosClient client = cosmos ?? throw new InvalidOperationException();
-    SeedScenarioManifest manifest = SeedData.LoadManifest(ScenarioPath);
+    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
     SeedInvoiceDefinition seed = manifest.Invoices[0];
     Guid owner = manifest.Personas.Single(persona => persona.Key == seed.OwnerKey).UserIdentifier;
     Database database = client.GetDatabase("primary");

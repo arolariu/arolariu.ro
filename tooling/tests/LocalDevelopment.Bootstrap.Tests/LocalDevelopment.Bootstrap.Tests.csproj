@@ -15,5 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" />
     <Compile Include="..\LocalDataTestFixture.cs" Link="TestInfrastructure\LocalDataTestFixture.cs" />
+    <Content Include="..\..\..\sites\api.arolariu.ro\src\Invoices\Resources\Taxonomies\*.json"
+      Link="Taxonomies\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

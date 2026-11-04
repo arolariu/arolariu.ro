@@ -39,6 +39,7 @@ internal static class SeedManifestValidator
     RequirePersona(personas, "alice", PersonaIds.Alice);
     RequirePersona(personas, "bob", PersonaIds.Bob);
     RequirePersona(personas, "charlie", PersonaIds.Charlie);
+    RequirePersona(personas, "dmitryi", PersonaIds.Dmitryi);
 
     foreach (SeedMerchantDefinition merchant in manifest.Merchants)
     {
@@ -152,20 +153,22 @@ internal static class SeedManifestValidator
     Dictionary<string, SeedPersonaDefinition> personas)
   {
     int CountInvoices(string persona) =>
-      manifest.Invoices.Count(invoice => invoice.OwnerKey == persona);
+      manifest.Invoices.Count(invoice => invoice.OwnerKey == persona && !invoice.IsSoftDeleted);
     int CountMerchants(string persona) =>
       manifest.Merchants.Count(merchant => merchant.OwnerKey == persona);
 
-    if (CountInvoices("alice") != 8
-        || CountMerchants("alice") != 5
-        || CountInvoices("bob") != 0
-        || CountMerchants("bob") != 0
-        || CountInvoices("charlie") != 3
-        || CountMerchants("charlie") != 2
-        || personas.Count != 3)
+    if (CountInvoices("alice") != 300
+        || CountMerchants("alice") != 100
+        || CountInvoices("bob") != 5
+        || CountMerchants("bob") != 4
+        || CountInvoices("charlie") != 20
+        || CountMerchants("charlie") != 7
+        || CountInvoices("dmitryi") != 1000
+        || CountMerchants("dmitryi") != 250
+        || personas.Count != 4)
     {
       throw new InvalidDataException(
-        "Seed scenario does not match the approved Alice/Bob/Charlie record counts.");
+        "Seed scenario does not match the approved four-persona active invoice and merchant counts.");
     }
   }
 }
