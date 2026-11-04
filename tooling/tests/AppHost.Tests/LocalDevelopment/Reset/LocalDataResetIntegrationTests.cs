@@ -4,14 +4,25 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
+using arolariu.Backend.Common.Options;
+using arolariu.Backend.Core.Auth.Endpoints;
+using arolariu.Backend.Core.Auth.Models;
+using arolariu.Backend.Core.Auth.Modules;
 using Aspire.Hosting.ApplicationModel;
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 using global::AppHost.Tests.LocalDevelopment.Reset.Fixtures;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 
@@ -386,6 +397,60 @@ public sealed class LocalDataResetIntegrationTests
     await using DbCommand command = sql.CreateCommand();
     command.CommandText = "SELECT OBJECT_ID(N'dbo.PersistedMarker');";
     Assert.AreEqual(DBNull.Value, await command.ExecuteScalarAsync(token));
+    await AssertIdentityRegistrationAndLoginAsync(
+      await fixture.ConnectionAsync(fixture.Resources.Infrastructure.SqlDatabase.Resource, token), token);
+  }
+
+  private static async Task AssertIdentityRegistrationAndLoginAsync(string connectionString, CancellationToken token)
+  {
+    var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = [], EnvironmentName = "Development" });
+    builder.WebHost.UseUrls("http://127.0.0.1:0");
+    builder.Logging.ClearProviders();
+    builder.Services.Configure<LocalOptions>(options =>
+    {
+      options.SqlConnectionString = connectionString;
+      options.JwtIssuer = "https://reset-fixture.invalid";
+      options.JwtAudience = "https://reset-fixture-api.invalid";
+      options.JwtSecret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+    });
+    builder.Services.AddSingleton<IOptionsManager, LocalOptionsManager>();
+    builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+    builder.AddAuthServices();
+    await using WebApplication app = builder.Build();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapAuthEndpoints();
+    await app.StartAsync(token);
+    try
+    {
+      using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+      const string email = "reset-regression@example.invalid";
+      string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
+      using HttpResponseMessage registration = await client.PostAsJsonAsync("/auth/register", new { email, password }, token);
+      Assert.AreEqual(HttpStatusCode.OK, registration.StatusCode,
+        "A successful reset must restore the real SQL-backed registration endpoint, not only an empty database.");
+      using HttpResponseMessage unconfirmed = await client.PostAsJsonAsync("/auth/login", new { email, password }, token);
+      Assert.AreEqual(HttpStatusCode.Unauthorized, unconfirmed.StatusCode,
+        "Schema recovery must not weaken the existing email-confirmation policy.");
+      await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
+      {
+        UserManager<AuthenticatedUser> users = scope.ServiceProvider.GetRequiredService<UserManager<AuthenticatedUser>>();
+        AuthenticatedUser? user = await users.FindByEmailAsync(email);
+        Assert.IsNotNull(user);
+        string confirmation = await users.GenerateEmailConfirmationTokenAsync(user);
+        Assert.IsTrue((await users.ConfirmEmailAsync(user, confirmation)).Succeeded);
+      }
+      using HttpResponseMessage incorrect = await client.PostAsJsonAsync("/auth/login", new { email, password = password + "wrong" }, token);
+      Assert.AreEqual(HttpStatusCode.Unauthorized, incorrect.StatusCode);
+      using HttpResponseMessage login = await client.PostAsJsonAsync("/auth/login", new { email, password }, token);
+      Assert.AreEqual(HttpStatusCode.OK, login.StatusCode);
+      using JsonDocument result = await JsonDocument.ParseAsync(await login.Content.ReadAsStreamAsync(token), cancellationToken: token);
+      Assert.IsFalse(string.IsNullOrEmpty(result.RootElement.GetProperty("accessToken").GetString()));
+    }
+    finally
+    {
+      await app.StopAsync(CancellationToken.None);
+    }
   }
 
   private static async Task<CosmosClient> CosmosAsync(NativeResetFixture fixture, CancellationToken token) =>
