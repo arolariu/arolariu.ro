@@ -30,11 +30,11 @@ public sealed class DevelopmentTokenFactoryTests
   /// Verifies Alice's token validates and carries the exact API claims.
   /// </summary>
   [TestMethod]
-  [DataRow("alice")]
-  [DataRow("bob")]
-  [DataRow("charlie")]
-  [DataRow("dmitryi")]
-  public void Create_KnownPersona_ReturnsValidSignedTokenWithExpectedClaims(string key)
+  [DataRow("alice", "7574070c-3ee9-5031-9b1b-0dc08c61ee86")]
+  [DataRow("bob", "6a40503e-c1af-51b0-8b60-3c6648b3724e")]
+  [DataRow("charlie", "fc687d5c-39d5-5541-868c-f76a3fdbd4e4")]
+  [DataRow("dmitryi", "2e92f011-8157-564d-a059-af27f4026fd6")]
+  public void Create_KnownPersona_ReturnsValidSignedTokenWithExpectedClaims(string key, string websiteIdentifier)
   {
     var timeProvider = new FixedTimeProvider(Anchor);
     var factory = new DevelopmentTokenFactory(
@@ -46,7 +46,7 @@ public sealed class DevelopmentTokenFactoryTests
     ClaimsPrincipal principal = ValidateToken(token, timeProvider);
 
     Assert.AreEqual(
-      persona.UserIdentifier.ToString(),
+      websiteIdentifier,
       principal.FindFirst("userIdentifier")?.Value);
     Assert.AreEqual("user", principal.FindFirst("role")?.Value);
     Assert.AreEqual($"{key}@arolariu.ro", principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);

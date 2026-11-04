@@ -256,6 +256,69 @@ public sealed class SeedManifestValidatorTests
       : invoice with { PaymentType = "invented" })));
   }
 
+  /// <summary>A selected leaf alone is not the complete canonical classification path.</summary>
+  [TestMethod]
+  [DataRow("merchant")]
+  [DataRow("invoice")]
+  [DataRow("product")]
+  public void Validate_TruncatedCanonicalHierarchy_Throws(string target)
+  {
+    SeedScenarioManifest manifest = Load();
+    if (target == "merchant")
+    {
+      SeedMerchantDefinition merchant = manifest.Merchants[0];
+      AssertInvalid(manifest with
+      {
+        Merchants = [merchant with { ClassificationPath = [merchant.ClassificationPath[^1]] }, .. manifest.Merchants.Skip(1)],
+      }, "canonical");
+      return;
+    }
+
+    SeedInvoiceDefinition invoice = manifest.Invoices.First(candidate => target == "invoice"
+      ? candidate.ClassificationPath?.Count > 1
+      : candidate.Products.Any(product => product.ClassificationPath?.Count > 1));
+    if (target == "invoice")
+    {
+      var path = invoice.ClassificationPath ?? throw new InvalidDataException();
+      AssertInvalid(Replace(manifest, invoice with { ClassificationPath = [path[^1]] }), "canonical");
+    }
+    else
+    {
+      SeedProductDefinition product = invoice.Products.First(candidate => candidate.ClassificationPath?.Count > 1);
+      var path = product.ClassificationPath ?? throw new InvalidDataException();
+      AssertInvalid(Replace(manifest, invoice with
+      {
+        Products = invoice.Products.Select(candidate => candidate.ProductCode == product.ProductCode
+          ? candidate with { ClassificationPath = [path[^1]] } : candidate).ToArray(),
+      }), "canonical");
+    }
+  }
+
+  /// <summary>The selected code cannot validate fabricated ancestor labels.</summary>
+  [TestMethod]
+  public void Validate_NoncanonicalAncestorLabel_Throws()
+  {
+    SeedScenarioManifest manifest = Load();
+    SeedMerchantDefinition merchant = manifest.Merchants[0];
+    var ancestor = merchant.ClassificationPath[0];
+    AssertInvalid(manifest with
+    {
+      Merchants = [merchant with
+      {
+        ClassificationPath = [new(ancestor.Level, ancestor.Code, "Fabricated ancestor label"), .. merchant.ClassificationPath.Skip(1)],
+      }, .. manifest.Merchants.Skip(1)],
+    }, "canonical");
+  }
+
+  /// <summary>Day-zero checkout times cannot become future transactions on an early startup.</summary>
+  [TestMethod]
+  public void Validate_DayZeroWithNonmidnightTime_Throws()
+  {
+    SeedScenarioManifest manifest = Load();
+    SeedInvoiceDefinition invoice = manifest.Invoices[0];
+    AssertInvalid(Replace(manifest, invoice with { DaysAgo = 0, TransactionTimeUtc = new TimeOnly(12, 0) }), "day-zero");
+  }
+
   private static SeedScenarioManifest Replace(SeedScenarioManifest manifest, SeedInvoiceDefinition changed) =>
     manifest with { Invoices = manifest.Invoices.Select(invoice => invoice.Key == changed.Key ? changed : invoice).ToArray() };
 

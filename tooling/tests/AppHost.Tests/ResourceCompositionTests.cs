@@ -398,6 +398,17 @@ public sealed class ResourceCompositionTests
     Assert.AreEqual("config.aspire.json", exp["EXP_LOCAL_CONFIG_PATH"]);
   }
 
+  /// <summary>A host directory override reaches the real registered Bootstrap environment.</summary>
+  [TestMethod]
+  public async Task Compose_Environment_HonorsConfiguredSeedDirectory()
+  {
+    var graph = CreateGraph(seedDataDirectory: @"C:\fixture-overrides\personas");
+
+    Dictionary<string, object> environment = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Bootstrap.Resource);
+
+    Assert.AreEqual(@"C:\fixture-overrides\personas", environment["SEED_DATA_DIRECTORY"]);
+  }
+
   private static async Task<Dictionary<string, object>> ResolveEnvironmentAsync(
     IDistributedApplicationBuilder builder, IResource resource)
   {
@@ -438,7 +449,8 @@ public sealed class ResourceCompositionTests
   }
 
   internal static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
-    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph(string environmentName = "Development")
+    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph(string environmentName = "Development",
+      string? seedDataDirectory = null)
   {
     string hostDirectory = HostDirectory();
     var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
@@ -448,6 +460,7 @@ public sealed class ResourceCompositionTests
       Args = [],
     });
     builder.Environment.EnvironmentName = environmentName;
+    if (seedDataDirectory is not null) { builder.Configuration["SEED_DATA_DIRECTORY"] = seedDataDirectory; }
     builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
       ["Parameters:sql-password"] = "local-test-password",

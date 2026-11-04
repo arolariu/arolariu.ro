@@ -1,5 +1,5 @@
 {
-  "version": "v2",
+  "version": "v3",
   "personas": [
     {
       "key": "charlie",
@@ -912,7 +912,7 @@
         ]
       },
       "blobKey": null,
-      "transactionTimeUtc": "19:28:00",
+      "transactionTimeUtc": "00:00:00",
       "classificationCode": null,
       "classificationLabel": null,
       "classificationPath": null

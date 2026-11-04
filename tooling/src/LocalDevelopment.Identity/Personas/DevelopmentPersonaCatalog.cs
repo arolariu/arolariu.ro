@@ -30,7 +30,7 @@ internal static class DevelopmentPersonaCatalog
     "dmitryi",
     "Dmitryi — loyal account",
     "dmitryi@arolariu.ro",
-    Guid.Parse("32a2818b-7844-59cf-a7c0-48d061cc86ae"),
+    Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6"),
     "user");
 
   internal static IReadOnlyList<DevelopmentPersona> All { get; } =

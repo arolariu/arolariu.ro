@@ -18,7 +18,7 @@ internal static class LocalDevelopmentResources
     LocalInfrastructure infrastructure, IResourceBuilder<PythonAppResource> exp, RepositoryLayout layout)
   {
     var bootstrapEnvironment =
-      LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment("SeedData");
+      LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment(builder.Configuration["SEED_DATA_DIRECTORY"] ?? "SeedData");
     var bootstrap = builder.AddProject<Projects.LocalDevelopment_Bootstrap>("local-bootstrap")
       .WithReference(infrastructure.CosmosDatabase)
       .WithReference(infrastructure.Blobs)

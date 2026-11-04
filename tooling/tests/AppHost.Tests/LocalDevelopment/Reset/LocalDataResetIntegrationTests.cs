@@ -210,7 +210,7 @@ public sealed class LocalDataResetIntegrationTests
 
   /// <summary>A legacy receipt blocking startup still permits the guarded, confirmed upgrade reset.</summary>
   [TestMethod]
-  public async Task ResetLocalData_LegacyReceiptBlockedInitializer_ConfirmedResetRestoresV2()
+  public async Task ResetLocalData_LegacyReceiptBlockedInitializer_ConfirmedResetRestoresCurrentScenario()
   {
     if (Environment.GetEnvironmentVariable("AROLARIU_RUN_LOCAL_DATA_TESTS") != "1")
     {
@@ -231,7 +231,7 @@ public sealed class LocalDataResetIntegrationTests
         Container state = cosmos.GetContainer("primary", "local-development");
         JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario",
           new PartitionKey("invoice-scenario"), cancellationToken: timeout.Token)).Resource;
-        receipt["manifestVersion"] = "v1";
+        receipt["manifestVersion"] = "v2";
         await state.ReplaceItemAsync(receipt, "invoice-scenario", new PartitionKey("invoice-scenario"),
           cancellationToken: timeout.Token);
       }
@@ -240,6 +240,11 @@ public sealed class LocalDataResetIntegrationTests
 
       second = await NativeResetFixture.StartAsync(scope, password, timeout.Token, waitForApplications: false);
       Assert.AreEqual(1, Current(second, "local-bootstrap").Snapshot.ExitCode);
+      foreach (string dependency in new[] { "exp", "local-identities" })
+      {
+        await second.Notifications.WaitForResourceAsync(dependency,
+          change => change.Snapshot.State?.Text == KnownResourceStates.FailedToStart, timeout.Token);
+      }
       await AssertCustomDataAsync(second, timeout.Token);
       second.Confirmation.Approved = true;
       ExecuteCommandResult reset = await second.Commands.ExecuteCommandAsync(
@@ -249,6 +254,8 @@ public sealed class LocalDataResetIntegrationTests
       await AssertResetDataAsync(second, timeout.Token);
       Assert.AreEqual(KnownResourceStates.Running, Current(second, "api").Snapshot.State?.Text);
       Assert.AreEqual(KnownResourceStates.Running, Current(second, "website").Snapshot.State?.Text);
+      Assert.AreEqual(KnownResourceStates.Running, Current(second, "exp").Snapshot.State?.Text);
+      Assert.AreEqual(KnownResourceStates.Running, Current(second, "local-identities").Snapshot.State?.Text);
     }
     finally
     {
@@ -351,11 +358,11 @@ public sealed class LocalDataResetIntegrationTests
     {
       JObject receipt = (await stateClient.GetContainer("primary", "local-development").ReadItemAsync<JObject>(
         "invoice-scenario", new PartitionKey("invoice-scenario"), cancellationToken: token)).Resource;
-      Assert.AreEqual("v2", receipt.Value<string>("manifestVersion"));
+      Assert.AreEqual("v3", receipt.Value<string>("manifestVersion"));
       Assert.IsTrue(receipt.Value<bool>("completed"));
     }
     Assert.AreEqual(18000, invoices.Where(invoice =>
-      invoice.Value<string>("UserIdentifier") == "32a2818b-7844-59cf-a7c0-48d061cc86ae"
+      invoice.Value<string>("UserIdentifier") == "2e92f011-8157-564d-a059-af27f4026fd6"
       && !invoice.Value<bool>("IsSoftDeleted")).Sum(invoice => invoice["Items"]?.Count() ?? 0));
     foreach (JObject merchant in merchants)
     {

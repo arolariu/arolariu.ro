@@ -42,7 +42,7 @@ public sealed class DevelopmentPersonaCatalogTests
     Assert.AreEqual(
       Guid.Parse("fc687d5c-39d5-5541-868c-f76a3fdbd4e4"),
       DevelopmentPersonaCatalog.Charlie.UserIdentifier);
-    Assert.AreEqual(Guid.Parse("32a2818b-7844-59cf-a7c0-48d061cc86ae"),
+    Assert.AreEqual(Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6"),
       DevelopmentPersonaCatalog.Dmitryi.UserIdentifier);
     Assert.HasCount(4, DevelopmentPersonaCatalog.All);
     CollectionAssert.AreEqual(new[] { "alice", "bob", "charlie", "dmitryi" },

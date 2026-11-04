@@ -43,8 +43,9 @@ directly.
 #### Four-persona development data
 
 Bootstrap loads the fully expanded `alice.json`, `bob.json`, `charlie.json`, and `dmitryi.json` files from its `SeedData` directory as one
-coordinated `v2` scenario. `SEED_DATA_DIRECTORY` may override that directory; `SEED_MANIFEST_PATH` and a single-file override are no longer
-supported. A missing, malformed, misowned, or mixed-version persona file blocks initialization before scenario writes.
+coordinated `v3` scenario. `SEED_DATA_DIRECTORY` may override that directory, including through the Aspire host's configuration;
+`SEED_MANIFEST_PATH` and a single-file override are no longer supported. A missing, malformed, misowned, or mixed-version persona file
+blocks initialization before scenario writes.
 
 | Persona         | Active owned invoices | Merchants | Product lines per invoice | Nominal history | Geography                               |
 | --------------- | --------------------: | --------: | ------------------------: | --------------- | --------------------------------------- |
@@ -58,9 +59,13 @@ has 1,325 active invoices, one additional soft-deleted Alice invoice, and 361 me
 Histories use the original persisted UTC anchor rather than moving forward on every restart. Names, purchases, and addresses are fictional;
 tax amounts are arithmetically reconciled development examples, not a historical tax-compliance corpus.
 
-An existing `v1` initialization receipt is deliberately not upgraded automatically. Export data you need, then use the existing confirmed
-**Reset local data** action if you intend to erase the owned local Cosmos, storage, and SQL user data and adopt `v2`. Otherwise preserve the
-old store and use the matching code/fixture version. Normal startup never merges or overwrites it.
+The `v3` dataset corrects Dmitryi's owner to the website's UUIDv5(DNS, email) contract, bounds day-zero checkout times at midnight for
+deterministic retries, and supplies three readable synthetic PNG receipt previews linked to their actual invoice baskets and totals.
+Classification overrides must match the complete canonical hierarchy and official labels, not just an existing leaf.
+
+Existing `v1` and `v2` initialization receipts are deliberately not upgraded automatically. Export data you need, then use the existing
+confirmed **Reset local data** action if you intend to erase the owned local Cosmos, storage, and SQL user data and adopt `v3`. Otherwise
+preserve the old store and use the matching code/fixture version. Normal startup never merges or overwrites it.
 
 #### Persistent data and explicit reset
 

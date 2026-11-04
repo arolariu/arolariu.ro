@@ -14,7 +14,7 @@ internal static class PersonaIds
   internal static readonly Guid Alice = Guid.Parse("7574070c-3ee9-5031-9b1b-0dc08c61ee86");
   internal static readonly Guid Bob = Guid.Parse("6a40503e-c1af-51b0-8b60-3c6648b3724e");
   internal static readonly Guid Charlie = Guid.Parse("fc687d5c-39d5-5541-868c-f76a3fdbd4e4");
-  internal static readonly Guid Dmitryi = Guid.Parse("32a2818b-7844-59cf-a7c0-48d061cc86ae");
+  internal static readonly Guid Dmitryi = Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6");
 }
 
 /// <summary>
@@ -25,7 +25,10 @@ internal sealed record SeedScenarioManifest(
   IReadOnlyList<SeedPersonaDefinition> Personas,
   IReadOnlyList<SeedMerchantDefinition> Merchants,
   IReadOnlyList<SeedInvoiceDefinition> Invoices,
-  IReadOnlyList<SeedBlobDefinition> Blobs);
+  IReadOnlyList<SeedBlobDefinition> Blobs)
+{
+  internal const string CurrentVersion = "v3";
+}
 
 internal sealed record SeedPersonaDefinition(
   string Key,

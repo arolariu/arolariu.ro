@@ -115,7 +115,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     await state.CreateItemAsync(new
     {
       id = "invoice-scenario",
-      manifestVersion = "v2",
+      manifestVersion = "v3",
       anchorDateUtc = "2026-11-03",
       completed = false,
     }, new PartitionKey("invoice-scenario"));
@@ -133,14 +133,16 @@ public sealed class LocalScenarioBootstrapPersistenceTests
 
   /// <summary>A different fixture version requires an explicit reset instead of silently rewriting data.</summary>
   [TestMethod]
-  public async Task RunAsync_ManifestVersionChanged_RefusesMutation()
+  [DataRow("v1")]
+  [DataRow("v2")]
+  public async Task RunAsync_ManifestVersionChanged_RefusesMutation(string legacyVersion)
   {
     CosmosClient client = cosmos ?? throw new InvalidOperationException();
     Container state = (await client.GetDatabase("primary").CreateContainerAsync("local-development", "/id")).Container;
     await state.CreateItemAsync(new
     {
       id = "invoice-scenario",
-      manifestVersion = "v1",
+      manifestVersion = legacyVersion,
       anchorDateUtc = "2026-11-03",
       completed = true,
     }, new PartitionKey("invoice-scenario"));
@@ -152,7 +154,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       CreateBootstrap(new DateOnly(2026, 11, 4)).RunAsync(ScenarioPath, CancellationToken.None));
 
     JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario", new PartitionKey("invoice-scenario"))).Resource;
-    Assert.AreEqual("v1", receipt.Value<string>("manifestVersion"));
+    Assert.AreEqual(legacyVersion, receipt.Value<string>("manifestVersion"));
     Assert.IsTrue(receipt.Value<bool>("completed"));
     using FeedIterator<JObject> iterator = invoices.GetItemQueryIterator<JObject>("SELECT * FROM c");
     var records = new List<JObject>();

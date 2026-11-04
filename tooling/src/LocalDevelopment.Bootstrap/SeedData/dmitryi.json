@@ -1,10 +1,10 @@
 {
-  "version": "v2",
+  "version": "v3",
   "personas": [
     {
       "key": "dmitryi",
       "subject": "dmitryi@arolariu.ro",
-      "userIdentifier": "32a2818b-7844-59cf-a7c0-48d061cc86ae"
+      "userIdentifier": "2e92f011-8157-564d-a059-af27f4026fd6"
     }
   ],
   "merchants": [
@@ -12061,7 +12061,7 @@
         ]
       },
       "blobKey": null,
-      "transactionTimeUtc": "08:24:00",
+      "transactionTimeUtc": "00:00:00",
       "classificationCode": null,
       "classificationLabel": null,
       "classificationPath": null
@@ -182700,7 +182700,7 @@
       ],
       "recipe": null,
       "blobKey": null,
-      "transactionTimeUtc": "10:23:00",
+      "transactionTimeUtc": "00:00:00",
       "classificationCode": "01.1",
       "classificationLabel": "Food",
       "classificationPath": [
@@ -284426,7 +284426,7 @@
       ],
       "recipe": null,
       "blobKey": null,
-      "transactionTimeUtc": "12:17:00",
+      "transactionTimeUtc": "00:00:00",
       "classificationCode": "01.1",
       "classificationLabel": "Food",
       "classificationPath": [

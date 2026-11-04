@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Bootstrap.Tests.Scenarios.Invoices;
 
 using System.Text.Json;
+using System.Buffers.Binary;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using global::LocalDevelopment.Bootstrap.Scenarios.Invoices;
@@ -47,7 +48,7 @@ public sealed class SeedDataTests
       (PersonaIds.Alice, 300, 100),
       (PersonaIds.Bob, 5, 4),
       (PersonaIds.Charlie, 20, 7),
-      (Guid.Parse("32a2818b-7844-59cf-a7c0-48d061cc86ae"), 1000, 250),
+      (Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6"), 1000, 250),
     })
     {
       Assert.AreEqual(active, scenario.Invoices.Count(invoice =>
@@ -237,6 +238,41 @@ public sealed class SeedDataTests
         Assert.AreEqual(invoice.AdditionalMetadata["seed.region"], merchants[invoice.MerchantReference].AdditionalMetadata["seed.region"]);
         Assert.AreEqual(invoice.CountryRegion == "RO" ? "RON" : "EUR", invoice.PaymentInformation.Currency.Code);
       }
+    }
+
+  }
+
+  /// <summary>A date-only retry anchor never creates future day-zero checkout timestamps.</summary>
+  [TestMethod]
+  public void Materialize_DayZeroReceipts_DoNotExceedBeginningOfAnchorDate()
+  {
+    DateOnly anchor = new(2026, 11, 4);
+    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
+    MaterializedSeedScenario scenario = SeedData.Materialize(manifest, anchor);
+    var dayZero = manifest.Invoices.Where(invoice => invoice.DaysAgo == 0).ToArray();
+    Assert.IsTrue(dayZero.Length > 0);
+
+    foreach (SeedInvoiceDefinition definition in dayZero)
+    {
+      var invoice = scenario.Invoices.Single(candidate => candidate.id == definition.Id);
+      Assert.IsTrue(invoice.CreatedAt <= new DateTimeOffset(anchor, TimeOnly.MinValue, TimeSpan.Zero));
+      Assert.AreEqual(invoice.CreatedAt, invoice.PaymentInformation.TransactionDate);
+    }
+  }
+
+  /// <summary>Every representative scan is a linked, non-placeholder PNG with readable receipt dimensions.</summary>
+  [TestMethod]
+  public void LoadScenario_ReceiptScans_AreLinkedReadablePngs()
+  {
+    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
+    Assert.HasCount(3, manifest.Blobs);
+    foreach (SeedBlobDefinition blob in manifest.Blobs)
+    {
+      Assert.AreEqual(1, manifest.Invoices.Count(invoice => invoice.BlobKey == blob.Key));
+      byte[] content = Convert.FromBase64String(blob.ContentBase64);
+      CollectionAssert.AreEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, content.Take(8).ToArray());
+      Assert.IsTrue(BinaryPrimitives.ReadInt32BigEndian(content.AsSpan(16, 4)) >= 500, blob.Key);
+      Assert.IsTrue(BinaryPrimitives.ReadInt32BigEndian(content.AsSpan(20, 4)) >= 250, blob.Key);
     }
   }
 
