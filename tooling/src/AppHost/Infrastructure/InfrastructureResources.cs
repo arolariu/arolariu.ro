@@ -35,7 +35,7 @@ internal static class InfrastructureResources
         .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
         .WithDataVolume(Constants.CosmosDataVolumeEn20261008)
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
-      .WithEndpoint("emulator", endpoint => endpoint.IsProxied = false)
+      .WithEndpoint("emulator", endpoint => endpoint.IsProxied = true)
       .WithIconName("DatabaseMultiple");
     var database = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
     var invoices = database.AddContainer(

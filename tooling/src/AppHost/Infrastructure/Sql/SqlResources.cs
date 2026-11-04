@@ -21,8 +21,8 @@ internal static class SqlResources
     var sql = builder.AddSqlServer("mssql", password: password, port: Constants.SqlPort)
       .WithImageSHA256(Constants.SqlServerImageSha256)
       .WithDataVolume(Constants.SqlDataVolumeV16_0_4305_5)
-      // TDS uses direct TCP rather than DCP's application proxy.
-      .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
+      // DCP forwards TDS to the allocated container port while keeping the public port fixed.
+      .WithEndpoint("tcp", endpoint => endpoint.IsProxied = true)
       .WithIconName("Database");
     var database = sql.AddDatabase(Constants.SqlDatabaseName)
       .WithCreationScript(DatabaseCreationScript);

@@ -63,11 +63,6 @@ internal sealed class NativeResetFixture : IAsyncDisposable
       ["DcpPublisher:WaitForResourceCleanup"] = "true",
     });
     LocalInfrastructure infrastructure = builder.AddInfrastructure(password);
-    foreach (IResource target in new[] { infrastructure.Cosmos.Resource, (IResource)infrastructure.Storage.Resource,
-      infrastructure.SqlDatabase.Resource.Parent })
-    {
-      foreach (EndpointAnnotation endpoint in target.Annotations.OfType<EndpointAnnotation>()) { endpoint.IsProxied = true; }
-    }
     builder.Resources.Remove(builder.Resources.Single(resource => resource.Name == "redis"));
     var volumes = new LocalDataResetVolumeNames($"{scope}-cosmos", $"{scope}-storage", $"{scope}-sql");
     ReplaceVolume(infrastructure.Cosmos.Resource, volumes.Cosmos);

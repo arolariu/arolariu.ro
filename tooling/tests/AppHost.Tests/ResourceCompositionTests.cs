@@ -182,10 +182,10 @@ public sealed class ResourceCompositionTests
 
   /// <summary>Verifies fixed ports and transport/proxy choices.</summary>
   [TestMethod]
-  [DataRow("mssql", "tcp", 8082, "tcp", false)]
-  [DataRow("cosmos", "emulator", 8081, "http", false)]
-  [DataRow("storage", "blob", 10000, "http", false)]
-  [DataRow("storage", "queue", 10001, "http", false)]
+  [DataRow("mssql", "tcp", 8082, "tcp", true)]
+  [DataRow("cosmos", "emulator", 8081, "http", true)]
+  [DataRow("storage", "blob", 10000, "http", true)]
+  [DataRow("storage", "queue", 10001, "http", true)]
   [DataRow("redis", "tcp", 6379, "redis", true)]
   [DataRow("exp", "http", 5002, "http", false)]
   [DataRow("local-identities", "http", 5011, "http", false)]

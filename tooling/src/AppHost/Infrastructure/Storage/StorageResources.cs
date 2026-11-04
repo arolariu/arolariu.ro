@@ -22,9 +22,9 @@ internal static class StorageResources
         .WithQueuePort(Constants.AzuriteQueuePort)
         .WithImageSHA256(Constants.AzuriteEmulatorImageSha256)
         .WithDataVolume(Constants.AzuriteDataVolumeV3_35_0))
-      // Native processes and the browser use fixed loopback ports, not DCP proxy ports.
-      .WithEndpoint("blob", endpoint => endpoint.IsProxied = false)
-      .WithEndpoint("queue", endpoint => endpoint.IsProxied = false)
+      // Keep public ports fixed while DCP manages the container-side forwarding.
+      .WithEndpoint("blob", endpoint => endpoint.IsProxied = true)
+      .WithEndpoint("queue", endpoint => endpoint.IsProxied = true)
       .WithIconName("Storage");
     var blobs = storage.AddBlobs("blobs");
     var queues = storage.AddQueues("queues");
