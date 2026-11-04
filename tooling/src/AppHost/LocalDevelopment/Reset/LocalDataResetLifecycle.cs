@@ -49,6 +49,16 @@ internal sealed class LocalDataResetLifecycle(
 
   internal async Task ResumeApplicationsAsync(CancellationToken cancellationToken)
   {
+    foreach (IResource dependency in new[] { resources.Applications.Exp, resources.Helpers.Identity.Resource })
+    {
+      ResourceEvent current = currentState(dependency.Name)
+        ?? throw new InvalidOperationException("Cannot prove the current state of a local application dependency.");
+      if (IsFreshHealthy(current, dependency)) { continue; }
+      await StopWriterAsync(dependency, cancellationToken).ConfigureAwait(false);
+      await waitForDependencies(dependency, cancellationToken).ConfigureAwait(false);
+      await StartAndObserveAsync(dependency, change => IsFreshHealthy(change, dependency), cancellationToken).ConfigureAwait(false);
+    }
+
     foreach (IResource resource in new[] { resources.Applications.Api, resources.Applications.Website })
     {
       await waitForDependencies(resource, cancellationToken).ConfigureAwait(false);

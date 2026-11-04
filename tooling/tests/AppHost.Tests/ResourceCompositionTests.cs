@@ -1,5 +1,6 @@
 namespace AppHost.Tests;
 
+using System.Reflection;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.JavaScript;
@@ -318,6 +319,63 @@ public sealed class ResourceCompositionTests
 
     Assert.IsFalse(result.Success);
     StringAssert.Contains(result.Message, "interactive");
+  }
+
+  /// <summary>A snapshot sampled while confirmation is pending must not latch the dashboard action disabled.</summary>
+  [TestMethod]
+  public async Task Compose_LocalReset_PendingConfirmation_DoesNotCacheDisabledState()
+  {
+    var graph = CreateGraph();
+    IInteractionService interaction = DispatchProxy.Create<IInteractionService, PendingResetInteraction>();
+    var pendingInteraction = (PendingResetInteraction)interaction;
+    graph.Builder.Services.AddSingleton(interaction);
+    await using DistributedApplication application = graph.Builder.Build();
+    ResourceCommandAnnotation command = graph.Local.Bootstrap.Resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Single(item => item.Name == "reset-local-data");
+    Task<ExecuteCommandResult> execution = command.ExecuteCommand(new ExecuteCommandContext
+    {
+      ResourceName = "local-bootstrap",
+      Services = application.Services,
+      Logger = NullLogger.Instance,
+      Arguments = new InteractionInputCollection([]),
+      CancellationToken = CancellationToken.None,
+    });
+    await pendingInteraction.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    ResourceCommandState sampled;
+    try
+    {
+      sampled = command.UpdateState(new UpdateCommandStateContext
+      {
+        ResourceSnapshot = new CustomResourceSnapshot { ResourceType = "test", Properties = [] },
+        Services = application.Services,
+      });
+    }
+    finally
+    {
+      pendingInteraction.Answer.TrySetResult(InteractionResult.Ok(false));
+      await execution;
+    }
+
+    Assert.AreEqual(ResourceCommandState.Enabled, sampled);
+  }
+
+  /// <summary>Controls only the external confirmation boundary; no reset store operation executes.</summary>
+  public class PendingResetInteraction : DispatchProxy
+  {
+    internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal TaskCompletionSource<InteractionResult<bool>> Answer { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <inheritdoc />
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+    {
+      if (targetMethod?.Name == "get_IsAvailable") { return true; }
+      if (targetMethod?.Name == nameof(IInteractionService.PromptConfirmationAsync))
+      {
+        Entered.TrySetResult();
+        return Answer.Task;
+      }
+      throw new NotSupportedException("Only local reset confirmation is supported.");
+    }
   }
 
   /// <summary>Verifies local safety/configuration and Python OTLP injection at the native boundary.</summary>

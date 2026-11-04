@@ -1,6 +1,7 @@
 namespace AppHost.Tests.LocalDevelopment.Reset;
 
 using Aspire.Hosting.ApplicationModel;
+using Azure;
 using global::AppHost.LocalDevelopment.Reset;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -136,6 +137,95 @@ public sealed class LocalDataResetCoordinatorTests
     Assert.IsFalse(operations.Contains("resume", StringComparer.Ordinal));
   }
 
+  /// <summary>Reading the confirmation dialog cannot consume the destructive operation's budget.</summary>
+  [TestMethod]
+  public async Task ExecuteAsync_SlowConfirmation_ReceivesFullBudgetAfterApproval()
+  {
+    var clock = new ControlledTimeProvider();
+    var coordinator = new LocalDataResetCoordinator(clock);
+    var confirmation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var operations = new List<string>();
+    Task<ExecuteCommandResult> pending = coordinator.ExecuteAsync(_ => confirmation.Task,
+      CreateOperations(operations), CancellationToken.None);
+
+    clock.Advance(TimeSpan.FromMinutes(20));
+    confirmation.SetResult(true);
+    ExecuteCommandResult result = await pending;
+
+    Assert.IsTrue(result.Success, result.Message);
+    Assert.IsTrue(operations.Contains("resume", StringComparer.Ordinal));
+  }
+
+  /// <summary>Confirmed work still has the full bounded deadline and failure cleanup.</summary>
+  [TestMethod]
+  public async Task ExecuteAsync_ConfirmedWork_HonorsFiveMinuteBudget()
+  {
+    var clock = new ControlledTimeProvider();
+    var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var operations = new List<string>();
+    LocalDataResetOperations actions = CreateOperations(operations) with
+    {
+      Initialize = async token =>
+      {
+        entered.SetResult();
+        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+      },
+    };
+    Task<ExecuteCommandResult> pending = new LocalDataResetCoordinator(clock)
+      .ExecuteAsync(_ => Task.FromResult(true), actions, CancellationToken.None);
+    await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+    clock.Advance(TimeSpan.FromMinutes(5) - TimeSpan.FromSeconds(1));
+    Assert.IsFalse(pending.IsCompleted);
+    clock.Advance(TimeSpan.FromSeconds(1));
+    ExecuteCommandResult result = await pending;
+
+    Assert.IsFalse(result.Success);
+    Assert.AreEqual("stop", operations[^1]);
+    Assert.IsFalse(operations.Contains("resume", StringComparer.Ordinal));
+  }
+
+  /// <summary>Provider failure codes remain actionable without exposing provider messages or credentials.</summary>
+  [TestMethod]
+  public async Task ExecuteAsync_ProviderFailure_ReportsSanitizedCauseAndResource()
+  {
+    LocalDataResetOperations actions = CreateOperations([]) with
+    {
+      ClearStorage = _ => Task.FromException(new RequestFailedException(503,
+        "AccountKey=provider-secret", "ServerBusy", null)),
+    };
+
+    ExecuteCommandResult result = await new LocalDataResetCoordinator()
+      .ExecuteAsync(_ => Task.FromResult(true), actions, CancellationToken.None);
+
+    StringAssert.Contains(result.Message, "storage");
+    StringAssert.Contains(result.Message, "503");
+    StringAssert.Contains(result.Message, "ServerBusy");
+    Assert.IsFalse(result.Message.Contains("provider-secret", StringComparison.Ordinal));
+  }
+
+  /// <summary>A failed cleanup cannot erase the primary provider failure from diagnostics.</summary>
+  [TestMethod]
+  public async Task ExecuteAsync_CleanupFails_RetainsPrimaryAndCleanupDiagnostics()
+  {
+    int stops = 0;
+    LocalDataResetOperations actions = CreateOperations([]) with
+    {
+      ClearStorage = _ => Task.FromException(new RequestFailedException(503,
+        "AccountKey=provider-secret", "ServerBusy", null)),
+      StopWriters = _ => ++stops == 1 ? Task.CompletedTask
+        : Task.FromException(new IOException("Password=cleanup-secret")),
+    };
+
+    ExecuteCommandResult result = await new LocalDataResetCoordinator()
+      .ExecuteAsync(_ => Task.FromResult(true), actions, CancellationToken.None);
+
+    StringAssert.Contains(result.Message, "ServerBusy");
+    StringAssert.Contains(result.Message, "IOException");
+    Assert.IsFalse(result.Message.Contains("provider-secret", StringComparison.Ordinal));
+    Assert.IsFalse(result.Message.Contains("cleanup-secret", StringComparison.Ordinal));
+  }
+
   private static LocalDataResetOperations CreateOperations(List<string> operations, string? failure = null)
   {
     Task Step(string name, CancellationToken token)
@@ -148,5 +238,53 @@ public sealed class LocalDataResetCoordinatorTests
     return new(token => Step("validate", token), token => Step("stop", token),
       token => Step("cosmos", token), token => Step("storage", token), token => Step("sql", token),
       token => Step("provision", token), token => Step("new-seed", token), token => Step("resume", token));
+  }
+
+  private sealed class ControlledTimeProvider : TimeProvider
+  {
+    private readonly List<ControlledTimer> timers = [];
+    private DateTimeOffset now = DateTimeOffset.UnixEpoch;
+
+    public override DateTimeOffset GetUtcNow() => now;
+
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+    {
+      var timer = new ControlledTimer(this, callback, state);
+      timer.Change(dueTime, period);
+      timers.Add(timer);
+      return timer;
+    }
+
+    internal void Advance(TimeSpan amount)
+    {
+      now += amount;
+      foreach (ControlledTimer timer in timers.ToArray()) { timer.Fire(now); }
+    }
+
+    private sealed class ControlledTimer(ControlledTimeProvider clock, TimerCallback callback, object? state) : ITimer
+    {
+      private DateTimeOffset? due;
+      private TimeSpan period;
+      private bool disposed;
+
+      public bool Change(TimeSpan dueTime, TimeSpan nextPeriod)
+      {
+        if (disposed) { return false; }
+        due = dueTime == Timeout.InfiniteTimeSpan ? null : clock.now + dueTime;
+        period = nextPeriod;
+        return true;
+      }
+
+      internal void Fire(DateTimeOffset current)
+      {
+        if (disposed || due is not DateTimeOffset deadline || deadline > current) { return; }
+        due = period == Timeout.InfiniteTimeSpan ? null : current + period;
+        callback(state);
+      }
+
+      public void Dispose() { disposed = true; due = null; }
+
+      public ValueTask DisposeAsync() { Dispose(); return ValueTask.CompletedTask; }
+    }
   }
 }

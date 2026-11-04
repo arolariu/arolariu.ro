@@ -116,6 +116,11 @@ The API, website, and any active/pending initializer are quiesced before deletio
 Bootstrap execution must finish successfully before the API and website restart and pass fresh health checks. Independent sites, Redis,
 selfhost resources, and the legacy Cosmos volume are not cleared. Named volumes and database-engine files are not reformatted or deleted.
 
+The five-minute operation budget starts only after confirmation succeeds; reading the dialog does not consume destructive-work time. After
+reseeding, unavailable exp and local Identity executions are recovered before the API resumes, while healthy dependency executions are
+preserved. Failures report the phase, affected resource, and safe provider type/status/error codes without exposing raw provider messages or
+credentials; a cleanup failure retains the original failure details separately.
+
 Reset is serialized, bounded, and not transactional across stores. Cancellation or failure can leave data partially cleared; writers are not
 automatically resumed against that state. Inspect the failed phase and explicitly retry after fixing the cause. If writer shutdown could not
 be confirmed, stop the AppHost before continuing. Reset is not a repair for arbitrary raw-volume/image incompatibilities.

@@ -123,6 +123,23 @@ public sealed class WebsiteCertificateRenewalTests
     AssertUnchanged(before);
   }
 
+  /// <summary>A matching issuer subject cannot substitute another CA's signing key.</summary>
+  [TestMethod]
+  [DataRow(false)]
+  [DataRow(true)]
+  public void Renew_CertificateFromDifferentKeyWithSameAuthoritySubject_ThrowsAndKeepsFiles(bool expired)
+  {
+    using X509Certificate2 local = WriteAuthority();
+    using X509Certificate2 other = CreateAuthority(local.Subject);
+    WriteLeaf(other, Now.AddDays(expired ? -1 : 3));
+    (byte[] Certificate, byte[] Key) before = ReadFiles();
+
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      WebsiteCertificateRenewal.Renew(certificates, authorityDirectory, Now, _ => true));
+
+    AssertUnchanged(before);
+  }
+
   /// <summary>Verifies an unreadable certificate fails clearly and changes nothing.</summary>
   [TestMethod]
   public void Renew_CertificateUnreadable_ThrowsAndKeepsFiles()

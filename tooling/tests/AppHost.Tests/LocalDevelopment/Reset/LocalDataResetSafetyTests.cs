@@ -17,6 +17,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class LocalDataResetSafetyTests
 {
+  /// <summary>Newly recovered dependencies must still be the captured owned native resources.</summary>
+  [TestMethod]
+  [DataRow(false)]
+  [DataRow(true)]
+  public void ValidateResourceOwnership_UnownedApplicationDependency_Refuses(bool identity)
+  {
+    LocalDataResetResources resources = CreateResources();
+    resources = identity
+      ? resources with { Helpers = resources.Helpers with { Identity = resources.Helpers.Bootstrap } }
+      : resources with { Applications = resources.Applications with { Exp = resources.Applications.Api } };
+
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      LocalDataResetSafety.ValidateResourceOwnership(resources, isDevelopment: true, isRunMode: true));
+  }
+
   /// <summary>Valid native repository resources are accepted without accessing their databases.</summary>
   [TestMethod]
   public void ValidateResourceOwnership_LocalNativeResources_Accepts()
@@ -122,9 +137,12 @@ public sealed class LocalDataResetSafetyTests
   [DataRow("queue")]
   [DataRow("table")]
   [DataRow("sql")]
+  [DataRow("local")]
   public void ValidateResolvedClients_CloudEndpoint_Refuses(string unsafeClient)
   {
     LocalDataResetResources resources = CreateResources();
+    resources.Infrastructure.Storage.Resource.Annotations.OfType<EndpointAnnotation>()
+      .Single(endpoint => endpoint.Name == "table").Port = 19002;
     string cosmosHost = unsafeClient == "cosmos" ? "example.invalid" : "127.0.0.1";
     using var cosmos = new CosmosClient($"AccountEndpoint=http://{cosmosHost}:8081/;AccountKey={LocalDataTestFixture.CosmosKey}",
       new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway, LimitToEndpoint = true });
@@ -135,8 +153,11 @@ public sealed class LocalDataResetSafetyTests
     using var sql = new SqlConnection(
       $"Server={(unsafeClient == "sql" ? "example.invalid" : "127.0.0.1")},8082;Database=master;Integrated Security=true;Encrypt=false");
 
-    Assert.ThrowsExactly<InvalidOperationException>(() => LocalDataResetSafety.ValidateResolvedClients(resources,
-      cosmos, new BlobServiceClient(storage), new QueueServiceClient(storage), new TableServiceClient(storage), sql));
+    void Validate() => LocalDataResetSafety.ValidateResolvedClients(resources,
+      cosmos, new BlobServiceClient(storage), new QueueServiceClient(storage), new TableServiceClient(storage), sql);
+
+    if (unsafeClient == "local") { Validate(); }
+    else { Assert.ThrowsExactly<InvalidOperationException>(Validate); }
   }
 
   /// <summary>Matching loopback clients are accepted only at their captured native ports.</summary>
@@ -167,7 +188,8 @@ public sealed class LocalDataResetSafetyTests
     return new(graph.Infrastructure, graph.Local,
       new LocalApplicationResources(
         graph.Builder.Resources.Single(resource => resource.Name == "api"),
-        graph.Builder.Resources.Single(resource => resource.Name == "website")),
+        graph.Builder.Resources.Single(resource => resource.Name == "website"),
+        graph.Exp.Resource),
       new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5));
   }
 
