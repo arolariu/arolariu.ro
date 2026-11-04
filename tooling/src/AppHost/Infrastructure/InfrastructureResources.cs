@@ -5,6 +5,7 @@ using AppHost.Infrastructure.Storage;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+using global::LocalDevelopment.Data;
 
 #pragma warning disable ASPIRECOSMOSDB001
 #pragma warning disable ASPIRECERTIFICATES001
@@ -37,11 +38,11 @@ internal static class InfrastructureResources
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = true)
       .WithIconName("DatabaseMultiple");
-    var database = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
+    var database = cosmos.AddCosmosDatabase(LocalDataContract.CosmosDatabaseName);
     var invoices = database.AddContainer(
-      Constants.CosmosInvoicesContainer, partitionKeyPath: Constants.CosmosInvoicesPartitionKey);
+      LocalDataContract.CosmosInvoicesContainer, partitionKeyPath: LocalDataContract.CosmosInvoicesPartitionKey);
     var merchants = database.AddContainer(
-      Constants.CosmosMerchantsContainer, partitionKeyPath: Constants.CosmosMerchantsPartitionKey);
+      LocalDataContract.CosmosMerchantsContainer, partitionKeyPath: LocalDataContract.CosmosMerchantsPartitionKey);
     LocalStorageResources storage = builder.AddLocalStorage();
     var redisPassword = builder.AddParameter("redis-password", secret: true);
     builder.AddRedis("redis", port: Constants.RedisPort, password: redisPassword)

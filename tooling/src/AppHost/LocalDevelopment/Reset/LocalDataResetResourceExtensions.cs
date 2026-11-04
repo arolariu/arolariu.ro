@@ -1,8 +1,8 @@
 namespace AppHost.LocalDevelopment.Reset;
 
-using AppHost.Infrastructure.Cosmos;
-using AppHost.Infrastructure.Sql;
-using AppHost.Infrastructure.Storage;
+using global::LocalDevelopment.Data.Cosmos;
+using global::LocalDevelopment.Data.Sql;
+using global::LocalDevelopment.Data.Storage;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Azure.Data.Tables;

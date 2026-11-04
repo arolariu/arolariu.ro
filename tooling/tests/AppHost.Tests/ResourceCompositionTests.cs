@@ -5,8 +5,6 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.JavaScript;
 using Aspire.Hosting.Python;
-using global::AppHost.Applications;
-using global::AppHost.Applications.Exp;
 using global::AppHost.Infrastructure;
 using global::AppHost.Infrastructure.Storage;
 using global::AppHost.LocalDevelopment;
@@ -23,6 +21,37 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ResourceCompositionTests
 {
+  /// <summary>Registering the graph does not generate overlays or issue website certificates.</summary>
+  [TestMethod]
+  public void Compose_WithoutStart_DoesNotWriteConfigurationOrCertificates()
+  {
+    DirectoryInfo temporary = Directory.CreateTempSubdirectory("arolariu-composition-");
+    try
+    {
+      RepositoryLayout layout = RepositoryLayout.Resolve(Path.Combine(temporary.FullName, "tooling", "src", "AppHost"));
+      foreach (string directory in new[] { layout.ExpDirectory, layout.WebsiteDirectory,
+        layout.CvDirectory, layout.DocsDirectory, layout.StatusDirectory })
+      {
+        Directory.CreateDirectory(directory);
+      }
+      File.WriteAllText(layout.SourceConfigPath, "source sentinel");
+      File.WriteAllText(layout.GeneratedConfigPath, "target sentinel");
+      var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
+      {
+        ProjectDirectory = HostDirectory(),
+        DisableDashboard = true,
+        Args = [],
+      });
+
+      _ = LocalApplication.Compose(builder, layout, "local-test-password");
+
+      Assert.AreEqual("source sentinel", File.ReadAllText(layout.SourceConfigPath));
+      Assert.AreEqual("target sentinel", File.ReadAllText(layout.GeneratedConfigPath));
+      Assert.IsFalse(Directory.Exists(Path.Combine(layout.WebsiteDirectory, "certificates")));
+    }
+    finally { temporary.Delete(recursive: true); }
+  }
+
   /// <summary>Verifies the real registration resolves a cycle-free, recovery-capable health check.</summary>
   [TestMethod]
   public async Task Compose_StorageHealth_ResolvesRecoveryCheckWithoutInitialProvisioning()
@@ -166,6 +195,10 @@ public sealed class ResourceCompositionTests
       Assert.IsFalse(app.Annotations.OfType<ResourceRelationshipAnnotation>()
         .Any(relationship => relationship.Resource.Name == $"{name}-installer"));
       Assert.IsTrue(app.Annotations.OfType<JavaScriptPackageManagerAnnotation>().Any());
+      if (name != "website")
+      {
+        Assert.IsFalse(app.Annotations.OfType<WaitAnnotation>().Any(wait => wait.Resource.Name == "api"));
+      }
     }
   }
 
@@ -387,6 +420,7 @@ public sealed class ResourceCompositionTests
     Assert.AreEqual("Development", bootstrap["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", bootstrap["INFRA"]);
     Assert.AreEqual("SeedData", bootstrap["SEED_DATA_DIRECTORY"]);
+    Assert.IsFalse(bootstrap.ContainsKey("AZURE_CLIENT_ID"));
     var identity = await ResolveEnvironmentAsync(graph.Builder, graph.Local.Identity.Resource);
     Assert.AreEqual("Development", identity["DOTNET_ENVIRONMENT"]);
     Assert.AreEqual("local", identity["INFRA"]);
@@ -468,12 +502,7 @@ public sealed class ResourceCompositionTests
       ["DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] = "https://localhost:21031",
     });
     RepositoryLayout layout = RepositoryLayout.Resolve(hostDirectory);
-    LocalInfrastructure infrastructure = builder.AddInfrastructure("local-test-password");
-    IResourceBuilder<PythonAppResource> exp = builder.AddExp(infrastructure, layout);
-    LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
-    LocalApplicationResources applications = builder.AddApplications(layout, exp, local);
-    builder.AddLocalDataReset(new(infrastructure, local, applications,
-      new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5)));
-    return (builder, infrastructure, exp, local);
+    LocalEnvironmentResources resources = LocalApplication.Compose(builder, layout, "local-test-password");
+    return (builder, resources.Infrastructure, resources.Exp, resources.Local);
   }
 }

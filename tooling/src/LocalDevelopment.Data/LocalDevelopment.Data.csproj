@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Azure.Data.Tables" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.Storage.Queues" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
+    <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="LocalDevelopment.Data.Tests" />
+  </ItemGroup>
+</Project>

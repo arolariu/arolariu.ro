@@ -15,26 +15,37 @@ tooling\
   src\
     AppHost\
     LocalDevelopment.Bootstrap\
+    LocalDevelopment.Data\
     LocalDevelopment.Identity\
   tests\
     AppHost.Tests\
     LocalDevelopment.Bootstrap.Tests\
+    LocalDevelopment.Data.Tests\
     LocalDevelopment.Identity.Tests\
 ```
 
-AppHost is the native Aspire composition root. Its `Infrastructure`, `Applications`, and `LocalDevelopment` slices keep resource definitions
-beside their readiness, provisioning, and configuration behavior. `RepositoryLayout` anchors project/configuration locations to the host
-project rather than shell cwd.
+AppHost is the native Aspire composition root. `Program.cs` generates the exp overlay before calling `LocalApplication.Compose`. Composition
+registers resources without starting processes or writing configuration/certificates. Its `Infrastructure`, `Applications`, and
+`LocalDevelopment` slices configure their own resources; cross-capability references, endpoint expressions, and startup waits are visible
+together in `LocalApplication`. `RepositoryLayout` anchors project/configuration locations to the host project rather than shell cwd.
 
-Bootstrap owns guarded invoice-scenario validation, materialization, initialization/write ordering, and storage adapters. Identity owns
-loopback-only persona lookup and token creation. The helper executables do not reference AppHost or one another. They do not adopt the API's
-Invoices service-layer hierarchy.
+To extend the graph, add a focused resource registration beside its capability, then wire dependencies in `LocalApplication.Compose`. Graph
+tests call that production entry point. The isolated native reset fixture shares only `WireStartupDependencies`, keeping controlled HTTP
+processes instead of starting real website/API applications.
+
+Data owns invoice-scenario validation, materialization, initialization/write ordering, and provider operations without Aspire dependencies.
+It also owns clear/restore SDK operations and application schema restoration. AppHost retains interactive reset confirmation, native-target
+authorization, repeated live-instance checks, and writer shutdown/restart ordering; Data does not authorize resets. Bootstrap owns the
+guarded command, cancellation, SDK client lifetime, and fixture packaging. AppHost and Bootstrap may reference Data. Identity owns
+loopback-only persona lookup and token creation and remains independent. The helper executables do not reference AppHost or one another.
+They do not adopt the API's Invoices service-layer hierarchy.
 
 Each test project directly references only its production owner. AppHost's native project-resource references remain necessary for its
 graph. Bootstrap owns the fully expanded `SeedData\alice.json`, `bob.json`, `charlie.json`, and `dmitryi.json` source fixtures; Identity
-tests link those same JSON files as contract data instead of depending on Bootstrap's model implementation. `SEED_DATA_DIRECTORY` selects
-the directory containing all four version-matched files. The obsolete `SEED_MANIFEST_PATH` override fails with migration guidance. Profile
-sizes and existing-store adoption are documented in the local-environment runbook.
+tests link those same JSON files as contract data instead of depending on Bootstrap's model implementation. Data.Tests links the same
+fixtures and owns scenario coverage. `SEED_DATA_DIRECTORY` selects the directory containing all four version-matched files. The obsolete
+`SEED_MANIFEST_PATH` override fails with migration guidance. Profile sizes and existing-store adoption are documented in the
+local-environment runbook.
 
 ## Build and package policy
 
@@ -56,10 +67,12 @@ From the repository root:
 ```powershell
 dotnet build tooling\src\AppHost\AppHost.csproj
 dotnet build tooling\src\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj
+dotnet build tooling\src\LocalDevelopment.Data\LocalDevelopment.Data.csproj
 dotnet build tooling\src\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj
 
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```
 
@@ -85,7 +98,7 @@ $env:AROLARIU_CONTAINER_ENGINE = "rancher"
 $env:AROLARIU_RUN_LOCAL_DATA_TESTS = "1"
 $env:AROLARIU_LOCAL_DATA_TEST_SCOPE = "arolariu-seed-tests-" + [guid]::NewGuid().ToString("N")
 npm run containers:compose -- --engine rancher --file tooling\tests\Fixtures\local-data.compose.yml -- up -d --wait
-dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
 npm run containers:compose -- --engine rancher --file tooling\tests\Fixtures\local-data.compose.yml -- down
 ```
@@ -112,10 +125,10 @@ than importing line-bound breakpoint XML.
 | Concern                 | Symbol to inspect                                                                       |
 | ----------------------- | --------------------------------------------------------------------------------------- |
 | Repository rooting      | `AppHost.Repository.RepositoryLayout.Resolve`                                           |
-| Native composition      | `AppHost.Infrastructure.InfrastructureResources.AddInfrastructure`                      |
+| Native composition      | `AppHost.LocalApplication.Compose`                                                      |
 | SQL readiness           | `AppHost.Infrastructure.Sql.SqlReadinessHealthCheck.CheckHealthAsync`                   |
 | Failed Azurite recovery | `AppHost.Infrastructure.Storage.AzuriteBootstrap.BootstrapHealthCheck.CheckHealthAsync` |
-| Scenario phase ordering | `LocalDevelopment.Bootstrap.Scenarios.Invoices.LocalScenarioBootstrap.RunAsync`         |
+| Scenario phase ordering | `LocalDevelopment.Data.Scenarios.Invoices.LocalScenarioBootstrap.RunAsync`              |
 | Persona token creation  | `LocalDevelopment.Identity.Personas.DevelopmentTokenFactory.Create`                     |
 
 Exception breakpoints for storage/provider failures or cancellation can help distinguish a transient retry from a terminal failure. Pausing

@@ -1,17 +1,17 @@
 namespace AppHost.Applications.Exp;
 
 using AppHost.Infrastructure.Sql;
-using AppHost.Infrastructure;
 using AppHost.Repository;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Python;
+using global::LocalDevelopment.Data;
 
 /// <summary>Owns the exp service's local endpoint overlay.</summary>
 internal static class ExpResources
 {
   internal static IResourceBuilder<PythonAppResource> AddExp(this IDistributedApplicationBuilder builder,
-    LocalInfrastructure infrastructure, RepositoryLayout layout) =>
+    RepositoryLayout layout) =>
     builder.AddUvicornApp("exp", layout.ExpDirectory, "main:app")
       .WithPip()
       .WithVirtualEnvironment(".venv")
@@ -22,9 +22,6 @@ internal static class ExpResources
       .WithEnvironment("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
       .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT",
         builder.Configuration["DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] ?? "https://localhost:21031")
-      .WaitFor(infrastructure.SqlDatabase)
-      .WaitFor(infrastructure.Cosmos)
-      .WaitFor(infrastructure.Storage)
       .WithIconName("KeyMultiple")
       .WithHttpHealthCheck("/api/ready");
 
@@ -34,7 +31,7 @@ internal static class ExpResources
       ["Endpoints:Database:NoSQL"] =
         $"AccountEndpoint=https://localhost:{Constants.CosmosGatewayPort}/;AccountKey={Constants.CosmosEmulatorWellKnownKey};",
       ["Endpoints:Database:SQL"] =
-        SqlResources.CreateConnectionString(sqlPassword, Constants.SqlDatabaseName),
+        SqlResources.CreateConnectionString(sqlPassword, LocalDataContract.SqlDatabaseName),
       ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
       ["Endpoints:Service:Api"] = $"https://localhost:{Constants.ApiPort}",
     };

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
+using global::LocalDevelopment.Data.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -111,14 +111,15 @@ internal static class AzuriteBootstrap
       ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
       var blobServiceClient = new BlobServiceClient(connectionString);
       var queueServiceClient = new QueueServiceClient(connectionString);
-      await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
+      var provisioner = new LocalStorageProvisioner(blobServiceClient, queueServiceClient);
+      await ApplyCorsWithRetryAsync(provisioner, logger, ct).ConfigureAwait(false);
       await EnsureContainersWithRetryAsync(
-        blobServiceClient,
+        provisioner,
         blobContainerNames,
         logger,
         ct).ConfigureAwait(false);
       await EnsureQueuesWithRetryAsync(
-        queueServiceClient,
+        provisioner,
         queueNames,
         logger,
         ct).ConfigureAwait(false);
@@ -274,25 +275,15 @@ internal static class AzuriteBootstrap
   }
 
   private static Task ApplyCorsWithRetryAsync(
-      BlobServiceClient client, ILogger? logger, CancellationToken ct)
+      LocalStorageProvisioner provisioner, ILogger? logger, CancellationToken ct)
     => RetryAsync("CORS", async token =>
     {
-      var props = (await client.GetPropertiesAsync(token).ConfigureAwait(false)).Value;
-      props.Cors.Clear();
-      props.Cors.Add(new BlobCorsRule
-      {
-        AllowedOrigins = "*",
-        AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
-        AllowedHeaders = "*",
-        ExposedHeaders = "*",
-        MaxAgeInSeconds = 3600,
-      });
-      await client.SetPropertiesAsync(props, token).ConfigureAwait(false);
+      await provisioner.ApplyStartupCorsAsync(token).ConfigureAwait(false);
       if (logger is not null) { CorsApplied(logger, null); }
     }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(
-      BlobServiceClient client,
+      LocalStorageProvisioner provisioner,
       IReadOnlyList<string> containerNames,
       ILogger? logger,
       CancellationToken ct)
@@ -303,21 +294,9 @@ internal static class AzuriteBootstrap
     {
       foreach (var name in containerNames)
       {
-        var container = client.GetBlobContainerClient(name);
-        var created = await container.CreateIfNotExistsAsync(
-            publicAccessType: PublicAccessType.Blob,
-            cancellationToken: token).ConfigureAwait(false);
-
-        if (created?.Value is null)
+        bool created = await provisioner.EnsureStartupContainerAsync(name, token).ConfigureAwait(false);
+        if (!created)
         {
-          // Container already existed (likely from a prior run with the
-          // persistent volume). The create call returns null in that
-          // case and does NOT touch the existing access policy, so
-          // explicitly upgrade it — first-time runs that predated this
-          // bootstrap may have left it at PublicAccessType.None.
-          await container.SetAccessPolicyAsync(
-              PublicAccessType.Blob,
-              cancellationToken: token).ConfigureAwait(false);
           if (logger is not null) { ContainerAlreadyExists(logger, name, null); }
         }
         else
@@ -329,7 +308,7 @@ internal static class AzuriteBootstrap
   }
 
   private static async Task EnsureQueuesWithRetryAsync(
-      QueueServiceClient client,
+      LocalStorageProvisioner provisioner,
       IReadOnlyList<string> queueNames,
       ILogger? logger,
       CancellationToken cancellationToken)
@@ -343,10 +322,7 @@ internal static class AzuriteBootstrap
     {
       foreach (string queueName in queueNames)
       {
-        await client
-          .GetQueueClient(queueName)
-          .CreateIfNotExistsAsync(cancellationToken: token)
-          .ConfigureAwait(false);
+        await provisioner.EnsureQueueAsync(queueName, token).ConfigureAwait(false);
         if (logger is not null) { QueueReady(logger, queueName, null); }
       }
 

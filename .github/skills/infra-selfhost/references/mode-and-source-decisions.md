@@ -26,9 +26,9 @@ chain, not an isolated process.
 Read the graph before acting:
 
 - Aspire ordering is expressed by `WaitFor`, `WaitForCompletion`, references, endpoint declarations, and health checks in the
-  `Infrastructure`, `Applications`, and `LocalDevelopment` slices under `tooling/src/AppHost`; `Program.cs` composes those slices.
-  Infrastructure gates config/identity/bootstrap resources; those gate the API; the API gates the website. Independent sites should not
-  block a narrow request unless their live declarations say otherwise.
+  `Infrastructure`, `Applications`, and `LocalDevelopment` slices under `tooling/src/AppHost`; `LocalApplication.Compose` composes those
+  slices and owns the cross-slice startup dependencies. Infrastructure gates config/identity/bootstrap resources; those gate the API; the
+  API gates the website. Independent sites should not block a narrow request unless their live declarations say otherwise.
 - Selfhost ordering is the command plan in `scripts/container-runtime/selfhost.ts`: management before storage and its bootstrap, then
   backend, then frontend. Its normal teardown is the reverse.
 - Compose `depends_on`, profiles, health checks, networks, ports, and volumes in each live file refine the wrapper order. Do not infer them
@@ -39,8 +39,8 @@ Read the graph before acting:
 Never use a remembered service table as authority. Derive the active endpoint:
 
 1. Aspire dashboard and OTLP bindings: `tooling/src/AppHost/Properties/launchSettings.json`.
-2. Aspire resource names, endpoints, schemes, dependencies, and health paths: capability slices under `tooling/src/AppHost`; shared port
-   symbols: `tooling/src/AppHost/Constants.cs`.
+2. Aspire resource names, endpoints, schemes, and health paths: capability slices under `tooling/src/AppHost`; startup dependencies:
+   `tooling/src/AppHost/LocalApplication.cs`; shared port symbols: `tooling/src/AppHost/Constants.cs`.
 3. Selfhost host ports and container health checks: `infra/Local/**/docker-compose.yml`; generated HTTPS routes:
    `scripts/container-runtime/traefik.ts`.
 4. Image-level health commands: `infra/containers/Dockerfile.*`.

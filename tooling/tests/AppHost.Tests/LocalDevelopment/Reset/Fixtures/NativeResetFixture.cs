@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-/// <summary>Starts the production composition against test-only volumes and controlled serving processes.</summary>
+/// <summary>Shares the production wait graph with test-only volumes and controlled serving processes.</summary>
 internal sealed class NativeResetFixture : IAsyncDisposable
 {
   private readonly DistributedApplication application;
@@ -76,8 +76,7 @@ internal sealed class NativeResetFixture : IAsyncDisposable
       .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
       .WithEnvironment("INFRA", "local")
       .WithEnvironment("SEED_DATA_DIRECTORY", seedDirectory)
-      .WaitFor(infrastructure.CosmosInvoices).WaitFor(infrastructure.CosmosMerchants)
-      .WaitFor(infrastructure.Blobs).WaitFor(infrastructure.Queues).ExcludeFromManifest();
+      .ExcludeFromManifest();
     if (bootstrapGate is not null)
     {
       bootstrap.WithEnvironment(async context =>
@@ -90,8 +89,7 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     }
     string server = Path.Combine(AppContext.BaseDirectory, "Fixtures", "healthy-process.py");
     var exp = builder.AddExecutable("exp", "python", AppContext.BaseDirectory, "-u", server)
-      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
-      .WaitForCompletion(bootstrap);
+      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health");
     string identityConfig = Path.Combine(Path.GetTempPath(), $"{scope}.identity.json");
     await File.WriteAllTextAsync(identityConfig, JsonSerializer.Serialize(new Dictionary<string, string>
     {
@@ -105,14 +103,13 @@ internal sealed class NativeResetFixture : IAsyncDisposable
       .WithEnvironment("INFRA", "local")
       .WithEnvironment("LOCAL_CONFIG_PATH", identityConfig)
       .WithEnvironment("LOCAL_SWAGGER_ORIGIN", "http://localhost:5000")
-      .WithHttpHealthCheck("/health").WaitFor(exp);
+      .WithHttpHealthCheck("/health");
     var api = builder.AddExecutable("api", "python", AppContext.BaseDirectory, "-u", server)
-      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
-      .WaitForCompletion(bootstrap).WaitFor(exp).WaitFor(identity);
+      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health");
     var website = builder.AddExecutable("website", "python", AppContext.BaseDirectory, "-u", server)
       .WithEnvironment("HEALTH_GATE_FILE", websiteHealthFile ?? string.Empty)
-      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
-      .WaitFor(api);
+      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health");
+    LocalApplication.WireStartupDependencies(infrastructure, bootstrap, exp, identity, api, website);
     var resources = new LocalDataResetResources(infrastructure, new LocalResources(bootstrap, identity),
       new LocalApplicationResources(api.Resource, website.Resource, exp.Resource), volumes);
     LocalDataResetSafety.ValidateResourceOwnership(resources, isDevelopment: true, isRunMode: true);
