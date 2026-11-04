@@ -56,9 +56,9 @@ internal static class SeedData
         throw new InvalidDataException($"Seed file '{path}' is malformed: {exception.Message}", exception);
       }
 
-      if (part.Version != "v2" || part.Personas.Count != 1 || part.Personas[0].Key != owner
-          || part.Merchants.Any(merchant => merchant.OwnerKey != owner)
-          || part.Invoices.Any(invoice => invoice.OwnerKey != owner))
+      if (part.Version != "v2" || part.Personas.Count != 1 || part.Personas[0] is null || part.Personas[0].Key != owner
+          || part.Merchants.Any(merchant => merchant is null || merchant.OwnerKey != owner)
+          || part.Invoices.Any(invoice => invoice is null || invoice.OwnerKey != owner))
       {
         throw new InvalidDataException($"Seed file '{path}' must contain version v2 and only its '{owner}' owner.");
       }

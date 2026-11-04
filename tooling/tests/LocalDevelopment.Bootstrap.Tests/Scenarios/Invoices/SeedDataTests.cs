@@ -57,6 +57,8 @@ public sealed class SeedDataTests
 
     Assert.HasCount(1326, scenario.Invoices);
     Assert.HasCount(361, scenario.Merchants);
+    Assert.AreEqual(18000, scenario.Invoices.Where(invoice =>
+      invoice.UserIdentifier == PersonaIds.Dmitryi && !invoice.IsSoftDeleted).Sum(invoice => invoice.Items.Count));
   }
 
   /// <summary>Verifies every receipt contains its complete paid basket and reconciled taxes.</summary>
@@ -173,6 +175,71 @@ public sealed class SeedDataTests
     Assert.AreEqual(12.53m, details.Sum(detail => detail.NetAmount + detail.Amount));
   }
 
+  /// <summary>Every physical invoice has exactly one owner-local reciprocal merchant link.</summary>
+  [TestMethod]
+  public void Materialize_ApprovedScenario_HasExactReciprocalReferences()
+  {
+    MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
+    foreach (var merchant in scenario.Merchants)
+    {
+      var invoices = scenario.Invoices.Where(invoice => invoice.MerchantReference == merchant.id).ToArray();
+      CollectionAssert.AreEquivalent(invoices.Select(invoice => invoice.id).ToArray(), merchant.ReferencedInvoices.ToArray());
+      Assert.AreEqual(merchant.ReferencedInvoices.Count(), merchant.ReferencedInvoices.Distinct().Count());
+      Assert.IsTrue(invoices.All(invoice => invoice.UserIdentifier == merchant.CreatedBy));
+      Assert.IsTrue(invoices.Any(invoice => !invoice.IsSoftDeleted));
+      Assert.IsTrue(invoices.All(invoice => merchant.CreatedAt < invoice.PaymentInformation.TransactionDate));
+    }
+  }
+
+  /// <summary>Repeated SKUs never share mutable Product objects across receipts.</summary>
+  [TestMethod]
+  public void Materialize_RepeatedSku_DoesNotAliasProducts()
+  {
+    MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
+    var pair = scenario.Invoices.SelectMany(invoice => invoice.Items.Select(product => (invoice.id, Product: product)))
+      .GroupBy(item => item.Product.ProductCode).First(group => group.Select(item => item.id).Distinct().Count() > 1)
+      .GroupBy(item => item.id).Select(group => group.First().Product).Take(2).ToArray();
+    string original = pair[1].Name;
+
+    pair[0].Name = "Changed in only one receipt";
+
+    Assert.AreEqual(original, pair[1].Name);
+  }
+
+  /// <summary>Materialized locations, history windows, and basket bounds retain the declared persona differences.</summary>
+  [TestMethod]
+  public void Materialize_ApprovedScenario_HasCoherentGeographyAndChronology()
+  {
+    DateOnly anchor = new(2026, 11, 4);
+    MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), anchor);
+    var merchants = scenario.Merchants.ToDictionary(merchant => merchant.id);
+    foreach (var (owner, days, regions, countries, minimum, maximum) in new[]
+    {
+      (PersonaIds.Bob, 30, 1, 1, 1, 10),
+      (PersonaIds.Charlie, 60, 2, 1, 1, 20),
+      (PersonaIds.Alice, 365, 3, 2, 2, 50),
+      (PersonaIds.Dmitryi, 1095, 6, 5, 1, 100),
+    })
+    {
+      var invoices = scenario.Invoices.Where(invoice => invoice.UserIdentifier == owner && !invoice.IsSoftDeleted).ToArray();
+      Assert.AreEqual(countries, invoices.Select(invoice => invoice.CountryRegion).Distinct().Count());
+      Assert.AreEqual(regions, invoices.Select(invoice =>
+        (invoice.CountryRegion, Region: invoice.AdditionalMetadata["seed.region"].ToString())).Distinct().Count());
+      Assert.AreEqual(days, invoices.Max(invoice => anchor.DayNumber
+        - DateOnly.FromDateTime(invoice.PaymentInformation.TransactionDate.UtcDateTime).DayNumber));
+      foreach (var invoice in invoices)
+      {
+        int age = anchor.DayNumber - DateOnly.FromDateTime(invoice.PaymentInformation.TransactionDate.UtcDateTime).DayNumber;
+        Assert.IsTrue(age >= 0 && age <= days);
+        Assert.IsTrue(invoice.Items.Count >= minimum && invoice.Items.Count <= maximum);
+        Assert.AreEqual(invoice.PaymentInformation.TransactionDate, invoice.CreatedAt);
+        Assert.AreEqual(invoice.CountryRegion, merchants[invoice.MerchantReference].AdditionalMetadata["seed.country"]);
+        Assert.AreEqual(invoice.AdditionalMetadata["seed.region"], merchants[invoice.MerchantReference].AdditionalMetadata["seed.region"]);
+        Assert.AreEqual(invoice.CountryRegion == "RO" ? "RON" : "EUR", invoice.PaymentInformation.Currency.Code);
+      }
+    }
+  }
+
   /// <summary>
   /// Verifies the same UTC anchor produces the same fixture-controlled values.
   /// </summary>
@@ -253,25 +320,6 @@ public sealed class SeedDataTests
       }));
   }
 
-  /// <summary>
-  /// Verifies the clean-slate persona cannot accidentally gain owned records.
-  /// </summary>
-  [TestMethod]
-  public void Validate_BobOwnsInvoice_ThrowsInvalidDataException()
-  {
-    SeedScenarioManifest manifest = SeedData.LoadScenario(ScenarioPath);
-    SeedInvoiceDefinition bobInvoice = manifest.Invoices[0] with
-    {
-      OwnerKey = "bob",
-    };
-
-    Assert.ThrowsExactly<InvalidDataException>(
-      () => SeedManifestValidator.Validate(manifest with
-      {
-        Invoices = [bobInvoice, .. manifest.Invoices.Skip(1)],
-      }));
-  }
-
   private static string Project(MaterializedSeedScenario scenario) =>
     JsonSerializer.Serialize(new
     {
@@ -282,6 +330,9 @@ public sealed class SeedDataTests
         merchant.Description,
         merchant.ParentCompanyId,
         merchant.CreatedBy,
+        merchant.CreatedAt,
+        merchant.Address,
+        merchant.AdditionalMetadata,
         merchant.ReferencedInvoices,
       }),
       Invoices = scenario.Invoices.Select(invoice => new
@@ -297,6 +348,9 @@ public sealed class SeedDataTests
         invoice.Items,
         invoice.PossibleRecipes,
         invoice.PaymentInformation,
+        invoice.Payments,
+        invoice.TaxDetails,
+        invoice.CountryRegion,
         invoice.IsImportant,
         invoice.IsSoftDeleted,
         invoice.AdditionalMetadata,
