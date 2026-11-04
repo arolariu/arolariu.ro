@@ -80,10 +80,10 @@ To intentionally start again, open the Aspire dashboard's **local-bootstrap** re
 accept the confirmation only after exporting anything you need and stopping external clients that write directly to these services. The
 command is local Development/run-mode only; headless invocations without interactive confirmation fail closed.
 
-| Owned service | Data removed                                                         | Preserved or restored                                                                           |
-| ------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the three-persona seed.            |
-| `storage`     | Every blob container/blob, queue/message, and table/entity           | Keep service configuration/CORS; restore invoice scans/container and the empty analysis queue.  |
+| Owned service | Data removed                                                         | Preserved or restored                                                                                                        |
+| ------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the three-persona seed.                                         |
+| `storage`     | Every blob container/blob, queue/message, and table/entity           | Keep service configuration/CORS; restore invoice scans/container and the empty analysis queue.                               |
 | `mssql`       | Every non-system user database, schema, and row                      | Keep system databases/server configuration/logins; recreate `arolariu-sql` and its existing `AuthDbContext` Identity schema. |
 
 Before stopping writers or deleting anything, reset requires the captured native containers to be running with their own allocated
