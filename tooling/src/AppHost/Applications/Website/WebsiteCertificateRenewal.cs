@@ -106,9 +106,9 @@ internal static class WebsiteCertificateRenewal
           $"no trusted mkcert CA with its key was found in '{authorityDirectory}'");
     }
 
-    if (current is not null && !string.Equals(current.Issuer, authority.Subject, StringComparison.Ordinal))
+    if (current is not null && !IsIssuedBy(current, authority))
     {
-      throw Unrenewable(certificatePath, previousExpiry, $"it was issued by '{current.Issuer}', not the local mkcert CA");
+      throw Unrenewable(certificatePath, previousExpiry, "it was not signed by the loaded local mkcert CA");
     }
 
     if (new DateTimeOffset(authority.NotAfter) <= now + RenewalWindow)
@@ -188,6 +188,18 @@ internal static class WebsiteCertificateRenewal
 
       return Task.CompletedTask;
     });
+  }
+
+  private static bool IsIssuedBy(X509Certificate2 certificate, X509Certificate2 authority)
+  {
+    using var chain = new X509Chain();
+    chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+    chain.ChainPolicy.CustomTrustStore.Add(authority);
+    chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+    chain.ChainPolicy.DisableCertificateDownloads = true;
+    chain.ChainPolicy.VerificationFlags = X509VerificationFlags.IgnoreNotTimeValid;
+    return chain.Build(certificate) && chain.ChainElements.Count > 1
+      && chain.ChainElements[^1].Certificate.RawData.AsSpan().SequenceEqual(authority.RawData);
   }
 
   private static DateTimeOffset Issue(X509Certificate2 authority, string certificatesDirectory, DateTimeOffset now)
