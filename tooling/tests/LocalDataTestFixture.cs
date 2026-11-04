@@ -52,9 +52,21 @@ internal static class LocalDataTestFixture
     await Task.WhenAll(output, errors);
     Assert.AreEqual(0, process.ExitCode, "The explicitly scoped test containers must exist.");
     using JsonDocument inspection = JsonDocument.Parse(await output);
-    Assert.AreEqual(services.Length, inspection.RootElement.GetArrayLength());
-    foreach (JsonElement container in inspection.RootElement.EnumerateArray())
+    VerifyInspection(inspection.RootElement, scope, bindings);
+  }
+
+  internal static void VerifyInspection(JsonElement inspection, string scope,
+    params (string Service, string ContainerPort, string HostPort)[] bindings)
+  {
+    string[] services = bindings.Select(binding => binding.Service).Distinct(StringComparer.Ordinal).ToArray();
+    Assert.AreEqual(services.Length, inspection.GetArrayLength());
+    var inspectedNames = new HashSet<string>(StringComparer.Ordinal);
+    foreach (JsonElement container in inspection.EnumerateArray())
     {
+      string name = container.GetProperty("Name").GetString()?.TrimStart('/') ?? string.Empty;
+      var requested = bindings.Where(binding => name == $"{scope}-{binding.Service}").ToArray();
+      Assert.IsTrue(requested.Length > 0, "Every inspected container must match a requested scoped service.");
+      Assert.IsTrue(inspectedNames.Add(name), "An inspected service cannot substitute for another requested service.");
       Assert.IsTrue(container.GetProperty("State").GetProperty("Running").GetBoolean());
       Assert.AreEqual(scope, container.GetProperty("Config").GetProperty("Labels")
         .GetProperty("com.docker.compose.project").GetString());
@@ -65,10 +77,11 @@ internal static class LocalDataTestFixture
         Assert.AreEqual("volume", mount.GetProperty("Type").GetString());
         Assert.IsTrue(mount.GetProperty("Name").GetString()?.StartsWith($"{scope}-", StringComparison.Ordinal) == true);
       }
-      foreach (var binding in bindings.Where(binding =>
-        container.GetProperty("Name").GetString() == $"/{scope}-{binding.Service}"))
+      foreach (var binding in requested)
       {
-        JsonElement ports = container.GetProperty("NetworkSettings").GetProperty("Ports").GetProperty(binding.ContainerPort);
+        Assert.IsTrue(container.GetProperty("NetworkSettings").GetProperty("Ports")
+          .TryGetProperty(binding.ContainerPort, out JsonElement ports), "A requested scoped port binding is missing.");
+        Assert.AreEqual(JsonValueKind.Array, ports.ValueKind);
         Assert.AreEqual(1, ports.GetArrayLength());
         Assert.AreEqual("127.0.0.1", ports[0].GetProperty("HostIp").GetString());
         Assert.AreEqual(binding.HostPort, ports[0].GetProperty("HostPort").GetString());

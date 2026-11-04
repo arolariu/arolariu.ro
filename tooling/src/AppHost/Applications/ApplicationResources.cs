@@ -11,7 +11,7 @@ using Aspire.Hosting.Python;
 #pragma warning disable ASPIREJAVASCRIPT001
 
 /// <summary>Contains application handles whose lifecycle participates in a local data reset.</summary>
-internal sealed record LocalApplicationResources(IResource Api, IResource Website);
+internal sealed record LocalApplicationResources(IResource Api, IResource Website, IResource Exp);
 
 /// <summary>Registers applications and their explicit native startup dependencies.</summary>
 internal static class ApplicationResources
@@ -75,6 +75,6 @@ internal static class ApplicationResources
       .WithIconName("PulseSquare")
       .WithHttpHealthCheck("/")
       .UseSharedNpmInstall(npmInstall);
-    return new(api.Resource, website.Resource);
+    return new(api.Resource, website.Resource, exp.Resource);
   }
 }

@@ -162,6 +162,62 @@ public sealed class LocalDataResetLifecycleTests
     Assert.IsFalse(runtime.Commands.Any(command => command.Resource == "website"));
   }
 
+  /// <summary>A failed initial Bootstrap cannot strand exp and identity before API recovery.</summary>
+  [TestMethod]
+  public async Task ResumeApplicationsAsync_FailedDependencies_RecoversBeforeApi()
+  {
+    LocalDataResetResources resources = LocalDataResetSafetyTests.CreateResources();
+    var runtime = new NativeBoundary(resources);
+    runtime.Publish(resources.Applications.Exp, KnownResourceStates.FailedToStart, null, 1);
+    runtime.Publish(resources.Helpers.Identity.Resource, KnownResourceStates.FailedToStart, null, 1);
+    runtime.OnWaitForDependencies = (resource, _) =>
+    {
+      if (resource.Name == "api")
+      {
+        Assert.AreEqual(KnownResourceStates.Running, runtime.Current("exp")?.Snapshot.State?.Text);
+        Assert.AreEqual(KnownResourceStates.Running, runtime.Current("local-identities")?.Snapshot.State?.Text);
+      }
+      return Task.CompletedTask;
+    };
+    runtime.OnCommand = (resource, command) =>
+    {
+      if (command == KnownResourceCommands.StartCommand)
+      {
+        runtime.Publish(resource, KnownResourceStates.Running, NextStart, null, NextStart.AddSeconds(1));
+      }
+    };
+
+    await runtime.CreateLifecycle().ResumeApplicationsAsync(CancellationToken.None);
+
+    CollectionAssert.AreEqual(new[]
+    {
+      ("exp", KnownResourceCommands.StartCommand), ("local-identities", KnownResourceCommands.StartCommand),
+      ("api", KnownResourceCommands.StartCommand), ("website", KnownResourceCommands.StartCommand),
+    }, runtime.Commands);
+  }
+
+  /// <summary>A failed prerequisite recovery must not start writers against an unavailable dependency.</summary>
+  [TestMethod]
+  public async Task ResumeApplicationsAsync_DependencyRecoveryFails_DoesNotStartApi()
+  {
+    LocalDataResetResources resources = LocalDataResetSafetyTests.CreateResources();
+    var runtime = new NativeBoundary(resources);
+    runtime.Publish(resources.Applications.Exp, KnownResourceStates.FailedToStart, null, 1);
+    runtime.OnCommand = (resource, command) =>
+    {
+      if (command == KnownResourceCommands.StartCommand)
+      {
+        runtime.Publish(resource, resource.Name == "exp" ? KnownResourceStates.FailedToStart : KnownResourceStates.Running,
+          NextStart, resource.Name == "exp" ? 1 : null, NextStart.AddSeconds(1));
+      }
+    };
+
+    await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+      runtime.CreateLifecycle().ResumeApplicationsAsync(CancellationToken.None));
+
+    Assert.IsFalse(runtime.Commands.Any(command => command.Resource is "api" or "website"));
+  }
+
   private sealed class NativeBoundary
   {
     private readonly LocalDataResetResources resources;
@@ -169,6 +225,7 @@ public sealed class LocalDataResetLifecycleTests
     private readonly List<(string Name, Func<ResourceEvent, bool> Predicate, TaskCompletionSource<ResourceEvent> Completion)> waits = [];
     internal List<(string Resource, string Command)> Commands { get; } = [];
     internal Action<IResource, string>? OnCommand { get; set; }
+    internal Func<IResource, CancellationToken, Task> OnWaitForDependencies { get; set; } = (_, _) => Task.CompletedTask;
 
     internal NativeBoundary(LocalDataResetResources resources)
     {
@@ -176,10 +233,11 @@ public sealed class LocalDataResetLifecycleTests
       Publish(resources.Applications.Api, KnownResourceStates.Exited, PreviousStart, 0);
       Publish(resources.Applications.Website, KnownResourceStates.Exited, PreviousStart, 0);
       Publish(resources.Helpers.Bootstrap.Resource, KnownResourceStates.Exited, PreviousStart, 0);
+      Publish(resources.Applications.Exp, KnownResourceStates.Running, PreviousStart, null, PreviousStart.AddSeconds(1));
+      Publish(resources.Helpers.Identity.Resource, KnownResourceStates.Running, PreviousStart, null, PreviousStart.AddSeconds(1));
     }
 
-    internal LocalDataResetLifecycle CreateLifecycle() => new(resources, ExecuteAsync, Current, WaitAsync,
-      (_, _) => Task.CompletedTask);
+    internal LocalDataResetLifecycle CreateLifecycle() => new(resources, ExecuteAsync, Current, WaitAsync, OnWaitForDependencies);
 
     internal ResourceEvent? Current(string name) => states.GetValueOrDefault(name);
 

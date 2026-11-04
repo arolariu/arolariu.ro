@@ -31,7 +31,6 @@ internal static class LocalDataResetResourceExtensions
         Description = "Delete local custom Cosmos, storage, and SQL data, then restore Alice, Bob, and Charlie.",
         IconName = "ArrowReset",
         Visibility = ResourceCommandVisibility.UI,
-        UpdateState = _ => coordinator.IsBusy ? ResourceCommandState.Disabled : ResourceCommandState.Enabled,
       });
   }
 

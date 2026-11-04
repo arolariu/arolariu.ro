@@ -18,6 +18,8 @@ internal static class LocalDataResetSafety
       || resources.Infrastructure.Storage.Resource.Name != "storage"
       || resources.Infrastructure.SqlDatabase.Resource.Parent.Name != "mssql"
       || resources.Helpers.Bootstrap.Resource.Name != "local-bootstrap"
+      || resources.Helpers.Identity.Resource.Name != "local-identities"
+      || resources.Applications.Exp.Name != "exp"
       || resources.Applications.Api.Name != "api" || resources.Applications.Website.Name != "website")
     {
       throw new InvalidOperationException("Local data reset refused a non-local or unowned resource graph.");

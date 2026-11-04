@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using global::AppHost.Applications;
@@ -20,16 +22,19 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 internal sealed class NativeResetFixture : IAsyncDisposable
 {
   private readonly DistributedApplication application;
+  private readonly string identityConfigPath;
   internal LocalDataResetResources Resources { get; }
   internal FixtureInteraction Confirmation { get; }
   internal ResourceCommandService Commands => application.Services.GetRequiredService<ResourceCommandService>();
   internal ResourceNotificationService Notifications => application.Services.GetRequiredService<ResourceNotificationService>();
 
-  private NativeResetFixture(DistributedApplication application, LocalDataResetResources resources, FixtureInteraction confirmation)
+  private NativeResetFixture(DistributedApplication application, LocalDataResetResources resources, FixtureInteraction confirmation,
+    string identityConfigPath)
   {
     this.application = application;
     Resources = resources;
     Confirmation = confirmation;
+    this.identityConfigPath = identityConfigPath;
   }
 
   internal static async Task<NativeResetFixture> StartAsync(string scope, string password, CancellationToken token,
@@ -87,17 +92,33 @@ internal sealed class NativeResetFixture : IAsyncDisposable
         context.EnvironmentVariables["ConnectionStrings__primary"] = bootstrapGate.Redirect(connection);
       });
     }
-    var identity = builder.AddProject<Projects.LocalDevelopment_Identity>("local-identities").WithExplicitStart();
     string server = Path.Combine(AppContext.BaseDirectory, "Fixtures", "healthy-process.py");
-    var api = builder.AddExecutable("api", "python", AppContext.BaseDirectory, "-u", server)
+    var exp = builder.AddExecutable("exp", "python", AppContext.BaseDirectory, "-u", server)
       .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
       .WaitForCompletion(bootstrap);
+    string identityConfig = Path.Combine(Path.GetTempPath(), $"{scope}.identity.json");
+    await File.WriteAllTextAsync(identityConfig, JsonSerializer.Serialize(new Dictionary<string, string>
+    {
+      ["Auth:JWT:Issuer"] = "https://local-fixture.invalid",
+      ["Auth:JWT:Audience"] = "https://local-fixture-api.invalid",
+      ["Auth:JWT:Secret"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+    }), token);
+    var identity = builder.AddProject<Projects.LocalDevelopment_Identity>("local-identities", launchProfileName: null)
+      .WithHttpEndpoint(port: FreePort(), name: "http", isProxied: false)
+      .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
+      .WithEnvironment("INFRA", "local")
+      .WithEnvironment("LOCAL_CONFIG_PATH", identityConfig)
+      .WithEnvironment("LOCAL_SWAGGER_ORIGIN", "http://localhost:5000")
+      .WithHttpHealthCheck("/health").WaitFor(exp);
+    var api = builder.AddExecutable("api", "python", AppContext.BaseDirectory, "-u", server)
+      .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
+      .WaitForCompletion(bootstrap).WaitFor(exp).WaitFor(identity);
     var website = builder.AddExecutable("website", "python", AppContext.BaseDirectory, "-u", server)
       .WithEnvironment("HEALTH_GATE_FILE", websiteHealthFile ?? string.Empty)
       .WithHttpEndpoint(port: FreePort(), env: "PORT", isProxied: false).WithHttpHealthCheck("/health")
       .WaitFor(api);
     var resources = new LocalDataResetResources(infrastructure, new LocalResources(bootstrap, identity),
-      new LocalApplicationResources(api.Resource, website.Resource), volumes);
+      new LocalApplicationResources(api.Resource, website.Resource, exp.Resource), volumes);
     LocalDataResetSafety.ValidateResourceOwnership(resources, isDevelopment: true, isRunMode: true);
     foreach (string volume in new[] { volumes.Cosmos, volumes.Storage, volumes.Sql })
     {
@@ -108,8 +129,10 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     var confirmation = (FixtureInteraction)interaction;
     builder.Services.AddSingleton(interaction);
     builder.AddLocalDataReset(resources);
-    DistributedApplication app = builder.Build();
-    var fixture = new NativeResetFixture(app, resources, confirmation);
+    DistributedApplication app;
+    try { app = builder.Build(); }
+    catch { File.Delete(identityConfig); throw; }
+    var fixture = new NativeResetFixture(app, resources, confirmation, identityConfig);
     try
     {
       using var startup = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -156,7 +179,11 @@ internal sealed class NativeResetFixture : IAsyncDisposable
   {
     using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
     try { await application.StopAsync(timeout.Token); }
-    finally { await application.DisposeAsync(); }
+    finally
+    {
+      try { await application.DisposeAsync(); }
+      finally { File.Delete(identityConfigPath); }
+    }
   }
 
   internal static async Task DeleteVolumesAsync(string scope)
