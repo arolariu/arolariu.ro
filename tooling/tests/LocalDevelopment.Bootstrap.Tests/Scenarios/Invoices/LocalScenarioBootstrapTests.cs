@@ -155,6 +155,22 @@ public sealed class LocalScenarioBootstrapTests
       operations);
   }
 
+  /// <summary>A completed legacy store cannot silently adopt the four-persona fixture.</summary>
+  [TestMethod]
+  public async Task RunAsync_LegacyCompletedReceipt_RefusesAllSeedWrites()
+  {
+    var operations = new List<string>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations, state: new SeedInitializationState("v1", new DateOnly(2026, 11, 3), true)),
+      new RecordingAzuriteResetter(operations), TimeProvider.System);
+
+    InvalidOperationException failure = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+      bootstrap.RunAsync(ScenarioPath, CancellationToken.None));
+
+    StringAssert.Contains(failure.Message, "explicit dashboard reset");
+    CollectionAssert.AreEqual(new[] { "receipt-read" }, operations);
+  }
+
   /// <summary>
   /// Verifies retries resume create-only operations without a destructive clear phase.
   /// </summary>
@@ -181,7 +197,8 @@ public sealed class LocalScenarioBootstrapTests
     Exception? readException = null,
     Action? afterRead = null,
     List<CancellationToken>? tokens = null,
-    Queue<Exception>? writeFailures = null) : ILocalCosmosResetter
+    Queue<Exception>? writeFailures = null,
+    SeedInitializationState? state = null) : ILocalCosmosResetter
   {
     public Task<SeedInitializationState> ReadOrCreateInitializationAsync(
       string manifestVersion, DateOnly proposedAnchorUtc, CancellationToken cancellationToken)
@@ -190,7 +207,7 @@ public sealed class LocalScenarioBootstrapTests
       tokens?.Add(cancellationToken);
       afterRead?.Invoke();
       return readException is null
-        ? Task.FromResult(new SeedInitializationState(manifestVersion, proposedAnchorUtc, false))
+        ? Task.FromResult(state ?? new SeedInitializationState(manifestVersion, proposedAnchorUtc, false))
         : Task.FromException<SeedInitializationState>(readException);
     }
 

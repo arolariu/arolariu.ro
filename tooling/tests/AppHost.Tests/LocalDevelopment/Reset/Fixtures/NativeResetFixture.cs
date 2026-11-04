@@ -33,8 +33,9 @@ internal sealed class NativeResetFixture : IAsyncDisposable
   }
 
   internal static async Task<NativeResetFixture> StartAsync(string scope, string password, CancellationToken token,
-    BootstrapConnectionGate? bootstrapGate = null, string? websiteHealthFile = null)
+    BootstrapConnectionGate? bootstrapGate = null, string? websiteHealthFile = null, bool waitForApplications = true)
   {
+    Stopwatch elapsed = Stopwatch.StartNew();
     RequireAvailablePorts(8081, 8082, 10000, 10001);
     await RequireTrustedCertificateAsync(token);
     await RequireCachedImagesAsync(token);
@@ -113,9 +114,20 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     try
     {
       using var startup = CancellationTokenSource.CreateLinkedTokenSource(token);
-      startup.CancelAfter(TimeSpan.FromSeconds(75));
+      startup.CancelAfter(TimeSpan.FromSeconds(120));
       await app.StartAsync(startup.Token);
-      await fixture.Notifications.WaitForResourceHealthyAsync("website", WaitBehavior.StopOnResourceUnavailable, startup.Token);
+      if (waitForApplications)
+      {
+        await fixture.Notifications.WaitForResourceHealthyAsync("website", WaitBehavior.StopOnResourceUnavailable, startup.Token);
+      }
+      else
+      {
+        await fixture.Notifications.WaitForResourceAsync("local-bootstrap", change =>
+          change.Snapshot.State?.Text == KnownResourceStates.Exited
+          || change.Snapshot.State?.Text == KnownResourceStates.Finished
+          || change.Snapshot.State?.Text == KnownResourceStates.FailedToStart, startup.Token);
+      }
+      Console.WriteLine($"Native fixture startup: {elapsed.Elapsed}; waitForApplications={waitForApplications}.");
       return fixture;
     }
     catch

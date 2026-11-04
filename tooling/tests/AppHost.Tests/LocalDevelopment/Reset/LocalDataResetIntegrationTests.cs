@@ -35,7 +35,7 @@ public sealed class LocalDataResetIntegrationTests
     string scope = $"arolariu-seed-tests-{Guid.NewGuid():N}";
     string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
     string healthFile = Path.Combine(Path.GetTempPath(), $"{scope}.health");
-    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
     using var commandCancellation = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
     await using var gate = new BootstrapConnectionGate();
     NativeResetFixture? fixture = null;
@@ -187,8 +187,10 @@ public sealed class LocalDataResetIntegrationTests
       await AssertCustomDataAsync(second, timeout.Token);
       second.Confirmation.Approved = true;
 
+      Stopwatch resetTime = Stopwatch.StartNew();
       ExecuteCommandResult reset = await second.Commands.ExecuteCommandAsync(
         second.Resources.Helpers.Bootstrap.Resource, "reset-local-data", timeout.Token);
+      Console.WriteLine($"Native confirmed reset duration: {resetTime.Elapsed}.");
 
       Assert.IsTrue(reset.Success, reset.Message);
       Assert.AreEqual(1, second.Confirmation.Prompts);
@@ -197,6 +199,56 @@ public sealed class LocalDataResetIntegrationTests
         Current(second, "api").Snapshot.State?.Text);
       Assert.AreEqual(KnownResourceStates.Running,
         Current(second, "website").Snapshot.State?.Text);
+    }
+    finally
+    {
+      if (first is not null) { await first.DisposeAsync(); }
+      if (second is not null) { await second.DisposeAsync(); }
+      await NativeResetFixture.DeleteVolumesAsync(scope);
+    }
+  }
+
+  /// <summary>A legacy receipt blocking startup still permits the guarded, confirmed upgrade reset.</summary>
+  [TestMethod]
+  public async Task ResetLocalData_LegacyReceiptBlockedInitializer_ConfirmedResetRestoresV2()
+  {
+    if (Environment.GetEnvironmentVariable("AROLARIU_RUN_LOCAL_DATA_TESTS") != "1")
+    {
+      Assert.Inconclusive("Native store integration requires explicit AROLARIU_RUN_LOCAL_DATA_TESTS=1.");
+    }
+    Assert.IsTrue(Environment.GetEnvironmentVariable("AROLARIU_CONTAINER_ENGINE") is "rancher" or "podman");
+    string scope = $"arolariu-seed-tests-{Guid.NewGuid():N}";
+    string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+    NativeResetFixture? first = null;
+    NativeResetFixture? second = null;
+    try
+    {
+      first = await NativeResetFixture.StartAsync(scope, password, timeout.Token);
+      await AddCustomDataAsync(first, timeout.Token);
+      using (CosmosClient cosmos = await CosmosAsync(first, timeout.Token))
+      {
+        Container state = cosmos.GetContainer("primary", "local-development");
+        JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario",
+          new PartitionKey("invoice-scenario"), cancellationToken: timeout.Token)).Resource;
+        receipt["manifestVersion"] = "v1";
+        await state.ReplaceItemAsync(receipt, "invoice-scenario", new PartitionKey("invoice-scenario"),
+          cancellationToken: timeout.Token);
+      }
+      await first.DisposeAsync();
+      first = null;
+
+      second = await NativeResetFixture.StartAsync(scope, password, timeout.Token, waitForApplications: false);
+      Assert.AreEqual(1, Current(second, "local-bootstrap").Snapshot.ExitCode);
+      await AssertCustomDataAsync(second, timeout.Token);
+      second.Confirmation.Approved = true;
+      ExecuteCommandResult reset = await second.Commands.ExecuteCommandAsync(
+        second.Resources.Helpers.Bootstrap.Resource, "reset-local-data", timeout.Token);
+
+      Assert.IsTrue(reset.Success, reset.Message);
+      await AssertResetDataAsync(second, timeout.Token);
+      Assert.AreEqual(KnownResourceStates.Running, Current(second, "api").Snapshot.State?.Text);
+      Assert.AreEqual(KnownResourceStates.Running, Current(second, "website").Snapshot.State?.Text);
     }
     finally
     {
@@ -295,6 +347,24 @@ public sealed class LocalDataResetIntegrationTests
     }
     Assert.HasCount(1326, invoices);
     Assert.HasCount(361, merchants);
+    using (CosmosClient stateClient = await CosmosAsync(fixture, token))
+    {
+      JObject receipt = (await stateClient.GetContainer("primary", "local-development").ReadItemAsync<JObject>(
+        "invoice-scenario", new PartitionKey("invoice-scenario"), cancellationToken: token)).Resource;
+      Assert.AreEqual("v2", receipt.Value<string>("manifestVersion"));
+      Assert.IsTrue(receipt.Value<bool>("completed"));
+    }
+    Assert.AreEqual(18000, invoices.Where(invoice =>
+      invoice.Value<string>("UserIdentifier") == "32a2818b-7844-59cf-a7c0-48d061cc86ae"
+      && !invoice.Value<bool>("IsSoftDeleted")).Sum(invoice => invoice["Items"]?.Count() ?? 0));
+    foreach (JObject merchant in merchants)
+    {
+      string? id = merchant.Value<string>("id");
+      JObject[] referenced = invoices.Where(invoice => invoice.Value<string>("MerchantReference") == id).ToArray();
+      CollectionAssert.AreEquivalent(referenced.Select(invoice => invoice.Value<string>("id")).ToArray(),
+        merchant["ReferencedInvoices"]?.Values<string>().ToArray() ?? []);
+      Assert.IsTrue(referenced.All(invoice => invoice.Value<string>("UserIdentifier") == merchant.Value<string>("CreatedBy")));
+    }
     Assert.IsFalse(invoices.Any(invoice => invoice.Value<string>("id") == "custom-invoice"));
     var blobs = new BlobServiceClient(await fixture.ConnectionAsync(fixture.Resources.Infrastructure.Blobs.Resource, token));
     Assert.IsFalse((await blobs.GetBlobContainerClient("invoices").GetBlobClient("custom.bin").ExistsAsync(token)).Value);

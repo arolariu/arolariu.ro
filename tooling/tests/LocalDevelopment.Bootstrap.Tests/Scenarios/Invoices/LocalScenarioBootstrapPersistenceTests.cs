@@ -1,6 +1,9 @@
 namespace LocalDevelopment.Bootstrap.Tests.Scenarios.Invoices;
 
 using System.Net;
+using System.Text.Json;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
@@ -124,8 +127,8 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     Guid owner = manifest.Personas.Single(persona => persona.Key == invoice.OwnerKey).UserIdentifier;
     JObject document = (await database.GetContainer("invoices")
       .ReadItemAsync<JObject>(invoice.Id.ToString(), new PartitionKey(owner.ToString()))).Resource;
-    Assert.AreEqual(new DateOnly(2026, 11, 3),
-      DateOnly.FromDateTime(document.Value<DateTime>("CreatedAt").ToUniversalTime()));
+    Assert.AreEqual(new DateTimeOffset(new DateOnly(2026, 11, 3).AddDays(-invoice.DaysAgo),
+      invoice.TransactionTimeUtc, TimeSpan.Zero).UtcDateTime, document.Value<DateTime>("CreatedAt").ToUniversalTime());
   }
 
   /// <summary>A different fixture version requires an explicit reset instead of silently rewriting data.</summary>
@@ -141,6 +144,9 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       anchorDateUtc = "2026-11-03",
       completed = true,
     }, new PartitionKey("invoice-scenario"));
+    Container invoices = client.GetContainer("primary", "invoices");
+    await invoices.CreateItemAsync(new { id = "legacy-custom", UserIdentifier = "custom-owner", Name = "preserve" },
+      new PartitionKey("custom-owner"));
 
     await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
       CreateBootstrap(new DateOnly(2026, 11, 4)).RunAsync(ScenarioPath, CancellationToken.None));
@@ -148,6 +154,60 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario", new PartitionKey("invoice-scenario"))).Resource;
     Assert.AreEqual("v1", receipt.Value<string>("manifestVersion"));
     Assert.IsTrue(receipt.Value<bool>("completed"));
+    using FeedIterator<JObject> iterator = invoices.GetItemQueryIterator<JObject>("SELECT * FROM c");
+    var records = new List<JObject>();
+    while (iterator.HasMoreResults) { records.AddRange(await iterator.ReadNextAsync()); }
+    Assert.HasCount(1, records);
+    Assert.AreEqual("legacy-custom", records[0].Value<string>("id"));
+  }
+
+  /// <summary>Expanded enrichment survives the same raw SDK domain deserialization used by the API.</summary>
+  [TestMethod]
+  public async Task RunAsync_ExpandedScenario_RoundTripsThroughApiDomainContracts()
+  {
+    CosmosClient client = cosmos ?? throw new InvalidOperationException();
+    DateOnly anchor = new(2026, 11, 4);
+    MaterializedSeedScenario expected = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), anchor);
+    await CreateBootstrap(anchor).RunAsync(ScenarioPath, CancellationToken.None);
+    var invoices = new List<Invoice>();
+    var merchants = new List<Merchant>();
+    using (FeedIterator<Invoice> iterator = client.GetContainer("primary", "invoices").GetItemQueryIterator<Invoice>("SELECT * FROM c"))
+    {
+      while (iterator.HasMoreResults) { invoices.AddRange(await iterator.ReadNextAsync()); }
+    }
+    using (FeedIterator<Merchant> iterator = client.GetContainer("primary", "merchants").GetItemQueryIterator<Merchant>("SELECT * FROM c"))
+    {
+      while (iterator.HasMoreResults) { merchants.AddRange(await iterator.ReadNextAsync()); }
+    }
+
+    Assert.HasCount(1326, invoices);
+    Assert.HasCount(361, merchants);
+    Assert.AreEqual(18000, invoices.Where(invoice =>
+      invoice.UserIdentifier == PersonaIds.Dmitryi && !invoice.IsSoftDeleted).Sum(invoice => invoice.Items.Count));
+    var byId = invoices.ToDictionary(invoice => invoice.id);
+    foreach (Invoice original in expected.Invoices)
+    {
+      Invoice actual = byId[original.id];
+      Assert.AreEqual(original.UserIdentifier, actual.UserIdentifier);
+      Assert.AreEqual(original.MerchantReference, actual.MerchantReference);
+      CollectionAssert.AreEqual(original.Items.Select(product => (product.Quantity, product.Price)).ToArray(),
+        actual.Items.Select(product => (product.Quantity, product.Price)).ToArray());
+      AssertEquivalent(original.Items, actual.Items, original.Name);
+      AssertEquivalent(original.Classification, actual.Classification, original.Name);
+      AssertEquivalent(original.PossibleRecipes, actual.PossibleRecipes, original.Name);
+      AssertEquivalent(original.PaymentInformation, actual.PaymentInformation, original.Name);
+      AssertEquivalent(original.TaxDetails, actual.TaxDetails, original.Name);
+    }
+
+    var merchantIds = merchants.ToDictionary(merchant => merchant.id);
+    foreach (Merchant original in expected.Merchants)
+    {
+      Merchant actual = merchantIds[original.id];
+      Assert.AreEqual(original.CreatedBy, actual.CreatedBy);
+      Assert.AreEqual(original.Address, actual.Address);
+      Assert.AreEqual(original.Classification, actual.Classification);
+      CollectionAssert.AreEquivalent(original.ReferencedInvoices.ToArray(), actual.ReferencedInvoices.ToArray());
+    }
   }
 
   /// <summary>First-use seeding must not overwrite an existing seed scan or its headers.</summary>
@@ -219,6 +279,9 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     Assert.AreEqual(states[0].AnchorDateUtc, states[1].AnchorDateUtc);
     Assert.IsTrue(states[0].AnchorDateUtc is { Year: 2026, Month: 11, Day: 3 or 4 });
   }
+
+  private static void AssertEquivalent<T>(T expected, T actual, string label) =>
+    Assert.IsTrue(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(expected), JsonSerializer.SerializeToElement(actual)), label);
 
   private LocalScenarioBootstrap CreateBootstrap(DateOnly date) => new(
     new LocalCosmosResetter(cosmos ?? throw new InvalidOperationException()),
