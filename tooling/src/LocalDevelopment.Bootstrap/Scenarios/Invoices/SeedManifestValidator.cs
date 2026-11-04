@@ -101,7 +101,7 @@ internal static class SeedManifestValidator
       {
         throw new InvalidDataException($"Invoice '{invoice.Key}' currency does not match its merchant country.");
       }
-      if (invoice.PaymentType != "SPLIT"
+      if (!string.Equals(invoice.PaymentType, "SPLIT", StringComparison.OrdinalIgnoreCase)
           && (!Enum.TryParse(invoice.PaymentType, ignoreCase: true, out PaymentType paymentType) || !Enum.IsDefined(paymentType)))
       {
         throw new InvalidDataException($"Invoice '{invoice.Key}' has an invalid payment method.");
@@ -155,13 +155,14 @@ internal static class SeedManifestValidator
           throw new InvalidDataException($"Invoice '{invoice.Key}' product '{product.ProductCode}' has an invalid tax rate.");
         }
         decimal extended = product.Quantity * product.Price;
-        if (decimal.Round(extended, 2) != extended || decimal.Round(product.Price, 2) != product.Price)
+        if (decimal.Round(extended, 2) != extended)
         {
           throw new InvalidDataException($"Invoice '{invoice.Key}' product '{product.ProductCode}' contains fractional cents.");
         }
-        if (product.AllergenState is not ("detected" or "none" or "insufficient" or "unassessed")
+        string allergenState = product.AllergenState.ToLowerInvariant();
+        if (allergenState is not ("detected" or "none" or "insufficient" or "unassessed")
             || product.AllergenCodes is null
-            || (product.AllergenState == "detected") != (product.AllergenCodes.Count > 0)
+            || (allergenState == "detected") != (product.AllergenCodes.Count > 0)
             || product.AllergenCodes.Any(code => !Enum.IsDefined(code))
             || product.AllergenCodes.Distinct().Count() != product.AllergenCodes.Count)
         {

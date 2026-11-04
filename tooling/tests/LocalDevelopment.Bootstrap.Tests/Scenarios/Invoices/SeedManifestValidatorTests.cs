@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Bootstrap.Tests.Scenarios.Invoices;
 
 using System.Text.Json.Nodes;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using global::LocalDevelopment.Bootstrap.Scenarios.Invoices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -184,6 +185,75 @@ public sealed class SeedManifestValidatorTests
     });
 
     Assert.ThrowsExactly<InvalidDataException>(() => SeedData.LoadScenario(files.Path));
+  }
+
+  /// <summary>Fuel-style precision is valid when the purchased quantity produces exact cents.</summary>
+  [TestMethod]
+  public void Validate_HigherPrecisionUnitPriceWithCentExactTotal_PreservesValue()
+  {
+    SeedScenarioManifest manifest = Load();
+    SeedInvoiceDefinition invoice = manifest.Invoices.First(candidate =>
+      candidate.CurrencyCode == "EUR" && candidate.Products.Any(product => product.ProductCode == "FUEL-000"));
+    SeedProductDefinition[] products = invoice.Products.Select(product => product.ProductCode == "FUEL-000"
+      ? product with { Quantity = 10m, Price = 1.959m } : product).ToArray();
+    SeedScenarioManifest changed = Replace(manifest, invoice with
+    {
+      Products = products,
+      TotalAmount = products.Sum(product => product.Quantity * product.Price),
+      TaxAmount = SeedFinancials.CreateTaxDetails(products).Sum(detail => detail.Amount),
+    });
+
+    SeedManifestValidator.Validate(changed);
+    var actual = SeedData.Materialize(changed, new DateOnly(2026, 11, 4))
+      .Invoices.Single(candidate => candidate.id == invoice.Id).Items.Single(product => product.ProductCode == "FUEL-000");
+
+    Assert.AreEqual(1.959m, actual.Price);
+    Assert.AreEqual(19.59m, actual.TotalPrice);
+  }
+
+  /// <summary>Validation accepts the same recognized spelling variants as domain materialization.</summary>
+  [TestMethod]
+  [DataRow("split", "detected", "Detected")]
+  [DataRow("Split", "detected", "Detected")]
+  [DataRow("SPLIT", "DETECTED", "Detected")]
+  [DataRow("SPLIT", "NONE", "NoSignals")]
+  [DataRow("SPLIT", "INSUFFICIENT", "InsufficientData")]
+  [DataRow("SPLIT", "UNASSESSED", "Unassessed")]
+  public void Validate_RecognizedPaymentAndAllergenCasing_RemainsCompatible(string payment, string state, string expectedStatus)
+  {
+    SeedScenarioManifest manifest = Load();
+    SeedInvoiceDefinition invoice = manifest.Invoices[0];
+    SeedProductDefinition product = invoice.Products[0] with
+    {
+      AllergenState = state,
+      AllergenCodes = string.Equals(state, "detected", StringComparison.OrdinalIgnoreCase)
+        ? [AllergenCode.CerealsContainingGluten] : [],
+    };
+    SeedScenarioManifest changed = Replace(manifest, invoice with
+    {
+      PaymentType = payment,
+      Products = [product, .. invoice.Products.Skip(1)],
+    });
+
+    SeedManifestValidator.Validate(changed);
+    var actual = SeedData.Materialize(changed, new DateOnly(2026, 11, 4)).Invoices.Single(candidate => candidate.id == invoice.Id);
+
+    Assert.AreEqual(2, actual.Payments.Count);
+    Assert.AreEqual(actual.PaymentInformation.TotalCostAmount, actual.Payments.Sum(detail => detail.Amount));
+    Assert.AreEqual(expectedStatus, actual.Items.First().AllergenAssessment?.Status.ToString() ?? "Unassessed");
+  }
+
+  /// <summary>Accepting recognized casing variants does not permit unknown payment or allergen values.</summary>
+  [TestMethod]
+  [DataRow(false)]
+  [DataRow(true)]
+  public void Validate_UnknownPaymentOrAllergenState_StillThrows(bool allergen)
+  {
+    SeedScenarioManifest manifest = Load();
+    SeedInvoiceDefinition invoice = manifest.Invoices[0];
+    Assert.ThrowsExactly<InvalidDataException>(() => SeedManifestValidator.Validate(Replace(manifest, allergen
+      ? invoice with { Products = [invoice.Products[0] with { AllergenState = "invented" }, .. invoice.Products.Skip(1)] }
+      : invoice with { PaymentType = "invented" })));
   }
 
   private static SeedScenarioManifest Replace(SeedScenarioManifest manifest, SeedInvoiceDefinition changed) =>
