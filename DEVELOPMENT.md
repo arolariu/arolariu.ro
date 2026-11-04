@@ -77,6 +77,10 @@ npm run dev          # ← This is what you'll use every day (alias: npm run dev
 4. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
 5. 📊 Exposes the Aspire dashboard at `https://localhost:17080` with live OTel traces / metrics / logs
 
+Local data persists across restarts. First use initializes the three-persona scenario; the dashboard's confirmed **Reset local data** action
+is the destructive path. Review the [owned-store scope and recovery behavior](infra/Local/readme.md#persistent-data-and-explicit-reset)
+before using it.
+
 > **Pressing F5 in VS Code / Visual Studio 2026** runs the same AppHost — the only difference is the IDE attaches a debugger.
 
 **Single-service standalone (no AppHost coordination — fallback only):**

@@ -20,9 +20,9 @@
   package or Python environment install by calling it startup.
 - Aspire startup generates an ignored exp Aspire config from the developer's Docker-mode source config. It must not mutate or expose that
   source's secret values. Inspect `ExpConfigGenerator` before diagnosing generation.
-- Aspire's local scenario bootstrap deliberately deletes every document in the guarded local invoice/merchant Cosmos containers, removes the
-  invoice blob container, clears the analysis queue, and then restores deterministic data. Obtain acknowledgement before risking unpreserved
-  local work; verify the guard still restricts targets to local emulators.
+- Treat ordinary Aspire startup and the explicit dashboard reset as different operations. Read the
+  [local-environment runbook](../../../../infra/Local/readme.md#persistent-data-and-explicit-reset) and live guards for their current data
+  effects; obtain acknowledgement before any operation that clears existing data.
 - Aspire launches the website through `next dev --experimental-https`. On a certificate-free first run, Next.js can download/run certificate
   tooling and install a local CA. Stop and ask before that trust-store branch.
 - Selfhost startup requires the current SQL password variable in the shell and performs SQL/Cosmos/Azurite/storage bootstrap. The

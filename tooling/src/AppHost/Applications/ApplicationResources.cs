@@ -10,10 +10,13 @@ using Aspire.Hosting.Python;
 
 #pragma warning disable ASPIREJAVASCRIPT001
 
+/// <summary>Contains application handles whose lifecycle participates in a local data reset.</summary>
+internal sealed record LocalApplicationResources(IResource Api, IResource Website);
+
 /// <summary>Registers applications and their explicit native startup dependencies.</summary>
 internal static class ApplicationResources
 {
-  internal static void AddApplications(this IDistributedApplicationBuilder builder,
+  internal static LocalApplicationResources AddApplications(this IDistributedApplicationBuilder builder,
     RepositoryLayout layout, IResourceBuilder<PythonAppResource> exp, LocalResources local)
   {
     // One install for the whole npm workspace; per-app installers would race over the shared node_modules.
@@ -33,7 +36,7 @@ internal static class ApplicationResources
       .WaitFor(exp)
       .WithIconName("CodeBlock")
       .WithHttpHealthCheck("/health");
-    builder.AddNextJsApp("website", layout.WebsiteDirectory)
+    var website = builder.AddNextJsApp("website", layout.WebsiteDirectory)
       // Next owns HTTPS; NODE_OPTIONS must not reach the npm installer resource. Upgrading the integration's own
       // PORT-bound "http" endpoint in place (as Aspire does for Vite and uvicorn) avoids a second, dead endpoint.
       .WithEndpoint("http", endpoint =>
@@ -72,5 +75,6 @@ internal static class ApplicationResources
       .WithIconName("PulseSquare")
       .WithHttpHealthCheck("/")
       .UseSharedNpmInstall(npmInstall);
+    return new(api.Resource, website.Resource);
   }
 }

@@ -28,6 +28,10 @@ internal static class Constants
 
   // ── Volume names (data persistence across container restarts) ──
   public const string SqlDataVolume = "arolariu-mssql-data";
+  // Keep the initialized Cosmos volume paired with its tested emulator image.
+  public const string CosmosDataVolume = "arolariu-cosmos-data-en20261008";
+  public const string CosmosEmulatorImageSha256 =
+      "4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38";
   public const string RedisDataVolume = "arolariu-redis-data";
   public const string AzuriteDataVolume = "arolariu-azurite-data";
 

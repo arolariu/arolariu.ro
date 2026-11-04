@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsAspireHost>true</IsAspireHost>
-    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <AspireUseCliBundle>false</AspireUseCliBundle>
     <UserSecretsId>arolariu-apphost-local</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
@@ -15,6 +15,7 @@
     <PackageReference Include="Aspire.Hosting.Python" />
     <PackageReference Include="Aspire.Hosting.Redis" />
     <PackageReference Include="Aspire.Hosting.SqlServer" />
+    <PackageReference Include="Azure.Data.Tables" />
     <PackageReference Include="Azure.Storage.Queues" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>

@@ -8,7 +8,8 @@ using Aspire.Hosting.Azure;
 internal sealed record LocalStorageResources(
   IResourceBuilder<AzureStorageResource> Storage,
   IResourceBuilder<AzureBlobStorageResource> Blobs,
-  IResourceBuilder<AzureQueueStorageResource> Queues);
+  IResourceBuilder<AzureQueueStorageResource> Queues,
+  IResourceBuilder<AzureTableStorageResource> Tables);
 
 /// <summary>Registers persistent local storage and its idempotent provisioning.</summary>
 internal static class StorageResources
@@ -26,8 +27,9 @@ internal static class StorageResources
       .WithIconName("Storage");
     var blobs = storage.AddBlobs("blobs");
     var queues = storage.AddQueues("queues");
+    var tables = storage.AddTables("tables");
     builder.AddAzuriteBootstrap(storage, Constants.AzuriteBlobPort, Constants.AzuriteQueuePort,
       ["invoices"], [Constants.AnalysisQueueName]);
-    return new(storage, blobs, queues);
+    return new(storage, blobs, queues, tables);
   }
 }

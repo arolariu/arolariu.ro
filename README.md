@@ -230,8 +230,9 @@ installs or upgrades Git, Node.js, or npm:
 
 ### Quick Start
 
-> [!WARNING] The Aspire start command below resets all guarded local invoice/merchant documents, invoice blobs, and analysis queue messages
-> before restoring the deterministic local scenarios.
+> [!NOTE] Aspire initializes the local scenarios once and preserves custom data on restart. Only the dashboard's confirmed **Reset local
+> data** command clears the local stores; review its
+> [scope and recovery instructions](infra/Local/readme.md#persistent-data-and-explicit-reset).
 
 ```bash
 # 1️⃣ Clone the repository
@@ -374,9 +375,9 @@ npx nx show project website      # 🔍 Show project details
 `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The
 AppHost orchestrates the entire dev stack:
 
-- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and Charlie, Aspire deletes all documents in the guarded local
-  invoice/merchant Cosmos containers, removes the local invoice blob container, and clears the analysis queue. Preserve local work before
-  starting.
+- **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
+  dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
+  scenario.
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via

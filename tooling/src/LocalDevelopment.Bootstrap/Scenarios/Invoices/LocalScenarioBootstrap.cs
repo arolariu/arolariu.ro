@@ -4,7 +4,7 @@ using LocalDevelopment.Bootstrap.Resilience;
 using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
 
 /// <summary>
-/// Coordinates deterministic local reset and seed operations.
+/// Coordinates resumable first-use seeding while preserving existing local data.
 /// </summary>
 internal sealed class LocalScenarioBootstrap(
   ILocalCosmosResetter cosmos,
@@ -20,18 +20,29 @@ internal sealed class LocalScenarioBootstrap(
     SeedScenarioManifest manifest = SeedData.LoadManifest(manifestPath);
     DateOnly anchor = DateOnly.FromDateTime(
       timeProvider.GetUtcNow().UtcDateTime);
-    MaterializedSeedScenario scenario =
+    MaterializedSeedScenario proposedScenario =
       SeedData.Materialize(manifest, anchor);
 
-    // Each attempt restarts from the clear phase, so a temporary failure never leaves partial seed data behind.
     await (retry ?? TransientRetry.None).ExecuteAsync(async token =>
     {
       token.ThrowIfCancellationRequested();
-      await cosmos.ClearAsync(token).ConfigureAwait(false);
+      SeedInitializationState state = await cosmos.ReadOrCreateInitializationAsync(
+        manifest.Version, anchor, token).ConfigureAwait(false);
+      if (!string.Equals(state.ManifestVersion, manifest.Version, StringComparison.Ordinal))
+      {
+        throw new InvalidOperationException(
+          "Seed manifest version changed; preserve local data and use the explicit dashboard reset before switching versions.");
+      }
+      if (state.Completed) { return; }
+      MaterializedSeedScenario scenario = state.AnchorDateUtc == anchor
+        ? proposedScenario
+        : SeedData.Materialize(manifest, state.AnchorDateUtc);
       token.ThrowIfCancellationRequested();
-      await storage.ResetAsync(scenario, token).ConfigureAwait(false);
+      await storage.EnsureSeedAsync(scenario, token).ConfigureAwait(false);
       token.ThrowIfCancellationRequested();
-      await cosmos.WriteAsync(scenario, token).ConfigureAwait(false);
+      await cosmos.WriteMissingAsync(scenario, token).ConfigureAwait(false);
+      token.ThrowIfCancellationRequested();
+      await cosmos.CompleteInitializationAsync(state, token).ConfigureAwait(false);
     }, cancellationToken).ConfigureAwait(false);
   }
 }

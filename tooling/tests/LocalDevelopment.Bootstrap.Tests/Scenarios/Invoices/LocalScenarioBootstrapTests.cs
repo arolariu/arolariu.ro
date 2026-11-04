@@ -10,29 +10,29 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Verifies reset and seed orchestration order.
+/// Verifies initialization, retry, and cancellation ordering at the external storage boundaries.
 /// </summary>
 [TestClass]
 public sealed class LocalScenarioBootstrapTests
 {
-  /// <summary>Verifies cancellation between phases cannot start further destructive work.</summary>
+  /// <summary>Verifies cancellation after receipt lookup cannot start seed writes.</summary>
   [TestMethod]
-  public async Task RunAsync_CancelledAfterCosmosClear_DoesNotResetStorageOrWrite()
+  public async Task RunAsync_CancelledAfterReceiptRead_DoesNotEnsureStorageOrWrite()
   {
     using var source = new CancellationTokenSource();
     var operations = new List<string>();
     var bootstrap = new LocalScenarioBootstrap(
-      new RecordingCosmosResetter(operations, afterClear: source.Cancel),
+      new RecordingCosmosResetter(operations, afterRead: source.Cancel),
       new RecordingAzuriteResetter(operations), TimeProvider.System);
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
       bootstrap.RunAsync(ScenarioPath, source.Token));
-    CollectionAssert.AreEqual(new[] { "cosmos-clear" }, operations);
+    CollectionAssert.AreEqual(new[] { "receipt-read" }, operations);
   }
 
-  /// <summary>Verifies cancellation after storage reset prevents Cosmos seed writes.</summary>
+  /// <summary>Verifies cancellation after storage provisioning prevents Cosmos seed writes.</summary>
   [TestMethod]
-  public async Task RunAsync_CancelledAfterStorageReset_DoesNotWrite()
+  public async Task RunAsync_CancelledAfterStorageEnsure_DoesNotWrite()
   {
     using var source = new CancellationTokenSource();
     var operations = new List<string>();
@@ -40,7 +40,7 @@ public sealed class LocalScenarioBootstrapTests
       new RecordingCosmosResetter(operations),
       new RecordingAzuriteResetter(operations, source.Cancel), TimeProvider.System);
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => bootstrap.RunAsync(ScenarioPath, source.Token));
-    CollectionAssert.AreEqual(new[] { "cosmos-clear", "storage-reset" }, operations);
+    CollectionAssert.AreEqual(new[] { "receipt-read", "storage-ensure" }, operations);
   }
 
   /// <summary>Verifies pre-cancellation performs no reset phase.</summary>
@@ -83,17 +83,17 @@ public sealed class LocalScenarioBootstrapTests
       new RecordingCosmosResetter(operations, tokens: tokens),
       new RecordingAzuriteResetter(operations, tokens: tokens), TimeProvider.System);
     await bootstrap.RunAsync(ScenarioPath, source.Token);
-    CollectionAssert.AreEqual(new[] { source.Token, source.Token, source.Token }, tokens);
+    CollectionAssert.AreEqual(new[] { source.Token, source.Token, source.Token, source.Token }, tokens);
   }
 
   private static readonly string ScenarioPath =
     Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
 
   /// <summary>
-  /// Verifies every previous document and blob is cleared before seed writes.
+  /// Verifies initialization is marked complete only after both storage and Cosmos seed writes.
   /// </summary>
   [TestMethod]
-  public async Task RunAsync_ValidScenario_ResetsThenWritesStorageAndCosmos()
+  public async Task RunAsync_ValidScenario_EnsuresThenWritesAndCompletes()
   {
     var operations = new List<string>();
     var cosmos = new RecordingCosmosResetter(operations);
@@ -107,20 +107,20 @@ public sealed class LocalScenarioBootstrapTests
     await bootstrap.RunAsync(ScenarioPath, CancellationToken.None);
 
     List<string> expected =
-      ["cosmos-clear", "storage-reset", "cosmos-write"];
+      ["receipt-read", "storage-ensure", "cosmos-write", "receipt-complete"];
     CollectionAssert.AreEqual(expected, operations);
   }
 
   /// <summary>
-  /// Verifies a reset failure prevents every subsequent write.
+  /// Verifies a state lookup failure prevents every subsequent write.
   /// </summary>
   [TestMethod]
-  public async Task RunAsync_CosmosResetFails_DoesNotResetStorageOrWrite()
+  public async Task RunAsync_ReceiptReadFails_DoesNotEnsureStorageOrWrite()
   {
     var operations = new List<string>();
     var cosmos = new RecordingCosmosResetter(
       operations,
-      clearException: new InvalidOperationException("reset failed"));
+      readException: new InvalidOperationException("receipt read failed"));
     var storage = new RecordingAzuriteResetter(operations);
     var bootstrap = new LocalScenarioBootstrap(
       cosmos,
@@ -131,15 +131,15 @@ public sealed class LocalScenarioBootstrapTests
       () => bootstrap.RunAsync(ScenarioPath, CancellationToken.None));
 
     CollectionAssert.AreEqual(
-      new List<string> { "cosmos-clear" },
+      new List<string> { "receipt-read" },
       operations);
   }
 
   /// <summary>
-  /// Verifies a temporary failure during seed writes restarts the whole reset instead of writing over partial data.
+  /// Verifies retries resume create-only operations without a destructive clear phase.
   /// </summary>
   [TestMethod]
-  public async Task RunAsync_TransientWriteFailure_RestartsFromClear()
+  public async Task RunAsync_TransientWriteFailure_RetriesWithoutClearing()
   {
     var operations = new List<string>();
     var failures = new Queue<Exception>([new CosmosException("busy", HttpStatusCode.ServiceUnavailable, 0, "activity", 0)]);
@@ -152,28 +152,29 @@ public sealed class LocalScenarioBootstrapTests
     await bootstrap.RunAsync(ScenarioPath, CancellationToken.None);
 
     CollectionAssert.AreEqual(
-      new[] { "cosmos-clear", "storage-reset", "cosmos-write", "cosmos-clear", "storage-reset", "cosmos-write" },
+      new[] { "receipt-read", "storage-ensure", "cosmos-write", "receipt-read", "storage-ensure", "cosmos-write", "receipt-complete" },
       operations);
   }
 
   private sealed class RecordingCosmosResetter(
     List<string> operations,
-    Exception? clearException = null,
-    Action? afterClear = null,
+    Exception? readException = null,
+    Action? afterRead = null,
     List<CancellationToken>? tokens = null,
     Queue<Exception>? writeFailures = null) : ILocalCosmosResetter
   {
-    public Task ClearAsync(CancellationToken cancellationToken)
+    public Task<SeedInitializationState> ReadOrCreateInitializationAsync(
+      string manifestVersion, DateOnly proposedAnchorUtc, CancellationToken cancellationToken)
     {
-      operations.Add("cosmos-clear");
+      operations.Add("receipt-read");
       tokens?.Add(cancellationToken);
-      afterClear?.Invoke();
-      return clearException is null
-        ? Task.CompletedTask
-        : Task.FromException(clearException);
+      afterRead?.Invoke();
+      return readException is null
+        ? Task.FromResult(new SeedInitializationState(manifestVersion, proposedAnchorUtc, false))
+        : Task.FromException<SeedInitializationState>(readException);
     }
 
-    public Task WriteAsync(
+    public Task WriteMissingAsync(
       MaterializedSeedScenario scenario,
       CancellationToken cancellationToken)
     {
@@ -183,6 +184,13 @@ public sealed class LocalScenarioBootstrapTests
         ? Task.FromException(writeFailures.Dequeue())
         : Task.CompletedTask;
     }
+
+    public Task CompleteInitializationAsync(SeedInitializationState state, CancellationToken cancellationToken)
+    {
+      operations.Add("receipt-complete");
+      tokens?.Add(cancellationToken);
+      return Task.CompletedTask;
+    }
   }
 
   private sealed class RecordingAzuriteResetter(
@@ -190,11 +198,11 @@ public sealed class LocalScenarioBootstrapTests
     Action? afterReset = null,
     List<CancellationToken>? tokens = null) : ILocalAzuriteResetter
   {
-    public Task ResetAsync(
+    public Task EnsureSeedAsync(
       MaterializedSeedScenario scenario,
       CancellationToken cancellationToken)
     {
-      operations.Add("storage-reset");
+      operations.Add("storage-ensure");
       tokens?.Add(cancellationToken);
       afterReset?.Invoke();
       return Task.CompletedTask;

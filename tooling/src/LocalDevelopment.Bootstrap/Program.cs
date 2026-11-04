@@ -109,7 +109,7 @@ internal static class Program
     }
     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
     {
-      Console.Error.WriteLine("Local development bootstrap cancelled; completed reset phases are not rolled back.");
+      Console.Error.WriteLine("Local development bootstrap cancelled; completed initialization operations are not rolled back.");
       return 1;
     }
     catch (Exception exception)

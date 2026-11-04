@@ -8,6 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 /// <summary>Owns the local SQL connection contract.</summary>
 internal static class SqlResources
 {
+  internal static string DatabaseCreationScript => $"""
+    IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
+        CREATE DATABASE [{Constants.SqlDatabaseName}];
+    """;
+
   internal static IResourceBuilder<SqlServerDatabaseResource> AddLocalSql(
     this IDistributedApplicationBuilder builder, string sqlPassword)
   {
@@ -19,10 +24,7 @@ internal static class SqlResources
       .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
       .WithIconName("Database");
     var database = sql.AddDatabase(Constants.SqlDatabaseName)
-      .WithCreationScript($"""
-        IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
-            CREATE DATABASE [{Constants.SqlDatabaseName}];
-        """);
+      .WithCreationScript(DatabaseCreationScript);
     builder.Services.AddHealthChecks().AddCheck("sql-ready",
       new SqlReadinessHealthCheck(() => new SqlConnection(readinessConnection)));
     sql.WithHealthCheck("sql-ready");

@@ -1,7 +1,9 @@
+using AppHost;
 using AppHost.Applications;
 using AppHost.Applications.Exp;
 using AppHost.Infrastructure;
 using AppHost.LocalDevelopment;
+using AppHost.LocalDevelopment.Reset;
 using AppHost.Repository;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -18,6 +20,8 @@ ExpConfigGenerator.GenerateAspireConfig(
 LocalInfrastructure infrastructure = builder.AddInfrastructure(sqlPasswordValue);
 var exp = builder.AddExp(infrastructure, layout);
 LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
-builder.AddApplications(layout, exp, local);
+var applications = builder.AddApplications(layout, exp, local);
+builder.AddLocalDataReset(new(infrastructure, local, applications,
+  new(Constants.CosmosDataVolume, Constants.AzuriteDataVolume, Constants.SqlDataVolume)));
 
 builder.Build().Run();

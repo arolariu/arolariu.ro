@@ -14,5 +14,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AppHost\AppHost.csproj" />
+    <Compile Include="..\LocalDataTestFixture.cs" Link="TestInfrastructure\LocalDataTestFixture.cs" />
+    <Content Include="..\..\src\LocalDevelopment.Bootstrap\SeedData\scenario.v1.json"
+      Link="SeedData\scenario.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="LocalDevelopment\Reset\Fixtures\healthy-process.py"
+      Link="Fixtures\healthy-process.py" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -6,9 +6,8 @@ Two coexisting modes for local development.
 
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
-> [!WARNING] Aspire's scenario bootstrap deletes all documents in the guarded local invoice/merchant Cosmos containers, removes the local
-> invoice blob container, and clears the analysis queue before restoring Alice, Bob, and Charlie. Preserve or export any local work before
-> starting. Selfhost does not run this scenario reset.
+> [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, and Charlie; an explicit, confirmed **Reset local
+> data** dashboard action is available when you intentionally want to erase custom data and restore the scenario.
 
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`) declares and orchestrates everything natively:
 
@@ -31,8 +30,8 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
   once `npm-install` finishes; every app has an HTTP health check, so green means it actually serves requests.
 - **One npm install**: a single `npm-install` resource runs `npm install --no-audit --no-fund` at the repository root for the whole npm
   workspace; the apps do not run their own installers.
-- **Cosmos emulator data**: the Aspire Cosmos emulator keeps no data between runs; bootstrap reseeds it on every start. The old
-  `arolariu-cosmos-data` volume is no longer used and can be deleted manually.
+- **Cosmos emulator data**: a pinned emulator image and compatible named volume retain data across runs. Bootstrap records completed
+  initialization instead of clearing data every time; see [persistent data and explicit reset](#persistent-data-and-explicit-reset).
 - **Direct service URLs**: api → `https://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
   `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies
   HTTPS to exp and the API; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
@@ -40,6 +39,44 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers
 directly.
+
+#### Persistent data and explicit reset
+
+The Cosmos emulator is pinned to release `EN20261008` by digest `sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38`.
+Its writable `arolariu-cosmos-data-en20261008` volume is mounted at `/data`. SQL, Azurite, and Redis retain their existing volumes. The old
+`arolariu-cosmos-data` volume remains untouched as an archive; it is neither an active mount nor a reset target.
+
+The older initialized emulator state was readable with the May image but failed with the October image's queries and feeds
+(`500 unknown type of jsonb container`). Fresh October storage works and persists across container recreation. Rebuilding only the logical
+Cosmos database did not repair that engine-state incompatibility. An image upgrade therefore requires a deliberate compatibility and
+data-preservation decision; do not silently reuse an incompatible volume, rotate to empty storage, or delete an old volume.
+
+On first use, Bootstrap stores an initialization receipt in `primary/local-development`, partitioned by `/id`. Its `invoice-scenario` record
+keeps the manifest version, original UTC anchor date, and completion state. Missing seed items/scans are created without overwriting
+existing data, and queues are not cleared. Interrupted initialization resumes with the same date; completed initialization leaves edited or
+deleted seed records alone. A changed fixture version requires an explicit preservation/reset decision instead of automatic reseeding.
+
+To intentionally start again, open the Aspire dashboard's **local-bootstrap** resource actions and choose **Reset local data**. Read and
+accept the confirmation only after exporting anything you need and stopping external clients that write directly to these services. The
+command is local Development/run-mode only; headless invocations without interactive confirmation fail closed.
+
+| Owned service | Data removed                                                         | Preserved or restored                                                                           |
+| ------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the three-persona seed.            |
+| `storage`     | Every blob container/blob, queue/message, and table/entity           | Keep service configuration/CORS; restore invoice scans/container and the empty analysis queue.  |
+| `mssql`       | Every non-system user database, schema, and row                      | Keep `master`, `model`, `msdb`, `tempdb`, server configuration/logins; recreate `arolariu-sql`. |
+
+Before stopping writers or deleting anything, reset requires the captured native containers to be running with their own allocated
+endpoints. It rechecks their physical container identities before each store/initialization/resumption phase; unavailable or replaced
+instances cannot authorize deletion through retained loopback ports. Shutdown attempts every writer even if another stop fails.
+
+The API, website, and any active/pending initializer are quiesced before deletion. Prerequisites are provisioned explicitly, then a new
+Bootstrap execution must finish successfully before the API and website restart and pass fresh health checks. Independent sites, Redis,
+selfhost resources, and the legacy Cosmos volume are not cleared. Named volumes and database-engine files are not reformatted or deleted.
+
+Reset is serialized, bounded, and not transactional across stores. Cancellation or failure can leave data partially cleared; writers are not
+automatically resumed against that state. Inspect the failed phase and explicitly retry after fixing the cause. If writer shutdown could not
+be confirmed, stop the AppHost before continuing. Reset is not a repair for arbitrary raw-volume/image incompatibilities.
 
 #### Tooling structure and extension points
 
@@ -67,9 +104,9 @@ dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Ident
 The exp overlay is written through an atomic replacement: generation failures leave the previous target intact and never overwrite the
 developer-owned source. Filesystem-linked source/target aliases are rejected. Temporary configuration files start with owner-only access;
 replacement preserves the existing Windows target ACL or Unix target mode. New Unix targets use mode `0600`. Bootstrap forwards
-graceful-shutdown cancellation and checks it between reset phases. Cancellation stops subsequent work; already completed resets are **not**
-rolled back. Forced process termination cannot guarantee cooperative cleanup. The scenario-reset and certificate-trust checkpoints above
-still apply.
+graceful-shutdown cancellation and checks it between initialization phases. Completed writes are not rolled back; the receipt allows
+create-only recovery on the next start. Forced process termination cannot guarantee cooperative cleanup. The explicit-reset and
+certificate-trust checkpoints above still apply.
 
 Azurite's initial readiness event performs idempotent CORS/container/queue provisioning. If provisioning fails, native health polling
 retries only that failed work, with six attempts and the existing backoff per operation per poll. Storage remains unhealthy while recovery
@@ -203,8 +240,8 @@ volumes. It leaves those containers intact; preservation or migration requires s
 
 ### 4. Start the environment
 
-Aspire and selfhost have different data effects. The warning above applies to Aspire; selfhost performs provisioning without the
-deterministic scenario reset.
+Aspire and selfhost have different data effects. Aspire initializes its scenario once and exposes an explicit dashboard reset; selfhost
+performs provisioning without either operation.
 
 ```bash
 npm run dev:selfhost -- --engine rancher

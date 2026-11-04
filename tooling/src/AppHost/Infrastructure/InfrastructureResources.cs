@@ -18,7 +18,8 @@ internal sealed record LocalInfrastructure(
   IResourceBuilder<AzureCosmosDBContainerResource> CosmosMerchants,
   IResourceBuilder<AzureStorageResource> Storage,
   IResourceBuilder<AzureBlobStorageResource> Blobs,
-  IResourceBuilder<AzureQueueStorageResource> Queues);
+  IResourceBuilder<AzureQueueStorageResource> Queues,
+  IResourceBuilder<AzureTableStorageResource> Tables);
 
 /// <summary>Composes local infrastructure using native Aspire integrations.</summary>
 internal static class InfrastructureResources
@@ -31,6 +32,8 @@ internal static class InfrastructureResources
       .RunAsEmulator(emulator => emulator
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
+        .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
+        .WithDataVolume(Constants.CosmosDataVolume)
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = false)
       .WithIconName("DatabaseMultiple");
@@ -46,6 +49,6 @@ internal static class InfrastructureResources
       // Local redis:alpine does not terminate TLS.
       .WithoutHttpsCertificate()
       .WithIconName("Memory");
-    return new(sql, cosmos, database, invoices, merchants, storage.Storage, storage.Blobs, storage.Queues);
+    return new(sql, cosmos, database, invoices, merchants, storage.Storage, storage.Blobs, storage.Queues, storage.Tables);
   }
 }

@@ -9,10 +9,12 @@ using global::AppHost.Applications.Exp;
 using global::AppHost.Infrastructure;
 using global::AppHost.Infrastructure.Storage;
 using global::AppHost.LocalDevelopment;
+using global::AppHost.LocalDevelopment.Reset;
 using global::AppHost.Repository;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -42,7 +44,7 @@ public sealed class ResourceCompositionTests
     var graph = CreateGraph();
     string[] names = graph.Builder.Resources.Select(resource => resource.Name).ToArray();
     string[] expected = ["mssql", "arolariu-sql", "cosmos", "primary", "invoices", "merchants",
-      "storage", "blobs", "queues", "redis", "local-bootstrap", "exp", "local-identities",
+      "storage", "blobs", "queues", "tables", "redis", "local-bootstrap", "exp", "local-identities",
       "api", "website", "cv", "docs", "status", "npm-install"];
     foreach (string name in expected) { CollectionAssert.Contains(names, name); }
   }
@@ -216,30 +218,37 @@ public sealed class ResourceCompositionTests
       .OfType<HealthCheckAnnotation>().Any(annotation => annotation.Key == "azurite-bootstrap"));
   }
 
-  /// <summary>Verifies restarts retain all three named infrastructure volumes.</summary>
+  /// <summary>Verifies restarts retain all four named infrastructure volumes.</summary>
   [TestMethod]
   public void Compose_Infrastructure_PreservesDataVolumes()
   {
     var graph = CreateGraph();
     string?[] volumes = graph.Builder.Resources.SelectMany(resource => resource.Annotations
       .OfType<ContainerMountAnnotation>()).Select(mount => mount.Source).ToArray();
-    foreach (string volume in new[] { "arolariu-mssql-data", "arolariu-azurite-data", "arolariu-redis-data" })
+    foreach (string volume in new[] { "arolariu-mssql-data", "arolariu-cosmos-data-en20261008",
+      "arolariu-azurite-data", "arolariu-redis-data" })
     {
       CollectionAssert.Contains(volumes, volume);
     }
   }
 
-  /// <summary>Verifies the Cosmos emulator starts empty so a newer emulator never reads older stored data.</summary>
+  /// <summary>Verifies the emulator retains data with its tested image and never reuses incompatible legacy state.</summary>
   [TestMethod]
-  public async Task Compose_CosmosEmulator_KeepsNoDataBetweenRuns()
+  public void Compose_CosmosEmulator_PinsWritablePersistentVolume()
   {
     var graph = CreateGraph();
     IResource cosmos = graph.Infrastructure.Cosmos.Resource;
-    Assert.IsFalse(cosmos.Annotations.OfType<ContainerMountAnnotation>().Any());
-    Assert.IsFalse((await ResolveEnvironmentAsync(graph.Builder, cosmos))
-      .ContainsKey("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE"));
+    ContainerMountAnnotation[] mounts = cosmos.Annotations.OfType<ContainerMountAnnotation>().ToArray();
+    Assert.HasCount(1, mounts);
+    ContainerMountAnnotation mount = mounts[0];
+    Assert.AreEqual("arolariu-cosmos-data-en20261008", mount.Source);
+    Assert.AreEqual("/data", mount.Target);
+    Assert.AreEqual(ContainerMountType.Volume, mount.Type);
+    Assert.IsFalse(mount.IsReadOnly);
+    ContainerImageAnnotation image = cosmos.Annotations.OfType<ContainerImageAnnotation>().Single();
+    Assert.AreEqual("4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38", image.SHA256);
     Assert.IsFalse(graph.Builder.Resources.SelectMany(resource => resource.Annotations.OfType<ContainerMountAnnotation>())
-      .Any(mount => mount.Source == "arolariu-cosmos-data"));
+      .Any(annotation => annotation.Source == "arolariu-cosmos-data"));
   }
 
   /// <summary>Verifies Cosmos ownership partition paths stay unchanged.</summary>
@@ -249,6 +258,48 @@ public sealed class ResourceCompositionTests
     var graph = CreateGraph();
     Assert.AreEqual("/UserIdentifier", graph.Infrastructure.CosmosInvoices.Resource.PartitionKeyPath);
     Assert.AreEqual("/ParentCompanyId", graph.Infrastructure.CosmosMerchants.Resource.PartitionKeyPath);
+  }
+
+  /// <summary>Exposes one explicit data reset without changing the ordinary Bootstrap start command.</summary>
+  [TestMethod]
+  public void Compose_LocalReset_RegistersExplicitCommand()
+  {
+    var graph = CreateGraph();
+    ResourceCommandAnnotation[] commands = graph.Local.Bootstrap.Resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Where(command => command.Name == "reset-local-data").ToArray();
+    Assert.HasCount(1, commands);
+    Assert.AreEqual("Reset local data", commands[0].DisplayName);
+  }
+
+  /// <summary>A production host has no destructive development command to discover or invoke.</summary>
+  [TestMethod]
+  public void Compose_LocalReset_ProductionMode_DoesNotRegisterCommand()
+  {
+    var graph = CreateGraph("Production");
+    Assert.IsFalse(graph.Local.Bootstrap.Resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Any(command => command.Name == "reset-local-data"));
+  }
+
+  /// <summary>A headless/direct command invocation cannot bypass interactive confirmation.</summary>
+  [TestMethod]
+  public async Task Compose_LocalReset_WithoutInteraction_FailsBeforeResolvingTargets()
+  {
+    var graph = CreateGraph();
+    ResourceCommandAnnotation command = graph.Local.Bootstrap.Resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Single(item => item.Name == "reset-local-data");
+    using ServiceProvider provider = new ServiceCollection().BuildServiceProvider();
+
+    ExecuteCommandResult result = await command.ExecuteCommand(new ExecuteCommandContext
+    {
+      ResourceName = "local-bootstrap",
+      Services = provider,
+      Logger = NullLogger.Instance,
+      Arguments = new InteractionInputCollection([]),
+      CancellationToken = CancellationToken.None,
+    });
+
+    Assert.IsFalse(result.Success);
+    StringAssert.Contains(result.Message, "interactive");
   }
 
   /// <summary>Verifies local safety/configuration and Python OTLP injection at the native boundary.</summary>
@@ -310,8 +361,8 @@ public sealed class ResourceCompositionTests
     return Path.GetFullPath(Path.Combine(bootstrapDirectory, "..", "AppHost"));
   }
 
-  private static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
-    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph()
+  internal static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
+    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph(string environmentName = "Development")
   {
     string hostDirectory = HostDirectory();
     var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
@@ -320,6 +371,7 @@ public sealed class ResourceCompositionTests
       DisableDashboard = true,
       Args = [],
     });
+    builder.Environment.EnvironmentName = environmentName;
     builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
       ["Parameters:sql-password"] = "local-test-password",
@@ -330,7 +382,9 @@ public sealed class ResourceCompositionTests
     LocalInfrastructure infrastructure = builder.AddInfrastructure("local-test-password");
     IResourceBuilder<PythonAppResource> exp = builder.AddExp(infrastructure, layout);
     LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
-    builder.AddApplications(layout, exp, local);
+    LocalApplicationResources applications = builder.AddApplications(layout, exp, local);
+    builder.AddLocalDataReset(new(infrastructure, local, applications,
+      new("arolariu-cosmos-data-en20261008", "arolariu-azurite-data", "arolariu-mssql-data")));
     return (builder, infrastructure, exp, local);
   }
 }
