@@ -20,7 +20,8 @@ internal static class StorageResources
       .RunAsEmulator(emulator => emulator
         .WithBlobPort(Constants.AzuriteBlobPort)
         .WithQueuePort(Constants.AzuriteQueuePort)
-        .WithDataVolume(Constants.AzuriteDataVolume))
+        .WithImageSHA256(Constants.AzuriteEmulatorImageSha256)
+        .WithDataVolume(Constants.AzuriteDataVolumeV3_35_0))
       // Native processes and the browser use fixed loopback ports, not DCP proxy ports.
       .WithEndpoint("blob", endpoint => endpoint.IsProxied = false)
       .WithEndpoint("queue", endpoint => endpoint.IsProxied = false)

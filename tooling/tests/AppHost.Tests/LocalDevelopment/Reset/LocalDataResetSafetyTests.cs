@@ -57,8 +57,23 @@ public sealed class LocalDataResetSafetyTests
   {
     LocalDataResetResources resources = CreateResources() with
     {
-      Volumes = new("not-the-captured-volume", "arolariu-azurite-data", "arolariu-mssql-data"),
+      Volumes = new("not-the-captured-volume", Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5),
     };
+
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      LocalDataResetSafety.ValidateResourceOwnership(resources, isDevelopment: true, isRunMode: true));
+  }
+
+  /// <summary>A substituted SQL or storage image cannot authorize reset against the captured data volumes.</summary>
+  [TestMethod]
+  [DataRow("storage")]
+  [DataRow("mssql")]
+  public void ValidateResourceOwnership_ReplacedPinnedImage_Refuses(string name)
+  {
+    LocalDataResetResources resources = CreateResources();
+    IResource resource = name == "storage" ? resources.Infrastructure.Storage.Resource
+      : resources.Infrastructure.SqlDatabase.Resource.Parent;
+    resource.Annotations.OfType<ContainerImageAnnotation>().Last().SHA256 = new string('a', 64);
 
     Assert.ThrowsExactly<InvalidOperationException>(() =>
       LocalDataResetSafety.ValidateResourceOwnership(resources, isDevelopment: true, isRunMode: true));
@@ -153,7 +168,7 @@ public sealed class LocalDataResetSafetyTests
       new LocalApplicationResources(
         graph.Builder.Resources.Single(resource => resource.Name == "api"),
         graph.Builder.Resources.Single(resource => resource.Name == "website")),
-      new("arolariu-cosmos-data-en20261008", "arolariu-azurite-data", "arolariu-mssql-data"));
+      new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5));
   }
 
   private static Dictionary<string, ResourceEvent> LiveStates(LocalDataResetResources resources)

@@ -23,12 +23,11 @@ using Microsoft.Extensions.Logging;
 /// Azurite ships with no default CORS rules, containers, or queues; without this hook every
 /// preflight OPTIONS fails with "No 'Access-Control-Allow-Origin' header is present on the
 /// requested resource", and the first upload to a missing container 404s with
-/// <c>ContainerNotFound</c>. With the named data volume in place (see <c>Program.cs</c>'s
-/// Azurite <c>WithDataVolume</c> call), Azurite now persists service-properties and
+/// <c>ContainerNotFound</c>. With <see cref="Constants.AzuriteDataVolumeV3_35_0"/>
+/// mounted by <see cref="StorageResources"/>, Azurite persists service-properties and
 /// containers across restarts in <c>/data/__azurite_db_blob__.json</c> and
 /// <c>__blobstorage__/</c> — but this bootstrap still runs on every AppHost startup as
-/// defense in depth: it recovers a fresh-volume state (e.g. after <c>docker volume rm
-/// arolariu-azurite-data</c>) without manual intervention, and both operations
+/// defense in depth: it provisions a fresh versioned volume without manual intervention, and both operations
 /// (CORS replace, <c>CreateIfNotExistsAsync</c>) are idempotent so the cost on a warm
 /// volume is negligible.
 /// </para>

@@ -67,10 +67,6 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     ReplaceVolume(infrastructure.Cosmos.Resource, volumes.Cosmos);
     ReplaceVolume(infrastructure.Storage.Resource, volumes.Storage);
     ReplaceVolume(infrastructure.SqlDatabase.Resource.Parent, volumes.Sql);
-    PinImage(infrastructure.Storage.Resource, "azure-storage/azurite", "3.35.0",
-      "647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37");
-    PinImage(infrastructure.SqlDatabase.Resource.Parent, "mssql/server", "2022-latest",
-      "d38c2a64812d775f844088e4e44ab33846eefc61157431bf9c8a3943a534c22e");
     string manifest = Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
     var bootstrap = builder.AddProject<Projects.LocalDevelopment_Bootstrap>("local-bootstrap")
       .WithReference(infrastructure.CosmosDatabase)
@@ -199,15 +195,6 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     resource.Annotations.Add(new ContainerMountAnnotation(name, previous.Target, ContainerMountType.Volume, isReadOnly: false));
   }
 
-  private static void PinImage(IResource resource, string image, string tag, string hash)
-  {
-    ContainerImageAnnotation annotation = resource.Annotations.OfType<ContainerImageAnnotation>().Single();
-    annotation.Registry = "mcr.microsoft.com";
-    annotation.Image = image;
-    annotation.Tag = tag;
-    annotation.SHA256 = hash;
-  }
-
   private static int FreePort()
   {
     using var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -263,9 +250,9 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     };
     start.ArgumentList.Add("image");
     start.ArgumentList.Add("inspect");
-    start.ArgumentList.Add("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38");
-    start.ArgumentList.Add("mcr.microsoft.com/azure-storage/azurite@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37");
-    start.ArgumentList.Add("mcr.microsoft.com/mssql/server@sha256:d38c2a64812d775f844088e4e44ab33846eefc61157431bf9c8a3943a534c22e");
+    start.ArgumentList.Add($"mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:{Constants.CosmosEmulatorImageSha256}");
+    start.ArgumentList.Add($"mcr.microsoft.com/azure-storage/azurite@sha256:{Constants.AzuriteEmulatorImageSha256}");
+    start.ArgumentList.Add($"mcr.microsoft.com/mssql/server@sha256:{Constants.SqlServerImageSha256}");
     start.ArgumentList.Add("--format");
     start.ArgumentList.Add("{{.Id}}");
     using Process process = Process.Start(start) ?? throw new InvalidOperationException("Cannot check fixture image availability.");

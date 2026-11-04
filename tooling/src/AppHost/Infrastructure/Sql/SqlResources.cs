@@ -19,7 +19,8 @@ internal static class SqlResources
     string readinessConnection = CreateConnectionString(sqlPassword, "master", 5);
     var password = builder.AddParameter("sql-password", secret: true);
     var sql = builder.AddSqlServer("mssql", password: password, port: Constants.SqlPort)
-      .WithDataVolume(Constants.SqlDataVolume)
+      .WithImageSHA256(Constants.SqlServerImageSha256)
+      .WithDataVolume(Constants.SqlDataVolumeV16_0_4305_5)
       // TDS uses direct TCP rather than DCP's application proxy.
       .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
       .WithIconName("Database");

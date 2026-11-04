@@ -25,9 +25,9 @@ internal static class LocalDataResetSafety
     ValidateMount(resources.Infrastructure.Cosmos.Resource, resources.Volumes.Cosmos, "/data");
     ValidateMount(resources.Infrastructure.Storage.Resource, resources.Volumes.Storage, "/data");
     ValidateMount(resources.Infrastructure.SqlDatabase.Resource.Parent, resources.Volumes.Sql, "/var/opt/mssql");
-    ContainerImageAnnotation? image = resources.Infrastructure.Cosmos.Resource.Annotations.OfType<ContainerImageAnnotation>()
-      .LastOrDefault();
-    if (image?.SHA256 != Constants.CosmosEmulatorImageSha256
+    if (!HasImageSha256(resources.Infrastructure.Cosmos.Resource, Constants.CosmosEmulatorImageSha256)
+      || !HasImageSha256(resources.Infrastructure.Storage.Resource, Constants.AzuriteEmulatorImageSha256)
+      || !HasImageSha256(resources.Infrastructure.SqlDatabase.Resource.Parent, Constants.SqlServerImageSha256)
       || !ReferenceEquals(resources.Infrastructure.Blobs.Resource.Parent, resources.Infrastructure.Storage.Resource)
       || !ReferenceEquals(resources.Infrastructure.Queues.Resource.Parent, resources.Infrastructure.Storage.Resource)
       || !ReferenceEquals(resources.Infrastructure.Tables.Resource.Parent, resources.Infrastructure.Storage.Resource))
@@ -106,6 +106,9 @@ internal static class LocalDataResetSafety
 
   private static string? ContainerId(ResourceEvent change) => change.Snapshot.Properties
     .Where(property => property.Name == "container.id").Select(property => property.Value?.ToString()).SingleOrDefault();
+
+  private static bool HasImageSha256(IResource resource, string expected) => resource.Annotations
+    .OfType<ContainerImageAnnotation>().LastOrDefault()?.SHA256 == expected;
 
   private static bool IsLocal(Uri uri) =>
     uri.IsLoopback && uri.Scheme is "http" or "https" && string.IsNullOrEmpty(uri.UserInfo)

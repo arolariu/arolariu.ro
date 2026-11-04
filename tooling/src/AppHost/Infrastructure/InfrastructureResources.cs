@@ -33,7 +33,7 @@ internal static class InfrastructureResources
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
         .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
-        .WithDataVolume(Constants.CosmosDataVolume)
+        .WithDataVolume(Constants.CosmosDataVolumeEn20261008)
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = false)
       .WithIconName("DatabaseMultiple");
@@ -45,8 +45,9 @@ internal static class InfrastructureResources
     LocalStorageResources storage = builder.AddLocalStorage();
     var redisPassword = builder.AddParameter("redis-password", secret: true);
     builder.AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
-      .WithDataVolume(Constants.RedisDataVolume)
-      // Local redis:alpine does not terminate TLS.
+      .WithImageSHA256(Constants.RedisImageSha256)
+      .WithDataVolume(Constants.RedisDataVolumeV8_6_3)
+      // Local Redis does not terminate TLS.
       .WithoutHttpsCertificate()
       .WithIconName("Memory");
     return new(sql, cosmos, database, invoices, merchants, storage.Storage, storage.Blobs, storage.Queues, storage.Tables);

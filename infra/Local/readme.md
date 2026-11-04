@@ -42,9 +42,29 @@ directly.
 
 #### Persistent data and explicit reset
 
-The Cosmos emulator is pinned to release `EN20261008` by digest `sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38`.
-Its writable `arolariu-cosmos-data-en20261008` volume is mounted at `/data`. SQL, Azurite, and Redis retain their existing volumes. The old
-`arolariu-cosmos-data` volume remains untouched as an archive; it is neither an active mount nor a reset target.
+All four Aspire infrastructure images are pinned by immutable digest and paired with explicit versioned volume names:
+
+| Service    | Image release                | SHA-256 digest                                                     | Data volume                       |
+| ---------- | ---------------------------- | ------------------------------------------------------------------ | --------------------------------- |
+| Cosmos     | `EN20261008`                 | `4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38` | `arolariu-cosmos-data-en20261008` |
+| SQL Server | 2022 CU27+GDR, `16.0.4305.5` | `cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718` | `arolariu-mssql-data-16.0.4305.5` |
+| Azurite    | `3.35.0`                     | `647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37` | `arolariu-azurite-data-3.35.0`    |
+| Redis      | `8.6.3`                      | `4d25e2fe601f7ffaeb4437cb6ced3518bc36edf34ebe98863c80836943d94529` | `arolariu-redis-data-8.6.3`       |
+
+The corresponding C# constants include the release in their identifiers: `CosmosDataVolumeEn20261008`, `SqlDataVolumeV16_0_4305_5`,
+`AzuriteDataVolumeV3_35_0`, and `RedisDataVolumeV8_6_3`. Cosmos, Azurite, and Redis retain their previously validated image releases. SQL
+uses the explicitly selected [CU27 security update](https://support.microsoft.com/en-us/help/5126934): the older cached SQL manifest was no
+longer published by MCR and would fail a clean pull.
+
+The new SQL, Azurite, and Redis volume names deliberately select fresh stores on the next Aspire start. The old `arolariu-mssql-data`,
+`arolariu-azurite-data`, `arolariu-redis-data`, and archived `arolariu-cosmos-data` volumes remain untouched; nothing is renamed, copied, or
+deleted automatically. Selfhost's separate volumes and images are unchanged. Reverting the declarations selects the old names again but does
+not migrate data written to the newer volumes.
+
+Cosmos's physical volume name is unchanged. If it already contains a completed initialization receipt while the new Azurite volume is empty,
+ordinary startup will not recreate seed scans or copy custom blobs from the old storage volume. Plan preservation/copying separately, or use
+the confirmed **Reset local data** command only if clearing the current Cosmos/SQL/storage user data and restoring the complete scenario is
+intentional. No automatic reset or migration resolves this mixed-store state.
 
 The older initialized emulator state was readable with the May image but failed with the October image's queries and feeds
 (`500 unknown type of jsonb container`). Fresh October storage works and persists across container recreation. Rebuilding only the logical

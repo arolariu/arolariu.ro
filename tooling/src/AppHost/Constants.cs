@@ -27,13 +27,19 @@ internal static class Constants
   public const string AnalysisQueueName = "invoice-analysis";
 
   // ── Volume names (data persistence across container restarts) ──
-  public const string SqlDataVolume = "arolariu-mssql-data";
+  public const string SqlDataVolumeV16_0_4305_5 = "arolariu-mssql-data-16.0.4305.5";
+  public const string SqlServerImageSha256 =
+      "cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718";
   // Keep the initialized Cosmos volume paired with its tested emulator image.
-  public const string CosmosDataVolume = "arolariu-cosmos-data-en20261008";
+  public const string CosmosDataVolumeEn20261008 = "arolariu-cosmos-data-en20261008";
   public const string CosmosEmulatorImageSha256 =
       "4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38";
-  public const string RedisDataVolume = "arolariu-redis-data";
-  public const string AzuriteDataVolume = "arolariu-azurite-data";
+  public const string RedisDataVolumeV8_6_3 = "arolariu-redis-data-8.6.3";
+  public const string RedisImageSha256 =
+      "4d25e2fe601f7ffaeb4437cb6ced3518bc36edf34ebe98863c80836943d94529";
+  public const string AzuriteDataVolumeV3_35_0 = "arolariu-azurite-data-3.35.0";
+  public const string AzuriteEmulatorImageSha256 =
+      "647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37";
 
   // ── Fixed dev ports — match infra/Local/Storage/docker-compose.yml ──
   public const int ApiPort = 5000;

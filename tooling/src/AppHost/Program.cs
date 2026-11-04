@@ -22,6 +22,6 @@ var exp = builder.AddExp(infrastructure, layout);
 LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
 var applications = builder.AddApplications(layout, exp, local);
 builder.AddLocalDataReset(new(infrastructure, local, applications,
-  new(Constants.CosmosDataVolume, Constants.AzuriteDataVolume, Constants.SqlDataVolume)));
+  new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5)));
 
 builder.Build().Run();

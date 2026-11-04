@@ -225,11 +225,29 @@ public sealed class ResourceCompositionTests
     var graph = CreateGraph();
     string?[] volumes = graph.Builder.Resources.SelectMany(resource => resource.Annotations
       .OfType<ContainerMountAnnotation>()).Select(mount => mount.Source).ToArray();
-    foreach (string volume in new[] { "arolariu-mssql-data", "arolariu-cosmos-data-en20261008",
-      "arolariu-azurite-data", "arolariu-redis-data" })
+    foreach (string volume in new[] { "arolariu-mssql-data-16.0.4305.5", "arolariu-cosmos-data-en20261008",
+      "arolariu-azurite-data-3.35.0", "arolariu-redis-data-8.6.3" })
     {
       CollectionAssert.Contains(volumes, volume);
     }
+    foreach (string legacy in new[] { "arolariu-mssql-data", "arolariu-azurite-data", "arolariu-redis-data" })
+    {
+      CollectionAssert.DoesNotContain(volumes, legacy);
+    }
+  }
+
+  /// <summary>Verifies native infrastructure cannot silently resolve a different image behind a mutable tag.</summary>
+  [TestMethod]
+  [DataRow("storage", "mcr.microsoft.com/azure-storage/azurite@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37")]
+  [DataRow("mssql", "mcr.microsoft.com/mssql/server@sha256:cf8f0ab2ebe61feec2eed2629061a07d247f791c2a8ddda74a4ac9f06a291718")]
+  [DataRow("redis", "docker.io/library/redis@sha256:4d25e2fe601f7ffaeb4437cb6ced3518bc36edf34ebe98863c80836943d94529")]
+  public void Compose_InfrastructureImages_UsesImmutableDigests(string name, string expectedImage)
+  {
+    var graph = CreateGraph();
+    IResource resource = graph.Builder.Resources.Single(resource => resource.Name == name);
+
+    Assert.IsTrue(resource.TryGetContainerImageName(out string? actualImage));
+    Assert.AreEqual(expectedImage, actualImage);
   }
 
   /// <summary>Verifies the emulator retains data with its tested image and never reuses incompatible legacy state.</summary>
@@ -384,7 +402,7 @@ public sealed class ResourceCompositionTests
     LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
     LocalApplicationResources applications = builder.AddApplications(layout, exp, local);
     builder.AddLocalDataReset(new(infrastructure, local, applications,
-      new("arolariu-cosmos-data-en20261008", "arolariu-azurite-data", "arolariu-mssql-data")));
+      new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5)));
     return (builder, infrastructure, exp, local);
   }
 }
