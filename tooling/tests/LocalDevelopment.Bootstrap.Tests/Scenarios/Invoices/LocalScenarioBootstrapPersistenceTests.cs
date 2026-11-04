@@ -128,6 +128,49 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       DateOnly.FromDateTime(document.Value<DateTime>("CreatedAt").ToUniversalTime()));
   }
 
+  /// <summary>An interrupted create-only initialization preserves an edited seed while completing missing records.</summary>
+  [TestMethod]
+  public async Task RunAsync_IncompleteInitializationWithEditedSeed_PreservesEditAndCompletesReceipt()
+  {
+    CosmosClient client = cosmos ?? throw new InvalidOperationException();
+    Database database = client.GetDatabase("primary");
+    SeedScenarioManifest manifest = SeedData.LoadManifest(ScenarioPath);
+    DateOnly anchor = new(2026, 11, 3);
+    MaterializedSeedScenario scenario = SeedData.Materialize(manifest, anchor);
+    Container state = (await database.CreateContainerAsync("local-development", "/id")).Container;
+    await state.CreateItemAsync(new
+    {
+      id = "invoice-scenario",
+      manifestVersion = manifest.Version,
+      anchorDateUtc = "2026-11-03",
+      completed = false,
+    }, new PartitionKey("invoice-scenario"));
+    var seed = scenario.Invoices[0];
+    Container invoices = database.GetContainer("invoices");
+    var partition = new PartitionKey(seed.UserIdentifier.ToString());
+    await invoices.CreateItemAsync(seed, partition);
+    JObject document = (await invoices.ReadItemAsync<JObject>(seed.id.ToString(), partition)).Resource;
+    document["Name"] = "edited before interrupted retry";
+    JObject before = (await invoices.ReplaceItemAsync(document, seed.id.ToString(), partition)).Resource;
+    string? version = before.Value<string>("_etag");
+    Assert.IsFalse(string.IsNullOrEmpty(version));
+
+    await CreateBootstrap(anchor.AddDays(1)).RunAsync(ScenarioPath, CancellationToken.None);
+
+    JObject preserved = (await invoices.ReadItemAsync<JObject>(seed.id.ToString(), partition)).Resource;
+    Assert.AreEqual("edited before interrupted retry", preserved.Value<string>("Name"));
+    Assert.AreEqual(version, preserved.Value<string>("_etag"),
+      "A successful 409 recovery must not rewrite the already-present seed.");
+    JObject receipt = (await state.ReadItemAsync<JObject>("invoice-scenario", new PartitionKey("invoice-scenario"))).Resource;
+    Assert.IsTrue(receipt.Value<bool>("completed"));
+    Assert.AreEqual("2026-11-03", receipt.Value<string>("anchorDateUtc"));
+    var missing = scenario.Invoices[1];
+    using ResponseMessage restored = await invoices.ReadItemStreamAsync(
+      missing.id.ToString(), new PartitionKey(missing.UserIdentifier.ToString()));
+    Assert.AreEqual(HttpStatusCode.OK, restored.StatusCode,
+      "The incomplete receipt must resume missing writes instead of skipping all seeding.");
+  }
+
   /// <summary>A different fixture version requires an explicit reset instead of silently rewriting data.</summary>
   [TestMethod]
   public async Task RunAsync_ManifestVersionChanged_RefusesMutation()

@@ -1,9 +1,11 @@
 namespace AppHost.Infrastructure.Sql;
 
 using System.Data.Common;
+using arolariu.Backend.Core.Auth.Brokers;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
-/// <summary>Clears user databases while preserving SQL system databases and server configuration.</summary>
+/// <summary>Clears user databases and restores the application-owned Identity schema without changing server configuration.</summary>
 internal sealed class LocalSqlDataResetter(Func<DbConnection> createMasterConnection)
 {
   internal async Task ClearAsync(CancellationToken cancellationToken)
@@ -38,11 +40,20 @@ internal sealed class LocalSqlDataResetter(Func<DbConnection> createMasterConnec
   internal async Task EnsureApplicationDatabaseAsync(CancellationToken cancellationToken)
   {
     await using DbConnection connection = createMasterConnection();
+    // Capture credentials before SqlClient redacts the opened connection string.
+    var settings = new SqlConnectionStringBuilder(connection.ConnectionString)
+    {
+      InitialCatalog = Constants.SqlDatabaseName,
+    };
     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
     RequireMaster(connection);
     await using DbCommand create = connection.CreateCommand();
     create.CommandText = SqlResources.DatabaseCreationScript;
     await create.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    var options = new DbContextOptionsBuilder<AuthDbContext>()
+      .UseSqlServer(settings.ConnectionString).Options;
+    await using var identity = new AuthDbContext(options);
+    await identity.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
   }
 
   private static bool IsSystemDatabase(string name) =>

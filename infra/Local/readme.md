@@ -84,7 +84,7 @@ command is local Development/run-mode only; headless invocations without interac
 | ------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `cosmos`      | Every user database, container, document, and initialization receipt | Restore `primary`, invoice/merchant partition contracts, and the three-persona seed.            |
 | `storage`     | Every blob container/blob, queue/message, and table/entity           | Keep service configuration/CORS; restore invoice scans/container and the empty analysis queue.  |
-| `mssql`       | Every non-system user database, schema, and row                      | Keep `master`, `model`, `msdb`, `tempdb`, server configuration/logins; recreate `arolariu-sql`. |
+| `mssql`       | Every non-system user database, schema, and row                      | Keep system databases/server configuration/logins; recreate `arolariu-sql` and its existing `AuthDbContext` Identity schema. |
 
 Before stopping writers or deleting anything, reset requires the captured native containers to be running with their own allocated
 endpoints. It rechecks their physical container identities before each store/initialization/resumption phase; unavailable or replaced
@@ -93,6 +93,8 @@ instances cannot authorize deletion through retained loopback ports. Shutdown at
 The API, website, and any active/pending initializer are quiesced before deletion. Prerequisites are provisioned explicitly, then a new
 Bootstrap execution must finish successfully before the API and website restart and pass fresh health checks. Independent sites, Redis,
 selfhost resources, and the legacy Cosmos volume are not cleared. Named volumes and database-engine files are not reformatted or deleted.
+Identity schema creation is part of confirmed reset only; ordinary startup and authentication policies are unchanged, and existing stores
+are not automatically migrated.
 
 The five-minute operation budget starts only after confirmation succeeds; reading the dialog does not consume destructive-work time. After
 reseeding, unavailable exp and local Identity executions are recovered before the API resumes, while healthy dependency executions are
