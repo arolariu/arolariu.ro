@@ -378,6 +378,9 @@ AppHost orchestrates the entire dev stack:
 - **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
   dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
   scenario.
+- **Pinned Aspire CLI** — `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK. The first launch, or the first
+  after an SDK change, can download the CLI bundle (Dashboard and DCP) through the configured NuGet sources; see the
+  [tooling guide](tooling/README.md#development-and-debugging).
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via

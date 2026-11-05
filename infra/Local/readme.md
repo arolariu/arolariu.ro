@@ -11,6 +11,9 @@ Two coexisting modes for local development.
 
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`) declares and orchestrates everything natively:
 
+- **Pinned Aspire CLI**: `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK through `dnx`, which supplies the
+  Dashboard and DCP from its bundle. The first launch, or the first after an SDK change, can download the tool and bundle through the
+  configured NuGet sources; offline launches need those caches. See the [tooling guide](../../tooling/README.md#development-and-debugging).
 - **Infrastructure**: SQL Server, the Cosmos Linux vNext emulator, Azurite, and Redis are spawned through Aspire integrations
   (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
 - **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`,
