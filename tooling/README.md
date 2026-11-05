@@ -154,8 +154,12 @@ AppHost launch currently uses Debug: the SDK's CLI run hook does not forward `--
 executable. Release builds and tests remain supported; recheck this launch limitation when upgrading the SDK.
 
 Console logging defaults to warnings and errors, with `Aspire.Hosting.DistributedApplication` retained at information level for startup,
-dashboard login, and endpoint announcements. The engine-specific VS Code profiles apply the same console-only filter. Other logging
-providers retain their existing levels; application resource logs remain available in the dashboard.
+dashboard login, and endpoint announcements. A console-specific default is required because the Aspire CLI's `ASPIRE_LOGLEVEL=Debug`
+overrides the generic default, but console-specific rules also take precedence over Aspire's built-in category filters. The console section
+therefore restates those filters: Kestrel, gRPC, and dashboard third-party logs report errors only, Kestrel server warnings remain visible,
+and health-check logs are omitted because readiness is reported by the dashboard. Readiness waits are unchanged. A unit test fails if a
+future Aspire version adds a stricter filter that the console section does not match. The engine-specific VS Code profiles apply the same
+console-only filter. Other logging providers retain their existing levels; application resource logs remain available in the dashboard.
 
 The existing [VS Code profiles](../.vscode/launch.json) and [tasks](../.vscode/tasks.json) target `tooling\src\AppHost`. Visual Studio uses
 the AppHost project in [the root solution](../arolariu.slnx). Set source or method breakpoints through the debugger's symbol search rather
