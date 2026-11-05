@@ -22,7 +22,10 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "podman",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "debuggers": {
         "apphost": {},
@@ -40,7 +43,10 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "docker",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "debuggers": {
         "apphost": {},
@@ -67,7 +73,10 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "podman",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "presentation": {"group": "10-aspire", "order": 3}
     },
@@ -80,7 +89,10 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "docker",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "presentation": {"group": "10-aspire", "order": 4}
     },

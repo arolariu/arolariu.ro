@@ -3,7 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsAspireHost>true</IsAspireHost>
-    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode>
     <UserSecretsId>arolariu-apphost-local</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>

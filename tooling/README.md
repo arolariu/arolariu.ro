@@ -143,10 +143,19 @@ The root Aspire entry points and engine flags are unchanged. Ordinary startup pr
 data without overwriting existing records. Consult the linked runbook before using the destructive dashboard **Reset local data** command;
 certificate-free website startup can still affect local trust.
 
-AppHost sets `AspireUseCliBundle` to `false`. `Aspire.AppHost.Sdk` restores platform-specific Dashboard and DCP packages matching the
-centrally managed `Aspire.Hosting.AppHost` version, so an installed Aspire CLI is not required and `dotnet run` starts AppHost directly.
-CLI-only features are unavailable in this mode. Aspire emits `ASPIRE010` for this opt-out; that warning remains visible without changing the
-tooling warning policy.
+AppHost enables `AspireUseCliBundle` with `AspireCliInvocationMode=DnxPinned`. The SDK obtains Dashboard and DCP from the CLI bundle rather
+than platform-specific orchestration NuGet packages. `dotnet run` delegates to the exact `Aspire.Cli` version paired with
+`Aspire.AppHost.Sdk` through `dnx`, rather than selecting whichever global CLI is on `PATH`. Initial bundle preparation or a changed SDK
+version can require downloads through the configured NuGet sources; warm/offline use requires the corresponding tool and bundle caches. The
+existing root commands and engine flags remain unchanged. VS Code's Aspire extension invokes its selected CLI directly, so keep that
+installation aligned with the project's SDK.
+
+AppHost launch currently uses Debug: the SDK's CLI run hook does not forward `--configuration Release` and can fail looking for a Debug
+executable. Release builds and tests remain supported; recheck this launch limitation when upgrading the SDK.
+
+Console logging defaults to warnings and errors, with `Aspire.Hosting.DistributedApplication` retained at information level for startup,
+dashboard login, and endpoint announcements. The engine-specific VS Code profiles apply the same console-only filter. Other logging
+providers retain their existing levels; application resource logs remain available in the dashboard.
 
 The existing [VS Code profiles](../.vscode/launch.json) and [tasks](../.vscode/tasks.json) target `tooling\src\AppHost`. Visual Studio uses
 the AppHost project in [the root solution](../arolariu.slnx). Set source or method breakpoints through the debugger's symbol search rather
