@@ -155,12 +155,17 @@ live-instance checks, and process sequencing. Bootstrap remains the guarded comm
 canonical four `SeedData` JSON content files. Data.Tests links those files rather than duplicating them. Identity remains an independent
 persona/token executable. AppHost and Bootstrap reference Data; no helper depends on the other helper.
 
-Source projects live under `tooling\src`; root launch commands are unchanged. Each of the four production projects has an owning MSTest
-project:
+Data exposes static `NoSqlDataProvider`, `SqlDataProvider`, and `StorageDataProvider` entry points; NoSQL currently uses Cosmos DB.
+`LocalDevelopment.Common.Http.Resilience` supplies the dependency-free named retry contract and executor shared by AppHost and Data. Data
+configures provider-specific policies; existing attempts, delays, cancellation, and logging behavior are preserved. See
+[tooling project ownership](../../tooling/README.md#project-ownership) for extension points.
+
+Source projects live under `tooling\src`; root launch commands are unchanged. Each production project has an owning MSTest project:
 
 ```powershell
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Common.Tests\LocalDevelopment.Common.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```

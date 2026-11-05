@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Net;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using LocalDevelopment.Data.Cosmos;
+using LocalDevelopment.Data.NoSql;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using static LocalDevelopment.Data.LocalDataContract;
@@ -37,7 +37,7 @@ internal sealed class LocalCosmosSeedStore(
     CancellationToken cancellationToken)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(manifestVersion);
-    Database database = await CosmosProvisioning.EnsureInvoiceContainersAsync(
+    Database database = await NoSqlDataProvider.EnsureScenarioContainersAsync(
       cosmosClient, cancellationToken).ConfigureAwait(false);
     Container container = (await database.CreateContainerIfNotExistsAsync(
       InitializationContainerName, "/id", cancellationToken: cancellationToken).ConfigureAwait(false)).Container;

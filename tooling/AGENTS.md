@@ -8,11 +8,14 @@ commands, layout, package policy, and debugger entry points. This guide adds onl
 - `src\AppHost\LocalApplication.cs` owns native composition and cross-capability wiring. Resource slices configure only their own resources;
   graph tests call production composition, while the isolated native fixture shares only the wait graph.
 - `src\LocalDevelopment.Data` owns scenario validation, materialization, initialization, and provider operations without Aspire
-  dependencies.
+  dependencies. `NoSqlDataProvider`, `SqlDataProvider`, and `StorageDataProvider` are stateless static capability entry points; the NoSQL
+  implementation still uses Cosmos DB.
+- `src\LocalDevelopment.Common` owns provider-neutral retry contracts, named-policy lookup, execution, and HTTP/network classification in
+  `Http\Resilience`, with no package or project dependencies. Data owns SDK-specific policy configuration in `LocalDataRetryPolicies`.
 - `src\LocalDevelopment.Bootstrap` owns the guarded command, cancellation, SDK client lifetime, and canonical seed fixture packaging.
 - `src\LocalDevelopment.Identity` owns local persona/token behavior.
 - Neither helper references AppHost or the other helper.
-- AppHost and Bootstrap may reference Data; Identity remains independent.
+- AppHost and Bootstrap may reference Data; AppHost and Data use Common. Identity remains independent.
 - Data owns clear/restore SDK operations and schema restoration, not authorization. AppHost retains reset confirmation, native-target
   validation, repeated live-instance checks, and process lifecycle sequencing.
 - Do not copy Invoices Standard layers or add a resource/repository framework to these small executable projects.

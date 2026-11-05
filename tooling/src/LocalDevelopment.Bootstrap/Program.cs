@@ -74,14 +74,10 @@ internal static class Program
         new BlobServiceClient(options.BlobStorageConnectionString);
       var queueServiceClient =
         new QueueServiceClient(options.QueueStorageConnectionString);
-      var storage = new LocalStorageProvisioner(
-        blobServiceClient,
-        queueServiceClient);
-
       if (ensureStorageOnly)
       {
-        await storage
-          .EnsureStorageAsync(cancellationToken)
+        await StorageDataProvider
+          .EnsureStorageAsync(blobServiceClient, queueServiceClient, cancellationToken)
           .ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return 0;

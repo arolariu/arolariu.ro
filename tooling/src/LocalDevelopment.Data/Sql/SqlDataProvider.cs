@@ -6,13 +6,13 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>Clears user databases and restores the application-owned Identity schema without changing server configuration.</summary>
-/// <param name="createMasterConnection">Creates an owned master connection to the already-authorized local SQL target.</param>
-public sealed class LocalSqlDataResetter(Func<DbConnection> createMasterConnection)
+public static class SqlDataProvider
 {
   /// <summary>Deletes user databases while preserving all SQL system databases and server configuration.</summary>
+  /// <param name="createMasterConnection">Creates an owned master connection to the already-authorized local SQL target.</param>
   /// <param name="cancellationToken">Cancels catalog enumeration or deletion between databases.</param>
   /// <returns>A task that completes after user databases have been removed.</returns>
-  public async Task ClearAsync(CancellationToken cancellationToken)
+  public static async Task ClearAsync(Func<DbConnection> createMasterConnection, CancellationToken cancellationToken)
   {
     cancellationToken.ThrowIfCancellationRequested();
     await using DbConnection connection = createMasterConnection();
@@ -42,9 +42,11 @@ public sealed class LocalSqlDataResetter(Func<DbConnection> createMasterConnecti
   }
 
   /// <summary>Restores the application database and the existing Identity schema.</summary>
+  /// <param name="createMasterConnection">Creates an owned master connection to the already-authorized local SQL target.</param>
   /// <param name="cancellationToken">Cancels database and schema creation.</param>
   /// <returns>A task that completes once the application schema exists.</returns>
-  public async Task EnsureApplicationDatabaseAsync(CancellationToken cancellationToken)
+  public static async Task EnsureApplicationDatabaseAsync(
+    Func<DbConnection> createMasterConnection, CancellationToken cancellationToken)
   {
     await using DbConnection connection = createMasterConnection();
     // Capture credentials before SqlClient redacts the opened connection string.

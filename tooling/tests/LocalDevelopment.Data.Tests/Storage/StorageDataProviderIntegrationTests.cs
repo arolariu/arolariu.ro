@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("LocalDataIntegration")]
 [DoNotParallelize]
-public sealed class LocalStorageDataResetterTests
+public sealed class StorageDataProviderIntegrationTests
 {
   /// <summary>Exercises later SDK pages and real deletes for blobs, queues, and tables.</summary>
   [TestMethod]
@@ -57,18 +57,16 @@ public sealed class LocalStorageDataResetterTests
     await foreach (QueueItem item in queues.GetQueuesAsync()) { queueItems.Add(item); }
     await foreach (TableItem item in tables.QueryAsync()) { tableItems.Add(item); }
     Response raw = (await blobs.GetPropertiesAsync()).GetRawResponse();
-    var resetter = new LocalStorageDataResetter(
+    await StorageDataProvider.ClearAsync(
       new PaginatedBlobs(blobs, containers, raw),
       new PaginatedQueues(queues, queueItems, raw),
-      new PaginatedTables(tables, tableItems, raw));
-
-    await resetter.ClearAsync(CancellationToken.None);
+      new PaginatedTables(tables, tableItems, raw), CancellationToken.None);
 
     Assert.IsFalse(await blobs.GetBlobContainersAsync().GetAsyncEnumerator().MoveNextAsync());
     Assert.IsFalse(await queues.GetQueuesAsync().GetAsyncEnumerator().MoveNextAsync());
     Assert.IsFalse(await tables.QueryAsync().GetAsyncEnumerator().MoveNextAsync());
     Assert.AreEqual("https://fixture.invalid", (await blobs.GetPropertiesAsync()).Value.Cors.Single().AllowedOrigins);
-    await resetter.EnsureStorageAsync(CancellationToken.None);
+    await StorageDataProvider.RestoreStorageAsync(blobs, queues, CancellationToken.None);
     Assert.AreEqual(PublicAccessType.Blob, (await blobs.GetBlobContainerClient("invoices").GetAccessPolicyAsync()).Value.BlobPublicAccess);
     Assert.IsTrue((await queues.GetQueueClient("invoice-analysis").ExistsAsync()).Value);
   }

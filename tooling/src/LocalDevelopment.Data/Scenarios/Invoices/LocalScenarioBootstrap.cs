@@ -1,7 +1,10 @@
 namespace LocalDevelopment.Data.Scenarios.Invoices;
 
-using LocalDevelopment.Data.Resilience;
+using System.Globalization;
+using Azure;
+using LocalDevelopment.Common.Http.Resilience;
 using LocalDevelopment.Data.Scenarios.Invoices.Storage;
+using Microsoft.Azure.Cosmos;
 
 /// <summary>
 /// Coordinates resumable first-use seeding while preserving existing local data.
@@ -10,7 +13,8 @@ internal sealed class LocalScenarioBootstrap(
   ILocalCosmosSeedStore cosmos,
   ILocalAzuriteSeedWriter storage,
   TimeProvider timeProvider,
-  TransientRetry? retry = null)
+  RetryPolicy? retry = null,
+  TextWriter? retryLog = null)
 {
   internal async Task RunAsync(
     string seedDataDirectory,
@@ -23,7 +27,7 @@ internal sealed class LocalScenarioBootstrap(
     MaterializedSeedScenario proposedScenario =
       SeedData.Materialize(manifest, anchor);
 
-    await (retry ?? TransientRetry.None).ExecuteAsync(async token =>
+    await RetryExecutor.ExecuteAsync(retry ?? LocalDataRetryPolicies.Default[LocalDataRetryPolicies.None], async token =>
     {
       token.ThrowIfCancellationRequested();
       SeedInitializationState state = await cosmos.ReadOrCreateInitializationAsync(
@@ -43,6 +47,20 @@ internal sealed class LocalScenarioBootstrap(
       await cosmos.WriteMissingAsync(scenario, token).ConfigureAwait(false);
       token.ThrowIfCancellationRequested();
       await cosmos.CompleteInitializationAsync(state, token).ConfigureAwait(false);
-    }, cancellationToken).ConfigureAwait(false);
+    }, cancellationToken, context => LogRetryAsync(retryLog ?? TextWriter.Null, context),
+      (wait, token) => Task.Delay(wait, timeProvider, token)).ConfigureAwait(false);
   }
+
+  internal static Task LogRetryAsync(TextWriter log, RetryContext context) =>
+    log.WriteLineAsync(string.Create(CultureInfo.InvariantCulture,
+      $"Local development bootstrap attempt {context.Attempt}/{context.MaxAttempts} failed with {Describe(context.Exception)}; retrying in {context.Delay.TotalSeconds:0.###} s."));
+
+  private static string Describe(Exception exception) => exception switch
+  {
+    CosmosException cosmos => string.Create(CultureInfo.InvariantCulture,
+      $"{nameof(CosmosException)} {(int)cosmos.StatusCode}"),
+    RequestFailedException storage => string.Create(CultureInfo.InvariantCulture,
+      $"{nameof(RequestFailedException)} {storage.Status}"),
+    _ => exception.GetType().Name,
+  };
 }

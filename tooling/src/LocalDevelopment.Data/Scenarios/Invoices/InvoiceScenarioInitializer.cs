@@ -2,7 +2,6 @@ namespace LocalDevelopment.Data.Scenarios.Invoices;
 
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
-using LocalDevelopment.Data.Resilience;
 using LocalDevelopment.Data.Scenarios.Invoices.Storage;
 using Microsoft.Azure.Cosmos;
 
@@ -20,11 +19,15 @@ public sealed class InvoiceScenarioInitializer(
   /// <param name="seedDataDirectory">The directory containing the four coordinated persona JSON files.</param>
   /// <param name="cancellationToken">Cancels initialization without rolling back completed writes.</param>
   /// <returns>A task that completes when the initialization receipt is complete.</returns>
-  public Task InitializeAsync(string seedDataDirectory, CancellationToken cancellationToken) =>
-    new LocalScenarioBootstrap(
+  public Task InitializeAsync(string seedDataDirectory, CancellationToken cancellationToken)
+  {
+    ArgumentNullException.ThrowIfNull(timeProvider);
+    return new LocalScenarioBootstrap(
       new LocalCosmosSeedStore(cosmos),
       new LocalAzuriteSeedWriter(blobs, queues),
       timeProvider,
-      TransientRetry.CreateDefault(retryLog, timeProvider))
+      LocalDataRetryPolicies.Default[LocalDataRetryPolicies.ScenarioTransient],
+      retryLog)
       .RunAsync(seedDataDirectory, cancellationToken);
+  }
 }

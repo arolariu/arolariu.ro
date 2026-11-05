@@ -7,6 +7,8 @@ using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
+using global::LocalDevelopment.Common.Http.Resilience;
+using global::LocalDevelopment.Data;
 using global::LocalDevelopment.Data.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -45,8 +47,6 @@ internal static class AzuriteBootstrap
   // exp's config.docker.json and the API's blob-storage health-check setup.
   private const string AzuriteAccountKey =
       "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
-  private const int MaxAttempts = 6;
 
   private const string HealthCheckName = "azurite-bootstrap";
 
@@ -111,15 +111,14 @@ internal static class AzuriteBootstrap
       ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
       var blobServiceClient = new BlobServiceClient(connectionString);
       var queueServiceClient = new QueueServiceClient(connectionString);
-      var provisioner = new LocalStorageProvisioner(blobServiceClient, queueServiceClient);
-      await ApplyCorsWithRetryAsync(provisioner, logger, ct).ConfigureAwait(false);
+      await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
       await EnsureContainersWithRetryAsync(
-        provisioner,
+        blobServiceClient,
         blobContainerNames,
         logger,
         ct).ConfigureAwait(false);
       await EnsureQueuesWithRetryAsync(
-        provisioner,
+        queueServiceClient,
         queueNames,
         logger,
         ct).ConfigureAwait(false);
@@ -226,21 +225,15 @@ internal static class AzuriteBootstrap
     ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
     ArgumentNullException.ThrowIfNull(operation);
     ArgumentNullException.ThrowIfNull(delay);
-    for (int attempt = 1; ; attempt++)
+    await RetryExecutor.ExecuteAsync(LocalDataRetryPolicies.Default[LocalDataRetryPolicies.AzuriteStartup],
+      operation, cancellationToken, context =>
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      try
+      if (logger is not null)
       {
-        await operation(cancellationToken).ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-        return;
+        AttemptFailed(logger, operationName, context.Attempt, (int)context.Delay.TotalSeconds, context.Exception);
       }
-      catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxAttempts)
-      {
-        if (logger is not null) { AttemptFailed(logger, operationName, attempt, attempt, exception); }
-        await delay(TimeSpan.FromSeconds(attempt), cancellationToken).ConfigureAwait(false);
-      }
-    }
+      return Task.CompletedTask;
+    }, delay).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -275,15 +268,15 @@ internal static class AzuriteBootstrap
   }
 
   private static Task ApplyCorsWithRetryAsync(
-      LocalStorageProvisioner provisioner, ILogger? logger, CancellationToken ct)
+      BlobServiceClient blobs, ILogger? logger, CancellationToken ct)
     => RetryAsync("CORS", async token =>
     {
-      await provisioner.ApplyStartupCorsAsync(token).ConfigureAwait(false);
+      await StorageDataProvider.ApplyStartupCorsAsync(blobs, token).ConfigureAwait(false);
       if (logger is not null) { CorsApplied(logger, null); }
     }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(
-      LocalStorageProvisioner provisioner,
+      BlobServiceClient blobs,
       IReadOnlyList<string> containerNames,
       ILogger? logger,
       CancellationToken ct)
@@ -294,7 +287,7 @@ internal static class AzuriteBootstrap
     {
       foreach (var name in containerNames)
       {
-        bool created = await provisioner.EnsureStartupContainerAsync(name, token).ConfigureAwait(false);
+        bool created = await StorageDataProvider.EnsureStartupContainerAsync(blobs, name, token).ConfigureAwait(false);
         if (!created)
         {
           if (logger is not null) { ContainerAlreadyExists(logger, name, null); }
@@ -308,7 +301,7 @@ internal static class AzuriteBootstrap
   }
 
   private static async Task EnsureQueuesWithRetryAsync(
-      LocalStorageProvisioner provisioner,
+      QueueServiceClient queues,
       IReadOnlyList<string> queueNames,
       ILogger? logger,
       CancellationToken cancellationToken)
@@ -322,7 +315,7 @@ internal static class AzuriteBootstrap
     {
       foreach (string queueName in queueNames)
       {
-        await provisioner.EnsureQueueAsync(queueName, token).ConfigureAwait(false);
+        await StorageDataProvider.EnsureQueueAsync(queues, queueName, token).ConfigureAwait(false);
         if (logger is not null) { QueueReady(logger, queueName, null); }
       }
 

@@ -1,8 +1,8 @@
-namespace LocalDevelopment.Data.Tests.Cosmos;
+namespace LocalDevelopment.Data.Tests.NoSql;
 
 using System.Net;
 using System.Text.Json;
-using global::LocalDevelopment.Data.Cosmos;
+using global::LocalDevelopment.Data.NoSql;
 using global::LocalDevelopment.Tests;
 using Microsoft.Azure.Cosmos;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("LocalDataIntegration")]
 [DoNotParallelize]
-public sealed class LocalCosmosDataResetterTests
+public sealed class NoSqlDataProviderTests
 {
   private CosmosClient? client;
 
@@ -42,7 +42,7 @@ public sealed class LocalCosmosDataResetterTests
     options.CustomHandlers.Add(handler);
     using var paginated = new CosmosClient(LocalDataTestFixture.CosmosConnectionString, options);
 
-    await new LocalCosmosDataResetter(paginated).ClearAsync(CancellationToken.None);
+    await NoSqlDataProvider.ClearAsync(paginated, CancellationToken.None);
 
     using FeedIterator<DatabaseProperties> remaining = (client ?? throw new InvalidOperationException())
       .GetDatabaseQueryIterator<DatabaseProperties>();
@@ -57,10 +57,9 @@ public sealed class LocalCosmosDataResetterTests
   public async Task EnsureScenarioContainersAsync_AfterClear_RestoresPartitionContracts()
   {
     CosmosClient active = client ?? throw new InvalidOperationException();
-    var resetter = new LocalCosmosDataResetter(active);
-    await resetter.ClearAsync(CancellationToken.None);
+    await NoSqlDataProvider.ClearAsync(active, CancellationToken.None);
 
-    await resetter.EnsureScenarioContainersAsync(CancellationToken.None);
+    await NoSqlDataProvider.EnsureScenarioContainersAsync(active, CancellationToken.None);
 
     Assert.AreEqual("/UserIdentifier",
       (await active.GetContainer("primary", "invoices").ReadContainerAsync()).Resource.PartitionKeyPath);

@@ -15,11 +15,13 @@ tooling\
   src\
     AppHost\
     LocalDevelopment.Bootstrap\
+    LocalDevelopment.Common\
     LocalDevelopment.Data\
     LocalDevelopment.Identity\
   tests\
     AppHost.Tests\
     LocalDevelopment.Bootstrap.Tests\
+    LocalDevelopment.Common.Tests\
     LocalDevelopment.Data.Tests\
     LocalDevelopment.Identity.Tests\
 ```
@@ -39,6 +41,19 @@ authorization, repeated live-instance checks, and writer shutdown/restart orderi
 guarded command, cancellation, SDK client lifetime, and fixture packaging. AppHost and Bootstrap may reference Data. Identity owns
 loopback-only persona lookup and token creation and remains independent. The helper executables do not reference AppHost or one another.
 They do not adopt the API's Invoices service-layer hierarchy.
+
+Provider operations have one static entry point per capability: `NoSql\NoSqlDataProvider`, `Sql\SqlDataProvider`, and
+`Storage\StorageDataProvider`. They receive caller-owned clients or connection factories rather than keeping global client state. `NoSql` is
+the capability name; its current implementation still uses the Cosmos SDK and existing partition contracts. Storage's create-only
+`EnsureStorageAsync`, startup access/CORS operations, and post-deletion `RestoreStorageAsync` remain distinct.
+
+The dependency-free Common library owns `LocalDevelopment.Common.Http.Resilience`: the retry contract, immutable named-policy registry,
+executor, and HTTP/network failure classification. Data's `LocalDataRetryPolicies` configures the SDK-specific profiles; AppHost and Data
+use the same executor. `azurite-startup` retains six attempts and linear waits, `scenario-transient` retains five attempts and doubling
+waits, and `storage-deletion-pending` retains thirty attempts with one-second waits only for deletion-in-progress conflicts. To configure a
+case, copy its `RetryPolicy` with the required settings and register it by name in a `RetryPolicyRegistry`; callers select it with the
+registry indexer. Retry logging stays at the call site. Common references neither Aspire nor provider/domain projects and adds no retry
+package dependency.
 
 Each test project directly references only its production owner. AppHost's native project-resource references remain necessary for its
 graph. Bootstrap owns the fully expanded `SeedData\alice.json`, `bob.json`, `charlie.json`, and `dmitryi.json` source fixtures; Identity
@@ -67,11 +82,13 @@ From the repository root:
 ```powershell
 dotnet build tooling\src\AppHost\AppHost.csproj
 dotnet build tooling\src\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj
+dotnet build tooling\src\LocalDevelopment.Common\LocalDevelopment.Common.csproj
 dotnet build tooling\src\LocalDevelopment.Data\LocalDevelopment.Data.csproj
 dotnet build tooling\src\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj
 
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Common.Tests\LocalDevelopment.Common.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```
@@ -91,17 +108,30 @@ checked before any cleanup. The native acceptance case starts its own uniquely s
 instead of the website/API applications. It requires unoccupied standard service ports and an already trusted development certificate; it
 does not install trust, packages, or missing images.
 
+Run native acceptance without concurrent tooling builds or test suites. Its helper processes use the shared build outputs, and cold emulator
+initialization and application health checks share a bounded startup deadline.
+
 From the repository root, with the reviewed fixture images already available:
 
 ```powershell
-$env:AROLARIU_CONTAINER_ENGINE = "rancher"
+$engine = "rancher" # Or "podman"; run the engines sequentially because fixture ports are shared.
+$env:AROLARIU_CONTAINER_ENGINE = $engine
 $env:AROLARIU_RUN_LOCAL_DATA_TESTS = "1"
 $env:AROLARIU_LOCAL_DATA_TEST_SCOPE = "arolariu-seed-tests-" + [guid]::NewGuid().ToString("N")
-npm run containers:compose -- --engine rancher --file tooling\tests\Fixtures\local-data.compose.yml -- up -d --wait
+npm run containers:compose -- --engine $engine --file tooling\tests\Fixtures\local-data.compose.yml -- -p $env:AROLARIU_LOCAL_DATA_TEST_SCOPE up -d
+
+# Repeat until BOTH containers report healthy before running the tests.
+$cli = if ($engine -eq "rancher") { "docker" } else { "podman" }
+& $cli inspect --format '{{.Name}} {{.State.Health.Status}}' `
+  "$env:AROLARIU_LOCAL_DATA_TEST_SCOPE-cosmos" "$env:AROLARIU_LOCAL_DATA_TEST_SCOPE-storage"
+
 dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
-npm run containers:compose -- --engine rancher --file tooling\tests\Fixtures\local-data.compose.yml -- down
+npm run containers:compose -- --engine $engine --file tooling\tests\Fixtures\local-data.compose.yml -- -p $env:AROLARIU_LOCAL_DATA_TEST_SCOPE down
 ```
+
+The explicit Compose project name keeps Podman Compose from treating the interpolated top-level `name` as a literal. Do not rely on
+`up --wait`, which is not supported by every Podman Compose provider; use the health inspection above on either engine.
 
 Ordinary `down` preserves the two test volumes. Remove only the two exact names derived from the recorded fixture scope when those test
 artifacts are no longer needed; never prune or remove developer/selfhost volumes. The native case removes its own three temporary volumes

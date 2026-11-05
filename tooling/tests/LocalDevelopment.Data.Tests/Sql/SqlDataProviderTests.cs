@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>Verifies database-wide SQL clearing at the actual ADO command boundary.</summary>
 [TestClass]
-public sealed class LocalSqlDataResetterTests
+public sealed class SqlDataProviderTests
 {
   /// <summary>A non-master connection cannot execute catalog or destructive SQL commands.</summary>
   [TestMethod]
@@ -17,10 +17,8 @@ public sealed class LocalSqlDataResetterTests
   {
     using DataTable catalog = CreateCatalog("custom");
     var commands = new List<string>();
-    var resetter = new LocalSqlDataResetter(() =>
-      new RecordingConnection(catalog, commands, database: "arolariu-sql"));
-
-    await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => resetter.ClearAsync(CancellationToken.None));
+    await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => SqlDataProvider.ClearAsync(
+      () => new RecordingConnection(catalog, commands, database: "arolariu-sql"), CancellationToken.None));
 
     Assert.HasCount(0, commands);
   }
@@ -32,7 +30,7 @@ public sealed class LocalSqlDataResetterTests
     using DataTable catalog = CreateCatalog("master", "MODEL", "msdb", "tempdb", "arolariu-sql", "custom");
     var commands = new List<string>();
 
-    await new LocalSqlDataResetter(() => new RecordingConnection(catalog, commands)).ClearAsync(CancellationToken.None);
+    await SqlDataProvider.ClearAsync(() => new RecordingConnection(catalog, commands), CancellationToken.None);
 
     string[] drops = commands.Where(command => command.Contains("DROP DATABASE", StringComparison.OrdinalIgnoreCase)).ToArray();
     Assert.HasCount(2, drops);
@@ -47,7 +45,7 @@ public sealed class LocalSqlDataResetterTests
     using DataTable catalog = CreateCatalog("sales];--");
     var commands = new List<string>();
 
-    await new LocalSqlDataResetter(() => new RecordingConnection(catalog, commands)).ClearAsync(CancellationToken.None);
+    await SqlDataProvider.ClearAsync(() => new RecordingConnection(catalog, commands), CancellationToken.None);
 
     Assert.IsTrue(commands.Any(command => command.Contains("DROP DATABASE [sales]];--]", StringComparison.Ordinal)));
   }
@@ -59,9 +57,8 @@ public sealed class LocalSqlDataResetterTests
     using DataTable catalog = CreateCatalog("first", "second");
     using var source = new CancellationTokenSource();
     var commands = new List<string>();
-    var resetter = new LocalSqlDataResetter(() => new RecordingConnection(catalog, commands, source.Cancel));
-
-    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => resetter.ClearAsync(source.Token));
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => SqlDataProvider.ClearAsync(
+      () => new RecordingConnection(catalog, commands, source.Cancel), source.Token));
 
     Assert.AreEqual(1, commands.Count(command => command.Contains("DROP DATABASE", StringComparison.OrdinalIgnoreCase)));
   }

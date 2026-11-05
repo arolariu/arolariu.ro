@@ -129,7 +129,8 @@ internal sealed class NativeResetFixture : IAsyncDisposable
     try
     {
       using var startup = CancellationTokenSource.CreateLinkedTokenSource(token);
-      startup.CancelAfter(TimeSpan.FromSeconds(120));
+      // Cold Podman stores and full scenario seeding can consume two minutes before the final health probe.
+      startup.CancelAfter(TimeSpan.FromMinutes(3));
       await app.StartAsync(startup.Token);
       if (waitForApplications)
       {

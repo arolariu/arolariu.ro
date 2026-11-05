@@ -2,7 +2,7 @@ namespace LocalDevelopment.Data.Tests.Scenarios.Invoices;
 
 using System.Net;
 
-using global::LocalDevelopment.Data.Resilience;
+using global::LocalDevelopment.Data;
 using global::LocalDevelopment.Data.Scenarios.Invoices;
 using global::LocalDevelopment.Data.Scenarios.Invoices.Storage;
 
@@ -185,7 +185,7 @@ public sealed class LocalScenarioBootstrapTests
       new RecordingCosmosResetter(operations, writeFailures: failures),
       new RecordingAzuriteResetter(operations),
       TimeProvider.System,
-      new TransientRetry(5, TimeSpan.Zero, (_, _) => Task.CompletedTask, TextWriter.Null));
+      LocalDataRetryPolicies.Default[LocalDataRetryPolicies.ScenarioTransient] with { GetDelay = _ => TimeSpan.Zero });
 
     await bootstrap.RunAsync(ScenarioPath, CancellationToken.None);
 

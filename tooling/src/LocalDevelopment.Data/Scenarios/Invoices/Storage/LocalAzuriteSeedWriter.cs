@@ -27,8 +27,8 @@ internal sealed class LocalAzuriteSeedWriter(
   {
     ArgumentNullException.ThrowIfNull(scenario);
 
-    await new LocalStorageProvisioner(blobServiceClient, queueServiceClient)
-      .EnsureStorageAsync(cancellationToken).ConfigureAwait(false);
+    await StorageDataProvider.EnsureStorageAsync(
+      blobServiceClient, queueServiceClient, cancellationToken).ConfigureAwait(false);
     BlobContainerClient container = blobServiceClient.GetBlobContainerClient(LocalDataContract.BlobContainerName);
 
     foreach (MaterializedSeedBlob blob in scenario.Blobs)

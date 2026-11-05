@@ -4,13 +4,56 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
+using global::LocalDevelopment.Data;
 using global::LocalDevelopment.Data.Storage;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>Verifies create-only and startup provisioning at the SDK boundary.</summary>
 [TestClass]
-public sealed class LocalStorageProvisionerTests
+public sealed class StorageDataProviderTests
 {
+  /// <summary>Restore retries each prerequisite independently before proceeding to the next.</summary>
+  [TestMethod]
+  public async Task RestoreStorageAsync_DeletionPending_RetriesContainerThenQueueWithCallerToken()
+  {
+    using var source = new CancellationTokenSource();
+    var operations = new List<string>();
+    var blobs = new RecordingBlobs(operations);
+    var queues = new RecordingQueues(operations);
+    blobs.Container.Failures.Enqueue(new RequestFailedException(409, "pending", "ContainerBeingDeleted", null));
+    queues.Queue.Failures.Enqueue(new RequestFailedException(409, "pending", "QueueBeingDeleted", null));
+
+    await StorageDataProvider.RestoreStorageAsync(blobs, queues, source.Token,
+      LocalDataRetryPolicies.Default[LocalDataRetryPolicies.StorageDeletionPending] with { GetDelay = _ => TimeSpan.Zero });
+
+    CollectionAssert.AreEqual(new[]
+    {
+      "blob:invoices", "blob-create", "blob:invoices", "blob-create",
+      "queue:invoice-analysis", "queue-create", "queue:invoice-analysis", "queue-create",
+    }, operations);
+    Assert.AreEqual(source.Token, blobs.Container.Token);
+    Assert.AreEqual(source.Token, queues.Queue.Token);
+    Assert.AreEqual(PublicAccessType.Blob, blobs.Container.Access);
+    Assert.AreEqual(0, blobs.CorsWrites);
+    Assert.AreEqual(0, blobs.Container.PolicyWrites);
+  }
+
+  /// <summary>A permanent container error prevents queue creation and is propagated unchanged.</summary>
+  [TestMethod]
+  public async Task RestoreStorageAsync_PermanentContainerFailure_DoesNotCreateQueue()
+  {
+    var operations = new List<string>();
+    var blobs = new RecordingBlobs(operations);
+    var failure = new RequestFailedException(409, "conflict", "AlreadyExists", null);
+    blobs.Container.Failures.Enqueue(failure);
+
+    var thrown = await Assert.ThrowsExactlyAsync<RequestFailedException>(() =>
+      StorageDataProvider.RestoreStorageAsync(blobs, new RecordingQueues(operations), CancellationToken.None));
+
+    Assert.AreSame(failure, thrown);
+    CollectionAssert.AreEqual(new[] { "blob:invoices", "blob-create" }, operations);
+  }
+
   /// <summary>Verifies storage-only calls create only, preserving names, access and tokens.</summary>
   [TestMethod]
   public async Task EnsureStorageAsync_StorageOnly_CreatesWithoutResetting()
@@ -19,7 +62,7 @@ public sealed class LocalStorageProvisionerTests
     var operations = new List<string>();
     var blobs = new RecordingBlobs(operations);
     var queues = new RecordingQueues(operations);
-    await new LocalStorageProvisioner(blobs, queues).EnsureStorageAsync(source.Token);
+    await StorageDataProvider.EnsureStorageAsync(blobs, queues, source.Token);
     CollectionAssert.AreEqual(new[] { "blob:invoices", "blob-create", "queue:invoice-analysis", "queue-create" }, operations);
     Assert.AreEqual(PublicAccessType.Blob, blobs.Container.Access);
     Assert.AreEqual(source.Token, blobs.Container.Token);
@@ -38,9 +81,7 @@ public sealed class LocalStorageProvisionerTests
     var operations = new List<string>();
     var blobs = new RecordingBlobs(operations);
     blobs.Container.Created = created;
-    var provisioner = new LocalStorageProvisioner(blobs, new RecordingQueues(operations));
-
-    Assert.AreEqual(created, await provisioner.EnsureStartupContainerAsync("invoices", source.Token));
+    Assert.AreEqual(created, await StorageDataProvider.EnsureStartupContainerAsync(blobs, "invoices", source.Token));
 
     Assert.AreEqual(created ? 0 : 1, blobs.Container.PolicyWrites);
     Assert.AreEqual(PublicAccessType.Blob, blobs.Container.Access);
@@ -57,7 +98,7 @@ public sealed class LocalStorageProvisionerTests
     blobs.Properties.Cors.Add(new BlobCorsRule { AllowedOrigins = "old" });
     blobs.Properties.DefaultServiceVersion = "2021-12-02";
 
-    await new LocalStorageProvisioner(blobs, new RecordingQueues(operations)).ApplyStartupCorsAsync(source.Token);
+    await StorageDataProvider.ApplyStartupCorsAsync(blobs, source.Token);
 
     Assert.AreEqual(1, blobs.CorsWrites);
     Assert.AreEqual(source.Token, blobs.Token);
@@ -103,6 +144,7 @@ public sealed class LocalStorageProvisionerTests
 
   private sealed class RecordingContainer(List<string> operations) : BlobContainerClient
   {
+    internal Queue<Exception> Failures { get; } = [];
     internal bool Created { get; set; }
     internal int PolicyWrites { get; private set; }
     internal PublicAccessType Access { get; private set; }
@@ -116,6 +158,7 @@ public sealed class LocalStorageProvisionerTests
       operations.Add("blob-create");
       Access = publicAccessType;
       Token = cancellationToken;
+      if (Failures.TryDequeue(out Exception? failure)) { return Task.FromException<Response<BlobContainerInfo>>(failure); }
       return Task.FromResult(Created
         ? Response.FromValue(BlobsModelFactory.BlobContainerInfo(new ETag("created"), DateTimeOffset.UnixEpoch), null!)
         : null!);
@@ -145,12 +188,14 @@ public sealed class LocalStorageProvisionerTests
 
   private sealed class RecordingQueue(List<string> operations) : QueueClient
   {
+    internal Queue<Exception> Failures { get; } = [];
     internal CancellationToken Token { get; private set; }
     public override Task<Response> CreateIfNotExistsAsync(
       IDictionary<string, string>? metadata = null, CancellationToken cancellationToken = default)
     {
       operations.Add("queue-create");
       Token = cancellationToken;
+      if (Failures.TryDequeue(out Exception? failure)) { return Task.FromException<Response>(failure); }
       return Task.FromResult<Response>(null!);
     }
   }

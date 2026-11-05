@@ -396,10 +396,12 @@ not hardcode platform-specific PATH or socket values.
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate
 `rancher-desktop` runtime.
 
-The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`; `RepositoryLayout` provides
-project-rooted paths. Bootstrap's invoice scenario and Identity's persona capability remain separate executables. Owner-specific coverage
-lives in `tooling/tests/AppHost.Tests/`, `tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
-`tooling/tests/LocalDevelopment.Identity.Tests/`. See the
+The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`, composed by `LocalApplication`;
+`RepositoryLayout` provides project-rooted paths. The Aspire-independent `LocalDevelopment.Data` library owns the invoice scenario and
+provider operations that the Bootstrap executable runs; `LocalDevelopment.Common` supplies shared retry contracts and execution. Identity's
+persona capability remains a separate executable. Owner-specific coverage lives in `tooling/tests/AppHost.Tests/`,
+`tooling/tests/LocalDevelopment.Bootstrap.Tests/`, `tooling/tests/LocalDevelopment.Common.Tests/`,
+`tooling/tests/LocalDevelopment.Data.Tests/`, and `tooling/tests/LocalDevelopment.Identity.Tests/`. See the
 [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points) for ownership, native resource contracts, and
 verification commands.
 
