@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
+using global::LocalDevelopment.Common.Http.Resilience;
+using global::LocalDevelopment.Data;
+using global::LocalDevelopment.Data.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -45,8 +47,6 @@ internal static class AzuriteBootstrap
   // exp's config.docker.json and the API's blob-storage health-check setup.
   private const string AzuriteAccountKey =
       "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
-  private const int MaxAttempts = 6;
 
   private const string HealthCheckName = "azurite-bootstrap";
 
@@ -225,21 +225,15 @@ internal static class AzuriteBootstrap
     ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
     ArgumentNullException.ThrowIfNull(operation);
     ArgumentNullException.ThrowIfNull(delay);
-    for (int attempt = 1; ; attempt++)
+    await RetryExecutor.ExecuteAsync(LocalDataRetryPolicies.Default[LocalDataRetryPolicies.AzuriteStartup],
+      operation, cancellationToken, context =>
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      try
+      if (logger is not null)
       {
-        await operation(cancellationToken).ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-        return;
+        AttemptFailed(logger, operationName, context.Attempt, (int)context.Delay.TotalSeconds, context.Exception);
       }
-      catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxAttempts)
-      {
-        if (logger is not null) { AttemptFailed(logger, operationName, attempt, attempt, exception); }
-        await delay(TimeSpan.FromSeconds(attempt), cancellationToken).ConfigureAwait(false);
-      }
-    }
+      return Task.CompletedTask;
+    }, delay).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -274,25 +268,15 @@ internal static class AzuriteBootstrap
   }
 
   private static Task ApplyCorsWithRetryAsync(
-      BlobServiceClient client, ILogger? logger, CancellationToken ct)
+      BlobServiceClient blobs, ILogger? logger, CancellationToken ct)
     => RetryAsync("CORS", async token =>
     {
-      var props = (await client.GetPropertiesAsync(token).ConfigureAwait(false)).Value;
-      props.Cors.Clear();
-      props.Cors.Add(new BlobCorsRule
-      {
-        AllowedOrigins = "*",
-        AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
-        AllowedHeaders = "*",
-        ExposedHeaders = "*",
-        MaxAgeInSeconds = 3600,
-      });
-      await client.SetPropertiesAsync(props, token).ConfigureAwait(false);
+      await StorageDataProvider.ApplyStartupCorsAsync(blobs, token).ConfigureAwait(false);
       if (logger is not null) { CorsApplied(logger, null); }
     }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(
-      BlobServiceClient client,
+      BlobServiceClient blobs,
       IReadOnlyList<string> containerNames,
       ILogger? logger,
       CancellationToken ct)
@@ -303,21 +287,9 @@ internal static class AzuriteBootstrap
     {
       foreach (var name in containerNames)
       {
-        var container = client.GetBlobContainerClient(name);
-        var created = await container.CreateIfNotExistsAsync(
-            publicAccessType: PublicAccessType.Blob,
-            cancellationToken: token).ConfigureAwait(false);
-
-        if (created?.Value is null)
+        bool created = await StorageDataProvider.EnsureStartupContainerAsync(blobs, name, token).ConfigureAwait(false);
+        if (!created)
         {
-          // Container already existed (likely from a prior run with the
-          // persistent volume). The create call returns null in that
-          // case and does NOT touch the existing access policy, so
-          // explicitly upgrade it — first-time runs that predated this
-          // bootstrap may have left it at PublicAccessType.None.
-          await container.SetAccessPolicyAsync(
-              PublicAccessType.Blob,
-              cancellationToken: token).ConfigureAwait(false);
           if (logger is not null) { ContainerAlreadyExists(logger, name, null); }
         }
         else
@@ -329,7 +301,7 @@ internal static class AzuriteBootstrap
   }
 
   private static async Task EnsureQueuesWithRetryAsync(
-      QueueServiceClient client,
+      QueueServiceClient queues,
       IReadOnlyList<string> queueNames,
       ILogger? logger,
       CancellationToken cancellationToken)
@@ -343,10 +315,7 @@ internal static class AzuriteBootstrap
     {
       foreach (string queueName in queueNames)
       {
-        await client
-          .GetQueueClient(queueName)
-          .CreateIfNotExistsAsync(cancellationToken: token)
-          .ConfigureAwait(false);
+        await StorageDataProvider.EnsureQueueAsync(queues, queueName, token).ConfigureAwait(false);
         if (logger is not null) { QueueReady(logger, queueName, null); }
       }
 

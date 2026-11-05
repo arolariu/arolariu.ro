@@ -4,14 +4,12 @@ using Microsoft.Data.SqlClient;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
+using global::LocalDevelopment.Data;
 
 /// <summary>Owns the local SQL connection contract.</summary>
 internal static class SqlResources
 {
-  internal static string DatabaseCreationScript => $"""
-    IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
-        CREATE DATABASE [{Constants.SqlDatabaseName}];
-    """;
+  internal static string DatabaseCreationScript => LocalDataContract.SqlDatabaseCreationScript;
 
   internal static IResourceBuilder<SqlServerDatabaseResource> AddLocalSql(
     this IDistributedApplicationBuilder builder, string sqlPassword)
@@ -24,7 +22,7 @@ internal static class SqlResources
       // DCP forwards TDS to the allocated container port while keeping the public port fixed.
       .WithEndpoint("tcp", endpoint => endpoint.IsProxied = true)
       .WithIconName("Database");
-    var database = sql.AddDatabase(Constants.SqlDatabaseName)
+    var database = sql.AddDatabase(LocalDataContract.SqlDatabaseName)
       .WithCreationScript(DatabaseCreationScript);
     builder.Services.AddHealthChecks().AddCheck("sql-ready",
       new SqlReadinessHealthCheck(() => new SqlConnection(readinessConnection)));

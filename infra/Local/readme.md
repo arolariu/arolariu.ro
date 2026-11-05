@@ -11,6 +11,9 @@ Two coexisting modes for local development.
 
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`) declares and orchestrates everything natively:
 
+- **Pinned Aspire CLI**: `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK through `dnx`, which supplies the
+  Dashboard and DCP from its bundle. The first launch, or the first after an SDK change, can download the tool and bundle through the
+  configured NuGet sources; offline launches need those caches. See the [tooling guide](../../tooling/README.md#development-and-debugging).
 - **Infrastructure**: SQL Server, the Cosmos Linux vNext emulator, Azurite, and Redis are spawned through Aspire integrations
   (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
 - **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`,
@@ -134,26 +137,44 @@ be confirmed, stop the AppHost before continuing. Reset is not a repair for arbi
 
 #### Tooling structure and extension points
 
-`tooling\src\AppHost\Program.cs` is the composition root. Capability slices keep resource definitions beside their supporting behavior:
-`Infrastructure\Sql` owns connection settings/readiness, `Infrastructure\Storage` owns Azurite provisioning, and `Applications\Exp` owns the
-exp resource/configuration overlay. `LocalDevelopment` wires the bootstrap and persona helpers. `RepositoryLayout` anchors project/config
-paths to the AppHost directory, independent of shell cwd.
+`tooling\src\AppHost\Program.cs` generates the exp overlay before calling `LocalApplication.Compose`. Composition registers native resources
+and callbacks without starting applications or writing configuration/certificates. Capability slices configure their own resources:
+`Infrastructure\Sql` owns connection settings/readiness, `Infrastructure\Storage` owns Azurite readiness/retry integration, and
+`Applications\Exp` owns the exp resource/configuration overlay. Cross-capability references, endpoint expressions, and startup waits live
+together in `LocalApplication`; graph tests call this production entry point. `RepositoryLayout` anchors project/config paths to the AppHost
+directory, independent of shell cwd.
 
 Extend an existing slice or add a focused native builder extension for a new capability, then wire its references/waits explicitly and add
-graph tests. Use Aspire's resource builders and typed handle bundles, not a parallel registry or generic repository framework. Shared
+graph tests. The isolated native reset fixture shares only `WireStartupDependencies`, keeping its own test volumes and controlled HTTP
+processes. Use Aspire's resource builders and typed handle bundles, not a parallel registry or generic repository framework. Shared
 [`tooling\Directory.Build.props`](../../tooling/Directory.Build.props) owns the compiler, analyzer, style, and documentation policy for all
 tooling projects. Production uses recommended analysis and XML documentation; `.Tests` projects select the fixed framework-default analysis
 without XML documentation by project name during early MSBuild evaluation. SDK declarations and resource-specific settings remain in each
 project. See the [tooling build and package policy](../../tooling/README.md#build-and-package-policy) for the ownership boundaries.
 
-Bootstrap keeps invoice-scenario materialization and storage adapters together; Identity keeps persona lookup/token creation together.
-Source projects live under `tooling\src`; root launch commands are unchanged. Each executable has an owning MSTest project:
+The Aspire-independent `LocalDevelopment.Data` library owns scenario validation/materialization, provider mutations, and clear/restore
+operations including existing Identity schema restoration. AppHost retains reset confirmation, native-target authorization, repeated
+live-instance checks, and process sequencing. Bootstrap remains the guarded command and owns SDK client lifetime, cancellation, and the
+canonical four `SeedData` JSON content files. Data.Tests links those files rather than duplicating them. Identity remains an independent
+persona/token executable. AppHost and Bootstrap reference Data; no helper depends on the other helper.
+
+Data exposes static `NoSqlDataProvider`, `SqlDataProvider`, and `StorageDataProvider` entry points; NoSQL currently uses Cosmos DB.
+`LocalDevelopment.Common.Http.Resilience` supplies the dependency-free named retry contract and executor shared by AppHost and Data. Data
+configures provider-specific policies; existing attempts, delays, cancellation, and logging behavior are preserved. See
+[tooling project ownership](../../tooling/README.md#project-ownership) for extension points.
+
+Source projects live under `tooling\src`; root launch commands are unchanged. Each production project has an owning MSTest project:
 
 ```powershell
 dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Common.Tests\LocalDevelopment.Common.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Data.Tests\LocalDevelopment.Data.Tests.csproj
 dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```
+
+Opt-in SDK persistence, pagination, and reset tests now run in Data.Tests. Native reset lifecycle acceptance remains in AppHost.Tests;
+follow the [isolated acceptance procedure](../../tooling/README.md#opt-in-local-data-acceptance), never developer/selfhost volumes.
 
 The exp overlay is written through an atomic replacement: generation failures leave the previous target intact and never overwrite the
 developer-owned source. Filesystem-linked source/target aliases are rejected. Temporary configuration files start with owner-only access;

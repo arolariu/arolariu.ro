@@ -3,6 +3,7 @@ namespace AppHost.Infrastructure.Storage;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+using global::LocalDevelopment.Data;
 
 /// <summary>Contains storage handles used by local scenario and application resources.</summary>
 internal sealed record LocalStorageResources(
@@ -30,7 +31,7 @@ internal static class StorageResources
     var queues = storage.AddQueues("queues");
     var tables = storage.AddTables("tables");
     builder.AddAzuriteBootstrap(storage, Constants.AzuriteBlobPort, Constants.AzuriteQueuePort,
-      ["invoices"], [Constants.AnalysisQueueName]);
+      [LocalDataContract.BlobContainerName], [LocalDataContract.AnalysisQueueName]);
     return new(storage, blobs, queues, tables);
   }
 }

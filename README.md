@@ -378,6 +378,9 @@ AppHost orchestrates the entire dev stack:
 - **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
   dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
   scenario.
+- **Pinned Aspire CLI** — `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK. The first launch, or the first
+  after an SDK change, can download the CLI bundle (Dashboard and DCP) through the configured NuGet sources; see the
+  [tooling guide](tooling/README.md#development-and-debugging).
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via
@@ -396,10 +399,12 @@ not hardcode platform-specific PATH or socket values.
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate
 `rancher-desktop` runtime.
 
-The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`; `RepositoryLayout` provides
-project-rooted paths. Bootstrap's invoice scenario and Identity's persona capability remain separate executables. Owner-specific coverage
-lives in `tooling/tests/AppHost.Tests/`, `tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
-`tooling/tests/LocalDevelopment.Identity.Tests/`. See the
+The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`, composed by `LocalApplication`;
+`RepositoryLayout` provides project-rooted paths. The Aspire-independent `LocalDevelopment.Data` library owns the invoice scenario and
+provider operations that the Bootstrap executable runs; `LocalDevelopment.Common` supplies shared retry contracts and execution. Identity's
+persona capability remains a separate executable. Owner-specific coverage lives in `tooling/tests/AppHost.Tests/`,
+`tooling/tests/LocalDevelopment.Bootstrap.Tests/`, `tooling/tests/LocalDevelopment.Common.Tests/`,
+`tooling/tests/LocalDevelopment.Data.Tests/`, and `tooling/tests/LocalDevelopment.Identity.Tests/`. See the
 [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points) for ownership, native resource contracts, and
 verification commands.
 

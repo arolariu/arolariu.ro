@@ -14,7 +14,8 @@ Load only after live inspection establishes NuGet ownership.
   Do not infer a lock for a project that has none.
 - [`Tooling Directory.Packages.props`](../../../../tooling/Directory.Packages.props) owns tooling PackageReference versions independently of
   the API catalog. Tooling projects declare package use, including [`AppHost.csproj`](../../../../tooling/src/AppHost/AppHost.csproj),
-  [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj), and
+  [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj),
+  [`LocalDevelopment.Data.csproj`](../../../../tooling/src/LocalDevelopment.Data/LocalDevelopment.Data.csproj), and
   [`LocalDevelopment.Identity.csproj`](../../../../tooling/src/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj). The AppHost SDK
   declaration remains project-local. No `packages.lock.json` is committed for those tooling owners.
 

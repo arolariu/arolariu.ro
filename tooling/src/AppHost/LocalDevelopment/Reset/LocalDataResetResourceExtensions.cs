@@ -1,8 +1,9 @@
 namespace AppHost.LocalDevelopment.Reset;
 
-using AppHost.Infrastructure.Cosmos;
-using AppHost.Infrastructure.Sql;
-using AppHost.Infrastructure.Storage;
+using System.Data.Common;
+using global::LocalDevelopment.Data.NoSql;
+using global::LocalDevelopment.Data.Sql;
+using global::LocalDevelopment.Data.Storage;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Azure.Data.Tables;
@@ -49,9 +50,10 @@ internal static class LocalDataResetResourceExtensions
       name => notifications.TryGetCurrentState(name, out ResourceEvent? change) ? change : null,
       notifications.WaitForResourceAsync, notifications.WaitForDependenciesAsync);
     CosmosClient? cosmos = null;
-    LocalCosmosDataResetter? cosmosResetter = null;
-    LocalStorageDataResetter? storageResetter = null;
-    LocalSqlDataResetter? sqlResetter = null;
+    BlobServiceClient? blobs = null;
+    QueueServiceClient? queues = null;
+    TableServiceClient? tables = null;
+    Func<DbConnection>? createMasterConnection = null;
     ResourceEvent[]? nativeInstances = null;
     ResourceEvent? Current(string name) =>
       notifications.TryGetCurrentState(name, out ResourceEvent? change) ? change : null;
@@ -69,14 +71,12 @@ internal static class LocalDataResetResourceExtensions
         var masterSettings = new SqlConnectionStringBuilder(sqlConnection) { InitialCatalog = "master" };
         cosmos = new CosmosClient(cosmosConnection,
           new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway, LimitToEndpoint = true });
-        var blobs = new BlobServiceClient(blobConnection);
-        var queues = new QueueServiceClient(queueConnection);
-        var tables = new TableServiceClient(tableConnection);
+        blobs = new BlobServiceClient(blobConnection);
+        queues = new QueueServiceClient(queueConnection);
+        tables = new TableServiceClient(tableConnection);
         using var master = new SqlConnection(masterSettings.ConnectionString);
         LocalDataResetSafety.ValidateResolvedClients(resources, cosmos, blobs, queues, tables, master);
-        cosmosResetter = new LocalCosmosDataResetter(cosmos);
-        storageResetter = new LocalStorageDataResetter(blobs, queues, tables);
-        sqlResetter = new LocalSqlDataResetter(() => new SqlConnection(masterSettings.ConnectionString));
+        createMasterConnection = () => new SqlConnection(masterSettings.ConnectionString);
       }
 
       Task Phase(string name, Func<CancellationToken, Task> action, CancellationToken token, bool requireLiveInfrastructure = false)
@@ -93,17 +93,24 @@ internal static class LocalDataResetResourceExtensions
 
       async Task ProvisionAsync(CancellationToken token)
       {
-        await (cosmosResetter ?? throw new InvalidOperationException()).EnsureScenarioContainersAsync(token).ConfigureAwait(false);
-        await (storageResetter ?? throw new InvalidOperationException()).EnsureStorageAsync(token).ConfigureAwait(false);
-        await (sqlResetter ?? throw new InvalidOperationException()).EnsureApplicationDatabaseAsync(token).ConfigureAwait(false);
+        await NoSqlDataProvider.EnsureScenarioContainersAsync(
+          cosmos ?? throw new InvalidOperationException(), token).ConfigureAwait(false);
+        await StorageDataProvider.RestoreStorageAsync(
+          blobs ?? throw new InvalidOperationException(), queues ?? throw new InvalidOperationException(), token).ConfigureAwait(false);
+        await SqlDataProvider.EnsureApplicationDatabaseAsync(
+          createMasterConnection ?? throw new InvalidOperationException(), token).ConfigureAwait(false);
       }
 
       var operations = new LocalDataResetOperations(
         token => Phase("validate targets", ValidateAsync, token),
         token => Phase("stop writers", lifecycle.StopWritersAsync, token),
-        token => Phase("clear Cosmos", (cosmosResetter ?? throw new InvalidOperationException()).ClearAsync, token, true),
-        token => Phase("clear storage", (storageResetter ?? throw new InvalidOperationException()).ClearAsync, token, true),
-        token => Phase("clear SQL", (sqlResetter ?? throw new InvalidOperationException()).ClearAsync, token, true),
+        token => Phase("clear Cosmos", ct => NoSqlDataProvider.ClearAsync(
+          cosmos ?? throw new InvalidOperationException(), ct), token, true),
+        token => Phase("clear storage", ct => StorageDataProvider.ClearAsync(
+          blobs ?? throw new InvalidOperationException(), queues ?? throw new InvalidOperationException(),
+          tables ?? throw new InvalidOperationException(), ct), token, true),
+        token => Phase("clear SQL", ct => SqlDataProvider.ClearAsync(
+          createMasterConnection ?? throw new InvalidOperationException(), ct), token, true),
         token => Phase("provision prerequisites", ProvisionAsync, token, true),
         token => Phase("initialize scenario", lifecycle.RunBootstrapAsync, token, true),
         token => Phase("resume applications", lifecycle.ResumeApplicationsAsync, token, true));

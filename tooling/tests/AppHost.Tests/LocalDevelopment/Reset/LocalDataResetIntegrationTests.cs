@@ -132,7 +132,7 @@ public sealed class LocalDataResetIntegrationTests
     Assert.IsTrue(Environment.GetEnvironmentVariable("AROLARIU_CONTAINER_ENGINE") is "rancher" or "podman");
     string scope = $"arolariu-seed-tests-{Guid.NewGuid():N}";
     string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
-    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
     NativeResetFixture? fixture = null;
     try
     {
@@ -179,7 +179,8 @@ public sealed class LocalDataResetIntegrationTests
     Assert.IsTrue(Environment.GetEnvironmentVariable("AROLARIU_CONTAINER_ENGINE") is "rancher" or "podman");
     string scope = $"arolariu-seed-tests-{Guid.NewGuid():N}";
     string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
-    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+    // Two host starts, teardown, reset, and data assertions share this test-only budget.
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
     NativeResetFixture? first = null;
     NativeResetFixture? second = null;
     try
@@ -230,7 +231,7 @@ public sealed class LocalDataResetIntegrationTests
     Assert.IsTrue(Environment.GetEnvironmentVariable("AROLARIU_CONTAINER_ENGINE") is "rancher" or "podman");
     string scope = $"arolariu-seed-tests-{Guid.NewGuid():N}";
     string password = $"{Convert.ToHexString(RandomNumberGenerator.GetBytes(18))}aA1!";
-    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
     NativeResetFixture? first = null;
     NativeResetFixture? second = null;
     try

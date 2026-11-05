@@ -2,7 +2,7 @@ namespace AppHost;
 
 /// <summary>
 /// Single source of truth for hardcoded strings used across AppHost's
-/// resource declarations: dev credentials, database / container names,
+/// resource declarations: emulator credentials,
 /// volume names, and fixed ports. Keep this file thin — only true constants
 /// belong here, not configurable values that should come from parameters
 /// or environment variables.
@@ -16,15 +16,6 @@ internal static class Constants
   /// </summary>
   public const string CosmosEmulatorWellKnownKey =
       "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
-
-  // ── Database / container / partition key names ──
-  public const string SqlDatabaseName = "arolariu-sql";
-  public const string CosmosDatabaseName = "primary";
-  public const string CosmosInvoicesContainer = "invoices";
-  public const string CosmosInvoicesPartitionKey = "/UserIdentifier";
-  public const string CosmosMerchantsContainer = "merchants";
-  public const string CosmosMerchantsPartitionKey = "/ParentCompanyId";
-  public const string AnalysisQueueName = "invoice-analysis";
 
   // ── Volume names (data persistence across container restarts) ──
   public const string SqlDataVolumeV16_0_4305_5 = "arolariu-mssql-data-16.0.4305.5";
