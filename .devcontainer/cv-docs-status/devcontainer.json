@@ -16,6 +16,7 @@
     }
   },
   "mounts": [
+    "source=arolariu-${devcontainerId}-sites-cache,target=/home/vscode/.cache,type=volume",
     "source=arolariu-${devcontainerId}-sites-npm,target=/home/vscode/.cache/npm,type=volume",
     "source=arolariu-${devcontainerId}-sites-root-modules,target=/workspaces/arolariu.ro/node_modules,type=volume",
     "source=arolariu-${devcontainerId}-sites-website-modules,target=/workspaces/arolariu.ro/sites/arolariu.ro/node_modules,type=volume",

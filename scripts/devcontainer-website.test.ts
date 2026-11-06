@@ -74,6 +74,7 @@ describe("Website devcontainer", () => {
     const definition = readDevcontainer("website");
     expect(definition).toBeDefined();
     expect(devcontainerMountTargets(definition)).toEqual([
+      "/home/vscode/.cache",
       "/home/vscode/.cache/npm",
       "/workspaces/arolariu.ro/node_modules",
       "/workspaces/arolariu.ro/sites/arolariu.ro/node_modules",

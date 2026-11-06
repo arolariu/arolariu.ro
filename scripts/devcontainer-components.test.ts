@@ -70,6 +70,7 @@ describe("Components devcontainer", () => {
     const definition = readDevcontainer("components");
     expect(definition).toBeDefined();
     expect(devcontainerMountTargets(definition)).toEqual([
+      "/home/vscode/.cache",
       "/home/vscode/.cache/npm",
       "/workspaces/arolariu.ro/node_modules",
       "/workspaces/arolariu.ro/sites/arolariu.ro/node_modules",

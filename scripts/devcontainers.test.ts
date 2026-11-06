@@ -85,11 +85,11 @@ describe("service-focused development containers", () => {
   it.each(flavors)("%s locks each declared feature to a content-addressed image", (flavor) => {
     const definition = readDevcontainer(flavor);
     if (
-      typeof definition !== "object" ||
-      definition === null ||
-      !("features" in definition) ||
-      typeof definition.features !== "object" ||
-      definition.features === null
+      typeof definition !== "object"
+      || definition === null
+      || !("features" in definition)
+      || typeof definition.features !== "object"
+      || definition.features === null
     ) {
       throw new Error("Expected explicit feature declarations.");
     }
@@ -109,6 +109,10 @@ describe("service-focused development containers", () => {
 
   it.each(nodeFlavors)("%s masks every live npm workspace cleanup destination", (flavor) => {
     expect(devcontainerMountTargets(readDevcontainer(flavor))).toEqual(expect.arrayContaining(workspaceCleanupTargets()));
+  });
+
+  it.each(nodeFlavors)("%s owns the cache parent needed by opt-in browser and tool downloads", (flavor) => {
+    expect(devcontainerMountTargets(readDevcontainer(flavor))).toContain("/home/vscode/.cache");
   });
 
   it.each(nodeFlavors)("%s refuses a newly added workspace before npm can clean host dependencies", async (flavor) => {

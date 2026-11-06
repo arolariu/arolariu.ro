@@ -220,11 +220,10 @@ Use Rancher Desktop or Podman Desktop, never Docker Desktop. For Podman, select 
 Every flavor commits a feature lockfile. Regenerate and review that flavor's lockfile when intentionally updating its Dev Container
 Features; do not silently resolve newer features for only some flavors.
 
-Editor connection waits for successful creation-time preparation of dependencies and essential generated state, but starts no server.
-There is no full-stack bootstrap, host-engine socket,
-nested daemon, Azure CLI setup, workload installation, host certificate trust change, or automatic browser download. Use the existing host
-Aspire workflow separately when full-stack coordination is needed; do not run `npm run setup`, `npm run dev`, or root-wide generators inside
-a flavor.
+Editor connection waits for successful creation-time preparation of dependencies and essential generated state, but starts no server. There
+is no full-stack bootstrap, host-engine socket, nested daemon, Azure CLI setup, workload installation, host certificate trust change, or
+automatic browser download. Use the existing host Aspire workflow separately when full-stack coordination is needed; do not run
+`npm run setup`, `npm run dev`, or root-wide generators inside a flavor.
 
 Run commands in the selected working folder:
 
@@ -254,9 +253,10 @@ connection alone does not prove dependencies are ready. Resolve package-feed/pro
 configuration, not by disabling certificate checks.
 
 Browser tests are opt-in: provision only the required browser/system dependencies after approval, or use an existing compatible browser. Use
-one active flavor per checkout, and do not build multiple flavor images in that checkout concurrently. The source checkout remains an
-intentional writable bind mount; these environments are not a sandbox for untrusted code. Do not share the same project's build outputs
-between simultaneous host and container builds.
+the flavor-owned writable parent cache for browser/tool downloads; Node flavors preserve their separate npm cache volume. Use one active
+flavor per checkout, and do not build multiple flavor images in that checkout concurrently. The source checkout remains an intentional
+writable bind mount; these environments are not a sandbox for untrusted code. Do not share the same project's build outputs between
+simultaneous host and container builds.
 
 ---
 

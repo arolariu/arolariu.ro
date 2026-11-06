@@ -3,6 +3,7 @@ set -euo pipefail
 
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 mounts=(
+  "${HOME}/.cache"
   "${HOME}/.cache/npm"
   "$repository_root/node_modules"
   "$repository_root/sites/arolariu.ro/node_modules"
