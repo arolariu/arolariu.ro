@@ -72,7 +72,8 @@ describe("persistent hygiene plan preparation", () => {
   it("persists full declared scope even when graph acquisition is unavailable", async () => {
     const plan = await preparePlanCore(context({workspaceRoot: root, commitSha: sha, baseRef: sha, headRef: sha}), "full");
     expect(plan.providers.every((provider) => provider.selected)).toBe(true);
-    expect(plan.suites).toHaveLength(6);
+    expect(plan.suites).toEqual(["scripts", "tooling", "website", "cv", "docs", "status", "components"]);
+    expect(await fs.readValidatedJson(join(root, "artifacts", "hygiene", "plan.json"), decodeHygienePlan, 1_000_000)).toEqual(plan);
     expect(plan.diagnostics.length).toBeGreaterThan(0);
   });
 });
