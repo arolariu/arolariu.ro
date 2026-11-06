@@ -217,6 +217,11 @@ Open the checkout in VS Code, run **Dev Containers: Reopen in Container**, and s
 Use Rancher Desktop or Podman Desktop, never Docker Desktop. For Podman, select its CLI through the host's Dev Containers extension setting
 `dev.containers.dockerPath`. Engine installation and startup remain host responsibilities.
 
+The upstream Dev Containers CLI adds `--security-opt label=disable` for Linux Podman. SELinux-enforcing Linux Podman hosts are therefore
+outside this strict-isolation support policy; use Rancher Desktop there instead. Do not disable SELinux or relax a container profile to make
+it start. With either engine, verify that `vscode` can write the checkout and owned volumes; resolve host UID mapping deliberately rather
+than switching the container to root or privileged mode.
+
 Use a regular clone for Windows checkouts opened in Linux containers. Absolute host Git-directory pointers from linked worktrees are outside
 the source bind mount; preparation rejects inaccessible Git metadata before restoring dependencies. It does not rewrite Git pointers or
 mount additional host Git directories.
