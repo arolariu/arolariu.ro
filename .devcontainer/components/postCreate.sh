@@ -26,12 +26,23 @@ for mount in "${mounts[@]}"; do
 done
 
 cd "$repository_root"
-node --input-type=module <<'JAVASCRIPT'
-import {readFileSync} from "node:fs";
-const {scripts = {}} = JSON.parse(readFileSync("package.json", "utf8"));
+node --input-type=module - "${mounts[@]}" <<'JAVASCRIPT'
+import {globSync, readFileSync} from "node:fs";
+import {dirname, resolve} from "node:path";
+const {scripts = {}, workspaces} = JSON.parse(readFileSync("package.json", "utf8"));
 for (const name of ["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare"]) {
   if (typeof scripts[name] === "string" && scripts[name].trim() !== "") {
     throw new Error(`Root lifecycle hook '${name}' is not allowed in a scoped devcontainer. Use a workspace-owned preparation command.`);
+  }
+}
+if (!Array.isArray(workspaces) || workspaces.some((pattern) => typeof pattern !== "string" || pattern.startsWith("!"))) {
+  throw new Error("Scoped preparation requires explicit, non-negated root workspace patterns. Review protective mounts before changing workspace discovery.");
+}
+const protectedPaths = new Set(process.argv.slice(2).map((path) => resolve(path)));
+for (const manifest of globSync(workspaces.map((pattern) => `${pattern}/package.json`))) {
+  const target = resolve(dirname(manifest), "node_modules");
+  if (!protectedPaths.has(target)) {
+    throw new Error(`Missing protective mount for npm workspace cleanup: ${target}. Update every Node flavor before installing.`);
   }
 }
 JAVASCRIPT
