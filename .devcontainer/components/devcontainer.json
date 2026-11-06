@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
+  "name": "arolariu.ro - Components",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "init": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/arolariu.ro,type=bind",
+  "workspaceFolder": "/workspaces/arolariu.ro/packages/components",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "pnpmVersion": "none",
+      "nodeGypDependencies": false,
+      "installYarnUsingApt": false
+    }
+  },
+  "mounts": [
+    "source=arolariu-${devcontainerId}-components-npm,target=/home/vscode/.cache/npm,type=volume",
+    "source=arolariu-${devcontainerId}-components-root-modules,target=/workspaces/arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-components-website-modules,target=/workspaces/arolariu.ro/sites/arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-components-cv-modules,target=/workspaces/arolariu.ro/sites/cv.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-components-docs-modules,target=/workspaces/arolariu.ro/sites/docs.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-components-status-modules,target=/workspaces/arolariu.ro/sites/status.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-components-library-modules,target=/workspaces/arolariu.ro/packages/components/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "NPM_CONFIG_CACHE": "/home/vscode/.cache/npm",
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  },
+  "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/components/postCreate.sh"],
+  "forwardPorts": [6006],
+  "portsAttributes": {
+    "6006": {"label": "Component Storybook", "onAutoForward": "notify"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["vitest.explorer"]
+    }
+  }
+}

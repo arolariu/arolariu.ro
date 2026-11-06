@@ -1,0 +1,137 @@
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {join, resolve} from "node:path";
+
+import {Effect} from "effect";
+import {afterEach, describe, expect, it} from "vitest";
+
+import {
+  createPreparationFixture,
+  devcontainerMountTargets,
+  readDevcontainer,
+  type PreparationFixture,
+} from "./platform/devcontainer-testing.ts";
+import {makeNodeLayer} from "./platform/layers.ts";
+
+const fixtures: PreparationFixture[] = [];
+const layer = makeNodeLayer({mode: "silent", verbose: false, color: false, context: "devcontainer-test"});
+
+function fixture(): PreparationFixture {
+  expect(existsSync(resolve(".devcontainer/website/postCreate.sh"))).toBe(true);
+  const value = createPreparationFixture("website");
+  fixtures.push(value);
+  return value;
+}
+
+function run(value: PreparationFixture, environment?: Readonly<Record<string, string>>) {
+  return Effect.runPromise(value.run(environment).pipe(Effect.provide(layer)));
+}
+
+async function licenseGenerator() {
+  expect(existsSync(resolve("sites/arolariu.ro/scripts/prepare-licenses.ts"))).toBe(true);
+  return import("../sites/arolariu.ro/scripts/prepare-licenses.ts");
+}
+
+afterEach(() => {
+  for (const value of fixtures.splice(0)) value.dispose();
+});
+
+describe("Website devcontainer", () => {
+  it("selects website-only Node tooling without warm preparation", () => {
+    const definition = readDevcontainer("website");
+    expect(definition).toBeDefined();
+    expect(definition).toMatchObject({
+      name: "arolariu.ro - Website",
+      containerUser: "vscode",
+      remoteUser: "vscode",
+      workspaceFolder: "/workspaces/arolariu.ro/sites/arolariu.ro",
+      features: {"ghcr.io/devcontainers/features/node:1": {version: "24", pnpmVersion: "none"}},
+      forwardPorts: [3000],
+    });
+    expect(definition).not.toHaveProperty("postStartCommand");
+    expect(definition).not.toHaveProperty("updateContentCommand");
+    expect(definition).not.toHaveProperty("privileged", true);
+  });
+
+  it("masks all dependency directories touched by npm cleanup", () => {
+    const definition = readDevcontainer("website");
+    expect(definition).toBeDefined();
+    expect(devcontainerMountTargets(definition)).toEqual([
+      "/home/vscode/.cache/npm",
+      "/workspaces/arolariu.ro/node_modules",
+      "/workspaces/arolariu.ro/sites/arolariu.ro/node_modules",
+      "/workspaces/arolariu.ro/sites/cv.arolariu.ro/node_modules",
+      "/workspaces/arolariu.ro/sites/docs.arolariu.ro/node_modules",
+      "/workspaces/arolariu.ro/sites/status.arolariu.ro/node_modules",
+      "/workspaces/arolariu.ro/packages/components/node_modules",
+    ]);
+  });
+
+  it("installs the website before its own attribution and type generation", async () => {
+    const value = fixture();
+    expect(await run(value)).toMatchObject({status: 0});
+    const events = value
+      .events()
+      .filter((event) => event.startsWith("npm\t") || (event.startsWith("node\t") && event.endsWith("/scripts/prepare-licenses.ts")));
+    expect(events).toHaveLength(3);
+    expect(events[0]).toBe(
+      "npm\tci\t--workspace\t@arolariu/website\t--include-workspace-root=false\t--foreground-scripts\t--no-audit\t--no-fund",
+    );
+    expect(events[1]).toMatch(/^node\t.*\/sites\/arolariu\.ro\/scripts\/prepare-licenses\.ts$/);
+    expect(events[2]).toBe("npm\texec\t--yes=false\t--workspace\t@arolariu/website\t--\tnext\ttypegen");
+  });
+
+  it("does not generate artifacts after an installation failure", async () => {
+    const value = fixture();
+    const result = await run(value, {FAIL_COMMAND: "npm"});
+    expect(result.status).toBe(17);
+    expect(result.stderr).toContain("controlled npm failure");
+    expect(value.events().some((event) => event.endsWith("/scripts/prepare-licenses.ts"))).toBe(false);
+    expect(result.stdout).not.toMatch(/ready|complete/i);
+  });
+
+  it("rejects a root lifecycle hook before installing another scope", async () => {
+    const value = fixture();
+    writeFileSync(join(value.root, "package.json"), JSON.stringify({scripts: {prepare: "echo unrelated"}}));
+    const result = await run(value);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/root.*prepare/i);
+    expect(value.events().some((event) => event.startsWith("npm"))).toBe(false);
+  });
+
+  it("generates actual website attribution without changing API files", async () => {
+    const {prepareWebsiteLicenses} = await licenseGenerator();
+    const value = fixture();
+    const apiSentinel = join(value.root, "sites", "api.arolariu.ro", "sentinel.txt");
+    writeFileSync(apiSentinel, "unchanged");
+    writeFileSync(join(value.root, "sites", "arolariu.ro", "package.json"), JSON.stringify({dependencies: {demo: "1.0.0"}}));
+    const installed = join(value.root, "node_modules", "demo");
+    mkdirSync(installed, {recursive: true});
+    writeFileSync(
+      join(installed, "package.json"),
+      JSON.stringify({
+        name: "demo",
+        version: "1.0.0",
+        author: "Fixture",
+        license: "MIT",
+        homepage: "https://example.test",
+      }),
+    );
+
+    const paths = await Effect.runPromise(prepareWebsiteLicenses(value.root).pipe(Effect.provide(layer)));
+    const output = join(value.root, "sites", "arolariu.ro", "licenses.json");
+    expect(paths).toEqual([output]);
+    const document: unknown = JSON.parse(readFileSync(output, "utf8"));
+    expect(document).toMatchObject({production: [{name: "demo", version: "1.0.0", license: "MIT"}]});
+    expect(readFileSync(apiSentinel, "utf8")).toBe("unchanged");
+  });
+
+  it("fails explicitly when attribution dependencies are missing", async () => {
+    const {prepareWebsiteLicenses} = await licenseGenerator();
+    const value = fixture();
+    writeFileSync(join(value.root, "sites", "arolariu.ro", "package.json"), JSON.stringify({dependencies: {missing: "1.0.0"}}));
+    await expect(Effect.runPromise(prepareWebsiteLicenses(value.root).pipe(Effect.provide(layer)))).rejects.toThrow(
+      /Unable to resolve declared frontend package manifest/,
+    );
+    expect(existsSync(join(value.root, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
+  });
+});

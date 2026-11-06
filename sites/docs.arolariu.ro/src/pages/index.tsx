@@ -12,7 +12,8 @@
  * 3. **`resources`** — three supplementary tiers (RFCs, backend
  *    guides, frontend guides).
  *
- * A keyboard cursor (↑/↓ or j/k) moves through all 13 rows; Enter
+ * A keyboard cursor (↑/↓ or j/k) moves through 13 full-site rows or
+ * seven authored-prose rows in site-only mode; Enter
  * navigates to the highlighted entry. Escape clears the selection.
  * The cursor shortcuts deliberately do not fire when the user is
  * typing in an input/textarea/contenteditable, so the landing never
@@ -23,34 +24,9 @@ import React, {useEffect, useRef, useState} from "react";
 import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
 import {useHistory} from "@docusaurus/router";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import {getDocumentationNavigation, type DocumentationRow} from "../lib/navigation";
 import styles from "./index.module.css";
-
-/** A single row on the landing page — human label + absolute href. */
-type Row = {readonly label: string; readonly href: string};
-
-const I_WANT_TO: readonly Row[] = [
-  {label: "hit the api from code", href: "/internals/dotnet/arolariu.Backend.Core/"},
-  {label: "understand the architecture", href: "/monorepo/rfc/domain-driven-design-architecture/"},
-  {label: "use the component library", href: "/reference/typescript/components/"},
-  {label: "add a new RFC", href: "/monorepo/rfc/"},
-  {label: "configure telemetry", href: "/monorepo/backend/opentelemetry-guide/"},
-  {label: "debug the config proxy", href: "/internals/experimental/config/loader/"},
-];
-
-const START_HERE: readonly Row[] = [
-  {label: "monorepo overview", href: "/monorepo/"},
-  {label: ".net internals", href: "/internals/dotnet/"},
-  {label: "typescript reference", href: "/reference/typescript/"},
-  {label: "experimental (python)", href: "/internals/experimental/"},
-];
-
-const RESOURCES: readonly Row[] = [
-  {label: "rfcs", href: "/monorepo/rfc/"},
-  {label: "backend guides", href: "/monorepo/backend/"},
-  {label: "frontend guides", href: "/monorepo/frontend/"},
-];
-
-const ALL_ROWS: readonly Row[] = [...I_WANT_TO, ...START_HERE, ...RESOURCES];
 
 /**
  * Return `'└─'` for the last row in a section, `'├─'` otherwise.
@@ -72,6 +48,9 @@ function isInteractiveTarget(el: EventTarget | null): boolean {
 }
 
 export default function Home(): React.JSX.Element {
+  const {siteConfig} = useDocusaurusContext();
+  const siteOnly = siteConfig.customFields?.["docsSiteOnly"] === true;
+  const navigation = getDocumentationNavigation(siteOnly ? "site-only" : "full");
   const [cursor, setCursor] = useState<number | null>(null);
   const history = useHistory();
   // Mirror `cursor` into a ref so the global keydown listener can read
@@ -87,7 +66,7 @@ export default function Home(): React.JSX.Element {
 
       if (event.key === "ArrowDown" || event.key === "j") {
         event.preventDefault();
-        setCursor((value) => (value === null ? 0 : Math.min(value + 1, ALL_ROWS.length - 1)));
+        setCursor((value) => (value === null ? 0 : Math.min(value + 1, navigation.allRows.length - 1)));
       } else if (event.key === "ArrowUp" || event.key === "k") {
         event.preventDefault();
         setCursor((value) => (value === null || value <= 0 ? 0 : value - 1));
@@ -95,14 +74,15 @@ export default function Home(): React.JSX.Element {
         event.preventDefault();
         // Route via Docusaurus' SPA history so the navigation stays
         // client-side — no full reload, preserves plugin state.
-        history.push(ALL_ROWS[cursorRef.current]!.href);
+        const selected = navigation.allRows[cursorRef.current];
+        if (selected !== undefined) history.push(selected.href);
       } else if (event.key === "Escape") {
         setCursor(null);
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [history]);
+  }, [history, navigation]);
 
   return (
     <Layout
@@ -116,7 +96,8 @@ export default function Home(): React.JSX.Element {
             <span className={styles["accent"]}>docs</span>
           </h1>
           <p className={styles["tagline"]}>
-            <span className={styles["comment"]}>//</span> unified reference for three services
+            <span className={styles["comment"]}>//</span>{" "}
+            {siteOnly ? "site-only preview: authored documentation" : "unified reference for three services"}
             <span
               className={styles["caret"]}
               aria-hidden='true'
@@ -126,21 +107,21 @@ export default function Home(): React.JSX.Element {
 
         <Section
           title='i want to…'
-          rows={I_WANT_TO}
+          rows={navigation.iWantTo}
           cursor={cursor}
           cursorOffset={0}
         />
         <Section
           title='start here'
-          rows={START_HERE}
+          rows={navigation.startHere}
           cursor={cursor}
-          cursorOffset={I_WANT_TO.length}
+          cursorOffset={navigation.iWantTo.length}
         />
         <Section
           title='resources'
-          rows={RESOURCES}
+          rows={navigation.resources}
           cursor={cursor}
-          cursorOffset={I_WANT_TO.length + START_HERE.length}
+          cursorOffset={navigation.iWantTo.length + navigation.startHere.length}
         />
 
         <footer className={styles["footer"]}>
@@ -155,7 +136,7 @@ export default function Home(): React.JSX.Element {
 /** Props for the internal `Section` helper. */
 type SectionProps = {
   readonly title: string;
-  readonly rows: readonly Row[];
+  readonly rows: readonly DocumentationRow[];
   readonly cursor: number | null;
   readonly cursorOffset: number;
 };

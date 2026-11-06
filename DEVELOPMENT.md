@@ -28,16 +28,16 @@
 
 There are three ways to develop locally. Choose based on your needs:
 
-|                         | Aspire (default)                                                                   | Selfhost (Compose)                                                      | DevContainer / Codespaces                                             |
-| ----------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| **Best for**            | Day-to-day coding with fast iteration                                              | CI parity, deploy-mock-of-prod, container auditing                      | Onboarding, cloud dev, consistent env                                 |
-| **Hot reload**          | ✅ All services (apps run native)                                                  | ❌ Production builds, no reload                                         | ✅ All services (Aspire runs inside container)                        |
-| **Infrastructure**      | ✅ SQL Server, Cosmos vNext emulator, Azurite, Redis via Aspire-managed containers | ✅ Full containerized stack                                             | ✅ Same as Aspire (Docker-in-Docker)                                  |
-| **Setup time**          | ~2 min (`npm run setup`)                                                           | ~5 min (container build + init)                                         | ~5 min (container build)                                              |
-| **Prerequisites**       | Git, Node, npm (`npm run setup` prepares .NET, Python, and the engine)             | Rancher Desktop or Podman Desktop (`npm run setup` prepares the engine) | A Dev Containers-compatible engine + VS Code Dev Containers extension |
-| **VS Code integration** | Open `.code-workspace`, press F5                                                   | Open folder (services run in containers)                                | Automatic — extensions + tools pre-installed                          |
-| **OS support**          | Windows, macOS, Linux                                                              | Windows, macOS, Linux                                                   | Windows, macOS, Linux, browser (Codespaces)                           |
-| **When to use**         | Writing code, debugging, unit tests                                                | Container auditing, CI parity, E2E against prod-shape                   | First day setup, CI environments, Codespaces                          |
+|                         | Aspire (default)                                                                   | Selfhost (Compose)                                                      | Service-focused DevContainers                                          |
+| ----------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Best for**            | Day-to-day coding with fast iteration                                              | CI parity, deploy-mock-of-prod, container auditing                      | Focused service work with isolated tooling                             |
+| **Hot reload**          | ✅ All services (apps run native)                                                  | ❌ Production builds, no reload                                         | Selected service's manually started development server                 |
+| **Infrastructure**      | ✅ SQL Server, Cosmos vNext emulator, Azurite, Redis via Aspire-managed containers | ✅ Full containerized stack                                             | None: no engine socket or nested daemon                                |
+| **Setup time**          | ~2 min (`npm run setup`)                                                           | ~5 min (container build + init)                                         | First creation restores selected dependencies; warm reopening does not |
+| **Prerequisites**       | Git, Node, npm (`npm run setup` prepares .NET, Python, and the engine)             | Rancher Desktop or Podman Desktop (`npm run setup` prepares the engine) | Rancher or Podman plus VS Code Dev Containers                          |
+| **VS Code integration** | Open `.code-workspace`, press F5                                                   | Open folder (services run in containers)                                | Automatic — extensions + tools pre-installed                           |
+| **OS support**          | Windows, macOS, Linux                                                              | Windows, macOS, Linux                                                   | A supported Rancher/Podman host running Linux containers               |
+| **When to use**         | Writing code, debugging, unit tests                                                | Container auditing, CI parity, E2E against prod-shape                   | Work limited to one selected flavor                                    |
 
 ### Recommended workflow
 
@@ -202,18 +202,54 @@ See [infra/Local/readme.md](infra/Local/readme.md) for full Compose details.
 
 ---
 
-### Alternative: DevContainer / GitHub Codespaces
+### Alternative: Service-focused DevContainers
 
-For new developers or cloud-based development:
+Open the checkout in VS Code, run **Dev Containers: Reopen in Container**, and select one definition:
 
-1. Open the repo in VS Code → "Reopen in Container"
-2. Container pre-installs Node 24, .NET 10, Python 3.12, and 28 VS Code extensions
-3. Run `npm run dev` inside the container (Docker-in-Docker is enabled — Aspire spawns infra containers as siblings)
+| Flavor              | Definition                                                                                       | Prepared scope                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| EXP                 | [.devcontainer/exp/devcontainer.json](.devcontainer/exp/devcontainer.json)                       | EXP's Python environment, runtime dependencies, pytest and Ruff |
+| API                 | [.devcontainer/api/devcontainer.json](.devcontainer/api/devcontainer.json)                       | API SDK, owning project restores and C# tooling                 |
+| CV, docs and status | [.devcontainer/cv-docs-status/devcontainer.json](.devcontainer/cv-docs-status/devcontainer.json) | Those three Node workspaces; docs-site-only preview             |
+| Main website        | [.devcontainer/website/devcontainer.json](.devcontainer/website/devcontainer.json)               | Website dependencies, attribution input and Next.js types       |
+| Components          | [.devcontainer/components/devcontainer.json](.devcontainer/components/devcontainer.json)         | Library dependencies, unit tests and Storybook tooling          |
 
-**GitHub Codespaces:** Go to the repo → Code → Codespaces → Create codespace
+Use Rancher Desktop or Podman Desktop, never Docker Desktop. For Podman, select its CLI through the host's Dev Containers extension setting
+`dev.containers.dockerPath`. Engine installation and startup remain host responsibilities.
 
-**Pre-installed:** Node 24, .NET 10, Python 3.12, Docker, Azure CLI, Playwright **Forwarded ports:** 3000, 5000, 5002, 5173, 6006, 7007,
-8080, 9229
+Creation prepares dependencies and essential generated state, but starts no server. There is no full-stack bootstrap, host-engine socket,
+nested daemon, Azure CLI setup, workload installation, host certificate trust change, or automatic browser download. Use the existing host
+Aspire workflow separately when full-stack coordination is needed; do not run `npm run setup`, `npm run dev`, or root-wide generators inside
+a flavor.
+
+Run commands in the selected working folder:
+
+- **EXP:** `python -m ruff check .`, `python -m pytest -q`; its existing standalone uvicorn command uses port 5002.
+- **API:** `dotnet build src/Core/arolariu.Backend.Core.csproj`; run each owning test project explicitly. Starting the API still requires
+  developer-owned external configuration/dependencies.
+- **Website:** `npm run typecheck`, `npm run test:unit`, `npm run dev`. Integration configuration and any certificate trust decision remain
+  explicit; creation does not synthesize credentials.
+- **Components:** `npm run test:unit`, `npm run build`, `npm run storybook`.
+- **CV/docs/status:** use workspace commands such as `npm run dev --workspace @arolariu/cv`, `npm run start --workspace @arolariu/docs`, and
+  `npm run dev --workspace @arolariu/status`. The root docs aliases perform full reference extraction and are intentionally not this
+  flavor's entrypoints. See the [docs-site workflow](sites/docs.arolariu.ro/README.md#site-only-development).
+
+Dependency/cache volumes belong to a flavor and checkout. Node flavors mask every workspace `node_modules` directory because even
+workspace-filtered `npm ci` cleans all those locations; only the selected applications are installed. Warm reopening runs no installation or
+generation. After changing dependency inputs, explicitly rerun that flavor's hook, for example:
+
+```bash
+bash /workspaces/arolariu.ro/.devcontainer/exp/postCreate.sh
+```
+
+Required failures propagate. A failed initial creation needs an explicit preparation rerun after fixing the reported cause; a subsequent CLI
+connection alone does not prove dependencies are ready. Resolve package-feed/proxy/TLS failures through the approved host/network
+configuration, not by disabling certificate checks.
+
+Browser tests are opt-in: provision only the required browser/system dependencies after approval, or use an existing compatible browser. Use
+one active flavor per checkout, and do not build multiple flavor images in that checkout concurrently. The source checkout remains an
+intentional writable bind mount; these environments are not a sandbox for untrusted code. Do not share the same project's build outputs
+between simultaneous host and container builds.
 
 ---
 

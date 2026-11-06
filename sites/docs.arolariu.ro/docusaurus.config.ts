@@ -2,11 +2,12 @@
  * @fileoverview Docusaurus site configuration for docs.arolariu.ro.
  *
  * @remarks
- * Registers four content-docs plugin instances (one per extractor
+ * Full mode registers four content-docs plugin instances (one per extractor
  * tier — monorepo prose, .NET internals, TypeScript reference,
  * Python experimental), the local schema.org JSON-LD plugin, local
  * search, Mermaid, custom head tags, and the console-aesthetic
- * theme customizations.
+ * theme customizations. Explicit site-only development keeps authored prose
+ * without registering generated-reference plugins.
  *
  * HTTP API reference is intentionally not hosted here:
  * `api.arolariu.ro` serves Swagger UI at runtime from the live spec,
@@ -17,6 +18,9 @@ import type {Config} from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import {themes as prismThemes} from "prism-react-renderer";
 import schemaJsonLdPlugin from "./src/plugins/schema-jsonld";
+import {includesDocumentationPath, readDocsSiteMode} from "./src/lib/siteMode";
+
+const docsMode = readDocsSiteMode(process.env["AROLARIU_DOCS_SITE_ONLY"]);
 
 const navbarItems = [
   {to: "/", label: "Docs", position: "left" as const},
@@ -25,6 +29,36 @@ const navbarItems = [
   {to: "/internals/experimental", label: "Experimental", position: "left" as const},
   {href: "https://api.arolariu.ro/index.html", label: "HTTP API", position: "right" as const},
   {href: "https://github.com/arolariu/arolariu.ro", label: "GitHub", position: "right" as const},
+].filter((item) => !("to" in item) || item.to === undefined || includesDocumentationPath(item.to, docsMode));
+
+const referencePlugins: NonNullable<Config["plugins"]> = [
+  [
+    "@docusaurus/plugin-content-docs",
+    {
+      id: "dotnet-internals",
+      path: "_generated/dotnet-internals",
+      routeBasePath: "internals/dotnet",
+      sidebarPath: "./sidebars/dotnet-internals.ts",
+    },
+  ],
+  [
+    "@docusaurus/plugin-content-docs",
+    {
+      id: "ts-reference",
+      path: "_generated/ts-reference",
+      routeBasePath: "reference/typescript",
+      sidebarPath: "./sidebars/ts-reference.ts",
+    },
+  ],
+  [
+    "@docusaurus/plugin-content-docs",
+    {
+      id: "python-internals",
+      path: "_generated/experimental",
+      routeBasePath: "internals/experimental",
+      sidebarPath: "./sidebars/experimental.ts",
+    },
+  ],
 ];
 
 const config: Config = {
@@ -38,6 +72,7 @@ const config: Config = {
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "throw",
   markdown: {format: "detect", mermaid: true},
+  customFields: {docsSiteOnly: docsMode === "site-only"},
   i18n: {defaultLocale: "en", locales: ["en"]},
   headTags: [
     {tagName: "meta", attributes: {name: "theme-color", content: "#0a0b0d"}},
@@ -77,33 +112,7 @@ const config: Config = {
         editUrl: "https://github.com/arolariu/arolariu.ro/tree/main/",
       },
     ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "dotnet-internals",
-        path: "_generated/dotnet-internals",
-        routeBasePath: "internals/dotnet",
-        sidebarPath: "./sidebars/dotnet-internals.ts",
-      },
-    ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "ts-reference",
-        path: "_generated/ts-reference",
-        routeBasePath: "reference/typescript",
-        sidebarPath: "./sidebars/ts-reference.ts",
-      },
-    ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "python-internals",
-        path: "_generated/experimental",
-        routeBasePath: "internals/experimental",
-        sidebarPath: "./sidebars/experimental.ts",
-      },
-    ],
+    ...(docsMode === "full" ? referencePlugins : []),
     schemaJsonLdPlugin,
     "@easyops-cn/docusaurus-search-local",
   ],

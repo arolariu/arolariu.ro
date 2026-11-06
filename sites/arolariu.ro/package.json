@@ -85,6 +85,7 @@
     "zustand": "*"
   },
   "devDependencies": {
+    "@effect/platform-node": "*",
     "@faker-js/faker": "*",
     "@next/bundle-analyzer": "*",
     "@next/eslint-plugin-next": "*",
@@ -103,8 +104,10 @@
     "@vitest/ui": "*",
     "cross-env": "*",
     "cssnano": "*",
+    "effect": "*",
     "fake-indexeddb": "*",
     "globals": "*",
+    "happy-dom": "*",
     "postcss": "*",
     "raw-loader": "*",
     "sass": "*",

@@ -13,7 +13,10 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare:site": "node scripts/prepare-site.mts",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test --tsconfig tsconfig.playwright.json"
   },
   "dependencies": {
     "@docusaurus/core": "*",
@@ -31,6 +34,15 @@
     "react-dom": "*"
   },
   "devDependencies": {
+    "@effect/platform-node": "*",
+    "@playwright/test": "*",
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "@vitest/coverage-v8": "*",
+    "effect": "*",
+    "typescript": "*",
+    "vitest": "*",
     "@docusaurus/module-type-aliases": "*",
     "@docusaurus/tsconfig": "*",
     "@docusaurus/types": "*",

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
+  "name": "arolariu.ro - EXP",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "init": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/arolariu.ro,type=bind",
+  "workspaceFolder": "/workspaces/arolariu.ro/sites/exp.arolariu.ro",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "os-provided",
+      "installTools": false,
+      "installJupyterlab": false
+    }
+  },
+  "mounts": [
+    "source=arolariu-${devcontainerId}-exp-venv,target=/home/vscode/.cache/exp-venv,type=volume",
+    "source=arolariu-${devcontainerId}-exp-pip,target=/home/vscode/.cache/pip,type=volume"
+  ],
+  "containerEnv": {
+    "INFRA": "local",
+    "PIP_CACHE_DIR": "/home/vscode/.cache/pip",
+    "VIRTUAL_ENV": "/home/vscode/.cache/exp-venv"
+  },
+  "remoteEnv": {
+    "PATH": "/home/vscode/.cache/exp-venv/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/exp/postCreate.sh"],
+  "forwardPorts": [5002],
+  "portsAttributes": {
+    "5002": {"label": "EXP config service", "onAutoForward": "notify"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-python.vscode-pylance", "ms-python.debugpy", "charliermarsh.ruff"],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.cache/exp-venv/bin/python",
+        "ruff.path": ["/home/vscode/.cache/exp-venv/bin/ruff"],
+        "[python]": {"editor.defaultFormatter": "charliermarsh.ruff"}
+      }
+    }
+  }
+}

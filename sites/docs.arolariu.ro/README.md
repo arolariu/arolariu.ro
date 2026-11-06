@@ -63,7 +63,34 @@ exp.arolariu.ro            ──pydoc-markdown──────────►
 The .NET build step itself is a single `dotnet build` invocation against `arolariu.Backend.Core.csproj` — that project is the sole graph
 root (everything else is a `<ProjectReference>` dependency), so MSBuild compiles the full assembly set in one pass.
 
-## Local development
+## Site-only development
+
+Choose the [CV/docs/status devcontainer](../../.devcontainer/cv-docs-status/devcontainer.json) for documentation-site work without the other
+application toolchains. It installs only those three workspaces, prepares authored prose, and sets `AROLARIU_DOCS_SITE_ONLY=1`. From its
+working folder:
+
+```bash
+npm run start --workspace @arolariu/docs
+npm run typecheck --workspace @arolariu/docs
+npm run test:unit --workspace @arolariu/docs
+npm run build --workspace @arolariu/docs
+```
+
+This mode retains site chrome, styles, authored pages, mirrored repository documentation, search and Mermaid. It omits generated-reference
+plugins and local reference destinations, and identifies itself as a site-only preview. It never runs TypeDoc, pydoc-markdown, API builds,
+or reference extraction. Ignored working artifacts are excluded from prose mirroring.
+
+Run `npm run prepare:site --workspace @arolariu/docs` explicitly to refresh authored prose. Outside this flavor, set
+`AROLARIU_DOCS_SITE_ONLY=1` in the shell before starting/building the site; unset it (or use `0`) for the unchanged full-reference
+configuration. Other explicit values fail configuration loading.
+
+Browser coverage is optional: `npm run test:e2e --workspace @arolariu/docs` runs the site-only Chromium checks. Browser installation is not
+part of creation; `PLAYWRIGHT_CHROMIUM_CHANNEL=chrome` can select an already installed compatible Chrome instead. The test owns its local
+server and will not reuse an unrelated listener on port 3100.
+
+Do not use the root `dev:docs`/`build:docs` aliases inside the filtered flavor: those retain their full-reference assembly dependency.
+
+## Full-reference maintenance
 
 **Prerequisites** (one-time per machine):
 
@@ -83,7 +110,7 @@ NuGet registers tool commands in lower case regardless of the package name's cas
 **Everyday commands** (from the repo root):
 
 ```bash
-npm run docs:assemble  # Run all four extractors + normalizer + landing pages
+npm run docs:assemble  # Run the three reference extractors, prose mirror, normalizer and landing pages
 npm run build:docs     # Full production build (triggers the postbuild hook)
 npm run dev:docs       # Live dev server with hot reload (http://localhost:3100)
 ```
@@ -91,9 +118,9 @@ npm run dev:docs       # Live dev server with hot reload (http://localhost:3100)
 `build:docs` and `dev:docs` depend on `docs:assemble` via Nx, so a single `npm run build:docs` performs the full pipeline.
 
 Run `npm --workspace @arolariu/docs run typecheck` to check the site source, configuration, sidebars, and build scripts with the root strict
-TypeScript and `checkJs` settings. Only `static/js/clarity.js` is excluded alongside generated build output: it is the unmodified vendor
-browser bootstrap loaded directly by `docusaurus.config.ts`, not an imported application module. Docusaurus copies it unchanged into the
-build; its loading and analytics behavior are not altered by this source boundary.
+TypeScript and `checkJs` settings. Generated build, coverage and browser-test output are excluded, as is `static/js/clarity.js`: it is the
+unmodified vendor browser bootstrap loaded directly by `docusaurus.config.ts`, not an imported application module. Docusaurus copies it
+unchanged into the build; its loading and analytics behavior are not altered by this source boundary.
 
 The Docusaurus preset still sets the deprecated `baseUrl` option. The local `baseUrl: null` clears that inherited setting rather than
 enabling it; effective compiler options omit `baseUrl`, and `@site/*` resolves through explicitly relative `paths` entries.

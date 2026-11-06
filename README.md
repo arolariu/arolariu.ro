@@ -535,7 +535,7 @@ before running:
 # Install/reinstall the local CA after approval
 mkcert -install
 
-# Regenerate the wildcard cert (devcontainer does this automatically in postCreate.sh)
+# Regenerate the wildcard cert only for an explicitly selected selfhost setup
 cd infra/Local/Management/certs
 mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
 ```
