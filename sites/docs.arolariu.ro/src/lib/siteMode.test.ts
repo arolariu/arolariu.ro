@@ -23,6 +23,21 @@ afterEach(() => {
 });
 
 describe("documentation site mode", () => {
+  it("exposes docs unit tests to Nx without assembling generated references", () => {
+    const project: unknown = JSON.parse(readFileSync(new URL("../../project.json", import.meta.url), "utf8"));
+
+    expect(project).toMatchObject({
+      targets: {
+        test: {
+          executor: "nx:run-commands",
+          options: {command: "npm run test:unit", cwd: "sites/docs.arolariu.ro"},
+          configurations: {unit: {command: "npm run test:unit"}},
+        },
+      },
+    });
+    expect(project).not.toHaveProperty("targets.test.dependsOn");
+  });
+
   it("keeps site-only output out of the full-site Nx build cache", () => {
     const project: unknown = JSON.parse(readFileSync(new URL("../../project.json", import.meta.url), "utf8"));
 

@@ -49,6 +49,18 @@
         "command": "npx tsc --noEmit",
         "cwd": "sites/docs.arolariu.ro"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:unit",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "configurations": {
+        "unit": {
+          "command": "npm run test:unit"
+        }
+      }
     }
   },
   "tags": ["domain:docs", "scope:docs", "type:app", "platform:node"]

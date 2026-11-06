@@ -84,6 +84,9 @@ Run `npm run prepare:site --workspace @arolariu/docs` explicitly to refresh auth
 `AROLARIU_DOCS_SITE_ONLY=1` in the shell before starting/building the site; unset it (or use `0`) for the unchanged full-reference
 configuration. Other explicit values fail configuration loading.
 
+The unit suite also runs through the root Nx unit-test target and the hygiene CI docs suite. It checks both the default full-site
+configuration and site-only mode without building or extracting generated references.
+
 Browser coverage is optional: `npm run test:e2e --workspace @arolariu/docs` runs the site-only Chromium checks. Browser installation is not
 part of creation; `PLAYWRIGHT_CHROMIUM_CHANNEL=chrome` can select an already installed compatible Chrome instead. The test owns its local
 server and will not reuse an unrelated listener on port 3100.

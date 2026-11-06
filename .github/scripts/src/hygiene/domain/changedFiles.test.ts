@@ -133,6 +133,11 @@ describe("suitesForTypeScriptChanges", () => {
     expect(suitesForTypeScriptChanges(known(["sites/arolariu.ro/src/app/page.tsx"]))).toEqual(["website"]);
   });
 
+  it("selects docs-site unit tests without broadening repository prose changes", () => {
+    expect(suitesForTypeScriptChanges(known(["sites/docs.arolariu.ro/docusaurus.config.ts"]))).toEqual(["docs"]);
+    expect(suitesForTypeScriptChanges(known(["docs/rfc/1003.md"]))).toEqual([]);
+  });
+
   it("selects components/cv/status/scripts by path", () => {
     expect(suitesForTypeScriptChanges(known(["packages/components/src/Button.tsx"]))).toEqual(["components"]);
     expect(suitesForTypeScriptChanges(known(["sites/cv.arolariu.ro/src/routes/+page.svelte"]))).toEqual(["cv"]);

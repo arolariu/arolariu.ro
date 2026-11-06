@@ -32,6 +32,28 @@ describe("dependency-aware hygiene planning", () => {
     expect(result.providers.filter((provider) => provider.setup.dotnet || provider.setup.python)).toEqual([]);
     expect(toProviderMatrix(result).provider).toHaveLength(6);
   });
+  it("owns the docs test target without broadening scope or preparing reference toolchains", () => {
+    const graph = workspace();
+    if (graph.kind !== "available") throw new Error("Invalid fixture");
+    const result = plan([{kind: "modified", path: "sites/docs.arolariu.ro/src/lib/siteMode.ts"}], {
+      workspace: {
+        ...graph,
+        value: {
+          ...graph.value,
+          projects: [...graph.value.projects, {name: "canonical-docs", root: "sites/docs.arolariu.ro", targets: ["test"]}],
+        },
+      },
+    });
+
+    expect(result.mode).toBe("affected");
+    expect(result.suites).toEqual(["docs"]);
+    expect(result.affectedProjects).toEqual(["canonical-docs"]);
+    expect(result.providers.find((provider) => provider.id === "test-typescript")).toMatchObject({
+      selected: true,
+      setup: {rootNodeDependencies: true, dotnet: false, python: false, buildComponents: false, generateArtifacts: false},
+    });
+    expect(decodeHygienePlan(JSON.parse(JSON.stringify(result)))).toEqual(result);
+  });
   it("retains both rename owners and deleted ownership without formatting deleted files", () => {
     const result = plan([
       {kind: "renamed", previousPath: "packages/components/old.ts", path: "sites/cv.arolariu.ro/new.ts"},
@@ -69,7 +91,7 @@ describe("dependency-aware hygiene planning", () => {
     const result = plan([{kind: "modified", path: "sites/arolariu.ro/page.tsx"}], extra);
     expect(result.mode).toBe("full");
     expect(result.providers.every((provider) => provider.selected)).toBe(true);
-    expect(result.suites).toHaveLength(6);
+    expect(result.suites).toHaveLength(7);
     expect(result.diagnostics.length).toBeGreaterThan(0);
   });
   it("respects shared-input globs from Nx and does not broaden docs-only changes", () => {
