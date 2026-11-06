@@ -127,6 +127,17 @@ describe("service-focused development containers", () => {
     expect(devcontainerMountTargets(readDevcontainer(flavor))).toContain("/home/vscode/.cache");
   });
 
+  it.each(nodeFlavors)("%s prepares a symlinked checkout using physical dependency mount paths", async (flavor) => {
+    const fixture = createPreparationFixture(flavor, true);
+    fixtures.push(fixture);
+
+    const result = await Effect.runPromise(fixture.run().pipe(Effect.provide(layer)));
+
+    expect(result, result.stderr).toMatchObject({status: 0});
+    expect(fixture.events().some((event) => event.startsWith("npm\tci\t"))).toBe(true);
+    expect(fixture.events().some((event) => event.startsWith("mountpoint\t") && event.includes("checkout-link"))).toBe(false);
+  });
+
   it.each(nodeFlavors)("%s refuses a newly added workspace before npm can clean host dependencies", async (flavor) => {
     const fixture = createPreparationFixture(flavor);
     fixtures.push(fixture);

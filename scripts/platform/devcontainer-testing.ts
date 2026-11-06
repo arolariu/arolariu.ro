@@ -1,4 +1,4 @@
-import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 
@@ -87,7 +87,7 @@ export function runFixtureNpm(
 }
 
 /** Creates an isolated checkout that runs the real hook against external-command doubles. */
-export function createPreparationFixture(flavor: DevcontainerFlavor): PreparationFixture {
+export function createPreparationFixture(flavor: DevcontainerFlavor, linkedCheckout = false): PreparationFixture {
   const source = join(repositoryRoot, ".devcontainer", flavor, "postCreate.sh");
   if (!existsSync(source)) throw new Error(`Missing ${flavor} preparation hook.`);
 
@@ -99,6 +99,8 @@ export function createPreparationFixture(flavor: DevcontainerFlavor): Preparatio
   mkdirSync(dirname(script), {recursive: true});
   mkdirSync(bin, {recursive: true});
   writeFileSync(script, readFileSync(source, "utf8"));
+  const checkout = linkedCheckout ? join(root, "checkout-link") : root;
+  if (linkedCheckout) symlinkSync(root, checkout, process.platform === "win32" ? "junction" : "dir");
   writeFileSync(join(root, "package.json"), JSON.stringify({name: "fixture", private: true, workspaces: ["sites/*", "packages/*"]}));
 
   for (const directory of [".cache/exp-venv", ".cache/pip", ".cache/npm", ".cache/api-dotnet", ".nuget/packages"])
@@ -183,7 +185,7 @@ exit 19
               env: {
                 HOME: bashPath(home),
                 FAKE_BIN: bashPath(bin),
-                PREP_SCRIPT: bashPath(script),
+                PREP_SCRIPT: bashPath(join(checkout, ".devcontainer", flavor, "postCreate.sh")),
                 TRACE: bashPath(trace),
                 REAL_NODE: bashPath(process.execPath),
                 BASH_ENV: "/dev/null",
@@ -202,6 +204,9 @@ exit 19
             ),
           );
       }),
-    dispose: () => rmSync(root, {recursive: true, force: true}),
+    dispose: () => {
+      if (linkedCheckout) unlinkSync(checkout);
+      rmSync(root, {recursive: true, force: true});
+    },
   };
 }

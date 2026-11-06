@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 if [[ -f "$repository_root/.git" ]] && ! git -C "$repository_root" rev-parse --show-toplevel > /dev/null; then
   printf 'Source checkout Git metadata is not accessible inside the container. Use a regular clone; external host Git directories are not mounted.\n' >&2
   exit 1

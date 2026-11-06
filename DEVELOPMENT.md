@@ -249,8 +249,9 @@ Run commands in the selected working folder:
 
 Dependency/cache volumes belong to a flavor and checkout. Node flavors mask every workspace `node_modules` directory because even
 workspace-filtered `npm ci` cleans all those locations; only the selected applications are installed. Preparation expands the live root
-workspace patterns and refuses installation if any workspace lacks a protective mount. When adding an npm workspace, update both the volume
-declarations and hook mount lists in every Node flavor; the contract tests also check these against the live workspace inventory.
+workspace patterns and refuses installation if any workspace lacks a protective mount. Checkout symlinks are resolved to physical paths
+before comparing dependency mount destinations. When adding an npm workspace, update both the volume declarations and hook mount lists in
+every Node flavor; the contract tests also check these against the live workspace inventory.
 
 Warm reopening runs no installation or generation. After changing dependency inputs, explicitly rerun that flavor's hook, for example:
 
