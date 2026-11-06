@@ -120,7 +120,7 @@ describe("service-focused development containers", () => {
   });
 
   it.each(nodeFlavors)("%s masks every live npm workspace cleanup destination", (flavor) => {
-    expect(devcontainerMountTargets(readDevcontainer(flavor))).toEqual(expect.arrayContaining(workspaceCleanupTargets()));
+    expect(devcontainerMountTargets(readDevcontainer(flavor))).toEqual(expect.arrayContaining([...workspaceCleanupTargets()]));
   });
 
   it.each(nodeFlavors)("%s owns the cache parent needed by opt-in browser and tool downloads", (flavor) => {
