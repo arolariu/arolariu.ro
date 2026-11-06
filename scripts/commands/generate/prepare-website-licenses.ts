@@ -2,10 +2,10 @@ import {NodeRuntime, NodeServices} from "@effect/platform-node";
 import {Effect, Layer} from "effect";
 import {resolve} from "node:path";
 
-import {FrontendLicenseGenerator, type FrontendLicenseRequirements} from "../../../scripts/commands/generate/artifacts.ts";
-import type {ArtifactGenerationFailed} from "../../../scripts/commands/generate/errors.ts";
-import {EnvironmentLive} from "../../../scripts/platform/Environment.ts";
-import {outputLayer, SinkLive} from "../../../scripts/platform/Output.ts";
+import {EnvironmentLive} from "../../platform/Environment.ts";
+import {outputLayer, SinkLive} from "../../platform/Output.ts";
+import {FrontendLicenseGenerator, type FrontendLicenseRequirements} from "./artifacts.ts";
+import type {ArtifactGenerationFailed} from "./errors.ts";
 
 /**
  * Generates only this website's attribution document from its installed dependencies.

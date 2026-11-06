@@ -1,7 +1,8 @@
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
-import {join, resolve} from "node:path";
+import {isAbsolute, join, relative, resolve, sep} from "node:path";
 
 import {Effect} from "effect";
+import ts from "typescript";
 import {afterEach, describe, expect, it} from "vitest";
 
 import {
@@ -27,8 +28,8 @@ function run(value: PreparationFixture, environment?: Readonly<Record<string, st
 }
 
 async function licenseGenerator() {
-  expect(existsSync(resolve("sites/arolariu.ro/scripts/prepare-licenses.ts"))).toBe(true);
-  return import("../sites/arolariu.ro/scripts/prepare-licenses.ts");
+  expect(existsSync(resolve("scripts/commands/generate/prepare-website-licenses.ts"))).toBe(true);
+  return import("./commands/generate/prepare-website-licenses.ts");
 }
 
 afterEach(() => {
@@ -36,6 +37,28 @@ afterEach(() => {
 });
 
 describe("Website devcontainer", () => {
+  it("keeps repository tooling out of the production website compilation", {timeout: 30_000}, () => {
+    const config = ts.getParsedCommandLineOfConfigFile(
+      resolve("sites/arolariu.ro/tsconfig.json"),
+      {},
+      {
+        ...ts.sys,
+        onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+          throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
+        },
+      },
+    );
+    if (config === undefined) throw new Error("The website compiler configuration could not be loaded.");
+    const program = ts.createProgram(config.fileNames, config.options);
+    const toolingRoot = resolve("scripts");
+    const toolingInputs = program.getSourceFiles().filter(({fileName}) => {
+      const path = relative(toolingRoot, fileName);
+      return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+    });
+
+    expect(toolingInputs.map(({fileName}) => relative(resolve("."), fileName))).toEqual([]);
+  });
+
   it.each([
     "@storybook/addon-a11y",
     "@storybook/addon-docs",
@@ -90,12 +113,16 @@ describe("Website devcontainer", () => {
     expect(await run(value)).toMatchObject({status: 0});
     const events = value
       .events()
-      .filter((event) => event.startsWith("npm\t") || (event.startsWith("node\t") && event.endsWith("/scripts/prepare-licenses.ts")));
+      .filter(
+        (event) =>
+          event.startsWith("npm\t")
+          || (event.startsWith("node\t") && event.endsWith("/scripts/commands/generate/prepare-website-licenses.ts")),
+      );
     expect(events).toHaveLength(3);
     expect(events[0]).toBe(
       "npm\tci\t--workspace\t@arolariu/website\t--include-workspace-root=false\t--foreground-scripts\t--no-audit\t--no-fund",
     );
-    expect(events[1]).toMatch(/^node\t.*\/sites\/arolariu\.ro\/scripts\/prepare-licenses\.ts$/);
+    expect(events[1]).toMatch(/^node\t.*\/scripts\/commands\/generate\/prepare-website-licenses\.ts$/);
     expect(events[2]).toBe("npm\texec\t--yes=false\t--workspace\t@arolariu/website\t--\tnext\ttypegen");
   });
 
@@ -104,7 +131,7 @@ describe("Website devcontainer", () => {
     const result = await run(value, {FAIL_COMMAND: "npm"});
     expect(result.status).toBe(17);
     expect(result.stderr).toContain("controlled npm failure");
-    expect(value.events().some((event) => event.endsWith("/scripts/prepare-licenses.ts"))).toBe(false);
+    expect(value.events().some((event) => event.endsWith("/scripts/commands/generate/prepare-website-licenses.ts"))).toBe(false);
     expect(result.stdout).not.toMatch(/ready|complete/i);
   });
 

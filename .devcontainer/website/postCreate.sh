@@ -54,5 +54,5 @@ for (const manifest of globSync(workspaces.map((pattern) => `${pattern}/package.
 JAVASCRIPT
 
 npm ci --workspace @arolariu/website --include-workspace-root=false --foreground-scripts --no-audit --no-fund
-node "$repository_root/sites/arolariu.ro/scripts/prepare-licenses.ts"
+node "$repository_root/scripts/commands/generate/prepare-website-licenses.ts"
 npm exec --yes=false --workspace @arolariu/website -- next typegen
