@@ -36,6 +36,24 @@ afterEach(() => {
 });
 
 describe("Website devcontainer", () => {
+  it.each([
+    "@storybook/addon-a11y",
+    "@storybook/addon-docs",
+    "@storybook/addon-themes",
+    "@storybook/nextjs-vite",
+    "@storybook/react",
+    "@testing-library/user-event",
+    "storybook",
+  ])("installs directly consumed tooling %s without another workspace", (name) => {
+    const root: unknown = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
+    const manifest: unknown = JSON.parse(readFileSync(resolve("sites/arolariu.ro/package.json"), "utf8"));
+    const lock: unknown = JSON.parse(readFileSync(resolve("package-lock.json"), "utf8"));
+
+    expect(root).toMatchObject({devDependencies: {[name]: expect.stringMatching(/^\d+\.\d+\.\d+/)}});
+    expect(manifest).toMatchObject({devDependencies: {[name]: "*"}});
+    expect(lock).toMatchObject({packages: {"sites/arolariu.ro": {devDependencies: {[name]: "*"}}}});
+  });
+
   it("selects website-only Node tooling without warm preparation", () => {
     const definition = readDevcontainer("website");
     expect(definition).toBeDefined();
