@@ -13,6 +13,7 @@
     },
     "build": {
       "executor": "nx:run-commands",
+      "inputs": ["production", {"env": "AROLARIU_DOCS_SITE_ONLY"}],
       "options": {
         "command": "npm run build",
         "cwd": "sites/docs.arolariu.ro"

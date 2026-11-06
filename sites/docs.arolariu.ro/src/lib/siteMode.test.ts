@@ -1,4 +1,4 @@
-import {existsSync} from "node:fs";
+import {existsSync, readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 
 import type {Config} from "@docusaurus/types";
@@ -23,6 +23,14 @@ afterEach(() => {
 });
 
 describe("documentation site mode", () => {
+  it("keeps site-only output out of the full-site Nx build cache", () => {
+    const project: unknown = JSON.parse(readFileSync(new URL("../../project.json", import.meta.url), "utf8"));
+
+    expect(project).toMatchObject({
+      targets: {build: {inputs: expect.arrayContaining(["production", {env: "AROLARIU_DOCS_SITE_ONLY"}])}},
+    });
+  });
+
   it.each([
     [undefined, "full"],
     ["0", "full"],
