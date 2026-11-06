@@ -5,6 +5,10 @@ import {Effect} from "effect";
 import ts from "typescript";
 import {afterEach, describe, expect, it} from "vitest";
 
+import {makeRootCommand, runCli} from "./cli.ts";
+import {makeGenerateCommand} from "./commands/generate/cli.ts";
+import {Environment} from "./platform/Environment.ts";
+import {exitCodeFor} from "./platform/exit.ts";
 import {
   createPreparationFixture,
   devcontainerMountTargets,
@@ -114,15 +118,13 @@ describe("Website devcontainer", () => {
     const events = value
       .events()
       .filter(
-        (event) =>
-          event.startsWith("npm\t")
-          || (event.startsWith("node\t") && event.endsWith("/scripts/commands/generate/prepare-website-licenses.ts")),
+        (event) => event.startsWith("npm\t") || (event.startsWith("node\t") && event.endsWith("\tgenerate\t--website-licenses-only")),
       );
     expect(events).toHaveLength(3);
     expect(events[0]).toBe(
       "npm\tci\t--workspace\t@arolariu/website\t--include-workspace-root=false\t--foreground-scripts\t--no-audit\t--no-fund",
     );
-    expect(events[1]).toMatch(/^node\t.*\/scripts\/commands\/generate\/prepare-website-licenses\.ts$/);
+    expect(events[1]).toMatch(/^node\t.*\/scripts\/cli\.ts\tgenerate\t--website-licenses-only$/);
     expect(events[2]).toBe("npm\texec\t--yes=false\t--workspace\t@arolariu/website\t--\tnext\ttypegen");
   });
 
@@ -131,7 +133,7 @@ describe("Website devcontainer", () => {
     const result = await run(value, {FAIL_COMMAND: "npm"});
     expect(result.status).toBe(17);
     expect(result.stderr).toContain("controlled npm failure");
-    expect(value.events().some((event) => event.endsWith("/scripts/commands/generate/prepare-website-licenses.ts"))).toBe(false);
+    expect(value.events().some((event) => event.endsWith("\tgenerate\t--website-licenses-only"))).toBe(false);
     expect(result.stdout).not.toMatch(/ready|complete/i);
   });
 
@@ -144,8 +146,7 @@ describe("Website devcontainer", () => {
     expect(value.events().some((event) => event.startsWith("npm"))).toBe(false);
   });
 
-  it("generates actual website attribution without changing API files", async () => {
-    const {prepareWebsiteLicenses} = await licenseGenerator();
+  it("generates actual website attribution through the central CLI without changing API files", async () => {
     const value = fixture();
     const apiSentinel = join(value.root, "sites", "api.arolariu.ro", "sentinel.txt");
     writeFileSync(apiSentinel, "unchanged");
@@ -163,9 +164,23 @@ describe("Website devcontainer", () => {
       }),
     );
 
-    const paths = await Effect.runPromise(prepareWebsiteLicenses(value.root).pipe(Effect.provide(layer)));
+    const outcome = await Effect.runPromiseExit(
+      runCli(["generate", "--website-licenses-only"], makeRootCommand([makeGenerateCommand()])).pipe(
+        Effect.provideService(Environment, {
+          variables: {},
+          cwd: value.root,
+          executablePath: process.execPath,
+          platform: process.platform,
+          architecture: process.arch,
+          stdinIsTTY: false,
+          stdoutIsTTY: false,
+          isCI: false,
+        }),
+        Effect.provide(layer),
+      ),
+    );
     const output = join(value.root, "sites", "arolariu.ro", "licenses.json");
-    expect(paths).toEqual([output]);
+    expect(exitCodeFor(outcome, undefined)).toBe(0);
     const document: unknown = JSON.parse(readFileSync(output, "utf8"));
     expect(document).toMatchObject({production: [{name: "demo", version: "1.0.0", license: "MIT"}]});
     expect(readFileSync(apiSentinel, "utf8")).toBe("unchanged");

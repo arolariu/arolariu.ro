@@ -1,9 +1,5 @@
-import {NodeRuntime, NodeServices} from "@effect/platform-node";
-import {Effect, Layer} from "effect";
-import {resolve} from "node:path";
+import type {Effect} from "effect";
 
-import {EnvironmentLive} from "../../platform/Environment.ts";
-import {outputLayer, SinkLive} from "../../platform/Output.ts";
 import {FrontendLicenseGenerator, type FrontendLicenseRequirements} from "./artifacts.ts";
 import type {ArtifactGenerationFailed} from "./errors.ts";
 
@@ -16,18 +12,4 @@ export function prepareWebsiteLicenses(
   repositoryRoot: string,
 ): Effect.Effect<readonly string[], ArtifactGenerationFailed, FrontendLicenseRequirements> {
   return new FrontendLicenseGenerator(repositoryRoot).generate();
-}
-
-if (import.meta.main) {
-  NodeRuntime.runMain(
-    prepareWebsiteLicenses(resolve(import.meta.dirname, "../../..")).pipe(
-      Effect.provide(
-        Layer.mergeAll(
-          NodeServices.layer,
-          EnvironmentLive,
-          outputLayer({mode: "human", verbose: false, color: false, context: "website-prepare"}).pipe(Layer.provideMerge(SinkLive)),
-        ),
-      ),
-    ),
-  );
 }

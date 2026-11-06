@@ -159,7 +159,7 @@ ${name === "npm" ? 'if [[ "${FAIL_COMMAND:-}" == "svelte" && "${1:-}" == "exec" 
     "node",
     `${record("node")}
 if [[ "\${1:-}" == "--input-type=module" ]]; then exec "$REAL_NODE" "$@"; fi
-if [[ "\${1:-}" == */scripts/commands/generate/prepare-website-licenses.ts ]]; then exit 0; fi
+if [[ "\${1:-}" == */scripts/cli.ts && "\${2:-}" == "generate" && "\${3:-}" == "--website-licenses-only" ]]; then exit 0; fi
 echo "Unexpected node invocation in preparation fixture" >&2
 exit 19
 `,

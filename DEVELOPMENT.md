@@ -240,8 +240,9 @@ Run commands in the selected working folder:
 - **API:** `dotnet build src/Core/arolariu.Backend.Core.csproj`; run each owning test project explicitly. Starting the API still requires
   developer-owned external configuration/dependencies.
 - **Website:** `npm run typecheck`, `npm run test:unit`, `npm run dev`. Integration configuration and any certificate trust decision remain
-  explicit; creation does not synthesize credentials. The devcontainer's attribution entrypoint belongs to repository tooling, outside the
-  website source and production TypeScript compilation; the production image does not need the root tooling tree.
+  explicit; creation does not synthesize credentials. The devcontainer uses `node scripts/cli.ts generate --website-licenses-only` from the
+  repository root for attribution. This uses the central tooling runtime, outside website source and production TypeScript compilation; the
+  production image does not need the root tooling tree.
 - **Components:** `npm run test:unit`, `npm run build`, `npm run storybook`.
 - **CV/docs/status:** use workspace commands such as `npm run dev --workspace @arolariu/cv`, `npm run start --workspace @arolariu/docs`, and
   `npm run dev --workspace @arolariu/status`. The root docs aliases perform full reference extraction and are intentionally not this
