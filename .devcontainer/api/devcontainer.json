@@ -23,6 +23,7 @@
     "ArtifactsPath": "/home/vscode/.cache/api-dotnet/artifacts"
   },
   "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/api/postCreate.sh"],
+  "waitFor": "postCreateCommand",
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {"label": "API", "onAutoForward": "notify"}

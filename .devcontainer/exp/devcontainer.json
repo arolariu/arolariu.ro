@@ -27,6 +27,7 @@
     "PATH": "/home/vscode/.cache/exp-venv/bin:${containerEnv:PATH}"
   },
   "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/exp/postCreate.sh"],
+  "waitFor": "postCreateCommand",
   "forwardPorts": [5002],
   "portsAttributes": {
     "5002": {"label": "EXP config service", "onAutoForward": "notify"}

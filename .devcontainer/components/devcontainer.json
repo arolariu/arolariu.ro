@@ -29,6 +29,7 @@
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
   },
   "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/components/postCreate.sh"],
+  "waitFor": "postCreateCommand",
   "forwardPorts": [6006],
   "portsAttributes": {
     "6006": {"label": "Component Storybook", "onAutoForward": "notify"}

@@ -74,6 +74,10 @@ describe("service-focused development containers", () => {
     expect(definition).toHaveProperty("postCreateCommand", ["bash", `/workspaces/arolariu.ro/.devcontainer/${flavor}/postCreate.sh`]);
   });
 
+  it.each(flavors)("%s waits for preparation before connecting the editor", (flavor) => {
+    expect(readDevcontainer(flavor)).toHaveProperty("waitFor", "postCreateCommand");
+  });
+
   it.each(flavors)("%s exposes LF-compatible shell bytes to Linux", (flavor) => {
     expect(readFileSync(resolve(".devcontainer", flavor, "postCreate.sh")).includes(13)).toBe(false);
   });

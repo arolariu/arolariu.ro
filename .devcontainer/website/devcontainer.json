@@ -29,6 +29,7 @@
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
   },
   "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/website/postCreate.sh"],
+  "waitFor": "postCreateCommand",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {"label": "Main website", "onAutoForward": "notify"}

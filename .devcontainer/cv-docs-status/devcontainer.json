@@ -30,6 +30,7 @@
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
   },
   "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/cv-docs-status/postCreate.sh"],
+  "waitFor": "postCreateCommand",
   "forwardPorts": [5173, 4173, 3100, 5174, 4175],
   "portsAttributes": {
     "5173": {"label": "CV development", "onAutoForward": "notify"},
