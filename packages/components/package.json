@@ -130,6 +130,7 @@
     "@vitejs/plugin-react": "*",
     "@vitest/coverage-v8": "*",
     "@vitest/ui": "*",
+    "cssnano": "*",
     "happy-dom": "*",
     "motion": "*",
     "playwright": "*",

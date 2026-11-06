@@ -4,6 +4,7 @@ import {join, resolve} from "node:path";
 import {Effect} from "effect";
 import {afterEach, describe, expect, it} from "vitest";
 
+import postcss from "../packages/components/postcss.config.ts";
 import {
   createPreparationFixture,
   devcontainerMountTargets,
@@ -32,6 +33,16 @@ afterEach(() => {
 });
 
 describe("Components devcontainer", () => {
+  it("declares every PostCSS plugin in the filtered workspace install", () => {
+    const manifest: unknown = JSON.parse(readFileSync(resolve("packages/components/package.json"), "utf8"));
+    const lock: unknown = JSON.parse(readFileSync(resolve("package-lock.json"), "utf8"));
+
+    for (const plugin of Object.keys(postcss.plugins)) {
+      expect(manifest).toMatchObject({devDependencies: {[plugin]: "*"}});
+      expect(lock).toMatchObject({packages: {"packages/components": {devDependencies: {[plugin]: "*"}}}});
+    }
+  });
+
   it("prepares a library-only Node workspace without engine access", () => {
     const definition = readDevcontainer("components");
     expect(definition).toBeDefined();
