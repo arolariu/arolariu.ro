@@ -78,6 +78,31 @@ describe("service-focused development containers", () => {
     expect(readFileSync(resolve(".devcontainer", flavor, "postCreate.sh")).includes(13)).toBe(false);
   });
 
+  it.each(flavors)("%s locks each declared feature to a content-addressed image", (flavor) => {
+    const definition = readDevcontainer(flavor);
+    if (
+      typeof definition !== "object" ||
+      definition === null ||
+      !("features" in definition) ||
+      typeof definition.features !== "object" ||
+      definition.features === null
+    ) {
+      throw new Error("Expected explicit feature declarations.");
+    }
+    const lock: unknown = JSON.parse(readFileSync(resolve(".devcontainer", flavor, "devcontainer-lock.json"), "utf8"));
+    for (const feature of Object.keys(definition.features)) {
+      expect(lock).toMatchObject({
+        features: {
+          [feature]: {
+            version: expect.stringMatching(/^\d+\.\d+\.\d+/),
+            resolved: expect.stringMatching(/@sha256:[a-f0-9]{64}$/),
+            integrity: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
+          },
+        },
+      });
+    }
+  });
+
   it.each(nodeFlavors)("%s masks every live npm workspace cleanup destination", (flavor) => {
     expect(devcontainerMountTargets(readDevcontainer(flavor))).toEqual(expect.arrayContaining(workspaceCleanupTargets()));
   });

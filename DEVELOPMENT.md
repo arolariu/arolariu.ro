@@ -217,6 +217,9 @@ Open the checkout in VS Code, run **Dev Containers: Reopen in Container**, and s
 Use Rancher Desktop or Podman Desktop, never Docker Desktop. For Podman, select its CLI through the host's Dev Containers extension setting
 `dev.containers.dockerPath`. Engine installation and startup remain host responsibilities.
 
+Every flavor commits a feature lockfile. Regenerate and review that flavor's lockfile when intentionally updating its Dev Container
+Features; do not silently resolve newer features for only some flavors.
+
 Creation prepares dependencies and essential generated state, but starts no server. There is no full-stack bootstrap, host-engine socket,
 nested daemon, Azure CLI setup, workload installation, host certificate trust change, or automatic browser download. Use the existing host
 Aspire workflow separately when full-stack coordination is needed; do not run `npm run setup`, `npm run dev`, or root-wide generators inside
