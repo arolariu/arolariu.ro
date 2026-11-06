@@ -217,6 +217,10 @@ Open the checkout in VS Code, run **Dev Containers: Reopen in Container**, and s
 Use Rancher Desktop or Podman Desktop, never Docker Desktop. For Podman, select its CLI through the host's Dev Containers extension setting
 `dev.containers.dockerPath`. Engine installation and startup remain host responsibilities.
 
+Use a regular clone for Windows checkouts opened in Linux containers. Absolute host Git-directory pointers from linked worktrees are outside
+the source bind mount; preparation rejects inaccessible Git metadata before restoring dependencies. It does not rewrite Git pointers or
+mount additional host Git directories.
+
 Every flavor commits a feature lockfile. Regenerate and review that flavor's lockfile when intentionally updating its Dev Container
 Features; do not silently resolve newer features for only some flavors.
 

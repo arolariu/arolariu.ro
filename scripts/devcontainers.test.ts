@@ -82,6 +82,18 @@ describe("service-focused development containers", () => {
     expect(readFileSync(resolve(".devcontainer", flavor, "postCreate.sh")).includes(13)).toBe(false);
   });
 
+  it.each(flavors)("%s rejects an inaccessible linked checkout before installing dependencies", async (flavor) => {
+    const fixture = createPreparationFixture(flavor);
+    fixtures.push(fixture);
+    writeFileSync(join(fixture.root, ".git"), "gitdir: /host-only/arolariu.git\n");
+
+    const result = await Effect.runPromise(fixture.run().pipe(Effect.provide(layer)));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Source checkout Git metadata is not accessible");
+    expect(fixture.events().some((event) => /^(npm|dotnet|python3|venv-python)\t/.test(event))).toBe(false);
+  });
+
   it.each(flavors)("%s locks each declared feature to a content-addressed image", (flavor) => {
     const definition = readDevcontainer(flavor);
     if (
