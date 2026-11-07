@@ -220,6 +220,7 @@ describe("testTypescriptProvider", () => {
       headRef: "HEAD",
       changeScope: "known",
       changedFiles: ["packages/components/src/index.ts"],
+      selectedSuites: ["components"],
       env: {},
     });
 
@@ -242,6 +243,7 @@ describe("testTypescriptProvider", () => {
       headRef: "HEAD",
       changeScope: "known",
       changedFiles: ["packages/components/src/index.ts"],
+      selectedSuites: ["components"],
       env: {},
     });
 
@@ -255,7 +257,7 @@ describe("testTypescriptProvider", () => {
     ]);
   });
 
-  it("runs only the website suite for website-only changes", async () => {
+  it("runs website and tooling guards for website-only changes", async () => {
     const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[]) => writeReport(args, passing));
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
@@ -269,9 +271,9 @@ describe("testTypescriptProvider", () => {
       env: {},
     });
 
-    expect(getExecOutput).toHaveBeenCalledTimes(1);
-    expect((getExecOutput.mock.calls[0]?.[2] as {cwd?: string} | undefined)?.cwd?.replace(/\\/g, "/")).toBe("/w/sites/arolariu.ro");
-    expect(result.payload.suites.map((s) => s.name)).toEqual(["website"]);
+    expect(getExecOutput).toHaveBeenCalledTimes(2);
+    expect((getExecOutput.mock.calls[1]?.[2] as {cwd?: string} | undefined)?.cwd?.replace(/\\/g, "/")).toBe("/w/sites/arolariu.ro");
+    expect(result.payload.suites.map((s) => s.name)).toEqual(["tooling", "website"]);
   });
 
   it("does not accept passing assertions when the Vitest process fails", async () => {
@@ -285,6 +287,7 @@ describe("testTypescriptProvider", () => {
       headRef: "HEAD",
       changeScope: "known",
       changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+      selectedSuites: ["website"],
       env: {},
     });
 

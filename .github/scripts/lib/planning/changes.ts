@@ -59,7 +59,7 @@ const PRETTIER_EXTENSIONS = new Set([
   ".svelte",
 ]);
 const ESLINT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".svelte"]);
-const TYPE_SCRIPT_SUITE_ORDER: readonly TypeScriptSuiteName[] = ["scripts", "website", "cv", "docs", "status", "components"];
+const TYPE_SCRIPT_SUITE_ORDER: readonly TypeScriptSuiteName[] = ["scripts", "tooling", "website", "cv", "docs", "status", "components"];
 
 export function normalizeChangedFile(file: string): string {
   return file.replace(/^[.][\\/]/, "").replace(/\\/g, "/");
@@ -189,6 +189,7 @@ export function suitesForTypeScriptChanges(changeInput: ChangeInput): readonly T
   if (classification.files.some((file) => file.startsWith("sites/docs.arolariu.ro/"))) suites.push("docs");
   if (classification.buckets.includes("status")) suites.push("status");
   if (classification.buckets.includes("components")) suites.push("components");
+  if (suites.some((suite) => suite === "website" || suite === "components" || suite === "docs")) suites.push("tooling");
   return TYPE_SCRIPT_SUITE_ORDER.filter((suite) => suites.includes(suite));
 }
 
