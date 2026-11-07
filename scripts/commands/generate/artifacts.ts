@@ -15,7 +15,7 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {DateTime, Duration, Effect, FileSystem, Option, type PlatformError} from "effect";
+import {DateTime, Duration, Effect, FileSystem, Option, type Path, type PlatformError} from "effect";
 import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "../../common/taxonomy-artifacts.ts";
@@ -68,6 +68,9 @@ export interface ArtifactGenerationResult {
 
 /** Every failure an artifact generator may report. */
 export type ArtifactGenerationError = TaxonomySourceUnavailable | ArtifactGenerationFailed;
+
+/** Capabilities actually consumed by frontend attribution generation. */
+export type FrontendLicenseRequirements = FileSystem.FileSystem | Path.Path | Environment | Presenter;
 
 /** Stable fields that identify the exact taxonomy expected by one generator. */
 type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
@@ -1620,7 +1623,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
    *
    * @returns The generated frontend license-document path.
    */
-  public override generate(): Effect.Effect<readonly string[], ArtifactGenerationFailed, GenerateRequirements> {
+  public override generate(): Effect.Effect<readonly string[], ArtifactGenerationFailed, FrontendLicenseRequirements> {
     return Effect.gen({self: this}, function* () {
       yield* Effect.logInfo("[Frontend licenses] Starting generation.");
       return yield* this.generateDocument().pipe(
@@ -1638,7 +1641,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
   private generateDocument(): Effect.Effect<
     readonly string[],
     ArtifactGenerationFailed | PlatformError.PlatformError,
-    GenerateRequirements
+    FrontendLicenseRequirements
   > {
     return Effect.gen({self: this}, function* () {
       const presenter = yield* Presenter;

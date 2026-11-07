@@ -1,0 +1,49 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
+  "name": "arolariu.ro - CV, Docs and Status",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "init": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/arolariu.ro,type=bind",
+  "workspaceFolder": "/workspaces/arolariu.ro/sites",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "pnpmVersion": "none",
+      "nodeGypDependencies": false,
+      "installYarnUsingApt": false
+    }
+  },
+  "mounts": [
+    "source=arolariu-${devcontainerId}-sites-cache,target=/home/vscode/.cache,type=volume",
+    "source=arolariu-${devcontainerId}-sites-npm,target=/home/vscode/.cache/npm,type=volume",
+    "source=arolariu-${devcontainerId}-sites-root-modules,target=/workspaces/arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-sites-website-modules,target=/workspaces/arolariu.ro/sites/arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-sites-cv-modules,target=/workspaces/arolariu.ro/sites/cv.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-sites-docs-modules,target=/workspaces/arolariu.ro/sites/docs.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-sites-status-modules,target=/workspaces/arolariu.ro/sites/status.arolariu.ro/node_modules,type=volume",
+    "source=arolariu-${devcontainerId}-sites-library-modules,target=/workspaces/arolariu.ro/packages/components/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "AROLARIU_DOCS_SITE_ONLY": "1",
+    "NPM_CONFIG_CACHE": "/home/vscode/.cache/npm",
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  },
+  "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/cv-docs-status/postCreate.sh"],
+  "waitFor": "postCreateCommand",
+  "forwardPorts": [5173, 4173, 3100, 5174, 4175],
+  "portsAttributes": {
+    "5173": {"label": "CV development", "onAutoForward": "notify"},
+    "4173": {"label": "CV preview", "onAutoForward": "notify"},
+    "3100": {"label": "Docs site-only preview", "onAutoForward": "notify"},
+    "5174": {"label": "Status development", "onAutoForward": "notify"},
+    "4175": {"label": "Status preview", "onAutoForward": "notify"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["svelte.svelte-vscode", "vitest.explorer"]
+    }
+  }
+}

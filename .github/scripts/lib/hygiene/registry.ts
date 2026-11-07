@@ -7,7 +7,7 @@ import type {Gate} from "./contracts.ts";
 /** Stable workflow/check identities; changing one requires a workflow migration. */
 export type ProviderId = "format" | "lint" | "test-typescript" | "test-dotnet" | "test-python" | "stats";
 /** CI scripts and root tooling remain independently named suites. */
-export type TypeScriptSuiteName = "scripts" | "tooling" | "website" | "components" | "cv" | "status";
+export type TypeScriptSuiteName = "scripts" | "tooling" | "website" | "components" | "cv" | "docs" | "status";
 
 /** Expensive setup capabilities a selected provider actually requires. */
 export interface ProviderSetup {
@@ -94,6 +94,7 @@ export const TYPESCRIPT_SUITE_PROJECTS: readonly Readonly<{name: TypeScriptSuite
   {name: "tooling", root: "scripts"},
   {name: "website", root: "sites/arolariu.ro"},
   {name: "cv", root: "sites/cv.arolariu.ro"},
+  {name: "docs", root: "sites/docs.arolariu.ro"},
   {name: "status", root: "sites/status.arolariu.ro"},
   {name: "components", root: "packages/components"},
 ]);

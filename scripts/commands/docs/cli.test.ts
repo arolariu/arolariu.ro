@@ -85,6 +85,14 @@ async function run(argv: readonly string[], failure?: ScriptedProcess): Promise<
 }
 
 describe("docs command", () => {
+  it("prepares authored prose through the central CLI without invoking extractors", async () => {
+    const result = await run(["docs", "prepare-site", "--json"]);
+
+    expect(result.code).toBe(0);
+    expect(result.calls).toBe(0);
+    expect(result.output).toEqual([{stream: "stdout", text: `${JSON.stringify({scope: "prose-only"}, null, 2)}\n`}]);
+  });
+
   it("assembles the documentation and prints the legacy completion line", async () => {
     // Act
     const result = await run(["docs", "assemble"]);
