@@ -153,9 +153,10 @@ function ChartContainer({
 }: Readonly<ChartContainerProps>): React.JSX.Element {
   const uniqueId = React.useId();
   const chartId = `chart-${encodeChartScope(uniqueId)}`;
+  const contextValue = React.useMemo<ChartContextProps>(() => ({config}), [config]);
 
   return (
-    <ChartContext.Provider value={{config}}>
+    <ChartContext.Provider value={contextValue}>
       <div
         ref={ref}
         id={id}

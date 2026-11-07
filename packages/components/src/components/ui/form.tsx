@@ -117,11 +117,11 @@ function unlessCancelled<TEvent extends React.SyntheticEvent>(
   };
 }
 
-type ObserverEvents = {
-  [TKey in Extract<keyof React.DOMAttributes<HTMLElement>, `on${string}`>]: React.DOMAttributes<HTMLElement>[TKey];
-};
-
 function cancellableObservers(props: React.HTMLAttributes<HTMLElement>): React.HTMLAttributes<HTMLElement> {
+  type ObserverEvents = {
+    [TKey in Extract<keyof React.DOMAttributes<HTMLElement>, `on${string}`>]: React.DOMAttributes<HTMLElement>[TKey];
+  };
+
   // Base UI merges every DOM event child-first, but its cancellation flag is
   // distinct from preventDefault. Preserve the RHF family's native policy too.
   const observers = {
@@ -709,8 +709,6 @@ const FormLabel = ({ref, className, htmlFor, ...props}: Readonly<FormLabelProps>
 };
 FormLabel.displayName = "FormLabel";
 
-type FormControlTarget = React.ComponentType<React.HTMLAttributes<HTMLElement> & {ref?: React.Ref<HTMLElement>}>;
-
 /**
  * Provides react-hook-form field metadata to a single control element.
  *
@@ -765,9 +763,9 @@ const FormControl = <TElement extends HTMLElement = HTMLInputElement>({
   const mergedRef = useMergedRefs<HTMLElement>(ref, controlRef(child));
   const describedBy = mergeAriaDescribedBy(child?.props["aria-describedby"], props["aria-describedby"], ...descriptionIds, ...messageIds);
   const ariaInvalid = invalid ? true : (props["aria-invalid"] ?? child?.props["aria-invalid"] ?? false);
-  const nativeProps: React.HTMLAttributes<HTMLElement> = props;
 
   if (child) {
+    type FormControlTarget = React.ComponentType<React.HTMLAttributes<HTMLElement> & {ref?: React.Ref<HTMLElement>}>;
     const {className: childClassName, ...childProps} = child.props;
     const mergedProps = mergeProps<FormControlTarget>(cancellableObservers(props), childProps);
     // eslint-disable-next-line react-x/no-clone-element -- legacy direct-child control API; explicit typed prop/event/ref composition
@@ -782,14 +780,19 @@ const FormControl = <TElement extends HTMLElement = HTMLInputElement>({
     });
   }
 
+  // Caller ARIA tokens are already merged above, so the generated IDs and invalid state cannot be dropped by the spread.
+  const fallbackProps: React.HTMLAttributes<HTMLElement> = {
+    ...props,
+    "aria-describedby": describedBy,
+    "aria-labelledby": mergeAriaDescribedBy(props["aria-labelledby"]),
+    "aria-invalid": ariaInvalid,
+  };
   return (
     <div
       ref={mergedRef}
       className={className}
       id={explicitId ?? formItemId}
-      aria-describedby={describedBy}
-      aria-invalid={ariaInvalid}
-      {...nativeProps}>
+      {...fallbackProps}>
       {children}
     </div>
   );

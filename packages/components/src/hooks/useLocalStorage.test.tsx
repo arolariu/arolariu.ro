@@ -252,6 +252,33 @@ describe("useLocalStorage", () => {
     expect(JSON.parse(globalThis.window.localStorage.getItem("user") ?? "")).toEqual(updatedUser);
   });
 
+  it("reads and updates the new key's own value when the key changes", () => {
+    globalThis.window.localStorage.setItem("account-a", "1");
+    globalThis.window.localStorage.setItem("account-b", "10");
+    const {result, rerender} = renderHook(({storageKey}) => useLocalStorage(storageKey, 0), {
+      initialProps: {storageKey: "account-a"},
+    });
+    expect(result.current[0]).toBe(1);
+
+    rerender({storageKey: "account-b"});
+    expect(result.current[0]).toBe(10);
+
+    act(() => result.current[1]((value) => value + 1));
+    expect(result.current[0]).toBe(11);
+    expect(globalThis.window.localStorage.getItem("account-b")).toBe("11");
+    expect(globalThis.window.localStorage.getItem("account-a")).toBe("1");
+  });
+
+  it("keeps one storage subscription when an inline default value changes identity", () => {
+    const add = vi.spyOn(globalThis.window, "addEventListener");
+    const {rerender} = renderHook(() => useLocalStorage<string[]>("inline-default", []));
+
+    rerender();
+    rerender();
+
+    expect(add.mock.calls.filter(([type]) => String(type) === "storage")).toHaveLength(1);
+  });
+
   it("cleans up storage event listener on unmount", () => {
     const removeEventListenerSpy = vi.spyOn(globalThis.window, "removeEventListener");
     const {unmount} = renderHook(() => useLocalStorage("cleanup-key", "value"));

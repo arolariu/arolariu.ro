@@ -318,6 +318,28 @@ describe("Calendar", () => {
     expect(dayButton("2024-01-15")).toHaveAttribute("data-today", "true");
   });
 
+  it("formats default-locale metadata with DayPicker's en-US locale instead of the runtime locale", () => {
+    const toLocaleString = vi.spyOn(Date.prototype, "toLocaleString");
+    const toLocaleDateString = vi.spyOn(Date.prototype, "toLocaleDateString");
+    try {
+      render(
+        <Calendar
+          mode='single'
+          captionLayout='dropdown'
+          defaultMonth={new Date(2024, 0, 1)}
+        />,
+      );
+
+      const requestedLocales = [...toLocaleString.mock.calls, ...toLocaleDateString.mock.calls].map(([locales]) => locales);
+      expect(requestedLocales.length).toBeGreaterThan(0);
+      expect(requestedLocales.every((locales) => locales === "en-US")).toBe(true);
+      expect(dayButton("2024-01-15")).toHaveAttribute("data-day", "1/15/2024");
+    } finally {
+      toLocaleString.mockRestore();
+      toLocaleDateString.mockRestore();
+    }
+  });
+
   it("supports controlled single selection and cannot select disabled dates", async () => {
     const user = userEvent.setup();
     render(<SingleSelection />);

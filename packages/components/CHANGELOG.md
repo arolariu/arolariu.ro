@@ -198,6 +198,15 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   restart the canvas (v2.4 restarted it on every new identity).
 - RippleButton and FlipButton follow `prefers-reduced-motion`, tracked live after hydration: no ripples or press/hover scaling, and an
   instant flip. v2.4 ignored the preference.
+- `useLocalStorage` reads the new key's stored value when `key` changes (it kept the previous key's value and wrote it under the new key),
+  and an inline `initialValue` array or object no longer re-subscribes the cross-tab `storage` listener on every render.
+- `useOnClickOutside` keeps one pair of document listeners while an inline handler changes identity, and still calls the latest handler.
+- A `FormControl` fallback wrapper (non-element children) keeps the generated description/message IDs and the field's invalid state when the
+  caller also passes `aria-describedby` or `aria-invalid`; caller tokens are merged as on the cloned-child path.
+- Calendar formats month-dropdown options and day-button labels/`data-day` without a `locale` with DayPicker's own `en-US` default instead
+  of the runtime locale, which differed between server and browser and caused hydration mismatches.
+- Carousel, Chart, ResizablePanelGroup and ToggleGroup memoize their context values, so a parent re-render with unchanged inputs no longer
+  re-renders every consumer part (and no longer rebuilds each ResizableHandle's geometry subscription).
 
 **🔧 Compatibility**
 

@@ -390,12 +390,46 @@ describe("Resizable v4 contracts", () => {
     document.head.append(stylesheet);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // v4.15 swallows the first click after a drag via a document capture listener removed on the next macrotask;
+    // expire it so a drag test's release cannot cancel the next test's synchronous click.
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
     stylesheet.remove();
     vi.unstubAllGlobals();
     observers.clear();
     if (ariaDisabledDescriptor) Object.defineProperty(Element.prototype, "ariaDisabled", ariaDisabledDescriptor);
     else Reflect.deleteProperty(Element.prototype, "ariaDisabled");
+  });
+
+  it("keeps each handle's geometry subscription when the group re-renders with unchanged inputs", () => {
+    const {rerender} = renderResizable();
+    notifyResize();
+    const subscribed = new Set(observers.keys());
+
+    rerender(
+      <ResizablePanelGroup id='group'>
+        <ResizablePanel
+          id='first'
+          defaultSize='50%'>
+          First panel
+        </ResizablePanel>
+        <ResizableHandle
+          id='separator'
+          aria-label='Resize panels'
+        />
+        <ResizablePanel
+          id='second'
+          defaultSize='50%'>
+          Second panel
+        </ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    const current = [...observers.keys()];
+    expect(current).toHaveLength(subscribed.size);
+    expect(current.every((observer) => subscribed.has(observer))).toBe(true);
   });
 
   it.each([

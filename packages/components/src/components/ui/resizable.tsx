@@ -298,8 +298,12 @@ function ResizablePanelGroup({
     },
     [onLayoutChange],
   );
+  const contextValue = React.useMemo<ResizeContextValue>(
+    () => ({apiRef, disabled, orientation, panels, layout, register}),
+    [disabled, orientation, panels, layout, register],
+  );
   return (
-    <ResizeContext.Provider value={{apiRef, disabled, orientation, panels, layout, register}}>
+    <ResizeContext.Provider value={contextValue}>
       <ResizablePrimitive.Group
         className={cn(styles.group, className)}
         groupRef={mergedRef}

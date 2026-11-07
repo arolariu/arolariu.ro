@@ -4,6 +4,7 @@ import {ChevronDown, ChevronLeft, ChevronRight} from "lucide-react";
 import * as React from "react";
 import {
   DayPicker,
+  defaultLocale,
   getDefaultClassNames,
   Root,
   type CustomComponents,
@@ -210,7 +211,8 @@ function Calendar({
         captionLayout={captionLayout}
         locale={locale}
         formatters={{
-          formatMonthDropdown: (date) => date.toLocaleString(locale?.code, {month: "short"}),
+          // Match DayPicker's own en-US default; the runtime locale differs between server and browser.
+          formatMonthDropdown: (date) => date.toLocaleString(locale?.code ?? defaultLocale.code, {month: "short"}),
           ...formatters,
         }}
         classNames={{
@@ -324,6 +326,7 @@ function CalendarDayButton({
   const ref = React.useRef<HTMLButtonElement>(null);
   const mergedRef = useMergedRefs(ref, forwardedRef);
   const focused = Boolean(modifiers["focused"]);
+  const localeCode = (locale ?? context?.locale)?.code ?? defaultLocale.code;
 
   React.useEffect(() => {
     if (focused) ref.current?.focus();
@@ -334,10 +337,10 @@ function CalendarDayButton({
       ref={mergedRef}
       variant='ghost'
       size='icon'
-      aria-label={ariaLabel ?? day.date.toLocaleDateString((locale ?? context?.locale)?.code, {dateStyle: "full"})}
+      aria-label={ariaLabel ?? day.date.toLocaleDateString(localeCode, {dateStyle: "full"})}
       type={type}
       data-slot='calendar-day-button'
-      data-day={day.date.toLocaleDateString((locale ?? context?.locale)?.code)}
+      data-day={day.date.toLocaleDateString(localeCode)}
       data-selected={Boolean(modifiers["selected"])}
       data-selected-single={Boolean(
         modifiers["selected"] && !modifiers["range_start"] && !modifiers["range_end"] && !modifiers["range_middle"],

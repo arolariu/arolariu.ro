@@ -22,10 +22,6 @@ export interface GradientTextProps extends React.ComponentPropsWithRef<"span">, 
   readonly transition?: Transition;
 }
 
-type GradientStyleProperties = React.CSSProperties & {
-  "--ac-gradient-text-background"?: string;
-};
-
 const defaultTransition: Transition = {duration: 50, repeat: Infinity, ease: "linear"};
 
 /**
@@ -60,6 +56,9 @@ function GradientText({
   const localRef = React.useRef<HTMLSpanElement>(null);
   const {paused} = useVisualEffectPolicy(localRef, {loop, motionPaused});
   const setRefs = useMergedRefs(localRef, ref);
+  type GradientStyleProperties = React.CSSProperties & {
+    "--ac-gradient-text-background"?: string;
+  };
   const baseStyle: GradientStyleProperties = {
     ...style,
     "--ac-gradient-text-background": style?.["--ac-gradient-text-background"] ?? gradient,

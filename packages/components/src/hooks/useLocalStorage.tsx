@@ -18,6 +18,7 @@ function readStorage<T>(key: string, initialValue: T): T {
 }
 
 interface StorageState<T> {
+  key: string;
   value: T;
   write: Readonly<{key: string; value: T}> | null;
 }
@@ -42,6 +43,8 @@ interface StorageState<T> {
  *   are swallowed silently — the in-memory state update still succeeds.
  * - Only committed local changes are persisted; batched setters write their
  *   final value and cross-tab updates are not written back.
+ * - Changing `key` reads that key's stored value; updates always target the
+ *   current key.
  *
  * @typeParam T - The type of the value being stored.
  * @param key - The localStorage key to store the value under.
@@ -80,18 +83,26 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     () => true,
     () => false,
   );
-  const [state, setState] = React.useState<StorageState<T>>(() => ({value: readStorage(key, initialValue), write: null}));
+  const [state, setState] = React.useState<StorageState<T>>(() => ({key, value: readStorage(key, initialValue), write: null}));
   const persistedWriteRef = React.useRef<StorageState<T>["write"]>(null);
+  const initialValueRef = React.useRef(initialValue);
 
-  const setValue = React.useCallback(
-    (value: T | ((prev: T) => T)) => {
-      setState((current) => {
-        const nextValue = typeof value === "function" ? (value as (prev: T) => T)(current.value) : value;
-        return {value: nextValue, write: {key, value: nextValue}};
-      });
-    },
-    [key],
-  );
+  React.useEffect(() => {
+    initialValueRef.current = initialValue;
+  });
+
+  // A new key owns a different stored value; reset before commit instead of
+  // exposing (or persisting) the previous key's value.
+  if (state.key !== key) {
+    setState({key, value: readStorage(key, initialValue), write: null});
+  }
+
+  const setValue = React.useCallback((value: T | ((prev: T) => T)) => {
+    setState((current) => {
+      const nextValue = typeof value === "function" ? (value as (prev: T) => T)(current.value) : value;
+      return {key: current.key, value: nextValue, write: {key: current.key, value: nextValue}};
+    });
+  }, []);
 
   const {write} = state;
   React.useEffect(() => {
@@ -116,9 +127,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       }
 
       try {
-        const newValue = event.newValue === null ? initialValue : (JSON.parse(event.newValue) as T);
+        const newValue = event.newValue === null ? initialValueRef.current : (JSON.parse(event.newValue) as T);
 
-        setState((current) => ({...current, value: newValue}));
+        setState((current) => (current.key === key ? {...current, value: newValue} : current));
       } catch {
         // Parse failures on cross-tab storage events fall through silently.
       }
@@ -129,7 +140,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     return () => {
       globalThis.window.removeEventListener("storage", handleStorageChange);
     };
-  }, [key, initialValue]);
+  }, [key]);
 
   return [hydrated ? state.value : initialValue, setValue];
 }

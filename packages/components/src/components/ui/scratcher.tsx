@@ -36,10 +36,6 @@ export interface ScratcherProps {
 }
 
 const defaultGradientColors: readonly [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
-type ScratchStyle = React.CSSProperties & {
-  readonly "--ac-scratcher-width": string;
-  readonly "--ac-scratcher-height": string;
-};
 
 interface ScratchGeneration {
   readonly width: number;
@@ -243,6 +239,10 @@ function ScratcherSurface({
   }, [complete, paused, controls, generation]);
 
   if (animationFailure?.generation === generation) throw animationFailure.error;
+  type ScratchStyle = React.CSSProperties & {
+    readonly "--ac-scratcher-width": string;
+    readonly "--ac-scratcher-height": string;
+  };
   const surfaceStyle: ScratchStyle = {"--ac-scratcher-width": `${width}px`, "--ac-scratcher-height": `${height}px`};
   return (
     <motion.div

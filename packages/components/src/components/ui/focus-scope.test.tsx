@@ -59,10 +59,14 @@ function expectTreeFocus(element: HTMLElement): void {
   expect(element.shadowRoot?.activeElement ?? null).toBeNull();
 }
 
+// Happy DOM 21 only builds about:blank iframe realms when page loading is enabled; srcdoc stays synchronous and offline.
+const IFRAME_REALM_SRCDOC = "<!doctype html><html><head></head><body></body></html>";
+
 function withIframeShadowConstructor(run: (ownerDocument: Document, owningConstructor: typeof ShadowRoot) => void): void {
   const originalConstructor = ShadowRoot;
   const iframe = document.createElement("iframe");
   iframe.title = "FocusScope owning realm";
+  iframe.srcdoc = IFRAME_REALM_SRCDOC;
   document.body.append(iframe);
   try {
     const ownerDocument = iframe.contentDocument;
@@ -102,6 +106,7 @@ function withIframeElementConstructors(
   const ambient: ElementRealmConstructors = {HTMLElement, HTMLDetailsElement, HTMLFieldSetElement, HTMLLegendElement};
   const iframe = document.createElement("iframe");
   iframe.title = "FocusScope element realm";
+  iframe.srcdoc = IFRAME_REALM_SRCDOC;
   document.body.append(iframe);
   try {
     const ownerDocument = iframe.contentDocument;
@@ -2203,7 +2208,12 @@ describe("FocusScope", () => {
   });
 
   it("uses the radio's actual owner-document tree, not a global document group", () => {
-    const {getByTitle, unmount: unmountIframe} = render(<iframe title='Radio owner document' />);
+    const {getByTitle, unmount: unmountIframe} = render(
+      <iframe
+        title='Radio owner document'
+        srcDoc={IFRAME_REALM_SRCDOC}
+      />,
+    );
     const iframe = getByTitle("Radio owner document");
     if (!(iframe instanceof HTMLIFrameElement)) throw new TypeError("The owner-document fixture requires an iframe element.");
     const otherDocument = iframe.contentDocument;

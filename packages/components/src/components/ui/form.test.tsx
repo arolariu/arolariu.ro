@@ -472,6 +472,49 @@ describe("Form", () => {
     expect(wrapper?.id).toMatch(/-form-item$/);
   });
 
+  it("keeps generated description IDs and field invalidity on the fallback wrapper over caller ARIA props", async () => {
+    // Arrange
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({defaultValues: {email: ""}});
+      React.useEffect(() => {
+        methods.setError("email", {message: "Email is required."});
+      }, [methods]);
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={() => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl
+                    aria-describedby='caller-help'
+                    aria-invalid={false}>
+                    Plain text fallback
+                  </FormControl>
+                  <FormDescription>Used for receipts.</FormDescription>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    // Act
+    render(<TestComponent />);
+
+    // Assert
+    const wrapper = screen.getByText("Plain text fallback").closest("div");
+    const description = screen.getByText("Used for receipts.");
+    await waitFor(() => expect(wrapper).toHaveAttribute("aria-invalid", "true"));
+    const describedBy = wrapper?.getAttribute("aria-describedby")?.split(/\s+/u) ?? [];
+    expect(describedBy).toContain("caller-help");
+    expect(describedBy).toContain(description.id);
+  });
+
   it("should merge refs in FormControl when child has ref", () => {
     // Arrange
     const childRef = React.createRef<HTMLInputElement>();

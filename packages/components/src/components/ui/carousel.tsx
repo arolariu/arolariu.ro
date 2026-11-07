@@ -286,21 +286,24 @@ function Carousel({ref, orientation, opts, setApi, plugins, className, children,
   }, [api, setApi]);
 
   const rootProps = mergeProps<"div">({onKeyDown: handleKeyDown}, props);
+  const contextValue = React.useMemo<CarouselContextProps>(
+    () => ({
+      api,
+      canScrollNext,
+      canScrollPrev,
+      carouselRef,
+      opts,
+      orientation: resolvedOrientation,
+      plugins,
+      scrollNext,
+      scrollPrev,
+      setApi,
+    }),
+    [api, canScrollNext, canScrollPrev, carouselRef, opts, plugins, resolvedOrientation, scrollNext, scrollPrev, setApi],
+  );
 
   return (
-    <CarouselContext.Provider
-      value={{
-        api,
-        canScrollNext,
-        canScrollPrev,
-        carouselRef,
-        opts,
-        orientation: resolvedOrientation,
-        plugins,
-        scrollNext,
-        scrollPrev,
-        setApi,
-      }}>
+    <CarouselContext.Provider value={contextValue}>
       <div
         ref={ref}
         data-slot='carousel'

@@ -81,9 +81,13 @@ export type ToggleGroupItemState = Toggle.State;
 const ToggleGroup = Object.assign(
   <Value extends string = string>(props: Readonly<ToggleGroup.Props<Value>>): React.JSX.Element => {
     const {ref, className, children, size, variant, spacing = 2, orientation = "horizontal", ...otherProps} = props;
+    const contextValue = React.useMemo<ToggleGroupContextValue>(
+      () => ({variant, size, spacing, orientation}),
+      [variant, size, spacing, orientation],
+    );
 
     return (
-      <ToggleGroupContext.Provider value={{variant, size, spacing, orientation}}>
+      <ToggleGroupContext.Provider value={contextValue}>
         <BaseToggleGroup
           ref={ref}
           data-slot='toggle-group'
