@@ -3,14 +3,33 @@ import {outcomeToCheckRun, postStatusChecks} from "./statusChecks.ts";
 import type {ProviderOutcome, HygieneReport} from "../domain/types.ts";
 
 const passed: ProviderOutcome<unknown> = {
-  providerId: "format", providerName: "Prettier", providerIcon: "🎨",
-  gate: {kind: "blocking", blockOn: "error"}, gateResult: "passed",
-  durationMs: 100, startedAt: "2026-05-30T00:00:00.000Z", finishedAt: "2026-05-30T00:00:00.100Z",
-  payload: null, findings: [], error: null,
+  providerId: "format",
+  providerName: "Prettier",
+  providerIcon: "🎨",
+  gate: {kind: "blocking", blockOn: "error"},
+  gateResult: "passed",
+  durationMs: 100,
+  startedAt: "2026-05-30T00:00:00.000Z",
+  finishedAt: "2026-05-30T00:00:00.100Z",
+  payload: null,
+  findings: [],
+  error: null,
 };
 const failed: ProviderOutcome<unknown> = {...passed, providerId: "lint", providerName: "ESLint", gateResult: "failed"};
-const advisory: ProviderOutcome<unknown> = {...passed, providerId: "stats", providerName: "Stats", gateResult: "advisory", gate: {kind: "advisory"}};
-const errored: ProviderOutcome<unknown> = {...passed, providerId: "test", providerName: "Vitest", gateResult: "errored", error: {message: "boom"}};
+const advisory: ProviderOutcome<unknown> = {
+  ...passed,
+  providerId: "stats",
+  providerName: "Stats",
+  gateResult: "advisory",
+  gate: {kind: "advisory"},
+};
+const errored: ProviderOutcome<unknown> = {
+  ...passed,
+  providerId: "test",
+  providerName: "Vitest",
+  gateResult: "errored",
+  error: {message: "boom"},
+};
 
 describe("outcomeToCheckRun", () => {
   it("passed -> success conclusion", () => {
@@ -33,24 +52,37 @@ describe("outcomeToCheckRun", () => {
   });
 
   it("includes finding count in output summary", () => {
-    const c = outcomeToCheckRun({...passed, findings: [
-      {kind: "line", severity: "error", file: "a", line: 1, column: 1, message: "x"},
-    ]}, "x");
+    const c = outcomeToCheckRun(
+      {...passed, findings: [{kind: "line", severity: "error", file: "a", line: 1, column: 1, message: "x"}]},
+      "x",
+    );
     expect(c.output.summary).toMatch(/1/);
   });
 });
 
 describe("postStatusChecks", () => {
   it("creates one check-run per outcome", async () => {
-    const create = vi.fn().mockResolvedValue({});
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce({data: {id: 101}})
+      .mockResolvedValueOnce({data: {id: 102}});
     const report: HygieneReport = {
-      schemaVersion: "3", commitSha: "abc", prNumber: 1,
-      workflowRunId: "1", workflowRunUrl: "https://x/1",
+      schemaVersion: "3",
+      commitSha: "abc",
+      prNumber: 1,
+      workflowRunId: "1",
+      workflowRunUrl: "https://x/1",
       generatedAt: "2026-05-30T00:00:00.000Z",
       overallResult: "failed",
       outcomes: [passed, failed],
     };
-    await postStatusChecks(report, {owner: "o", repo: "r", create});
+    const ids = await postStatusChecks(report, {owner: "o", repo: "r", create});
+    expect(ids).toEqual(
+      new Map([
+        ["format", 101],
+        ["lint", 102],
+      ]),
+    );
     expect(create).toHaveBeenCalledTimes(2);
   });
 });

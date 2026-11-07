@@ -153,9 +153,12 @@ async function runStep(step: LintStep): Promise<LintStepResult> {
 /** Maps each target to its working directory for child-process spawns. */
 function dirFor(target: LintTarget): string {
   switch (target) {
-    case "cv": return "sites/cv.arolariu.ro";
-    case "status": return "sites/status.arolariu.ro";
-    default: return ".";
+    case "cv":
+      return "sites/cv.arolariu.ro";
+    case "status":
+      return "sites/status.arolariu.ro";
+    default:
+      return ".";
   }
 }
 
@@ -169,9 +172,7 @@ export function stepsForTarget(input: LintWorkerInput): readonly LintStep[] {
   switch (target) {
     case "packages":
     case "website":
-      return [
-        {label: "eslint", run: () => runESLint(input)},
-      ];
+      return [{label: "eslint", run: () => runESLint(input)}];
 
     case "cv":
     case "status":
@@ -190,7 +191,10 @@ export function stepsForTarget(input: LintWorkerInput): readonly LintStep[] {
 
     case "api":
       return [
-        {label: "dotnet format", run: () => runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"])},
+        {
+          label: "dotnet format",
+          run: () => runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"]),
+        },
         // --no-restore: dotnet format (step 1) already restored packages; skipping the redundant restore saves ~15-30s.
         {label: "dotnet build", run: () => runCommand("dotnet", ["build", "arolariu.slnx", "--no-restore", "--verbosity", "quiet"])},
       ];
@@ -259,9 +263,7 @@ function aggregateResults(args: {
   const slowestFiles = eslintData?.slowestFiles ?? [];
 
   const totalDurationMs = results.reduce((sum, r) => sum + r.durationMs, 0);
-  const resultText = results
-    .map((r) => `▸ ${r.label} (${r.durationMs}ms)${r.code !== 0 ? " — FAILED" : ""}\n${r.output}`)
-    .join("\n");
+  const resultText = results.map((r) => `▸ ${r.label} (${r.durationMs}ms)${r.code !== 0 ? " — FAILED" : ""}\n${r.output}`).join("\n");
 
   return {
     configName,
@@ -329,7 +331,8 @@ export default async function lintWorker(input: LintWorkerInput): Promise<LintWo
         workerId,
         startTime,
         peakMemoryBytes,
-        reason: "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
+        reason:
+          "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
       });
     }
   }

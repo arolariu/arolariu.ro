@@ -13,6 +13,7 @@
     },
     "build": {
       "executor": "nx:run-commands",
+      "inputs": ["production", {"env": "AROLARIU_DOCS_SITE_ONLY"}],
       "options": {
         "command": "npm run build",
         "cwd": "sites/docs.arolariu.ro"
@@ -47,6 +48,18 @@
       "options": {
         "command": "npx tsc --noEmit",
         "cwd": "sites/docs.arolariu.ro"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:unit",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "configurations": {
+        "unit": {
+          "command": "npm run test:unit"
+        }
       }
     }
   },

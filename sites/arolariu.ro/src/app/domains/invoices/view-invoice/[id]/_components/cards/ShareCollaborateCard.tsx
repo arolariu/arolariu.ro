@@ -39,16 +39,6 @@ import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
 
 /**
- * Type for sharing status computed from invoice.sharedWith array.
- *
- * @remarks
- * - `private`: No sharing enabled
- * - `public`: Public access enabled (LAST_GUID sentinel present)
- * - `shared`: Shared with specific users
- */
-type SharingStatus = "private" | "public" | "shared";
-
-/**
  * Share & Collaborate card component.
  *
  * @remarks
@@ -82,6 +72,16 @@ type SharingStatus = "private" | "public" | "shared";
  * ```
  */
 export function ShareCollaborateCard(): React.JSX.Element {
+  /**
+   * Type for sharing status computed from invoice.sharedWith array.
+   *
+   * @remarks
+   * - `private`: No sharing enabled
+   * - `public`: Public access enabled (LAST_GUID sentinel present)
+   * - `shared`: Shared with specific users
+   */
+  type SharingStatus = "private" | "public" | "shared";
+
   const t = useTranslations();
   const {invoice, setInvoice} = useInvoiceContext();
   const {shareInvoiceCallback} = useInvoiceShare();

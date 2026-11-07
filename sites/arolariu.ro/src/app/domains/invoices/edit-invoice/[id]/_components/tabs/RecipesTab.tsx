@@ -27,11 +27,6 @@ type Props = {
   recipes: readonly RecipeSuggestion[];
 };
 
-type IndexedRecipe = Readonly<{
-  recipe: RecipeSuggestion;
-  recipeIndex: number;
-}>;
-
 /**
  * Displays recipes that can be made with invoice items, with add and generate capabilities.
  *
@@ -69,6 +64,11 @@ type IndexedRecipe = Readonly<{
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
+  type IndexedRecipe = Readonly<{
+    recipe: RecipeSuggestion;
+    recipeIndex: number;
+  }>;
+
   const t = useTranslations();
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 

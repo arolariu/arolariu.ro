@@ -8,45 +8,17 @@
  * Isolates typed project state in sequential processes and parses their combined JSON output.
  */
 
-import * as exec from "@actions/exec";
+import * as exec from "../../../helpers/sdk/exec.ts";
+import {CommandExecutionError} from "../../../helpers/exec/index.ts";
+import {decodeEslintReport, type EslintFileResult} from "../../../helpers/reports/eslint.ts";
 import * as path from "node:path";
 import {filesForEslint, filterExistingFiles} from "../domain/changedFiles.ts";
-import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
+import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
 import type {Finding, LineFinding, Severity} from "../domain/types.ts";
-
-export interface EslintMessage {
-  readonly line: number;
-  readonly column: number;
-  readonly endLine?: number;
-  readonly endColumn?: number;
-  readonly severity: 0 | 1 | 2;
-  readonly message: string;
-  readonly ruleId: string | null;
-}
-
-export interface EslintFileResult {
-  readonly filePath: string;
-  readonly errorCount: number;
-  readonly warningCount: number;
-  readonly messages: readonly EslintMessage[];
-}
-
-export interface LintPayload {
-  readonly errorCount: number;
-  readonly warningCount: number;
-  readonly filesChecked: number;
-}
-
-const schema: Schema<LintPayload> = {
-  parse(data: unknown): LintPayload {
-    if (typeof data !== "object" || data === null) throw new Error("payload not object");
-    const r = data as Record<string, unknown>;
-    if (typeof r["errorCount"] !== "number") throw new Error("errorCount");
-    if (typeof r["warningCount"] !== "number") throw new Error("warningCount");
-    if (typeof r["filesChecked"] !== "number") throw new Error("filesChecked");
-    return {errorCount: r["errorCount"], warningCount: r["warningCount"], filesChecked: r["filesChecked"]};
-  },
-};
+import {lintPayloadSchema, type LintPayload} from "../../../lib/hygiene/payloads.ts";
+import {providerDescriptor} from "../../../lib/hygiene/registry.ts";
+export type {LintPayload} from "../../../lib/hygiene/payloads.ts";
+export type {EslintMessage, EslintFileResult} from "../../../helpers/reports/eslint.ts";
 
 function eslintSeverityToFinding(s: 0 | 1 | 2): Severity {
   if (s === 2) return "error";
@@ -91,11 +63,8 @@ export function parseEslintJson(results: readonly EslintFileResult[]): {
 }
 
 export const lintProvider: CheckProvider<LintPayload> = {
-  id: "lint",
-  name: "ESLint",
-  icon: "🔍",
-  defaultGate: {kind: "blocking", blockOn: "error"},
-  payloadSchema: schema,
+  ...providerDescriptor("lint"),
+  payloadSchema: lintPayloadSchema,
   applicableTo: (input) => {
     const files = filesForEslint(input);
     return files === null || files.length > 0;
@@ -110,9 +79,9 @@ export const lintProvider: CheckProvider<LintPayload> = {
       };
     }
 
-    const nodeOptions = input.env["NODE_OPTIONS"] ?? process.env["NODE_OPTIONS"] ?? "";
+    const nodeOptions = input.env["NODE_OPTIONS"] ?? "";
     const env = {
-      ...process.env,
+      ...input.env,
       NODE_OPTIONS: /--max[-_]old[-_]space[-_]size(?:=|\s)/u.test(nodeOptions)
         ? nodeOptions
         : `${nodeOptions} --max-old-space-size=8192`.trim(),
@@ -126,6 +95,7 @@ export const lintProvider: CheckProvider<LintPayload> = {
             scopedFiles.filter((file) => !projectPrefixes.some((prefix) => file.startsWith(prefix))),
           ].filter((group) => group.length > 0);
     const parsed: EslintFileResult[] = [];
+    let failed = false;
     for (const group of groups) {
       const result = await exec.getExecOutput("npx", ["eslint", ...group, "--format", "json"], {
         cwd: input.workspaceRoot,
@@ -135,13 +105,16 @@ export const lintProvider: CheckProvider<LintPayload> = {
         env,
       });
 
-      if (result.exitCode > 1) {
-        throw new Error(`ESLint exited with code ${result.exitCode} for ${group[0]}. stderr: ${result.stderr.slice(-4000)}`);
-      }
+      if (result.exitCode > 1) throw new CommandExecutionError("ESLint", result);
 
       try {
-        parsed.push(...(JSON.parse(result.stdout) as EslintFileResult[]));
+        const value: unknown = JSON.parse(result.stdout);
+        const files = decodeEslintReport(value);
+        if (result.exitCode !== 0 && !files.some((file) => file.errorCount > 0)) throw new CommandExecutionError("ESLint", result);
+        parsed.push(...files);
+        failed ||= result.exitCode !== 0;
       } catch (err) {
+        if (err instanceof CommandExecutionError) throw err;
         throw new Error(
           `Failed to parse ESLint JSON output for ${group[0]} (exit ${result.exitCode}): ${(err as Error).message}. `
             + `stderr: ${result.stderr.slice(-4000)}`,
@@ -153,6 +126,7 @@ export const lintProvider: CheckProvider<LintPayload> = {
     return {
       payload: {errorCount, warningCount, filesChecked: parsed.length},
       findings,
+      executionStatus: failed ? "failed" : "passed",
     };
   },
 };

@@ -84,6 +84,15 @@ describe("formatProvider metadata", () => {
 describe("formatProvider.run", () => {
   beforeEach(() => vi.resetModules());
 
+  it("does not report an operational Prettier exit as a clean check", async () => {
+    vi.doMock("@actions/exec", () => ({
+      getExecOutput: vi.fn().mockResolvedValue({exitCode: 2, stdout: "", stderr: "configuration failed"}),
+    }));
+    const {formatProvider: provider} = await import("./formatProvider.ts");
+    await expect(
+      provider.run({workspaceRoot: "/tmp", baseRef: "main", headRef: "HEAD", changeScope: "unknown", changedFiles: [], env: {}}),
+    ).rejects.toThrow(/code 2/);
+  });
   it("returns 0 findings and 'clean' payload when prettier exits 0", async () => {
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockResolvedValue({

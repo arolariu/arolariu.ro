@@ -43,10 +43,5 @@
       }
     }
   },
-  "tags": [
-    "domain:backend",
-    "scope:exp",
-    "type:app",
-    "platform:python"
-  ]
+  "tags": ["domain:backend", "scope:exp", "type:app", "platform:python"]
 }

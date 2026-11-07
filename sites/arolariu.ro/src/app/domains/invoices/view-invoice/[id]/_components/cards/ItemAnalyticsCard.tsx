@@ -79,11 +79,6 @@ import styles from "./ItemAnalyticsCard.module.scss";
  */
 type SortField = "name" | "classification" | "price" | "quantity";
 
-/**
- * Sort direction for ascending or descending order.
- */
-type SortDirection = "asc" | "desc";
-
 /** Minimal interface for sortable item fields used by the sort comparator. */
 type SortableItem = {
   readonly name: string;
@@ -175,6 +170,11 @@ function getConfidenceLevel(confidence: number, high: string, medium: string, lo
  * @returns Rendered card component with items table
  */
 export function ItemAnalyticsCard(): React.JSX.Element {
+  /**
+   * Sort direction for ascending or descending order.
+   */
+  type SortDirection = "asc" | "desc";
+
   const locale = useLocale();
   const t = useTranslations();
   const {invoice} = useInvoiceContext();

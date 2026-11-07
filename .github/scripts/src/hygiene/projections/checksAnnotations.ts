@@ -60,7 +60,9 @@ export interface PostAnnotationsDeps {
   readonly owner: string;
   readonly repo: string;
   update(args: {
-    owner: string; repo: string; check_run_id: number;
+    owner: string;
+    repo: string;
+    check_run_id: number;
     output: {title: string; summary: string; annotations: Annotation[]};
   }): Promise<unknown>;
 }
@@ -70,7 +72,9 @@ export async function postAnnotations(annotations: readonly Annotation[], deps: 
   const batches = batchAnnotations([...annotations], 50);
   for (const batch of batches) {
     await deps.update({
-      owner: deps.owner, repo: deps.repo, check_run_id: deps.checkRunId,
+      owner: deps.owner,
+      repo: deps.repo,
+      check_run_id: deps.checkRunId,
       output: {
         title: "Hygiene findings",
         summary: `${annotations.length} annotated finding(s) across ${batches.length} batch(es)`,

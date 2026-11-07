@@ -1,0 +1,14 @@
+{
+  "total": {
+    "lines": {"total": 10, "covered": 8, "skipped": 0, "pct": 80},
+    "statements": {"total": 10, "covered": 8, "skipped": 0, "pct": 80},
+    "functions": {"total": 2, "covered": 2, "skipped": 0, "pct": 100},
+    "branches": {"total": 4, "covered": 3, "skipped": 0, "pct": 75}
+  },
+  "example.ts": {
+    "lines": {"total": 10, "covered": 8, "skipped": 0, "pct": 80},
+    "statements": {"total": 10, "covered": 8, "skipped": 0, "pct": 80},
+    "functions": {"total": 2, "covered": 2, "skipped": 0, "pct": 100},
+    "branches": {"total": 4, "covered": 3, "skipped": 0, "pct": 75}
+  }
+}

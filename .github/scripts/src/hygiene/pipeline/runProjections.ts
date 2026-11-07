@@ -1,117 +1,102 @@
 /**
- * @fileoverview Final pipeline gate: load outcomes, run projections, set exit code.
+ * @fileoverview Required-plan verified gate; independent projections cannot hide missing evidence.
  * @module github/scripts/src/hygiene/pipeline/runProjections
- *
- * @remarks
- * This is the only script in the pipeline that can fail the workflow.
- * Projections are run via Promise.allSettled so a single projection failure
- * (e.g., transient GitHub API hiccup) does not starve other projections.
- *
- * CLI usage:
- *   node --experimental-strip-types runProjections.ts
  */
-
-import * as core from "@actions/core";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import {buildReport} from "../domain/buildReport.ts";
-import type {HygieneReport, ProviderOutcome} from "../domain/types.ts";
-import {buildContextFromEnv} from "./context.ts";
+import {join} from "node:path";
+import * as core from "../../../helpers/sdk/core.ts";
+import {createEnvironmentHelper} from "../../../helpers/environment/index.ts";
+import {createGitHubHelper} from "../../../helpers/github/index.ts";
+import {captureWorkflowContext} from "../../../lib/context.ts";
+import {loadRequiredPlan} from "../../../lib/planning/transport.ts";
+import {buildVerifiedReport} from "../../../lib/hygiene/aggregate.ts";
+import {loadProviderOutcomes} from "../../../lib/hygiene/outcomes.ts";
+import type {HygieneReport} from "../../../lib/hygiene/contracts.ts";
+import {publicationExitCode, publishAll, type Projection as SharedProjection} from "../../../lib/reporting/projections.ts";
 import {writeJsonArtifact} from "../projections/jsonArtifact.ts";
 import {writeStepSummary} from "../projections/stepSummary.ts";
 import {postPrComment} from "../projections/prComment.ts";
 import {postStatusChecks} from "../projections/statusChecks.ts";
 
-export interface Projection {
-  readonly name: string;
-  run(report: HygieneReport): Promise<void>;
-}
+/** Compatible name, now requiring the same explicit shared publication contract. */
+export type Projection = SharedProjection<HygieneReport>;
+export {loadProviderOutcomes as loadOutcomes} from "../../../lib/hygiene/outcomes.ts";
 
-export async function loadOutcomes(workspaceRoot: string): Promise<ProviderOutcome<unknown>[]> {
-  const dir = path.join(workspaceRoot, "artifacts", "hygiene");
-  let entries: string[];
-  try {
-    entries = await fs.readdir(dir);
-  } catch {
-    return [];
-  }
-  const outcomes: ProviderOutcome<unknown>[] = [];
-  for (const entry of entries) {
-    if (!entry.startsWith("outcome-") || !entry.endsWith(".json")) continue;
-    try {
-      const content = await fs.readFile(path.join(dir, entry), "utf-8");
-      outcomes.push(JSON.parse(content) as ProviderOutcome<unknown>);
-    } catch (err) {
-      core.warning(`Failed to load outcome file '${entry}': ${(err as Error).message}`);
-    }
-  }
-  return outcomes;
-}
-
+/**
+ * Publishes every independent projection before selecting the final exit code.
+ * @param report - Verified report retaining all evidence issues.
+ * @param projections - Explicit required/optional publication contracts.
+ * @returns The primary gate result plus required-publication truth.
+ */
 export async function runProjectionsCore(report: HygieneReport, projections: readonly Projection[]): Promise<number> {
-  const results = await Promise.allSettled(projections.map((p) => p.run(report)));
-  results.forEach((r, i) => {
-    const proj = projections[i];
-    if (!proj) return;
-    if (r.status === "rejected") {
-      core.warning(`Projection '${proj.name}' failed: ${(r.reason as Error)?.message ?? r.reason}`);
-    } else {
-      core.info(`Projection '${proj.name}' succeeded`);
-    }
-  });
-  if (report.overallResult === "failed" || report.overallResult === "errored") {
-    core.setFailed(`Hygiene check overall result: ${report.overallResult}`);
-    return 1;
+  const results = await publishAll(report, projections);
+  for (const result of results) {
+    if (result.status === "failed") core.warning(`Projection '${result.name}' failed: ${result.message}`);
+    else core.info(`Projection '${result.name}': ${result.status}`);
   }
-  return 0;
+  return publicationExitCode(report, results);
 }
 
-export async function main(): Promise<void> {
-  const ctx = buildContextFromEnv(process.env as Record<string, string | undefined>);
-  const outcomes = await loadOutcomes(ctx.workspaceRoot);
-  if (outcomes.length === 0) {
-    core.warning("No outcome files found; nothing to project. This usually means all provider steps were skipped.");
-  }
-  const report = buildReport({
-    outcomes,
-    commitSha: ctx.headRef,
-    prNumber: ctx.prNumber,
-    workflowRunId: ctx.workflowRunId,
-    workflowRunUrl: ctx.workflowRunUrl,
-  });
-
-  // Build projections list. The PR-comment / status-checks projections need a GitHub helper;
-  // we lazily build it only if a token is present.
-  const token = process.env["GITHUB_TOKEN"];
-  const projections: Projection[] = [
-    {name: "jsonArtifact", run: async (r) => { await writeJsonArtifact(r, ctx.workspaceRoot); }},
-    {name: "stepSummary", run: async (r) => { await writeStepSummary(r); }},
-  ];
-
-  if (token) {
-    const {createGitHubHelper} = await import("../../../helpers/github/index.ts");
-    const gh = createGitHubHelper(token);
-    projections.push({name: "prComment", run: async (r) => { await postPrComment(r, gh); }});
-    // statusChecks: import @actions/github lazily
-    const {getOctokit} = await import("@actions/github");
-    const octokit = getOctokit(token);
-    projections.push({
-      name: "statusChecks",
-      run: async (r) => {
-        await postStatusChecks(r, {
-          owner: ctx.repoOwner, repo: ctx.repoName,
-          create: (args) => octokit.rest.checks.create(args as Parameters<typeof octokit.rest.checks.create>[0]),
-        });
+/** CLI usage: runProjections.ts --plan <path>; missing or incompatible plans fail. */
+export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
+  try {
+    const plan = await loadRequiredPlan(argv);
+    const variables = createEnvironmentHelper().snapshot();
+    const context = await captureWorkflowContext(variables, {mode: "actions"});
+    const loaded = await loadProviderOutcomes(join(context.workspaceRoot, "artifacts", "hygiene"), plan, context.workflowRunAttempt);
+    const report = buildVerifiedReport(context, plan, loaded);
+    const token = createEnvironmentHelper(variables).get("GITHUB_TOKEN");
+    const github = token ? createGitHubHelper(token) : null;
+    const projections: readonly Projection[] = [
+      {
+        name: "jsonArtifact",
+        required: true,
+        run: async (value) => {
+          await writeJsonArtifact(value, context.workspaceRoot);
+          return {status: "published"};
+        },
       },
-    });
-    // checksAnnotations: would need a checkRunId. Deferred -- annotations only ship in v3.1.
+      {
+        name: "stepSummary",
+        required: false,
+        run: async (value) => {
+          if (!variables["GITHUB_STEP_SUMMARY"]) return {status: "skipped", reason: "No Actions step-summary path"};
+          await writeStepSummary(value);
+          return {status: "published"};
+        },
+      },
+      {
+        name: "prComment",
+        required: false,
+        run: async (value) => {
+          if (!github || value.prNumber === null) return {status: "skipped", reason: "No token or PR context"};
+          await postPrComment(value, github);
+          return {status: "published"};
+        },
+      },
+      {
+        name: "statusChecks",
+        required: false,
+        run: async (value) => {
+          if (!github) return {status: "skipped", reason: "No token for check publication"};
+          await postStatusChecks(value, {
+            owner: context.repoOwner,
+            repo: context.repoName,
+            create: (args) => github.getClient().rest.checks.create({...args}),
+          });
+          return {status: "published"};
+        },
+      },
+    ];
+    const code = await runProjectionsCore(report, projections);
+    if (code !== 0)
+      core.setFailed(`Hygiene verification failed: ${report.overallResult}; ${report.evidenceIssues?.length ?? 0} evidence issue(s)`);
+    process.exitCode = code;
+  } catch (error) {
+    core.setFailed(error instanceof Error ? error.message : "Hygiene gate failed");
+    process.exitCode = 1;
   }
-
-  const code = await runProjectionsCore(report, projections);
-  process.exit(code);
 }
 
-const invokedDirectly = process.argv[1] && process.argv[1].endsWith("runProjections.ts");
-if (invokedDirectly) {
+if (import.meta.main) {
   void main();
 }

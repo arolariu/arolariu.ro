@@ -12,7 +12,7 @@
  * disk state.
  */
 
-import {resolve} from "node:path";
+import {join, resolve} from "node:path";
 
 import {Effect, Exit, Layer, PlatformError, Terminal} from "effect";
 import {describe, expect, it, vi} from "vitest";
@@ -1023,7 +1023,7 @@ describe("workspace characterization (pre-Effect migration)", () => {
         id: "workspace.github-scripts-dependencies",
         status: "failed",
         summary: ".github scripts dependency setup failed.",
-        evidence: ["npm ci failed in <root>\\.github\\scripts.\nCommand exited with code 1.\nstderr: restore failed"],
+        evidence: [`npm ci failed in ${join("<root>", ".github", "scripts")}.\nCommand exited with code 1.\nstderr: restore failed`],
         nextActions: ["Resolve the reported .github scripts dependency error, then rerun setup."],
         durationMs: 1,
       },

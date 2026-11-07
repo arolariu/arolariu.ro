@@ -10,5 +10,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bar { transition: none; }
+  .bar {
+    transition: none;
+  }
 }

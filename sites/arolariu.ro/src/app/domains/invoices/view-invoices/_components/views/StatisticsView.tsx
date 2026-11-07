@@ -121,12 +121,12 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
 
   // Product-level analytics
   const classificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
-  const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
+  const topProducts = useMemo(() => computeTopProducts(invoices), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
   const assessedProductCount = useMemo(() => countAssessedProducts(invoices), [invoices]);
 
   // Merchant-level analytics
-  const merchantTrends = useMemo(() => computeMerchantTrends(invoices, 5), [invoices]);
+  const merchantTrends = useMemo(() => computeMerchantTrends(invoices), [invoices]);
   const merchantVisitPatterns = useMemo(() => computeMerchantVisitFrequency(invoices), [invoices]);
 
   // Currency distribution

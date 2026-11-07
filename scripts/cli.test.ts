@@ -150,7 +150,7 @@ describe("runCli", () => {
 
   it("renders an invalid built-in flag value as one JSON document with --json", async () => {
     // Arrange
-    const argv = ["--completions", "powershell", "--json"];
+    const argv = ["--completions", "not-a-shell", "--json"];
 
     // Act
     const result = await run(argv);
@@ -160,7 +160,7 @@ describe("runCli", () => {
     expect(result.stdoutRecords).toHaveLength(1);
     const document: unknown = JSON.parse(result.stdout);
     expect(document).toMatchObject({status: "failed", kind: "usage", evidence: []});
-    expect(document).toHaveProperty("message", expect.stringContaining("powershell"));
+    expect(document).toHaveProperty("message", expect.stringContaining("not-a-shell"));
   });
 
   it("runs a group without a subcommand under --json to help on stderr and no document", async () => {

@@ -126,7 +126,7 @@ function createMockNewmanReport(overrides: Partial<NewmanReport> = {}): NewmanRe
       ],
     },
     ...overrides,
-  } as NewmanReport;
+  };
 }
 
 describe("NewmanHelper", () => {
@@ -529,12 +529,8 @@ describe("NewmanHelper", () => {
     });
 
     it("should show success message when no failures", () => {
-      // Test mutation - override readonly for testing purposes
-      (mockStats as unknown as {failures: []}).failures = [];
-      (mockStats as unknown as {failedRequests: number}).failedRequests = 0;
-      (mockStats as unknown as {failedAssertions: number}).failedAssertions = 0;
-
-      const markdown = helper.generateMarkdownSection(mockStats, "Frontend");
+      const success = {...mockStats, failures: [], failedRequests: 0, failedAssertions: 0};
+      const markdown = helper.generateMarkdownSection(success, "Frontend");
 
       expect(markdown).toContain("### ✅ All Requests Passed");
       expect(markdown).toContain("No failed requests detected");

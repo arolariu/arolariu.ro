@@ -1,8 +1,7 @@
 # Internationalization Guide
 
-The website uses `next-intl` for request/provider behavior and
-`next-intl-selector` for typed message access. RFC 1003 owns the architecture;
-live messages, generated declarations, and consumers own current behavior.
+The website uses `next-intl` for request/provider behavior and `next-intl-selector` for typed message access. RFC 1003 owns the
+architecture; live messages, generated declarations, and consumers own current behavior.
 
 ## Message files
 
@@ -17,8 +16,7 @@ sites/arolariu.ro/messages/
 - `en.json` is the source schema.
 - `ro.json` and `fr.json` must contain the same key structure.
 - `en.d.json.ts` is generated and must not be edited by hand.
-- User-visible text belongs in messages, including accessibility labels,
-  errors, empty/loading states, metadata, and email copy.
+- User-visible text belongs in messages, including accessibility labels, errors, empty/loading states, metadata, and email copy.
 
 ## Server usage
 
@@ -31,8 +29,7 @@ export default async function Page(): Promise<React.JSX.Element> {
 }
 ```
 
-Use the server import in Server Components, layouts, Route Handlers, private
-server helpers, and metadata generation.
+Use the server import in Server Components, layouts, Route Handlers, private server helpers, and metadata generation.
 
 ## Client usage
 
@@ -47,8 +44,7 @@ export function ButtonLabel(): React.JSX.Element {
 }
 ```
 
-Do not use the retired string-namespace shape such as
-`useTranslations("Footer")` for new code.
+Do not use the retired string-namespace shape such as `useTranslations("Footer")` for new code.
 
 ## Metadata messages
 
@@ -69,9 +65,8 @@ Current locale files use nested `metadata` objects:
 }
 ```
 
-Use the same path in all locales, select it with
-`next-intl-selector/server`, and pass values to `createMetadata`.
-`__metadata__` is not a supported alternate schema.
+Use the same path in all locales, select it with `next-intl-selector/server`, and pass values to `createMetadata`. `__metadata__` is not a
+supported alternate schema.
 
 ## ICU messages
 
@@ -83,17 +78,14 @@ Use ICU for variables and language-dependent branches:
 }
 ```
 
-Keep variable names identical in each locale. Prefer plural/select/date/time
-formatting to concatenating translated fragments.
+Keep variable names identical in each locale. Prefer plural/select/date/time formatting to concatenating translated fragments.
 
 ## Dates, numbers, and relative time
 
-Server Components use server formatting APIs such as `getFormatter`; Client
-Components use the matching client Hooks. Do not call or await a client Hook
-from server code.
+Server Components use server formatting APIs such as `getFormatter`; Client Components use the matching client Hooks. Do not call or await a
+client Hook from server code.
 
-The request configuration in `src/i18n/request.ts` owns locale validation,
-dictionary loading, and the configured time zone.
+The request configuration in `src/i18n/request.ts` owns locale validation, dictionary loading, and the configured time zone.
 
 ## Adding or changing messages
 
@@ -104,25 +96,20 @@ dictionary loading, and the configured time zone.
 5. Test every changed ICU branch and user-visible state.
 6. Inspect metadata/email/accessibility consumers when their schema changes.
 
-Do not copy a message into a second namespace solely to shorten a selector.
-Move/rename keys only as an explicit schema migration with all consumers and
-locales updated together.
+Do not copy a message into a second namespace solely to shorten a selector. Move/rename keys only as an explicit schema migration with all
+consumers and locales updated together.
 
 ## Client bundle behavior
 
-The root layout currently loads one complete selected locale dictionary and
-passes it to the client provider. Do not claim that unused keys are
-tree-shaken or quote static locale sizes without a current measured build.
+The root layout currently loads one complete selected locale dictionary and passes it to the client provider. Do not claim that unused keys
+are tree-shaken or quote static locale sizes without a current measured build.
 
-Reducing that handoff would require a new loading/provider contract and bundle
-evidence.
+Reducing that handoff would require a new loading/provider contract and bundle evidence.
 
 ## Server Actions
 
-`"use server"` exports are browser-callable RPC even though their
-implementation runs on the server. Validate browser input, derive identity
-server-side, authorize independently, and translate only the user-visible
-result. Never accept a caller-provided JWT as proof of identity.
+`"use server"` exports are browser-callable RPC even though their implementation runs on the server. Validate browser input, derive identity
+server-side, authorize independently, and translate only the user-visible result. Never accept a caller-provided JWT as proof of identity.
 
 ## Testing checklist
 

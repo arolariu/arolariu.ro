@@ -270,12 +270,8 @@
             "description": "Health check endpoint for monitoring service availability. Returns detailed health information including service dependencies. Rate limited - use sparingly in automated monitoring.",
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
             }
           },
           "event": [
@@ -336,14 +332,8 @@
             "description": "Retrieve all invoices for the current user. Should be empty initially.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             }
           }
         },
@@ -370,14 +360,8 @@
             "description": "Create a new invoice with an initial scan. Expected: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             },
             "body": {
               "mode": "raw",
@@ -452,14 +436,8 @@
             "description": "Retrieve all invoices. Should now have at least one.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             }
           },
           "event": [
@@ -514,15 +492,8 @@
             "description": "Retrieve a single invoice by its identifier.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
             }
           },
           "event": [
@@ -589,15 +560,8 @@
             "description": "Full update of an invoice. Expected: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
             },
             "body": {
               "mode": "raw",
@@ -633,15 +597,8 @@
             "description": "Partial update of an invoice. Expected: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
             },
             "body": {
               "mode": "raw",
@@ -672,15 +629,8 @@
             "description": "Verify the PATCH was applied correctly.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
             }
           },
           "event": [
@@ -722,16 +672,8 @@
             "description": "Get products from invoice. May have items from PUT.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             }
           }
         },
@@ -758,16 +700,8 @@
             "description": "Add a new product to the invoice. Expected: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             },
             "body": {
               "mode": "raw",
@@ -798,16 +732,8 @@
             "description": "Verify product was added.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             }
           },
           "event": [
@@ -849,16 +775,8 @@
             "description": "Update an existing product in the invoice.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             },
             "body": {
               "mode": "raw",
@@ -894,16 +812,8 @@
             "description": "Add a second product for testing deletion.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             },
             "body": {
               "mode": "raw",
@@ -939,16 +849,8 @@
             "description": "Remove a product from the invoice by rawName.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             },
             "body": {
               "mode": "raw",
@@ -979,16 +881,8 @@
             "description": "Verify the milk product was removed.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "products"]
             }
           },
           "event": [
@@ -1031,16 +925,8 @@
             "description": "Get the merchant associated with the invoice. Initially none - expects 404.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "merchant"]
             }
           },
           "event": [
@@ -1091,16 +977,8 @@
             "description": "Associate a new merchant with the invoice. Expected: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "merchant"]
             },
             "body": {
               "mode": "raw",
@@ -1154,16 +1032,8 @@
             "description": "Verify merchant was associated with the invoice.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "merchant"]
             }
           },
           "event": [
@@ -1200,16 +1070,8 @@
             "description": "Disassociate the merchant from the invoice.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "merchant"]
             }
           }
         }
@@ -1237,16 +1099,8 @@
             "description": "Get all scans associated with the invoice. Should have the initial scan.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "scans"]
             }
           },
           "event": [
@@ -1288,16 +1142,8 @@
             "description": "Add another scan to the invoice. Expected: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "scans"]
             },
             "body": {
               "mode": "raw",
@@ -1328,16 +1174,8 @@
             "description": "Verify second scan was added.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "scans"]
             }
           },
           "event": [
@@ -1374,9 +1212,7 @@
             "description": "Delete a specific scan by its location field. Expected: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans/https%3A%2F%2Fstorage.blob.core.windows.net%2Finvoices%2Ftest-receipt-page2.pdf",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "rest",
                 "v1",
@@ -1412,16 +1248,8 @@
             "description": "Get the additional metadata for the invoice.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "metadata"]
             }
           }
         },
@@ -1448,16 +1276,8 @@
             "description": "Add/update metadata keys. Expected: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "metadata"]
             },
             "body": {
               "mode": "raw",
@@ -1488,16 +1308,8 @@
             "description": "Verify metadata was updated.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "metadata"]
             }
           },
           "event": [
@@ -1539,16 +1351,8 @@
             "description": "Delete specific metadata keys. Expected: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}", "metadata"]
             },
             "body": {
               "mode": "raw",
@@ -1585,14 +1389,8 @@
             "description": "Retrieve all merchants for a given parent company.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants"],
               "query": [
                 {
                   "key": "parentCompanyId",
@@ -1625,14 +1423,8 @@
             "description": "Create a new merchant. Expected: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants"]
             },
             "body": {
               "mode": "raw",
@@ -1686,14 +1478,8 @@
             "description": "Verify merchant was created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants"],
               "query": [
                 {
                   "key": "parentCompanyId",
@@ -1736,15 +1522,8 @@
             "description": "Retrieve a specific merchant by ID.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}"]
             }
           }
         },
@@ -1771,15 +1550,8 @@
             "description": "Full update of a merchant. Expected: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}"]
             },
             "body": {
               "mode": "raw",
@@ -1810,15 +1582,8 @@
             "description": "Verify merchant was updated.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}"]
             }
           },
           "event": [
@@ -1860,16 +1625,8 @@
             "description": "Get all invoices associated with a merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
             }
           }
         },
@@ -1896,16 +1653,8 @@
             "description": "Associate an invoice with the merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
             },
             "body": {
               "mode": "raw",
@@ -1936,16 +1685,8 @@
             "description": "Verify invoice was associated.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
             }
           },
           "event": [
@@ -1982,16 +1723,8 @@
             "description": "Get all products across all invoices for this merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "products"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "products"]
             }
           }
         },
@@ -2018,16 +1751,8 @@
             "description": "Disassociate an invoice from the merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
             },
             "body": {
               "mode": "raw",
@@ -2064,15 +1789,8 @@
             "description": "Attempt to retrieve a non-existent invoice. Expected: 404 Not Found.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21"]
             }
           },
           "event": [
@@ -2106,14 +1824,8 @@
             "description": "Attempt to access protected endpoint without authentication. Expected: 401 Unauthorized.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             }
           },
           "event": [
@@ -2162,14 +1874,8 @@
             "description": "Send invalid request body to test validation. Expected: 400 Bad Request.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             },
             "body": {
               "mode": "raw",
@@ -2225,15 +1931,8 @@
             "description": "Delete the test merchant. Expected: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}"],
               "query": [
                 {
                   "key": "parentCompanyId",
@@ -2261,15 +1960,8 @@
             "description": "Delete the test invoice. Expected: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
             }
           }
         },
@@ -2291,14 +1983,8 @@
             "description": "Verify the invoice was deleted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             }
           }
         },
@@ -2320,14 +2006,8 @@
             "description": "Delete all invoices for the authenticated user. Expected: 204 No Content. Use with caution - this deletes ALL user invoices.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices"]
             }
           }
         }

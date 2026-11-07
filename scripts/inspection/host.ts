@@ -459,9 +459,9 @@ function projectRequiredPorts(
 
   return owners.toSorted(
     (left, right) =>
-      left.port - right.port ||
-      (left.pid ?? Number.MAX_SAFE_INTEGER) - (right.pid ?? Number.MAX_SAFE_INTEGER) ||
-      compareText(left.processName ?? "", right.processName ?? ""),
+      left.port - right.port
+      || (left.pid ?? Number.MAX_SAFE_INTEGER) - (right.pid ?? Number.MAX_SAFE_INTEGER)
+      || compareText(left.processName ?? "", right.processName ?? ""),
   );
 }
 

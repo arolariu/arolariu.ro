@@ -84,12 +84,7 @@ export function formatTimestamp(now: Date): string {
  * // Output: [14:23:45.123] 🚀 Worker #1 spawned for task "packages"
  * ```
  */
-export function logWorkerSpawn(
-  workerId: number,
-  taskName: string,
-  logger: MonorepositoryLogger,
-  now: Date,
-): void {
+export function logWorkerSpawn(workerId: number, taskName: string, logger: MonorepositoryLogger, now: Date): void {
   logger.line([
     {text: `[${formatTimestamp(now)}]`, styles: ["gray"]},
     {text: " 🚀 "},
@@ -183,10 +178,7 @@ interface ProgressTracker {
  * tracker.finish();     // Prints newline to finalize
  * ```
  */
-export function createProgressTracker(
-  total: number,
-  logger: MonorepositoryLogger = defaultPresentationLogger(),
-): ProgressTracker {
+export function createProgressTracker(total: number, logger: MonorepositoryLogger = defaultPresentationLogger()): ProgressTracker {
   let completed = 0;
   let progress: ProgressReporter | null = null;
 
@@ -262,10 +254,7 @@ interface TimelineEntry {
  * // ──────────────────────────────────────────────────────────
  * ```
  */
-export function printWorkerTimeline(
-  results: readonly TimelineEntry[],
-  logger: MonorepositoryLogger = defaultPresentationLogger(),
-): void {
+export function printWorkerTimeline(results: readonly TimelineEntry[], logger: MonorepositoryLogger = defaultPresentationLogger()): void {
   if (results.length === 0) return;
 
   const maxDuration = Math.max(...results.map((r) => r.durationMs));

@@ -4,14 +4,15 @@ This directory contains the CodeQL configuration for the arolariu.ro monorepo.
 
 ## Overview
 
-[CodeQL](https://codeql.github.com/) is GitHub's semantic code analysis engine that identifies security vulnerabilities and code quality issues. This configuration enables automated security scanning for the entire monorepo.
+[CodeQL](https://codeql.github.com/) is GitHub's semantic code analysis engine that identifies security vulnerabilities and code quality
+issues. This configuration enables automated security scanning for the entire monorepo.
 
 ## Analyzed Languages
 
-| Language | Source Paths | Build Required |
-|----------|-------------|----------------|
+| Language              | Source Paths                                                          | Build Required   |
+| --------------------- | --------------------------------------------------------------------- | ---------------- |
 | JavaScript/TypeScript | `sites/arolariu.ro/`, `sites/cv.arolariu.ro/`, `packages/components/` | No (interpreted) |
-| C# / .NET | `sites/api.arolariu.ro/` | Yes (compiled) |
+| C# / .NET             | `sites/api.arolariu.ro/`                                              | Yes (compiled)   |
 
 ## Configuration Files
 
@@ -49,11 +50,11 @@ Security findings are available in:
 
 ## Query Suites
 
-| Suite | Description |
-|-------|-------------|
-| `security-extended` | Extended set of security queries |
-| `security-and-quality` | Security + code quality queries |
-| `code-scanning` | Default queries for code scanning |
+| Suite                  | Description                       |
+| ---------------------- | --------------------------------- |
+| `security-extended`    | Extended set of security queries  |
+| `security-and-quality` | Security + code quality queries   |
+| `code-scanning`        | Default queries for code scanning |
 
 ## Customization
 

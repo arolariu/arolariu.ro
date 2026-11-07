@@ -15,13 +15,13 @@ public sealed class DevelopmentPersonaCatalogTests
   [TestMethod]
   public void All_SeedFixture_PreservesKeysSubjectsAndIdentifiers()
   {
-    using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(
-      Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json")));
-    JsonElement[] personas = manifest.RootElement.GetProperty("personas").EnumerateArray().ToArray();
-    Assert.AreEqual(personas.Length, DevelopmentPersonaCatalog.All.Count);
+    Assert.HasCount(4, DevelopmentPersonaCatalog.All);
     foreach (DevelopmentPersona persona in DevelopmentPersonaCatalog.All)
     {
-      JsonElement definition = personas.Single(candidate => candidate.GetProperty("key").GetString() == persona.Key);
+      using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(
+        Path.Combine(AppContext.BaseDirectory, "SeedData", $"{persona.Key}.json")));
+      JsonElement definition = manifest.RootElement.GetProperty("personas").EnumerateArray().Single();
+      Assert.AreEqual(persona.Key, definition.GetProperty("key").GetString());
       Assert.AreEqual(definition.GetProperty("subject").GetString(), persona.Subject);
       Assert.AreEqual(definition.GetProperty("userIdentifier").GetGuid(), persona.UserIdentifier);
     }
@@ -42,6 +42,10 @@ public sealed class DevelopmentPersonaCatalogTests
     Assert.AreEqual(
       Guid.Parse("fc687d5c-39d5-5541-868c-f76a3fdbd4e4"),
       DevelopmentPersonaCatalog.Charlie.UserIdentifier);
-    Assert.HasCount(3, DevelopmentPersonaCatalog.All);
+    Assert.AreEqual(Guid.Parse("2e92f011-8157-564d-a059-af27f4026fd6"),
+      DevelopmentPersonaCatalog.Dmitryi.UserIdentifier);
+    Assert.HasCount(4, DevelopmentPersonaCatalog.All);
+    CollectionAssert.AreEqual(new[] { "alice", "bob", "charlie", "dmitryi" },
+      DevelopmentPersonaCatalog.All.Select(persona => persona.Key).ToArray());
   }
 }

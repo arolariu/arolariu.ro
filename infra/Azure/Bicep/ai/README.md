@@ -11,10 +11,10 @@ This module deploys Azure AI services including Azure OpenAI and AI Foundry for 
 
 ## 🏗️ Resources Created
 
-| Resource Type     | Name Pattern         | Purpose                        |
-| ----------------- | -------------------- | ------------------------------ |
-| CognitiveServices | `{prefix}-openai`    | Azure OpenAI resource          |
-| AI Foundry Hub    | `{prefix}-ai-hub`    | AI Foundry hub for AI services |
+| Resource Type     | Name Pattern      | Purpose                        |
+| ----------------- | ----------------- | ------------------------------ |
+| CognitiveServices | `{prefix}-openai` | Azure OpenAI resource          |
+| AI Foundry Hub    | `{prefix}-ai-hub` | AI Foundry hub for AI services |
 
 ## 📊 Architecture
 
@@ -80,19 +80,19 @@ module aiDeployment 'ai/deploymentFile.bicep' = {
 
 ## 📁 Module Files
 
-| File                  | Purpose                              |
-| --------------------- | ------------------------------------ |
-| `deploymentFile.bicep`| Orchestrates AI service deployments  |
-| `openai.bicep`        | Azure OpenAI Cognitive Services      |
-| `aiFoundry.bicep`     | Azure AI Foundry hub                 |
+| File                   | Purpose                             |
+| ---------------------- | ----------------------------------- |
+| `deploymentFile.bicep` | Orchestrates AI service deployments |
+| `openai.bicep`         | Azure OpenAI Cognitive Services     |
+| `aiFoundry.bicep`      | Azure AI Foundry hub                |
 
 ## 🚨 Troubleshooting
 
-| Issue                | Solution                                              |
-| -------------------- | ----------------------------------------------------- |
-| Access denied        | Check RBAC in `rbac/backend-uami-rbac.bicep`          |
-| Quota exceeded       | Request quota increase in Azure portal                |
-| Region not available | OpenAI is only available in select regions            |
+| Issue                | Solution                                     |
+| -------------------- | -------------------------------------------- |
+| Access denied        | Check RBAC in `rbac/backend-uami-rbac.bicep` |
+| Quota exceeded       | Request quota increase in Azure portal       |
+| Region not available | OpenAI is only available in select regions   |
 
 ## 📚 References
 

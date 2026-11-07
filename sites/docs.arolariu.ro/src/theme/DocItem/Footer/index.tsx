@@ -9,13 +9,13 @@
  * top" on the 404.
  */
 
-import React from 'react';
-import {useLocation} from '@docusaurus/router';
-import Footer from '@theme-original/DocItem/Footer';
-import type FooterType from '@theme/DocItem/Footer';
-import type {WrapperProps} from '@docusaurus/types';
-import DocFeedback from '@site/src/components/DocFeedback';
-import BackToTop from '@site/src/components/BackToTop';
+import React from "react";
+import {useLocation} from "@docusaurus/router";
+import Footer from "@theme-original/DocItem/Footer";
+import type FooterType from "@theme/DocItem/Footer";
+import type {WrapperProps} from "@docusaurus/types";
+import DocFeedback from "@site/src/components/DocFeedback";
+import BackToTop from "@site/src/components/BackToTop";
 
 /** Props forwarded to the wrapped `DocItem/Footer`. */
 type Props = WrapperProps<typeof FooterType>;

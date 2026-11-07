@@ -1,0 +1,17 @@
+[
+  {"package": "@actions/core", "facade": "core.ts"},
+  {"package": "@actions/exec", "facade": "exec.ts"},
+  {"package": "@actions/github", "facade": "github.ts"},
+  {"package": "@actions/github/lib/utils", "facade": "github-utils.ts"},
+  {"package": "@actions/artifact", "facade": "artifact.ts"},
+  {"package": "@actions/cache", "facade": "cache.ts"},
+  {"package": "@actions/glob", "facade": "glob.ts"},
+  {"package": "@actions/io", "facade": "io.ts"},
+  {"package": "@actions/io/lib/io-util", "facade": "io-util.ts"},
+  {"package": "@actions/http-client", "facade": "http-client.ts"},
+  {"package": "@actions/http-client/lib/auth", "facade": "http-auth.ts"},
+  {"package": "@actions/http-client/lib/proxy", "facade": "http-proxy.ts"},
+  {"package": "@actions/http-client/lib/interfaces", "facade": "http-interfaces.ts"},
+  {"package": "@actions/tool-cache", "facade": "tool-cache.ts"},
+  {"package": "@actions/attest", "facade": "attest.ts"}
+]

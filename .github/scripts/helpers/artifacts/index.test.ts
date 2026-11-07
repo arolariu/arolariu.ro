@@ -1,425 +1,155 @@
 /**
- * @fileoverview Unit tests for artifacts helper.
+ * @fileoverview Artifact conveniences using real discovery and typed SDK boundaries.
  * @module github/scripts/helpers/artifacts/tests
- *
- * @remarks
- * Validates upload/download behavior using mocked GitHub Actions artifact clients.
  */
-
-import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
+import {mkdtemp, mkdir, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {DefaultArtifactClient} from "../sdk/artifact.ts";
+import {createArtifactHelper, type IArtifactHelper} from "./index.ts";
 
-// Create mock client
-const mockUploadArtifact = vi.fn();
-const mockDownloadArtifact = vi.fn();
-const mockGetArtifact = vi.fn();
-const mockListArtifacts = vi.fn();
-
-// Mock @actions/artifact module
-vi.mock("@actions/artifact", () => {
-  class MockDefaultArtifactClient {
-    uploadArtifact = mockUploadArtifact;
-    downloadArtifact = mockDownloadArtifact;
-    getArtifact = mockGetArtifact;
-    listArtifacts = mockListArtifacts;
-  }
-
-  return {
-    DefaultArtifactClient: MockDefaultArtifactClient,
-  };
-});
-
-// Mock @actions/glob
-const mockGlob = vi.fn();
-const mockCreate = vi.fn();
-vi.mock("@actions/glob", () => ({
-  create: mockCreate,
-}));
-
-describe("ArtifactsHelper", () => {
-  let testDir: string;
+describe("ArtifactHelper", () => {
+  let directory: string;
+  let file: string;
+  let helper: IArtifactHelper;
+  let client: DefaultArtifactClient;
+  const findBy = {token: "opaque", workflowRunId: 42, repositoryOwner: "owner", repositoryName: "repo"};
 
   beforeEach(async () => {
-    vi.clearAllMocks();
-
-    // Create a temporary directory for test files
-    testDir = await fs.mkdtemp(path.join(os.tmpdir(), "artifact-test-"));
-
-    // Default mock implementations
-    mockCreate.mockResolvedValue({
-      glob: mockGlob,
-    });
+    directory = await mkdtemp(join(tmpdir(), "artifact-test-"));
+    file = join(directory, "report.txt");
+    await writeFile(file, "actual evidence");
+    vi.spyOn(DefaultArtifactClient.prototype, "uploadArtifact").mockResolvedValue({id: 123, size: 1024, digest: "actual-digest"});
+    vi.spyOn(DefaultArtifactClient.prototype, "downloadArtifact").mockResolvedValue({downloadPath: directory, digestMismatch: false});
+    vi.spyOn(DefaultArtifactClient.prototype, "getArtifact").mockResolvedValue({artifact: {id: 123, name: "report", size: 1024}});
+    vi.spyOn(DefaultArtifactClient.prototype, "listArtifacts").mockResolvedValue({artifacts: []});
+    client = new DefaultArtifactClient();
+    helper = createArtifactHelper(client);
   });
-
   afterEach(async () => {
-    // Clean up test directory
-    try {
-      await fs.rm(testDir, {recursive: true, force: true});
-    } catch {
-      // Ignore cleanup errors
-    }
+    vi.restoreAllMocks();
+    await rm(directory, {recursive: true, force: true});
   });
 
-  describe("upload", () => {
-    it("should upload artifact successfully", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
+  it("discovers real files and retains upload digest, size, and identity", async () => {
+    const result = await helper.upload({name: "report", files: [join(directory, "*.txt")], rootDirectory: directory});
+    expect(result).toEqual({id: 123, size: 1024, digest: "actual-digest", fileCount: 1});
+    expect(client.uploadArtifact).toHaveBeenCalledWith("report", [file], directory, {});
+  });
 
-      // Create test files
-      const testFile = path.join(testDir, "test.txt");
-      await fs.writeFile(testFile, "test content");
+  it.each([undefined, 0, -1])("rejects missing or nonpositive upload identity %s", async (id) => {
+    vi.mocked(client.uploadArtifact).mockResolvedValue(id === undefined ? {} : {id});
+    await expect(helper.upload({name: "report", files: [file], rootDirectory: directory})).rejects.toThrow(/identity|id/i);
+  });
 
-      mockGlob.mockResolvedValue([testFile]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 123,
-        size: 1024,
-      });
+  it("does not invent absent native size metadata", async () => {
+    vi.mocked(client.uploadArtifact).mockResolvedValue({id: 123});
+    expect(await helper.upload({name: "report", files: [file]})).toEqual({id: 123, fileCount: 1});
+  });
 
-      const result = await artifactsHelper.upload({
-        name: "test-artifact",
-        files: ["*.txt"],
-        rootDirectory: testDir,
-      });
-
-      expect(result.id).toBe(123);
-      expect(result.size).toBe(1024);
-      expect(result.fileCount).toBe(1);
-      expect(mockUploadArtifact).toHaveBeenCalledWith("test-artifact", [testFile], testDir, {});
-    });
-
-    it("should upload with retention days", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const testFile = path.join(testDir, "test.txt");
-      await fs.writeFile(testFile, "test content");
-
-      mockGlob.mockResolvedValue([testFile]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 456,
-        size: 2048,
-      });
-
-      await artifactsHelper.upload({
-        name: "test-artifact",
-        files: ["*.txt"],
-        retentionDays: 30,
-      });
-
-      expect(mockUploadArtifact).toHaveBeenCalledWith("test-artifact", [testFile], expect.any(String), {retentionDays: 30});
-    });
-
-    it("should throw error when no files found", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockGlob.mockResolvedValue([]);
-
-      await expect(
-        artifactsHelper.upload({
-          name: "test-artifact",
-          files: ["*.nonexistent"],
-        }),
-      ).rejects.toThrow("No files found matching patterns");
-    });
-
-    it("should throw error on upload failure", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const testFile = path.join(testDir, "test.txt");
-      await fs.writeFile(testFile, "test content");
-
-      mockGlob.mockResolvedValue([testFile]);
-      mockUploadArtifact.mockRejectedValue(new Error("Upload failed"));
-
-      await expect(
-        artifactsHelper.upload({
-          name: "test-artifact",
-          files: ["*.txt"],
-        }),
-      ).rejects.toThrow("Failed to upload artifact: Upload failed");
-    });
-
-    it("should handle missing id and size in response", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const testFile = path.join(testDir, "test.txt");
-      await fs.writeFile(testFile, "test content");
-
-      mockGlob.mockResolvedValue([testFile]);
-      mockUploadArtifact.mockResolvedValue({});
-
-      const result = await artifactsHelper.upload({
-        name: "test-artifact",
-        files: ["*.txt"],
-      });
-
-      expect(result.id).toBe(0);
-      expect(result.size).toBe(0);
+  it("forwards native compression, skip-archive, and zero retention", async () => {
+    await helper.upload({name: "report", files: [file], retentionDays: 0, nativeOptions: {compressionLevel: 0, skipArchive: true}});
+    expect(client.uploadArtifact).toHaveBeenCalledWith("report", [file], expect.any(String), {
+      retentionDays: 0,
+      compressionLevel: 0,
+      skipArchive: true,
     });
   });
 
-  describe("download", () => {
-    it("should download artifact by name", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockGetArtifact.mockResolvedValue({
-        artifact: {id: 123, name: "test-artifact", size: 1024},
-      });
-      mockDownloadArtifact.mockResolvedValue({
-        downloadPath: "/tmp/download",
-      });
-
-      const result = await artifactsHelper.download({
-        name: "test-artifact",
-        destination: "/tmp/download",
-      });
-
-      expect(result.id).toBe(123);
-      expect(result.downloadPath).toBe("/tmp/download");
-      expect(mockGetArtifact).toHaveBeenCalledWith("test-artifact");
-      expect(mockDownloadArtifact).toHaveBeenCalledWith(123, {path: "/tmp/download"});
-    });
-
-    it("should download artifact by ID", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockDownloadArtifact.mockResolvedValue({
-        downloadPath: "/tmp/download",
-      });
-
-      const result = await artifactsHelper.download({
-        artifactId: 456,
-        destination: "/tmp/download",
-      });
-
-      expect(result.id).toBe(456);
-      expect(result.downloadPath).toBe("/tmp/download");
-      expect(mockDownloadArtifact).toHaveBeenCalledWith(456, {path: "/tmp/download"});
-      expect(mockGetArtifact).not.toHaveBeenCalled();
-    });
-
-    it("should use destination when downloadPath not in response", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockDownloadArtifact.mockResolvedValue({});
-
-      const result = await artifactsHelper.download({
-        artifactId: 789,
-        destination: "/tmp/fallback",
-      });
-
-      expect(result.downloadPath).toBe("/tmp/fallback");
-    });
-
-    it("should throw error when neither name nor ID provided", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      await expect(
-        artifactsHelper.download({
-          destination: "/tmp/download",
-        } as any),
-      ).rejects.toThrow("Either 'name' or 'artifactId' must be provided");
-    });
-
-    it("should throw error on download failure with name", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockGetArtifact.mockResolvedValue({
-        artifact: {id: 123, name: "test-artifact", size: 1024},
-      });
-      mockDownloadArtifact.mockRejectedValue(new Error("Download failed"));
-
-      await expect(
-        artifactsHelper.download({
-          name: "test-artifact",
-          destination: "/tmp/download",
-        }),
-      ).rejects.toThrow("Failed to download artifact: Download failed");
-    });
-
-    it("should throw error on download failure with ID", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockDownloadArtifact.mockRejectedValue(new Error("Not found"));
-
-      await expect(
-        artifactsHelper.download({
-          artifactId: 999,
-          destination: "/tmp/download",
-        }),
-      ).rejects.toThrow("Failed to download artifact: Not found");
-    });
+  it("rejects conflicting retention settings before upload", async () => {
+    await expect(helper.upload({name: "report", files: [file], retentionDays: 7, nativeOptions: {retentionDays: 30}})).rejects.toThrow(
+      /conflict/i,
+    );
+    expect(client.uploadArtifact).not.toHaveBeenCalled();
   });
 
-  describe("list", () => {
-    it("should list all artifacts", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockListArtifacts.mockResolvedValue({
-        artifacts: [
-          {id: 1, name: "artifact-1", size: 1024},
-          {id: 2, name: "artifact-2", size: 2048},
-          {id: 3, name: "artifact-3", size: 4096},
-        ],
-      });
-
-      const result = await artifactsHelper.list();
-
-      expect(result).toHaveLength(3);
-      expect(result[0]).toEqual({id: 1, name: "artifact-1", size: 1024});
-      expect(result[1]).toEqual({id: 2, name: "artifact-2", size: 2048});
-      expect(result[2]).toEqual({id: 3, name: "artifact-3", size: 4096});
-    });
-
-    it("should return empty array when no artifacts", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockListArtifacts.mockResolvedValue({
-        artifacts: [],
-      });
-
-      const result = await artifactsHelper.list();
-
-      expect(result).toEqual([]);
-    });
-
-    it("should throw error on list failure", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      mockListArtifacts.mockRejectedValue(new Error("API error"));
-
-      await expect(artifactsHelper.list()).rejects.toThrow("Failed to list artifacts: API error");
-    });
+  it("rejects empty discovery without calling the external client", async () => {
+    await expect(helper.upload({name: "report", files: [join(directory, "*.missing")]})).rejects.toThrow(
+      "No files found matching patterns",
+    );
+    expect(client.uploadArtifact).not.toHaveBeenCalled();
   });
 
-  describe("uploadDirectory", () => {
-    it("should upload entire directory", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      // Create test files in directory
-      const subDir = path.join(testDir, "subdir");
-      await fs.mkdir(subDir);
-      const testFile1 = path.join(testDir, "file1.txt");
-      const testFile2 = path.join(subDir, "file2.txt");
-      await fs.writeFile(testFile1, "content1");
-      await fs.writeFile(testFile2, "content2");
-
-      mockGlob.mockResolvedValue([testFile1, testFile2]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 111,
-        size: 2048,
-      });
-
-      const result = await artifactsHelper.uploadDirectory("dir-artifact", testDir);
-
-      expect(result.id).toBe(111);
-      expect(result.fileCount).toBe(2);
-      expect(mockCreate).toHaveBeenCalledWith(`${testDir}/**/*`);
-      expect(mockUploadArtifact).toHaveBeenCalledWith("dir-artifact", [testFile1, testFile2], testDir, {});
-    });
-
-    it("should upload directory with retention days", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const testFile = path.join(testDir, "test.txt");
-      await fs.writeFile(testFile, "test");
-
-      mockGlob.mockResolvedValue([testFile]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 222,
-        size: 1024,
-      });
-
-      await artifactsHelper.uploadDirectory("dir-artifact", testDir, 7);
-
-      expect(mockUploadArtifact).toHaveBeenCalledWith("dir-artifact", [testFile], testDir, {retentionDays: 7});
-    });
+  it("uses the injected complete native client", async () => {
+    const injected = new DefaultArtifactClient();
+    const upload = vi.fn<typeof injected.uploadArtifact>().mockResolvedValue({id: 456});
+    injected.uploadArtifact = upload;
+    const owned = createArtifactHelper(injected);
+    expect((await owned.upload({name: "report", files: [file]})).id).toBe(456);
+    expect(upload).toHaveBeenCalledOnce();
   });
 
-  describe("uploadFiles", () => {
-    it("should upload specific files", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const file1 = path.join(testDir, "file1.txt");
-      const file2 = path.join(testDir, "file2.txt");
-      await fs.writeFile(file1, "content1");
-      await fs.writeFile(file2, "content2");
-
-      mockGlob.mockResolvedValue([file1, file2]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 333,
-        size: 4096,
-      });
-
-      const result = await artifactsHelper.uploadFiles("files-artifact", ["file1.txt", "file2.txt"], testDir);
-
-      expect(result.id).toBe(333);
-      expect(result.fileCount).toBe(2);
-      expect(mockCreate).toHaveBeenCalledWith("file1.txt\nfile2.txt");
-    });
-
-    it("should upload files with retention days", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const file1 = path.join(testDir, "log.txt");
-      await fs.writeFile(file1, "log content");
-
-      mockGlob.mockResolvedValue([file1]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 444,
-        size: 512,
-      });
-
-      await artifactsHelper.uploadFiles("logs", ["log.txt"], testDir, 14);
-
-      expect(mockUploadArtifact).toHaveBeenCalledWith("logs", [file1], testDir, {retentionDays: 14});
-    });
-
-    it("should upload files without rootDirectory", async () => {
-      const {createArtifactHelper} = await import("./index");
-      const artifactsHelper = createArtifactHelper();
-
-      const file1 = path.join(testDir, "file.txt");
-      await fs.writeFile(file1, "content");
-
-      mockGlob.mockResolvedValue([file1]);
-      mockUploadArtifact.mockResolvedValue({
-        id: 555,
-        size: 256,
-      });
-
-      await artifactsHelper.uploadFiles("files", ["file.txt"]);
-
-      expect(mockUploadArtifact).toHaveBeenCalledWith("files", [file1], expect.any(String), {});
-    });
+  it("preserves native upload errors", async () => {
+    const failure = new Error("Upload failed");
+    vi.mocked(client.uploadArtifact).mockRejectedValue(failure);
+    await expect(helper.upload({name: "report", files: [file]})).rejects.toBe(failure);
   });
 
-  describe("artifacts default export", () => {
-    it("should export default artifacts instance", async () => {
-      const {artifacts} = await import("./index");
+  it("forwards cross-run lookup and required download integrity options", async () => {
+    const nativeOptions = {findBy, expectedHash: "expected-digest", skipDecompress: true};
+    const result = await helper.download({name: "report", destination: directory, nativeOptions});
+    expect(client.getArtifact).toHaveBeenCalledWith("report", {findBy});
+    expect(client.downloadArtifact).toHaveBeenCalledWith(123, {...nativeOptions, path: directory});
+    expect(result).toEqual({id: 123, downloadPath: directory, digestMismatch: false});
+  });
 
-      expect(artifacts).toBeDefined();
-      expect(artifacts.upload).toBeDefined();
-      expect(artifacts.download).toBeDefined();
-      expect(artifacts.list).toBeDefined();
-    });
+  it("downloads by ID without a name lookup", async () => {
+    expect((await helper.download({artifactId: 456, destination: directory})).id).toBe(456);
+    expect(client.downloadArtifact).toHaveBeenCalledWith(456, {path: directory});
+    expect(client.getArtifact).not.toHaveBeenCalled();
+  });
+
+  it("retains the requested destination when the native response omits it", async () => {
+    vi.mocked(client.downloadArtifact).mockResolvedValue({});
+    expect((await helper.download({artifactId: 123, destination: directory})).downloadPath).toBe(directory);
+  });
+
+  it("rejects download integrity mismatch rather than declaring success", async () => {
+    vi.mocked(client.downloadArtifact).mockResolvedValue({downloadPath: directory, digestMismatch: true});
+    await expect(helper.download({artifactId: 123, destination: directory, nativeOptions: {expectedHash: "expected"}})).rejects.toThrow(
+      /digest/i,
+    );
+  });
+
+  it("requires a name or ID", async () => {
+    await expect(helper.download({destination: directory})).rejects.toThrow("Either 'name' or 'artifactId' must be provided");
+  });
+
+  it.each([0, -1, Number.NaN])("rejects invalid required download identity %s", async (artifactId) => {
+    await expect(helper.download({artifactId, destination: directory})).rejects.toThrow(/id/i);
+    expect(client.downloadArtifact).not.toHaveBeenCalled();
+  });
+
+  it.each(["downloadArtifact", "getArtifact", "listArtifacts"] as const)("preserves native %s errors", async (method) => {
+    const failure = new Error("Native artifact error");
+    vi.mocked(client[method]).mockRejectedValue(failure);
+    const action = method === "listArtifacts" ? helper.list() : helper.download({name: "report", destination: directory});
+    await expect(action).rejects.toBe(failure);
+  });
+
+  it("retains listing metadata and forwards list/find options", async () => {
+    const artifact = {id: 123, name: "report", size: 1024, digest: "real-digest", createdAt: new Date("2026-01-01T00:00:00Z")};
+    vi.mocked(client.listArtifacts).mockResolvedValue({artifacts: [artifact]});
+    expect(await helper.list({latest: false, findBy})).toEqual([artifact]);
+    expect(client.listArtifacts).toHaveBeenCalledWith({latest: false, findBy});
+  });
+
+  it("returns an empty native listing without fabrication", async () => {
+    expect(await helper.list()).toEqual([]);
+  });
+
+  it("uploads a real directory recursively without counting directory entries", async () => {
+    const nested = join(directory, "nested");
+    await mkdir(nested);
+    const second = join(nested, "second.txt");
+    await writeFile(second, "second evidence");
+    expect((await helper.uploadDirectory("report", directory, 7)).fileCount).toBe(2);
+    expect(client.uploadArtifact).toHaveBeenCalledWith("report", expect.arrayContaining([file, second]), directory, {retentionDays: 7});
+  });
+
+  it("retains specific-file convenience options including zero retention", async () => {
+    await helper.uploadFiles("report", [file], directory, 0);
+    expect(client.uploadArtifact).toHaveBeenCalledWith("report", [file], directory, {retentionDays: 0});
   });
 });

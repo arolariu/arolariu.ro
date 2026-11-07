@@ -7,7 +7,13 @@ import {basename} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 
-import {AbstractProcessRunner, type ProcessEnvironment, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./runner.ts";
+import {
+  AbstractProcessRunner,
+  type ProcessEnvironment,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type ProcessRunOptions,
+} from "./runner.ts";
 
 interface ExecaResultLike {
   readonly code?: string | number | undefined;
@@ -59,10 +65,7 @@ export class ExecaProcessRunner extends AbstractProcessRunner {
     this.#monotonicNow = options.monotonicNow;
   }
 
-  protected override execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
     if (options.signal?.aborted === true) {
       return Promise.resolve({kind: "cancelled", stdout: "", stderr: "", durationMs: 0});
     }
@@ -227,11 +230,7 @@ function mapExecaOutcome(
   };
 }
 
-function mapExecaFailure(
-  error: unknown,
-  startedAt: number,
-  context: Readonly<ExecaExecutionContext>,
-): ProcessOutcome {
+function mapExecaFailure(error: unknown, startedAt: number, context: Readonly<ExecaExecutionContext>): ProcessOutcome {
   return {
     kind: "spawn-failed",
     message: error instanceof Error ? error.message : String(error),

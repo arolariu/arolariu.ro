@@ -15,6 +15,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
+    // Separate workspace runners must not invalidate each other's module cache.
+    fsModuleCachePath: "node_modules/.vitest-cache",
     pool: "threads",
     setupFiles: ["./vitest.setup.ts"],
     testTimeout: 10000, // 10 seconds for each test

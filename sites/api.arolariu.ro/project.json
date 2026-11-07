@@ -10,9 +10,7 @@
         "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Release",
         "cwd": "sites/api.arolariu.ro"
       },
-      "outputs": [
-        "{projectRoot}/src/Core/bin"
-      ]
+      "outputs": ["{projectRoot}/src/Core/bin"]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -39,10 +37,5 @@
       }
     }
   },
-  "tags": [
-    "domain:backend",
-    "scope:api",
-    "type:app",
-    "platform:dotnet"
-  ]
+  "tags": ["domain:backend", "scope:api", "type:app", "platform:dotnet"]
 }

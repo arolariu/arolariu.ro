@@ -8,8 +8,8 @@ applyTo: "**/*.ts,**/*.tsx,**/tsconfig*.json,sites/cv.arolariu.ro/**/*.svelte,si
 
 ## Scope
 
-Owns TypeScript language and type-system behavior only. React, Next.js, Svelte,
-and project architecture belong to their narrower instructions.
+Owns TypeScript language and type-system behavior only. React, Next.js, Svelte, and project architecture belong to their narrower
+instructions.
 
 ## Required Inputs
 
@@ -21,15 +21,13 @@ and project architecture belong to their narrower instructions.
 
 - Never introduce explicit `any`.
 - Use `unknown` plus a type guard for untrusted data.
-- Prefer domain-specific interfaces, discriminated unions, and generics over
-  assertions.
+- Prefer domain-specific interfaces, discriminated unions, and generics over assertions.
 - Give exported functions explicit return types.
 - Use `Readonly<T>` or readonly properties for input contracts.
 - Preserve nullability; do not silence it with broad non-null assertions.
 - Use `satisfies` when validating object shape without widening.
 - Keep runtime validation at transport or trust boundaries.
-- Reuse identifier-normalization and parsing helpers already present in the
-  codebase.
+- Reuse identifier-normalization and parsing helpers already present in the codebase.
 - Do not add a new utility when an existing module owns the behavior.
 
 ## Reference Catalog
@@ -39,18 +37,15 @@ Open `references/typescript.md` only when the task needs one of:
 - designing or changing a public function/type/module API surface;
 - a discriminated union, generic, `satisfies`, or branded-identifier decision;
 - adding or changing runtime validation at a transport/trust boundary;
-- a `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/module-syntax edge
-  case that is not resolved by the rules above.
+- a `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/module-syntax edge case that is not resolved by the rules above.
 
-The catalog does not redefine these rules or the verification/escalation
-sections below; it only adds repository-specific examples and anti-patterns.
+The catalog does not redefine these rules or the verification/escalation sections below; it only adds repository-specific examples and
+anti-patterns.
 
 ## Validation
 
-Run the smallest project test/build from the nearest local guide that exercises
-the changed TypeScript.
+Run the smallest project test/build from the nearest local guide that exercises the changed TypeScript.
 
 ## Escalation
 
-Ask before changing a public contract, adding a dependency, weakening
-validation, or choosing among behaviorally different type models.
+Ask before changing a public contract, adding a dependency, weakening validation, or choosing among behaviorally different type models.

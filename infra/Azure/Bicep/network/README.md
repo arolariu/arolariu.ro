@@ -1,6 +1,7 @@
 # 🌐 Network Module
 
-This module provisions the global networking infrastructure for the arolariu.ro platform, including Azure Front Door for global edge routing, WAF protection, load balancing, and DNS management.
+This module provisions the global networking infrastructure for the arolariu.ro platform, including Azure Front Door for global edge
+routing, WAF protection, load balancing, and DNS management.
 
 ## 📋 **Overview**
 
@@ -14,22 +15,22 @@ The network module creates a comprehensive global networking solution that:
 
 ## 🏗️ **Resources Created**
 
-| Resource Type             | Name Pattern    | Purpose                            |
-| ------------------------- | --------------- | ---------------------------------- |
-| Front Door Profile        | `{prefix}-afd`  | Azure Front Door Standard profile  |
-| WAF Policy                | `productionWAF` | Web Application Firewall policy    |
-| AFD Endpoint              | `production`    | Production traffic endpoint        |
-| Origin Group              | `production`    | Production origin servers          |
-| DNS Zone                  | `{domain-name}` | Public DNS zone management         |
-| DNSSEC Config             | `default`       | Cryptographic DNS security         |
+| Resource Type      | Name Pattern    | Purpose                           |
+| ------------------ | --------------- | --------------------------------- |
+| Front Door Profile | `{prefix}-afd`  | Azure Front Door Standard profile |
+| WAF Policy         | `productionWAF` | Web Application Firewall policy   |
+| AFD Endpoint       | `production`    | Production traffic endpoint       |
+| Origin Group       | `production`    | Production origin servers         |
+| DNS Zone           | `{domain-name}` | Public DNS zone management        |
+| DNSSEC Config      | `default`       | Cryptographic DNS security        |
 
 ## 📁 **Module Files**
 
-| File                       | Purpose                              |
-| -------------------------- | ------------------------------------ |
-| `deploymentFile.bicep`     | Orchestrates network deployments     |
-| `azureFrontDoor.bicep`     | Azure Front Door profile and WAF     |
-| `dnsZone.bicep`            | DNS Zone with all records            |
+| File                   | Purpose                          |
+| ---------------------- | -------------------------------- |
+| `deploymentFile.bicep` | Orchestrates network deployments |
+| `azureFrontDoor.bicep` | Azure Front Door profile and WAF |
+| `dnsZone.bicep`        | DNS Zone with all records        |
 
 ## 📊 **Architecture**
 
@@ -201,41 +202,44 @@ The module creates a public DNS zone with DNSSEC enabled for the arolariu.ro dom
 
 ### **DNS Records**
 
-| Record Type | Name                      | Purpose                                      |
-| ----------- | ------------------------- | -------------------------------------------- |
-| **A**       | `@`                       | Apex domain → Front Door (ALIAS)             |
-| **CNAME**   | `www`                     | WWW subdomain → Front Door                   |
-| **CNAME**   | `api`                     | API subdomain → App Service                  |
-| **CNAME**   | `dev`                     | Dev subdomain → App Service                  |
-| **CNAME**   | `cv`                      | CV subdomain → Static Web App                |
-| **CNAME**   | `docs`                    | Docs subdomain → Static Web App              |
-| **TXT**     | `_dnsauth`                | Front Door apex domain validation            |
-| **TXT**     | `_dnsauth.www`            | Front Door WWW domain validation             |
-| **TXT**     | `asuid.api`               | App Service API domain verification          |
-| **TXT**     | `asuid.dev`               | App Service Dev domain verification          |
-| **TXT**     | `_dmarc`                  | DMARC email authentication policy            |
-| **TXT**     | `send.mail`               | SPF record for Resend email                  |
-| **TXT**     | `resend._domainkey.mail`  | DKIM record for Resend email                 |
-| **MX**      | `send.mail`               | MX record for Amazon SES                     |
-| **CNAME**   | `clerk`                   | Clerk authentication service                 |
-| **CNAME**   | `accounts`                | Clerk accounts service                       |
-| **CNAME**   | `clkmail`                 | Clerk mail service                           |
-| **CNAME**   | `clk._domainkey`          | Clerk DKIM key 1                             |
-| **CNAME**   | `clk2._domainkey`         | Clerk DKIM key 2                             |
+| Record Type | Name                     | Purpose                             |
+| ----------- | ------------------------ | ----------------------------------- |
+| **A**       | `@`                      | Apex domain → Front Door (ALIAS)    |
+| **CNAME**   | `www`                    | WWW subdomain → Front Door          |
+| **CNAME**   | `api`                    | API subdomain → App Service         |
+| **CNAME**   | `dev`                    | Dev subdomain → App Service         |
+| **CNAME**   | `cv`                     | CV subdomain → Static Web App       |
+| **CNAME**   | `docs`                   | Docs subdomain → Static Web App     |
+| **TXT**     | `_dnsauth`               | Front Door apex domain validation   |
+| **TXT**     | `_dnsauth.www`           | Front Door WWW domain validation    |
+| **TXT**     | `asuid.api`              | App Service API domain verification |
+| **TXT**     | `asuid.dev`              | App Service Dev domain verification |
+| **TXT**     | `_dmarc`                 | DMARC email authentication policy   |
+| **TXT**     | `send.mail`              | SPF record for Resend email         |
+| **TXT**     | `resend._domainkey.mail` | DKIM record for Resend email        |
+| **MX**      | `send.mail`              | MX record for Amazon SES            |
+| **CNAME**   | `clerk`                  | Clerk authentication service        |
+| **CNAME**   | `accounts`               | Clerk accounts service              |
+| **CNAME**   | `clkmail`                | Clerk mail service                  |
+| **CNAME**   | `clk._domainkey`         | Clerk DKIM key 1                    |
+| **CNAME**   | `clk2._domainkey`        | Clerk DKIM key 2                    |
 
 ### **Third-Party Service Integration**
 
 #### **Clerk Authentication**
+
 - `clerk.arolariu.ro` → `frontend-api.clerk.services`
 - `accounts.arolariu.ro` → `accounts.clerk.services`
 - DKIM records for email authentication
 
 #### **Resend Email Service**
+
 - SPF record: `v=spf1 include:amazonses.com ~all`
 - DKIM public key for email signing
 - MX record pointing to Amazon SES
 
 #### **DMARC Policy**
+
 - `v=DMARC1; p=none; rua=mailto:admin@arolariu.ro`
 - Policy: None (monitoring mode)
 - Reports sent to admin@arolariu.ro
@@ -261,13 +265,13 @@ az network dns record-set cname set-record \
 
 ## 💰 **Cost Considerations**
 
-| Resource                   | Tier/SKU                | Estimated Monthly Cost\* |
-| -------------------------- | ----------------------- | ------------------------ |
-| Azure Front Door (Legacy)  | Standard                | €5-15                    |
-| Front Door Profile         | Standard_AzureFrontDoor | €20-50                   |
-| DNS Zone                   | Public zone             | €0.50                    |
-| **Data Transfer**          | Global egress           | €5-20                    |
-| **Total**                  |                         | **€30-85**               |
+| Resource                  | Tier/SKU                | Estimated Monthly Cost\* |
+| ------------------------- | ----------------------- | ------------------------ |
+| Azure Front Door (Legacy) | Standard                | €5-15                    |
+| Front Door Profile        | Standard_AzureFrontDoor | €20-50                   |
+| DNS Zone                  | Public zone             | €0.50                    |
+| **Data Transfer**         | Global egress           | €5-20                    |
+| **Total**                 |                         | **€30-85**               |
 
 \*Estimates based on moderate traffic (1-10GB/month). Costs vary significantly with traffic volume.
 
@@ -441,5 +445,4 @@ az monitor metrics list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: December 2025
-**Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: December 2025 **Maintainer**: Alexandru-Razvan Olariu

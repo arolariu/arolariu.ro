@@ -36,16 +36,6 @@ import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
 
 /**
- * Type for monthly spending data point used in the sparkline chart.
- */
-type MonthlySpending = {
-  /** Month label (e.g., "Jan", "Feb") */
-  readonly month: string;
-  /** Total spending amount for the month */
-  readonly amount: number;
-};
-
-/**
  * Merchant information card component with rich analytics.
  *
  * @remarks
@@ -73,6 +63,16 @@ type MonthlySpending = {
  * ```
  */
 export function MerchantInfoCard(): React.JSX.Element {
+  /**
+   * Type for monthly spending data point used in the sparkline chart.
+   */
+  type MonthlySpending = {
+    /** Month label (e.g., "Jan", "Feb") */
+    readonly month: string;
+    /** Total spending amount for the month */
+    readonly amount: number;
+  };
+
   const {invoice, merchant} = useInvoiceContext();
   const {entities: invoices} = useInvoicesStore();
   const t = useTranslations();

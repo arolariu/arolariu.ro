@@ -8,11 +8,61 @@
  * Follows Single Responsibility Principle by focusing solely on file operations.
  */
 
-import * as core from "@actions/core";
-import * as io from "@actions/io";
-import {constants} from "node:fs";
-import {access, readdir, readFile, rm, stat, writeFile} from "node:fs/promises";
-import {dirname, join} from "node:path";
+import * as core from "../sdk/core.ts";
+import * as io from "../sdk/io.ts";
+import {randomUUID} from "node:crypto";
+import {constants, type Dirent} from "node:fs";
+import {access, mkdtemp, open, readdir, readFile, rename, rm, stat, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {basename, dirname, join} from "node:path";
+import {Readable} from "node:stream";
+import {pipeline} from "node:stream/promises";
+
+/**
+ * Owns a unique temporary directory through all awaited callback work.
+ * @param prefix - A nonempty filename prefix, not a path.
+ * @param run - Work that may use only this invocation's temporary directory.
+ * @returns Callback result after cleanup completes.
+ * @throws Original operation errors, or AggregateError if cleanup also fails.
+ */
+export async function withTemporaryDirectory<T>(prefix: string, run: (directory: string) => Promise<T>): Promise<T> {
+  if (!prefix || /[\\/\0]/.test(prefix) || prefix === "." || prefix === "..") throw new TypeError("Invalid temporary directory prefix");
+  const directory = await mkdtemp(join(tmpdir(), prefix));
+  let failed = false;
+  let failure: unknown;
+  try {
+    return await run(directory);
+  } catch (error) {
+    failed = true;
+    failure = error;
+    throw error;
+  } finally {
+    try {
+      await rm(directory, {recursive: true, force: true});
+    } catch (cleanup) {
+      if (failed) throw new AggregateError([failure, cleanup], "Temporary work and cleanup failed");
+      throw cleanup;
+    }
+  }
+}
+
+/** A streamed read observed more bytes than the caller allowed. */
+export class FileSizeLimitError extends Error {
+  readonly path: string;
+  readonly maximumBytes: number;
+
+  /**
+   * Records an oversized input without retaining its contents.
+   * @param path - Evidence path.
+   * @param maximumBytes - Accepted byte ceiling.
+   */
+  constructor(path: string, maximumBytes: number) {
+    super(`File '${path}' exceeds the ${maximumBytes} byte limit`);
+    this.name = "FileSizeLimitError";
+    this.path = path;
+    this.maximumBytes = maximumBytes;
+  }
+}
 
 /**
  * File system operation options
@@ -91,9 +141,30 @@ export interface IFileSystemHelper {
   readText(path: string, encoding?: BufferEncoding): Promise<string>;
 
   /**
+   * Reads UTF-8 while enforcing an observed byte ceiling, including concurrent growth.
+   * @param path - Evidence path.
+   * @param maxBytes - Nonnegative safe-integer byte limit.
+   * @returns Complete decoded contents, never silently truncated evidence.
+   * @throws {FileSizeLimitError} When the input exceeds the limit.
+   * @throws Native file errors or RangeError for an invalid limit.
+   */
+  readTextBounded(path: string, maxBytes: number): Promise<string>;
+
+  /**
+   * Reads bounded JSON and invokes its actual runtime decoder.
+   * @param path - Evidence path.
+   * @param decode - Domain decoder receiving unknown parsed JSON.
+   * @param maxBytes - Nonnegative safe-integer byte limit.
+   * @returns Validated domain data.
+   * @throws File, JSON syntax, size, or decoder errors without returning substitute data.
+   */
+  readValidatedJson<T>(path: string, decode: (value: unknown) => T, maxBytes: number): Promise<T>;
+
+  /**
    * Reads and parses a JSON file
    * @param path - Path to JSON file
    * @returns Promise resolving to parsed JSON
+   * @remarks T is a caller assertion, not runtime validation; use readValidatedJson at transport boundaries.
    */
   readJson<T = unknown>(path: string): Promise<T>;
 
@@ -114,6 +185,24 @@ export interface IFileSystemHelper {
    * @returns Promise resolving when write completes
    */
   writeJson(path: string, data: unknown, options?: FileOperationOptions): Promise<void>;
+
+  /**
+   * Replaces JSON using an exclusively created sibling and rename.
+   * @param path - Destination path; parents are created as needed.
+   * @param value - JSON-serializable data.
+   * @returns Completion after replacement is atomically visible to readers.
+   * @throws Serialization, file, or cleanup errors; the previous destination survives a failed write.
+   */
+  writeJsonAtomic(path: string, value: unknown): Promise<void>;
+
+  /**
+   * Streams bytes into an owned sibling, then renames it over the destination.
+   * @param path - Destination path.
+   * @param source - Consumed readable; preparation or pipeline failure destroys it.
+   * @returns Completion after stream closure and atomic replacement.
+   * @throws The original operation error, or AggregateError if cleanup also fails.
+   */
+  writeStreamAtomic(path: string, source: Readable): Promise<void>;
 
   /**
    * Copies a file or directory
@@ -160,7 +249,7 @@ export interface IFileSystemHelper {
    * Lists directory contents
    * @param path - Directory path
    * @param options - Traversal options
-   * @returns Promise resolving to array of file paths
+   * @returns Files and directories; default depth is zero and symbolic links are not traversed.
    */
   list(path: string, options?: TraversalOptions): Promise<readonly string[]>;
 
@@ -224,8 +313,9 @@ export class FileSystemHelper implements IFileSystemHelper {
     try {
       await access(path);
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      if (error instanceof Error && "code" in error && (error.code === "ENOENT" || error.code === "ENOTDIR")) return false;
+      throw error;
     }
   }
 
@@ -265,6 +355,34 @@ export class FileSystemHelper implements IFileSystemHelper {
       const err = error as Error;
       throw new Error(`Failed to read text file '${path}': ${err.message}`);
     }
+  }
+
+  /** {@inheritDoc IFileSystemHelper.readTextBounded} */
+  async readTextBounded(path: string, maxBytes: number): Promise<string> {
+    if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) throw new RangeError("maxBytes must be a nonnegative safe integer");
+    const handle = await open(path, "r");
+    try {
+      const buffer = Buffer.alloc(Math.min(maxBytes + 1, 64 * 1024));
+      const chunks: Buffer[] = [];
+      let total = 0;
+      while (true) {
+        const {bytesRead} = await handle.read(buffer, 0, Math.min(buffer.length, maxBytes - total + 1), null);
+        if (bytesRead === 0) break;
+        total += bytesRead;
+        if (total > maxBytes) throw new FileSizeLimitError(path, maxBytes);
+        chunks.push(Buffer.from(buffer.subarray(0, bytesRead)));
+      }
+      return Buffer.concat(chunks, total).toString("utf8");
+    } finally {
+      await handle.close();
+    }
+  }
+
+  /** {@inheritDoc IFileSystemHelper.readValidatedJson} */
+  async readValidatedJson<T>(path: string, decode: (value: unknown) => T, maxBytes: number): Promise<T> {
+    const content = await this.readTextBounded(path, maxBytes);
+    const value: unknown = JSON.parse(content);
+    return decode(value);
   }
 
   /**
@@ -326,6 +444,45 @@ export class FileSystemHelper implements IFileSystemHelper {
     } catch (error) {
       const err = error as Error;
       throw new Error(`Failed to write JSON file '${path}': ${err.message}`);
+    }
+  }
+
+  /** {@inheritDoc IFileSystemHelper.writeJsonAtomic} */
+  async writeJsonAtomic(path: string, value: unknown): Promise<void> {
+    const content = JSON.stringify(value, null, 2);
+    if (content === undefined) throw new TypeError("Value has no JSON representation");
+    await this.writeStreamAtomic(path, Readable.from([content]));
+  }
+
+  /** {@inheritDoc IFileSystemHelper.writeStreamAtomic} */
+  async writeStreamAtomic(path: string, source: Readable): Promise<void> {
+    const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
+    const prepare = async (): Promise<Awaited<ReturnType<typeof open>>> => {
+      await this.ensureDirectory(dirname(path));
+      return open(temporary, "wx");
+    };
+    const handle = await prepare().catch((error: unknown) => {
+      source.destroy();
+      throw error;
+    });
+    try {
+      await pipeline(source, handle.createWriteStream({autoClose: true}));
+      await handle.close();
+      await rename(temporary, path);
+    } catch (error) {
+      const errors: unknown[] = [error];
+      try {
+        await handle.close();
+      } catch (closeError) {
+        errors.push(closeError);
+      }
+      try {
+        await rm(temporary, {force: true});
+      } catch (removeError) {
+        errors.push(removeError);
+      }
+      if (errors.length > 1) throw new AggregateError(errors, `Atomic write and cleanup failed for '${path}'`);
+      throw error;
     }
   }
 
@@ -420,56 +577,49 @@ export class FileSystemHelper implements IFileSystemHelper {
    * {@inheritDoc IFileSystemHelper.list}
    */
   async list(path: string, options: TraversalOptions = {}): Promise<readonly string[]> {
+    const pattern = options.pattern && new RegExp(options.pattern.source, options.pattern.flags);
+    const result: string[] = [];
     try {
-      core.debug(`Listing directory: ${path}`);
-
-      const entries = await readdir(path, {withFileTypes: true});
-      const result: string[] = [];
-
-      for (const entry of entries) {
-        if (!options.includeHidden && entry.name.startsWith(".")) {
-          continue;
-        }
-
-        const fullPath = join(path, entry.name);
-
-        if (options.pattern) {
-          if (options.pattern.test(entry.name)) {
-            result.push(fullPath);
-          }
-        } else {
-          result.push(fullPath);
-        }
+      for await (const item of this.walk(path, options.maxDepth ?? 0, options.includeHidden ?? false)) {
+        if (pattern) pattern.lastIndex = 0;
+        if (!pattern || pattern.test(item.entry.name)) result.push(item.path);
       }
-
-      return result;
     } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to list directory '${path}': ${err.message}`);
+      if (error instanceof Error && "code" in error) {
+        throw new Error(`Failed to list directory '${path}': ${error.message}`, {cause: error});
+      }
+      throw error;
     }
+    return result;
   }
 
   /**
    * {@inheritDoc IFileSystemHelper.find}
    */
   async find(directory: string, pattern: RegExp, maxDepth: number = -1): Promise<readonly string[]> {
-    try {
-      core.debug(`Finding files in ${directory} matching ${pattern}`);
+    const matcher = new RegExp(pattern.source, pattern.flags);
+    const result: string[] = [];
+    for await (const item of this.walk(directory, maxDepth, true)) {
+      matcher.lastIndex = 0;
+      if (item.entry.isFile() && matcher.test(item.entry.name)) result.push(item.path);
+    }
+    return result;
+  }
 
-      const entries = await readdir(directory, {withFileTypes: true, recursive: maxDepth === -1});
-      const result: string[] = [];
-
-      for (const entry of entries) {
-        if (entry.isFile() && pattern.test(entry.name)) {
-          const fullPath = join(entry.parentPath ?? directory, entry.name);
-          result.push(fullPath);
+  private async *walk(directory: string, maxDepth: number, includeHidden: boolean): AsyncGenerator<{path: string; entry: Dirent}, void> {
+    if (!Number.isSafeInteger(maxDepth) || maxDepth < -1) throw new RangeError("maxDepth must be -1 or a nonnegative safe integer");
+    const pending = [{directory, depth: 0}];
+    while (pending.length > 0) {
+      const current = pending.pop();
+      if (!current) break;
+      for (const entry of await readdir(current.directory, {withFileTypes: true})) {
+        if (!includeHidden && entry.name.startsWith(".")) continue;
+        const path = join(current.directory, entry.name);
+        yield {path, entry};
+        if (entry.isDirectory() && (maxDepth === -1 || current.depth < maxDepth)) {
+          pending.push({directory: path, depth: current.depth + 1});
         }
       }
-
-      return result;
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to find files in '${directory}': ${err.message}`);
     }
   }
 

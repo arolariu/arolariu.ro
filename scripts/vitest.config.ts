@@ -17,7 +17,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    pool: "threads",
+    fsModuleCachePath: "node_modules/.vitest-cache-scripts",
+    // Native tooling crashes during Windows worker-thread teardown; isolate its processes.
+    pool: process.platform === "win32" ? "forks" : "threads",
     testTimeout: 10_000,
     hookTimeout: 20_000,
     teardownTimeout: 5_000,

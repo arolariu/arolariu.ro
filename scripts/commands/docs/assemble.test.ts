@@ -526,19 +526,22 @@ describe("assembleDocumentation", () => {
     }),
   );
 
-  docsTest("dispatches typedoc components before typedoc website, both with capture output at the repository root", NO_OVERRIDES, ({harness}) =>
-    Effect.gen(function* () {
-      yield* assembleDocumentation;
+  docsTest(
+    "dispatches typedoc components before typedoc website, both with capture output at the repository root",
+    NO_OVERRIDES,
+    ({harness}) =>
+      Effect.gen(function* () {
+        yield* assembleDocumentation;
 
-      const typedocCalls = harness.processCalls().filter((call) => call.request.command === "npx");
-      expect(typedocCalls.map((call) => call.request.args)).toEqual([
-        ["typedoc", "--options", "typedoc.components.json"],
-        ["typedoc", "--options", "typedoc.website.json"],
-      ]);
-      for (const call of typedocCalls) {
-        expect(call.options).toEqual({cwd: FIXTURE_PATHS.root, output: "capture"});
-      }
-    }),
+        const typedocCalls = harness.processCalls().filter((call) => call.request.command === "npx");
+        expect(typedocCalls.map((call) => call.request.args)).toEqual([
+          ["typedoc", "--options", "typedoc.components.json"],
+          ["typedoc", "--options", "typedoc.website.json"],
+        ]);
+        for (const call of typedocCalls) {
+          expect(call.options).toEqual({cwd: FIXTURE_PATHS.root, output: "capture"});
+        }
+      }),
   );
 
   docsTest("dispatches pydoc-markdown with capture output at the exp.arolariu.ro directory", NO_OVERRIDES, ({harness}) =>

@@ -54,10 +54,7 @@ describe("controlled process lifecycle", () => {
       sink,
     });
 
-    const outcome = await defaultProcessRunner.run(
-      {command: process.execPath, args: ["-e", splitUtf8Script]},
-      {logger, output: "tee"},
-    );
+    const outcome = await defaultProcessRunner.run({command: process.execPath, args: ["-e", splitUtf8Script]}, {logger, output: "tee"});
 
     expect(outcome).toMatchObject({
       kind: "succeeded",
@@ -92,8 +89,18 @@ describe("controlled process lifecycle", () => {
       stdout: stdoutSecret,
       stderr: stderrSecret,
     });
-    expect(sink.records.filter(({stream}) => stream === "stdout").map(({text}) => text).join("")).toBe("[REDACTED]");
-    expect(sink.records.filter(({stream}) => stream === "stderr").map(({text}) => text).join("")).toBe("[REDACTED]");
+    expect(
+      sink.records
+        .filter(({stream}) => stream === "stdout")
+        .map(({text}) => text)
+        .join(""),
+    ).toBe("[REDACTED]");
+    expect(
+      sink.records
+        .filter(({stream}) => stream === "stderr")
+        .map(({text}) => text)
+        .join(""),
+    ).toBe("[REDACTED]");
   });
 });
 
@@ -105,11 +112,7 @@ describe("stdin selection by output mode", () => {
   it("inherits stdin from the parent process for inherited output", async () => {
     await defaultProcessRunner.run({command: process.execPath, args: ["-e", ""]}, {output: "inherit"});
 
-    expect(mockedExeca).toHaveBeenCalledWith(
-      process.execPath,
-      ["-e", ""],
-      expect.objectContaining({stdin: "inherit"}),
-    );
+    expect(mockedExeca).toHaveBeenCalledWith(process.execPath, ["-e", ""], expect.objectContaining({stdin: "inherit"}));
   });
 
   it("keeps stdin ignored for captured output when no input is supplied", async () => {
@@ -126,10 +129,7 @@ describe("stdin selection by output mode", () => {
   });
 
   it("pipes stdin for captured output when input is supplied", async () => {
-    await defaultProcessRunner.run(
-      {command: process.execPath, args: ["-e", "process.stdin.pipe(process.stdout)"]},
-      {input: "payload"},
-    );
+    await defaultProcessRunner.run({command: process.execPath, args: ["-e", "process.stdin.pipe(process.stdout)"]}, {input: "payload"});
 
     expect(mockedExeca).toHaveBeenCalledWith(
       process.execPath,

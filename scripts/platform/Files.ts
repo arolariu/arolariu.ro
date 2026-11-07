@@ -143,7 +143,10 @@ export interface GlobShape {
    * Resolves one or more glob patterns to absolute matching paths, in the order the underlying
    * directory walk yields them.
    */
-  readonly match: (patterns: string | readonly string[], options?: GlobOptions) => Effect.Effect<readonly string[], PlatformError.PlatformError>;
+  readonly match: (
+    patterns: string | readonly string[],
+    options?: GlobOptions,
+  ) => Effect.Effect<readonly string[], PlatformError.PlatformError>;
 }
 
 /** Service tag for glob pattern matching. */
@@ -209,7 +212,10 @@ export type ReadOnlyFileSystemShape = Pick<
   /** Resolves glob patterns to absolute matching paths; see {@link Glob}. */
   readonly glob: Glob["Service"]["match"];
   /** Reads at most `maximumBytes` bytes; see {@link readBytesBounded}. */
-  readonly readBytesBounded: (path: string, maximumBytes: number) => Effect.Effect<Uint8Array, PlatformError.PlatformError | MaxBytesExceeded>;
+  readonly readBytesBounded: (
+    path: string,
+    maximumBytes: number,
+  ) => Effect.Effect<Uint8Array, PlatformError.PlatformError | MaxBytesExceeded>;
 };
 
 /** Service tag for the {@link ReadOnlyFileSystemShape} view. */

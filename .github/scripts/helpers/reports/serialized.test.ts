@@ -1,0 +1,62 @@
+import {fileURLToPath} from "node:url";
+import {describe, expect, it} from "vitest";
+import {fs} from "../filesystem/index.ts";
+import {parseJUnitXml} from "./junit.ts";
+import {parseTrxResults} from "./trx.ts";
+import {decodeVitestReport} from "./vitest.ts";
+import {redactEvidenceText} from "./redact.ts";
+
+const fixture = (name: string): string => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+
+describe("raw serialized report decoders", () => {
+  it.each([{testResults: []}, {testResults: [{name: "missing.test.ts", status: "passed", assertionResults: []}]}])(
+    "rejects positive Vitest totals without their assertion records: %j",
+    ({testResults}) => {
+      expect(() =>
+        decodeVitestReport({
+          numTotalTests: 1,
+          numPassedTests: 1,
+          numFailedTests: 0,
+          numPendingTests: 0,
+          testResults,
+        }),
+      ).toThrow(/assertion count/i);
+    },
+  );
+  it("retains collection failures with zero assertions instead of requiring invented tests", () => {
+    const report = decodeVitestReport({
+      numTotalTests: 0,
+      numPassedTests: 0,
+      numFailedTests: 0,
+      numPendingTests: 0,
+      testResults: [{name: "collection.test.ts", status: "failed", message: "Collection failed", assertionResults: []}],
+    });
+    expect(report.testResults[0]).toMatchObject({status: "failed", message: "Collection failed", assertionResults: []});
+  });
+  it("redacts quoted credentials in command diagnostics before presentation", () => {
+    const value = redactEvidenceText('password="private value" client_secret=\'other private value\' "api_key": "private-key"');
+    expect(value).not.toMatch(/private value|private-key/);
+    expect(value).toContain("[REDACTED]");
+  });
+  it("retains raw JUnit cases without importing workflow findings", async () => {
+    const suites = parseJUnitXml(await fs.readText(fixture("junit.xml")));
+    expect(suites[0]).toMatchObject({tests: 3, failures: 1, skipped: 1});
+    expect(suites[0]?.cases[1]).toMatchObject({name: "fails", line: 12, failureMessage: "Expected true"});
+    expect(parseJUnitXml('<testsuite name="single" tests="1"><testcase name="one"/></testsuite>')).toHaveLength(1);
+  });
+  it("retains single/multiple TRX results including Error outcomes", async () => {
+    expect(parseTrxResults(await fs.readText(fixture("trx.xml"))).map((result) => result.outcome)).toEqual(["Passed", "Error"]);
+    expect(parseTrxResults('<TestRun><Results><UnitTestResult testName="one" outcome="Passed"/></Results></TestRun>')).toHaveLength(1);
+  });
+  it.each(["<testsuite>", "<other/>", '<testsuite tests="-1"/>'])("rejects malformed JUnit evidence %s", (xml) => {
+    expect(() => parseJUnitXml(xml)).toThrow();
+  });
+  it("validates real Vitest JSON rather than casting its counters", async () => {
+    const raw = await fs.readJson<unknown>(fixture("vitest.json"));
+    const report = decodeVitestReport(raw);
+    expect(report.numFailedTests).toBe(1);
+    expect(() => decodeVitestReport({...report, numFailedTests: "1"})).toThrow();
+    expect(() => decodeVitestReport({...report, numTotalTests: -1})).toThrow();
+    expect(() => decodeVitestReport({testResults: []})).toThrow();
+  });
+});

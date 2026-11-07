@@ -1,6 +1,7 @@
 # arolariu.ro Documentation
 
-This directory contains comprehensive technical documentation for the arolariu.ro monorepo following RFC (Request for Comments) style format.
+This directory contains comprehensive technical documentation for the arolariu.ro monorepo following RFC (Request for Comments) style
+format.
 
 ## Directory Structure
 
@@ -155,5 +156,4 @@ For questions about documentation:
 
 ---
 
-**Last Updated**: 2026-08-31
-**Maintained By**: arolariu team
+**Last Updated**: 2026-08-31 **Maintained By**: arolariu team

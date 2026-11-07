@@ -2,14 +2,7 @@
   "$schema": "https://json.schemastore.org/staticwebapp.config.json",
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [
-      "/assets/*",
-      "/img/*",
-      "/js/*",
-      "/css/*",
-      "/fonts/*",
-      "*.{txt,json,xml,png,svg,ico,woff2,css,js,webmanifest,map}"
-    ]
+    "exclude": ["/assets/*", "/img/*", "/js/*", "/css/*", "/fonts/*", "*.{txt,json,xml,png,svg,ico,woff2,css,js,webmanifest,map}"]
   },
   "mimeTypes": {
     ".txt": "text/plain; charset=utf-8",

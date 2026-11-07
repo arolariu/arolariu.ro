@@ -52,6 +52,13 @@ async function run(argv: readonly string[], options: TestLayerOptions = {}): Pro
 }
 
 describe("generate command", () => {
+  it("rejects mixing website-only attribution with unrelated generators", async () => {
+    const result = await run(["generate", "env", "--website-licenses-only"]);
+
+    expect(result.code).toBe(2);
+    expect(result.texts.some((text) => text.includes("--website-licenses-only cannot be combined with generator tasks."))).toBe(true);
+  });
+
   it("maps generate task names regardless of order and completes with exit 0", async () => {
     // Act
     const result = await run(["generate", "gql", "i18n"]);

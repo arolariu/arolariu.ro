@@ -12,7 +12,7 @@
  * file reads the live checkout, spawns a process, or observes ambient Node state.
  */
 
-import {resolve} from "node:path";
+import {join, resolve} from "node:path";
 
 import {Effect, Exit, Layer, Redacted} from "effect";
 import {describe, expect, it, vi} from "vitest";
@@ -1471,8 +1471,8 @@ describe("dotnet characterization (pre-Effect migration)", () => {
       },
       actionIds: ["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"],
       commands: [
-        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
-        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["workload", "restore", join("<root>", "arolariu.slnx")]},
+        {command: "dotnet", args: ["restore", join("<root>", "arolariu.slnx")]},
         {command: "dotnet", args: ["tool", "restore"]},
       ],
     });
@@ -1523,8 +1523,8 @@ describe("dotnet characterization (pre-Effect migration)", () => {
           command: "winget",
           args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
         },
-        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
-        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["workload", "restore", join("<root>", "arolariu.slnx")]},
+        {command: "dotnet", args: ["restore", join("<root>", "arolariu.slnx")]},
         {command: "dotnet", args: ["tool", "restore"]},
       ],
     });

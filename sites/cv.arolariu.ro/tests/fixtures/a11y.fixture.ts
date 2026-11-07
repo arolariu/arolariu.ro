@@ -6,9 +6,10 @@
 
 import type {Page} from "@playwright/test";
 import {test as base, expect} from "@playwright/test";
+import {createRequire} from "node:module";
 
-// CDN URL for axe-core
-const AXE_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js";
+// Use the installed, lock-backed checker rather than depending on a live CDN.
+const AXE_SCRIPT_PATH = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
 /**
  * Violation severity levels.
@@ -21,6 +22,7 @@ type ViolationImpact = "minor" | "moderate" | "serious" | "critical";
 interface A11yViolationNode {
   html: string;
   target: string[];
+  failureSummary?: string;
 }
 
 /**
@@ -62,6 +64,11 @@ const IMPACT_ORDER: Record<ViolationImpact, number> = {
   critical: 4,
 };
 
+function formatViolation(violation: A11yViolation): string {
+  const nodes = violation.nodes.map((node) => `  ${node.target.join(", ")}: ${node.failureSummary ?? node.html}`).join("\n");
+  return `[${violation.impact}] ${violation.id}: ${violation.description}\n${nodes}`;
+}
+
 /**
  * A11y fixtures.
  */
@@ -73,7 +80,15 @@ interface A11yFixtures {
  * Test fixture with accessibility support.
  */
 export const test = base.extend<A11yFixtures>({
-  checkA11y: async ({}, use) => {
+  page: async ({page, baseURL}, use) => {
+    const localOrigin = new URL(baseURL ?? "http://localhost:4173").origin;
+    // Keep audits offline: remote fonts use the site's declared fallback font.
+    await page.route("**/*", (route) =>
+      new URL(route.request().url()).origin === localOrigin ? route.continue() : route.abort("blockedbyclient"),
+    );
+    await use(page);
+  },
+  checkA11y: async ({}, use, testInfo) => {
     const checkA11y = async (page: Page, options?: A11yCheckOptions): Promise<A11yResult> => {
       // Check if axe is already loaded
       const axeInjected = await page.evaluate(() => {
@@ -82,9 +97,19 @@ export const test = base.extend<A11yFixtures>({
 
       // Inject axe-core if not present
       if (!axeInjected) {
-        await page.addScriptTag({url: AXE_CDN_URL});
+        await page.addScriptTag({path: AXE_SCRIPT_PATH});
         await page.waitForFunction(() => typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined", {timeout: 10000});
       }
+
+      // Audit settled text, not a partially transparent entrance-transition frame.
+      // Decorative infinite animations keep running; no duration-based sleep is needed.
+      await page.evaluate(async () => {
+        const finiteAnimations = document.getAnimations().filter((animation) => {
+          const endTime = animation.effect?.getComputedTiming().endTime;
+          return typeof endTime === "number" && Number.isFinite(endTime);
+        });
+        await Promise.all(finiteAnimations.map((animation) => animation.finished.catch(() => undefined)));
+      });
 
       // Run axe analysis
       interface AxeResults {
@@ -112,12 +137,19 @@ export const test = base.extend<A11yFixtures>({
         return (globalThis as unknown as {axe: {run: (options: AxeRunOptions) => Promise<AxeResults>}}).axe.run(runOptions);
       }, options);
 
+      if (results.violations.length > 0) {
+        await testInfo.attach("accessibility-violations", {
+          body: JSON.stringify(results.violations, null, 2),
+          contentType: "application/json",
+        });
+      }
+
       return {
         violations: results.violations,
         passes: results.passes,
         assertNoViolations: () => {
           if (results.violations.length > 0) {
-            const formatted = results.violations.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
+            const formatted = results.violations.map(formatViolation).join("\n");
             throw new Error(`Found ${results.violations.length} accessibility violations:\n${formatted}`);
           }
         },
@@ -125,12 +157,12 @@ export const test = base.extend<A11yFixtures>({
           const threshold = IMPACT_ORDER[level];
           const severe = results.violations.filter((v) => IMPACT_ORDER[v.impact] >= threshold);
           if (severe.length > 0) {
-            const formatted = severe.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
+            const formatted = severe.map(formatViolation).join("\n");
             throw new Error(`Found ${severe.length} ${level}+ accessibility violations:\n${formatted}`);
           }
         },
         formatViolations: () => {
-          return results.violations.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
+          return results.violations.map(formatViolation).join("\n");
         },
       };
     };

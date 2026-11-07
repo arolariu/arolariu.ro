@@ -50,7 +50,15 @@ describe("classifyChangedFiles", () => {
   });
 
   it("marks root shared config as broad impact", () => {
-    const c = classifyChangedFiles(["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"]);
+    const c = classifyChangedFiles(
+      ["package-lock.json", "eslint.config.ts", "vitest.config.ts", "nx.json"],
+      [
+        "{workspaceRoot}/package-lock.json",
+        "{workspaceRoot}/eslint.config.ts",
+        "{workspaceRoot}/vitest.config.ts",
+        "{workspaceRoot}/nx.json",
+      ],
+    );
     expect(c.hasRootSharedChange).toBe(true);
     expect(c.hasJavaScriptSharedChange).toBe(true);
   });
@@ -62,9 +70,9 @@ describe("classifyChangedFiles", () => {
 });
 
 describe("scope helpers", () => {
-  it("runs broadly for unknown scope and root shared changes", () => {
+  it("consumes broad scope resolved by the plan rather than a competing copied root list", () => {
     expect(shouldRunBroadly(unknown())).toBe(true);
-    expect(shouldRunBroadly(known(["package.json"]))).toBe(true);
+    expect(shouldRunBroadly(known(["package.json"]))).toBe(false);
   });
 
   it("does not run broadly for isolated project changes", () => {
@@ -116,17 +124,22 @@ describe("file filters", () => {
 
   it("returns null filters for unknown or broad scope", () => {
     expect(filesForPrettier(unknown())).toBeNull();
-    expect(filesForEslint(known(["package.json"]))).toBeNull();
+    expect(filesForEslint(unknown())).toBeNull();
   });
 });
 
 describe("suitesForTypeScriptChanges", () => {
-  it("selects only website for website-only changes", () => {
-    expect(suitesForTypeScriptChanges(known(["sites/arolariu.ro/src/app/page.tsx"]))).toEqual(["website"]);
+  it("selects website and its repository contract guards for website changes", () => {
+    expect(suitesForTypeScriptChanges(known(["sites/arolariu.ro/src/app/page.tsx"]))).toEqual(["tooling", "website"]);
+  });
+
+  it("selects docs-site unit tests without broadening repository prose changes", () => {
+    expect(suitesForTypeScriptChanges(known(["sites/docs.arolariu.ro/docusaurus.config.ts"]))).toEqual(["tooling", "docs"]);
+    expect(suitesForTypeScriptChanges(known(["docs/rfc/1003.md"]))).toEqual([]);
   });
 
   it("selects components/cv/status/scripts by path", () => {
-    expect(suitesForTypeScriptChanges(known(["packages/components/src/Button.tsx"]))).toEqual(["components"]);
+    expect(suitesForTypeScriptChanges(known(["packages/components/src/Button.tsx"]))).toEqual(["tooling", "components"]);
     expect(suitesForTypeScriptChanges(known(["sites/cv.arolariu.ro/src/routes/+page.svelte"]))).toEqual(["cv"]);
     expect(suitesForTypeScriptChanges(known(["sites/status.arolariu.ro/src/App.svelte"]))).toEqual(["status"]);
     expect(suitesForTypeScriptChanges(known([".github/scripts/src/hygiene/pipeline/runProvider.ts"]))).toEqual(["scripts"]);
@@ -134,7 +147,7 @@ describe("suitesForTypeScriptChanges", () => {
 
   it("returns null for broad TypeScript scope", () => {
     expect(suitesForTypeScriptChanges(unknown())).toBeNull();
-    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toBeNull();
+    expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toEqual([]);
   });
 });
 
@@ -147,6 +160,6 @@ describe("touchedBundleFolders", () => {
 
   it("returns null for unknown or broad scope", () => {
     expect(touchedBundleFolders(unknown(), bundleFolders)).toBeNull();
-    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toBeNull();
+    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toEqual([]);
   });
 });

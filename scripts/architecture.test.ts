@@ -95,21 +95,17 @@ const effectRunnerNames: ReadonlySet<string> = new Set([
  */
 const workerEntrypoints: readonly string[] = [
   "scripts/inspection/aggregate-worker.ts",
+  "scripts/inspection/workspace-facts.worker.ts",
   "scripts/inspection/workspace.worker.ts",
 ];
 
 /**
  * Every production module the process may be started with directly: the effect/cli entrypoint, the
- * two inspection workers, and the Piscina-hosted format/lint orchestrators (RFC 0002 section 3.2).
+ * inspection workers, and the Piscina-hosted format/lint orchestrators (RFC 0002 section 3.2).
  * The platform test fixtures under {@link platformFixturesDirectory} are the only other modules that
  * use `import.meta.main`.
  */
-const directEntrypoints: readonly string[] = [
-  cliEntrypoint,
-  "scripts/format.ts",
-  ...workerEntrypoints,
-  "scripts/lint.ts",
-].toSorted();
+const directEntrypoints: readonly string[] = [cliEntrypoint, "scripts/format.ts", ...workerEntrypoints, "scripts/lint.ts"].toSorted();
 
 /** Module specifiers that spawn an operating-system process outside the approved Execa adapter. */
 const processSpawningModules: ReadonlySet<string> = new Set(["node:child_process", "child_process"]);
@@ -171,10 +167,7 @@ const execaAdapter = "scripts/common/runner.execa.ts";
  * structural `ProcessRequest` shape both reuse from `common/runner.ts`. Type stripping erases the
  * import, so neither loads the closure; the list is pinned so a new type dependency is deliberate.
  */
-const typeOnlyPrivateModuleImporters: readonly string[] = [
-  "scripts/container-runtime/adapters.ts",
-  "scripts/inspection/probes.ts",
-];
+const typeOnlyPrivateModuleImporters: readonly string[] = ["scripts/container-runtime/adapters.ts", "scripts/inspection/probes.ts"];
 
 /**
  * Ambient-access rules each frozen closure module breaks, exactly. The closure predates the Effect
@@ -399,12 +392,7 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
 function isPropertyNameLike(
   node: ts.PropertyName | ts.Expression,
 ): node is ts.Identifier | ts.StringLiteral | ts.NumericLiteral | ts.NoSubstitutionTemplateLiteral {
-  return (
-    ts.isIdentifier(node)
-    || ts.isStringLiteral(node)
-    || ts.isNumericLiteral(node)
-    || ts.isNoSubstitutionTemplateLiteral(node)
-  );
+  return ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
 }
 
 function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath: AccessPath | null): void {
@@ -438,8 +426,7 @@ function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath:
       continue;
     }
 
-    const elementAccessPath =
-      element.dotDotDotToken === undefined && accessPath !== null ? [...accessPath, `${index}`] : null;
+    const elementAccessPath = element.dotDotDotToken === undefined && accessPath !== null ? [...accessPath, `${index}`] : null;
 
     declareBindingName(element.name, scope, elementAccessPath);
   }
@@ -487,7 +474,11 @@ function isDynamicImport(node: ts.CallExpression): boolean {
   return node.expression.kind === ts.SyntaxKind.ImportKeyword;
 }
 
-function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasScope[], visit: (node: ts.Node, scopes: readonly AliasScope[]) => void): void {
+function visitFunction(
+  node: ts.FunctionLikeDeclaration,
+  scopes: readonly AliasScope[],
+  visit: (node: ts.Node, scopes: readonly AliasScope[]) => void,
+): void {
   const functionScope: AliasScope = new Map();
   if (node.name !== undefined && ts.isIdentifier(node.name)) {
     functionScope.set(node.name.text, null);
@@ -517,10 +508,7 @@ function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasS
  * @param sourceText - Source text to parse.
  * @returns Every violation, ordered by line and rule.
  */
-function scanAmbientSource(
-  file: string,
-  sourceText: string,
-): readonly AmbientViolation[] {
+function scanAmbientSource(file: string, sourceText: string): readonly AmbientViolation[] {
   const normalizedFile = normalizeFilePath(file);
   const source = parseSource(sourceText);
   const violations: AmbientViolation[] = [];
@@ -567,25 +555,24 @@ function scanAmbientSource(
       add(node, "ambient-os-state");
     }
 
-    if (
-      specifier === "node:timers"
-      || specifier === "node:timers/promises"
-      || specifier === "timers"
-      || specifier === "timers/promises"
-    ) {
+    if (specifier === "node:timers" || specifier === "node:timers/promises" || specifier === "timers" || specifier === "timers/promises") {
       add(node, "ambient-timer");
     }
   }
 
   function isDirectOutputPath(path: AccessPath): boolean {
-    return (path.length === 2 && path[0] === "console")
-      || (path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write");
+    return (
+      (path.length === 2 && path[0] === "console")
+      || (path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write")
+    );
   }
 
   function isAmbientTimerCallPath(path: AccessPath): boolean {
-    return (path.length === 1 && (path[0] === "setTimeout" || path[0] === "setInterval"))
+    return (
+      (path.length === 1 && (path[0] === "setTimeout" || path[0] === "setInterval"))
       || (path.length === 2 && path[0] === "performance" && path[1] === "now")
-      || (path.length === 2 && path[0] === "Date" && path[1] === "now");
+      || (path.length === 2 && path[0] === "Date" && path[1] === "now")
+    );
   }
 
   function isAmbientEnvironmentPath(path: AccessPath): boolean {
@@ -593,13 +580,15 @@ function scanAmbientSource(
   }
 
   function isAmbientOsStatePath(path: AccessPath): boolean {
-    return startsWithPath(path, ["process", "argv"])
+    return (
+      startsWithPath(path, ["process", "argv"])
       || startsWithPath(path, ["process", "execPath"])
       || startsWithPath(path, ["process", "platform"])
       || startsWithPath(path, ["process", "arch"])
       || startsWithPath(path, ["process", "pid"])
       || startsWithPath(path, ["process", "version"])
-      || startsWithPath(path, ["process", "versions"]);
+      || startsWithPath(path, ["process", "versions"])
+    );
   }
 
   function isAmbientOsStateCallPath(path: AccessPath): boolean {
@@ -607,13 +596,15 @@ function scanAmbientSource(
   }
 
   function isAmbientProcessControlPath(path: AccessPath): boolean {
-    return startsWithPath(path, ["process", "chdir"])
+    return (
+      startsWithPath(path, ["process", "chdir"])
       || startsWithPath(path, ["process", "kill"])
       || startsWithPath(path, ["process", "on"])
       || startsWithPath(path, ["process", "once"])
       || startsWithPath(path, ["process", "addListener"])
       || startsWithPath(path, ["process", "removeListener"])
-      || startsWithPath(path, ["process", "off"]);
+      || startsWithPath(path, ["process", "off"])
+    );
   }
 
   function expressionContainsAccessPath(
@@ -644,11 +635,13 @@ function scanAmbientSource(
   }
 
   function isImportMetaUrlExpression(expression: ts.Expression): boolean {
-    return ts.isPropertyAccessExpression(expression)
+    return (
+      ts.isPropertyAccessExpression(expression)
       && expression.name.text === "url"
       && ts.isMetaProperty(expression.expression)
       && expression.expression.keywordToken === ts.SyntaxKind.ImportKeyword
-      && expression.expression.name.text === "meta";
+      && expression.expression.name.text === "meta"
+    );
   }
 
   function expressionContainsImportMetaUrl(expression: ts.Expression): boolean {
@@ -672,10 +665,7 @@ function scanAmbientSource(
   }
 
   function isOutermostAccessPathExpression(node: ts.Expression): boolean {
-    return !(
-      (ts.isPropertyAccessExpression(node.parent) || ts.isElementAccessExpression(node.parent))
-      && node.parent.expression === node
-    );
+    return !((ts.isPropertyAccessExpression(node.parent) || ts.isElementAccessExpression(node.parent)) && node.parent.expression === node);
   }
 
   function visit(node: ts.Node, scopes: readonly AliasScope[]): void {
@@ -717,8 +707,7 @@ function scanAmbientSource(
           visit(declaration.initializer, scopes);
         }
 
-        const accessPath =
-          isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
+        const accessPath = isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
 
         declareBindingName(declaration.name, scope, accessPath);
       }
@@ -788,20 +777,13 @@ function scanAmbientSource(
           add(node, "ambient-process-control");
         }
 
-        if (
-          path.length === 2
-          && path[0] === "Promise"
-          && (path[1] === "all" || path[1] === "allSettled")
-        ) {
+        if (path.length === 2 && path[0] === "Promise" && (path[1] === "all" || path[1] === "allSettled")) {
           add(node, "explicit-concurrency");
         }
       }
     }
 
-    if (
-      (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node))
-      && isOutermostAccessPathExpression(node)
-    ) {
+    if ((ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) && isOutermostAccessPathExpression(node)) {
       const path = getAccessPath(node, scopes);
       if (path !== null && !ownsAmbientRuntime(normalizedFile)) {
         if (isAmbientEnvironmentPath(path)) {
@@ -816,20 +798,16 @@ function scanAmbientSource(
 
     if (ts.isBinaryExpression(node)) {
       const leftPath = getAccessPath(node.left, scopes);
-      if (
-        leftPath !== null
-        && startsWithPath(leftPath, ["process", "exitCode"])
-        && assignmentOperators.has(node.operatorToken.kind)
-      ) {
+      if (leftPath !== null && startsWithPath(leftPath, ["process", "exitCode"]) && assignmentOperators.has(node.operatorToken.kind)) {
         add(node, "direct-exit");
       }
 
       if (
         comparisonOperators.has(node.operatorToken.kind)
-        && (
-          (expressionContainsImportMetaUrl(node.left) && expressionContainsAccessPath(node.right, scopes, (path) => startsWithPath(path, ["process", "argv"])))
-          || (expressionContainsImportMetaUrl(node.right) && expressionContainsAccessPath(node.left, scopes, (path) => startsWithPath(path, ["process", "argv"])))
-        )
+        && ((expressionContainsImportMetaUrl(node.left)
+          && expressionContainsAccessPath(node.right, scopes, (path) => startsWithPath(path, ["process", "argv"])))
+          || (expressionContainsImportMetaUrl(node.right)
+            && expressionContainsAccessPath(node.left, scopes, (path) => startsWithPath(path, ["process", "argv"]))))
       ) {
         add(node, "manual-entrypoint");
       }
@@ -847,10 +825,7 @@ function scanAmbientSource(
 
   visit(source, []);
   return violations.toSorted(
-    (left, right) =>
-      left.file.localeCompare(right.file)
-      || left.line - right.line
-      || left.rule.localeCompare(right.rule),
+    (left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.rule.localeCompare(right.rule),
   );
 }
 
@@ -1544,21 +1519,9 @@ describe("scripts architecture", {timeout: 30_000}, () => {
         'import {execFile} from "child_process";',
         [{file: "scripts/example.ts", line: 1, rule: "ambient-process-control"}],
       ],
-      [
-        "flags os export specifiers",
-        'export * from "node:os";',
-        [{file: "scripts/example.ts", line: 1, rule: "ambient-os-state"}],
-      ],
-      [
-        "flags timer dynamic imports",
-        'await import("timers/promises");',
-        [{file: "scripts/example.ts", line: 1, rule: "ambient-timer"}],
-      ],
-      [
-        "flags network imports",
-        'import {request} from "node:https";',
-        [{file: "scripts/example.ts", line: 1, rule: "ambient-network"}],
-      ],
+      ["flags os export specifiers", 'export * from "node:os";', [{file: "scripts/example.ts", line: 1, rule: "ambient-os-state"}]],
+      ["flags timer dynamic imports", 'await import("timers/promises");', [{file: "scripts/example.ts", line: 1, rule: "ambient-timer"}]],
+      ["flags network imports", 'import {request} from "node:https";', [{file: "scripts/example.ts", line: 1, rule: "ambient-network"}]],
     ])("%s", (_label, source, expected) => {
       expect(scanAmbientSource("scripts/example.ts", source)).toEqual(expected);
     });
@@ -1829,9 +1792,9 @@ describe("scripts architecture", {timeout: 30_000}, () => {
         {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "*"},
         {file: "scripts/commands/doctor/example.ts", specifier: "node:child_process"},
       ]);
-      expect(scanReadOnlyCapabilitySource("scripts/inspection/example.ts", 'import {writeTextAtomic} from "../platform/Files.ts";')).toEqual([
-        {file: "scripts/inspection/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"},
-      ]);
+      expect(
+        scanReadOnlyCapabilitySource("scripts/inspection/example.ts", 'import {writeTextAtomic} from "../platform/Files.ts";'),
+      ).toEqual([{file: "scripts/inspection/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"}]);
     });
 
     it("read-only families never import mutating capabilities", () => {
@@ -1869,13 +1832,9 @@ describe("scripts architecture", {timeout: 30_000}, () => {
     });
 
     it("command families depend on effect/cli only through scripts/commands", () => {
-      const importers = discoverProductionScripts().filter(
-        (file) => scanEffectCliImportSource(file, readSource(file)).length > 0,
-      );
+      const importers = discoverProductionScripts().filter((file) => scanEffectCliImportSource(file, readSource(file)).length > 0);
 
-      expect(
-        importers.filter((file) => !file.startsWith(commandFamiliesDirectory) && !effectCliConsumers.includes(file)),
-      ).toEqual([]);
+      expect(importers.filter((file) => !file.startsWith(commandFamiliesDirectory) && !effectCliConsumers.includes(file))).toEqual([]);
       expect(importers).toContain(cliEntrypoint);
       expect(importers.some((file) => /^scripts\/commands\/[\w-]+\/cli\.ts$/.test(file))).toBe(true);
     });

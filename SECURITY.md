@@ -2,7 +2,8 @@
 
 ## Supported Versions
 
-We are committed to ensuring the security of the `arolariu.ro` platform. Security updates and patches will be applied to the latest versions of our services. Please ensure you are interacting with the most current deployments.
+We are committed to ensuring the security of the `arolariu.ro` platform. Security updates and patches will be applied to the latest versions
+of our services. Please ensure you are interacting with the most current deployments.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -12,15 +13,20 @@ We are committed to ensuring the security of the `arolariu.ro` platform. Securit
 
 ## Reporting a Vulnerability
 
-The `arolariu.ro` team and community take all security bugs in our services seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
+The `arolariu.ro` team and community take all security bugs in our services seriously. We appreciate your efforts to responsibly disclose
+your findings, and will make every effort to acknowledge your contributions.
 
-To report a security vulnerability, please use the [GitHub Security Advisory "Report a Vulnerability" feature](https://github.com/arolariu/arolariu.ro/security/advisories/new).
+To report a security vulnerability, please use the
+[GitHub Security Advisory "Report a Vulnerability" feature](https://github.com/arolariu/arolariu.ro/security/advisories/new).
 
-Alternatively, you can email the project maintainer directly at <admin@arolariu.ro>. **Please do not report security vulnerabilities through public GitHub issues.**
+Alternatively, you can email the project maintainer directly at <admin@arolariu.ro>. **Please do not report security vulnerabilities through
+public GitHub issues.**
 
-You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
+You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original
+message.
 
-Please include the requested information listed below (as much as you can provide) to help us better understand the nature and scope of the possible issue:
+Please include the requested information listed below (as much as you can provide) to help us better understand the nature and scope of the
+possible issue:
 
 - Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
 - Full paths of source file(s) related to the manifestation of the vulnerability

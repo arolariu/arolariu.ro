@@ -10,18 +10,6 @@ import {SiIntel, SiUbisoft} from "react-icons/si";
 import {TbBriefcase, TbCalendar, TbChevronRight, TbMap} from "react-icons/tb";
 import styles from "./Experience.module.scss";
 
-type ExperienceType = {
-  company: string;
-  role: string;
-  period: string;
-  location: string;
-  description: string;
-  responsibilities: string[];
-  achievements: string[];
-  skills: string[];
-  logo: React.JSX.Element;
-};
-
 /**
  * @description Component that displays a timeline of professional experiences.
  * This component renders an interactive timeline of work experiences, with a navigation
@@ -35,6 +23,18 @@ type ExperienceType = {
  * @returns A section element containing the experience timeline and detailed work card
  */
 export default function Experience(): React.JSX.Element {
+  type ExperienceType = {
+    company: string;
+    role: string;
+    period: string;
+    location: string;
+    description: string;
+    responsibilities: string[];
+    achievements: string[];
+    skills: string[];
+    logo: React.JSX.Element;
+  };
+
   const t = useTranslations();
   const [activeExpIndex, setActiveExpIndex] = useState<number>(0);
   const handleExperienceClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {

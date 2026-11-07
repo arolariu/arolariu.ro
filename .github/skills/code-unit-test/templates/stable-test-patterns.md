@@ -1,8 +1,7 @@
 # Stable Test Patterns
 
-Use a template only after a current sibling confirms the same behavior
-category. Replace every placeholder from live source; templates never override
-the current test harness or contract.
+Use a template only after a current sibling confirms the same behavior category. Replace every placeholder from live source; templates never
+override the current test harness or contract.
 
 ## Vitest Pure-Behavior Pattern
 
@@ -22,14 +21,12 @@ the current test harness or contract.
 
 ### Live-derived values
 
-Derive import paths, public function, input type, valid baseline fixture,
-failure type/message or fallback, and parameterized edge cases from current
-source and a colocated test.
+Derive import paths, public function, input type, valid baseline fixture, failure type/message or fallback, and parameterized edge cases
+from current source and a colocated test.
 
 ### Invalidated when
 
-Do not use when behavior requires rendering, hooks, storage, network,
-framework runtime, provider serialization, or a multi-module contract.
+Do not use when behavior requires rendering, hooks, storage, network, framework runtime, provider serialization, or a multi-module contract.
 
 ```typescript
 import {describe, expect, it} from "vitest";
@@ -72,15 +69,13 @@ describe("publicFunction", () => {
 
 ### Live-derived values
 
-Derive the configured provider wrapper, translated accessible name, input
-fixture, callback/result type, loading/error state, and whether an external
-browser/framework seam is already supplied by the test harness.
+Derive the configured provider wrapper, translated accessible name, input fixture, callback/result type, loading/error state, and whether an
+external browser/framework seam is already supplied by the test harness.
 
 ### Invalidated when
 
-Do not use for a Server Component, middleware/navigation flow, behavior that
-requires a real browser, or a component whose only usable seam would replace
-repository modules.
+Do not use for a Server Component, middleware/navigation flow, behavior that requires a real browser, or a component whose only usable seam
+would replace repository modules.
 
 ```tsx
 import {render, screen} from "@testing-library/react";
@@ -121,45 +116,40 @@ describe("ComponentUnderTest", () => {
 - `sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Services/Management/InvoiceManagementServiceTests.cs`
 - `sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Services/Processing/InvoiceProcessingServiceCurrentArchitectureTests.cs`
 
-The live classifiers do not retain the same exception object at every path.
-Derive the assertion variant below from the exact service method. Existing
-siblings that use `CancellationToken.None` or `It.IsAny<CancellationToken>()`
-confirm classification only; they are not token-forwarding templates.
+The live classifiers do not retain the same exception object at every path. Derive the assertion variant below from the exact service
+method. Existing siblings that use `CancellationToken.None` or `It.IsAny<CancellationToken>()` confirm classification only; they are not
+token-forwarding templates.
 
 ### Invariants
 
 - `[TestClass]` and `[TestMethod]` mark current MSTest tests.
 - Names use `Method_Condition_Expected`.
 - The real service executes against only its direct injected seam.
-- Use a distinct caller-owned `CancellationToken`, match it exactly in setup
-  and verification, and pass that same token to the real service.
-- Name the exception thrown by the dependency separately from the cause the
-  current classifier is contractually expected to retain or unwrap.
-- Strict dependency behavior proves arguments, exact token, calls, and
-  classification; a substitute cannot prove behavior owned by the dependency.
-- Typed failures use `Assert.ThrowsExactly` or
-  `Assert.ThrowsExactlyAsync`; assert reference identity for every retained
-  exception object when classification is the behavior.
+- Use a distinct caller-owned `CancellationToken`, match it exactly in setup and verification, and pass that same token to the real service.
+- Name the exception thrown by the dependency separately from the cause the current classifier is contractually expected to retain or
+  unwrap.
+- Strict dependency behavior proves arguments, exact token, calls, and classification; a substitute cannot prove behavior owned by the
+  dependency.
+- Typed failures use `Assert.ThrowsExactly` or `Assert.ThrowsExactlyAsync`; assert reference identity for every retained exception object
+  when classification is the behavior.
 - Fixtures are deterministic.
 
 ### Live-derived values
 
-Derive namespace, service constructor, direct-layer contract, method signature,
-deterministic fixture, exact dependency and outer exception types, classifier
-path, expected retained cause, expected calls/order, and XML documentation from
-the closest current layer sibling and its live `*.Exceptions.cs`.
+Derive namespace, service constructor, direct-layer contract, method signature, deterministic fixture, exact dependency and outer exception
+types, classifier path, expected retained cause, expected calls/order, and XML documentation from the closest current layer sibling and its
+live `*.Exceptions.cs`.
 
 ### Classifier variants
 
-Select exactly one current shape; invalidate the template if the target method
-uses a different classifier.
+Select exactly one current shape; invalidate the template if the target method uses a different classifier.
 
-| Path | Inject into the direct dependency | Required identity proof |
-| --- | --- | --- |
-| Foundation `Classify` | A Broker exception such as `InvoiceFailedStorageException` | The outer `InnerException` is the same injected Broker exception. |
-| Processing `Classify` used by CRUD/visibility paths | An Orchestration outer containing a raw cause | The Processing outer `InnerException` is the same raw cause; it is not the injected Orchestration outer. |
-| Processing `ClassifyAnalysis` | An Analysis Orchestration outer containing a raw cause | The Processing outer `InnerException` is the same injected Orchestration outer, whose `InnerException` is the same raw cause. |
-| Management `Classify` | A Processing outer whose chain contains the marker/cause | The Management outer `InnerException` is the same injected Processing outer; the retained cause remains at the corresponding nested depth. |
+| Path                                                | Inject into the direct dependency                          | Required identity proof                                                                                                                    |
+| --------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Foundation `Classify`                               | A Broker exception such as `InvoiceFailedStorageException` | The outer `InnerException` is the same injected Broker exception.                                                                          |
+| Processing `Classify` used by CRUD/visibility paths | An Orchestration outer containing a raw cause              | The Processing outer `InnerException` is the same raw cause; it is not the injected Orchestration outer.                                   |
+| Processing `ClassifyAnalysis`                       | An Analysis Orchestration outer containing a raw cause     | The Processing outer `InnerException` is the same injected Orchestration outer, whose `InnerException` is the same raw cause.              |
+| Management `Classify`                               | A Processing outer whose chain contains the marker/cause   | The Management outer `InnerException` is the same injected Processing outer; the retained cause remains at the corresponding nested depth. |
 
 Foundation direct-wrap:
 
@@ -206,13 +196,10 @@ Assert.AreSame(expectedRetainedCause, exception.InnerException.InnerException);
 
 ### Invalidated when
 
-Do not use when the behavior belongs to a real HTTP mapper, DI container,
-architecture reflection, persistence/provider contract, Activity listener, or
-when substituting the dependency would remove the behavior under test. Also
-invalidate it when the method uses another classifier, rethrows an existing
-same-layer exception, or the exception chain has no retained cause at the
-depth shown. Cancellation propagation requires its own test because all three
-live TryCatch layers rethrow `OperationCanceledException` before classification.
+Do not use when the behavior belongs to a real HTTP mapper, DI container, architecture reflection, persistence/provider contract, Activity
+listener, or when substituting the dependency would remove the behavior under test. Also invalidate it when the method uses another
+classifier, rethrows an existing same-layer exception, or the exception chain has no retained cause at the depth shown. Cancellation
+propagation requires its own test because all three live TryCatch layers rethrow `OperationCanceledException` before classification.
 
 ```csharp
 /// <summary>Verifies <c>{{Method}}</c> behavior.</summary>

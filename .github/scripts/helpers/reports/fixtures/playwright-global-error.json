@@ -1,0 +1,16 @@
+{
+  "stats": {"expected": 1, "unexpected": 0, "flaky": 0, "skipped": 0, "duration": 100},
+  "errors": [{"message": "Global teardown failed", "stack": "Error: Global teardown failed\n    at teardown.ts:12:3"}],
+  "suites": [
+    {
+      "title": "browser.spec.ts",
+      "file": "tests/browser.spec.ts",
+      "specs": [
+        {
+          "title": "passes",
+          "tests": [{"status": "expected", "expectedStatus": "passed", "results": [{"status": "passed", "duration": 100}]}]
+        }
+      ]
+    }
+  ]
+}

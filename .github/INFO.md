@@ -65,6 +65,7 @@ npm install
 ### Creating a New Workflow Script
 
 1. Create a new TypeScript file in `scripts/src/`:
+
    ```typescript
    /**
     * @fileoverview Brief description of what this script does
@@ -91,12 +92,12 @@ npm install
          await myNewScript({github, context, core, exec});
    ```
 
-
 ## 🔧 Composite Actions
 
 ### `setup-workspace`
 
 Reusable action that handles:
+
 - Repository checkout with configurable depth
 - Node.js setup with version caching
 - .NET SDK setup with caching (optional)
@@ -105,19 +106,21 @@ Reusable action that handles:
 - Cache hit detection and reporting
 
 **Usage:**
+
 ```yaml
 - name: Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'        # Default: '24'
-    dotnet-version: '10.0.x'  # Default: '10.0.x'
-    fetch-depth: '1'          # Default: '1' (shallow)
-    install-node-deps: 'true' # Default: 'true'
-    setup-dotnet: 'false'     # Default: 'false'
-    working-directory: '.'    # Default: '.'
+    node-version: "24" # Default: '24'
+    dotnet-version: "10.0.x" # Default: '10.0.x'
+    fetch-depth: "1" # Default: '1' (shallow)
+    install-node-deps: "true" # Default: 'true'
+    setup-dotnet: "false" # Default: 'false'
+    working-directory: "." # Default: '.'
 ```
 
 **When to use shallow vs full checkout:**
+
 - `fetch-depth: 1` (shallow): For format checks, lint checks, builds, deployments
 - `fetch-depth: 0` (full): For git diff stats, changelog generation, version tagging
 
@@ -226,6 +229,7 @@ When adding new workflows or scripts:
 ## 📞 Support
 
 For questions or issues with workflows/scripts:
+
 - Check workflow run logs in GitHub Actions tab
 - Review this README for patterns and best practices
 - Examine existing scripts for similar functionality

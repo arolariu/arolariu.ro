@@ -486,7 +486,9 @@ describe("status — shared inspection session", () => {
     expect(new Set(calls).size).toBe(calls.length);
     // The quick profile answers "aggregate" with its fixed stub: the isolated worker is never spawned.
     expect(
-      harness.processCalls().filter((call) => [call.request.command, ...call.request.args].some((token) => token.includes("aggregate-worker"))),
+      harness
+        .processCalls()
+        .filter((call) => [call.request.command, ...call.request.args].some((token) => token.includes("aggregate-worker"))),
     ).toEqual([]);
     expect(probeKeys(harness)).toEqual(expect.arrayContaining([...JSON_PROBE_INVENTORY, "git --version", "npm config get cache"]));
     expect(document.workspaces).toBeNull();
@@ -1100,8 +1102,15 @@ describe("status — human dashboard", () => {
   it("renders unavailable sections and isolated projects without crashing or fabricating success values", async () => {
     // Arrange
     const harness = statusHarness({
-      responses: withOverrides({[GIT_BRANCH_KEY]: exited(1), [NPM_AUDIT_KEY]: timedOut(), [diskProbeKey(DISK_NEXT_BUILD_TARGET)]: exited(1)}),
-      workspace: availableWorkspace({...HEALTHY_WORKSPACE_FACTS, projects: [...HEALTHY_WORKSPACE_FACTS.projects, {name: "lonely", root: "lonely", targets: []}]}),
+      responses: withOverrides({
+        [GIT_BRANCH_KEY]: exited(1),
+        [NPM_AUDIT_KEY]: timedOut(),
+        [diskProbeKey(DISK_NEXT_BUILD_TARGET)]: exited(1),
+      }),
+      workspace: availableWorkspace({
+        ...HEALTHY_WORKSPACE_FACTS,
+        projects: [...HEALTHY_WORKSPACE_FACTS.projects, {name: "lonely", root: "lonely", targets: []}],
+      }),
     });
 
     // Act
@@ -1167,7 +1176,11 @@ describe("status — human dashboard", () => {
         cycles: [],
       }),
       files: {
-        [join(FIXTURE_ROOT, "sites", "api.arolariu.ro", "project.json")]: JSON.stringify({name: "@arolariu/api", projectType: "application", tags: ["domain:backend", "type:app"]}),
+        [join(FIXTURE_ROOT, "sites", "api.arolariu.ro", "project.json")]: JSON.stringify({
+          name: "@arolariu/api",
+          projectType: "application",
+          tags: ["domain:backend", "type:app"],
+        }),
       },
     });
     const report = doctorReport({summary: {passed: 1, warnings: 2, failed: 1, skipped: 0}});

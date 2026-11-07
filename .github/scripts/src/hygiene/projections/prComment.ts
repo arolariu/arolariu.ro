@@ -5,8 +5,10 @@
 
 import {buildStepSummary} from "./stepSummary.ts";
 import type {HygieneReport} from "../domain/types.ts";
+import {GITHUB_CONSTANTS} from "../../../lib/workflow-constants.ts";
 
-export const HYGIENE_V3_COMMENT_ID = "<!-- arolariu-hygiene-check-v3 -->";
+/** Compatibility export of the active, unchanged lib-owned marker. */
+export const HYGIENE_V3_COMMENT_ID = GITHUB_CONSTANTS.HYGIENE_COMMENT_ID;
 
 /**
  * Minimal GitHub helper interface needed by this projection (avoids hard dep on full helper).

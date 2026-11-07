@@ -15,7 +15,7 @@ public sealed class ExpResourcesTests
     IReadOnlyDictionary<string, string> values = ExpResources.CreateEndpointOverrides("local;password");
     Assert.HasCount(4, values);
     Assert.AreEqual("http://localhost:10000/devstoreaccount1", values["Endpoints:Storage:Blob"]);
-    Assert.AreEqual("http://localhost:5000", values["Endpoints:Service:Api"]);
+    Assert.AreEqual("https://localhost:5000", values["Endpoints:Service:Api"]);
     StringAssert.StartsWith(values["Endpoints:Database:NoSQL"], "AccountEndpoint=https://localhost:8081/;");
     var sql = new SqlConnectionStringBuilder(values["Endpoints:Database:SQL"]);
     Assert.AreEqual("arolariu-sql", sql.InitialCatalog);

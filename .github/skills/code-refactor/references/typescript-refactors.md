@@ -101,18 +101,14 @@ implementation. Existing store tests that replace the repository adapter cannot 
 For `@arolariu/components`:
 
 - never import from `sites/**`;
-- follow `.github/instructions/components.instructions.md` for composition,
-  React 19 `ref` and accessibility rules;
-- colocate component, focused test, Storybook story, and a CSS Module when the
-  component owns visual presentation;
+- follow `.github/instructions/components.instructions.md` for composition, React 19 `ref` and accessibility rules;
+- colocate component, focused test, Storybook story, and a CSS Module when the component owns visual presentation;
 - export every supported component and public type from `src/index.ts`;
 - validate both direct implementation imports and the package entry point.
 
-Moving a component file without its owned style/test/story or forgetting the
-barrel creates an orphaned or unreachable API even if its local test passes.
-`button.tsx`, `_button-variants.ts`, `button.module.css`, `button.test.tsx`,
-`button.stories.tsx`, and `src/index.ts` are the styled inspection set;
-`async-boundary.tsx` is the intentional style-free composition example.
+Moving a component file without its owned style/test/story or forgetting the barrel creates an orphaned or unreachable API even if its local
+test passes. `button.tsx`, `_button-variants.ts`, `button.module.css`, `button.test.tsx`, `button.stories.tsx`, and `src/index.ts` are the
+styled inspection set; `async-boundary.tsx` is the intentional style-free composition example.
 
 For ordinary TypeScript barrels, avoid widening an internal symbol into a public contract merely to shorten imports. Preserve
 framework-required default exports for pages, layouts, configuration, and worker entry points; prefer named exports for reusable internal
@@ -138,8 +134,7 @@ layout rely on them. Preserve semantic markup alongside CSS so accessibility doe
 If a structural move touches user-visible website copy, preserve the same typed selector and identical key shape in `en`, `ro`, and `fr`; do
 not rename keys as cleanup. Generated message declarations follow source messages and must not be maintained by hand.
 
-Keep route metadata in the server route and build it through the shared
-metadata helper and nested `metadata` message shape.
+Keep route metadata in the server route and build it through the shared metadata helper and nested `metadata` message shape.
 
 ### Accessibility
 

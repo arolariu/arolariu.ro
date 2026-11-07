@@ -224,6 +224,10 @@
   margin-left: 0.15rem;
 }
 
+:global(.dark) .statUnit {
+  color: var(--cv-color-gray-400);
+}
+
 .statKey {
   font-family: ui-monospace, "JetBrains Mono", monospace;
   font-size: 0.65rem;

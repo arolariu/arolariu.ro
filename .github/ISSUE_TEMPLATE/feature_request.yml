@@ -20,7 +20,9 @@ body:
       label: Preflight Checklist
       description: Please ensure you've completed all of the following before submitting.
       options:
-        - label: I have searched the [existing issues](https://github.com/arolariu/arolariu.ro/issues) and this feature has not been requested yet.
+        - label:
+            I have searched the [existing issues](https://github.com/arolariu/arolariu.ro/issues) and this feature has not been requested
+            yet.
           required: true
         - label: I have checked the [documentation](https://docs.arolariu.ro) to confirm this feature doesn't already exist.
           required: true

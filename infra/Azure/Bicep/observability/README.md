@@ -1,6 +1,7 @@
 # 📊 Observability Module
 
-This module provisions a comprehensive monitoring and observability stack for the arolariu.ro platform, including Application Insights, Log Analytics, and Managed Grafana for telemetry collection, analysis, and visualization.
+This module provisions a comprehensive monitoring and observability stack for the arolariu.ro platform, including Application Insights, Log
+Analytics, and Managed Grafana for telemetry collection, analysis, and visualization.
 
 ## 📋 **Overview**
 
@@ -23,12 +24,12 @@ The observability module creates a complete monitoring solution that:
 
 ## 📁 **Module Files**
 
-| File                        | Purpose                                |
-| --------------------------- | -------------------------------------- |
-| `deploymentFile.bicep`      | Orchestrates observability deployments |
-| `log-analytics.bicep`       | Log Analytics workspace                |
-| `application-insights.bicep`| Application Insights resource          |
-| `grafana.bicep`             | Managed Grafana dashboard              |
+| File                         | Purpose                                |
+| ---------------------------- | -------------------------------------- |
+| `deploymentFile.bicep`       | Orchestrates observability deployments |
+| `log-analytics.bicep`        | Log Analytics workspace                |
+| `application-insights.bicep` | Application Insights resource          |
+| `grafana.bicep`              | Managed Grafana dashboard              |
 
 ## 📊 **Architecture**
 
@@ -132,7 +133,8 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
 | `appInsightsConnectionString`   | string | Application Insights connection string   |
 | `appInsightsInstrumentationKey` | string | Application Insights instrumentation key |
 
-> **Note**: Managed Grafana module is currently disabled in deployment but can be enabled by uncommenting the module in `deploymentFile.bicep`.
+> **Note**: Managed Grafana module is currently disabled in deployment but can be enabled by uncommenting the module in
+> `deploymentFile.bicep`.
 
 ## 📈 **Component Details**
 
@@ -210,7 +212,7 @@ workspaceCapping: {
 
 ```javascript
 // Example: Application Insights SDK integration
-import { ApplicationInsights } from "@microsoft/applicationinsights-web";
+import {ApplicationInsights} from "@microsoft/applicationinsights-web";
 
 const appInsights = new ApplicationInsights({
   config: {
@@ -513,5 +515,4 @@ Usage
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: December 2025
-**Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: December 2025 **Maintainer**: Alexandru-Razvan Olariu

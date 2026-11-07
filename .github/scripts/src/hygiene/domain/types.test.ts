@@ -70,7 +70,10 @@ describe("Finding discriminated union", () => {
     severity: "info",
     name: "extension-distribution",
     columns: ["extension", "count"],
-    rows: [["ts", 42], ["tsx", 17]],
+    rows: [
+      ["ts", 42],
+      ["tsx", 17],
+    ],
     message: "Top extensions in changed files",
   };
 

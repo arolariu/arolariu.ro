@@ -27,33 +27,27 @@ Owns Azure infrastructure-as-code conventions.
 - Pin supported API versions consistent with neighboring modules.
 - Preserve diagnostic settings, tags, TLS, and network restrictions.
 - Avoid subscription-wide Owner or Contributor assignments.
-- Treat SKU, region, networking, role, and new-resource changes as
-  cost/security decisions.
+- Treat SKU, region, networking, role, and new-resource changes as cost/security decisions.
 
 ## Reference Catalog
 
 Open `references/bicep.md` only when the task needs one of:
 
-- confirming or extending the facade module composition, deployment order, or
-  identity-array convention;
+- confirming or extending the facade module composition, deployment order, or identity-array convention;
 - a naming, tagging, or user-defined-type decision beyond the rules above;
 - an identity/RBAC/secret/network decision on a specific resource type;
-- an API-version, diagnostics, or cost/SKU question not resolved by the rules
-  above;
-- constructing or reading a `what-if`/validation command for an approved
-  change.
+- an API-version, diagnostics, or cost/SKU question not resolved by the rules above;
+- constructing or reading a `what-if`/validation command for an approved change.
 
-The catalog does not redefine these rules, the Infrastructure Expert agent's
-approval workflow, or the verification/escalation sections below; it only
-adds repository-specific examples, anti-patterns, and live pointers. It does
-not authorize any mutation.
+The catalog does not redefine these rules, the Infrastructure Expert agent's approval workflow, or the verification/escalation sections
+below; it only adds repository-specific examples, anti-patterns, and live pointers. It does not authorize any mutation.
 
 ## Validation
 
-Use local Bicep build/lint during investigation. Run Azure `what-if` only
-after the user approves the infrastructure change and target scope.
+Use local Bicep build/lint during investigation. Run Azure `what-if` only after the user approves the infrastructure change and target
+scope.
 
 ## Escalation
 
-Ask before every new resource, SKU/cost change, network rule, role assignment,
-production deployment, or infrastructure mutation not explicit in the task.
+Ask before every new resource, SKU/cost change, network rule, role assignment, production deployment, or infrastructure mutation not
+explicit in the task.

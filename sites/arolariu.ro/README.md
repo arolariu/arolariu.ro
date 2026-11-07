@@ -29,8 +29,8 @@ page.tsx / layout.tsx
 
 The website consumes the exact npm registry tarball declared in [`package.json`](./package.json). The root
 [`package-lock.json`](../../package-lock.json) records its integrity and installs it under the website's `node_modules`.
-`packages/components` remains an npm workspace and Nx project for independent library development, but website builds, tests, Storybook,
-and containers do not use that workspace's source or `dist`.
+`packages/components` remains an npm workspace and Nx project for independent library development, but website builds, tests, Storybook, and
+containers do not use that workspace's source or `dist`.
 
 A semver dependency or npm alias can be linked to a same-name local workspace by npm. The explicit registry tarball prevents that implicit
 link, including when the local and published versions match. Do not restore source/dist test aliases or a local components build

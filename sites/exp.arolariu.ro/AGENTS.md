@@ -4,14 +4,13 @@ This FastAPI service provides configuration-proxy and feature-flag behavior.
 
 ## Representative Local API
 
-`main.py` and the router modules under `api/` own the complete live route set.
-The entries below are common public probes/configuration examples, not an
-exhaustive inventory.
+`main.py` and the router modules under `api/` own the complete live route set. The entries below are common public probes/configuration
+examples, not an exhaustive inventory.
 
-| Route | Responsibility |
-| --- | --- |
-| `/api/health` | Liveness |
-| `/api/ready` | Readiness |
+| Route                     | Responsibility                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `/api/health`             | Liveness                                                                            |
+| `/api/ready`              | Readiness                                                                           |
 | `/api/v1/config?name=KEY` | One indexed configuration value after mode-specific caller and target authorization |
 
 ## Local Rules
@@ -20,8 +19,7 @@ exhaustive inventory.
 - Public functions have type hints.
 - Use the PEP 695 `type` keyword for aliases.
 - Tests use `*.test.py`, not `test_*.py`.
-- Feature flags use bare catalog names and the `FeatureManagement:` storage
-  prefix.
+- Feature flags use bare catalog names and the `FeatureManagement:` storage prefix.
 - `requirements-dev.txt` includes `requirements.txt`; install one, not both.
 
 ## Local Verification

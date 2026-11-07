@@ -7,12 +7,7 @@
 import type {Competency} from "@/types";
 
 type CompetencyKeys =
-  | "engineeringExcellence"
-  | "testDrivenDevelopment"
-  | "domainDrivenDesign"
-  | "customerCentric"
-  | "agileMethodologies"
-  | "algorithmicSkills";
+  "engineeringExcellence" | "testDrivenDevelopment" | "domainDrivenDesign" | "customerCentric" | "agileMethodologies" | "algorithmicSkills";
 
 type CompetenciesMap = Readonly<Record<CompetencyKeys, Competency>>;
 

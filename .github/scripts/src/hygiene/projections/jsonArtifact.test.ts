@@ -6,8 +6,12 @@ import {writeJsonArtifact} from "./jsonArtifact.ts";
 import type {HygieneReport} from "../domain/types.ts";
 
 let tmpDir: string;
-beforeEach(async () => { tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hyg-")); });
-afterEach(async () => { await fs.rm(tmpDir, {recursive: true, force: true}); });
+beforeEach(async () => {
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hyg-"));
+});
+afterEach(async () => {
+  await fs.rm(tmpDir, {recursive: true, force: true});
+});
 
 const report: HygieneReport = {
   schemaVersion: "3",

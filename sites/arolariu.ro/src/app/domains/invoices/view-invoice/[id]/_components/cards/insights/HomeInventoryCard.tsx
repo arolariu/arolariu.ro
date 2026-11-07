@@ -9,14 +9,6 @@ import {TbHome, TbLeaf, TbPackage, TbSpray, TbStar} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./HomeInventoryCard.module.scss";
 
-type SupplyItem = {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  daysRemaining: number;
-  maxDays: number;
-};
-
 /** GS1 GPC segment for cleaning and hygiene products. */
 const GS1_CLEANING_HYGIENE_SEGMENT_CODE = "47000000";
 
@@ -43,6 +35,14 @@ function getSupplyProgressColor(percentage: number, moduleStyles: Record<string,
 }
 
 export function HomeInventoryCard(): React.JSX.Element {
+  type SupplyItem = {
+    id: string;
+    name: string;
+    icon: React.ReactNode;
+    daysRemaining: number;
+    maxDays: number;
+  };
+
   const locale = useLocale();
   const t = useTranslations();
   const {invoice} = useInvoiceContext();

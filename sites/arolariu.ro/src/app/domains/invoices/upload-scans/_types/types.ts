@@ -106,8 +106,7 @@ export type CreateUploadTargetResult =
 
 /** Result returned by the server-side fallback upload action. */
 export type ServerUploadScanResult =
-  | Readonly<{success: true; data: Readonly<{status: number; scan: Scan}>}>
-  | Readonly<{success: false; error: Readonly<{message: string}>}>;
+  Readonly<{success: true; data: Readonly<{status: number; scan: Scan}>}> | Readonly<{success: false; error: Readonly<{message: string}>}>;
 
 /** Dependencies injected into the upload runner for testable side effects. */
 export type UploadRunnerDependencies = Readonly<{
@@ -167,8 +166,7 @@ export type UploadState = Readonly<{
 
 /** Translation code returned by the upload session for the React layer to toast. */
 export type ToastCode =
-  | Readonly<{kind: "success"; key: "uploadSucceeded"; count: number}>
-  | Readonly<{kind: "error"; key: "uploadFailed"; count: number}>;
+  Readonly<{kind: "success"; key: "uploadSucceeded"; count: number}> | Readonly<{kind: "error"; key: "uploadFailed"; count: number}>;
 
 /** Aggregated outcome returned by `runUploadSession`. */
 export type UploadOutcome = Readonly<{

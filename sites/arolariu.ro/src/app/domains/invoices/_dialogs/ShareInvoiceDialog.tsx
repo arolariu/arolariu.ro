@@ -30,13 +30,6 @@ import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
 // ============================================================================
-// Types
-// ============================================================================
-
-/** Sharing mode determines the current view in the dialog */
-type SharingMode = "selection" | "public" | "private";
-
-// ============================================================================
 // Sub-Components
 // ============================================================================
 
@@ -150,6 +143,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareInvoiceDialog(): React.JSX.Element | null {
+  /** Sharing mode determines the current view in the dialog */
+  type SharingMode = "selection" | "public" | "private";
+
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();

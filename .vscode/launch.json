@@ -9,9 +9,9 @@
       "command": "run",
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       }
     },
     {
@@ -22,15 +22,18 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "podman",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       },
-      "presentation": { "group": "10-aspire", "order": 1 }
+      "presentation": {"group": "10-aspire", "order": 1}
     },
     {
       "name": "🚀 [Rancher] Full stack (Aspire)",
@@ -40,15 +43,18 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "docker",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
       "debuggers": {
         "apphost": {},
-        "project": { "console": "integratedTerminal" },
-        "node":    { "skipFiles": ["<node_internals>/**"] },
-        "python":  { "justMyCode": false }
+        "project": {"console": "integratedTerminal"},
+        "node": {"skipFiles": ["<node_internals>/**"]},
+        "python": {"justMyCode": false}
       },
-      "presentation": { "group": "10-aspire", "order": 2 }
+      "presentation": {"group": "10-aspire", "order": 2}
     },
     {
       "name": "🚀 Full stack (no debug)",
@@ -67,9 +73,12 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "podman",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
-      "presentation": { "group": "10-aspire", "order": 3 }
+      "presentation": {"group": "10-aspire", "order": 3}
     },
     {
       "name": "🚀 [Rancher] Full stack (no debug)",
@@ -80,9 +89,12 @@
       "command": "run",
       "env": {
         "ASPIRE_CONTAINER_RUNTIME": "docker",
-        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
+        "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker",
+        "Logging__Console__LogLevel__Default": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.Dcp": "Warning",
+        "Logging__Console__LogLevel__Aspire.Hosting.DistributedApplication": "Information"
       },
-      "presentation": { "group": "10-aspire", "order": 4 }
+      "presentation": {"group": "10-aspire", "order": 4}
     },
     {
       "name": "🌐 Website only (standalone)",
@@ -145,7 +157,7 @@
       "continueOnAttach": true,
       "localRoot": "${workspaceFolder}/sites/arolariu.ro",
       "remoteRoot": "${workspaceFolder}/sites/arolariu.ro",
-      "presentation": { "group": "10-aspire-attach", "order": 1 }
+      "presentation": {"group": "10-aspire-attach", "order": 1}
     }
   ],
   "compounds": []

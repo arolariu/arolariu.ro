@@ -19,9 +19,7 @@ interface TestLoggerRuntimeHost extends LoggerRuntimeHost {
   readonly unreferencedCount: () => number;
 }
 
-function createTestLoggerRuntimeHost(
-  options: Readonly<{stdoutIsTTY?: boolean; noColor?: boolean}> = {},
-): TestLoggerRuntimeHost {
+function createTestLoggerRuntimeHost(options: Readonly<{stdoutIsTTY?: boolean; noColor?: boolean}> = {}): TestLoggerRuntimeHost {
   const callbacks = new Set<() => void>();
   let unreferencedCount = 0;
 
@@ -620,9 +618,7 @@ describe("MonorepositoryConsoleLogger", () => {
 
     logger.fatal("failed with secret");
 
-    expect(sink.records).toEqual([
-      {stream: "stderr", text: "[arolariu::status] ⛔ failed with [REDACTED]", write: false},
-    ]);
+    expect(sink.records).toEqual([{stream: "stderr", text: "[arolariu::status] ⛔ failed with [REDACTED]", write: false}]);
   });
 
   it("ignores json() outside JSON mode so human presentation never emits a document", () => {

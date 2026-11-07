@@ -9,9 +9,11 @@
 
 ## Abstract
 
-This RFC documents the SCSS Module system architecture for the arolariu.ro frontend. Built on the 7-1 pattern with CSS Modules for scoping, the system provides a scalable, maintainable approach to styling React components with full SCSS preprocessing capabilities.
+This RFC documents the SCSS Module system architecture for the arolariu.ro frontend. Built on the 7-1 pattern with CSS Modules for scoping,
+the system provides a scalable, maintainable approach to styling React components with full SCSS preprocessing capabilities.
 
 Key features:
+
 - **7-1 Pattern Architecture**: Organized SCSS partials for variables, mixins, base styles, themes, animations, and components
 - **CSS Modules**: Scoped styles preventing class name collisions
 - **Design Token Integration**: SCSS functions that reference CSS variables for theming
@@ -90,22 +92,22 @@ sites/arolariu.ro/src/styles/
 
 ```scss
 // 1. Abstracts - Variables, mixins, functions (no CSS output)
-@use 'abstracts' as *;
+@use "abstracts" as *;
 
 // 2. Base - Reset, element defaults
-@use 'base';
+@use "base";
 
 // 3. Themes - Theme variable documentation
-@use 'themes';
+@use "themes";
 
 // 4. Animations - Keyframes, transitions
-@use 'animations';
+@use "animations";
 
 // 5. Components - Shared component styles
-@use 'components';
+@use "components";
 
 // 6. Utilities - Utility classes
-@use 'utilities';
+@use "utilities";
 ```
 
 ### 2.3 CSS Module Files
@@ -151,20 +153,33 @@ Standardized spacing scale for consistent design:
 // Usage: space(4) returns 1rem (16px)
 $spacing: (
   0: 0,
-  0.5: 0.125rem,   // 2px
-  1: 0.25rem,      // 4px
-  2: 0.5rem,       // 8px
-  3: 0.75rem,      // 12px
-  4: 1rem,         // 16px (base)
-  5: 1.25rem,      // 20px
-  6: 1.5rem,       // 24px
-  8: 2rem,         // 32px
-  10: 2.5rem,      // 40px
-  12: 3rem,        // 48px
-  16: 4rem,        // 64px
-  20: 5rem,        // 80px
-  24: 6rem,        // 96px
-  // ... up to 96
+  0.5: 0.125rem,
+  // 2px
+  1: 0.25rem,
+  // 4px
+  2: 0.5rem,
+  // 8px
+  3: 0.75rem,
+  // 12px
+  4: 1rem,
+  // 16px (base)
+  5: 1.25rem,
+  // 20px
+  6: 1.5rem,
+  // 24px
+  8: 2rem,
+  // 32px
+  10: 2.5rem,
+  // 40px
+  12: 3rem,
+  // 48px
+  16: 4rem,
+  // 64px
+  20: 5rem,
+  // 80px
+  24: 6rem,
+  // 96px
+   // ... up to 96
 );
 
 // Helper function with error handling
@@ -183,14 +198,21 @@ Responsive breakpoints for mobile-first design:
 ```scss
 // Usage: breakpoint('md') returns 768px
 $breakpoints: (
-  '2xsm': 320px,   // Mobile-first (custom)
-  'xsm': 480px,    // Small phones (custom)
-  'sm': 640px,     // Standard mobile
-  'md': 768px,     // Tablets
-  'lg': 1024px,    // Small desktop
-  'xl': 1280px,    // Desktop
-  '2xl': 1440px,   // Large desktop (custom)
-  '3xl': 1976px,   // Ultra-wide (custom)
+  "2xsm": 320px,
+  // Mobile-first (custom)
+  "xsm": 480px,
+  // Small phones (custom)
+  "sm": 640px,
+  // Standard mobile
+  "md": 768px,
+  // Tablets
+  "lg": 1024px,
+  // Small desktop
+  "xl": 1280px,
+  // Desktop
+  "2xl": 1440px,
+  // Large desktop (custom)
+  "3xl": 1976px, // Ultra-wide (custom)
 );
 
 @function breakpoint($key) {
@@ -208,15 +230,15 @@ Organized layering system:
 ```scss
 // Usage: z('modal') returns 1050
 $z-index: (
-  'base': 0,
-  'dropdown': 1000,
-  'sticky': 1020,
-  'fixed': 1030,
-  'modal-backdrop': 1040,
-  'modal': 1050,
-  'popover': 1060,
-  'tooltip': 1070,
-  'toast': 1080,
+  "base": 0,
+  "dropdown": 1000,
+  "sticky": 1020,
+  "fixed": 1030,
+  "modal-backdrop": 1040,
+  "modal": 1050,
+  "popover": 1060,
+  "tooltip": 1070,
+  "toast": 1080,
 );
 
 @function z($key) {
@@ -232,14 +254,20 @@ $z-index: (
 ```scss
 // Usage: radius('xl') returns 0.75rem
 $border-radius: (
-  'none': 0,
-  'sm': 0.125rem,     // 2px
-  'md': 0.375rem,     // 6px
-  'lg': 0.5rem,       // 8px
-  'xl': 0.75rem,      // 12px
-  '2xl': 1rem,        // 16px
-  '3xl': 1.5rem,      // 24px
-  'full': 9999px,
+  "none": 0,
+  "sm": 0.125rem,
+  // 2px
+  "md": 0.375rem,
+  // 6px
+  "lg": 0.5rem,
+  // 8px
+  "xl": 0.75rem,
+  // 12px
+  "2xl": 1rem,
+  // 16px
+  "3xl": 1.5rem,
+  // 24px
+  "full": 9999px,
 );
 ```
 
@@ -247,16 +275,10 @@ $border-radius: (
 
 ```scss
 // Font sizes - Usage: font-size('xl') returns 1.25rem
-@function font-size($key)
-
-// Font weights - Usage: font-weight('bold') returns 700
-@function font-weight($key)
-
-// Line heights - Usage: line-height('relaxed') returns 1.625
-@function line-height($key)
-
-// Letter spacing - Usage: letter-spacing('tight') returns -0.025em
-@function letter-spacing($key)
+@function font-size($key) // Font weights - Usage: font-weight('bold') returns 700
+  @function font-weight($key) // Line heights - Usage: line-height('relaxed') returns 1.625
+  @function line-height($key) // Letter spacing - Usage: letter-spacing('tight') returns -0.025em
+  @function letter-spacing($key);
 ```
 
 ### 3.6 Colors (from _colors.scss)
@@ -312,13 +334,11 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Full flexbox control
 // Usage: @include flex(row, center, center, wrap)
-@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap)
-
-// Common shortcuts
-@mixin flex-center      // justify-content: center; align-items: center
-@mixin flex-between     // justify-content: space-between; align-items: center
-@mixin flex-column      // flex-direction: column
-@mixin flex-column-center  // column + align-items: center
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) // Common shortcuts
+  @mixin flex-center // justify-content: center; align-items: center
+  @mixin flex-between // justify-content: space-between; align-items: center
+  @mixin flex-column // flex-direction: column
+  @mixin flex-column-center; // column + align-items: center
 ```
 
 ### 4.3 Grid Mixins
@@ -326,15 +346,11 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Fixed columns grid
 // Usage: @include grid(3, space(4))
-@mixin grid($columns: 1, $gap: space(4))
-
-// Auto-fit responsive grid
-// Usage: @include grid-auto-fit(250px, space(4))
-@mixin grid-auto-fit($min-width: 250px, $gap: space(4))
-
-// Auto-fill responsive grid
-// Usage: @include grid-auto-fill(250px, space(4))
-@mixin grid-auto-fill($min-width: 250px, $gap: space(4))
+@mixin grid($columns: 1, $gap: space(4)) // Auto-fit responsive grid
+  // Usage: @include grid-auto-fit(250px, space(4))
+  @mixin grid-auto-fit($min-width: 250px, $gap: space(4)) // Auto-fill responsive grid
+  // Usage: @include grid-auto-fill(250px, space(4))
+  @mixin grid-auto-fill($min-width: 250px, $gap: space(4));
 ```
 
 ### 4.4 Visual Effects
@@ -343,25 +359,14 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 // Box shadows
 // Usage: @include shadow('lg')
 // Levels: 'sm', 'md', 'lg', 'xl', '2xl', 'none'
-@mixin shadow($level: 'md')
-
-// Transitions
-// Usage: @include transition(transform, box-shadow)
-@mixin transition($properties: all, $duration: 150ms, $timing: cubic-bezier(0.4, 0, 0.2, 1))
-
-// Hover lift effect (translateY + shadow)
-// Usage: @include hover-lift(-2px)
-@mixin hover-lift($distance: -2px)
-
-// Gradient text
-// Usage: @include gradient-text
-@mixin gradient-text {
-  background: linear-gradient(
-    to right,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
-  );
+@mixin shadow($level: "md") // Transitions
+  // Usage: @include transition(transform, box-shadow)
+  @mixin transition($properties: all, $duration: 150ms, $timing: cubic-bezier(0.4, 0, 0.2, 1)) // Hover lift effect (translateY + shadow)
+  // Usage: @include hover-lift(-2px)
+  @mixin hover-lift($distance: -2px) // Gradient text
+  // Usage: @include gradient-text
+  @mixin gradient-text {
+  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-via)), hsl(var(--gradient-to)));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -369,7 +374,7 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 
 // Gradient background
 // Usage: @include gradient-bg(to bottom)
-@mixin gradient-bg($direction: to right)
+@mixin gradient-bg($direction: to right);
 ```
 
 ### 4.5 Utility Mixins
@@ -377,23 +382,15 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Visually hidden (accessible)
 // Usage: @include visually-hidden
-@mixin visually-hidden
-
-// Text truncation with ellipsis
-// Usage: @include truncate
-@mixin truncate
-
-// Multi-line truncation
-// Usage: @include line-clamp(3)
-@mixin line-clamp($lines: 2)
-
-// Centered container
-// Usage: @include container(80rem)
-@mixin container($max-width: 80rem)
-
-// Focus ring (accessibility)
-// Usage: @include focus-ring
-@mixin focus-ring {
+@mixin visually-hidden // Text truncation with ellipsis
+  // Usage: @include truncate
+  @mixin truncate // Multi-line truncation
+  // Usage: @include line-clamp(3)
+  @mixin line-clamp($lines: 2) // Centered container
+  // Usage: @include container(80rem)
+  @mixin container($max-width: 80rem) // Focus ring (accessibility)
+  // Usage: @include focus-ring
+  @mixin focus-ring {
   &:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
@@ -435,8 +432,7 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 // Image drop shadow (for illustrations/photos)
 // Usage: @include image-drop-shadow
 @mixin image-drop-shadow {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04))
-          drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
 }
 ```
 
@@ -445,20 +441,20 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Real example from Hero.module.scss
 .title {
-  font-size: font-size('4xl');
-  font-weight: font-weight('normal');
+  font-size: font-size("4xl");
+  font-weight: font-weight("normal");
   text-align: center;
 
-  @include respond-to('sm') {
-    font-size: font-size('5xl');
+  @include respond-to("sm") {
+    font-size: font-size("5xl");
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     text-align: left;
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('6xl');
+  @include respond-to("lg") {
+    font-size: font-size("6xl");
   }
 }
 
@@ -468,7 +464,7 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 
   &:hover {
     border-color: hsl(var(--primary) / 0.4);
-    @include shadow('xl');
+    @include shadow("xl");
   }
 }
 ```
@@ -483,20 +479,30 @@ CSS Module classes use **semantic camelCase** naming (NOT BEM):
 
 ```scss
 // CORRECT - Semantic camelCase
-.section { }
-.heroSection { }
-.cardTitle { }
-.cardDescription { }
-.ctaButton { }
-.ctaButtonIcon { }
+.section {
+}
+.heroSection {
+}
+.cardTitle {
+}
+.cardDescription {
+}
+.ctaButton {
+}
+.ctaButtonIcon {
+}
 
 // INCORRECT - BEM naming
-.card__title { }        // No double underscores
-.card--primary { }      // No double dashes
-.hero-section { }       // No kebab-case
+.card__title {
+} // No double underscores
+.card--primary {
+} // No double dashes
+.hero-section {
+} // No kebab-case
 ```
 
 **Rationale:**
+
 1. CSS Modules provide automatic scoping (BEM namespacing unnecessary)
 2. Matches JavaScript object property access pattern
 3. Cleaner JSX: `styles["cardTitle"]` vs `styles["card__title"]`
@@ -508,37 +514,55 @@ Use common prefixes to group related elements:
 
 ```scss
 // Hero component example
-.section { }           // Container
-.article { }           // Content wrapper
-.content { }           // Main content area
-.title { }             // Primary heading
-.titleGradient { }     // Title variant/modifier
-.subtitle { }          // Secondary text
-.ctaWrapper { }        // CTA container
-.ctaGlow { }           // CTA decoration
-.ctaButton { }         // CTA interactive element
+.section {
+} // Container
+.article {
+} // Content wrapper
+.content {
+} // Main content area
+.title {
+} // Primary heading
+.titleGradient {
+} // Title variant/modifier
+.subtitle {
+} // Secondary text
+.ctaWrapper {
+} // CTA container
+.ctaGlow {
+} // CTA decoration
+.ctaButton {
+} // CTA interactive element
 
 // Card component example
-.card { }              // Card container
-.cardHeader { }        // Card header area
-.cardHeaderTop { }     // Header top section
-.cardIcon { }          // Icon in card
-.cardIconWrapper { }   // Icon container
-.cardTitle { }         // Card title
-.cardDescription { }   // Card description
-.cardContent { }       // Card body
-.cardFooter { }        // Card footer
+.card {
+} // Card container
+.cardHeader {
+} // Card header area
+.cardHeaderTop {
+} // Header top section
+.cardIcon {
+} // Icon in card
+.cardIconWrapper {
+} // Icon container
+.cardTitle {
+} // Card title
+.cardDescription {
+} // Card description
+.cardContent {
+} // Card body
+.cardFooter {
+} // Card footer
 ```
 
 ### 5.3 File Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| CSS Module | `ComponentName.module.scss` | `Hero.module.scss` |
-| Shared Styles | `feature.module.scss` | `Auth.module.scss` |
-| Page Styles | `page.module.scss` | `page.module.scss` |
-| SCSS Partial | `_partialname.scss` | `_variables.scss` |
-| SCSS Index | `_index.scss` | `_index.scss` |
+| Type          | Convention                  | Example            |
+| ------------- | --------------------------- | ------------------ |
+| CSS Module    | `ComponentName.module.scss` | `Hero.module.scss` |
+| Shared Styles | `feature.module.scss`       | `Auth.module.scss` |
+| Page Styles   | `page.module.scss`          | `page.module.scss` |
+| SCSS Partial  | `_partialname.scss`         | `_variables.scss`  |
+| SCSS Index    | `_index.scss`               | `_index.scss`      |
 
 ### 5.4 Component Import Pattern
 
@@ -567,12 +591,13 @@ Every CSS Module file MUST start with:
 // ===========================================
 // COMPONENT NAME - Brief Description
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 // ... component styles
 ```
 
 The relative path to abstracts varies by file location:
+
 - `src/app/_components/` → `../../styles/abstracts`
 - `src/app/auth/` → `../../styles/abstracts`
 - `src/app/about/_components/` → `../../../../styles/abstracts`
@@ -588,23 +613,27 @@ All responsive styles use **mobile-first** methodology:
 ```scss
 // Base styles apply to mobile (< 640px)
 .title {
-  font-size: font-size('2xl');    // Mobile default
+  font-size: font-size("2xl"); // Mobile default
   text-align: center;
 
-  @include respond-to('sm') {     // >= 640px
-    font-size: font-size('3xl');
+  @include respond-to("sm") {
+    // >= 640px
+    font-size: font-size("3xl");
   }
 
-  @include respond-to('md') {     // >= 768px
+  @include respond-to("md") {
+    // >= 768px
     text-align: left;
   }
 
-  @include respond-to('lg') {     // >= 1024px
-    font-size: font-size('4xl');
+  @include respond-to("lg") {
+    // >= 1024px
+    font-size: font-size("4xl");
   }
 
-  @include respond-to('xl') {     // >= 1280px
-    font-size: font-size('5xl');
+  @include respond-to("xl") {
+    // >= 1280px
+    font-size: font-size("5xl");
   }
 }
 ```
@@ -612,58 +641,61 @@ All responsive styles use **mobile-first** methodology:
 ### 6.2 Breakpoint Reference
 
 | Breakpoint | Min Width | Common Use Case |
-|------------|-----------|-----------------|
-| `2xsm` | 320px | Small phones |
-| `xsm` | 480px | Large phones |
-| `sm` | 640px | Standard mobile |
-| `md` | 768px | Tablets |
-| `lg` | 1024px | Small desktop |
-| `xl` | 1280px | Desktop |
-| `2xl` | 1440px | Large desktop |
-| `3xl` | 1976px | Ultra-wide |
+| ---------- | --------- | --------------- |
+| `2xsm`     | 320px     | Small phones    |
+| `xsm`      | 480px     | Large phones    |
+| `sm`       | 640px     | Standard mobile |
+| `md`       | 768px     | Tablets         |
+| `lg`       | 1024px    | Small desktop   |
+| `xl`       | 1280px    | Desktop         |
+| `2xl`      | 1440px    | Large desktop   |
+| `3xl`      | 1976px    | Ultra-wide      |
 
 ### 6.3 Common Responsive Patterns
 
 **Responsive Grid:**
+
 ```scss
 .grid {
   display: grid;
-  grid-template-columns: 1fr;           // Mobile: single column
+  grid-template-columns: 1fr; // Mobile: single column
   gap: space(4);
 
-  @include respond-to('md') {
-    grid-template-columns: repeat(2, 1fr);  // Tablet: 2 columns
+  @include respond-to("md") {
+    grid-template-columns: repeat(2, 1fr); // Tablet: 2 columns
   }
 
-  @include respond-to('lg') {
-    grid-template-columns: repeat(3, 1fr);  // Desktop: 3 columns
+  @include respond-to("lg") {
+    grid-template-columns: repeat(3, 1fr); // Desktop: 3 columns
     gap: space(8);
   }
 }
 ```
 
 **Responsive Spacing:**
+
 ```scss
 .section {
-  padding: space(8) space(4);           // Mobile padding
+  padding: space(8) space(4); // Mobile padding
 
-  @include respond-to('md') {
-    padding: space(16) space(8);        // Tablet padding
+  @include respond-to("md") {
+    padding: space(16) space(8); // Tablet padding
   }
 
-  @include respond-to('lg') {
-    padding: space(20) space(12);       // Desktop padding
+  @include respond-to("lg") {
+    padding: space(20) space(12); // Desktop padding
   }
 }
 ```
 
 **Show/Hide by Breakpoint:**
+
 ```scss
 // Mobile-only element
 .mobileNav {
   display: block;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: none;
   }
 }
@@ -672,27 +704,28 @@ All responsive styles use **mobile-first** methodology:
 .desktopNav {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: flex;
   }
 }
 ```
 
 **Responsive Typography:**
+
 ```scss
 .heading {
-  font-size: font-size('3xl');          // Mobile: 1.875rem
+  font-size: font-size("3xl"); // Mobile: 1.875rem
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');        // Small: 2.25rem
+  @include respond-to("sm") {
+    font-size: font-size("4xl"); // Small: 2.25rem
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('5xl');        // Large: 3rem
+  @include respond-to("lg") {
+    font-size: font-size("5xl"); // Large: 3rem
   }
 
-  @include respond-to('xl') {
-    font-size: font-size('6xl');        // XL: 3.75rem
+  @include respond-to("xl") {
+    font-size: font-size("6xl"); // XL: 3.75rem
   }
 }
 ```
@@ -703,7 +736,7 @@ For styles that should ONLY apply on mobile:
 
 ```scss
 .mobileWarning {
-  @include respond-below('md') {
+  @include respond-below("md") {
     display: block;
     background: hsl(var(--destructive));
     padding: space(4);
@@ -748,6 +781,7 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 ### 7.2 Using CSS Variables in SCSS
 
 **Direct HSL Usage:**
+
 ```scss
 .element {
   background-color: hsl(var(--background));
@@ -757,36 +791,40 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 ```
 
 **With Opacity/Alpha:**
+
 ```scss
 .overlay {
-  background-color: hsl(var(--background) / 0.8);    // 80% opacity
-  border-color: hsl(var(--primary) / 0.4);           // 40% opacity
+  background-color: hsl(var(--background) / 0.8); // 80% opacity
+  border-color: hsl(var(--primary) / 0.4); // 40% opacity
 }
 ```
 
 **Using Helper Functions:**
+
 ```scss
 .element {
-  color: color('primary');                           // hsl(var(--primary))
-  background: color-alpha('background', 0.5);        // hsl(var(--background) / 0.5)
+  color: color("primary"); // hsl(var(--primary))
+  background: color-alpha("background", 0.5); // hsl(var(--background) / 0.5)
 }
 ```
 
 ### 7.3 Dark Mode Styling
 
 **Method 1: `:global(.dark) &` selector (CURRENT)**
+
 ```scss
 .card {
   background: hsl(var(--card));
-  border-color: rgb(229, 231, 235);      // gray-200 (light mode)
+  border-color: rgb(229, 231, 235); // gray-200 (light mode)
 
   :global(.dark) & {
-    border-color: rgb(55, 65, 81);       // gray-700 (dark mode)
+    border-color: rgb(55, 65, 81); // gray-700 (dark mode)
   }
 }
 ```
 
 **Method 2: `@include dark` mixin (PREFERRED)**
+
 ```scss
 .card {
   background: hsl(var(--card));
@@ -813,12 +851,7 @@ var(--accent-primary)    // Primary accent
 
 // Usage
 .badge {
-  background: linear-gradient(
-    to right,
-    var(--gradient-from),
-    var(--gradient-via),
-    var(--gradient-to)
-  );
+  background: linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to));
 }
 ```
 
@@ -831,7 +864,8 @@ For backgrounds that differ significantly between themes:
   background: linear-gradient(
     to bottom,
     hsl(var(--background)),
-    rgb(233, 213, 255),              // purple-200 (light)
+    rgb(233, 213, 255),
+    // purple-200 (light)
     hsl(var(--background))
   );
 
@@ -839,7 +873,8 @@ For backgrounds that differ significantly between themes:
     background: linear-gradient(
       to bottom,
       hsl(var(--background)),
-      rgb(23, 37, 84),               // blue-950 (dark)
+      rgb(23, 37, 84),
+      // blue-950 (dark)
       hsl(var(--background))
     );
   }
@@ -848,21 +883,21 @@ For backgrounds that differ significantly between themes:
 
 ### 7.6 Available CSS Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `--background` | Page background |
-| `--foreground` | Default text color |
-| `--card` | Card backgrounds |
-| `--card-foreground` | Card text |
-| `--primary` | Primary brand color |
-| `--primary-foreground` | Text on primary |
-| `--secondary` | Secondary color |
-| `--muted` | Muted backgrounds |
-| `--muted-foreground` | Muted text |
-| `--accent` | Accent highlights |
-| `--border` | Border color |
-| `--ring` | Focus ring color |
-| `--destructive` | Error/danger color |
+| Variable               | Purpose             |
+| ---------------------- | ------------------- |
+| `--background`         | Page background     |
+| `--foreground`         | Default text color  |
+| `--card`               | Card backgrounds    |
+| `--card-foreground`    | Card text           |
+| `--primary`            | Primary brand color |
+| `--primary-foreground` | Text on primary     |
+| `--secondary`          | Secondary color     |
+| `--muted`              | Muted backgrounds   |
+| `--muted-foreground`   | Muted text          |
+| `--accent`             | Accent highlights   |
+| `--border`             | Border color        |
+| `--ring`               | Focus ring color    |
+| `--destructive`        | Error/danger color  |
 
 ---
 
@@ -874,7 +909,7 @@ For backgrounds that differ significantly between themes:
 // ===========================================
 // COMPONENT NAME - Brief Description
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 // Container/Section
 .section {
@@ -895,17 +930,17 @@ For backgrounds that differ significantly between themes:
 
 // Typography
 .title {
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('lg') {
-    font-size: font-size('4xl');
+  @include respond-to("lg") {
+    font-size: font-size("4xl");
   }
 }
 
 .subtitle {
   color: hsl(var(--muted-foreground));
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 // Interactive elements
@@ -930,13 +965,13 @@ For backgrounds that differ significantly between themes:
   overflow: hidden;
   background-color: hsl(var(--card) / 0.5);
   border: 1px solid hsl(var(--border) / 0.5);
-  border-radius: radius('xl');
+  border-radius: radius("xl");
   backdrop-filter: blur(4px);
   @include transition(border-color, box-shadow);
 
   &:hover {
     border-color: hsl(var(--primary) / 0.4);
-    @include shadow('xl');
+    @include shadow("xl");
   }
 }
 
@@ -1008,11 +1043,11 @@ For backgrounds that differ significantly between themes:
   grid-template-columns: 1fr;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: space(8);
   }
@@ -1037,7 +1072,7 @@ Use the `@include orb()` mixin for decorative blur orbs:
 }
 
 .orbSecondary {
-  @include orb(8rem, 48px, rgb(168, 85, 247, 0.2));  // purple-500/20
+  @include orb(8rem, 48px, rgb(168, 85, 247, 0.2)); // purple-500/20
   bottom: -5rem;
   right: -5rem;
 }
@@ -1065,15 +1100,15 @@ Use the `@include orb()` mixin for decorative blur orbs:
 }
 
 .label {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   color: hsl(var(--foreground));
 }
 
 .input {
   padding: space(2) space(3);
   border: 1px solid hsl(var(--border));
-  border-radius: radius('md');
+  border-radius: radius("md");
   background: hsl(var(--background));
   @include transition(border-color, box-shadow);
 
@@ -1104,7 +1139,7 @@ Use the `@include orb()` mixin for decorative blur orbs:
   object-fit: contain;
   @include image-drop-shadow;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 14rem;
     height: 14rem;
   }
@@ -1138,46 +1173,49 @@ Use the `@include orb()` mixin for decorative blur orbs:
 ### 9.1 Creating New Component Styles
 
 **Step 1: Create SCSS Module File**
+
 ```bash
 # For component in src/app/domain/_components/MyComponent.tsx
 touch src/app/domain/_components/MyComponent.module.scss
 ```
 
 **Step 2: Add Standard Header and Import**
+
 ```scss
 // ===========================================
 // MY COMPONENT - Brief Description
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 ```
 
 **Step 3: Define Component Styles**
 
 Common pattern examples:
 
-| Pattern | SCSS Implementation |
-|---------|---------------------|
-| Flexbox layout | `@include flex-between` |
-| Grid layout | `@include grid(3, space(4))` |
-| Padding | `padding: space(4)` |
-| Spacing | `margin-top: space(8); margin-bottom: space(4)` |
-| Typography | `font-size: font-size('xl'); font-weight: font-weight('bold')` |
-| Muted text | `color: hsl(var(--muted-foreground))` |
-| Card background | `background-color: hsl(var(--card))` |
-| Border radius | `border-radius: radius('xl')` |
-| `shadow-lg` | `@include shadow('lg')` |
-| `hover:scale-105` | `&:hover { transform: scale(1.05); }` |
-| `transition-all` | `@include transition(all)` |
-| `md:flex-row` | `@include respond-to('md') { flex-direction: row; }` |
+| Pattern            | SCSS Implementation                                               |
+| ------------------ | ----------------------------------------------------------------- |
+| Flexbox layout     | `@include flex-between`                                           |
+| Grid layout        | `@include grid(3, space(4))`                                      |
+| Padding            | `padding: space(4)`                                               |
+| Spacing            | `margin-top: space(8); margin-bottom: space(4)`                   |
+| Typography         | `font-size: font-size('xl'); font-weight: font-weight('bold')`    |
+| Muted text         | `color: hsl(var(--muted-foreground))`                             |
+| Card background    | `background-color: hsl(var(--card))`                              |
+| Border radius      | `border-radius: radius('xl')`                                     |
+| `shadow-lg`        | `@include shadow('lg')`                                           |
+| `hover:scale-105`  | `&:hover { transform: scale(1.05); }`                             |
+| `transition-all`   | `@include transition(all)`                                        |
+| `md:flex-row`      | `@include respond-to('md') { flex-direction: row; }`              |
 | `dark:bg-gray-900` | `:global(.dark) & { background: ... }` or `@include dark { ... }` |
 
 **Step 4: Update React Component**
+
 ```typescript
 // Before
 export function MyComponent() {
   return (
-    <div className="flex items-center justify-between p-4 bg-card rounded-xl">
-      <h2 className="text-xl font-bold">Title</h2>
+    <div className='flex items-center justify-between p-4 bg-card rounded-xl'>
+      <h2 className='text-xl font-bold'>Title</h2>
     </div>
   );
 }
@@ -1197,6 +1235,7 @@ export function MyComponent() {
 ### 9.2 Common Conversion Patterns
 
 **Responsive Classes:**
+
 ```scss
 // Previous utility-class pattern: className="flex flex-col md:flex-row lg:gap-8"
 // SCSS:
@@ -1204,17 +1243,18 @@ export function MyComponent() {
   display: flex;
   flex-direction: column;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     flex-direction: row;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     gap: space(8);
   }
 }
 ```
 
 **Conditional Classes:**
+
 ```typescript
 // Previous utility-class pattern: className={cn("base", isActive && "active")}
 // SCSS:
@@ -1224,6 +1264,7 @@ const containerClass = `${styles["container"]} ${isActive ? styles["active"] : "
 ```
 
 **Dynamic Variant Classes:**
+
 ```typescript
 // Map variant to class name
 const variantMap = {
@@ -1236,7 +1277,8 @@ const variantMap = {
 
 ### 9.3 Using Shared Component Library
 
-The `@arolariu/components` library provides pre-built components with CSS Modules. When using these components alongside custom SCSS modules:
+The `@arolariu/components` library provides pre-built components with CSS Modules. When using these components alongside custom SCSS
+modules:
 
 ```typescript
 import {Button, Card} from "@arolariu/components";
@@ -1248,7 +1290,7 @@ export function MyPage() {
       {/* Shared component library components */}
       <Card>
         <h2 className={styles["title"]}>Title</h2>
-        <Button variant="primary">Click</Button>
+        <Button variant='primary'>Click</Button>
       </Card>
     </section>
   );
@@ -1256,6 +1298,7 @@ export function MyPage() {
 ```
 
 **Integration guidelines:**
+
 - Shared components use their own CSS Modules internally
 - Custom page/component styles use SCSS Modules
 - Both systems coexist without conflicts due to scoping
@@ -1279,18 +1322,19 @@ export function MyPage() {
 
 ### 10.1 Considered Alternatives
 
-| Alternative | Reason for Rejection |
-|-------------|---------------------|
-| **Tailwind Only** | Limited CSS power, no variables/mixins, harder to maintain complex styles |
-| **CSS-in-JS (Emotion/Styled)** | Runtime overhead, RSC compatibility issues, larger bundle |
-| **vanilla-extract** | Build complexity, learning curve, less ecosystem support |
-| **CSS Modules (plain CSS)** | No SCSS features (mixins, nesting, functions) |
-| **SCSS without Modules** | No automatic scoping, class name collisions |
-| **BEM Naming** | Unnecessary with CSS Modules scoping, verbose syntax |
+| Alternative                    | Reason for Rejection                                                      |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| **Tailwind Only**              | Limited CSS power, no variables/mixins, harder to maintain complex styles |
+| **CSS-in-JS (Emotion/Styled)** | Runtime overhead, RSC compatibility issues, larger bundle                 |
+| **vanilla-extract**            | Build complexity, learning curve, less ecosystem support                  |
+| **CSS Modules (plain CSS)**    | No SCSS features (mixins, nesting, functions)                             |
+| **SCSS without Modules**       | No automatic scoping, class name collisions                               |
+| **BEM Naming**                 | Unnecessary with CSS Modules scoping, verbose syntax                      |
 
 ### 10.2 Why SCSS Modules?
 
 **Advantages:**
+
 - Full SCSS power (variables, mixins, functions, nesting)
 - Automatic scoping via CSS Modules
 - No runtime overhead (compile-time only)
@@ -1300,6 +1344,7 @@ export function MyPage() {
 - Component-level encapsulation
 
 **Trade-offs:**
+
 - Build-time compilation required
 - Relative import paths for abstracts
 - No TypeScript autocomplete for class names (minor)
@@ -1307,6 +1352,7 @@ export function MyPage() {
 ### 10.3 Why 7-1 Pattern?
 
 **Advantages:**
+
 - Industry-standard organization
 - Clear separation of concerns
 - Scalable for large projects
@@ -1314,6 +1360,7 @@ export function MyPage() {
 - Promotes DRY code with shared abstracts
 
 **Adaptations:**
+
 - Pages folder optional (CSS Modules are page-scoped)
 - No separate vendors folder (npm dependencies)
 - Utilities integrated into mixins/functions
@@ -1334,40 +1381,40 @@ The SCSS system maintains consistency through:
 
 ### 11.1 Core SCSS Infrastructure
 
-| File | Purpose |
-|------|---------|
-| `src/styles/main.scss` | 7-1 pattern entry point |
-| `src/styles/abstracts/_index.scss` | Barrel export for abstracts |
-| `src/styles/abstracts/_config.scss` | Feature flags, namespace prefix, defaults |
-| `src/styles/abstracts/_variables.scss` | Spacing, breakpoints, z-index, radius, shadows, motion |
-| `src/styles/abstracts/_colors.scss` | CSS variable helpers, static/interactive colors |
-| `src/styles/abstracts/_typography.scss` | Font families, sizes, weights, heights, spacing |
-| `src/styles/abstracts/_mixins.scss` | 30+ mixins (responsive, layout, visual, a11y, decorative) |
-| `src/styles/abstracts/_functions.scss` | Unit conversion, map/list/string utilities |
-| `src/styles/base/_reset.scss` | CSS reset |
-| `src/styles/animations/_keyframes.scss` | Animation definitions |
-| `src/styles/components/_header.scss` | Header styles |
-| `src/styles/components/_navigation.scss` | Navigation styles |
+| File                                     | Purpose                                                   |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `src/styles/main.scss`                   | 7-1 pattern entry point                                   |
+| `src/styles/abstracts/_index.scss`       | Barrel export for abstracts                               |
+| `src/styles/abstracts/_config.scss`      | Feature flags, namespace prefix, defaults                 |
+| `src/styles/abstracts/_variables.scss`   | Spacing, breakpoints, z-index, radius, shadows, motion    |
+| `src/styles/abstracts/_colors.scss`      | CSS variable helpers, static/interactive colors           |
+| `src/styles/abstracts/_typography.scss`  | Font families, sizes, weights, heights, spacing           |
+| `src/styles/abstracts/_mixins.scss`      | 30+ mixins (responsive, layout, visual, a11y, decorative) |
+| `src/styles/abstracts/_functions.scss`   | Unit conversion, map/list/string utilities                |
+| `src/styles/base/_reset.scss`            | CSS reset                                                 |
+| `src/styles/animations/_keyframes.scss`  | Animation definitions                                     |
+| `src/styles/components/_header.scss`     | Header styles                                             |
+| `src/styles/components/_navigation.scss` | Navigation styles                                         |
 
 ### 11.2 Migrated CSS Modules
 
-| Route | Files |
-|-------|-------|
-| Home | `src/app/_components/{Hero,Features,Technologies}.module.scss` |
-| Auth | `src/app/auth/Auth.module.scss` |
-| About | `src/app/about/page.module.scss`, `_components/*.module.scss` |
-| About/Author | `src/app/about/the-author/page.module.scss`, `_components/*.module.scss` |
-| About/Platform | `src/app/about/the-platform/page.module.scss`, `_components/*.module.scss` |
-| Privacy | `src/app/(privacy-and-terms)/privacy-policy/page.module.scss` |
-| Terms | `src/app/(privacy-and-terms)/terms-of-service/page.module.scss` |
-| Acknowledgements | `src/app/(privacy-and-terms)/acknowledgements/*.module.scss` |
+| Route            | Files                                                                      |
+| ---------------- | -------------------------------------------------------------------------- |
+| Home             | `src/app/_components/{Hero,Features,Technologies}.module.scss`             |
+| Auth             | `src/app/auth/Auth.module.scss`                                            |
+| About            | `src/app/about/page.module.scss`, `_components/*.module.scss`              |
+| About/Author     | `src/app/about/the-author/page.module.scss`, `_components/*.module.scss`   |
+| About/Platform   | `src/app/about/the-platform/page.module.scss`, `_components/*.module.scss` |
+| Privacy          | `src/app/(privacy-and-terms)/privacy-policy/page.module.scss`              |
+| Terms            | `src/app/(privacy-and-terms)/terms-of-service/page.module.scss`            |
+| Acknowledgements | `src/app/(privacy-and-terms)/acknowledgements/*.module.scss`               |
 
 ### 11.3 Routes Pending Migration
 
-| Route | Component Count | Priority |
-|-------|----------------|----------|
-| `/domains/invoices` | 78 components | High |
-| `/my-profile` | 11 components | Medium |
+| Route               | Component Count | Priority |
+| ------------------- | --------------- | -------- |
+| `/domains/invoices` | 78 components   | High     |
+| `/my-profile`       | 11 components   | Medium   |
 
 ### 11.4 Related Documentation
 
@@ -1381,9 +1428,11 @@ The SCSS system maintains consistency through:
 
 ### 12.1 SassDoc Annotations
 
-All public SCSS APIs (variables, functions, mixins) are documented using [SassDoc](http://sassdoc.com/) triple-slash (`///`) comment syntax. This enables automated documentation generation and IDE support.
+All public SCSS APIs (variables, functions, mixins) are documented using [SassDoc](http://sassdoc.com/) triple-slash (`///`) comment syntax.
+This enables automated documentation generation and IDE support.
 
 **Required annotations for functions:**
+
 ```scss
 /// Get a spacing value by its scale key.
 /// @param {Number} $key - Scale key (e.g. 4, 8, 12)
@@ -1396,6 +1445,7 @@ All public SCSS APIs (variables, functions, mixins) are documented using [SassDo
 ```
 
 **Required annotations for mixins:**
+
 ```scss
 /// Mobile-first responsive breakpoint mixin.
 /// @param {String} $breakpoint - Breakpoint name (e.g. 'sm', 'md', 'lg')
@@ -1410,63 +1460,72 @@ All public SCSS APIs (variables, functions, mixins) are documented using [SassDo
 ```
 
 **Required annotations for variables/maps:**
+
 ```scss
 /// Spacing scale map for consistent layout tokens.
 /// @type Map
 /// @group tokens-spacing
 /// @prop {Length} 0 [0] - No spacing
 /// @prop {Length} 4 [1rem] - 16px (base)
-$spacing: ( ... );
+$spacing: (...);
 ```
 
 ### 12.2 SassDoc Groups
 
-| Group | File | Description |
-|-------|------|-------------|
-| `config` | `_config.scss` | Feature flags and global settings |
-| `tokens` | `_variables.scss` | File-level overview |
-| `tokens-spacing` | `_variables.scss` | Spacing scale tokens |
-| `tokens-breakpoints` | `_variables.scss` | Responsive breakpoints |
-| `tokens-z-index` | `_variables.scss` | Z-index layering system |
-| `tokens-radius` | `_variables.scss` | Border radius tokens |
-| `tokens-shadows` | `_variables.scss` | Shadow elevation tokens |
-| `tokens-motion` | `_variables.scss` | Duration and easing tokens |
-| `tokens-colors` | `_colors.scss` | Color system (CSS var refs + static) |
-| `tokens-typography` | `_typography.scss` | Font sizes, weights, heights, spacing |
-| `functions` | `_functions.scss` | Unit conversion and utility functions |
-| `mixins-responsive` | `_mixins.scss` | Breakpoint media query mixins |
-| `mixins-layout` | `_mixins.scss` | Flex, grid, container mixins |
-| `mixins-visual` | `_mixins.scss` | Shadow, transition, gradient mixins |
-| `mixins-utility` | `_mixins.scss` | Truncate, dark mode, content-visibility |
-| `mixins-a11y` | `_mixins.scss` | Visually-hidden, focus-ring, reduced-motion |
-| `mixins-decorative` | `_mixins.scss` | Orb, accent-bar, icon-color variants |
+| Group                | File               | Description                                 |
+| -------------------- | ------------------ | ------------------------------------------- |
+| `config`             | `_config.scss`     | Feature flags and global settings           |
+| `tokens`             | `_variables.scss`  | File-level overview                         |
+| `tokens-spacing`     | `_variables.scss`  | Spacing scale tokens                        |
+| `tokens-breakpoints` | `_variables.scss`  | Responsive breakpoints                      |
+| `tokens-z-index`     | `_variables.scss`  | Z-index layering system                     |
+| `tokens-radius`      | `_variables.scss`  | Border radius tokens                        |
+| `tokens-shadows`     | `_variables.scss`  | Shadow elevation tokens                     |
+| `tokens-motion`      | `_variables.scss`  | Duration and easing tokens                  |
+| `tokens-colors`      | `_colors.scss`     | Color system (CSS var refs + static)        |
+| `tokens-typography`  | `_typography.scss` | Font sizes, weights, heights, spacing       |
+| `functions`          | `_functions.scss`  | Unit conversion and utility functions       |
+| `mixins-responsive`  | `_mixins.scss`     | Breakpoint media query mixins               |
+| `mixins-layout`      | `_mixins.scss`     | Flex, grid, container mixins                |
+| `mixins-visual`      | `_mixins.scss`     | Shadow, transition, gradient mixins         |
+| `mixins-utility`     | `_mixins.scss`     | Truncate, dark mode, content-visibility     |
+| `mixins-a11y`        | `_mixins.scss`     | Visually-hidden, focus-ring, reduced-motion |
+| `mixins-decorative`  | `_mixins.scss`     | Orb, accent-bar, icon-color variants        |
 
 ### 12.3 Shadow Elevation Guide
 
 The shadow system uses a 6-level elevation scale inspired by Material Design 3:
 
-| Level | Elevation | Use Case | Example Component |
-|-------|-----------|----------|-------------------|
-| `none` | 0dp | Flat elements, no depth | Inline text, flat buttons |
-| `sm` | 1dp | Subtle resting depth | Cards at rest, input fields |
-| `md` | 3dp | Standard raised surface | Raised cards, dropdowns |
-| `lg` | 6dp | Elevated interactive state | Hovered cards, popovers |
-| `xl` | 12dp | High-emphasis surface | Modals, dialogs |
-| `2xl` | 24dp | Maximum emphasis | Full-screen overlays |
+| Level  | Elevation | Use Case                   | Example Component           |
+| ------ | --------- | -------------------------- | --------------------------- |
+| `none` | 0dp       | Flat elements, no depth    | Inline text, flat buttons   |
+| `sm`   | 1dp       | Subtle resting depth       | Cards at rest, input fields |
+| `md`   | 3dp       | Standard raised surface    | Raised cards, dropdowns     |
+| `lg`   | 6dp       | Elevated interactive state | Hovered cards, popovers     |
+| `xl`   | 12dp      | High-emphasis surface      | Modals, dialogs             |
+| `2xl`  | 24dp      | Maximum emphasis           | Full-screen overlays        |
 
 **Usage pattern:**
+
 ```scss
 // At rest: use 'sm' or 'md'
-.card { @include shadow('sm'); }
+.card {
+  @include shadow("sm");
+}
 
 // On hover: elevate to 'lg' or 'xl'
-.card:hover { @include shadow('lg'); }
+.card:hover {
+  @include shadow("lg");
+}
 
 // Modal/dialog: use 'xl'
-.modal { @include shadow('xl'); }
+.modal {
+  @include shadow("xl");
+}
 ```
 
-Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility against dark backgrounds. The `shadow()` mixin handles this automatically.
+Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility against dark backgrounds. The `shadow()` mixin handles this
+automatically.
 
 ---
 
@@ -1476,19 +1535,23 @@ Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility aga
 
 The design system supports compile-time feature flags:
 
-| Flag | Default | Purpose |
-|------|---------|---------|
-| `$enable-fluid-type` | `true` | Enable `clamp()`-based fluid typography |
-| `$enable-logical-properties` | `true` | Enable `margin-inline` / `padding-block` |
-| `$enable-container-queries` | `true` | Enable CSS container queries |
-| `$enable-reduced-motion` | `true` | Enable `prefers-reduced-motion` wrappers |
-| `$enable-high-contrast` | `true` | Enable high-contrast mode adjustments |
-| `$enable-print-styles` | `true` | Enable print stylesheet generation |
-| `$enable-css-layers` | `true` | Enable CSS `@layer` for cascade control |
+| Flag                         | Default | Purpose                                  |
+| ---------------------------- | ------- | ---------------------------------------- |
+| `$enable-fluid-type`         | `true`  | Enable `clamp()`-based fluid typography  |
+| `$enable-logical-properties` | `true`  | Enable `margin-inline` / `padding-block` |
+| `$enable-container-queries`  | `true`  | Enable CSS container queries             |
+| `$enable-reduced-motion`     | `true`  | Enable `prefers-reduced-motion` wrappers |
+| `$enable-high-contrast`      | `true`  | Enable high-contrast mode adjustments    |
+| `$enable-print-styles`       | `true`  | Enable print stylesheet generation       |
+| `$enable-css-layers`         | `true`  | Enable CSS `@layer` for cascade control  |
 
 ### 13.2 Overriding Defaults
 
 Consumer modules can override configuration:
+
 ```scss
-@use 'abstracts' with ($enable-fluid-type: false, $css-prefix: 'custom');
+@use "abstracts" with (
+  $enable-fluid-type: false,
+  $css-prefix: "custom"
+);
 ```

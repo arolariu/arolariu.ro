@@ -11,13 +11,64 @@ import {createEnvironmentHelper} from "./index";
 
 describe("EnvironmentHelper", () => {
   let originalEnv: NodeJS.ProcessEnv;
+  let originalExitCode: typeof process.exitCode;
 
   beforeEach(() => {
     originalEnv = {...process.env};
+    originalExitCode = process.exitCode;
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    process.exitCode = originalExitCode;
+  });
+
+  it("required reads do not set the action's global exit status", () => {
+    delete process.env["CI_SCRIPTS_TEST_ABSENT"];
+    const before = process.exitCode;
+    expect(() => createEnvironmentHelper().getRequired("CI_SCRIPTS_TEST_ABSENT")).toThrow(/CI_SCRIPTS_TEST_ABSENT/);
+    expect(process.exitCode).toBe(before);
+  });
+
+  it("custom validation does not expose the rejected value or fail the action implicitly", () => {
+    process.env["CI_SCRIPTS_TEST_VALUE"] = "sensitive-sentinel";
+    const before = process.exitCode;
+    let caught: unknown;
+    try {
+      createEnvironmentHelper().getWithValidation({key: "CI_SCRIPTS_TEST_VALUE", validator: () => false});
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect(caught instanceof Error ? caught.message : "").not.toContain("sensitive-sentinel");
+    expect(process.exitCode).toBe(before);
+  });
+
+  it("rejects an invalid supplied boolean rather than treating it as false", () => {
+    process.env["CI_SCRIPTS_TEST_BOOLEAN"] = "maybe";
+    expect(() => createEnvironmentHelper().getBoolean("CI_SCRIPTS_TEST_BOOLEAN")).toThrow(/CI_SCRIPTS_TEST_BOOLEAN/);
+  });
+  it.each(["null", "undefined"])("typed reads reject the supplied sentinel %s while ordinary lookup stays compatible", (value) => {
+    const helper = createEnvironmentHelper({VALUE: value});
+    expect(helper.get("VALUE", "fallback")).toBe("fallback");
+    expect(() => helper.getBoolean("VALUE", true)).toThrow(/VALUE/);
+    expect(() => helper.getInt("VALUE", 100)).toThrow(/VALUE/);
+  });
+
+  it("rejects partial and unsafe integers instead of truncating or rounding them", () => {
+    process.env["CI_SCRIPTS_TEST_INTEGER"] = "12x";
+    expect(() => createEnvironmentHelper().getInt("CI_SCRIPTS_TEST_INTEGER", 0)).toThrow(/CI_SCRIPTS_TEST_INTEGER/);
+    process.env["CI_SCRIPTS_TEST_INTEGER"] = "9007199254740992";
+    expect(() => createEnvironmentHelper().getInt("CI_SCRIPTS_TEST_INTEGER", 0)).toThrow(/CI_SCRIPTS_TEST_INTEGER/);
+  });
+
+  it("can parse an injected snapshot without reading later ambient changes", () => {
+    const values = {CI_SCRIPTS_TEST_SNAPSHOT: "first"};
+    const helper = createEnvironmentHelper(values);
+    values.CI_SCRIPTS_TEST_SNAPSHOT = "second";
+    process.env["CI_SCRIPTS_TEST_SNAPSHOT"] = "ambient";
+    expect(helper.get("CI_SCRIPTS_TEST_SNAPSHOT")).toBe("first");
+    expect(helper.snapshot()["CI_SCRIPTS_TEST_SNAPSHOT"]).toBe("first");
   });
 
   describe("get", () => {
@@ -101,11 +152,11 @@ describe("EnvironmentHelper", () => {
       expect(env.getInt("INT_VAR", 0)).toBe(42);
     });
 
-    it("should return default value for non-numeric strings", () => {
+    it("rejects a supplied non-numeric string instead of using the missing-value default", () => {
       process.env["INT_VAR"] = "not-a-number";
       const env = createEnvironmentHelper();
 
-      expect(env.getInt("INT_VAR", 10)).toBe(10);
+      expect(() => env.getInt("INT_VAR", 10)).toThrow(/INT_VAR/);
     });
 
     it("should return default value when variable is not set", () => {

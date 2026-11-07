@@ -8,7 +8,7 @@
  * Follows Builder pattern for complex comment construction.
  */
 
-import * as core from "@actions/core";
+import * as core from "../sdk/core.ts";
 
 /**
  * Section in a comment
@@ -186,7 +186,7 @@ export class CommentBuilder implements ICommentBuilder {
    * {@inheritDoc ICommentBuilder.addCodeBlock}
    */
   addCodeBlock(code: string, language: string = ""): ICommentBuilder {
-    this.parts.push(`\`\`\`${language}\n${code}\n\`\`\`\n`);
+    this.parts.push(`${MarkdownUtils.fence(code, language)}\n`);
     return this;
   }
 
@@ -230,7 +230,7 @@ export class CommentBuilder implements ICommentBuilder {
     }
 
     // Header row
-    const headers = columns.map((col) => col.header).join(" | ");
+    const headers = columns.map((col) => MarkdownUtils.tableCell(col.header)).join(" | ");
     this.parts.push(`| ${headers} |\n`);
 
     // Separator row with alignment
@@ -244,7 +244,10 @@ export class CommentBuilder implements ICommentBuilder {
 
     // Data rows
     for (const row of rows) {
-      const cells = row.slice(0, columns.length).join(" | ");
+      const cells = row
+        .slice(0, columns.length)
+        .map((cell) => MarkdownUtils.tableCell(cell))
+        .join(" | ");
       this.parts.push(`| ${cells} |\n`);
     }
 
@@ -336,6 +339,33 @@ export class CommentBuilder implements ICommentBuilder {
  * Markdown utility functions
  */
 export class MarkdownUtils {
+  /**
+   * Wraps literal content in a fence longer than every embedded backtick run.
+   * @param content - Unescaped block content.
+   * @param language - Optional single-line info string without backticks.
+   * @returns A complete block without an added trailing newline.
+   * @throws TypeError when the language could terminate/change the block.
+   */
+  static fence(content: string, language = ""): string {
+    if (/[\r\n`]/.test(language)) throw new TypeError("Invalid Markdown fence language");
+    let longest = 0;
+    for (const run of content.match(/`+/g) ?? []) longest = Math.max(longest, run.length);
+    const delimiter = "`".repeat(Math.max(3, longest + 1));
+    return `${delimiter}${language}\n${content}\n${delimiter}`;
+  }
+
+  /**
+   * Keeps text/inline Markdown inside a single GitHub table cell.
+   * @param content - Cell content, not a raw table row.
+   * @returns Escaped delimiters and HTML line breaks; raw builder operations stay raw.
+   */
+  static tableCell(content: string): string {
+    return content
+      .replace(/\\/g, "\\\\")
+      .replace(/\|/g, "\\|")
+      .replace(/\r\n|\r|\n/g, "<br>");
+  }
+
   /**
    * Creates a markdown link
    * @param text - Link text

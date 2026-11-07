@@ -6,8 +6,11 @@
  * Covers coverage parsing and markdown generation for reporting.
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import type {IFileSystemHelper} from "../filesystem/index.ts";
+import {mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {fs} from "../filesystem/index.ts";
 import {
   checkVitestThresholds,
   createVitestHelper,
@@ -90,19 +93,19 @@ function createMockVitestCoverageSummary(): VitestCoverageSummary {
 }
 
 /**
- * Creates a mock file system helper for testing
+ * Persists actual coverage JSON rather than substituting an incomplete helper.
  */
-function createMockFileSystemHelper(mockData: VitestCoverageSummary): IFileSystemHelper {
-  return {
-    exists: vi.fn().mockResolvedValue(true),
-    readJson: vi.fn().mockResolvedValue(mockData),
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-    deleteFile: vi.fn(),
-    createDirectory: vi.fn(),
-    listFiles: vi.fn(),
-    getFileStats: vi.fn(),
-  } as unknown as IFileSystemHelper;
+let directory: string;
+beforeEach(async () => {
+  directory = await mkdtemp(join(tmpdir(), "vitest-coverage-"));
+});
+afterEach(async () => {
+  await rm(directory, {recursive: true, force: true});
+});
+async function writeReport(value: unknown): Promise<string> {
+  const path = join(directory, "report.json");
+  await writeFile(path, JSON.stringify(value));
+  return path;
 }
 
 describe("VitestHelper", () => {
@@ -115,9 +118,8 @@ describe("VitestHelper", () => {
   describe("parseCoverage", () => {
     it("should successfully parse valid coverage data", async () => {
       const mockData = createMockVitestCoverageSummary();
-      const mockFs = createMockFileSystemHelper(mockData);
-
-      const result = await helper.parseCoverage("coverage-summary.json", mockFs);
+      const reportPath = await writeReport(mockData);
+      const result = await helper.parseCoverage(reportPath, fs);
 
       expect(result.total).toEqual(mockData.total);
       expect(result.files).toHaveLength(3);
@@ -127,22 +129,15 @@ describe("VitestHelper", () => {
     });
 
     it("should throw error when coverage file does not exist", async () => {
-      const mockFs = {
-        exists: vi.fn().mockResolvedValue(false),
-        readJson: vi.fn(),
-      } as unknown as IFileSystemHelper;
-
-      await expect(helper.parseCoverage("missing.json", mockFs)).rejects.toThrow("Coverage file not found");
+      await expect(helper.parseCoverage(join(directory, "missing.json"), fs)).rejects.toThrow("Coverage file not found");
     });
 
     it("should throw error when coverage data missing total property", async () => {
       const mockData = {
         "/workspace/file.ts": createMockCoverageFileSummary(),
-      } as unknown as VitestCoverageSummary;
-
-      const mockFs = createMockFileSystemHelper(mockData);
-
-      await expect(helper.parseCoverage("invalid.json", mockFs)).rejects.toThrow("Coverage data missing 'total' property");
+      };
+      const reportPath = await writeReport(mockData);
+      await expect(helper.parseCoverage(reportPath, fs)).rejects.toThrow("Coverage data missing 'total' property");
     });
 
     it("should handle coverage data with only total (no files)", async () => {
@@ -150,9 +145,8 @@ describe("VitestHelper", () => {
         total: createMockCoverageFileSummary(),
       } as VitestCoverageSummary;
 
-      const mockFs = createMockFileSystemHelper(mockData);
-
-      const result = await helper.parseCoverage("coverage-summary.json", mockFs);
+      const reportPath = await writeReport(mockData);
+      const result = await helper.parseCoverage(reportPath, fs);
 
       expect(result.total).toEqual(mockData.total);
       expect(result.files).toHaveLength(0);
@@ -166,9 +160,8 @@ describe("VitestHelper", () => {
         "/workspace/m-file.ts": createMockCoverageFileSummary(),
       } as VitestCoverageSummary;
 
-      const mockFs = createMockFileSystemHelper(mockData);
-
-      const result = await helper.parseCoverage("coverage-summary.json", mockFs);
+      const reportPath = await writeReport(mockData);
+      const result = await helper.parseCoverage(reportPath, fs);
 
       expect(result.files).toHaveLength(3);
       expect(result.files[0]?.filePath).toBe("/workspace/a-file.ts");
@@ -416,9 +409,8 @@ describe("VitestHelper", () => {
 
     it("should export parseVitestCoverage convenience function", async () => {
       const mockData = createMockVitestCoverageSummary();
-      const mockFs = createMockFileSystemHelper(mockData);
-
-      const result = await parseVitestCoverage("coverage.json", mockFs);
+      const reportPath = await writeReport(mockData);
+      const result = await parseVitestCoverage(reportPath, fs);
 
       expect(result.total).toEqual(mockData.total);
       expect(result.files).toHaveLength(3);

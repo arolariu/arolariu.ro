@@ -8,10 +8,10 @@
     <PackageReference Include="Microsoft.Azure.Cosmos" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
+    <ProjectReference Include="..\LocalDevelopment.Data\LocalDevelopment.Data.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SeedData\scenario.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="SeedData\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="LocalDevelopment.Bootstrap.Tests" />

@@ -5,16 +5,28 @@
  * @remarks
  * Provides a clean, type-safe API for GitHub operations in GitHub Actions.
  * Uses @actions/github (Octokit) for GitHub REST and GraphQL APIs.
- * Follows Single Responsibility Principle by focusing on GitHub API operations.
+ * SDK errors propagate unchanged. List operations use native pagination; marker
+ * matching remains substring-based without an additional author policy.
  */
 
-import * as core from "@actions/core";
-import * as github from "@actions/github";
+import * as core from "../sdk/core.ts";
+import * as github from "../sdk/github.ts";
 
 /**
  * Type alias for the Octokit client
  */
 export type OctokitClient = ReturnType<typeof github.getOctokit>;
+
+/** Inject a fully configured native client, including plugins/request options. */
+export interface GitHubHelperOptions {
+  readonly client?: OctokitClient;
+}
+
+type NativeComment = Awaited<ReturnType<OctokitClient["rest"]["issues"]["createComment"]>>["data"];
+type NativeIssue = Pick<
+  Awaited<ReturnType<OctokitClient["rest"]["issues"]["get"]>>["data"],
+  "number" | "title" | "body" | "state" | "html_url" | "labels" | "assignees"
+>;
 
 /**
  * GitHub repository information
@@ -127,7 +139,7 @@ export interface IGitHubHelper {
   deleteComment(commentId: number): Promise<void>;
 
   /**
-   * Lists comments on a pull request
+   * Lists every page of comments on a pull request.
    * @param prNumber - PR number
    * @returns Promise resolving to array of comments
    */
@@ -185,7 +197,7 @@ export interface IGitHubHelper {
   getIssue(issueNumber: number): Promise<IssueInfo>;
 
   /**
-   * Lists issues
+   * Lists every page of issues matching the existing repository filters.
    * @param options - Filtering options
    * @returns Promise resolving to array of issues
    */
@@ -195,7 +207,8 @@ export interface IGitHubHelper {
    * Finds an open pull request for a given branch name
    * Useful when triggered by push events where PR context is not available
    * @param branchName - The head branch name to search for
-   * @returns Promise resolving to PR context or null if no open PR found
+   * @returns PR context or null only for a successful empty lookup.
+   * @throws Original SDK/transport errors unchanged.
    */
   findPullRequestForBranch(branchName: string): Promise<PullRequestContext | null>;
 
@@ -226,17 +239,18 @@ export interface IGitHubHelper {
  * Implementation of GitHub helper
  */
 export class GitHubHelper implements IGitHubHelper {
-  private client: OctokitClient;
-  private context: typeof github.context;
-  private repo: RepositoryInfo;
+  private readonly client: OctokitClient;
+  private readonly context: typeof github.context;
+  private readonly repo: RepositoryInfo;
 
   /**
    * Creates a new GitHub helper instance
    * @param token - GitHub token for authentication
    * @param context - GitHub Actions context (optional, uses github.context by default)
+   * @param options - Optional complete native client injection.
    */
-  constructor(token: string, context?: typeof github.context) {
-    this.client = github.getOctokit(token);
+  constructor(token: string, context?: typeof github.context, options: GitHubHelperOptions = {}) {
+    this.client = options.client ?? github.getOctokit(token);
     this.context = context ?? github.context;
 
     const {owner, repo} = this.context.repo;
@@ -279,150 +293,67 @@ export class GitHubHelper implements IGitHubHelper {
    * {@inheritDoc IGitHubHelper.findPullRequestForBranch}
    */
   async findPullRequestForBranch(branchName: string): Promise<PullRequestContext | null> {
-    try {
-      core.debug(`Searching for open PRs with head branch: ${branchName}`);
-
-      // Query GitHub API for open PRs with the specified head branch
-      const response = await this.client.rest.pulls.list({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        state: "open",
-        head: `${this.repo.owner}:${branchName}`,
-      });
-
-      if (response.data.length === 0) {
-        core.debug(`No open PRs found for branch: ${branchName}`);
-        return null;
-      }
-
-      // Return the first (most recent) open PR for this branch
-      const pr = response.data[0];
-      core.info(`Found open PR #${pr.number} for branch: ${branchName}`);
-
-      return {
-        number: pr.number,
-        title: pr.title,
-        url: pr.html_url,
-        state: pr.state,
-        base: pr.base.ref,
-        head: pr.head.ref,
-        author: pr.user?.login ?? "",
-      };
-    } catch (error) {
-      const err = error as Error;
-      core.warning(`Failed to find PR for branch ${branchName}: ${err.message}`);
-      return null;
-    }
+    const response = await this.client.rest.pulls.list({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      state: "open",
+      head: `${this.repo.owner}:${branchName}`,
+      per_page: 1,
+    });
+    const pr = response.data[0];
+    if (!pr) return null;
+    return {
+      number: pr.number,
+      title: pr.title,
+      url: pr.html_url,
+      state: pr.state,
+      base: pr.base.ref,
+      head: pr.head.ref,
+      author: pr.user?.login ?? "",
+    };
   }
 
   /**
    * {@inheritDoc IGitHubHelper.postPullRequestComment}
    */
   async postPullRequestComment(prNumber: number, body: string): Promise<Comment> {
-    try {
-      core.info(`💬 Posting comment to PR #${prNumber}`);
-      core.debug(`Comment length: ${body.length} characters`);
-
-      const response = await this.client.rest.issues.createComment({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        issue_number: prNumber,
-        body,
-      });
-
-      core.info(`✅ Successfully posted comment to PR #${prNumber}`);
-      core.notice(`PR comment: https://github.com/${this.repo.fullName}/pull/${prNumber}`);
-
-      return {
-        id: response.data.id,
-        body: response.data.body ?? "",
-        author: response.data.user?.login ?? "unknown",
-        createdAt: response.data.created_at,
-        updatedAt: response.data.updated_at,
-        url: response.data.html_url,
-      };
-    } catch (error) {
-      const err = error as Error;
-      core.error(`❌ Failed to post comment to PR #${prNumber}: ${err.message}`);
-      throw new Error(`Failed to post PR comment: ${err.message}`);
-    }
+    const response = await this.client.rest.issues.createComment({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      issue_number: prNumber,
+      body,
+    });
+    core.notice(`PR comment: https://github.com/${this.repo.fullName}/pull/${prNumber}`);
+    return this.comment(response.data);
   }
 
   /**
    * {@inheritDoc IGitHubHelper.updateComment}
    */
   async updateComment(commentId: number, body: string): Promise<Comment> {
-    try {
-      core.debug(`Updating comment ${commentId}`);
-
-      const response = await this.client.rest.issues.updateComment({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        comment_id: commentId,
-        body,
-      });
-
-      core.debug(`✅ Comment ${commentId} updated`);
-
-      return {
-        id: response.data.id,
-        body: response.data.body ?? "",
-        author: response.data.user?.login ?? "unknown",
-        createdAt: response.data.created_at,
-        updatedAt: response.data.updated_at,
-        url: response.data.html_url,
-      };
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to update comment ${commentId}: ${err.message}`);
-    }
+    return this.comment(
+      (await this.client.rest.issues.updateComment({owner: this.repo.owner, repo: this.repo.name, comment_id: commentId, body})).data,
+    );
   }
 
   /**
    * {@inheritDoc IGitHubHelper.deleteComment}
    */
   async deleteComment(commentId: number): Promise<void> {
-    try {
-      core.debug(`Deleting comment ${commentId}`);
-
-      await this.client.rest.issues.deleteComment({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        comment_id: commentId,
-      });
-
-      core.debug(`✅ Comment ${commentId} deleted`);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to delete comment ${commentId}: ${err.message}`);
-    }
+    await this.client.rest.issues.deleteComment({owner: this.repo.owner, repo: this.repo.name, comment_id: commentId});
   }
 
   /**
    * {@inheritDoc IGitHubHelper.listPullRequestComments}
    */
   async listPullRequestComments(prNumber: number): Promise<Comment[]> {
-    try {
-      core.debug(`Listing comments for PR #${prNumber}`);
-
-      const response = await this.client.rest.issues.listComments({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        issue_number: prNumber,
-      });
-
-      return response.data.map((comment) => ({
-        id: comment.id,
-        body: comment.body ?? "",
-        author: comment.user?.login ?? "unknown",
-        createdAt: comment.created_at,
-        updatedAt: comment.updated_at,
-        url: comment.html_url,
-      }));
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to list PR comments: ${err.message}`);
-    }
+    const comments = await this.client.paginate(this.client.rest.issues.listComments, {
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      issue_number: prNumber,
+      per_page: 100,
+    });
+    return comments.map((comment) => this.comment(comment));
   }
 
   /**
@@ -455,39 +386,15 @@ export class GitHubHelper implements IGitHubHelper {
    * {@inheritDoc IGitHubHelper.createIssue}
    */
   async createIssue(title: string, body: string, labels?: string[], assignees?: string[]): Promise<IssueInfo> {
-    try {
-      core.info(`Creating issue: ${title}`);
-
-      const createOptions: Parameters<typeof this.client.rest.issues.create>[0] = {
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        title,
-        body,
-      };
-      if (labels) {
-        createOptions.labels = labels;
-      }
-      if (assignees) {
-        createOptions.assignees = assignees;
-      }
-
-      const response = await this.client.rest.issues.create(createOptions);
-
-      core.info(`✅ Issue created: #${response.data.number}`);
-
-      return {
-        number: response.data.number,
-        title: response.data.title,
-        body: response.data.body ?? "",
-        state: response.data.state,
-        url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
-        assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
-      };
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to create issue: ${err.message}`);
-    }
+    const response = await this.client.rest.issues.create({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      title,
+      body,
+      ...(labels ? {labels} : {}),
+      ...(assignees ? {assignees} : {}),
+    });
+    return this.issue(response.data);
   }
 
   /**
@@ -503,55 +410,20 @@ export class GitHubHelper implements IGitHubHelper {
       assignees?: string[];
     },
   ): Promise<IssueInfo> {
-    try {
-      core.info(`Updating issue #${issueNumber}`);
-
-      const response = await this.client.rest.issues.update({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        issue_number: issueNumber,
-        ...updates,
-      });
-
-      return {
-        number: response.data.number,
-        title: response.data.title,
-        body: response.data.body ?? "",
-        state: response.data.state,
-        url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
-        assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
-      };
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to update issue: ${err.message}`);
-    }
+    const response = await this.client.rest.issues.update({
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      issue_number: issueNumber,
+      ...updates,
+    });
+    return this.issue(response.data);
   }
 
   /**
    * {@inheritDoc IGitHubHelper.getIssue}
    */
   async getIssue(issueNumber: number): Promise<IssueInfo> {
-    try {
-      const response = await this.client.rest.issues.get({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        issue_number: issueNumber,
-      });
-
-      return {
-        number: response.data.number,
-        title: response.data.title,
-        body: response.data.body ?? "",
-        state: response.data.state,
-        url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
-        assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
-      };
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to get issue: ${err.message}`);
-    }
+    return this.issue((await this.client.rest.issues.get({owner: this.repo.owner, repo: this.repo.name, issue_number: issueNumber})).data);
   }
 
   /**
@@ -564,74 +436,31 @@ export class GitHubHelper implements IGitHubHelper {
       assignee?: string;
     } = {},
   ): Promise<IssueInfo[]> {
-    try {
-      const listOptions: Parameters<typeof this.client.rest.issues.listForRepo>[0] = {
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        state: options.state ?? "open",
-      };
-      if (options.labels) {
-        listOptions.labels = options.labels.join(",");
-      }
-      if (options.assignee) {
-        listOptions.assignee = options.assignee;
-      }
-
-      const response = await this.client.rest.issues.listForRepo(listOptions);
-
-      return response.data.map((issue) => ({
-        number: issue.number,
-        title: issue.title,
-        body: issue.body ?? "",
-        state: issue.state,
-        url: issue.html_url,
-        labels: issue.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
-        assignees: issue.assignees?.map((assignee) => assignee.login) ?? [],
-      }));
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to list issues: ${err.message}`);
-    }
+    const listOptions = {
+      owner: this.repo.owner,
+      repo: this.repo.name,
+      state: options.state ?? "open",
+      per_page: 100,
+      ...(options.labels ? {labels: options.labels.join(",")} : {}),
+      ...(options.assignee ? {assignee: options.assignee} : {}),
+    };
+    const issues = await this.client.paginate(this.client.rest.issues.listForRepo, listOptions);
+    return issues.map((issue) => this.issue(issue));
   }
 
   /**
    * {@inheritDoc IGitHubHelper.addLabels}
    */
   async addLabels(issueNumber: number, labels: string[]): Promise<void> {
-    try {
-      await this.client.rest.issues.addLabels({
-        owner: this.repo.owner,
-        repo: this.repo.name,
-        issue_number: issueNumber,
-        labels,
-      });
-
-      core.debug(`Added labels to #${issueNumber}: ${labels.join(", ")}`);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to add labels: ${err.message}`);
-    }
+    await this.client.rest.issues.addLabels({owner: this.repo.owner, repo: this.repo.name, issue_number: issueNumber, labels});
   }
 
   /**
    * {@inheritDoc IGitHubHelper.removeLabels}
    */
   async removeLabels(issueNumber: number, labels: string[]): Promise<void> {
-    try {
-      for (const label of labels) {
-        await this.client.rest.issues.removeLabel({
-          owner: this.repo.owner,
-          repo: this.repo.name,
-          issue_number: issueNumber,
-          name: label,
-        });
-      }
-
-      core.debug(`Removed labels from #${issueNumber}: ${labels.join(", ")}`);
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(`Failed to remove labels: ${err.message}`);
-    }
+    for (const name of labels)
+      await this.client.rest.issues.removeLabel({owner: this.repo.owner, repo: this.repo.name, issue_number: issueNumber, name});
   }
 
   /**
@@ -640,12 +469,36 @@ export class GitHubHelper implements IGitHubHelper {
   getClient(): OctokitClient {
     return this.client;
   }
+
+  private comment(value: NativeComment): Comment {
+    return {
+      id: value.id,
+      body: value.body ?? "",
+      author: value.user?.login ?? "unknown",
+      createdAt: value.created_at,
+      updatedAt: value.updated_at,
+      url: value.html_url,
+    };
+  }
+
+  private issue(value: NativeIssue): IssueInfo {
+    return {
+      number: value.number,
+      title: value.title,
+      body: value.body ?? "",
+      state: value.state,
+      url: value.html_url,
+      labels: value.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
+      assignees: value.assignees?.map((assignee) => assignee.login) ?? [],
+    };
+  }
 }
 
 /**
  * Creates a new GitHub helper instance
  * @param token - GitHub token for authentication
  * @param context - Optional GitHub Actions context
+ * @param options - Optional complete native client.
  * @returns GitHub helper instance
  * @example
  * ```typescript
@@ -656,6 +509,6 @@ export class GitHubHelper implements IGitHubHelper {
  * }
  * ```
  */
-export function createGitHubHelper(token: string, context?: typeof github.context): IGitHubHelper {
-  return new GitHubHelper(token, context);
+export function createGitHubHelper(token: string, context?: typeof github.context, options?: GitHubHelperOptions): IGitHubHelper {
+  return new GitHubHelper(token, context, options);
 }

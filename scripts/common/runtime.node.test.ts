@@ -131,8 +131,7 @@ describe("nodeLoggerRuntimeHost", () => {
   });
 
   it("releases the event-loop hold of every scheduled interval it unreferences", () => {
-    const countReferencedTimers = (): number =>
-      process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
+    const countReferencedTimers = (): number => process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
     const baseline = countReferencedTimers();
     const interval = nodeLoggerRuntimeHost.scheduleInterval(() => undefined, 80);
 

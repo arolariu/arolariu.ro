@@ -117,12 +117,9 @@ self.addEventListener("fetch", (event: FetchEvent) => {
   // Skip non-GET requests
   if (request.method !== "GET") return;
 
-  // Skip cross-origin requests
+  // Skip cross-origin requests and API routes that need fresh data
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-
-  // Skip API routes and server-side rendered pages that need fresh data
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/rest/")) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/rest/")) return;
 
   event.respondWith(
     (async (): Promise<Response> => {

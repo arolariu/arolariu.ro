@@ -17,35 +17,68 @@ describe("GitHelper", () => {
   let gitHelper: ReturnType<typeof createGitHelper>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 0, stdout: "", stderr: ""});
     gitHelper = createGitHelper();
+  });
+
+  it("does not turn a failed diff into an empty changed-file list", async () => {
+    vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 128, stdout: "", stderr: "unknown revision"});
+    await expect(gitHelper.getChangedFiles("missing", "HEAD")).rejects.toMatchObject({exitCode: 128, stderr: "unknown revision"});
+  });
+
+  it("does not report a nonzero fetch as completed", async () => {
+    vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 128, stdout: "", stderr: "fetch failed"});
+    await expect(gitHelper.fetchBranch("main")).rejects.toMatchObject({exitCode: 128});
+  });
+
+  it("retains Git filenames that collide with object prototype properties", async () => {
+    vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 0, stdout: "100644 blob abc123 42\t__proto__\0", stderr: ""});
+    const result = await gitHelper.getFileSizes("HEAD", ["__proto__"]);
+    expect(Object.hasOwn(result, "__proto__")).toBe(true);
+    expect(result["__proto__"]).toBe(42);
+  });
+
+  it("retains newline and whitespace characters in NUL-delimited change paths", async () => {
+    expect(gitHelper.getChangeSet).toBeTypeOf("function");
+    vi.mocked(exec.getExecOutput)
+      .mockResolvedValueOnce({exitCode: 0, stdout: "a".repeat(40), stderr: ""})
+      .mockResolvedValueOnce({exitCode: 0, stdout: "b".repeat(40), stderr: ""})
+      .mockResolvedValueOnce({exitCode: 0, stdout: "R100\0old project/file.ts\0new project/file.ts\0M\0 leading\nname.ts\0", stderr: ""});
+    expect(await gitHelper.getChangeSet("workspace", "base", "head")).toMatchObject({
+      scope: "known",
+      entries: [
+        {kind: "renamed", previousPath: "old project/file.ts", path: "new project/file.ts"},
+        {kind: "modified", path: " leading\nname.ts"},
+      ],
+    });
   });
 
   describe("fetchBranch", () => {
     it("should fetch branch with default depth", async () => {
-      vi.mocked(exec.exec).mockResolvedValue(0);
+      vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 0, stdout: "", stderr: ""});
 
       await gitHelper.fetchBranch("main");
 
-      expect(exec.exec).toHaveBeenCalledWith("git", ["fetch", "origin", "main:refs/remotes/origin/main"], {
+      expect(exec.getExecOutput).toHaveBeenCalledWith("git", ["fetch", "origin", "main:refs/remotes/origin/main"], {
         ignoreReturnCode: true,
         silent: true,
       });
     });
 
     it("should fetch branch with custom depth", async () => {
-      vi.mocked(exec.exec).mockResolvedValue(0);
+      vi.mocked(exec.getExecOutput).mockResolvedValue({exitCode: 0, stdout: "", stderr: ""});
 
       await gitHelper.fetchBranch("develop", undefined, 10);
 
-      expect(exec.exec).toHaveBeenCalledWith("git", ["fetch", "origin", "develop:refs/remotes/origin/develop", "--depth=10"], {
+      expect(exec.getExecOutput).toHaveBeenCalledWith("git", ["fetch", "origin", "develop:refs/remotes/origin/develop", "--depth=10"], {
         ignoreReturnCode: true,
         silent: true,
       });
     });
 
     it("should throw error on fetch failure", async () => {
-      vi.mocked(exec.exec).mockRejectedValue(new Error("Fetch failed"));
+      vi.mocked(exec.getExecOutput).mockRejectedValue(new Error("Fetch failed"));
 
       await expect(gitHelper.fetchBranch("main")).rejects.toThrow("Fetch failed");
     });
@@ -53,9 +86,7 @@ describe("GitHelper", () => {
 
   describe("getDiffStats", () => {
     it("should return diff statistics", async () => {
-      const mockFilesOutput = `file1.ts
-file2.ts
-file3.ts`;
+      const mockFilesOutput = "file1.ts\0file2.ts\0file3.ts\0";
       const mockStatsOutput = "3 files changed, 15 insertions(+), 13 deletions(-)";
 
       vi.mocked(exec.getExecOutput)
@@ -75,7 +106,7 @@ file3.ts`;
       expect(stats.filesChanged).toBe(3);
       expect(stats.linesAdded).toBe(15);
       expect(stats.linesDeleted).toBe(13);
-      expect(exec.getExecOutput).toHaveBeenNthCalledWith(1, "git", ["diff", "--name-only", "base", "head"], expect.any(Object));
+      expect(exec.getExecOutput).toHaveBeenNthCalledWith(1, "git", ["diff", "--name-only", "-z", "base", "head", "--"], expect.any(Object));
       expect(exec.getExecOutput).toHaveBeenNthCalledWith(2, "git", ["diff", "--shortstat", "base", "head"], expect.any(Object));
     });
 
@@ -96,9 +127,7 @@ file3.ts`;
 
   describe("getChangedFiles", () => {
     it("should return list of changed files", async () => {
-      const mockOutput = `src/file1.ts
-src/file2.ts
-package.json`;
+      const mockOutput = "src/file1.ts\0src/file2.ts\0package.json\0";
 
       vi.mocked(exec.getExecOutput).mockResolvedValue({
         exitCode: 0,
@@ -123,12 +152,8 @@ package.json`;
       expect(files).toEqual([]);
     });
 
-    it("should filter out empty lines", async () => {
-      const mockOutput = `src/file1.ts
-
-src/file2.ts
-
-`;
+    it("filters empty NUL records without trimming actual file names", async () => {
+      const mockOutput = "src/file1.ts\0\0src/file2.ts\0";
 
       vi.mocked(exec.getExecOutput).mockResolvedValue({
         exitCode: 0,
@@ -144,8 +169,7 @@ src/file2.ts
 
   describe("getFileSizes", () => {
     it("should return file sizes from git tree", async () => {
-      const mockOutput = `100644 blob abc123 1024	src/file1.ts
-100644 blob def456 2048	src/file2.ts`;
+      const mockOutput = "100644 blob abc123 1024\tsrc/file1.ts\0" + "100644 blob def456 2048\tsrc/file2.ts\0";
 
       vi.mocked(exec.getExecOutput)
         .mockResolvedValueOnce({
@@ -235,12 +259,10 @@ john@example.com
       expect(result).toBe(true);
     });
 
-    it("should return false for non-existing ref", async () => {
+    it("does not misreport a failed reference lookup as an absent reference", async () => {
       vi.mocked(exec.getExecOutput).mockRejectedValue(new Error("Not found"));
 
-      const result = await gitHelper.refExists("origin/nonexistent");
-
-      expect(result).toBe(false);
+      await expect(gitHelper.refExists("origin/nonexistent")).rejects.toThrow("Not found");
     });
 
     it("should return false for non-zero exit code", async () => {
@@ -270,16 +292,14 @@ john@example.com
       expect(exec.getExecOutput).toHaveBeenCalledWith("git", ["rev-list", "--count", "origin/main..HEAD"], expect.any(Object));
     });
 
-    it("should return 0 for invalid output", async () => {
+    it("rejects malformed commit counts instead of manufacturing zero", async () => {
       vi.mocked(exec.getExecOutput).mockResolvedValue({
         exitCode: 0,
         stdout: "not-a-number\n",
         stderr: "",
       });
 
-      const count = await gitHelper.getCommitCount("base", "head");
-
-      expect(count).toBe(0);
+      await expect(gitHelper.getCommitCount("base", "head")).rejects.toThrow(/count/i);
     });
 
     it("should return 0 for no commits", async () => {
@@ -474,21 +494,17 @@ feature|def456|def456e| `;
         stderr: "fatal: Not a valid object name invalid-ref",
       });
 
-      const sizes = await gitHelper.getFileSizes("invalid-ref", ["some/path"]);
-
-      expect(Object.keys(sizes).length).toBe(0);
+      await expect(gitHelper.getFileSizes("invalid-ref", ["some/path"])).rejects.toMatchObject({exitCode: 128});
     });
 
     it("should handle execution error", async () => {
       vi.mocked(exec.getExecOutput).mockRejectedValue(new Error("Command failed"));
 
-      const sizes = await gitHelper.getFileSizes("HEAD", ["some/path"]);
-
-      expect(Object.keys(sizes).length).toBe(0);
+      await expect(gitHelper.getFileSizes("HEAD", ["some/path"])).rejects.toThrow("Command failed");
     });
 
     it("should handle trailing slash in paths", async () => {
-      const mockOutput = `100644 blob abc123 1024	src/file.ts`;
+      const mockOutput = "100644 blob abc123 1024\tsrc/file.ts\0";
       vi.mocked(exec.getExecOutput).mockResolvedValue({
         exitCode: 0,
         stdout: mockOutput,

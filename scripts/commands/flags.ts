@@ -97,12 +97,8 @@ type CommandOutputServices = BaseServices | GlobalFlag.Setting.Identifier<"json"
  */
 export function withCommandOutput(
   context: string,
-): <A, E, R>(
-  self: Effect.Effect<A, E, R>,
-) => Effect.Effect<A, E, Exclude<R, CommandServices> | CommandOutputServices> {
-  return <A, E, R>(
-    self: Effect.Effect<A, E, R>,
-  ): Effect.Effect<A, E, Exclude<R, CommandServices> | CommandOutputServices> =>
+): <A, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, CommandServices> | CommandOutputServices> {
+  return <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, CommandServices> | CommandOutputServices> =>
     Effect.gen(function* () {
       const json = yield* JsonFlag;
       const verbose = yield* VerboseFlag;

@@ -24,7 +24,12 @@ type Props = Readonly<{
   centerOverlay?: ReactNode;
 }>;
 
-function ScanMedia({src, mediaKind, alt, loading}: Readonly<Pick<Props, "src" | "mediaKind" | "alt" | "loading">>): React.JSX.Element | null {
+function ScanMedia({
+  src,
+  mediaKind,
+  alt,
+  loading,
+}: Readonly<Pick<Props, "src" | "mediaKind" | "alt" | "loading">>): React.JSX.Element | null {
   if (src && mediaKind === "image") {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- scan URLs can be object/blob URLs and should bypass next/image processing.

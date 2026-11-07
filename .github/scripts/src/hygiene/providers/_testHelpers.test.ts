@@ -96,6 +96,11 @@ describe("parseTrxDuration", () => {
 });
 
 describe("parseTrxToSuiteResult", () => {
+  it("does not treat a TRX Error outcome as a passing test", () => {
+    expect(
+      parseTrxToSuiteResult("test-api", '<TestRun><Results><UnitTestResult testName="broken" outcome="Error"/></Results></TestRun>'),
+    ).toMatchObject({passed: 0, failed: 1});
+  });
   it("parses a TRX file with passing and failing tests", () => {
     const trx = `<?xml version="1.0" encoding="utf-8"?>
 <TestRun>
@@ -162,12 +167,22 @@ describe("aggregateSuites", () => {
 describe("flattenSuiteFindings", () => {
   it("concatenates findings across suites preserving order", () => {
     const suites: SuiteResult[] = [
-      {name: "a", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings: [
-        {kind: "line", severity: "error", file: "a.ts", line: 1, column: 1, message: "first"},
-      ]},
-      {name: "b", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings: [
-        {kind: "line", severity: "error", file: "b.ts", line: 1, column: 1, message: "second"},
-      ]},
+      {
+        name: "a",
+        totalTests: 1,
+        passed: 0,
+        failed: 1,
+        skipped: 0,
+        findings: [{kind: "line", severity: "error", file: "a.ts", line: 1, column: 1, message: "first"}],
+      },
+      {
+        name: "b",
+        totalTests: 1,
+        passed: 0,
+        failed: 1,
+        skipped: 0,
+        findings: [{kind: "line", severity: "error", file: "b.ts", line: 1, column: 1, message: "second"}],
+      },
     ];
     const out = flattenSuiteFindings(suites);
     expect(out).toHaveLength(2);
