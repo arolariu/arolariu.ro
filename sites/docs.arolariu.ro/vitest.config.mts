@@ -10,7 +10,7 @@ export default mergeConfig(
     test: {
       include: ["src/lib/**/*.test.ts", "scripts/**/*.test.ts"],
       coverage: {
-        include: ["src/lib/siteMode.ts", "src/lib/navigation.ts", "scripts/prepare-site.mts"],
+        include: ["src/lib/siteMode.ts", "src/lib/navigation.ts"],
       },
     },
   }),

@@ -80,9 +80,10 @@ This mode retains site chrome, styles, authored pages, mirrored repository docum
 plugins and local reference destinations, and identifies itself as a site-only preview. It never runs TypeDoc, pydoc-markdown, API builds,
 or reference extraction. Ignored working artifacts are excluded from prose mirroring.
 
-Run `npm run prepare:site --workspace @arolariu/docs` explicitly to refresh authored prose. Outside this flavor, set
-`AROLARIU_DOCS_SITE_ONLY=1` in the shell before starting/building the site; unset it (or use `0`) for the unchanged full-reference
-configuration. Other explicit values fail configuration loading.
+Run `npm run prepare:site --workspace @arolariu/docs` explicitly to refresh authored prose. This invokes the central repository CLI
+(`node scripts/cli.ts docs prepare-site` from the repository root), not a separate Effect runtime or the full assembler. Outside this
+flavor, set `AROLARIU_DOCS_SITE_ONLY=1` in the shell before starting/building the site; unset it (or use `0`) for the unchanged
+full-reference configuration. Other explicit values fail configuration loading.
 
 The unit suite also runs through the root Nx unit-test target and the hygiene CI docs suite. It checks both the default full-site
 configuration and site-only mode without building or extracting generated references.

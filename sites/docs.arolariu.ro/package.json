@@ -14,7 +14,7 @@
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
     "typecheck": "tsc --noEmit",
-    "prepare:site": "node scripts/prepare-site.mts",
+    "prepare:site": "node ../../scripts/cli.ts docs prepare-site",
     "test:unit": "vitest run",
     "test:e2e": "playwright test --tsconfig tsconfig.playwright.json"
   },
@@ -34,19 +34,20 @@
     "react-dom": "*"
   },
   "devDependencies": {
+    "@azure/storage-blob": "*",
+    "@docusaurus/module-type-aliases": "*",
+    "@docusaurus/tsconfig": "*",
+    "@docusaurus/types": "*",
     "@effect/platform-node": "*",
     "@playwright/test": "*",
+    "@resvg/resvg-js": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
     "@vitest/coverage-v8": "*",
     "effect": "*",
+    "node-html-parser": "*",
     "typescript": "*",
-    "vitest": "*",
-    "@docusaurus/module-type-aliases": "*",
-    "@docusaurus/tsconfig": "*",
-    "@docusaurus/types": "*",
-    "@resvg/resvg-js": "*",
-    "node-html-parser": "*"
+    "vitest": "*"
   }
 }

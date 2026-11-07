@@ -10,8 +10,8 @@ import {afterEach, describe, expect, it} from "vitest";
 const directories: string[] = [];
 
 async function preparation() {
-  expect(existsSync(fileURLToPath(new URL("./prepare-site.mts", import.meta.url)))).toBe(true);
-  return import("./prepare-site.mts");
+  expect(existsSync(fileURLToPath(new URL("./prepare-site.ts", import.meta.url)))).toBe(true);
+  return import("./prepare-site.ts");
 }
 
 function fixture(): string {

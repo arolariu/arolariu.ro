@@ -1,8 +1,10 @@
 import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
+import {builtinModules} from "node:module";
 
 import {Effect} from "effect";
+import ts from "typescript";
 
 import type {PlatformServices} from "./layers.ts";
 import {Process, type ProcessError} from "./Process.ts";
@@ -27,6 +29,119 @@ export interface PreparationFixture {
 }
 
 const repositoryRoot = resolve(import.meta.dirname, "../..");
+
+function installedNpmCli(): string {
+  const inheritedCli = process.env["npm_execpath"];
+  const candidates = [
+    ...(inheritedCli === undefined ? [] : [join(dirname(inheritedCli), "npm-cli.js")]),
+    join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+    resolve(dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js"),
+  ];
+  const cli = candidates.find((candidate) => existsSync(candidate));
+  if (cli === undefined) throw new Error("The installed npm CLI could not be located.");
+  return cli;
+}
+
+/** Walks the entrypoint's load-time value imports and re-exports, excluding erased types and Node built-ins. */
+export function runtimePackageNames(entrypoint: string): ReadonlySet<string> {
+  const visited = new Set<string>();
+  const packages = new Set<string>();
+  const pending = [resolve(entrypoint)];
+  for (const file of pending) {
+    if (visited.has(file) || file.endsWith(".json")) continue;
+    visited.add(file);
+    const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
+    for (const statement of source.statements) {
+      if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
+      const specifier = statement.moduleSpecifier;
+      if (specifier === undefined || !ts.isStringLiteral(specifier)) continue;
+      const clause = ts.isImportDeclaration(statement) ? statement.importClause : undefined;
+      if (clause?.isTypeOnly || (ts.isExportDeclaration(statement) && statement.isTypeOnly)) continue;
+      const bindings = clause?.namedBindings ?? (ts.isExportDeclaration(statement) ? statement.exportClause : undefined);
+      if (
+        clause?.name === undefined
+        && bindings !== undefined
+        && (ts.isNamedImports(bindings) || ts.isNamedExports(bindings))
+        && bindings.elements.length > 0
+        && bindings.elements.every((item) => item.isTypeOnly)
+      ) {
+        continue;
+      }
+      const name = specifier.text;
+      if (name.startsWith("node:") || builtinModules.includes(name)) continue;
+      if (name.startsWith(".")) {
+        const module = ts.resolveModuleName(
+          name,
+          file,
+          {
+            moduleResolution: ts.ModuleResolutionKind.NodeNext,
+            module: ts.ModuleKind.NodeNext,
+            allowImportingTsExtensions: true,
+            resolveJsonModule: true,
+          },
+          ts.sys,
+        ).resolvedModule;
+        if (module === undefined) throw new Error(`Unresolved runtime import '${name}' in ${file}.`);
+        pending.push(module.resolvedFileName);
+      } else {
+        packages.add(
+          name
+            .split("/")
+            .slice(0, name.startsWith("@") ? 2 : 1)
+            .join("/"),
+        );
+      }
+    }
+  }
+  return packages;
+}
+
+function collectPackageNames(value: unknown, names: Set<string>): void {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("Invalid npm dependency node.");
+  if (!("dependencies" in value)) return;
+  const dependencies = value.dependencies;
+  if (typeof dependencies !== "object" || dependencies === null || Array.isArray(dependencies)) {
+    throw new Error("Invalid npm dependency map.");
+  }
+  for (const [name, dependency] of Object.entries(dependencies)) {
+    names.add(name);
+    collectPackageNames(dependency, names);
+  }
+}
+
+/** Uses npm's lockfile-only workspace tree to identify packages supplied by the same filtered install as the flavor. */
+export function filteredWorkspacePackageNames(
+  workspaces: readonly string[],
+): Effect.Effect<ReadonlySet<string>, ProcessError, PlatformServices> {
+  return Effect.gen(function* () {
+    const runner = yield* Process;
+    const result = yield* runner.run(
+      {
+        command: process.execPath,
+        args: [
+          installedNpmCli(),
+          "ls",
+          "--all",
+          "--package-lock-only",
+          ...workspaces.flatMap((workspace) => ["--workspace", workspace]),
+          "--include-workspace-root=false",
+          "--json",
+          "--offline",
+        ],
+      },
+      {
+        cwd: repositoryRoot,
+        env: {NPM_CONFIG_UPDATE_NOTIFIER: "false"},
+        timeout: "30 seconds",
+        failureOutput: "full",
+      },
+    );
+    const value: unknown = JSON.parse(result.stdout);
+    const names = new Set<string>();
+    collectPackageNames(value, names);
+    return names;
+  });
+}
 
 function bashPath(path: string): string {
   return process.platform === "win32"
@@ -62,16 +177,8 @@ export function runFixtureNpm(
 ): Effect.Effect<PreparationResult, ProcessError, PlatformServices> {
   return Effect.gen(function* () {
     const runner = yield* Process;
-    const inheritedCli = process.env["npm_execpath"];
-    const candidates = [
-      ...(inheritedCli === undefined ? [] : [join(dirname(inheritedCli), "npm-cli.js")]),
-      join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
-      resolve(dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js"),
-    ];
-    const cli = candidates.find((candidate) => existsSync(candidate));
-    if (cli === undefined) throw new Error("The installed npm CLI could not be located.");
     const result = yield* runner.run(
-      {command: process.execPath, args: [cli, ...args]},
+      {command: process.execPath, args: [installedNpmCli(), ...args]},
       {
         cwd: fixture.root,
         env: {
