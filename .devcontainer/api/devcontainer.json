@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
+  "name": "arolariu.ro - API",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "init": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/arolariu.ro,type=bind",
+  "workspaceFolder": "/workspaces/arolariu.ro/sites/api.arolariu.ro",
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": {"version": "10.0"}
+  },
+  "mounts": [
+    "source=arolariu-${devcontainerId}-api-dotnet,target=/home/vscode/.cache/api-dotnet,type=volume",
+    "source=arolariu-${devcontainerId}-api-nuget,target=/home/vscode/.nuget/packages,type=volume"
+  ],
+  "containerEnv": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "DOTNET_CLI_HOME": "/home/vscode/.cache/api-dotnet",
+    "DOTNET_GENERATE_ASPNET_CERTIFICATE": "false",
+    "NUGET_PACKAGES": "/home/vscode/.nuget/packages",
+    "UseArtifactsOutput": "true",
+    "ArtifactsPath": "/home/vscode/.cache/api-dotnet/artifacts"
+  },
+  "postCreateCommand": ["bash", "/workspaces/arolariu.ro/.devcontainer/api/postCreate.sh"],
+  "waitFor": "postCreateCommand",
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": {"label": "API", "onAutoForward": "notify"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-dotnettools.csdevkit", "ms-dotnettools.csharp", "humao.rest-client"]
+    }
+  }
+}

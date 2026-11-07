@@ -6,5 +6,5 @@
       "@site/*": ["./*"]
     }
   },
-  "exclude": ["build", "_generated", "static/js/clarity.js"]
+  "exclude": ["build", "_generated", "code-cov", "test-results", "playwright-report", "static/js/clarity.js"]
 }
