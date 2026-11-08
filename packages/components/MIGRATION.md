@@ -368,12 +368,12 @@ DayPicker's own `en-US` default instead of the runtime locale.
 #### Card
 
 **What changed:** the Card root is a `flex` column and CardHeader is a grid (two columns when it contains CardAction). Spacing comes from
-`--ac-card-spacing` (`1.5rem`, or `1rem` for `size="sm"`). CardContent that is the card's first child, with no CardHeader above it, gets
-top padding equal to `--ac-card-spacing`.
+`--ac-card-spacing` (`1.5rem`, or `1rem` for `size="sm"`). CardContent that is the card's first child, with no CardHeader above it, gets top
+padding equal to `--ac-card-spacing`.
 
 **Before → after:** check cards whose CardContent comes first: they gain top padding. For flush content, set `--ac-card-spacing: 0` or a
-`padding-top` override on the CardContent class. The first-child rule uses `:where()`, so a single consumer class overrides it with the
-same cascade order as v2.4.
+`padding-top` override on the CardContent class. The first-child rule uses `:where()`, so a single consumer class overrides it with the same
+cascade order as v2.4.
 
 **Why:** content-only cards previously touched the top border.
 
@@ -417,15 +417,15 @@ replace `<Cell fill=… />` children with a series `shape`; use native `id`/clas
 
 #### Checkbox
 
-**What changed:** `checked="indeterminate"` is removed. Checkbox, Switch and RadioGroupItem render Base UI's default `<span>` plus a
-hidden native `<input>` instead of v2.4's `<button>`, and `nativeButton` now defaults to `false`.
+**What changed:** `checked="indeterminate"` is removed. Checkbox, Switch and RadioGroupItem render Base UI's default `<span>` plus a hidden
+native `<input>` instead of v2.4's `<button>`, and `nativeButton` now defaults to `false`.
 
 **Before → after:** `<Checkbox checked='indeterminate' />` becomes `<Checkbox checked={false} indeterminate />`. Delete every bare
 `nativeButton` on Checkbox, Switch and RadioGroupItem; keep it only together with `render={<button />}`.
 
 **Why:** Base UI models the mixed state as an explicit boolean beside `checked`. A bare `nativeButton` on the default `<span>` drops Space/
-Enter toggling and moves the caller's `id` off the hidden input, so `<Label htmlFor>` no longer targets the control. TypeScript cannot
-catch this; it only fails at runtime.
+Enter toggling and moves the caller's `id` off the hidden input, so `<Label htmlFor>` no longer targets the control. TypeScript cannot catch
+this; it only fails at runtime.
 
 **Find usages:** `rg -n "indeterminate"` and `rg -n "<(Checkbox|Switch|RadioGroupItem)\b[^>]*nativeButton"` (also check multi-line JSX)
 
