@@ -985,16 +985,16 @@ visibility and Escape dismissal (WCAG 1.4.13).
 BackgroundBeams, BubbleBackground, DotBackground, FireworksBackground, GradientBackground, GradientText, HighlightText, HoleBackground,
 TypewriterText, TypewriterTextSmooth, CountingNumber, Scratcher, Flip, Ripple and the other retained extensions.
 
-**What changed:** automatic motion settles to a static frame five seconds after mount (wall clock; scrolling does not restart it); v2.4 had
-no time limit. Reduced motion, a hidden document and off-screen instances also pause. CountingNumber, which has no `loop`, then shows its
-final value. While paused, FireworksBackground draws a deterministic static starburst. FireworksBackground's canvas is decorative
-(background clicks do nothing; v2.4 launched fireworks on click) plus a native launch button (`launchLabel`, default `"Launch fireworks"`)
-that stays available after automatic launches settle and in `population={0}` click-only mode; it is `aria-disabled` (still focusable,
-activation ignored) under reduced motion, `motionPaused` or a hidden document. Scratcher adds a native reveal button (`revealLabel`, default
-`"Reveal content"`) and a visually hidden completion status (`completedLabel`, default `"Content revealed"`); after the reveal the button
-keeps focus and its tab stop as `aria-disabled` (activation ignored) until a `width`, `height` or `gradientColors` change resets the card.
-Flip accepts `"right"`, not `"righ"`. RippleButton and FlipButton follow `prefers-reduced-motion`. Canvas refs and error policies retain
-their owning contracts.
+**What changed:** automatic motion settles to a static frame five seconds after the instance is first scrolled into view (wall clock;
+scrolling away and back does not restart it); v2.4 had no time limit. Reduced motion, a hidden document and off-screen instances also pause.
+CountingNumber, which has no `loop`, then shows its final value. While paused, FireworksBackground draws a deterministic static starburst.
+FireworksBackground's canvas is decorative (background clicks do nothing; v2.4 launched fireworks on click) plus a native launch button
+(`launchLabel`, default `"Launch fireworks"`) that stays available after automatic launches settle and in `population={0}` click-only mode;
+it is `aria-disabled` (still focusable, activation ignored) under reduced motion, `motionPaused` or a hidden document. Scratcher adds a
+native reveal button (`revealLabel`, default `"Reveal content"`) and a visually hidden completion status (`completedLabel`, default
+`"Content revealed"`); after the reveal the button keeps focus and its tab stop as `aria-disabled` (activation ignored) until a `width`,
+`height` or `gradientColors` change resets the card. Flip accepts `"right"`, not `"righ"`. RippleButton and FlipButton follow
+`prefers-reduced-motion`. Canvas refs and error policies retain their owning contracts.
 
 **Before → after:** pass `loop` to keep automatic motion running, together with a caller-supplied, localized native pause/stop control that
 sets `motionPaused` (which stops motion at any time); localize the generated labels; replace `direction='righ'` with `direction='right'`.
@@ -1012,7 +1012,7 @@ These rows compile unchanged but behave differently. Each links to its component
 | ------------------------------------------ | -------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Toast auto-dismiss                         | `duration` defaulted to 5000 ms                          | `timeout` defaults to `0`: notifications persist until closed               | [Toast](#toast)                                                   |
 | Toast close control name                   | `"Close notification"`                                   | Toaster `closeLabel`, default `"Close toast"`                               | [Toast](#toast)                                                   |
-| Automatic visual-effect motion             | No time limit                                            | Settles five seconds after mount unless `loop`                              | [Visual effects and motion](#visual-effects-and-motion)           |
+| Automatic visual-effect motion             | No time limit                                            | Settles five seconds after first in view unless `loop`                      | [Visual effects and motion](#visual-effects-and-motion)           |
 | Skeleton pulse                             | Indefinite                                               | Two pulses (four seconds), then static                                      | [Skeleton and Spinner](#skeleton-and-spinner)                     |
 | ResizableHandle                            | No step buttons                                          | Native −/+ step buttons: two extra tab stops per handle                     | [Resizable](#resizable)                                           |
 | FireworksBackground                        | Clicking the canvas launched fireworks                   | Decorative canvas plus a native launch button                               | [Visual effects and motion](#visual-effects-and-motion)           |
@@ -1051,7 +1051,8 @@ The repository website (`sites/arolariu.ro`) pins the published 2.4 tarball. Whe
    intended (with enough reading time and a way to dismiss) and a localized `closeLabel`. Choose between settled motion and `loop` plus a
    localized pause control for the decorative effects the site renders (BackgroundBeams, DotBackground, GradientText, TypewriterTextSmooth),
    and expect two-pulse skeletons in route `loading.tsx` files. CountingNumber (the platform statistics use `inView`) has no `loop` opt-in:
-   five seconds after mount it shows its final value, so a counter scrolled into view later no longer counts up.
+   it counts up once when first scrolled into view and shows its final value from five seconds after that, so re-entering view does not
+   replay it.
 7. Localize every generated name this guide lists for the components the site renders, such as Toaster `closeLabel` and the Toaster viewport
    name (`viewportProps={{"aria-label": …}}`, default `"Notifications"`). Commander's CommandInput is named by its translated placeholder,
    so its English `fallbackLabel` does not apply there.

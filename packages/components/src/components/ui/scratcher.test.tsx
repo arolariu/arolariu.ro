@@ -421,6 +421,40 @@ describe("Scratcher", () => {
     expect(observers.every((observer) => observer.disconnect.mock.calls.length === 1)).toBe(true);
   });
 
+  it("does not replay the completion feedback when motion resumes after the reveal", async () => {
+    reduced = false;
+    const complete = vi.fn();
+    render(
+      <Scratcher
+        width={200}
+        height={100}
+        onComplete={complete}>
+        Prize
+      </Scratcher>,
+    );
+    act(() => {
+      views[0]?.enter();
+    });
+    const root = document.querySelector<HTMLElement>('[data-slot="scratcher"]') ?? canvas().parentElement;
+    if (!root) throw new Error("Missing scratcher root");
+    fireEvent.click(screen.getByRole("button", {name: "Reveal content"}));
+    await waitFor(() => expect(root.style.transform).toMatch(/scale|rotate/u));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    act(() => {
+      reduced = true;
+      media.dispatchEvent(new Event("change"));
+    });
+    act(() => {
+      reduced = false;
+      media.dispatchEvent(new Event("change"));
+    });
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 200);
+    });
+    expect(root.style.transform).not.toMatch(/scale\((?!1\))|rotate\((?!0)/u);
+    expect(complete).toHaveBeenCalledOnce();
+  });
+
   it("finishes pending feedback exactly once on preference change instead of leaving stale completion", async () => {
     reduced = false;
     const complete = vi.fn();

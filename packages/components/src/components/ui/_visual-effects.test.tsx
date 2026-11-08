@@ -472,13 +472,77 @@ describe("visual effect policy consumer contracts", () => {
       });
       expect(frames.filter((callback) => callback.name === "animate")).toHaveLength(0);
     });
-    it("keeps a stable conservative server snapshot without creating native observers or timers", () => {
+    it("renders a not-reduced, paused server snapshot without creating native observers or timers", () => {
       const html = renderToString(<PolicyProbe />);
       expect(html).toContain('data-paused="true"');
       expect(html).toContain('data-visible="false"');
-      expect(html).toContain('data-reduced="true"');
+      expect(html).toContain('data-reduced="false"');
       expect(observers).toHaveLength(0);
       expect(timers).toHaveLength(0);
+    });
+    it("starts the five-second settle timer at the first visibility, not at mount, and never restarts it", () => {
+      const settleTimers = (): TimerHandler[] =>
+        timers.filter((callback) => typeof callback === "function" && callback.name === "settleMotion");
+      const {container} = render(<PolicyProbe />);
+      expect(settleTimers()).toHaveLength(0);
+      act(() => {
+        observers[0]?.notify(false);
+      });
+      expect(settleTimers()).toHaveLength(0);
+      act(() => {
+        observers[0]?.notify(true);
+      });
+      expect(settleTimers()).toHaveLength(1);
+      act(() => {
+        observers[0]?.notify(false);
+      });
+      act(() => {
+        observers[0]?.notify(true);
+      });
+      expect(settleTimers()).toHaveLength(1);
+      expect(container.querySelector("[data-policy]")).toHaveAttribute("data-paused", "false");
+    });
+    it.each([
+      {
+        name: "CountingNumber",
+        ui: (): React.JSX.Element => (
+          <CountingNumber
+            number={100}
+            fromNumber={0}
+          />
+        ),
+      },
+      {name: "TypewriterText", ui: (): React.JSX.Element => <TypewriterText words={[{text: "Hello"}]} />},
+    ])("$name hydrates its starting frame and animates when it enters view instead of jumping to the end", async ({name, ui}) => {
+      const html = renderToString(ui());
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      document.body.append(container);
+      const consoleErrors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const recoverableErrors = vi.fn();
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      try {
+        await act(async () => {
+          root = hydrateRoot(container, ui(), {onRecoverableError: recoverableErrors});
+        });
+        act(() => {
+          for (const observer of observers) if (observer.target) observer.notify(true);
+        });
+        expect(recoverableErrors).not.toHaveBeenCalled();
+        expect(consoleErrors).not.toHaveBeenCalled();
+        if (name === "CountingNumber") {
+          expect(container.querySelector('[data-slot="counting-number-visual"]')).toHaveTextContent(/^0$/u);
+        } else {
+          expect(container.querySelector("[data-motion]")).toHaveAttribute("data-motion", "running");
+          expect(container.querySelector('[data-slot="typewriter-cursor"]')).not.toBeNull();
+        }
+      } finally {
+        act(() => {
+          root?.unmount();
+        });
+        container.remove();
+        consoleErrors.mockRestore();
+      }
     });
   });
 

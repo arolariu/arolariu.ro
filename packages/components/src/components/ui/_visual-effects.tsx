@@ -23,7 +23,9 @@ export interface VisualEffectOptions {
   readonly loop?: boolean;
 }
 
-const serverPreferences: MotionPreferences = {reducedMotion: true, documentHidden: false};
+// Not "reduced": hydration keeps this snapshot until after the first client effects run, and a reduced placeholder would make
+// effects jump straight to their final state. Instances start paused (not yet visible) instead, which renders the starting frame.
+const serverPreferences: MotionPreferences = {reducedMotion: false, documentHidden: false};
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 const serverReducedMotion = (): boolean => true;
 
@@ -33,7 +35,7 @@ const serverReducedMotion = (): boolean => true;
  * @remarks
  * For controls whose motion is user-initiated (RippleButton, FlipButton): unlike {@link useVisualEffectPolicy}, it creates no
  * IntersectionObserver, document visibility listener or settle timer per instance. The server and hydration snapshot is
- * conservatively `true` (reduced), like the policy's; the live preference applies after hydration.
+ * conservatively `true` (reduced); these controls have no motion at mount, and the live preference applies after hydration.
  *
  * @returns Whether reduced motion is currently preferred.
  * @internal
@@ -56,7 +58,8 @@ export function useReducedMotionPreference(): boolean {
  * Observes per-instance visibility and live platform motion preferences.
  *
  * @internal
- * Starts paused until the first intersecting observation. Keep reveal/replay state
+ * Starts paused until the first intersecting observation. Automatic motion settles five
+ * seconds after that first observation. Keep reveal/replay state
  * separate from this resource policy. Motion14's real reduced-motion hook is retained,
  * with a native subscription for preference changes it does not currently publish.
  */
@@ -64,17 +67,21 @@ export function useVisualEffectPolicy<TElement extends Element>(
   ref: React.RefObject<TElement | null>,
   {motionPaused = false, loop = false}: Readonly<VisualEffectOptions> = {},
 ): VisualEffectPolicy {
+  const visible = useInView(ref);
+  const [hasBeenVisible, setHasBeenVisible] = React.useState(false);
+  if (visible && !hasBeenVisible) setHasBeenVisible(true);
   const [settled, setSettled] = React.useState(false);
   React.useEffect(() => {
-    if (loop || settled) return;
-    // Wall-clock lifetime, not a restartable viewport timer: toggling visibility
-    // must not extend automatic motion indefinitely (WCAG 2.2.2).
+    if (loop || settled || !hasBeenVisible) return;
+    // Wall-clock lifetime from the first presentation, not a restartable viewport timer:
+    // later visibility changes must not extend automatic motion indefinitely (WCAG 2.2.2).
+    // Offscreen instances are already paused, so motion is never presented before this starts.
     const settleMotion = (): void => {
       setSettled(true);
     };
     const timer = globalThis.setTimeout(settleMotion, 5000);
     return (): void => globalThis.clearTimeout(timer);
-  }, [loop, settled]);
+  }, [loop, settled, hasBeenVisible]);
   const initialReducedMotion = useReducedMotion();
   const preferences = React.useMemo(() => {
     const media = typeof window === "undefined" ? null : globalThis.matchMedia(reducedMotionQuery);
@@ -99,7 +106,6 @@ export function useVisualEffectPolicy<TElement extends Element>(
     };
   }, [initialReducedMotion]);
   const {reducedMotion, documentHidden} = React.useSyncExternalStore(preferences.subscribe, preferences.snapshot, () => serverPreferences);
-  const visible = useInView(ref);
   return {
     reducedMotion,
     documentHidden,

@@ -99,7 +99,8 @@ application style objects or a styling dependency.
 - Button's icon sizes require `aria-label` or `aria-labelledby`, and `ButtonProps` is a union: extend it with `type X = ButtonProps & {…}`,
   not an interface. Links stay native `<a>` elements styled with `buttonVariants()` rather than Button render targets.
 - Toasts persist until closed unless `timeout` is set (it defaults to `0`; v2.4 dismissed after 5000 ms), and visual effects settle five
-  seconds after mount unless `loop`. See MIGRATION for every changed default, removed toast option and generated control.
+  seconds after first scrolling into view unless `loop`. See MIGRATION for every changed default, removed toast option and generated
+  control.
 - Root collision names are intentional: component `FieldError` versus `RHFFieldError`; native `Label` versus `RechartsLabel`; canonical
   `Toast` versus `ToastData`; original `DirectionProvider`/`useDirection` with `TextDirection`.
 

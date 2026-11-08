@@ -212,7 +212,8 @@ function ScratcherSurface({
       notifiedRef.current = true;
       callbackRef.current?.();
     };
-    if (paused) {
+    if (paused || notifiedRef.current) {
+      // Once this reveal has been acknowledged, resuming (scrolling back into view, a visible tab) must not replay it.
       controls.stop();
       controls.set({scale: 1, rotate: 0});
       notify();
