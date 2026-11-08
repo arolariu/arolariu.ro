@@ -31,7 +31,7 @@ import {
   type DayHistoricalComparison,
 } from "../../_utils/analytics";
 import styles from "./ShoppingCalendarCard.module.scss";
-import {getDateFnsLocale} from "@/lib/dateFnsLocale";
+import {getCalendarLocale} from "@/lib/calendarLocale";
 
 /** Props type for the Calendar's DayButton slot component */
 type DayButtonProps = {
@@ -209,7 +209,7 @@ function CustomDayButton({
 
 export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
-  const dateFnsLocale = getDateFnsLocale(locale);
+  const calendarLocale = getCalendarLocale(locale);
   const t = useTranslations();
   const {invoice} = useInvoiceContext();
   const transactionDate = useMemo(
@@ -278,7 +278,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
           </CardHeader>
           <CardContent className={styles["contentCentered"]}>
             <Calendar
-              locale={dateFnsLocale}
+              locale={calendarLocale}
               mode='single'
               selected={transactionDate}
               month={month}

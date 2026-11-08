@@ -38,7 +38,7 @@ import {useCallback, useMemo} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
-import {getDateFnsLocale} from "@/lib/dateFnsLocale";
+import {getCalendarLocale} from "@/lib/calendarLocale";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
 
@@ -83,7 +83,7 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
  */
 export default function InvoiceDetailsForm(): React.JSX.Element {
   const t = useTranslations();
-  const dateFnsLocale = getDateFnsLocale(useLocale());
+  const calendarLocale = getCalendarLocale(useLocale());
   const {
     invoiceDetails,
     setName,
@@ -249,7 +249,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   className={styles["calendarPopover"]}
                   align='start'>
                   <Calendar
-                    locale={dateFnsLocale}
+                    locale={calendarLocale}
                     mode='single'
                     selected={invoiceDetails.transactionDate}
                     onSelect={handleTransactionDateChange}

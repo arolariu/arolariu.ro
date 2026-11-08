@@ -36,7 +36,7 @@ import {TbCalendar, TbCreditCard, TbHeart} from "react-icons/tb";
 import ItemsTable from "../_components/tables/ItemsTable";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 import styles from "./InvoiceCard.module.scss";
-import {getDateFnsLocale} from "@/lib/dateFnsLocale";
+import {getCalendarLocale} from "@/lib/calendarLocale";
 
 /**
  * Displays comprehensive invoice details with inline editing capabilities.
@@ -76,7 +76,7 @@ import {getDateFnsLocale} from "@/lib/dateFnsLocale";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
-  const dateFnsLocale = getDateFnsLocale(locale);
+  const calendarLocale = getCalendarLocale(locale);
   const t = useTranslations();
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} = useEditInvoiceContext();
   const {paymentInformation, isImportant, description} = invoice;
@@ -234,7 +234,7 @@ export default function InvoiceCard(): React.JSX.Element {
                     className={styles["popoverContent"]}
                     align='start'>
                     <Calendar
-                      locale={dateFnsLocale}
+                      locale={calendarLocale}
                       mode='single'
                       hideNavigation
                       selected={currentTransactionDate}
