@@ -3342,7 +3342,8 @@
             "selectAllInvoices": "Sélectionner toutes les factures",
             "selectInvoice": "Sélectionner facture {name}",
             "sortByAmount": "Trier par montant",
-            "sortByDate": "Trier par date"
+            "sortByDate": "Trier par date",
+            "table": "Factures"
           },
           "columns": {
             "actions": "Opérations",
@@ -5050,7 +5051,8 @@
       "notifications": {
         "region": "Notifications",
         "close": "Fermer la notification"
-      }
+      },
+      "close": "Fermer"
     },
     "invoices": {
       "classification": {

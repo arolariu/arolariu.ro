@@ -189,7 +189,6 @@ export default function ScanCard({
                 onKeyDown={handleStopPropagation}>
                 <Checkbox
                   checked={selection.checked}
-                  nativeButton
                   onCheckedChange={handleSelectionToggle}
                   aria-label={selection.label}
                   className={styles["checkbox"]}

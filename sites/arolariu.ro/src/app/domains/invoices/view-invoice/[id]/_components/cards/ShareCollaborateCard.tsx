@@ -237,7 +237,6 @@ export function ShareCollaborateCard(): React.JSX.Element {
               {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.publicAccess)}
             </Label>
             <Switch
-              nativeButton
               id='public-toggle'
               checked={sharingStatus === "public"}
               onCheckedChange={handleTogglePublic}

@@ -336,7 +336,6 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='single'
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
-                nativeButton
                 value='single'
                 id='single'
                 className={styles["radioItem"]}
@@ -356,7 +355,6 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='batch'
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
-                nativeButton
                 value='batch'
                 id='batch'
                 className={styles["radioItem"]}
@@ -625,7 +623,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        showCloseButton={step !== "creating"}
+        className={styles["dialogContent"]}>
         <AnimatePresence mode='wait'>
           {step === "select" ? renderSelectStep() : null}
           {step === "creating" ? renderCreatingStep() : null}

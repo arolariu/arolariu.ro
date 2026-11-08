@@ -21,6 +21,9 @@ type Props = Readonly<{
   handlePageSizeChange: (size: number) => void;
 }>;
 
+/** Rows-per-page options; labels are locale-independent numbers. */
+const PAGE_SIZE_ITEMS = [5, 10, 20, 50, 100, 500, 1000].map((size) => ({value: String(size), label: String(size)}));
+
 export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, pageSize, currentPage, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const t = useTranslations();
@@ -92,18 +95,19 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             <Select
               value={String(pageSize)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-              onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              onValueChange={(value) => handlePageSizeChange(Number(value))}
+              items={PAGE_SIZE_ITEMS}>
               <SelectTrigger
                 className={styles["pageSizeTrigger"]}
                 aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.rowsPerPage)}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
+                {PAGE_SIZE_ITEMS.map((item) => (
                   <SelectItem
-                    key={size}
-                    value={String(size)}>
-                    {size}
+                    key={item.value}
+                    value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>

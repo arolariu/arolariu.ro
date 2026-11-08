@@ -115,7 +115,9 @@ export default function AllergenDialog(): React.JSX.Element | null {
     <Dialog
       open={isOpen}
       onOpenChange={close}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.allergenDialog.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.allergenDialog.description, {productName: product.name})}</DialogDescription>

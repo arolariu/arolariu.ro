@@ -78,7 +78,6 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
     <div className={styles["cardWrapper"]}>
       <div className={styles["checkboxOverlay"]}>
         <Checkbox
-          nativeButton
           checked={isSelected}
           onCheckedChange={handleToggleSelection}
           aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name})}

@@ -31,7 +31,7 @@ import {
 } from "@/types/invoices/Allergen";
 import {Badge, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
-import {useCallback, useId, useRef, useState, type ChangeEvent} from "react";
+import {useCallback, useId, useMemo, useRef, useState, type ChangeEvent} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
 import styles from "./AllergenAssessmentEditor.module.scss";
 
@@ -124,6 +124,10 @@ function AllergenCodeField({signal, signalId, signalIndex, onChange}: SignalFiel
     },
     [onChange, signalIndex],
   );
+  const codeItems = useMemo(
+    () => ALLERGEN_CODES.map((code) => ({value: code, label: t(selectorFromPath(getAllergenLabelKey(code)))})),
+    [t],
+  );
 
   return (
     <div className={styles["field"]}>
@@ -134,18 +138,19 @@ function AllergenCodeField({signal, signalId, signalIndex, onChange}: SignalFiel
       </Label>
       <Select
         value={signal.code}
-        onValueChange={handleValueChange}>
+        onValueChange={handleValueChange}
+        items={codeItems}>
         <SelectTrigger
           id={`${signalId}-code`}
           className={styles["selectTrigger"]}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {ALLERGEN_CODES.map((code) => (
+          {codeItems.map((item) => (
             <SelectItem
-              key={code}
-              value={code}>
-              {t(selectorFromPath(getAllergenLabelKey(code)))}
+              key={item.value}
+              value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -164,6 +169,10 @@ function EvidenceLevelField({signal, signalId, signalIndex, onChange}: SignalFie
     },
     [onChange, signalIndex],
   );
+  const levelItems = useMemo(
+    () => EVIDENCE_LEVELS.map((level) => ({value: level, label: t(selectorFromPath(getAllergenEvidenceLevelLabelKey(level)))})),
+    [t],
+  );
 
   return (
     <div className={styles["field"]}>
@@ -174,18 +183,19 @@ function EvidenceLevelField({signal, signalId, signalIndex, onChange}: SignalFie
       </Label>
       <Select
         value={signal.evidenceLevel}
-        onValueChange={handleValueChange}>
+        onValueChange={handleValueChange}
+        items={levelItems}>
         <SelectTrigger
           id={`${signalId}-level`}
           className={styles["selectTrigger"]}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {EVIDENCE_LEVELS.map((level) => (
+          {levelItems.map((item) => (
             <SelectItem
-              key={level}
-              value={level}>
-              {t(selectorFromPath(getAllergenEvidenceLevelLabelKey(level)))}
+              key={item.value}
+              value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -367,6 +377,13 @@ export function AllergenAssessmentEditor({value, onChange, onValidityChange}: Re
   );
 
   const hasSignals = working.signals.length > 0;
+  const statusItems = useMemo(
+    () => [
+      {value: AllergenAssessmentStatus.NoSignals, label: t(selectorFromPath("allergens.editor.status.noSignals"))},
+      {value: AllergenAssessmentStatus.InsufficientData, label: t(selectorFromPath("allergens.editor.status.insufficientData"))},
+    ],
+    [t],
+  );
 
   return (
     <div className={styles["container"]}>
@@ -380,17 +397,21 @@ export function AllergenAssessmentEditor({value, onChange, onValidityChange}: Re
           </Label>
           <Select
             value={working.status}
-            onValueChange={handleStatusChange}>
+            onValueChange={handleStatusChange}
+            items={statusItems}>
             <SelectTrigger
               id={`${baseId}-status`}
               className={styles["selectTrigger"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={AllergenAssessmentStatus.NoSignals}>{t(selectorFromPath("allergens.editor.status.noSignals"))}</SelectItem>
-              <SelectItem value={AllergenAssessmentStatus.InsufficientData}>
-                {t(selectorFromPath("allergens.editor.status.insufficientData"))}
-              </SelectItem>
+              {statusItems.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

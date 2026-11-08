@@ -224,6 +224,15 @@ export default function AddRecipeDialog(): React.JSX.Element {
     if (!isRecipeDifficulty(value)) throw new Error(`Unsupported recipe difficulty: ${value}`);
     setDifficulty(value);
   }, []);
+  // Single source for both the rendered options and the trigger label lookup.
+  const difficultyItems = useMemo(
+    () => [
+      {value: RecipeDifficulty.Easy, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)},
+      {value: RecipeDifficulty.Medium, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)},
+      {value: RecipeDifficulty.Hard, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)},
+    ],
+    [t],
+  );
   const handlePreparationMinutesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setPreparationMinutes(Number(event.currentTarget.value));
   }, []);
@@ -284,7 +293,9 @@ export default function AddRecipeDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.create.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.create.description)}</DialogDescription>
@@ -355,14 +366,19 @@ export default function AddRecipeDialog(): React.JSX.Element {
               <Label htmlFor='recipe-add-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
               <Select
                 value={difficulty}
-                onValueChange={handleDifficultyChange}>
+                onValueChange={handleDifficultyChange}
+                items={difficultyItems}>
                 <SelectTrigger id='recipe-add-difficulty'>
                   <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={RecipeDifficulty.Easy}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
-                  <SelectItem value={RecipeDifficulty.Medium}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
-                  <SelectItem value={RecipeDifficulty.Hard}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
+                  {difficultyItems.map((item) => (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

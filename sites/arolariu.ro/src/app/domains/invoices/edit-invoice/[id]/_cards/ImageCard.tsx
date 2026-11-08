@@ -130,7 +130,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 <TbZoomIn className={styles["zoomIcon"]} />
               </div>
             </Button>
-            <DialogContent className={styles["zoomDialogContent"]}>
+            <DialogContent
+              closeLabel={t((m) => m.shared.accessibility.close)}
+              className={styles["zoomDialogContent"]}>
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1

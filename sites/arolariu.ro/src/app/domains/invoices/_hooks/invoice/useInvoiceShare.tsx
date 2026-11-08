@@ -10,7 +10,7 @@
  * delegates invitation delivery to the email server action.
  */
 
-import {notify} from "@/lib/notify";
+import {DEFAULT_CONFIRMATION_TIMEOUT_MS, notify} from "@/lib/notify";
 import {sendEmail} from "@/lib/actions/email";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
@@ -238,7 +238,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
           const {to} = action;
           await toast.promise(shareAndMutate(invoiceIdOrIds, action), {
             loading: t((m) => m.toasts.invoices.useInvoiceShare.emailSending, {email: to}),
-            success: t((m) => m.toasts.invoices.useInvoiceShare.emailSuccess, {email: to}),
+            success: {
+              title: t((m) => m.toasts.invoices.useInvoiceShare.emailSuccess, {email: to}),
+              timeout: DEFAULT_CONFIRMATION_TIMEOUT_MS,
+            },
             error: (err: unknown) =>
               t((m) => m.toasts.invoices.useInvoiceShare.emailError, {
                 email: to,

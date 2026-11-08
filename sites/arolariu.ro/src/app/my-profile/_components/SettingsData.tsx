@@ -31,6 +31,10 @@ type Props = Readonly<{
   onSettingsChange: (settings: Partial<DataSettings>) => void;
 }>;
 
+/** Single sources for both the rendered options and the trigger label lookups. */
+const RETENTION_ITEMS = DATA_RETENTION_OPTIONS.map((option) => ({value: option.id, label: option.name}));
+const BACKUP_FREQUENCY_ITEMS = REPORT_FREQUENCIES.filter((f) => f.id !== "never").map((freq) => ({value: freq.id, label: freq.name}));
+
 export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
@@ -88,16 +92,17 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardContent>
               <Select
                 value={settings.retention}
-                onValueChange={handleRetentionChange}>
+                onValueChange={handleRetentionChange}
+                items={RETENTION_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DATA_RETENTION_OPTIONS.map((option) => (
+                  {RETENTION_ITEMS.map((item) => (
                     <SelectItem
-                      key={option.id}
-                      value={option.id}>
-                      {option.name}
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -127,7 +132,6 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   <p>{t((m) => m.pages.profile.settings.data.backup.autoBackupHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.autoBackup}
                   onCheckedChange={handleToggle("autoBackup")}
                 />
@@ -138,16 +142,17 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                 <Select
                   value={settings.backupFrequency}
                   onValueChange={handleBackupFrequencyChange}
-                  disabled={!settings.autoBackup}>
+                  disabled={!settings.autoBackup}
+                  items={BACKUP_FREQUENCY_ITEMS}>
                   <SelectTrigger className={styles["selectCursorMt"]}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {REPORT_FREQUENCIES.filter((f) => f.id !== "never").map((freq) => (
+                    {BACKUP_FREQUENCY_ITEMS.map((item) => (
                       <SelectItem
-                        key={freq.id}
-                        value={freq.id}>
-                        {freq.name}
+                        key={item.value}
+                        value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -177,7 +182,6 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   <p>{t((m) => m.pages.profile.settings.data.privacy.shareAnonymousHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.shareAnonymousData}
                   onCheckedChange={handleToggle("shareAnonymousData")}
                 />

@@ -3342,7 +3342,8 @@
             "selectAllInvoices": "Selectează toate facturile",
             "selectInvoice": "Selectează factură {name}",
             "sortByAmount": "Sortare după sumă",
-            "sortByDate": "Sortare după dată"
+            "sortByDate": "Sortare după dată",
+            "table": "Facturi"
           },
           "columns": {
             "actions": "Acțiuni",
@@ -5050,7 +5051,8 @@
       "notifications": {
         "region": "Notificări",
         "close": "Închide notificarea"
-      }
+      },
+      "close": "Închide"
     },
     "invoices": {
       "classification": {

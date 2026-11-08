@@ -28,6 +28,14 @@ type Props = Readonly<{
   onSettingsChange: (settings: Partial<AnalyticsSettings>) => void;
 }>;
 
+/** Single sources for both the rendered options and the trigger label lookups. */
+const GRANULARITY_ITEMS = ANALYTICS_GRANULARITY.map((option) => ({value: option.id, label: option.name}));
+const EXPORT_FORMAT_ITEMS = [
+  {value: "json", label: "JSON"},
+  {value: "csv", label: "CSV"},
+  {value: "pdf", label: "PDF"},
+] as const;
+
 export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
@@ -96,7 +104,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.enabled.hint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.enabled}
                   onCheckedChange={handleToggle("enabled")}
                 />
@@ -122,16 +129,17 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
               <Select
                 value={settings.granularity}
                 onValueChange={handleGranularityChange}
-                disabled={!settings.enabled}>
+                disabled={!settings.enabled}
+                items={GRANULARITY_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ANALYTICS_GRANULARITY.map((option) => (
+                  {GRANULARITY_ITEMS.map((item) => (
                     <SelectItem
-                      key={option.id}
-                      value={option.id}>
-                      {option.name}
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -156,14 +164,19 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardContent>
               <Select
                 value={settings.exportFormat}
-                onValueChange={handleExportFormatChange}>
+                onValueChange={handleExportFormatChange}
+                items={EXPORT_FORMAT_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='json'>JSON</SelectItem>
-                  <SelectItem value='csv'>CSV</SelectItem>
-                  <SelectItem value='pdf'>PDF</SelectItem>
+                  {EXPORT_FORMAT_ITEMS.map((item) => (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </CardContent>
@@ -190,7 +203,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.tracking.spendingHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.trackSpending}
                   onCheckedChange={handleToggle("trackSpending")}
                   disabled={!settings.enabled}
@@ -203,7 +215,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.tracking.categoriesHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.trackCategories}
                   onCheckedChange={handleToggle("trackCategories")}
                   disabled={!settings.enabled}
@@ -216,7 +227,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.tracking.merchantsHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.trackMerchants}
                   onCheckedChange={handleToggle("trackMerchants")}
                   disabled={!settings.enabled}
@@ -246,7 +256,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.advanced.benchmarkingHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.benchmarking}
                   onCheckedChange={handleToggle("benchmarking")}
                   disabled={!settings.enabled}
@@ -259,7 +268,6 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t((m) => m.pages.profile.settings.analytics.advanced.predictiveHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.predictiveAnalysis}
                   onCheckedChange={handleToggle("predictiveAnalysis")}
                   disabled={!settings.enabled}

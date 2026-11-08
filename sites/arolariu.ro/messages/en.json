@@ -3342,7 +3342,8 @@
             "selectAllInvoices": "Select all invoices",
             "selectInvoice": "Select invoice {name}",
             "sortByAmount": "Sort by amount",
-            "sortByDate": "Sort by date"
+            "sortByDate": "Sort by date",
+            "table": "Invoices"
           },
           "columns": {
             "actions": "Actions",
@@ -5050,7 +5051,8 @@
       "notifications": {
         "region": "Notifications",
         "close": "Close notification"
-      }
+      },
+      "close": "Close"
     },
     "invoices": {
       "classification": {

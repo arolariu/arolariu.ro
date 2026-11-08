@@ -179,7 +179,9 @@ export default function AddScanDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.addScanDialog.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.addScanDialog.description)}</DialogDescription>

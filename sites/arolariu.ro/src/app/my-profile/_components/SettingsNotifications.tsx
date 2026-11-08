@@ -28,6 +28,9 @@ type Props = Readonly<{
   onSettingsChange: (settings: Partial<NotificationSettings>) => void;
 }>;
 
+/** Single source for both the rendered options and the trigger label lookup. */
+const REPORT_FREQUENCY_ITEMS = REPORT_FREQUENCIES.map((freq) => ({value: freq.id, label: freq.name}));
+
 export function SettingsNotifications({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
@@ -95,7 +98,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.email.enabledHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.emailEnabled}
                   onCheckedChange={handleToggle("emailEnabled")}
                 />
@@ -121,16 +123,17 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <Select
                 value={settings.reportFrequency}
                 onValueChange={handleFrequencyChange}
-                disabled={!settings.emailEnabled}>
+                disabled={!settings.emailEnabled}
+                items={REPORT_FREQUENCY_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {REPORT_FREQUENCIES.map((freq) => (
+                  {REPORT_FREQUENCY_ITEMS.map((item) => (
                     <SelectItem
-                      key={freq.id}
-                      value={freq.id}>
-                      {freq.name}
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -142,7 +145,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.reports.weeklyDigestHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.weeklyDigest}
                   onCheckedChange={handleToggle("weeklyDigest")}
                   disabled={!settings.emailEnabled}
@@ -155,7 +157,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.reports.monthlyReportHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.monthlyReport}
                   onCheckedChange={handleToggle("monthlyReport")}
                   disabled={!settings.emailEnabled}
@@ -185,7 +186,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.financial.spendingAlertsHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.spendingAlerts}
                   onCheckedChange={handleToggle("spendingAlerts")}
                   disabled={!settings.emailEnabled}
@@ -198,7 +198,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.financial.budgetAlertsHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.budgetAlerts}
                   onCheckedChange={handleToggle("budgetAlerts")}
                   disabled={!settings.emailEnabled}
@@ -228,7 +227,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.updates.newFeaturesHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.newFeatures}
                   onCheckedChange={handleToggle("newFeatures")}
                   disabled={!settings.emailEnabled}
@@ -241,7 +239,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.updates.marketingHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.marketingEmails}
                   onCheckedChange={handleToggle("marketingEmails")}
                   disabled={!settings.emailEnabled}
@@ -271,7 +268,6 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t((m) => m.pages.profile.settings.notifications.security.securityAlertsHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.securityAlerts}
                   onCheckedChange={handleToggle("securityAlerts")}
                 />

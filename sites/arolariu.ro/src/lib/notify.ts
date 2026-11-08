@@ -13,8 +13,9 @@ export type NotifyType = "success" | "error" | "info" | "warning" | "loading";
  * Optional per-notification settings.
  *
  * @remarks
- * - `id` updates an already visible notification in place instead of adding a new one.
- * - `timeout` (milliseconds) overrides the Toaster default; `0` keeps the notification until it is closed.
+ * - `id` updates the notification with this id in place, or shows it again if it was already closed.
+ * - `timeout` (milliseconds) overrides {@link DEFAULT_CONFIRMATION_TIMEOUT_MS} for success, info and neutral
+ *   notifications and the persistent default for the others; `0` keeps the notification until it is closed.
  */
 export type NotifyOptions = Readonly<{
   description?: ReactNode;
@@ -23,34 +24,48 @@ export type NotifyOptions = Readonly<{
 }>;
 
 /**
- * Adds a notification, or updates the one identified by `options.id`.
+ * Auto-dismiss delay (milliseconds) for transient confirmations: success, info and neutral notifications.
+ *
+ * @remarks
+ * Errors, warnings and loading notifications stay open until they are closed, so they are never the only
+ * timed source of important information. Without a timeout the toasts would accumulate for the whole session.
+ */
+export const DEFAULT_CONFIRMATION_TIMEOUT_MS = 5000;
+
+/**
+ * Adds a notification, or updates or shows again the one identified by `options.id`.
  *
  * @param type - Notification category, or `undefined` for a neutral message.
  * @param title - Primary notification text.
- * @param options - Optional description, existing id and timeout.
+ * @param options - Optional description, id and timeout.
  * @returns The id of the added or updated notification.
  */
 function show(type: NotifyType | undefined, title: ReactNode, options?: NotifyOptions): string {
-  const {id, ...rest} = options ?? {};
-  const content = {title, ...rest, ...(type === undefined ? {} : {type})};
+  const {id, timeout, ...rest} = options ?? {};
+  const isConfirmation = type === undefined || type === "success" || type === "info";
+  // Always explicit: an id update merges into the previous toast and would otherwise inherit its timeout.
+  const resolvedTimeout = timeout ?? (isConfirmation ? DEFAULT_CONFIRMATION_TIMEOUT_MS : 0);
 
-  if (id !== undefined) {
-    toast.update(id, content);
-    return id;
-  }
-
-  return toast.add(content);
+  // `toast.add` with an id updates a live toast in place and re-creates one that was closed meanwhile,
+  // whereas `toast.update` silently ignores closed toasts and would lose the final result.
+  return toast.add({
+    title,
+    ...rest,
+    ...(type === undefined ? {} : {type}),
+    timeout: resolvedTimeout,
+    ...(id === undefined ? {} : {id}),
+  });
 }
 
 /**
  * Website notification facade over the `@arolariu/components` v3 toast manager.
  *
  * @remarks
- * - Keeps call sites short (`notify.success(title)`) while emitting canonical `toast.add` / `toast.update` /
- *   `toast.close` calls. Use `toast.promise` directly for promise-tracking notifications.
+ * - Keeps call sites short (`notify.success(title)`) while emitting canonical `toast.add` / `toast.close` calls.
+ *   Use `toast.promise` directly for promise-tracking notifications.
  * - Notifications reach the global `Toaster` mounted in `providers.tsx`; calls made before it mounts are dropped.
- * - The Toaster keeps the v3 persistent default, so notifications stay until the user closes them unless a
- *   `timeout` is passed.
+ * - Success, info and neutral notifications auto-dismiss after {@link DEFAULT_CONFIRMATION_TIMEOUT_MS}; errors,
+ *   warnings and loading notifications stay until closed unless a `timeout` is passed.
  *
  * @example
  * ```ts

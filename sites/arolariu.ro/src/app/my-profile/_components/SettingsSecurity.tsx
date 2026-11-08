@@ -21,7 +21,7 @@ import {
 } from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useRef} from "react";
+import {useCallback, useMemo, useRef} from "react";
 import {TbClock, TbDevices, TbKey, TbLock, TbShieldCheck, TbTrash} from "react-icons/tb";
 import type {SecuritySettings} from "../_utils/types";
 import styles from "./SettingsSecurity.module.scss";
@@ -60,6 +60,18 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
     [onSettingsChange, settings.trustedDevices],
   );
 
+  // Single source for both the rendered options and the trigger label lookup.
+  const sessionTimeoutItems = useMemo(
+    () => [
+      {value: "15", label: `15 ${t((m) => m.pages.profile.settings.security.session.minutes)}`},
+      {value: "30", label: `30 ${t((m) => m.pages.profile.settings.security.session.minutes)}`},
+      {value: "60", label: `1 ${t((m) => m.pages.profile.settings.security.session.hour)}`},
+      {value: "120", label: `2 ${t((m) => m.pages.profile.settings.security.session.hours)}`},
+      {value: "480", label: `8 ${t((m) => m.pages.profile.settings.security.session.hours)}`},
+    ],
+    [t],
+  );
+
   return (
     <motion.section
       ref={sectionRef}
@@ -94,7 +106,6 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   <p>{t((m) => m.pages.profile.settings.security.twoFactor.enabledHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.twoFactorEnabled}
                   onCheckedChange={handleToggle("twoFactorEnabled")}
                 />
@@ -129,16 +140,19 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                 <Label>{t((m) => m.pages.profile.settings.security.session.timeout)}</Label>
                 <Select
                   value={settings.sessionTimeout.toString()}
-                  onValueChange={handleSessionTimeoutChange}>
+                  onValueChange={handleSessionTimeoutChange}
+                  items={sessionTimeoutItems}>
                   <SelectTrigger className={styles["selectCursorMt"]}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='15'>15 {t((m) => m.pages.profile.settings.security.session.minutes)}</SelectItem>
-                    <SelectItem value='30'>30 {t((m) => m.pages.profile.settings.security.session.minutes)}</SelectItem>
-                    <SelectItem value='60'>1 {t((m) => m.pages.profile.settings.security.session.hour)}</SelectItem>
-                    <SelectItem value='120'>2 {t((m) => m.pages.profile.settings.security.session.hours)}</SelectItem>
-                    <SelectItem value='480'>8 {t((m) => m.pages.profile.settings.security.session.hours)}</SelectItem>
+                    {sessionTimeoutItems.map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -149,7 +163,6 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   <p>{t((m) => m.pages.profile.settings.security.session.loginNotificationsHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.loginNotifications}
                   onCheckedChange={handleToggle("loginNotifications")}
                 />

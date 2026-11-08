@@ -146,6 +146,12 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
     [handleSectionChange],
   );
 
+  // Single source for both the mobile-nav options and the trigger label lookup.
+  const mobileNavItems = useMemo(
+    () => TAB_CONFIG.map(({id, key}) => ({value: id, label: t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))})),
+    [t],
+  );
+
   if (!user) {
     return <ProfileSkeleton />;
   }
@@ -236,16 +242,17 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
           {/* Mobile nav — replaces fixed bottom nav */}
           <Select
             value={activeSection}
-            onValueChange={handleMobileNavChange}>
+            onValueChange={handleMobileNavChange}
+            items={mobileNavItems}>
             <SelectTrigger className={styles["mobileNav"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TAB_CONFIG.map(({id, key}) => (
+              {mobileNavItems.map((item) => (
                 <SelectItem
-                  key={id}
-                  value={id}>
-                  {t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))}
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
                 </SelectItem>
               ))}
             </SelectContent>

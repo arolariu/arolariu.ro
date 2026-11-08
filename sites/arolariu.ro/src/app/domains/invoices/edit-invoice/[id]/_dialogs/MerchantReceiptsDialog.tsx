@@ -29,7 +29,7 @@ import {
 } from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./MerchantReceiptsDialog.module.scss";
@@ -139,6 +139,25 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     setCurrentPage(currentPage + 1);
   }, [currentPage, setCurrentPage]);
 
+  // Single sources for both the rendered options and the trigger label lookups.
+  const dateFilterItems = useMemo(
+    () => [
+      {value: "all", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.allTime)},
+      {value: "30days", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last30Days)},
+      {value: "90days", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last90Days)},
+      {value: "thisYear", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.thisYear)},
+    ],
+    [t],
+  );
+
+  const sortItems = useMemo(
+    () => [
+      {value: "date-desc", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.newest)},
+      {value: "date-asc", label: t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.oldest)},
+    ],
+    [t],
+  );
+
   return (
     <Dialog
       open={isOpen}
@@ -146,7 +165,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.title, {merchant: merchant?.name ?? ""})}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.description)}</DialogDescription>
@@ -165,28 +186,40 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
             </div>
             <div className={styles["filterControls"]}>
               <div className={styles["selectWrapper"]}>
-                <Select onValueChange={handleDateFilterChange}>
+                <Select
+                  onValueChange={handleDateFilterChange}
+                  items={dateFilterItems}>
                   <SelectTrigger>
                     <TbCalendar className={styles["filterIcon"]} />
                     <SelectValue placeholder={t((m) => m.dialogs.invoices.merchantReceiptsDialog.filters.date)} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.allTime)}</SelectItem>
-                    <SelectItem value='30days'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last30Days)}</SelectItem>
-                    <SelectItem value='90days'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last90Days)}</SelectItem>
-                    <SelectItem value='thisYear'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.thisYear)}</SelectItem>
+                    {dateFilterItems.map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className={styles["selectWrapper"]}>
-                <Select onValueChange={handleSortChange}>
+                <Select
+                  onValueChange={handleSortChange}
+                  items={sortItems}>
                   <SelectTrigger>
                     <TbArrowsUpDown className={styles["filterIcon"]} />
                     <SelectValue placeholder={t((m) => m.dialogs.invoices.merchantReceiptsDialog.filters.sort)} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='date-desc'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.newest)}</SelectItem>
-                    <SelectItem value='date-asc'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.oldest)}</SelectItem>
+                    {sortItems.map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -195,7 +228,11 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
 
           <div className={styles["tableOuter"]}>
             <div className={styles["tableScroll"]}>
-              <Table>
+              <Table
+                containerProps={{
+                  role: "region",
+                  "aria-label": t((m) => m.dialogs.invoices.merchantReceiptsDialog.title, {merchant: merchant?.name ?? ""}),
+                }}>
                 <TableHeader>
                   <TableRow className={styles["headerRow"]}>
                     <TableHead className={styles["tableHeader"]}>

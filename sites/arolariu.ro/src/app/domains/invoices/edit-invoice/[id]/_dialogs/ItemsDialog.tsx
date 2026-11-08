@@ -202,7 +202,9 @@ export default function ItemsDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.itemsDialog.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.itemsDialog.description)}</DialogDescription>
@@ -210,7 +212,9 @@ export default function ItemsDialog(): React.JSX.Element {
 
         <div className={styles["body"]}>
           <div className={styles["tableWrapper"]}>
-            <Table className={styles["table"]}>
+            <Table
+              containerProps={{role: "region", "aria-label": t((m) => m.dialogs.invoices.itemsDialog.title)}}
+              className={styles["table"]}>
               <TableHeader>
                 <TableRow className={styles["headerRow"]}>
                   <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.item)}</TableHead>

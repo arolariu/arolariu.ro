@@ -49,6 +49,9 @@ type Props = Readonly<{
 type SortField = "date" | "amount" | "name";
 type SortDirection = "asc" | "desc" | null;
 
+/** Rows-per-page options; labels are locale-independent numbers. */
+const PAGE_SIZE_ITEMS = [5, 10, 20, 50, 100, 500, 1000].map((size) => ({value: String(size), label: String(size)}));
+
 /**
  * Resolves the accessible sort state for a table column.
  *
@@ -140,7 +143,6 @@ function InvoiceTableRow({invoice, isSelected, onSelectInvoice}: Readonly<Invoic
     <TableRow>
       <TableCell className={styles["printHidden"]}>
         <Checkbox
-          nativeButton
           checked={isSelected}
           onCheckedChange={handleCheckedChange}
           aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name || invoice.id})}
@@ -287,12 +289,11 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const isIndeterminate = selectedCountOnPage > 0 && selectedCountOnPage < invoices.length;
 
   return (
-    <Table>
+    <Table containerProps={{role: "region", "aria-label": t((m) => m.pages.invoices.viewInvoices.tableView.aria.table)}}>
       <TableHeader>
         <TableRow>
           <TableHead className={styles["printHidden"]}>
             <Checkbox
-              nativeButton
               className={styles["frostedCheckbox"]}
               checked={isAllSelected}
               indeterminate={!isAllSelected && isIndeterminate}
@@ -364,18 +365,19 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 <span className={styles["footerLabel"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.rowsPerPage)}</span>
                 <Select
                   value={String(pageSize)}
-                  onValueChange={handlePageSizeValueChange}>
+                  onValueChange={handlePageSizeValueChange}
+                  items={PAGE_SIZE_ITEMS}>
                   <SelectTrigger
                     className={styles["pageSizeTrigger"]}
                     aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.rowsPerPage)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
+                    {PAGE_SIZE_ITEMS.map((item) => (
                       <SelectItem
-                        key={size}
-                        value={String(size)}>
-                        {size}
+                        key={item.value}
+                        value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

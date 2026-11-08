@@ -90,6 +90,8 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
     return null;
   }
 
+  const deleteLabel = t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)});
+
   return (
     <div className={styles["toolbar"]}>
       <div className={styles["toolbarContent"]}>
@@ -112,8 +114,12 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                     variant='ghost'
                     size='sm'
                     onClick={clearSelection}
+                    aria-label={t((m) => m.pages.invoices.viewScans.toolbar.clearSelection)}
                     className={styles["clearButton"]}>
-                    <TbX className={styles["clearIcon"]} />
+                    <TbX
+                      aria-hidden
+                      className={styles["clearIcon"]}
+                    />
                     <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.toolbar.clearSelection)}</span>
                   </Button>
                 }
@@ -124,50 +130,47 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
         </div>
 
         <div className={styles["toolbarRight"]}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <AlertDialog
-                    open={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
                     <AlertDialogTrigger
                       render={
                         <Button
                           variant='destructive'
                           size='sm'
-                          disabled={isDeleting}>
-                          <TbTrash />
-                          <span className={styles["hiddenMobile"]}>
-                            {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
-                          </span>
+                          disabled={isDeleting}
+                          aria-label={deleteLabel}>
+                          <TbTrash aria-hidden />
+                          <span className={styles["hiddenMobile"]}>{deleteLabel}</span>
                         </Button>
                       }
                     />
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t((m) => m.pages.invoices.viewScans.toolbar.delete.confirmTitle)}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirmDescription, {count: String(selectedScans.length)})}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t((m) => m.pages.invoices.viewScans.toolbar.delete.cancel)}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteSelected}
-                          disabled={isDeleting}>
-                          {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirm)}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                }
-              />
-              <TooltipContent>
-                {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                  }
+                />
+                <TooltipContent>{deleteLabel}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t((m) => m.pages.invoices.viewScans.toolbar.delete.confirmTitle)}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirmDescription, {count: String(selectedScans.length)})}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t((m) => m.pages.invoices.viewScans.toolbar.delete.cancel)}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}>
+                  {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirm)}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <TooltipProvider>
             <Tooltip>

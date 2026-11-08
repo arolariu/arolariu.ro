@@ -113,7 +113,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
     <Dialog
       open={open}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialog"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialog"]}>
         <DialogHeader className={styles["header"]}>
           <div className={styles["titleRow"]}>
             <TbKeyboard

@@ -22,7 +22,7 @@ vi.mock("@/lib/actions/email", () => ({
   sendEmail: vi.fn(),
 }));
 
-vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
+vi.mock("@/lib/notify", async () => ({DEFAULT_CONFIRMATION_TIMEOUT_MS: 5000, notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),

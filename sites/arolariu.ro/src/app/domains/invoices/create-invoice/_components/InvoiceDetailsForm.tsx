@@ -34,7 +34,7 @@ import {
 } from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
+import {useCallback, useMemo} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
@@ -139,6 +139,32 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   // Get first selected scan for preview
   const [firstScan] = selectedScans;
 
+  // Single source for both the rendered options and the trigger label lookup.
+  const paymentTypeItems = useMemo(
+    () => [
+      {
+        value: PaymentType.Unknown.toString(),
+        label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.unknown),
+      },
+      {value: PaymentType.Cash.toString(), label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.cash)},
+      {value: PaymentType.Card.toString(), label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.card)},
+      {
+        value: PaymentType.Transfer.toString(),
+        label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.transfer),
+      },
+      {
+        value: PaymentType.MobilePayment.toString(),
+        label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.mobilePayment),
+      },
+      {
+        value: PaymentType.Voucher.toString(),
+        label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.voucher),
+      },
+      {value: PaymentType.Other.toString(), label: t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.other)},
+    ],
+    [t],
+  );
+
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
@@ -187,32 +213,19 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='payment-type'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.label)}</Label>
               <Select
                 value={invoiceDetails.paymentType.toString()}
-                onValueChange={handlePaymentTypeChange}>
+                onValueChange={handlePaymentTypeChange}
+                items={paymentTypeItems}>
                 <SelectTrigger id='payment-type'>
                   <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={PaymentType.Unknown.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.unknown)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.Cash.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.cash)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.Card.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.card)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.Transfer.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.transfer)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.MobilePayment.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.mobilePayment)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.Voucher.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.voucher)}
-                  </SelectItem>
-                  <SelectItem value={PaymentType.Other.toString()}>
-                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.other)}
-                  </SelectItem>
+                  {paymentTypeItems.map((item) => (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

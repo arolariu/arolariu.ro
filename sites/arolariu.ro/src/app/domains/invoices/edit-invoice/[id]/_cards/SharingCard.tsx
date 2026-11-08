@@ -1,6 +1,6 @@
 "use client";
 
-import {notify} from "@/lib/notify";
+import {DEFAULT_CONFIRMATION_TIMEOUT_MS, notify} from "@/lib/notify";
 import {useUserInformation} from "@/hooks";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -127,7 +127,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       markPrivateAction().finally(() => setIsMarkingPrivate(false)),
       {
         loading: t((m) => m.cards.invoices.sharingCard.toasts.revoke.loading),
-        success: t((m) => m.cards.invoices.sharingCard.toasts.revoke.success),
+        success: {title: t((m) => m.cards.invoices.sharingCard.toasts.revoke.success), timeout: DEFAULT_CONFIRMATION_TIMEOUT_MS},
         error: (error: unknown) =>
           t((m) => m.cards.invoices.sharingCard.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
       },

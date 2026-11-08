@@ -352,7 +352,6 @@ function ItemTableRow({
       } ${indicatorClass}`}>
       <td className={styles["tableCellCheckbox"]}>
         <Checkbox
-          nativeButton
           checked={isSelected}
           onCheckedChange={onSelectRow}
           aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.columns.selectRow, {name: item.name})}
@@ -824,12 +823,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       </div>
 
       <div className={styles["tableWrapper"]}>
-        <Table className={styles["table"]}>
+        <Table
+          containerProps={{role: "region", "aria-label": t((m) => m.pages.invoices.editInvoice.itemsTable.title)}}
+          className={styles["table"]}>
           <TableHeader>
             <TableRow className={styles["mutedRow"]}>
               <TableHead className={styles["tableHeaderCheckbox"]}>
                 <Checkbox
-                  nativeButton
                   checked={selectedIndices.size === sortedItems.length && sortedItems.length > 0}
                   onCheckedChange={handleSelectAll}
                   aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.columns.selectAll)}

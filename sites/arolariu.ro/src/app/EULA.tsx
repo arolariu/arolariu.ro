@@ -187,7 +187,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           </Button>
                         }
                       />
-                      <DialogContent className={styles["dialogContent"]}>
+                      <DialogContent
+                        closeLabel={t((m) => m.shared.accessibility.close)}
+                        className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.termsOfService.cta)}</DialogTitle>
                           <RenderTermsOfServiceScreen />
@@ -221,7 +223,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           </Button>
                         }
                       />
-                      <DialogContent className={styles["dialogContent"]}>
+                      <DialogContent
+                        closeLabel={t((m) => m.shared.accessibility.close)}
+                        className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.privacyPolicy.cta)}</DialogTitle>
                           <RenderPrivacyPolicyScreen />
@@ -267,7 +271,6 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         </p>
                         <div className={styles["switchRow"]}>
                           <Switch
-                            nativeButton
                             id='essential'
                             checked
                             disabled
@@ -301,7 +304,6 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         </p>
                         <div className={styles["switchRow"]}>
                           <Switch
-                            nativeButton
                             id='analytics'
                             checked={cookieState.analytics}
                             onCheckedChange={handleAnalyticsCheckedChange}

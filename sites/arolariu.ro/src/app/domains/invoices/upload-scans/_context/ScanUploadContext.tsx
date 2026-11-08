@@ -89,15 +89,26 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       const validation = validateUploadFiles(Array.from(files));
 
       for (const invalid of validation.invalidFiles) {
+        // A stable id per file and reason re-uses the existing toast when the same file is dropped again.
+        const rejectionToast = {id: `scan-upload-rejected:${invalid.reason}:${invalid.file.name}`};
         switch (invalid.reason) {
           case "file-too-large":
-            notify.error(t((m) => m.pages.invoices.uploadScans.errors.tooLarge, {name: invalid.file.name}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.tooLarge, {name: invalid.file.name}),
+              rejectionToast,
+            );
             break;
           case "unsupported-type":
-            notify.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedType, {type: invalid.file.type || "unknown"}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.unsupportedType, {type: invalid.file.type || "unknown"}),
+              rejectionToast,
+            );
             break;
           case "unsupported-extension":
-            notify.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}),
+              rejectionToast,
+            );
             break;
           default:
             break;

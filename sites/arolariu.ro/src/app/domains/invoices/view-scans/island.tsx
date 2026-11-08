@@ -204,6 +204,7 @@ function Sidebar(): React.JSX.Element | null {
 function MobileTipsButton(): React.JSX.Element | null {
   const {scans} = useScans();
   const isMobile = useIsMobile();
+  const t = useTranslations();
 
   // Only show on mobile and when there are scans
   if (!isMobile || scans.length === 0) return null;
@@ -222,6 +223,7 @@ function MobileTipsButton(): React.JSX.Element | null {
         }
       />
       <SheetContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
         side='bottom'
         className={styles["mobileTipsSheet"]}>
         <div className={styles["mobileTipsContent"]}>

@@ -285,7 +285,9 @@ Items: ${invoice.items.length}
     <Dialog
       open={isOpen}
       onOpenChange={close}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.pages.invoices.viewInvoice.export.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.pages.invoices.viewInvoice.export.description)}</DialogDescription>

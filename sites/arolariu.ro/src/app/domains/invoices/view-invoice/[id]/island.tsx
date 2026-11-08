@@ -157,7 +157,9 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
         <Dialog
           open={showHealthDialog}
           onOpenChange={setShowHealthDialog}>
-          <DialogContent className='max-h-[85vh] max-w-2xl overflow-y-auto'>
+          <DialogContent
+            closeLabel={t((m) => m.shared.accessibility.close)}
+            className='max-h-[85vh] max-w-2xl overflow-y-auto'>
             <DialogHeader>
               <DialogTitle>{t((m) => m.pages.invoices.viewInvoice.healthScore.dialogTitle)}</DialogTitle>
             </DialogHeader>
