@@ -348,6 +348,7 @@ import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
 import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
+import {enUS, fr, ro} from "@arolariu/components/calendar-locales"; // Translated DayPicker locales for <Calendar locale>
 ```
 
 ---

@@ -359,11 +359,29 @@ which are a **single replaced token**, not a merged class list. Custom component
 DayPicker's own `en-US` default instead of the runtime locale.
 
 **Before → after:** provide CSS for overridden animation tokens; put meaningful day content (events, availability) into
-`labels.labelDayButton` and mark visual-only content `aria-hidden`; pass `locale` for localized output.
+`labels.labelDayButton` and mark visual-only content `aria-hidden`; pass `locale` for localized output. Import it from the
+`@arolariu/components/calendar-locales` subpath, whose DayPicker locales also translate navigation, dropdown and day-button labels, instead
+of a raw `date-fns/locale` (dates only, English labels) that adds a direct `date-fns` dependency:
+
+```tsx
+// Before (2.4)
+import {ro} from "date-fns/locale";
+<Calendar
+  mode='single'
+  locale={ro}
+/>;
+
+// After (3.0)
+import {ro} from "@arolariu/components/calendar-locales";
+<Calendar
+  mode='single'
+  locale={ro}
+/>;
+```
 
 **Why:** the runtime locale differed between server and browser and caused hydration mismatches; day buttons keep one accessible name.
 
-**Find usages:** `rg -n "<Calendar\b|CalendarDayButton|labelDayButton"`
+**Find usages:** `rg -n "<Calendar\b|CalendarDayButton|labelDayButton|date-fns/locale"`
 
 #### Card
 

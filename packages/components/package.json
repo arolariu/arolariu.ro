@@ -738,6 +738,11 @@
       "import": "./dist/hooks/useWindowSize.js",
       "default": "./dist/hooks/useWindowSize.js"
     },
+    "./calendar-locales": {
+      "types": "./dist/lib/calendar-locales.d.ts",
+      "import": "./dist/lib/calendar-locales.js",
+      "default": "./dist/lib/calendar-locales.js"
+    },
     "./color-conversion-utilities": {
       "types": "./dist/lib/color-conversion-utilities.d.ts",
       "import": "./dist/lib/color-conversion-utilities.js",

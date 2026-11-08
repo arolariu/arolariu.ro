@@ -672,7 +672,7 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
     for (const [sourceDirectory, names] of [
       ["components/ui", supportedComponentModules],
       ["hooks", supportedHookModules],
-      ["lib", ["utilities", "color-conversion-utilities"]],
+      ["lib", ["utilities", "color-conversion-utilities", "calendar-locales"]],
     ] as const) {
       for (const name of names) {
         const entry = manifest.exports[`./${name}`];
@@ -800,6 +800,10 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
         const module = await import("@arolariu/components/" + name);
         for (const [key, value] of Object.entries(module)) assert.equal(root[key], value, name + "." + key);
       }
+      // Calendar locales are a subpath-only data module: translated DayPicker locales, deliberately absent from the root.
+      const calendarLocales = await import("@arolariu/components/calendar-locales");
+      assert.equal(calendarLocales.ro.labels.labelNext, "Mergi la luna următoare");
+      assert.equal(root.ro, undefined);
       for (const name of ${JSON.stringify(retainedChartAliases)}) assert.ok(root[name] !== undefined, name);
       // Pure class helpers run from the root import in plain Node: no DOM and no React render.
       for (const name of ${JSON.stringify(serverCallableClassHelpers.map(([name]) => name))}) {

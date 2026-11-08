@@ -1,9 +1,9 @@
 "use client";
 
-import {fr} from "date-fns/locale";
 import {useRef, useState} from "react";
 import {CalendarDay} from "react-day-picker";
 import type {Decorator, Meta, StoryObj} from "storybook-react-rsbuild";
+import {fr} from "../../lib/calendar-locales";
 import {Button} from "./button";
 import {Calendar, CalendarDayButton, type DateRange as CalendarDateRange, type DayPickerProps} from "./calendar";
 const storyStyles = `

@@ -219,6 +219,9 @@ The full list:
   Attachment/Bubble/Marker/Message display families.
 - Caller-owned `Stepper.completedLabel`, defaulting to `"Completed"`, so completed-step assistive text can be localized or deliberately
   omitted.
+- `@arolariu/components/calendar-locales`, a subpath-only re-export of `react-day-picker/locale` plus the `CalendarLocale` type. Its
+  translated DayPicker locales (date-fns data plus navigation, dropdown and day-button labels) feed `Calendar`/`CalendarDayButton` `locale`
+  without a direct `date-fns` or `react-day-picker` dependency; named imports keep unused locales out of bundles.
 - Separator and ButtonGroupSeparator accept a Base UI state-callback `className` as well as a string (v2.4 typed it as a string);
   ButtonGroupSeparator merges the result after its group class.
 - Shipped MIGRATION guide, preserving historical v0 → v1 documentation and adding comprehensive 2.4 → 3 examples and behavior inventory.
