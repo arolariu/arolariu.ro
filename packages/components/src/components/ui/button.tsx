@@ -14,7 +14,9 @@ export type ButtonSize = "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "
  * Primitive-owned button state augmented with the selected visual presets.
  */
 export interface ButtonState extends Readonly<ButtonPrimitive.State> {
+  /** Selected visual variant, also exposed as `data-variant`. */
   readonly variant: ButtonVariant;
+  /** Selected size preset, also exposed as `data-size`. */
   readonly size: ButtonSize;
 }
 

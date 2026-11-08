@@ -54,7 +54,9 @@ export type CommandProps = Readonly<
 /** Modal shell only: callers provide exactly one explicit Command root. */
 export type CommandDialogProps = Readonly<
   Omit<DialogProps, "children"> & {
+    /** Ref to the dialog popup element. */
     ref?: React.Ref<HTMLDivElement>;
+    /** The single explicit `Command` root rendered inside the dialog. */
     children?: React.ReactNode;
     /** Real accessible dialog title. @default "Command menu" */
     title?: React.ReactNode;

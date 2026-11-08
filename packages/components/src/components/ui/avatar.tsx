@@ -14,6 +14,7 @@ export type AvatarSize = "sm" | "default" | "lg";
 
 /** Primitive-owned image status augmented with the selected size. */
 export interface AvatarState extends Readonly<BaseAvatar.Root.State> {
+  /** Selected size preset, also exposed as `data-size`. */
   readonly size: AvatarSize;
 }
 
@@ -51,7 +52,10 @@ type AvatarPartRenderProps = Readonly<
 >;
 
 /** State owned by the native avatar badge renderer. */
-export type AvatarBadgeState = Readonly<{slot: "avatar-badge"}>;
+export type AvatarBadgeState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "avatar-badge";
+}>;
 
 /** Native span props with Base UI render composition for the corner badge. */
 export type AvatarBadgeProps = Readonly<
@@ -62,7 +66,10 @@ export type AvatarBadgeProps = Readonly<
 >;
 
 /** State owned by the native avatar group renderer. */
-export type AvatarGroupState = Readonly<{slot: "avatar-group"}>;
+export type AvatarGroupState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "avatar-group";
+}>;
 
 /** Native div props with Base UI render composition for an avatar stack. */
 export type AvatarGroupProps = Readonly<
@@ -73,7 +80,10 @@ export type AvatarGroupProps = Readonly<
 >;
 
 /** State owned by the native avatar group count renderer. */
-export type AvatarGroupCountState = Readonly<{slot: "avatar-group-count"}>;
+export type AvatarGroupCountState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "avatar-group-count";
+}>;
 
 /** Native div props with Base UI render composition for remaining-avatar content. */
 export type AvatarGroupCountProps = Readonly<

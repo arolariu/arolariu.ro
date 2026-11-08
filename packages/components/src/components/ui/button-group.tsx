@@ -32,7 +32,10 @@ export type ButtonGroupProps = Readonly<
 >;
 
 /** State exposed to {@link ButtonGroupText} render callbacks. */
-export type ButtonGroupTextState = Readonly<{slot: "button-group-text"}>;
+export type ButtonGroupTextState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "button-group-text";
+}>;
 
 // Base UI resolves input object/callback refs to a merged callback (or null).
 type ButtonGroupTextRenderProps = Readonly<
@@ -54,7 +57,12 @@ export type ButtonGroupTextProps = Readonly<
 /**
  * Props for the {@link ButtonGroupSeparator} component.
  */
-export type ButtonGroupSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof Separator>>;
+export type ButtonGroupSeparatorProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof Separator>, "orientation"> & {
+    /** Separator axis; vertical divides the buttons of a horizontal group. @default "vertical" */
+    orientation?: React.ComponentPropsWithRef<typeof Separator>["orientation"];
+  }
+>;
 
 /**
  * Aligns related buttons into a single visual control group.

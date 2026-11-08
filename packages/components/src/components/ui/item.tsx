@@ -20,8 +20,11 @@ export type ItemMediaVariant = "default" | "icon" | "image";
 
 /** Item-owned state supplied to render callbacks and mapped to data attributes. */
 export type ItemState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
   slot: "item";
+  /** Selected surface variant, also exposed as `data-variant`. */
   variant: ItemVariant;
+  /** Selected density preset, also exposed as `data-size`. */
   size: ItemSize;
 }>;
 

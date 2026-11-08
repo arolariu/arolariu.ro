@@ -25,7 +25,10 @@ export type BreadcrumbListProps = Readonly<React.ComponentPropsWithRef<"ol">>;
 export type BreadcrumbItemProps = Readonly<React.ComponentPropsWithRef<"li">>;
 
 /** Link-owned state supplied to render callbacks and mapped to data attributes. */
-export type BreadcrumbLinkState = Readonly<{slot: "breadcrumb-link"}>;
+export type BreadcrumbLinkState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "breadcrumb-link";
+}>;
 
 // Base UI resolves input object/callback refs to a merged callback (or null).
 type BreadcrumbLinkRenderProps = Readonly<

@@ -15,6 +15,7 @@ export type DialogProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payl
 /** Trigger composition uses Base UI's real state and polymorphic render contract. */
 export type DialogTriggerProps = Readonly<
   Omit<BaseDialog.Trigger.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
     ref?: React.Ref<HTMLElement>;
   }
 >;
@@ -22,11 +23,15 @@ export type DialogTriggerProps = Readonly<
 export type DialogCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDialog.Close>>;
 /** Backdrop props with the library's presentation classes. */
 export type DialogOverlayProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 /** Popup props, including Base UI's initial/final focus and render contracts. */
 export type DialogContentProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
     className?: string;
     /** Append an accessible icon close after the content. @default true */
     showCloseButton?: boolean;
@@ -43,6 +48,7 @@ export type DialogContentProps = Readonly<
 /** Layout composition uses Base UI's polymorphic callback props, not div-specific refs. */
 export type DialogHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
     ref?: React.Ref<HTMLElement>;
   }
 >;
@@ -56,10 +62,18 @@ export type DialogFooterProps = Readonly<
   }
 >;
 /** Accessible dialog heading, wired by Base UI. */
-export type DialogTitleProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {className?: string}>;
+export type DialogTitleProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
+>;
 /** Accessible dialog description, wired by Base UI. */
 export type DialogDescriptionProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 
 type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;

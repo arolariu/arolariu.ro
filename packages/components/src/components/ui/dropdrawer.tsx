@@ -98,8 +98,11 @@ export type DropDrawerContentState = BaseMenu.Popup.State | BaseDrawer.Popup.Sta
 export type DropDrawerContentProps = Readonly<
   Omit<DropdownMenuContentProps, "ref" | "render" | "className" | "style" | "align">
     & Pick<BaseDrawer.Popup.Props, "initialFocus"> & {
+      /** Ref to the rendered element on either surface; typed as `HTMLElement` because the element differs per viewport. */
       ref?: React.Ref<HTMLElement>;
+      /** Element or callback that replaces the default element; receives the active surface's `DropDrawerContentState`. */
       render?: RenderProp<DropDrawerContentState>;
+      /** Additional classes, or a callback receiving the active surface's `DropDrawerContentState`. */
       className?: StateClassName<DropDrawerContentState>;
       /** State-aware caller styling is resolved by the actual SDK popup. */
       style?: React.CSSProperties | ((state: DropDrawerContentState) => React.CSSProperties | undefined);
@@ -116,8 +119,11 @@ export type DropDrawerItemProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof DropdownMenuItem>, keyof React.DOMAttributes<HTMLElement> | "render" | "className" | "style">
     & ResponsiveDOMEvents
     & Pick<BaseButton.Props, "type" | "name" | "value" | "form" | "formAction"> & {
+      /** Element or callback that replaces the default element; receives the active surface's `DropDrawerItemState`. */
       render?: RenderProp<DropDrawerItemState>;
+      /** Additional classes, or a callback receiving the active surface's `DropDrawerItemState`. */
       className?: StateClassName<DropDrawerItemState>;
+      /** Inline styles, or a callback receiving the active surface's `DropDrawerItemState`. */
       style?: React.CSSProperties | ((state: DropDrawerItemState) => React.CSSProperties | undefined);
       /** Runs after an uncancelled click; preventDefault cancels closing. */
       onSelect?: (event: Event) => void;
@@ -132,10 +138,16 @@ export type DropDrawerLabelProps = Readonly<React.ComponentPropsWithRef<typeof D
 /** Separators appear in desktop menus; mobile groups supply their own visual boundaries. */
 export type DropDrawerSeparatorProps = Readonly<React.ComponentPropsWithRef<typeof DropdownMenuSeparator>>;
 /** Native footer layout composition and ref. */
-export type DropDrawerFooterProps = Readonly<Omit<useRender.ComponentProps<"div">, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DropDrawerFooterProps = Readonly<
+  Omit<useRender.ComponentProps<"div">, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default div. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** SDK submenu options apply on desktop; mobile open/disabled/callback props coordinate local live panels. */
 export type DropDrawerSubProps = Readonly<
   BaseMenu.SubmenuRoot.Props & {
+    /** Stable submenu identity for mobile drill-down navigation and its panel id; generated with `React.useId()` when omitted. */
     id?: string;
     /**
      * Localizable heading of this submenu's mobile panel, which also names the drawer dialog while the panel is active.
@@ -154,13 +166,17 @@ export type DropDrawerSubTriggerProps = Readonly<
     keyof React.DOMAttributes<HTMLElement> | "render" | "className" | "style"
   >
     & ResponsiveDOMEvents & {
+      /** Element or callback that replaces the default element; receives the active surface's `DropDrawerSubTriggerState`. */
       render?: RenderProp<DropDrawerSubTriggerState>;
+      /** Additional classes, or a callback receiving the active surface's `DropDrawerSubTriggerState`. */
       className?: StateClassName<DropDrawerSubTriggerState>;
+      /** Inline styles, or a callback receiving the active surface's `DropDrawerSubTriggerState`. */
       style?: React.CSSProperties | ((state: DropDrawerSubTriggerState) => React.CSSProperties | undefined);
     }
 >;
 /** Mobile panel state belongs to the local navigation owner, not a counterfeit SDK popup. */
 export type DropDrawerPanelState = {
+  /** Whether this submenu's mobile panel is the active drill-down panel. */
   readonly open: boolean;
 };
 /** Desktop popup or local mobile panel state. */
@@ -168,9 +184,13 @@ export type DropDrawerSubContentState = BaseMenu.Popup.State | DropDrawerPanelSt
 /** Desktop submenu placement (DropdownMenuSubContent defaults) plus state-aware composition of the live mobile panel. */
 export type DropDrawerSubContentProps = Readonly<
   Omit<DropdownMenuSubContent.Props, "ref" | "render" | "className" | "style"> & {
+    /** Ref to the rendered element on either surface; typed as `HTMLElement` because the element differs per viewport. */
     ref?: React.Ref<HTMLElement>;
+    /** Element or callback that replaces the default element; receives the active surface's `DropDrawerSubContentState`. */
     render?: RenderProp<DropDrawerSubContentState>;
+    /** Additional classes, or a callback receiving the active surface's `DropDrawerSubContentState`. */
     className?: StateClassName<DropDrawerSubContentState>;
+    /** Inline styles, or a callback receiving the active surface's `DropDrawerSubContentState`. */
     style?: React.CSSProperties | ((state: DropDrawerSubContentState) => React.CSSProperties | undefined);
   }
 >;

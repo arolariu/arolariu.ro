@@ -89,13 +89,17 @@ export type AttachmentActionProps = AttachmentActionPropsOf<Readonly<ButtonProps
 /** Actual Button-owned interaction and visual state for action render callbacks. */
 export type AttachmentActionState = ButtonState;
 /** State owned by the native attachment trigger renderer. */
-export type AttachmentTriggerState = Readonly<{slot: "attachment-trigger"}>;
+export type AttachmentTriggerState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "attachment-trigger";
+}>;
 
 type AttachmentTriggerRenderProps = Readonly<Omit<HTMLProps<HTMLElement>, "ref"> & {ref?: React.RefCallback<HTMLElement> | null}>;
 
 /** Native trigger props with Base UI composition and a ref to the actual target. */
 export type AttachmentTriggerProps = Readonly<
   Omit<useRender.ComponentProps<"button", AttachmentTriggerState, AttachmentTriggerRenderProps>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default button. */
     ref?: React.Ref<HTMLElement>;
   }
 >;

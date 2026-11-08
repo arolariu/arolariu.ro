@@ -32,11 +32,13 @@ export type ToastManagerUpdateOptions<Data extends object = DefaultToastMetadata
 /** Primitive promise states, with rejected values explicitly typed as unknown. */
 export type ToastManagerPromiseOptions<Value, Data extends object = DefaultToastMetadata> = Readonly<
   Omit<PrimitiveToastManagerPromiseOptions<Value, Data>, "error"> & {
+    /** Toast shown when the promise rejects; a callback receives the rejection reason as `unknown`. */
     error: string | ToastManagerUpdateOptions<Data> | ((error: unknown) => string | ToastManagerUpdateOptions<Data>);
   }
 >;
 /** A real Base UI manager; it is not a callable compatibility facade. */
 export type ToastManager<Data extends object = DefaultToastMetadata> = Omit<PrimitiveToastManager<Data>, "promise"> & {
+  /** Shows loading, success and error toasts that track `value`, and returns `value` unchanged. */
   promise: <Value, T extends Data = Data>(value: Promise<Value>, options: ToastManagerPromiseOptions<Value, T>) => Promise<Value>;
 };
 /** Provider-scoped manager state and operations. */
@@ -127,7 +129,7 @@ const toast = createToastManager();
 
 /** Provider props preserving typed custom data and the primitive's timeout/limit contract. */
 export type ToastProviderProps<Data extends object = DefaultToastMetadata> = Readonly<
-  Omit<ToastPrimitive.Provider.Props, "toastManager"> & {
+  Omit<ToastPrimitive.Provider.Props, "toastManager" | "timeout"> & {
     /**
      * Manager whose calls this provider renders, such as the shared {@link toast} or one from
      * {@link createToastManager}. Without one, only `useToastManager` calls inside the provider add toasts.
@@ -276,7 +278,10 @@ ToastViewport.displayName = "ToastViewport";
 
 /** Root props retaining typed toast data and every primitive rendering/state option. */
 export type ToastProps<Data extends object = DefaultToastMetadata> = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof ToastPrimitive.Root>, "toast"> & {toast: ToastObject<Data>}
+  Omit<React.ComponentPropsWithRef<typeof ToastPrimitive.Root>, "toast"> & {
+    /** Toast object from `useToastManager().toasts` that this root renders. */
+    toast: ToastObject<Data>;
+  }
 >;
 /** Primitive-owned root transition, expansion, limitation, type, and swipe state. */
 export type ToastState = ToastPrimitive.Root.State;
@@ -320,6 +325,7 @@ function Toast<Data extends object = DefaultToastMetadata>({ref, className, ...p
     />
   );
 }
+/** Component name shown in React DevTools. */
 Toast.displayName = "Toast";
 
 /** Primitive content props. */
@@ -587,6 +593,7 @@ export type ToasterProps<Data extends object = DefaultToastMetadata> = ToastProv
     closeLabel?: string;
     /** Configuration only; use compound primitives for custom notification-list children. */
     viewportProps?: Omit<ToastViewportProps, "children">;
+    /** Ref to the toast viewport element, merged with `viewportProps.ref`. */
     ref?: React.Ref<HTMLDivElement>;
   }>;
 /** Generic composition signature preserving manager metadata and viewport refs. */
@@ -658,6 +665,7 @@ function Toaster<Data extends object = DefaultToastMetadata>({
     </ToastProvider>
   );
 }
+/** Component name shown in React DevTools. */
 Toaster.displayName = "Toaster";
 
 export {

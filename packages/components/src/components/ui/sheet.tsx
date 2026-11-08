@@ -15,14 +15,25 @@ export type SheetSide = "top" | "right" | "bottom" | "left";
 /** Base UI owns modal state, dismissal, focus and trigger payloads. */
 export type SheetProps<Payload = unknown> = Readonly<BaseDialog.Root.Props<Payload>>;
 /** Trigger props with the existing single-element slot compatibility. */
-export type SheetTriggerProps = Readonly<Omit<BaseDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type SheetTriggerProps = Readonly<
+  Omit<BaseDialog.Trigger.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** Unstyled primitive dismissal control. */
 export type SheetCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDialog.Close>>;
 /** Primitive backdrop props with presentation classes. */
-export type SheetOverlayProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {className?: string}>;
+export type SheetOverlayProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
+>;
 /** Sheet popup options retain Base UI's real state, ref and focus contracts. */
 export type SheetContentProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
     className?: string;
     /** Viewport edge. @default "right" */
     side?: SheetSide;
@@ -41,16 +52,25 @@ export type SheetContentProps = Readonly<
 /** Layout props use the actual Base UI polymorphic render contract. */
 export type SheetHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
     ref?: React.Ref<HTMLElement>;
   }
 >;
 /** Footer layout positioned after sheet content. */
 export type SheetFooterProps = Readonly<SheetHeaderProps>;
 /** Accessible sheet heading. */
-export type SheetTitleProps = Readonly<Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {className?: string}>;
+export type SheetTitleProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
+>;
 /** Accessible sheet description. */
 export type SheetDescriptionProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 
 type PrimitiveRenderCallback = Exclude<BaseDialog.Popup.Props["render"], React.ReactElement | undefined>;

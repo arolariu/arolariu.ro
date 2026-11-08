@@ -12,7 +12,12 @@ import styles from "./marker.module.css";
 /** Supported inline marker surface treatments: plain, flanked by rules (`separator`) or underlined (`border`). */
 export type MarkerVariant = "default" | "separator" | "border";
 /** State owned by the marker renderer, not by an application or another primitive. */
-export type MarkerState = Readonly<{slot: "marker"; variant: MarkerVariant}>;
+export type MarkerState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "marker";
+  /** Selected surface treatment, also exposed as `data-variant`. */
+  variant: MarkerVariant;
+}>;
 
 /**
  * Options for generating {@link Marker} classes with {@link markerVariants} without rendering a Marker.

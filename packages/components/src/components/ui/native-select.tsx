@@ -74,6 +74,14 @@ NativeSelect.displayName = "NativeSelect";
  * @param props - Native option attributes and optional additional CSS classes.
  * @param props.ref - React 19 ref to the underlying HTML option.
  * @returns A native option styled with the system Canvas colors.
+ *
+ * @example
+ * ```tsx
+ * <NativeSelect defaultValue='ro'>
+ *   <NativeSelectOption value='en'>English</NativeSelectOption>
+ *   <NativeSelectOption value='ro'>Română</NativeSelectOption>
+ * </NativeSelect>
+ * ```
  */
 const NativeSelectOption = ({ref, className, ...props}: Readonly<NativeSelectOptionProps>): React.JSX.Element => (
   <option
@@ -91,6 +99,15 @@ NativeSelectOption.displayName = "NativeSelectOption";
  * @param props - Native optgroup attributes, including label and disabled state.
  * @param props.ref - React 19 ref to the underlying HTML optgroup.
  * @returns A native optgroup styled with the system Canvas colors.
+ *
+ * @example
+ * ```tsx
+ * <NativeSelect>
+ *   <NativeSelectOptGroup label='Europe'>
+ *     <NativeSelectOption value='ro'>Romania</NativeSelectOption>
+ *   </NativeSelectOptGroup>
+ * </NativeSelect>
+ * ```
  */
 const NativeSelectOptGroup = ({ref, className, ...props}: Readonly<NativeSelectOptGroupProps>): React.JSX.Element => (
   <optgroup

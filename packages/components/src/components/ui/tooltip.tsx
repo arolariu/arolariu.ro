@@ -385,7 +385,17 @@ function TooltipPopupSurface({elementProps, state, render}: TooltipPopupSurfaceP
   });
 }
 
-/** Decorative arrow positioned by Base UI; omit the default arrow with `TooltipContent.showArrow=false` when composing this part. */
+/**
+ * Decorative arrow positioned by Base UI; omit the default arrow with `TooltipContent.showArrow=false` when composing this part.
+ *
+ * @example
+ * ```tsx
+ * <TooltipContent showArrow={false}>
+ *   Saved
+ *   <TooltipArrow className='custom-arrow' />
+ * </TooltipContent>
+ * ```
+ */
 const TooltipArrow = ({ref, className, ...props}: Readonly<TooltipArrow.Props>): React.ReactElement => (
   <BaseTooltip.Arrow
     ref={ref}

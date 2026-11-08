@@ -12,16 +12,25 @@ import styles from "./alert-dialog.module.css";
 /** Real modal primitive state, dismissal and imperative actions. */
 export type AlertDialogProps<Payload = unknown> = Readonly<BaseAlertDialog.Root.Props<Payload>>;
 /** Trigger composition retains primitive render state and slot compatibility. */
-export type AlertDialogTriggerProps = Readonly<Omit<BaseAlertDialog.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type AlertDialogTriggerProps = Readonly<
+  Omit<BaseAlertDialog.Trigger.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** Backdrop presentation with primitive composition. */
 export type AlertDialogOverlayProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Backdrop>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Backdrop>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 /** Supported confirmation popup widths and media/action layouts. */
 export type AlertDialogSize = "default" | "sm";
 /** Confirmation popup props with primitive-owned render, ref and focus contracts. */
 export type AlertDialogContentProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Popup>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
     className?: string;
     /** Compact or standard confirmation layout. @default "default" */
     size?: AlertDialogSize;
@@ -36,6 +45,7 @@ export type AlertDialogContentProps = Readonly<
 /** Layout composition uses the actual Base UI polymorphic render contract. */
 export type AlertDialogHeaderProps = Readonly<
   Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
     ref?: React.Ref<HTMLElement>;
   }
 >;
@@ -43,21 +53,31 @@ export type AlertDialogHeaderProps = Readonly<
 export type AlertDialogFooterProps = Readonly<AlertDialogHeaderProps>;
 /** Optional visual media. Decorative icons should be `aria-hidden`; meaningful images need alternative text. */
 export type AlertDialogMediaProps = Readonly<
-  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {ref?: React.Ref<HTMLElement>}
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
 >;
 /** Accessible confirmation heading. */
 export type AlertDialogTitleProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Title>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Title>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 /** Accessible confirmation description. */
 export type AlertDialogDescriptionProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Description>, "className"> & {className?: string}
+  Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Description>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
+    className?: string;
+  }
 >;
 /** Ordinary Button props: confirmation does not implicitly dismiss the modal. */
 export type AlertDialogActionProps = ButtonProps;
 /** Explicit dismissal control with the shared Button's visual presets. */
 export type AlertDialogCancelProps = Readonly<
   Omit<React.ComponentPropsWithRef<typeof BaseAlertDialog.Close>, "className"> & {
+    /** Additional CSS classes appended to the part's own styles. */
     className?: string;
     /** Shared button variant. @default "outline" */
     variant?: ButtonVariant;

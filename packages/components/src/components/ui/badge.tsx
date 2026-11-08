@@ -14,7 +14,9 @@ export type BadgeVariant = "default" | "secondary" | "destructive" | "outline" |
 
 /** State supplied to the badge's composition callback and data attributes. */
 export type BadgeState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
   slot: "badge";
+  /** Selected visual variant, also exposed as `data-variant`. */
   variant: BadgeVariant;
 }>;
 

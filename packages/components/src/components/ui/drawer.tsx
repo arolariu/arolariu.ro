@@ -18,16 +18,27 @@ export type DrawerProps<Payload = unknown> = Readonly<
   }
 >;
 /** Trigger props retain Base UI's render, class callback and native button contracts. */
-export type DrawerTriggerProps = Readonly<Omit<BaseDrawer.Trigger.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DrawerTriggerProps = Readonly<
+  Omit<BaseDrawer.Trigger.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** Portal configuration for custom primitive compositions. */
 export type DrawerPortalProps = Readonly<BaseDrawer.Portal.Props>;
 /** Base UI close control, without imposed button presentation. */
 export type DrawerCloseProps = Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Close>>;
 /** Backdrop composition with a ref to the actual rendered element. */
-export type DrawerOverlayProps = Readonly<Omit<BaseDrawer.Backdrop.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DrawerOverlayProps = Readonly<
+  Omit<BaseDrawer.Backdrop.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** Popup composition, including Base UI's initial/final focus contracts. */
 export type DrawerContentProps = Readonly<
   Omit<BaseDrawer.Popup.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
     ref?: React.Ref<HTMLElement>;
     /**
      * Props for the internal Portal, for example `keepMounted` (keep the closed drawer and its form state mounted
@@ -39,7 +50,10 @@ export type DrawerContentProps = Readonly<
 >;
 /** Decorative swipe surface; its gestures are owned by the enclosing Viewport. */
 export type DrawerSwipeHandleProps = Readonly<
-  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {ref?: React.Ref<HTMLElement>}
+  Omit<useRender.ComponentProps<"div", Record<string, never>>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
 >;
 /** Layout composition using the native render contract. */
 export type DrawerHeaderProps = Readonly<DrawerSwipeHandleProps>;
@@ -47,9 +61,19 @@ export type DrawerHeaderProps = Readonly<DrawerSwipeHandleProps>;
 // eslint-disable-next-line sonarjs/redundant-type-aliases -- retain the independent public footer prop name.
 export type DrawerFooterProps = DrawerHeaderProps;
 /** Accessible title props with a ref to the actual rendered heading. */
-export type DrawerTitleProps = Readonly<Omit<BaseDrawer.Title.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DrawerTitleProps = Readonly<
+  Omit<BaseDrawer.Title.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 /** Accessible description props with a ref to the actual rendered element. */
-export type DrawerDescriptionProps = Readonly<Omit<BaseDrawer.Description.Props, "ref"> & {ref?: React.Ref<HTMLElement>}>;
+export type DrawerDescriptionProps = Readonly<
+  Omit<BaseDrawer.Description.Props, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default element. */
+    ref?: React.Ref<HTMLElement>;
+  }
+>;
 
 type DrawerSnapPoint = BaseDrawer.Root.SnapPoint;
 type DrawerSnapPointChangeDetails = BaseDrawer.Root.SnapPointChangeEventDetails;

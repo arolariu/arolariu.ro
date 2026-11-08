@@ -14,7 +14,10 @@ export interface AspectRatioProps extends Readonly<React.ComponentPropsWithRef<"
 }
 
 /** The approved dynamic ratio bridge; all authored layout remains in the CSS Module. */
-export type AspectRatioStyle = React.CSSProperties & {readonly "--ac-aspect-ratio"?: number | string};
+export type AspectRatioStyle = React.CSSProperties & {
+  /** Ratio custom property read by the CSS Module; the component always overwrites it from the `ratio` prop. */
+  readonly "--ac-aspect-ratio"?: number | string;
+};
 
 /**
  * Preserves a predictable width-to-height ratio for arbitrary content.

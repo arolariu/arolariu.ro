@@ -88,8 +88,13 @@ export interface ChartContainerProps
     Omit<React.ComponentPropsWithRef<"div">, "children" | "onResize">,
     Pick<
       ResponsiveContainerProps,
-      "initialDimension" | "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
+      "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
     > {
+  /**
+   * Chart size used until the container is first measured (including server rendering).
+   * @default {width: 320, height: 200}
+   */
+  readonly initialDimension?: ResponsiveContainerProps["initialDimension"];
   /**
    * Series configuration used to resolve labels, icons, and colors.
    */
@@ -776,35 +781,35 @@ export {ChartContainer, ChartLegend, ChartLegendContent, ChartStyle, ChartToolti
 // ---------------------------------------------------------------------------
 
 // -- Chart containers -------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/AreaChart | AreaChart API} */
+/** Cartesian chart container for area series. @see {@link https://recharts.github.io/en-US/api/AreaChart | AreaChart API} */
 export const {AreaChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/BarChart | BarChart API} */
+/** Cartesian chart container for bar series. @see {@link https://recharts.github.io/en-US/api/BarChart | BarChart API} */
 export const {BarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ComposedChart | ComposedChart API} */
+/** Cartesian chart container that mixes area, bar, line and scatter series. @see {@link https://recharts.github.io/en-US/api/ComposedChart | ComposedChart API} */
 export const {ComposedChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/FunnelChart | FunnelChart API} */
+/** Chart container for funnel series. @see {@link https://recharts.github.io/en-US/api/FunnelChart | FunnelChart API} */
 export const {FunnelChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/LineChart | LineChart API} */
+/** Cartesian chart container for line series. @see {@link https://recharts.github.io/en-US/api/LineChart | LineChart API} */
 export const {LineChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PieChart | PieChart API} */
+/** Polar chart container for pie series. @see {@link https://recharts.github.io/en-US/api/PieChart | PieChart API} */
 export const {PieChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadarChart | RadarChart API} */
+/** Polar chart container for radar series. @see {@link https://recharts.github.io/en-US/api/RadarChart | RadarChart API} */
 export const {RadarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadialBarChart | RadialBarChart API} */
+/** Polar chart container for radial bar series. @see {@link https://recharts.github.io/en-US/api/RadialBarChart | RadialBarChart API} */
 export const {RadialBarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ScatterChart | ScatterChart API} */
+/** Cartesian chart container for scatter series. @see {@link https://recharts.github.io/en-US/api/ScatterChart | ScatterChart API} */
 export const {ScatterChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Sankey | Sankey API} */
+/** Flow diagram whose link widths are proportional to their values. @see {@link https://recharts.github.io/en-US/api/Sankey | Sankey API} */
 export const {Sankey} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/SunburstChart | SunburstChart API} */
+/** Hierarchical chart rendered as concentric rings. @see {@link https://recharts.github.io/en-US/api/SunburstChart | SunburstChart API} */
 export const {SunburstChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Treemap | Treemap API} */
+/** Hierarchical chart rendered as nested rectangles sized by value. @see {@link https://recharts.github.io/en-US/api/Treemap | Treemap API} */
 export const {Treemap} = RechartsPrimitive;
 
 // -- Series elements --------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/Area | Area API} */
+/** Area series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Area | Area API} */
 export const {Area} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Bar | Bar API} */
+/** Bar series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Bar | Bar API} */
 export const {Bar} = RechartsPrimitive;
 /**
  * Groups stacked bars and configures shared stack properties such as radius.
@@ -812,49 +817,49 @@ export const {Bar} = RechartsPrimitive;
  * @see {@link https://recharts.github.io/en-US/guide/roundedBars | BarStack Guide}
  */
 export const {BarStack} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Funnel | Funnel API} */
+/** Funnel series for a funnel chart. @see {@link https://recharts.github.io/en-US/api/Funnel | Funnel API} */
 export const {Funnel} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Line | Line API} */
+/** Line series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Line | Line API} */
 export const {Line} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Pie | Pie API} */
+/** Pie or donut series for a pie chart. @see {@link https://recharts.github.io/en-US/api/Pie | Pie API} */
 export const {Pie} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Radar | Radar API} */
+/** Radar polygon series for a radar chart. @see {@link https://recharts.github.io/en-US/api/Radar | Radar API} */
 export const {Radar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadialBar | RadialBar API} */
+/** Radial bar series for a radial bar chart. @see {@link https://recharts.github.io/en-US/api/RadialBar | RadialBar API} */
 export const {RadialBar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Scatter | Scatter API} */
+/** Scatter (point) series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Scatter | Scatter API} */
 export const {Scatter} = RechartsPrimitive;
 
 // -- Axis & grid ------------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/CartesianGrid | CartesianGrid API} */
+/** Background grid lines for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/CartesianGrid | CartesianGrid API} */
 export const {CartesianGrid} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarAngleAxis | PolarAngleAxis API} */
+/** Angle (circumferential) axis for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarAngleAxis | PolarAngleAxis API} */
 export const {PolarAngleAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarGrid | PolarGrid API} */
+/** Background grid for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarGrid | PolarGrid API} */
 export const {PolarGrid} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarRadiusAxis | PolarRadiusAxis API} */
+/** Radius axis for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarRadiusAxis | PolarRadiusAxis API} */
 export const {PolarRadiusAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/XAxis | XAxis API} – supports `type: "auto"` since v3.7. */
+/** Horizontal axis for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/XAxis | XAxis API} – supports `type: "auto"` since v3.7. */
 export const {XAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/YAxis | YAxis API} – supports `type: "auto"` since v3.7. */
+/** Vertical axis for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/YAxis | YAxis API} – supports `type: "auto"` since v3.7. */
 export const {YAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ZAxis | ZAxis API} */
+/** Size dimension for scatter points; renders nothing itself. @see {@link https://recharts.github.io/en-US/api/ZAxis | ZAxis API} */
 export const {ZAxis} = RechartsPrimitive;
 
 // -- Annotations & overlays ------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/Brush | Brush API} */
+/** Range selector that zooms a Cartesian chart to a slice of its data. @see {@link https://recharts.github.io/en-US/api/Brush | Brush API} */
 export const {Brush} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ErrorBar | ErrorBar API} */
+/** Error bars for a bar, line, area or scatter series. @see {@link https://recharts.github.io/en-US/api/ErrorBar | ErrorBar API} */
 export const {ErrorBar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Label | Label API} */
+/** Text label for a chart element (Recharts `Label`, renamed to avoid name collisions). @see {@link https://recharts.github.io/en-US/api/Label | Label API} */
 export const {Label: RechartsLabel} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/LabelList | LabelList API} */
+/** Value labels for every data point of a series. @see {@link https://recharts.github.io/en-US/api/LabelList | LabelList API} */
 export const {LabelList} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceArea | ReferenceArea API} */
+/** Highlighted rectangular region between axis values. @see {@link https://recharts.github.io/en-US/api/ReferenceArea | ReferenceArea API} */
 export const {ReferenceArea} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceDot | ReferenceDot API} */
+/** Marker at a fixed data coordinate. @see {@link https://recharts.github.io/en-US/api/ReferenceDot | ReferenceDot API} */
 export const {ReferenceDot} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceLine | ReferenceLine API} */
+/** Horizontal or vertical line at an axis value. @see {@link https://recharts.github.io/en-US/api/ReferenceLine | ReferenceLine API} */
 export const {ReferenceLine} = RechartsPrimitive;
 
 // -- Layout -----------------------------------------------------------------
@@ -864,21 +869,29 @@ export const {ReferenceLine} = RechartsPrimitive;
  * @see {@link https://recharts.github.io/en-US/api/ResponsiveContainer | ResponsiveContainer API}
  */
 export const {ResponsiveContainer} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Customized | Customized API} */
+/** Renders a custom component with access to the chart's internal state. @see {@link https://recharts.github.io/en-US/api/Customized | Customized API} */
 export const {Customized} = RechartsPrimitive;
 
 // -- Shapes -----------------------------------------------------------------
+/** SVG crosshair shape primitive. */
 export const {Cross} = RechartsPrimitive;
+/** SVG curve (path through points) shape primitive. */
 export const {Curve} = RechartsPrimitive;
+/** SVG circle shape primitive. */
 export const {Dot} = RechartsPrimitive;
+/** SVG polygon shape primitive. */
 export const {Polygon} = RechartsPrimitive;
+/** SVG rectangle shape primitive with optional rounded corners. */
 export const {Rectangle} = RechartsPrimitive;
+/** SVG annular-sector shape primitive. */
 export const {Sector} = RechartsPrimitive;
+/** SVG symbol (circle, cross, diamond, star, …) shape primitive. */
 export const {Symbols} = RechartsPrimitive;
+/** SVG trapezoid shape primitive. */
 export const {Trapezoid} = RechartsPrimitive;
 
 // -- Z-index (v3.4+) -------------------------------------------------------
-/** @since recharts 3.4 @see {@link https://recharts.github.io/en-US/guide/zIndex | Z-Index Guide} */
+/** Renders its children in a chosen z-index layer of the chart. @since recharts 3.4 @see {@link https://recharts.github.io/en-US/guide/zIndex | Z-Index Guide} */
 export const {ZIndexLayer} = RechartsPrimitive;
 /** Default z-index ordering constants. @since recharts 3.4 */
 export const {DefaultZIndexes} = RechartsPrimitive;

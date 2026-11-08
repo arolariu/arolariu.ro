@@ -56,18 +56,35 @@ export type SidebarMenuSubItemProps = Readonly<React.ComponentPropsWithRef<"li">
 /** Stateless group-label render callback state. */
 export type SidebarGroupLabelState = Record<string, never>;
 /** Group-action render callback state. */
-export type SidebarGroupActionState = Readonly<{disabled: boolean}>;
+export type SidebarGroupActionState = Readonly<{
+  /** Whether the action is disabled. */
+  disabled: boolean;
+}>;
 /** Primary navigation render callback state. */
 export type SidebarMenuButtonState = Readonly<{
+  /** Whether the button is disabled. */
   disabled: boolean;
+  /** Whether the button represents the current page or selection. */
   isActive: boolean;
+  /** Selected size preset. */
   size: "default" | "sm" | "lg";
+  /** Selected visual variant. */
   variant: "default" | "outline";
 }>;
 /** Secondary action render callback state. */
-export type SidebarMenuActionState = Readonly<{disabled: boolean; showOnHover: boolean}>;
+export type SidebarMenuActionState = Readonly<{
+  /** Whether the action is disabled. */
+  disabled: boolean;
+  /** Whether the action is hidden until its menu item is hovered or focused. */
+  showOnHover: boolean;
+}>;
 /** Nested-link render callback state. */
-export type SidebarMenuSubButtonState = Readonly<{isActive: boolean; size: "sm" | "md"}>;
+export type SidebarMenuSubButtonState = Readonly<{
+  /** Whether the link represents the current page. */
+  isActive: boolean;
+  /** Selected size preset. */
+  size: "sm" | "md";
+}>;
 
 type SidebarControlProps<State> = Readonly<
   Omit<ButtonPrimitive.Props, "render" | "className" | "style" | "ref" | "focusableWhenDisabled"> & {

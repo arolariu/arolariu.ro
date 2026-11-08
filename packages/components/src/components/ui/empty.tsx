@@ -37,7 +37,10 @@ export type EmptyTitleProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /**
  * State owned by the {@link EmptyDescription} renderer and passed to its `render` callback.
  */
-export type EmptyDescriptionState = Readonly<{slot: "empty-description"}>;
+export type EmptyDescriptionState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "empty-description";
+}>;
 
 // Base UI resolves input object/callback refs to a merged callback (or null).
 type EmptyDescriptionRenderProps = Readonly<Omit<HTMLProps<HTMLElement>, "ref"> & {ref?: React.RefCallback<HTMLElement> | null}>;

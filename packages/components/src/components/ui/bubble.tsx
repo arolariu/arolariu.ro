@@ -35,13 +35,19 @@ export type BubbleProps = Readonly<
   }
 >;
 /** State owned by the native bubble content renderer. */
-export type BubbleContentState = Readonly<{slot: "bubble-content"}>;
+export type BubbleContentState = Readonly<{
+  /** Constant part identifier, also exposed as the `data-slot` attribute. */
+  slot: "bubble-content";
+}>;
 
 type BubbleContentRenderProps = Readonly<Omit<HTMLProps<HTMLElement>, "ref"> & {ref?: React.RefCallback<HTMLElement> | null}>;
 
 /** Shrinking content props with Base UI composition and a ref to the actual target. */
 export type BubbleContentProps = Readonly<
-  Omit<useRender.ComponentProps<"div", BubbleContentState, BubbleContentRenderProps>, "ref"> & {ref?: React.Ref<HTMLElement>}
+  Omit<useRender.ComponentProps<"div", BubbleContentState, BubbleContentRenderProps>, "ref"> & {
+    /** Ref to the rendered element; typed as `HTMLElement` because `render` can replace the default div. */
+    ref?: React.Ref<HTMLElement>;
+  }
 >;
 /** Native reaction collection props; reaction buttons and counts remain caller-owned. */
 export type BubbleReactionsProps = Readonly<

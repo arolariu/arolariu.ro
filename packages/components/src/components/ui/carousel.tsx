@@ -78,18 +78,22 @@ export type CarouselContentProps = Readonly<React.ComponentPropsWithRef<"div">>;
 export type CarouselItemProps = Readonly<React.ComponentPropsWithRef<"div">>;
 /** Shared Button props for previous navigation, including primitive-owned render composition. */
 export type CarouselPreviousProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof Button>, "size"> & {
+  Omit<React.ComponentPropsWithRef<typeof Button>, "size" | "variant"> & {
     /** Visual preset; the carousel always supplies its navigation name. */
     size?: React.ComponentProps<typeof Button>["size"];
+    /** Button visual variant. @default "outline" */
+    variant?: React.ComponentProps<typeof Button>["variant"];
     /** Localizable fallback navigation name. @default "Previous slide" */
     label?: string;
   }
 >;
 /** Shared Button props for next navigation, including primitive-owned render composition. */
 export type CarouselNextProps = Readonly<
-  Omit<React.ComponentPropsWithRef<typeof Button>, "size"> & {
+  Omit<React.ComponentPropsWithRef<typeof Button>, "size" | "variant"> & {
     /** Visual preset; the carousel always supplies its navigation name. */
     size?: React.ComponentProps<typeof Button>["size"];
+    /** Button visual variant. @default "outline" */
+    variant?: React.ComponentProps<typeof Button>["variant"];
     /** Localizable fallback navigation name. @default "Next slide" */
     label?: string;
   }
@@ -98,13 +102,21 @@ export type CarouselNextProps = Readonly<
 /** Readonly carousel context for custom descendants and navigation controls. */
 export type CarouselContextProps = Readonly<
   {
+    /** Ref callback to attach to the scrollable viewport element. */
     carouselRef: ReturnType<typeof useEmblaCarousel>[0];
+    /** Embla API instance, or `undefined` before the viewport mounts. */
     api: ReturnType<typeof useEmblaCarousel>[1];
+    /** Scrolls to the previous slide, if any. */
     scrollPrev: () => void;
+    /** Scrolls to the next slide, if any. */
     scrollNext: () => void;
+    /** Whether a previous slide is reachable. */
     canScrollPrev: boolean;
+    /** Whether a next slide is reachable. */
     canScrollNext: boolean;
+    /** Resolved scroll axis. */
     orientation: "horizontal" | "vertical";
+    /** The carousel's `setApi` callback, as supplied by the caller. */
     setApi: CarouselConfiguration["setApi"];
   } & Omit<CarouselConfiguration, "orientation" | "setApi">
 >;
