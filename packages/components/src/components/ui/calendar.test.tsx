@@ -1,7 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {act, fireEvent, render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {fr} from "date-fns/locale";
 import {createRef, StrictMode, useState} from "react";
 import {CalendarDay, type RootProps} from "react-day-picker";
 import {composeStories} from "storybook-react-rsbuild";
@@ -10,6 +9,8 @@ import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {Features, transform} from "lightningcss";
 import postcss from "postcss";
+
+import {fr, ro} from "@/lib/calendar-locales";
 
 import {Calendar, CalendarDayButton, type CalendarDayButtonProps, type DateRange} from "./calendar";
 import styles from "./calendar.module.css";
@@ -316,6 +317,22 @@ describe("Calendar", () => {
     expect(dayButton("2024-01-15")).toHaveAttribute("data-day", "15/01/2024");
     expect(dayButton("2024-01-15")).toHaveAccessibleName(/lundi 15 janvier 2024/i);
     expect(dayButton("2024-01-15")).toHaveAttribute("data-today", "true");
+  });
+
+  it("names navigation controls from a translated calendar locale", () => {
+    // Arrange
+    render(
+      <Calendar
+        mode='single'
+        defaultMonth={new Date(2024, 0, 1)}
+        locale={ro}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByRole("button", {name: "Mergi la luna următoare"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Mergi la luna anterioară"})).toBeInTheDocument();
+    expect(screen.getByRole("grid")).toHaveAccessibleName(/ianuarie 2024/i);
   });
 
   it("formats default-locale metadata with DayPicker's en-US locale instead of the runtime locale", () => {
