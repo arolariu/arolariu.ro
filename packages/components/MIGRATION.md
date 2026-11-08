@@ -7,9 +7,66 @@ workspace's source or `dist`.
 
 The historical v0.x → v1.0 guide follows this section unchanged. Its old dependency ranges and examples are historical, not instructions for
 adopting v3. In particular, its `<Button render={<a … />}>` link examples are superseded: in v3, links are native `<a>` elements styled with
-`buttonVariants()` (see [Button naming and links](#button-naming-and-links)).
+`buttonVariants()` (see [Button](#button)).
 
-### Dependency and packaging decision
+### How to use this guide
+
+The guide is organized for both people and automated agents:
+
+1. [Quick start](#quick-start) lists the upgrade steps and the searches that locate affected code.
+2. [Global changes](#global-changes) apply to every application, whichever components it renders.
+3. [Removed APIs](#removed-apis) maps every deleted export or prop to its replacement.
+4. [Breaking changes by component](#breaking-changes-by-component) has one alphabetical section per component family or hook. Each section
+   uses the same four labels: **What changed**, **Before → after**, **Why** and **Find usages**.
+5. [Changed defaults at a glance](#changed-defaults-at-a-glance) summarizes the defaults that change runtime behavior without a type error.
+
+Search patterns are regular expressions for `rg` (ripgrep); `git grep -nE` accepts the same patterns. Run them from the application's source
+root.
+
+### Quick start
+
+1. Upgrade the peers: `react` and `react-dom` to `^19`, `@base-ui/react` to `^1.9`, then install the published `@arolariu/components@3`.
+2. Run the type checker. Removed props, naming unions (Button, Carousel) and removed exports fail at compile time; fix them with the linked
+   component sections.
+3. Run every search in the table below and migrate each hit with its section.
+4. Decide every row of [Changed defaults at a glance](#changed-defaults-at-a-glance) explicitly: these compile unchanged but behave
+   differently.
+5. Localize every generated accessible name the components you render now expose (`closeLabel`, `fallbackLabel`, `launchLabel`,
+   `revealLabel`, `decreaseLabel`, …).
+6. Re-run the application's tests and the manual browser and assistive-technology checks in
+   [ACCESSIBILITY.md](./ACCESSIBILITY.md#verification-boundary).
+
+| Search (`rg -n`)                                                                                                                   | Finds                                                  | Section                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `asChild`                                                                                                                          | Removed slot props                                     | [Removed APIs](#removed-apis)                                     |
+| `toast(\.(success\|error\|info\|warning\|loading\|dismiss\|custom\|getToasts\|getHistory))?\(`                                     | Callable toast facade                                  | [Toast](#toast)                                                   |
+| `<Toaster`                                                                                                                         | Toaster options and the persistent default             | [Toast](#toast)                                                   |
+| `CommandDialog`                                                                                                                    | The removed automatic Command root                     | [Command](#command)                                               |
+| `AlertDialogAction`                                                                                                                | The removed automatic close                            | [AlertDialog](#alertdialog)                                       |
+| `extends (ButtonProps\|InputGroupButtonProps\|AlertDialogActionProps\|SidebarTriggerProps\|CarouselProps)`                         | Interfaces over naming unions (TS2312)                 | [Button](#button), [Carousel](#carousel)                          |
+| `render=\{<a\b`                                                                                                                    | Links rendered through Button                          | [Button](#button)                                                 |
+| `size=["{]['"]?icon`                                                                                                               | Icon buttons that now need a name                      | [Button](#button)                                                 |
+| `buttonVariants\|badgeVariants\|markerVariants\|tabsListVariants\|toggleVariants\|navigationMenuTriggerStyle\|buttonGroupVariants` | Class helpers called from Server Components            | [Global changes](#client-and-server-boundaries)                   |
+| `<Accordion\b[^>]*\btype=`                                                                                                         | Scalar/`type` Accordion values                         | [Accordion](#accordion)                                           |
+| `indeterminate`                                                                                                                    | Checkbox `checked="indeterminate"`                     | [Checkbox](#checkbox)                                             |
+| `delayDuration\|TooltipProvider`                                                                                                   | Removed delay alias, real provider timing              | [Tooltip and HoverCard](#tooltip-and-hovercard)                   |
+| `PopoverAnchor\|NavigationMenuViewport\|NavigationMenuIndicator\|positionMethod`                                                   | Removed compatibility parts                            | [Removed APIs](#removed-apis)                                     |
+| `hexToHsl\|hslToHex\|isValidHexColor\|getComplementaryColor\|adjustLightness\|parseHslString\|convertHslToHexString`               | Color utilities                                        | [Color utilities](#color-utilities)                               |
+| `"righ"`                                                                                                                           | Flip's misspelled direction                            | [Visual effects and motion](#visual-effects-and-motion)           |
+| `\bCell\b`                                                                                                                         | The removed Recharts `Cell` re-export                  | [Chart](#chart)                                                   |
+| `<Carousel\b`                                                                                                                      | Carousels that need a region name                      | [Carousel](#carousel)                                             |
+| `Skeleton`                                                                                                                         | Count validation and the two-pulse default             | [Skeleton and Spinner](#skeleton-and-spinner)                     |
+| `ScrollArea\|ScrollBar`                                                                                                            | The stable gutter and mounted track                    | [ScrollArea](#scrollarea)                                         |
+| `<(Dialog\|Sheet)\b[^>]*modal=`                                                                                                    | Non-modal dialogs that relied on the backdrop          | [Dialog and Sheet](#dialog-and-sheet)                             |
+| `Combobox`                                                                                                                         | Removed automatic search/list/empty block              | [Combobox](#combobox)                                             |
+| `ContextMenuContent\|DropdownMenuContent\|MenubarContent`                                                                          | Placement defaults                                     | [Menus](#menus)                                                   |
+| `ResizableHandle`                                                                                                                  | Generated step buttons                                 | [Resizable](#resizable)                                           |
+| `SidebarProvider\|SidebarMenuButton\|SidebarMenuSubButton`                                                                         | `aria-current`, the close control and the state cookie | [Sidebar](#sidebar)                                               |
+| `useFocusManager\|FocusScope`                                                                                                      | Candidate filtering and `aria-disabled` tab stops      | [FocusScope and useFocusManager](#focusscope-and-usefocusmanager) |
+
+### Global changes
+
+#### Dependency and packaging decision
 
 - The Base UI peer minimum becomes **`@base-ui/react@^1.9`** (2.4 accepted `^1`). Public 1.0's export map lacks `./drawer`; the tested 1.9
   provides it and declares React `^17 || ^18 || ^19`. This is a verified minimum chosen for this major, **not a claim that 1.9 is the
@@ -22,42 +79,34 @@ adopting v3. In particular, its `<Button render={<a … />}>` link examples are 
 - ESM, declarations, original source, CSS Modules, `styles`/`styles.css`, CSS side effects and client/server boundaries remain supported.
   MIGRATION is included in the package file list. Short public subpaths are explicit; underscore helpers are private even when emitted or
   packed as transitive modules.
-- Client boundaries changed for some subpaths: `async-boundary`, `badge`, `breadcrumb`, `empty` and `item` are now `"use client"` modules
-  (2.4's were directive-free), so a Server Component can pass their parts only serializable props (no `render` or `className` callbacks) and
-  must import `badgeVariants` from the package root to call it, while `field`, `loading-overlay` and `pagination` no longer carry
-  `"use client"` and render on the server when a Server Component imports them.
+- `npm test` verifies the built package and a real packed archive: ESM, declarations, CSS, client directives and private-import rejection
+  (see [Verification and limits](#verification-and-limits)). Physical-browser and assistive-technology verification remain separate.
+
+#### Client and server boundaries
+
+- `async-boundary`, `badge`, `breadcrumb`, `empty` and `item` are now `"use client"` modules (2.4's were directive-free), so a Server
+  Component can pass their parts only serializable props (no `render` or `className` callbacks). `field`, `loading-overlay` and `pagination`
+  no longer carry `"use client"` and render on the server when a Server Component imports them.
+- The pure class helpers `badgeVariants`, `buttonVariants`, `buttonGroupVariants`, `markerVariants`, `navigationMenuTriggerStyle`,
+  `tabsListVariants` and `toggleVariants` live in directive-free modules that the package root re-exports. Call them in a Server Component
+  only through `import {buttonVariants} from "@arolariu/components"`. Component subpaths such as `@arolariu/components/button` re-export the
+  same functions from `"use client"` modules, where they are client references, so import them from a subpath only in Client Components. A
+  Server Component that called `badgeVariants` from `@arolariu/components/badge` must switch to the root import.
+
+#### Refs, render props and primitive state
+
 - Receive DOM `ref` as an ordinary typed React 19 prop. Preserve cleanup-returning callback refs and object-ref targets in custom render
   components. Repeated merged-ref identities attach once, retained refs survive reordering, and obsolete disposers cannot detach new nodes.
 - `asChild` and the deprecated aliases are removed rather than retained behind another alias. Replace old slots with `render`; set
   `nativeButton={false}` when a button-like primitive renders a non-button element that takes button semantics (for example a `<div>`).
   Links are not button targets: render them as native `<a>` elements styled with `buttonVariants()`.
-- `npm test` verifies the built package and a real packed archive: ESM, declarations, CSS, client directives and private-import rejection
-  (see [Verification and limits](#verification-and-limits)). Physical-browser and assistive-technology verification remain separate.
+- Primitive render/class callbacks: wrappers no longer evaluate these through a stateless outer renderer. Callback props/state belong to the
+  actual primitive and callback refs are merged callbacks, not assumed mutable ref objects. Preserve forwarded props/ref and use actual
+  state, event details and cancellation.
+- Automatic NavigationMenu and Drawer anatomy survives React Flight: opaque render elements passed from Server Components are transported,
+  not re-created.
 
-### Removed APIs
-
-| Removed surface                                                                                                                         | Canonical replacement                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| All `asChild` props                                                                                                                     | `render` plus the primitive's native/composed-element contract               |
-| Callable `toast()` facade and its status helpers (`toast.success`, `toast.dismiss`, …)                                                  | `Toaster`, `toast.add/update/close/promise` or explicit Toast compound parts |
-| CommandDialog's automatic `Command` root                                                                                                | `CommandDialog` containing one explicit `Command`                            |
-| `AlertDialogAction`'s automatic close                                                                                                   | `AlertDialogAction` with caller-owned successful close                       |
-| Accordion scalar values and `type` adapters                                                                                             | Array values in both single- and multiple-panel modes; native `multiple`     |
-| Checkbox `checked="indeterminate"`                                                                                                      | Boolean `checked` plus explicit `indeterminate`                              |
-| Tooltip root/provider `delayDuration` (v2.4 ignored it on both: the provider was a pass-through, and Base UI 1.x's Root has no `delay`) | Native provider or trigger `delay`                                           |
-| NavigationMenuViewport/Indicator compatibility parts                                                                                    | NavigationMenuPositioner and its explicit viewport props                     |
-| Structural PopoverAnchor                                                                                                                | A measurable Content `anchor`                                                |
-| ContextMenu's deprecated `positionMethod`                                                                                               | Native context-menu positioning options                                      |
-| Breadcrumb `separator`, Separator `decorative` and other legacy no-op props                                                             | Explicit parts/native semantics                                              |
-| Branch-ambiguous DropDrawer handles                                                                                                     | Branch-specific menu/drawer configuration                                    |
-| Flip direction `"righ"`                                                                                                                 | `"right"`                                                                    |
-| `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness`, `parseHslString`                                 | Canonically named color utilities                                            |
-| Recharts `Cell` reexport                                                                                                                | A series `shape`                                                             |
-
-Source, declarations, root exports and component subpaths no longer expose these surfaces. Old before-examples below explain migration, not
-a compatibility option.
-
-### Accessibility and visual behavior
+#### Accessibility and visual behavior
 
 The target is applicable WCAG 2.2 A/AA. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for the criteria matrix, localized consumer content,
 motion/timing controls and manual browser/assistive-technology obligations. Native/primitive semantics, keyboard operation, focus cleanup
@@ -90,7 +139,7 @@ Related default contrast and state cues:
   `HighlightText` only while that indicator is displayed (never in server HTML or before Base UI measures the tab); the `line` variant keeps
   `CanvasText` over its `Highlight` underline. v2.4 had no forced-colors tab cue.
 
-### Public names and collision rules
+#### Public names and collision rules
 
 Use explicit root or family imports; public named props/state types accompany existing component namespaces where those namespaces are
 defined by the family. Generic primitive roots retain their primitive generics and event-detail namespace members.
@@ -108,94 +157,320 @@ RHF's provider, Controller, six hook pass-throughs and existing named RHF types 
 NavigationMenuPositioner, DrawerSwipeHandle, Popover naming parts, TooltipArrow, NativeSelect and the additive Attachment/Bubble/Marker/
 Message display families. These display families do not introduce AI/chat SDK, upload, network, application store or localization policy.
 
-### Toast: migrate the facade to a manager
+### Removed APIs
 
-In v2.4, the callable/status facade used the names `toast` and `Toaster`. In v3 **`toast` is a real Base UI manager**, not callable and not
-a heuristic overload. Mount its ready-made Toaster before emitting. Canonical Provider timeout/limit and manager timeout/type/actionProps
-replace facade duration/visibleToasts/status helpers.
+| Removed surface                                                                                                                         | Canonical replacement                                                        | Section                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| All `asChild` props                                                                                                                     | `render` plus the primitive's native/composed-element contract               | [Refs and render props](#refs-render-props-and-primitive-state) |
+| Callable `toast()` facade and its status helpers (`toast.success`, `toast.dismiss`, …)                                                  | `Toaster`, `toast.add/update/close/promise` or explicit Toast compound parts | [Toast](#toast)                                                 |
+| CommandDialog's automatic `Command` root                                                                                                | `CommandDialog` containing one explicit `Command`                            | [Command](#command)                                             |
+| `AlertDialogAction`'s automatic close                                                                                                   | `AlertDialogAction` with caller-owned successful close                       | [AlertDialog](#alertdialog)                                     |
+| Accordion scalar values and `type` adapters                                                                                             | Array values in both single- and multiple-panel modes; native `multiple`     | [Accordion](#accordion)                                         |
+| Checkbox `checked="indeterminate"`                                                                                                      | Boolean `checked` plus explicit `indeterminate`                              | [Checkbox](#checkbox)                                           |
+| Tooltip root/provider `delayDuration` (v2.4 ignored it on both: the provider was a pass-through, and Base UI 1.x's Root has no `delay`) | Native provider or trigger `delay`                                           | [Tooltip and HoverCard](#tooltip-and-hovercard)                 |
+| NavigationMenuViewport/Indicator compatibility parts                                                                                    | NavigationMenuPositioner and its explicit viewport props                     | [NavigationMenu](#navigationmenu)                               |
+| Structural PopoverAnchor                                                                                                                | A measurable Content `anchor`                                                | [Popover](#popover)                                             |
+| ContextMenu's deprecated `positionMethod`                                                                                               | Native context-menu positioning options                                      | [Menus](#menus)                                                 |
+| Breadcrumb `separator`, Separator `decorative` and other legacy no-op props                                                             | Explicit parts/native semantics                                              | [Breadcrumb and Item](#breadcrumb-and-item)                     |
+| Branch-ambiguous DropDrawer handles                                                                                                     | Branch-specific menu/drawer configuration                                    | [DropDrawer](#dropdrawer)                                       |
+| Flip direction `"righ"`                                                                                                                 | `"right"`                                                                    | [Visual effects and motion](#visual-effects-and-motion)         |
+| `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness`, `parseHslString`                                 | Canonically named color utilities                                            | [Color utilities](#color-utilities)                             |
+| Recharts `Cell` reexport                                                                                                                | A series `shape`                                                             | [Chart](#chart)                                                 |
 
-**Before — published v2.4 facade:**
+Source, declarations, root exports and component subpaths no longer expose these surfaces. Old before-examples below explain migration, not
+a compatibility option.
+
+### Breaking changes by component
+
+#### Accordion
+
+**What changed:** Values and callbacks are string arrays in both single- and multiple-panel modes. An empty array selects nothing; an array
+containing the empty string selects that item. `collapsible={false}` cancels empty proposals using the original event details. Each trigger
+renders inside Base UI's Header, an `<h3>` by default that now carries `data-slot="accordion-header"`. Trigger hover text uses
+`--ac-primary-emphasis`.
+
+**Before → after:** `<Accordion type='single' value='a'>` becomes `<Accordion value={["a"]}>`; `type='multiple'` becomes the native
+`multiple` prop. Pass `headerProps={{render: <h2 />}}` (typed `AccordionHeaderProps` or `AccordionTrigger.HeaderProps`) when `<h3>` does not
+continue the page outline.
+
+**Why:** Base UI's Accordion owns a single array-valued state; the scalar/`type` adapter converted values and lost event details.
+Applications own the heading level.
+
+**Find usages:** `rg -n "<Accordion\b[^>]*\b(type|value|defaultValue)="`
+
+#### Alert, Empty and other native display parts
+
+**What changed:** AlertTitle remains `h5`. Alert keeps normal flow for free-form children; the new `AlertAction` (`AlertActionProps`,
+`AlertAction.Props`), as a direct child, switches it to a two-column grid (the action in the trailing column, every other element child in
+the message column). `EmptyDescription` composes through Base UI `useRender` (default `<p>`); caller props, including `data-slot`, are
+applied last, and render callbacks receive `EmptyDescriptionState` (`EmptyDescription.State`). The `empty` module is now a client module
+(v2.4's was server-compatible), like Badge, Marker and BubbleContent; Server Components can still render every part. Kbd/group remain native
+`kbd`; Table remains a real table with its horizontal wrapper. Plain nested links in Alert and Empty descriptions inherit the text colour
+and are underlined (see [Accessibility and visual behavior](#accessibility-and-visual-behavior)).
+
+**Before → after:** wrap loose text in `AlertDescription` when an `AlertAction` is present; compose block content with
+`<EmptyDescription render={<div />}>`.
+
+**Why:** a grid split free-form children into cells; `render` replaces ad hoc block wrappers with the shared composition contract.
+
+**Find usages:** `rg -n "AlertAction|EmptyDescription"`
+
+#### AlertDialog
+
+**What changed:** `AlertDialogAction` is an ordinary Button and does not close the dialog. Cancel remains Close-backed. Base UI retains
+Escape and outside-dismissal policy through original cancellable details. `AlertDialogContent` accepts `portalProps` (`keepMounted`,
+`container`). `AlertDialogActionProps` aliases `ButtonProps`, so it is a naming union (see [Button](#button)).
+
+**Before → after:** explicitly close after successful asynchronous work and retain pending/rejection policies:
 
 ```tsx
-import {toast, Toaster} from "@arolariu/components";
+const [open, setOpen] = React.useState(false);
 
-<Toaster
-  duration={5000}
-  visibleToasts={3}
-/>;
-// Inside an event handler, after the Toaster has mounted:
-const id = toast.success("Saved", {duration: 3000, description: "Changes stored"});
-toast.update(id, {message: "Saved again"});
-toast.dismiss(id);
+<AlertDialog
+  open={open}
+  onOpenChange={setOpen}>
+  …
+  <AlertDialogAction
+    onClick={async () => {
+      await deleteItem();
+      setOpen(false);
+    }}>
+    Delete
+  </AlertDialogAction>
+</AlertDialog>;
 ```
 
-**After — canonical v3 manager:**
+**Why:** an automatic close dismissed the confirmation before asynchronous work could fail, hiding the error from the user.
+
+**Find usages:** `rg -n "AlertDialogAction"`
+
+#### AsyncBoundary, ErrorBoundary and LoadingOverlay
+
+**What changed:**
+
+- An explicit `fallback={null}` stays empty.
+- ErrorBoundary normalizes unknown thrown values to an `Error` with `cause`, keeping a thrown `Error` as the same object. A reset requires
+  repaired descendants or a replaced rejected resource.
+- AsyncBoundary is a Client Component and owns no fetch, cache or DOM ref. With the default fallback (a decorative spinner), a visually
+  hidden `<span role="status">` follows its content for the boundary's whole lifetime, and `loadingLabel` is written into it while
+  suspended.
+- LoadingOverlay is visual and does not intercept input. The caller owns inert, disabled, busy and focus state, and keeps the overlay
+  outside busy and inert subtrees. It always renders a persistent, visually hidden `role="status"` region (empty while hidden) and writes
+  `loadingLabel` (default `"Loading"`) into it while `visible`. The overlay element has no role.
+- The `async-boundary` module is a client module, and `loading-overlay` renders on the server (see
+  [Client and server boundaries](#client-and-server-boundaries)).
+
+**Before → after:** keep LoadingOverlay mounted and toggle `visible`; pass the loading message as `loadingLabel`, not `aria-label`. In list
+or table contexts, where the `<span>` sibling does not fit the content model, pass a fitting `loadingFallback`, which renders no region. A
+custom or `null` fallback owns its own announcement.
+
+**Why:** a status region mounted before loading starts is announced reliably, and a boundary must not swallow the identity of real errors.
+
+**Find usages:** `rg -n "AsyncBoundary|ErrorBoundary|LoadingOverlay"`
+
+#### Badge
+
+**What changed:** the default element/ref becomes `span` / `HTMLSpanElement`, not `div`. Composed refs follow the real element. Ghost/link
+variants are additive. The `link` variant's text uses `--ac-primary-emphasis`, and default badges hover to a foreground mix. The `badge`
+subpath is a client module, so call `badgeVariants` from the package root in Server Components (see
+[Client and server boundaries](#client-and-server-boundaries)).
+
+**Before → after:** use `render={<div />}` deliberately for block markup.
+
+**Why:** a badge is phrasing content; a `div` inside paragraphs and buttons produced invalid HTML.
+
+**Find usages:** `rg -n "<Badge\b|badgeVariants"`
+
+#### Breadcrumb and Item
+
+**What changed:** composed refs target `HTMLElement`; native parts retain their exact tags. Item's default `div` is noninteractive. The
+Breadcrumb root `separator` prop is removed. The `breadcrumb` and `item` modules are client modules.
+
+**Before → after:** `<Breadcrumb separator={<Slash />}>` becomes an explicit `<BreadcrumbSeparator><Slash /></BreadcrumbSeparator>` between
+items.
+
+**Why:** the root prop was a no-op compatibility flag; explicit parts keep the separators in the accessible list structure.
+
+**Find usages:** `rg -n "<Breadcrumb\b[^>]*separator=|<Item\b"`
+
+#### Button
+
+**What changed:** `ButtonProps` is now a naming union. The icon sizes (`icon`, `icon-xs`, `icon-sm`, `icon-lg`) require a string
+`aria-label` or `aria-labelledby`; visible or visually hidden text alone does not satisfy the type for those sizes. Because the props are a
+union, `interface X extends ButtonProps` fails with TS2312 ("An interface can only extend an object type or intersection of object types
+with statically known members"); declare an intersection type alias instead, such as `type X = ButtonProps & {…}`. The same applies to
+`InputGroupButtonProps` (`ButtonProps` with its `ghost`/`xs` defaults documented), to `AlertDialogActionProps`, which aliases `ButtonProps`,
+and to `SidebarTriggerProps`. Button adds `xs`, `icon-xs`, `icon-sm` and `icon-lg`; exhaustive consumer size maps must include them. Refs
+truthfully target `HTMLElement` where composition permits non-button elements; native button refs remain usable.
+
+**Before → after:**
 
 ```tsx
-"use client";
-import {toast, Toaster} from "@arolariu/components/toast";
-import type {ToastData} from "@arolariu/components/toast";
+import {Button, type ButtonProps} from "@arolariu/components/button";
+import {X} from "lucide-react";
 
-// Render once before invoking the manager, e.g. from event handlers.
-<Toaster
-  timeout={5000}
-  limit={3}
-/>;
-// Inside an event handler, after the Toaster has mounted:
-const id = toast.add({title: "Saved", description: "Changes stored", timeout: 3000, type: "success"});
-toast.update(id, {title: "Saved again"});
-toast.close(id);
+// Before: `interface CustomButtonProps extends ButtonProps {…}` — TS2312 in v3.
+type CustomButtonProps = ButtonProps & {readonly icon?: React.ReactNode};
 
-type Notification = ToastData<{readonly source: "editor"}>;
+<Button
+  variant='ghost'
+  size='icon'
+  aria-label='Close panel'>
+  <X />
+</Button>;
 ```
 
-**Default change:** v3 `timeout` defaults to **`0`**, so a notification stays until it is closed; v2.4's `duration` defaulted to **5000
-ms**. The after-example passes `timeout={5000}` to keep v2.4's auto-dismissal — omitting it makes every notification persistent. Timed
-notifications must still leave users enough time to read them and a way to extend or dismiss them (see
-[ACCESSIBILITY.md](./ACCESSIBILITY.md#motion-and-timed-content)).
-
-The ready-made Toaster renders a named close control on every notification. Its accessible name changed from v2.4's `"Close notification"`
-to `"Close toast"`; pass a localized `closeLabel` to the Toaster (a standalone icon-only `ToastClose` also defaults to `"Close toast"`).
-
-| Removed v2.4 Toaster/toast option                                                   | v3 replacement                                                                                                                                                                                                       |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `duration` (Toaster or per toast)                                                   | `timeout` on Toaster/ToastProvider or per `toast.add()`; the default is now `0` (persistent) instead of 5000 ms                                                                                                      |
-| `visibleToasts`                                                                     | `limit` (Base UI default `3`)                                                                                                                                                                                        |
-| `closeButton` (Toaster or per toast)                                                | No option: the ready-made Toaster always renders the close control. Compose ToastProvider/Portal/Viewport and Toast parts to change it                                                                               |
-| `closeButtonAriaLabel` (per toast)                                                  | Toaster-wide `closeLabel` (default `"Close toast"`, was `"Close notification"`); a per-notification name needs compound Toast parts                                                                                  |
-| `containerAriaLabel`                                                                | `viewportProps={{"aria-label": "…"}}`; the viewport name still defaults to `"Notifications"`                                                                                                                         |
-| Toaster `className`, `style`                                                        | `viewportProps={{className, style}}`; the v3 Toaster accepts neither prop                                                                                                                                            |
-| `action` (per toast)                                                                | `actionProps` button props, with the label as `children` (`actionProps: {children: "Undo", onClick}`); a custom action node needs compound Toast parts                                                               |
-| `className`, `descriptionClassName`, `style` (per toast)                            | No per-toast styling options: compose Toast parts with their own `className`, or style by the Toast root's `data-type` (also on Title, Description, Action and Close), e.g. `[data-slot="toast"][data-type="error"]` |
-| `toastOptions`                                                                      | No default-options merge: set `timeout` on the Toaster and pass the other options to each `toast.add()` call                                                                                                         |
-| `cancel`                                                                            | No replacement in the ready-made Toaster, which renders one `actionProps` action; compose a second control in compound Toast parts                                                                                   |
-| `onDismiss`, `onAutoClose`                                                          | Per-toast `onClose` (and `onRemove` after exit animations). They receive no snapshot or cause, so an automatic close is not reported separately                                                                      |
-| `toast.custom()`                                                                    | Compound Toast composition with typed `data` (`ToastData<T>`)                                                                                                                                                        |
-| `toast.getToasts()`, `toast.getHistory()`                                           | `useToastManager().toasts` lists the nearest provider's current notifications. History has no replacement: keep it in application state                                                                              |
-| `toast.update()` `message`/`variant`; `toast.promise()` factory input and `finally` | `toast.update(id, {title, type})`; `toast.promise()` takes a Promise plus `{loading, success, error}`, so run `finally` work on the promise it returns                                                               |
-
-Toaster `position` and the per-toast `id`, `description` and `priority` options keep their names; `id` must now be a string and
-`description` a node rather than a factory function.
-
-There is no v3 facade compatibility import. Move custom content to compound Toast composition and application-owned data rather than
-restoring callable status helpers, history or snapshot callbacks.
-
-Independent canonical scopes use `createToastManager<Data>()` with `toastManager={manager}` on Toaster or ToastProvider.
-`useToastManager<Data>()` reads only its nearest provider. A plain ToastProvider does **not** implicitly attach the global manager. Toaster
-`viewportProps` configures the viewport, not custom notification-list children; compose ToastProvider/Portal/Viewport and the Toast parts
-for a custom list. Ready-made top placements swipe up/right; bottom placements swipe down/right. Compound roots retain primitive
-swipe-direction options and all primitive-owned render states.
-
-Canonical `onClose`/`onRemove` retain their primitive signatures. Do not invent a removal cause or assume that a notification's timeout
-proves a user read it. Applications retain critical feedback outside disappearing notifications and own asynchronous rejection handling.
-
-### Command: one explicit native root
-
-CommandDialog is **only the modal shell**. Supply exactly one explicit Command root; v2.4's CommandDialog created it automatically.
-
-**Before — v2.4 automatic root:**
+Button always exposes button semantics, so it is for actions, not navigation: a link rendered through Button is announced as a button, is
+missing from the page's list of links and activates on Space. Render links as native `<a>` elements styled with `buttonVariants()`, and keep
+`render` with `nativeButton={false}` for non-link targets that take button semantics, such as a `<div>`.
 
 ```tsx
+import {Button, buttonVariants} from "@arolariu/components";
+
+// Before: <Button nativeButton={false} render={<a href='/dashboard' />}>Go to dashboard</Button> rendered a link as a button.
+<a
+  href='/dashboard'
+  className={buttonVariants({variant: "outline"})}>
+  Go to dashboard
+</a>;
+
+<Button
+  nativeButton={false}
+  render={<div />}>
+  Run task
+</Button>;
+```
+
+With `variant: "link"`, a real anchor stays underlined at rest (a non-colour cue), while `<Button variant="link">` underlines only on hover;
+the other variants never underline. Import `buttonVariants` from the package root to call it in a Server Component (see
+[Client and server boundaries](#client-and-server-boundaries)).
+
+**Why:** icon-only buttons without a name fail WCAG 4.1.2, and buttons that navigate break link semantics; the type system now catches both.
+
+**Find usages:**
+`rg -n "extends (ButtonProps|InputGroupButtonProps|AlertDialogActionProps|SidebarTriggerProps)|render=\{<a\b|size=[\"{]['\"]?icon"`
+
+#### Calendar
+
+**What changed:** DayPicker discriminated selection modes and primitive callbacks remain. Styled `classNames` append, except animation keys,
+which are a **single replaced token**, not a merged class list. Custom components replace defaults, a custom Root must attach the merged
+`rootRef`, and the locale-aware `CalendarDayButton` preserves native button refs. DayPicker names each day button through
+`labels.labelDayButton`, so custom DayButton children are presentational. Without a `locale`, month-dropdown options and day labels use
+DayPicker's own `en-US` default instead of the runtime locale.
+
+**Before → after:** provide CSS for overridden animation tokens; put meaningful day content (events, availability) into
+`labels.labelDayButton` and mark visual-only content `aria-hidden`; pass `locale` for localized output.
+
+**Why:** the runtime locale differed between server and browser and caused hydration mismatches; day buttons keep one accessible name.
+
+**Find usages:** `rg -n "<Calendar\b|CalendarDayButton|labelDayButton"`
+
+#### Carousel
+
+**What changed:** `CarouselProps` is a naming union: pass a localized `aria-label` or `aria-labelledby` (preferably the `id` of a visible
+heading); v2.4 rendered an unnamed `role="region"`. `interface X extends CarouselProps` fails with TS2312. Under
+`prefers-reduced-motion: reduce`, transitions are instant through a `duration: 0` the carousel adds to
+`opts.breakpoints["(prefers-reduced-motion: reduce)"]` (keeping a caller entry's other options and outranking other breakpoints'
+`duration`); the caller's or Embla's default `duration` returns when the preference clears. Embla options/plugins/API and the real
+`useCarousel` context remain. Navigation refs follow Button's `HTMLElement` contract, and CarouselPrevious/CarouselNext default to the
+`outline` variant.
+
+**Before → after:** `<Carousel>` becomes `<Carousel aria-labelledby={headingId}>`; `interface X extends CarouselProps` becomes
+`type X = CarouselProps & {…}`.
+
+**Why:** an unnamed region is announced without context (WCAG 4.1.2), and sliding transitions ignored the reduced-motion preference.
+
+**Find usages:** `rg -n "<Carousel\b|extends CarouselProps"`
+
+#### Chart
+
+**What changed:** ChartContainer `id`/`className`/`ref` belong to the native **outer root**, not ResponsiveContainer's optional measuring
+div. Native `id`/`className` are strings. Generated `data-chart` scopes are internal unique IDs. Unsafe config color declarations are
+omitted; nullish formatter output suppresses rows and default ranges use `~`. The Recharts `Cell` re-export is removed. Chart config
+`stackId` is consumer metadata, not automatic series configuration; outer Recharts positioning/sorting/container props remain outer
+responsibilities. Configure legend positioning/layout through the actual `ChartLegend`, not removed no-op custom-content props.
+`ChartLegendContent` exposes its supported per-item callbacks only; engine-injected layout/presentation fields are consumed internally
+instead of leaking to the DOM. `hideIndicator` keeps configured tooltip icons, and `hideIcon` replaces legend icons with swatches.
+SDK-inactive legend items append the caller-owned `inactiveSuffix` (default `" (hidden)"`; `""`/`null` suppresses), which is visible and
+part of clickable items' names. `initialDimension` defaults to `{width: 320, height: 200}`.
+
+**Before → after:** use JSX content or callbacks returning JSX for ref-capable Tooltip/Legend content, not direct function invocation;
+replace `<Cell fill=… />` children with a series `shape`; use native `id`/class/`data-slot` instead of the generated scope.
+
+**Why:** attributes on the measuring div were dropped whenever Recharts skipped it, and invoked content could not receive refs.
+
+**Find usages:** `rg -n "ChartContainer|ChartTooltipContent|ChartLegendContent|\bCell\b"`
+
+#### Checkbox
+
+**What changed:** `checked="indeterminate"` is removed.
+
+**Before → after:** `<Checkbox checked='indeterminate' />` becomes `<Checkbox checked={false} indeterminate />`.
+
+**Why:** Base UI models the mixed state as an explicit boolean beside `checked`.
+
+**Find usages:** `rg -n "indeterminate"`
+
+#### Collapsible
+
+**What changed:** open callbacks keep primitive event details; `details.trigger` is not synthesized when absent. Trigger render children are
+retained.
+
+**Before → after:** guard `details.trigger` before use.
+
+**Why:** callbacks report what the primitive observed instead of fabricated fields.
+
+**Find usages:** `rg -n "<Collapsible\b[^>]*onOpenChange"`
+
+#### Color utilities
+
+**What changed:** the deprecated aliases `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness` and
+`parseHslString` are removed. `convertHslToHexString` now wraps the hue into `[0, 360)`, clamps saturation and lightness to `0`–`100` and
+throws `RangeError` for a non-finite component; v2.4 produced malformed hex for out-of-range input and silently accepted `NaN`.
+`convertHexToHslString` and the helpers built on it accept only 6-digit `#rrggbb` input (check with `validateHexColorFormat`).
+
+**Before → after:**
+
+| v2.4                    | v3                               |
+| ----------------------- | -------------------------------- |
+| `hexToHsl`              | `convertHexToHslString`          |
+| `hslToHex`              | `convertHslToHexString`          |
+| `isValidHexColor`       | `validateHexColorFormat`         |
+| `getComplementaryColor` | `calculateComplementaryHexColor` |
+| `adjustLightness`       | `adjustHexColorLightness`        |
+| `parseHslString`        | `parseHslStringToComponents`     |
+
+Validate user-supplied numbers before calling `convertHslToHexString`, or catch the `RangeError`.
+
+**Why:** one canonical name per utility; out-of-range input now yields a valid colour instead of a malformed string.
+
+**Find usages:** `rg -n "hexToHsl|hslToHex|isValidHexColor|getComplementaryColor|adjustLightness|parseHslString|convertHslToHexString"`
+
+#### Combobox
+
+**What changed:** there is no automatic search/List/Empty block, transient item-label registry or empty-string deselection. Root retains
+generic object/number/multiple values. Single clearing yields `null`; multiple yields arrays. No legacy-combobox engine is added.
+ComboboxEmpty's `role="status"` root stays mounted while rendered and only its children toggle; it collapses its padding while empty.
+ComboboxContent defaults to `align="start"` and `sideOffset={6}` (Base UI: `"center"`, `0`).
+
+**Before → after:** move root `placeholder`/`searchPlaceholder`/`emptyMessage`/`className` to explicit Value/Input/Empty/visual parts;
+supply persistent Root `items`, an explicit `ComboboxList`, `ComboboxLabel` instead of a group heading and a root `filter`/data instead of
+item keywords. Style ComboboxEmpty margins/borders with `:empty`/`:not(:empty)` and never hide it with `hidden`, `display: none`,
+`aria-hidden` or conditional rendering.
+
+**Why:** a persistent status region is announced reliably; explicit parts expose the real Base UI anatomy.
+
+**Find usages:** `rg -n "<Combobox\b|ComboboxEmpty|searchPlaceholder|emptyMessage"`
+
+#### Command
+
+**What changed:** CommandDialog is **only the modal shell**. Supply exactly one explicit Command root; v2.4's CommandDialog created it
+automatically.
+
+**Before → after:**
+
+```tsx
+// Before: CommandDialog created the Command root implicitly.
 <CommandDialog
   open={open}
   onOpenChange={setOpen}>
@@ -205,8 +480,6 @@ CommandDialog is **only the modal shell**. Supply exactly one explicit Command r
   </CommandList>
 </CommandDialog>
 ```
-
-**After — canonical v3:**
 
 ```tsx
 import {Command, CommandDialog, CommandInput, CommandItem, CommandList} from "@arolariu/components/command";
@@ -270,133 +543,266 @@ associated `<label>`, `title` or `placeholder` names it. It is decided after mou
 examples above are named by their placeholder. The active option also draws a 2px `--ac-ring` outline (see
 [Accessibility and visual behavior](#accessibility-and-visual-behavior)).
 
-### Button naming and links
+**Why:** an explicit root makes the selected value, search state and filtering owner visible to the caller, and a status region outside the
+listbox keeps "no results" announcements valid.
 
-`ButtonProps` is now a naming union. The icon sizes (`icon`, `icon-xs`, `icon-sm`, `icon-lg`) require a string `aria-label` or
-`aria-labelledby`; visible or visually hidden text alone does not satisfy the type for those sizes. Because the props are a union,
-`interface X extends ButtonProps` fails with TS2312 ("An interface can only extend an object type or intersection of object types with
-statically known members"); declare an intersection type alias instead. The same applies to `InputGroupButtonProps` (`ButtonProps` with its
-`ghost`/`xs` defaults documented), to `AlertDialogActionProps`, which aliases `ButtonProps`, and to `SidebarTriggerProps`.
+**Find usages:** `rg -n "CommandDialog|CommandEmpty|data-command|:first-child"`
 
-```tsx
-import {Button, type ButtonProps} from "@arolariu/components/button";
-import {X} from "lucide-react";
+#### Dialog and Sheet
 
-// Before: `interface CustomButtonProps extends ButtonProps {…}` — TS2312 in v3.
-type CustomButtonProps = ButtonProps & {readonly icon?: React.ReactNode};
+**What changed:** the Content icon close defaults to visible (`showCloseButton` defaults to `true`); DialogFooter's optional close defaults
+to `false`. Exported Close parts are unstyled. Automatic dismissal labels are caller-localizable (`closeLabel`). Sheet's automatic close
+follows content. Content renders the page-blocking backdrop only when the root has `modal={true}` (the default): `modal={false}` and
+`"trap-focus"` leave the page visible and pressable, and an outside press still dismisses unless `disablePointerDismissal`. `portalProps`
+configures Content's internal Portal (`keepMounted`, `container`).
 
-<Button
-  variant='ghost'
-  size='icon'
-  aria-label='Close panel'>
-  <X />
-</Button>;
-```
+**Before → after:** pass `showCloseButton={false}` where the content already has its own close control; use `modal={true}` where a backdrop
+is required; style exported Close parts yourself; compose only through `render`.
 
-Button always exposes button semantics, so it is for actions, not navigation: a link rendered through Button is announced as a button, is
-missing from the page's list of links and activates on Space. Render links as native `<a>` elements styled with `buttonVariants()`, and keep
-`render` with `nativeButton={false}` for non-link targets that take button semantics, such as a `<div>`.
+**Why:** every dialog gets a keyboard- and pointer-reachable dismissal by default, and the backdrop now matches the modality the primitive
+enforces.
 
-```tsx
-import {Button, buttonVariants} from "@arolariu/components";
+**Find usages:** `rg -n "<(Dialog|Sheet)\b[^>]*modal=|(Dialog|Sheet)Content|(Dialog|Sheet)Close"`
 
-// Before: <Button nativeButton={false} render={<a href='/dashboard' />}>Go to dashboard</Button> rendered a link as a button.
-<a
-  href='/dashboard'
-  className={buttonVariants({variant: "outline"})}>
-  Go to dashboard
-</a>;
+#### Drawer
 
-<Button
-  nativeButton={false}
-  render={<div />}>
-  Run task
-</Button>;
-```
+**What changed:** the actual Viewport owns gestures, snap points and nesting. Only `modal={true}` has a blocking backdrop; non-modal and
+trap-focus viewports do not. The default down/modal behavior remains; `showSwipeHandle` defaults to `false`, and the decorative
+`DrawerSwipeHandle` stays outside Content. No snap point or list is invented. With vertical `snapPoints`, keyboard or programmatic focus on
+a control that the active snap point keeps (even partly) off-screen requests the largest snap point through `onSnapPointChange` with
+`reason: "none"`: uncontrolled drawers expand, controlled owners must apply or cancel the request. `DrawerContent` accepts `portalProps`.
 
-With `variant: "link"`, a real anchor stays underlined at rest (a non-colour cue), while `<Button variant="link">` underlines only on hover;
-the other variants never underline. Import `buttonVariants` from the package root (`import {buttonVariants} from "@arolariu/components"`) to
-call it in a Server Component: the root re-exports it from a directive-free module. The `@arolariu/components/button` subpath re-exports the
-same function from a `"use client"` module, where it is a client reference, so import it from that subpath only in Client Components.
-`badgeVariants`, `buttonGroupVariants`, `markerVariants`, `navigationMenuTriggerStyle`, `tabsListVariants` and `toggleVariants` follow the
-same rule.
+**Before → after:** supply a snap point tall enough for every focusable control (for example `1`), or keep focusable controls within the
+smallest snap height; handle `reason: "none"` in controlled `onSnapPointChange` owners.
 
-### Changed defaults, motion and generated controls
+**Why:** focus must never land on a control the user cannot see (WCAG 2.4.11).
 
-| Surface                                                                                                                                                                                      | v2.4                                                                                               | v3                                                                                                                                                                                                                                                                                                                                 | Opt-in or replacement                                                                                                                                                                                                     |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Toast auto-dismiss                                                                                                                                                                           | `duration` defaulted to 5000 ms                                                                    | `timeout` defaults to `0`: notifications persist until closed                                                                                                                                                                                                                                                                      | `timeout` on Toaster/ToastProvider or per `toast.add()`; see [Toast](#toast-migrate-the-facade-to-a-manager)                                                                                                              |
-| Toast close control name                                                                                                                                                                     | `"Close notification"`                                                                             | Toaster `closeLabel`, default `"Close toast"`                                                                                                                                                                                                                                                                                      | A localized `closeLabel`                                                                                                                                                                                                  |
-| Visual effects: BackgroundBeams, BubbleBackground, DotBackground, FireworksBackground, GradientBackground, GradientText, HighlightText, HoleBackground, TypewriterText, TypewriterTextSmooth | No time limit on automatic motion                                                                  | Automatic motion settles to a static frame five seconds after mount (wall clock; scrolling does not restart it). Reduced motion, a hidden document and off-screen instances also pause. CountingNumber, which has no `loop`, then shows its final value                                                                            | `loop` keeps automatic motion running and requires a caller-supplied, localized native pause/stop control that sets `motionPaused` (WCAG 2.2.2); `motionPaused` stops motion at any time                                  |
-| Skeleton, including Card/Form/List/Table skeletons                                                                                                                                           | Pulsed indefinitely                                                                                | Two pulses (four seconds), then static                                                                                                                                                                                                                                                                                             | No infinite pulse; `animated={false}` or reduced motion keeps it static from the start                                                                                                                                    |
-| ResizableHandle                                                                                                                                                                              | No step buttons                                                                                    | Native −/+ step buttons after each separator: two extra tab stops per handle                                                                                                                                                                                                                                                       | `decreaseLabel`, `increaseLabel`, `resizeStep`; `withControls={false}` (see the Carousel/Resizable row below)                                                                                                             |
-| FireworksBackground                                                                                                                                                                          | Clicking the canvas launched fireworks                                                             | Decorative canvas (background clicks do nothing) plus a native launch button, `launchLabel` default `"Launch fireworks"`                                                                                                                                                                                                           | The button stays available after automatic launches settle and in `population={0}` click-only mode; it is `aria-disabled` (still focusable, activation ignored) under reduced motion, `motionPaused` or a hidden document |
-| Scratcher                                                                                                                                                                                    | Pointer scratching only                                                                            | A native reveal button (`revealLabel`, default `"Reveal content"`) and a visually hidden completion status (`completedLabel`, default `"Content revealed"`); after the reveal the button keeps focus and its tab stop as `aria-disabled` (activation ignored) until a `width`, `height` or `gradientColors` change resets the card | Localized `revealLabel` and `completedLabel`                                                                                                                                                                              |
-| PaginationPrevious / PaginationNext                                                                                                                                                          | Named `"Go to previous page"` / `"Go to next page"`; visible `"Previous"` / `"Next"`               | The visible `text` is also the accessible name: `"Previous"` / `"Next"`                                                                                                                                                                                                                                                            | A localized `text`                                                                                                                                                                                                        |
-| SidebarMenuButton tooltips                                                                                                                                                                   | Base UI's default open delay (600 ms); SidebarProvider's `TooltipProvider` was a pass-through shim | Collapsed-sidebar `tooltip` content opens without delay (`delay={0}` on its own trigger); other tooltips are unaffected                                                                                                                                                                                                            | For another delay, omit `tooltip` and compose `Tooltip` with `TooltipTrigger delay={…} render={<SidebarMenuButton …/>}`                                                                                                   |
-| Carousel transitions                                                                                                                                                                         | Embla's `duration` (default 25) regardless of the motion preference                                | Instant (`duration: 0`) while `prefers-reduced-motion: reduce` matches; the caller's or Embla's default `duration` returns when it clears                                                                                                                                                                                          | Other reduced-motion options go in `opts.breakpoints["(prefers-reduced-motion: reduce)"]`; its `duration` is always `0`                                                                                                   |
-| Table scroll viewport                                                                                                                                                                        | Plain, non-focusable `<div>`                                                                       | A tab stop (`tabIndex={0}`) with a focus ring and no role or name                                                                                                                                                                                                                                                                  | Name it with `containerProps={{role: "region", "aria-labelledby": captionId}}`; `containerProps={{tabIndex: -1}}` only when the table can never overflow                                                                  |
+**Find usages:** `rg -n "<Drawer\b|snapPoints|onSnapPointChange"`
 
-### Breaking defaults, values, refs and native tags
+#### DropDrawer
 
-| Family                           | Migration / retained boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button and composed controls     | Non-button canonical targets that take button semantics must specify `nativeButton={false}`; links are native `<a>` elements styled with `buttonVariants()`, not Button render targets. Refs truthfully target `HTMLElement` where composition permits non-button elements; native button refs remain usable. Button adds `xs`, `icon-xs`, `icon-sm`, `icon-lg`; exhaustive consumer size maps must include them. Icon sizes require `aria-label` or `aria-labelledby`, and `ButtonProps` (with `InputGroupButtonProps`, `AlertDialogActionProps` and `SidebarTriggerProps`) is a union: replace `interface X extends ButtonProps` with `type X = ButtonProps & {…}`. See [Button naming and links](#button-naming-and-links).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Badge                            | Default element/ref becomes `span` / `HTMLSpanElement`, not div. Use `render={<div />}` deliberately for block markup; composed refs follow the real element. Ghost/link variants are additive. The `link` variant's text uses `--ac-primary-emphasis`, and default badges hover to a foreground mix (see [Accessibility and visual behavior](#accessibility-and-visual-behavior)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Breadcrumb/Item                  | Composed refs target HTMLElement; native parts retain their exact tags. Item's default div is noninteractive. Breadcrumb root separator is removed; use BreadcrumbSeparator.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Primitive render/class callbacks | Wrappers no longer evaluate these through a stateless outer renderer. Callback props/state belong to the actual primitive and callback refs are merged callbacks, not assumed mutable ref objects. Preserve forwarded props/ref and use actual state, event details and cancellation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Accordion                        | Values and callbacks are string arrays in both single- and multiple-panel modes. Use native multiple, never type or scalar values. An empty array selects nothing; an array containing the empty string selects that item. collapsible=false cancels empty proposals using the original event details. Each trigger renders inside Base UI's Header, an `<h3>` by default (`data-slot="accordion-header"`); applications own the heading level, so pass `headerProps={{render: <h2 />}}` (typed `AccordionHeaderProps` or `AccordionTrigger.HeaderProps`) when `<h3>` does not continue the outline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Collapsible                      | Open callbacks keep primitive event details; `details.trigger` is not synthesized when absent. Trigger render children are retained.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Slider                           | Scalar stays scalar; readonly/mutable ranges retain primitive inference and one thumb per supplied endpoint, including zero for an empty range. An omitted default is the primitive's single minimum, not an invented range. Keep `(value, details)` change/commit callbacks and native named inputs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Progress                         | Omitted/null values are primitive indeterminate state, not coerced to zero. Root children are retained. Four explicit parts replace the convenience track when a direct local/Base UI track is supplied; Value formatting belongs to the primitive.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Tabs                             | Default/line visual variants are explicit. Disabled tabs may remain keyboard-focusable under the primitive's `focusableWhenDisabled` policy, but cannot activate. Panel hiding follows transition completion, not synchronous selected-value inequality.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Select                           | Root retains generic object/number/multiple values and nullable single selection. Do not filter callbacks into old string-only values; retain original `(value, details)`, equality, cancellation and clear semantics. To name the listbox use `listProps`, not only Popup's label.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Combobox                         | No automatic search/List/Empty block, transient item-label registry or empty-string deselection. Move root placeholder/searchPlaceholder/emptyMessage/className to explicit Value/Input/Empty/visual parts; supply persistent Root `items`, an explicit ComboboxList, ComboboxLabel instead of group heading and root filter/data instead of item keywords. Single clearing yields null; multiple yields arrays. No legacy-combobox engine is added. ComboboxEmpty's `role="status"` root stays mounted while rendered and only its children toggle; it collapses its padding while empty, so style its margins/borders with `:empty`/`:not(:empty)`, and never hide it with `hidden`, `display: none`, `aria-hidden` or conditional rendering. ComboboxContent defaults to `align="start"` and `sideOffset={6}` (Base UI: `"center"`, `0`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Dialog/Sheet                     | Content icon close defaults true; showCloseButton=false opts out. DialogFooter's optional close defaults false. Exported Close parts are unstyled. Automatic dismissal labels are caller-localizable; compose only through render. Content renders the page-blocking backdrop only when the root has `modal={true}` (the default): `modal={false}` and `"trap-focus"` leave the page visible and pressable, and an outside press still dismisses unless `disablePointerDismissal`. Use `modal={true}` where a backdrop is required. `portalProps` configures Content's internal Portal (`keepMounted`, `container`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| AlertDialog                      | Action is an ordinary Button and does not close. Explicitly close after successful asynchronous work and retain pending/rejection policies. Cancel remains Close-backed. Base UI retains Escape and outside-dismissal policy through original cancellable details. `AlertDialogContent` accepts `portalProps` (`keepMounted`, `container`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Popover                          | The structural PopoverAnchor adapter is removed. Supply Content anchor with a measurable element/ref. Header owns layout; Title and Description own accessible registration.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Tooltip/HoverCard                | Render/state/timing belongs to the primitive. Use native provider/trigger delay; delayDuration is removed. Tooltip's decorative Arrow can be disabled with showArrow=false before custom TooltipArrow composition. Preserve hover/focus visibility and Escape dismissal. `TooltipProvider` is now Base UI's provider (v2.4's was a pass-through that ignored `delayDuration`): its `delay`, `closeDelay` and `timeout` (default 400 ms) apply to the tooltips inside it, and a tooltip there opens instantly when another closed less than `timeout` earlier, so wrapping an app in `<TooltipProvider>` changes its tooltip timing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Menus                            | Popup render/class/ref/focus remain on Popup, positioning options on Positioner, portal options on Portal. Trigger refs may be HTMLElement. Primitive checked/value/nativeButton/event details are not converted; submenu `inline-end` is RTL-aware. The props document the deliberate placement defaults (side/align/sideOffset/alignOffset): DropdownMenuContent unset/start/4/0; DropdownMenuSubContent and MenubarSubContent inline-end/start/0/−3; MenubarContent unset/start/8/−4; ContextMenuContent inline-end/start/0/4; DropDrawerContent (desktop) align `end`; NavigationMenuPositioner bottom/start/8/0; PopoverContent and TooltipContent `sideOffset` 4; HoverCardContent offsets 4/4. DropdownMenuContent and MenubarContent leave `side` unset unless provided, so Base UI opens root menus below the trigger and vertical Menubar menus toward the inline end. ContextMenuContent defaults to the logical `side="inline-end"` (left in RTL; the popup reports `data-side="inline-end"`), start alignment and offsets 0/4 (side/align). v2.4 passed no placement, so Base UI's context-menu default applied (with Base UI 1.9: `data-side="bottom"`, start alignment, side offset −5 and align offset 2). Destructive items use the contrast-safe text mix (see [Accessibility and visual behavior](#accessibility-and-visual-behavior)).                                                                                                  |
-| Drawer                           | Actual Viewport owns gestures/snaps/nesting. Modal true alone has a blocking backdrop; nonmodal/trap-focus viewports do not. Default down/modal behavior remains; `showSwipeHandle` defaults false, and decorative DrawerSwipeHandle stays outside Content. No snap point/list is invented. With vertical `snapPoints`, keyboard or programmatic focus on a control that the active snap point keeps (even partly) off-screen requests the largest snap point through `onSnapPointChange` with `reason: "none"`: uncontrolled drawers expand, controlled owners must apply or cancel the request. Supply a snap point tall enough for every focusable control (for example `1`), or keep focusable controls within the smallest snap height. `DrawerContent` accepts `portalProps`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| NavigationMenu                   | Root supplies an automatic positioned Popup/Viewport, including opaque Flight render elements. Set positionerProps=false for explicit NavigationMenuPositioner composition. Viewport/Indicator compatibility adapters are removed. Mark the current page's link with `active` (Base UI adds `aria-current="page"`); it draws a 2px underline besides the hover tint.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Sidebar                          | Root ref follows actual desktop/static/mobile popup; Inset is native main, list/item parts retain ul/li refs. Functional desktop/mobile setters and controlled behavior remain. Polymorphic action/label/button state is wrapper-owned, not fabricated Menu/Tooltip/Sheet state. `isActive` on SidebarMenuButton and SidebarMenuSubButton now also sets `aria-current="page"` (with a forced-colors cue, and an underline on sub-buttons); pass another `aria-current` value for other kinds of current item, or `aria-current={undefined}` on section/disclosure triggers whose active styling does not mark the current page. The mobile sheet now renders a visible, named close control, last in DOM order and pinned to the top inline-end corner above a reserved top row. `showCloseButton` (default `true`) controls both; `closeLabel` defaults to `"Close sidebar"`. In v2.4 that name belonged to the full-screen overlay button; the v3 backdrop is not a named control. SidebarProvider still writes the `sidebar_state` cookie (`path=/`, `max-age=604800`) on every desktop open-state change, including controlled proposals, and never reads it: seed `defaultOpen` from it, or pass the new `persistState={false}` when you persist the state yourself. Ctrl+B / Cmd+B toggles the sidebar unless a `keydown` handler calls `preventDefault()` first (v2.4 toggled regardless).                                                           |
-| Calendar                         | DayPicker discriminated selection modes and primitive callbacks remain. Styled classNames append, except animation keys are a **single replaced token**, not a merged class list; provide CSS for overridden tokens. Custom components replace defaults, Custom Root must attach merged rootRef, and locale-aware CalendarDayButton preserves native button refs. DayPicker names each day button through `labels.labelDayButton`, so custom DayButton children are presentational: put meaningful day content (events, availability) into that label and mark visual-only content `aria-hidden`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Carousel/Resizable               | Carousel requires a region name: `CarouselProps` is a naming union, so pass a localized `aria-label` or `aria-labelledby` (v2.4 rendered an unnamed `role="region"`), and replace `interface X extends CarouselProps` with `type X = CarouselProps & {…}`. Keep Embla options/plugins/API and real `useCarousel` context. Navigation refs follow Button's HTMLElement contract. Resizable remains installed v4 Group/Panel/Separator with primitive imperative handles/callbacks; use percentage-string constraints and primitive orientation state, not old ad hoc selectors. `ResizableHandle` renders native −/+ step buttons after each separator (two extra tab stops; `decreaseLabel`/`increaseLabel`/`resizeStep`), placed outside the separator's drag area, with `data-slot` hooks `resizable-controls`/`resizable-decrease`/`resizable-increase`. The controls container carries react-resizable-panels' `data-resize-preview` marker so it never changes separator hit regions; scope any `[data-resize-preview]` styling to the primitive's preview overlays. Opt out with `withControls={false}` only alongside another single-pointer resize alternative (WCAG 2.5.7). The default clearance assumes the 1px separator and a `resizeTargetMinimumSize` of at most 22px; reposition the controls through the hooks if you widen either.                                                                                                        |
-| ScrollArea                       | `ScrollBar` keeps its 24px (1.5rem) track mounted by default (`keepMounted` defaults to `true`). While its axis fits, the track stays in the DOM but is hidden and paints nothing; code or tests that expected it to be absent must check `visibility` or use a composed `ScrollBar` with `keepMounted={false}`. Whenever a package-styled track is mounted, the viewport (now `box-sizing: border-box`) reserves a stable 1.5rem gutter plus scroll padding (inline-end for vertical, block-end for horizontal), present in server HTML and independent of overflow. Content is therefore 1.5rem narrower or shorter even without overflow, and the gutter replaces the viewport's own end padding on that axis (pad `ScrollAreaContent` instead). The convenience `ScrollArea` always reserves the vertical gutter; to opt out, compose `ScrollAreaRoot` with `<ScrollBar keepMounted={false} />`, which restores mount-on-overflow: the gutter then appears after hydration and can oscillate for width-dependent content. Restyled tracks wider than 1.5rem need a matching gutter.                                                                                                                                                                                                                                                                                                                                                                     |
-| Chart                            | ChartContainer id/class/ref now belong to the native **outer root**, not ResponsiveContainer's optional measuring div. Native id/className are strings. Use JSX content or callbacks returning JSX for ref-capable Tooltip/Legend content, not direct function invocation. Generated data-chart scopes are internal unique IDs; use native id/class/data-slot instead. Unsafe config color declarations are omitted; nullish formatter output suppresses rows and default ranges use `~`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Form/Field                       | Form remains RHF's provider. FormControl preserves real element/event refs and child-first cancellation; no implicit replacement of the RHF update handler. Only mounted meaningful description/message nodes get ARIA references; blank/boolean/empty-fragment errors don't create empty messages, but numeric zero remains meaningful. Invalid fields can remain invalid without text. Inline messages are not automatic alerts: own one submission announcement. Server HTML and the hydration render already carry the label/control association and `aria-describedby`, derived from the FormLabel/FormControl/FormDescription/FormMessage elements written in the FormItem's children (through fragments and wrapper elements, not nested items) and honoring explicit IDs. Limits: parts rendered internally by other components link only once they mount, and server HTML links a generated description or message only when it is the item's single generated part of that kind, so give additional parts explicit IDs. Until hydration, server HTML can reference a written part that renders empty or not at all, and a written plus a component-rendered generated description can share one ID. After hydration, mounted parts refine the links and generated IDs become unique.                                                                                                                                                              |
-| Input/OTP/Textarea/Label         | Input state/callbacks remain Base UI-owned. OTP invalid indexes fail fast; active caret suppresses placeholder, inactive empty slots retain placeholder or `·`. Textarea and Label remain native/server-compatible; Textarea defaults to manual resizing, with `data-sizing="content"` as CSS progressive enhancement, not a fabricated Base Textarea/autoresize API.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Native/display parts             | AlertTitle remains h5. Alert keeps normal flow for free-form children; the new `AlertAction`, as a direct child, switches it to a two-column grid (the action in the trailing column, every other element child in the message column; wrap loose text in `AlertDescription`). EmptyDescription remains a `<p>` by default; compose block content with `render={<div />}` (Base UI `useRender`; caller props, including `data-slot`, are applied last; render callbacks receive `EmptyDescriptionState`). The `empty` module is now a client module (v2.4's was server-compatible), like Badge, Marker and BubbleContent. Kbd/group remain native kbd; Table remains a real table with its horizontal wrapper. Skeleton/Spinner can use `animated={false}` and reduced motion; Skeleton pulses twice, then stays static. Neither announces loading reliably (Spinner's `role="status"` and default `"Loading"` name identify it but are not an announcement): write text into a status region mounted before loading starts (LoadingOverlay's `loadingLabel`, AsyncBoundary's default fallback, `useAnnounce` or a persistent `VisuallyHidden role="status"`), keep `aria-busy` off that region and mark the spinner `aria-hidden="true"`. ScrollArea convenience composition stays; explicit Root/Viewport/Content/Thumb/Corner parts support sibling axis scrollbars and actual viewport refs (see the ScrollArea row for its gutter and track mounting). |
-| Boundaries/loading               | Explicit `fallback={null}` stays empty. ErrorBoundary normalizes unknown thrown values to Error with cause, preserving genuine Error identity. Reset requires repaired descendants/replaced rejected resource. AsyncBoundary owns no fetch/cache/DOM ref. FocusScope is local keyboard scope, not a modal engine. With `contain` (default) the consumer provides and announces a keyboard exit; focusable `aria-disabled` controls are tab stops. LoadingOverlay is visual/non-intercepting; the caller owns inert/disabled/busy/focus and keeps the overlay outside busy and inert subtrees. It always renders a persistent, visually hidden `role="status"` region (empty while hidden) and writes `loadingLabel` (default `"Loading"`) into it while `visible`, so keep it mounted and toggle `visible`. The overlay element has no role: pass the loading message as `loadingLabel`, not `aria-label`. AsyncBoundary is a Client Component; with the default fallback (a decorative spinner) a new visually hidden `<span role="status">` follows its content for the boundary's whole lifetime, and `loadingLabel` is written into it while suspended. In list or table contexts, where that `<span>` sibling does not fit the content model, pass a fitting `loadingFallback`, which renders no region. A custom or `null` fallback owns its announcement.                                                                                            |
-| DropDrawer                       | Open state survives breakpoint changes; submenu path resets and the new primitive owns focus. Mobile actions are native buttons; desktop uses Menu. `closeOnClick` defaults true, including submenu actions. Live registrations are not cached React children. Desktop maps trap-focus to Menu modal mode; mobile follows Drawer backdrop rules. Shared states are engine unions: narrow them rather than assuming Menu highlighting on mobile. On mobile, a submenu's drill-down panel heading, which also names the drawer dialog while that panel is active, comes from `DropDrawerSub`'s localizable `title`, then the trigger's `label`, then its visible text (excluding `aria-hidden` and `hidden` content), then the root `mobileTitle`; set `title` for icon-only, `aria-label`-named or badge/count triggers. Desktop menus ignore it. Choose the owner with `presentation`: the default `"responsive"` switches at `(max-width: 767px)` and server-renders the desktop Menu; `"menu"` and `"drawer"` force one owner, on the server too. Derive a custom breakpoint with `useMediaQuery`.                                                                                                                                                                                                                                                                                                                                                        |
-| Local visual/motion extensions   | Background/text/canvas extensions and Copy/Counting/Flip/Ripple/Stepper/Timeline/Typewriter/VisuallyHidden remain. Canvas refs and error policies retain their owning contracts. Flip accepts right, not righ. Preserve native keyboard reveal, meaningful readable text, reduced-motion alternatives and user-operable control of continuing motion. Automatic motion settles after five seconds unless `loop`, and FireworksBackground and Scratcher add native generated controls (see [Changed defaults, motion and generated controls](#changed-defaults-motion-and-generated-controls)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+**What changed:** open state survives breakpoint changes; the submenu path resets and the new primitive owns focus. Mobile actions are
+native buttons; desktop uses Menu. `closeOnClick` defaults to `true`, including submenu actions. Live registrations are not cached React
+children. Desktop maps trap-focus to Menu modal mode; mobile follows Drawer backdrop rules. Shared states are engine unions.
+Branch-ambiguous handles are removed. The new `presentation` prop chooses the owner: the default `"responsive"` switches at
+`(max-width: 767px)` and server-renders the desktop Menu; `"menu"` and `"drawer"` force one owner, on the server too. Mobile `DropDrawerSub`
+`onOpenChange` details support destructured `cancel()` and `allowPropagation()` like Base UI's, and the mobile Back and drill-down chevrons
+mirror in RTL. On mobile, a submenu's drill-down panel heading, which also names the drawer dialog while that panel is active, comes from
+`DropDrawerSub`'s localizable `title`, then the trigger's `label`, then its visible text (excluding `aria-hidden` and `hidden` content),
+then the root `mobileTitle`. Desktop menus ignore it. DropDrawerContent (desktop) aligns to `end` by default.
 
-### Caller-owned Stepper completion copy
+**Before → after:** narrow shared states rather than assuming Menu highlighting on mobile; move branch-specific options to the menu or
+drawer configuration; set `title` for icon-only, `aria-label`-named or badge/count triggers; derive a custom breakpoint with `useMediaQuery`
+and `presentation`.
 
-`completedLabel` controls the assistive text appended to completed steps. Its default remains `"Completed"`; pass translated text for the
-consumer's locale, or an empty string to omit the completion suffix. The step labels and native root `aria-label` remain caller-owned.
+**Why:** each viewport uses one real primitive, so focus, semantics and server HTML are truthful.
 
-```tsx
-<Stepper
-  steps={["Compte", "Profil", "Vérification"]}
-  activeStep={1}
-  completedLabel='Terminé'
-  aria-label='Progression'
-/>
-```
+**Find usages:** `rg -n "DropDrawer"`
 
-### Exact Skeleton count/error policy
+#### FocusScope and useFocusManager
 
-Card `lines`, Form `fields`, List `items` and Table `rows`/`columns` must each be **finite nonnegative integers ≤ 10,000**. No coercion,
-clamping or truncation occurs. Invalid or over-limit counts synchronously throw documented **RangeError before allocation**.
+**What changed:** in FocusScope, natively focusable `aria-disabled` controls (Base UI `focusableWhenDisabled`, disabled toolbar roving
+stops) are tab stops: Tab continues past them, and wrapping, `autoFocus` and focus restoration include them. A scope in a same-origin iframe
+document looks up `HTMLElement`/`HTMLDetailsElement`/`HTMLFieldSetElement`/`HTMLLegendElement` from the element's own window. FocusScope is
+local keyboard scope, not a modal engine; with `contain` (the default) the consumer provides and announces a keyboard exit (WCAG 2.1.2).
+`useFocusManager` candidates also skip `aria-disabled`, hidden, `inert`, `display: none`/`visibility: hidden`, closed-`<details>` and
+disabled-`<fieldset>` content (v2.4 skipped only `disabled` and negative-`tabindex` elements). `focusNext`/`focusPrevious` from a focused
+element that is not a candidate continue to the nearest candidate after or before it in DOM order instead of jumping to the first or last
+candidate; with focus outside the container, or on nothing, they still go to the first or last candidate, and moves past either end always
+wrap.
+
+**Before → after:** remove workarounds that skipped hidden or `inert` content manually; provide a visible exit from contained scopes.
+
+**Why:** focus should only move to controls a user can perceive and operate.
+
+**Find usages:** `rg -n "FocusScope|useFocusManager"`
+
+#### Form and Field
+
+**What changed:** `Form` remains RHF's provider (not a native `<form>`). FormControl preserves real element/event refs and child-first
+cancellation; there is no implicit replacement of the RHF update handler. Only mounted meaningful description/message nodes get ARIA
+references; blank/boolean/empty-fragment errors don't create empty messages, but numeric zero remains meaningful. Invalid fields can remain
+invalid without text. Inline messages are not automatic alerts. Server HTML and the hydration render already carry the label/control
+association and `aria-describedby`, derived from the FormLabel/FormControl/FormDescription/FormMessage elements written in the FormItem's
+children (through fragments and wrapper elements, not nested items) and honoring explicit IDs. Limits: parts rendered internally by other
+components link only once they mount, and server HTML links a generated description or message only when it is the item's single generated
+part of that kind. Until hydration, server HTML can reference a written part that renders empty or not at all, and a written plus a
+component-rendered generated description can share one ID. After hydration, mounted parts refine the links and generated IDs become unique.
+A FormControl fallback wrapper merges caller `aria-describedby`/`aria-invalid` with the generated values.
+
+**Before → after:** own one submission announcement; give additional descriptions or messages explicit IDs. The root `FieldError` is the
+styled component; RHF's data type is `RHFFieldError` (see [Public names and collision rules](#public-names-and-collision-rules)).
+
+**Why:** assistive technology receives only references to content that exists.
+
+**Find usages:** `rg -n "FormControl|FormMessage|FormDescription|FieldError"`
+
+#### Input, InputOTP, Textarea and Label
+
+**What changed:** Input state/callbacks remain Base UI-owned. OTP invalid indexes fail fast; the active caret suppresses the placeholder,
+and inactive empty slots retain the placeholder or `·`. Textarea and Label remain native and server-compatible; Textarea defaults to manual
+resizing, with `data-sizing="content"` as CSS progressive enhancement, not a fabricated Base Textarea/autoresize API.
+
+**Before → after:** remove autoresize props; opt into content sizing with `data-sizing="content"`.
+
+**Why:** no invented API over a native element.
+
+**Find usages:** `rg -n "InputOTPSlot|<Textarea\b"`
+
+#### Menus
+
+DropdownMenu, ContextMenu, Menubar and the desktop DropDrawer menu.
+
+**What changed:** Popup render/class/ref/focus remain on Popup, positioning options on Positioner, portal options on Portal. Trigger refs
+may be `HTMLElement`. Primitive checked/value/nativeButton/event details are not converted; submenu `inline-end` is RTL-aware. ContextMenu's
+deprecated `positionMethod` is removed. The props document the deliberate placement defaults (side/align/sideOffset/alignOffset):
+DropdownMenuContent unset/start/4/0; DropdownMenuSubContent and MenubarSubContent inline-end/start/0/−3; MenubarContent unset/start/8/−4;
+ContextMenuContent inline-end/start/0/4; DropDrawerContent (desktop) align `end`; NavigationMenuPositioner bottom/start/8/0; PopoverContent
+and TooltipContent `sideOffset` 4; HoverCardContent offsets 4/4. DropdownMenuContent and MenubarContent leave `side` unset unless provided,
+so Base UI opens root menus below the trigger and vertical Menubar menus toward the inline end. ContextMenuContent defaults to the logical
+`side="inline-end"` (left in RTL; the popup reports `data-side="inline-end"`); v2.4 passed no placement, so Base UI's context-menu default
+applied (with Base UI 1.9: `data-side="bottom"`, start alignment, side offset −5 and align offset 2). Destructive items use the
+contrast-safe text mix. Menu roots write `dir="rtl"` only under an RTL `DirectionProvider` (see
+[Public names and collision rules](#public-names-and-collision-rules)).
+
+**Before → after:** pass `side='bottom'` with `sideOffset={-5}` and `alignOffset={2}` to ContextMenuContent to keep v2.4's placement; wrap
+RTL apps in `DirectionProvider direction="rtl"`.
+
+**Why:** logical placement mirrors correctly in RTL, and destructive text keeps 4.5:1 contrast.
+
+**Find usages:** `rg -n "(ContextMenu|DropdownMenu|Menubar)(Sub)?Content|positionMethod"`
+
+#### NavigationMenu
+
+**What changed:** Root supplies an automatic positioned Popup/Viewport, including opaque Flight render elements. The Viewport/Indicator
+compatibility adapters are removed. Mark the current page's link with `active` (Base UI adds `aria-current="page"`); it draws a 2px
+underline besides the hover tint. `navigationMenuTriggerStyle` is callable from the package root in Server Components.
+
+**Before → after:** set `positionerProps={false}` for explicit `NavigationMenuPositioner` composition instead of
+`NavigationMenuViewport`/`NavigationMenuIndicator`.
+
+**Why:** the positioner is the real Base UI anatomy; the current page is not identified by colour alone.
+
+**Find usages:** `rg -n "NavigationMenuViewport|NavigationMenuIndicator|NavigationMenuLink"`
+
+#### Pagination
+
+**What changed:** PaginationPrevious / PaginationNext are named by their visible `text` (`"Previous"` / `"Next"`); v2.4 named them
+`"Go to previous page"` / `"Go to next page"`. The `pagination` module renders on the server.
+
+**Before → after:** pass a localized `text`.
+
+**Why:** the accessible name contains the visible label (WCAG 2.5.3).
+
+**Find usages:** `rg -n "Pagination(Previous|Next)"`
+
+#### Popover
+
+**What changed:** the structural `PopoverAnchor` adapter is removed. Header owns layout; Title and Description own accessible registration.
+
+**Before → after:** supply Content `anchor` with a measurable element or ref.
+
+**Why:** Base UI positions against a measured element, not a structural wrapper.
+
+**Find usages:** `rg -n "PopoverAnchor"`
+
+#### Progress and Slider
+
+**What changed:** Progress: omitted/null values are primitive indeterminate state, not coerced to zero. Root children are retained. Four
+explicit parts replace the convenience track when a direct local/Base UI track is supplied; Value formatting belongs to the primitive.
+Slider: a scalar stays scalar; readonly/mutable ranges retain primitive inference and one thumb per supplied endpoint, including zero for an
+empty range. An omitted default is the primitive's single minimum, not an invented range. The Progress, Meter and Slider range fills use
+`--ac-primary-emphasis`.
+
+**Before → after:** pass `value={0}` where a determinate empty bar is intended; keep `(value, details)` change/commit callbacks and native
+named inputs.
+
+**Why:** an unknown progress value must be announced as indeterminate, not as 0%.
+
+**Find usages:** `rg -n "<(Progress|Slider)\b"`
+
+#### Resizable
+
+**What changed:** Resizable remains the installed react-resizable-panels v4 Group/Panel/Separator with primitive imperative
+handles/callbacks. `ResizableHandle` renders native −/+ step buttons after each separator (two extra tab stops;
+`decreaseLabel`/`increaseLabel`/`resizeStep`), placed at least 11px clear of the 1px separator so presses never start a drag while the
+group's `resizeTargetMinimumSize` is at most 22px, with `data-slot` hooks `resizable-controls`/`resizable-decrease`/`resizable-increase`. In
+vertical groups − sits above and + below the line. The controls container carries react-resizable-panels' `data-resize-preview` marker so it
+never changes separator hit regions; separator presses keep focus, the `active` state and double-click reset.
+
+**Before → after:** use percentage-string constraints and primitive orientation state, not old ad hoc selectors; localize the step labels;
+opt out with `withControls={false}` only alongside another single-pointer resize alternative; scope any `[data-resize-preview]` styling to
+the primitive's preview overlays; reposition the controls through the hooks if you widen the separator or hit area.
+
+**Why:** dragging must have a single-pointer alternative (WCAG 2.5.7).
+
+**Find usages:** `rg -n "ResizableHandle|data-resize-preview"`
+
+#### ScrollArea
+
+**What changed:** `ScrollBar` keeps its 24px (1.5rem) track mounted by default (`keepMounted` defaults to `true`). While its axis fits, the
+track stays in the DOM but is hidden and paints nothing. Whenever a package-styled track is mounted, the viewport (now
+`box-sizing: border-box`) reserves a stable 1.5rem gutter plus scroll padding (inline-end for vertical, block-end for horizontal), present
+in server HTML and independent of overflow. Content is therefore 1.5rem narrower or shorter even without overflow, and the gutter replaces
+the viewport's own end padding on that axis. The convenience `ScrollArea` always reserves the vertical gutter. Explicit
+Root/Viewport/Content/Thumb/Corner parts support sibling axis scrollbars and actual viewport refs.
+
+**Before → after:** code or tests that expected an idle track to be absent must check `visibility`; pad `ScrollAreaContent` instead of the
+viewport; to opt out, compose `ScrollAreaRoot` with `<ScrollBar keepMounted={false} />`, which restores mount-on-overflow (the gutter then
+appears after hydration and can oscillate for width-dependent content). Restyled tracks wider than 1.5rem need a matching gutter.
+
+**Why:** a stable gutter prevents layout shift after hydration and flip-flopping for width-dependent content.
+
+**Find usages:** `rg -n "ScrollArea|ScrollBar"`
+
+#### Select
+
+**What changed:** Root retains generic object/number/multiple values and nullable single selection, with original `(value, details)`,
+equality, cancellation and clear semantics.
+
+**Before → after:** do not filter callbacks into old string-only values; name the listbox with `listProps`, not only the Popup's label.
+
+**Why:** callbacks report the primitive's real values.
+
+**Find usages:** `rg -n "<Select\b|onValueChange"`
+
+#### Sidebar
+
+**What changed:** the Root ref follows the actual desktop/static/mobile popup; Inset is a native `main`, and list/item parts retain
+`ul`/`li` refs. Functional desktop/mobile setters and controlled behavior remain. Polymorphic action/label/button state is wrapper-owned,
+not fabricated Menu/Tooltip/Sheet state. `isActive` on SidebarMenuButton and SidebarMenuSubButton now also sets `aria-current="page"` (with
+a forced-colors cue, and an underline on sub-buttons). The mobile sheet renders a visible, named close control, last in DOM order and pinned
+to the top inline-end corner above a reserved top row; `showCloseButton` (default `true`) controls it and `closeLabel` defaults to
+`"Close sidebar"`. In v2.4 that name belonged to the full-screen overlay button; the v3 backdrop is not a named control. SidebarProvider
+still writes the `sidebar_state` cookie (`path=/`, `max-age=604800`) on every desktop open-state change, including controlled proposals, and
+never reads it; the new `persistState` (default `true`) controls the write. Ctrl+B / Cmd+B toggles the sidebar unless a `keydown` handler
+calls `preventDefault()` first (v2.4 toggled regardless). Collapsed-sidebar `tooltip` content opens without delay (`delay={0}` on its own
+trigger). `SidebarTriggerProps` is a naming union (see [Button](#button)).
+
+**Before → after:** pass another `aria-current` value for other kinds of current item, or `aria-current={undefined}` on section/disclosure
+triggers whose active styling does not mark the current page; seed `defaultOpen` from the cookie, or pass `persistState={false}` when you
+persist the state yourself; for another tooltip delay, omit `tooltip` and compose `Tooltip` with
+`TooltipTrigger delay={…} render={<SidebarMenuButton …/>}`.
+
+**Why:** the current page is exposed to assistive technology, and the mobile sheet has a real, focusable close control.
+
+**Find usages:** `rg -n "Sidebar(Provider|MenuButton|MenuSubButton|Trigger)|sidebar_state"`
+
+#### Skeleton and Spinner
+
+**What changed:** Skeleton, including the Card/Form/List/Table skeletons, pulses twice (four seconds) and then stays static; v2.4 pulsed
+indefinitely. `animated={false}` or reduced motion keeps it static from the start. Neither Skeleton nor Spinner announces loading reliably
+(Spinner's `role="status"` and default `"Loading"` name identify it but are not an announcement). Card `lines`, Form `fields`, List `items`
+and Table `rows`/`columns` must each be **finite nonnegative integers ≤ 10,000**. No coercion, clamping or truncation occurs. Invalid or
+over-limit counts synchronously throw a documented **RangeError before allocation**.
 
 Table additionally requires **`(rows + (showHeader ? 1 : 0)) * columns ≤ 10,000`**, after both axes are validated and before arrays are
-allocated. `showHeader` defaults true. Valid zero dimensions remain valid: zero card lines preserve header/footer; zero form fields preserve
-submit; zero list items leave an empty root; zero table axes retain requested empty rows/header unless header is disabled. Default counts
-stay Card 3 / Form 4 / List 5 / Table 5 rows × 4 columns; List avatar remains enabled by default. All four root refs remain HTMLDivElement.
-Internal skeletons are decorative and announce nothing; the caller owns one loading announcement through a persistent status region mounted
-before loading starts (for example a `VisuallyHidden role="status"` that receives its text when loading begins), not a labeled or
-`aria-busy` skeleton.
+allocated. `showHeader` defaults to true. Valid zero dimensions remain valid: zero card lines preserve header/footer; zero form fields
+preserve submit; zero list items leave an empty root; zero table axes retain requested empty rows/header unless the header is disabled.
+Default counts stay Card 3 / Form 4 / List 5 / Table 5 rows × 4 columns; the List avatar remains enabled by default. All four root refs
+remain `HTMLDivElement`. Internal skeletons are decorative and announce nothing.
+
+**Before → after:**
 
 ```tsx
 // Before: invalid counts could be silently normalized or allocate unbounded arrays.
@@ -419,21 +825,216 @@ before loading starts (for example a `VisuallyHidden role="status"` that receive
 />;
 ```
 
-### Retained extensions and unselected families
+Write the loading text into a status region mounted before loading starts (LoadingOverlay's `loadingLabel`, AsyncBoundary's default
+fallback, `useAnnounce` or a persistent `VisuallyHidden role="status"`), keep `aria-busy` off that region and mark the spinner
+`aria-hidden="true"`.
 
-CSS Modules and `--ac-*` tokens remain; no Tailwind/CVA/external cn/runtime CSS-in-JS migration. Primitive-generated geometry/animation
-styles and narrowly approved data-driven bridges (e.g. chart series color/aspect ratio) are not a general styling exception. Recharts
-non-deprecated primitives/hooks/constants, RHF pass-throughs, existing calendar/OTP regex and imperative-panel types remain. Chart config
-`stackId` is consumer metadata, not automatic series configuration; outer Recharts positioning/sorting/container props remain outer
-responsibilities. Configure legend positioning/layout through the actual `ChartLegend`, not removed no-op custom-content props.
-`ChartLegendContent` exposes its supported per-item callbacks only; engine-injected layout/presentation fields are consumed internally
-instead of leaking to the DOM. `hideIndicator` keeps configured tooltip icons, and `hideIcon` replaces legend icons with swatches.
-SDK-inactive legend items append caller-owned `inactiveSuffix` (default `" (hidden)"`; `""`/`null` suppresses), which is visible and part of
-clickable items' names. Existing Breadcrumb root separator and decorative compatibility flags are removed.
+**Why:** endless motion fails WCAG 2.2.2, and unbounded counts could allocate arbitrarily large arrays.
 
-Optional headless-UI, Sonner and cmdk engine families are not included: there are no root exports for them and no eager imports of absent
-engines. Native Command and canonical components are not renamed substitutes for those engines. Private underscore modules may ship
-transitively but are not supported imports.
+**Find usages:** `rg -n "Skeleton|<Spinner\b"`
+
+#### Stepper
+
+**What changed:** `completedLabel` controls the assistive text appended to completed steps. Its default remains `"Completed"`. The step
+labels and native root `aria-label` remain caller-owned. The active step number uses `--ac-primary-emphasis`.
+
+**Before → after:** pass translated text for the consumer's locale, or an empty string to omit the completion suffix:
+
+```tsx
+<Stepper
+  steps={["Compte", "Profil", "Vérification"]}
+  activeStep={1}
+  completedLabel='Terminé'
+  aria-label='Progression'
+/>
+```
+
+**Why:** generated assistive text must follow the page language.
+
+**Find usages:** `rg -n "<Stepper\b"`
+
+#### Table
+
+**What changed:** the scroll viewport (`data-slot="table-container"`, a plain non-focusable `<div>` in v2.4) is a tab stop (`tabIndex={0}`)
+with a focus ring and no role or name. The new `containerProps` (attributes and `ref`) configures it.
+
+**Before → after:** name it with `containerProps={{role: "region", "aria-labelledby": captionId}}` (or `aria-label`); pass
+`containerProps={{tabIndex: -1}}` only when the table can never overflow.
+
+**Why:** keyboard users must be able to scroll an overflowing table (WCAG 2.1.1).
+
+**Find usages:** `rg -n "<Table\b"`
+
+#### Tabs
+
+**What changed:** default/line visual variants are explicit. Disabled tabs may remain keyboard-focusable under the primitive's
+`focusableWhenDisabled` policy, but cannot activate. Panel hiding follows transition completion, not synchronous selected-value inequality.
+A forced-colors selected-tab cue is added (see [Accessibility and visual behavior](#accessibility-and-visual-behavior)).
+
+**Before → after:** tests that asserted a panel was hidden synchronously after a selection change must wait for the transition.
+
+**Why:** panels hide when Base UI finishes the exit transition.
+
+**Find usages:** `rg -n "<Tabs\b|TabsPanel|TabsContent"`
+
+#### Toast
+
+**What changed:** in v2.4, the callable/status facade used the names `toast` and `Toaster`. In v3 **`toast` is a real Base UI manager**, not
+callable and not a heuristic overload. Mount its ready-made Toaster before emitting. Canonical Provider timeout/limit and manager
+timeout/type/actionProps replace facade duration/visibleToasts/status helpers. `Toast` is a component; notification data is
+`ToastData`/`ToastObject`.
+
+**Before → after:**
+
+```tsx
+// Before — published v2.4 facade:
+import {toast, Toaster} from "@arolariu/components";
+
+<Toaster
+  duration={5000}
+  visibleToasts={3}
+/>;
+// Inside an event handler, after the Toaster has mounted:
+const id = toast.success("Saved", {duration: 3000, description: "Changes stored"});
+toast.update(id, {message: "Saved again"});
+toast.dismiss(id);
+```
+
+```tsx
+// After — canonical v3 manager:
+"use client";
+import {toast, Toaster} from "@arolariu/components/toast";
+import type {ToastData} from "@arolariu/components/toast";
+
+// Render once before invoking the manager, e.g. from event handlers.
+<Toaster
+  timeout={5000}
+  limit={3}
+/>;
+// Inside an event handler, after the Toaster has mounted:
+const id = toast.add({title: "Saved", description: "Changes stored", timeout: 3000, type: "success"});
+toast.update(id, {title: "Saved again"});
+toast.close(id);
+
+type Notification = ToastData<{readonly source: "editor"}>;
+```
+
+**Default change:** v3 `timeout` defaults to **`0`**, so a notification stays until it is closed; v2.4's `duration` defaulted to **5000
+ms**. The after-example passes `timeout={5000}` to keep v2.4's auto-dismissal — omitting it makes every notification persistent. Timed
+notifications must still leave users enough time to read them and a way to extend or dismiss them (see
+[ACCESSIBILITY.md](./ACCESSIBILITY.md#motion-and-timed-content)).
+
+The ready-made Toaster renders a named close control on every notification. Its accessible name changed from v2.4's `"Close notification"`
+to `"Close toast"`; pass a localized `closeLabel` to the Toaster (a standalone icon-only `ToastClose` also defaults to `"Close toast"`).
+
+| Removed v2.4 Toaster/toast option                                                   | v3 replacement                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `duration` (Toaster or per toast)                                                   | `timeout` on Toaster/ToastProvider or per `toast.add()`; the default is now `0` (persistent) instead of 5000 ms                                                                                                      |
+| `visibleToasts`                                                                     | `limit` (Base UI default `3`)                                                                                                                                                                                        |
+| `closeButton` (Toaster or per toast)                                                | No option: the ready-made Toaster always renders the close control. Compose ToastProvider/Portal/Viewport and Toast parts to change it                                                                               |
+| `closeButtonAriaLabel` (per toast)                                                  | Toaster-wide `closeLabel` (default `"Close toast"`, was `"Close notification"`); a per-notification name needs compound Toast parts                                                                                  |
+| `containerAriaLabel`                                                                | `viewportProps={{"aria-label": "…"}}`; the viewport name still defaults to `"Notifications"`                                                                                                                         |
+| Toaster `className`, `style`                                                        | `viewportProps={{className, style}}`; the v3 Toaster accepts neither prop                                                                                                                                            |
+| `action` (per toast)                                                                | `actionProps` button props, with the label as `children` (`actionProps: {children: "Undo", onClick}`); a custom action node needs compound Toast parts                                                               |
+| `className`, `descriptionClassName`, `style` (per toast)                            | No per-toast styling options: compose Toast parts with their own `className`, or style by the Toast root's `data-type` (also on Title, Description, Action and Close), e.g. `[data-slot="toast"][data-type="error"]` |
+| `toastOptions`                                                                      | No default-options merge: set `timeout` on the Toaster and pass the other options to each `toast.add()` call                                                                                                         |
+| `cancel`                                                                            | No replacement in the ready-made Toaster, which renders one `actionProps` action; compose a second control in compound Toast parts                                                                                   |
+| `onDismiss`, `onAutoClose`                                                          | Per-toast `onClose` (and `onRemove` after exit animations). They receive no snapshot or cause, so an automatic close is not reported separately                                                                      |
+| `toast.custom()`                                                                    | Compound Toast composition with typed `data` (`ToastData<T>`)                                                                                                                                                        |
+| `toast.getToasts()`, `toast.getHistory()`                                           | `useToastManager().toasts` lists the nearest provider's current notifications. History has no replacement: keep it in application state                                                                              |
+| `toast.update()` `message`/`variant`; `toast.promise()` factory input and `finally` | `toast.update(id, {title, type})`; `toast.promise()` takes a Promise plus `{loading, success, error}`, so run `finally` work on the promise it returns                                                               |
+
+Toaster `position` and the per-toast `id`, `description` and `priority` options keep their names; `id` must now be a string and
+`description` a node rather than a factory function.
+
+There is no v3 facade compatibility import. Move custom content to compound Toast composition and application-owned data rather than
+restoring callable status helpers, history or snapshot callbacks.
+
+Independent canonical scopes use `createToastManager<Data>()` with `toastManager={manager}` on Toaster or ToastProvider.
+`useToastManager<Data>()` reads only its nearest provider. A plain ToastProvider does **not** implicitly attach the global manager. Toaster
+`viewportProps` configures the viewport, not custom notification-list children; compose ToastProvider/Portal/Viewport and the Toast parts
+for a custom list. Ready-made top placements swipe up/right; bottom placements swipe down/right. Compound roots retain primitive
+swipe-direction options and all primitive-owned render states.
+
+Canonical `onClose`/`onRemove` retain their primitive signatures. Do not invent a removal cause or assume that a notification's timeout
+proves a user read it. Applications retain critical feedback outside disappearing notifications and own asynchronous rejection handling.
+
+**Why:** a real manager exposes Base UI's typed queue, focus and swipe contracts instead of a heuristic facade, and persistent notifications
+avoid content disappearing before it is read (WCAG 2.2.1).
+
+**Find usages:** `rg -n "toast(\.(success|error|info|warning|loading|dismiss|custom|getToasts|getHistory))?\(|<Toaster|ToastProvider"`
+
+#### Tooltip and HoverCard
+
+**What changed:** render, state and timing belong to the primitive. `delayDuration` is removed from the root and provider. `TooltipProvider`
+is now Base UI's provider (v2.4's was a pass-through that ignored `delayDuration`): its `delay`, `closeDelay` and `timeout` (default 400 ms)
+apply to the tooltips inside it, and a tooltip there opens instantly when another closed less than `timeout` earlier, so wrapping an app in
+`<TooltipProvider>` changes its tooltip timing. Tooltip's decorative arrow can be disabled with `showArrow={false}` before custom
+`TooltipArrow` composition. HoverCardContent offsets default to 4/4 and TooltipContent `sideOffset` to 4.
+
+**Before → after:** `<Tooltip delayDuration={100}>` becomes `<TooltipProvider delay={100}>` or `<TooltipTrigger delay={100}>`; drop it to
+keep Base UI's 600 ms default.
+
+**Why:** v2.4 accepted but ignored the alias; the real provider makes timing configurable and groups adjacent tooltips. Preserve hover/focus
+visibility and Escape dismissal (WCAG 1.4.13).
+
+**Find usages:** `rg -n "delayDuration|TooltipProvider|TooltipArrow"`
+
+#### Visual effects and motion
+
+BackgroundBeams, BubbleBackground, DotBackground, FireworksBackground, GradientBackground, GradientText, HighlightText, HoleBackground,
+TypewriterText, TypewriterTextSmooth, CountingNumber, Scratcher, Flip, Ripple and the other retained extensions.
+
+**What changed:** automatic motion settles to a static frame five seconds after mount (wall clock; scrolling does not restart it); v2.4 had
+no time limit. Reduced motion, a hidden document and off-screen instances also pause. CountingNumber, which has no `loop`, then shows its
+final value. While paused, FireworksBackground draws a deterministic static starburst. FireworksBackground's canvas is decorative
+(background clicks do nothing; v2.4 launched fireworks on click) plus a native launch button (`launchLabel`, default `"Launch fireworks"`)
+that stays available after automatic launches settle and in `population={0}` click-only mode; it is `aria-disabled` (still focusable,
+activation ignored) under reduced motion, `motionPaused` or a hidden document. Scratcher adds a native reveal button (`revealLabel`, default
+`"Reveal content"`) and a visually hidden completion status (`completedLabel`, default `"Content revealed"`); after the reveal the button
+keeps focus and its tab stop as `aria-disabled` (activation ignored) until a `width`, `height` or `gradientColors` change resets the card.
+Flip accepts `"right"`, not `"righ"`. RippleButton and FlipButton follow `prefers-reduced-motion`. Canvas refs and error policies retain
+their owning contracts.
+
+**Before → after:** pass `loop` to keep automatic motion running, together with a caller-supplied, localized native pause/stop control that
+sets `motionPaused` (which stops motion at any time); localize the generated labels; replace `direction='righ'` with `direction='right'`.
+
+**Why:** automatic motion that lasts more than five seconds needs a pause mechanism (WCAG 2.2.2), and pointer-only interactions need
+keyboard alternatives (WCAG 2.1.1).
+
+**Find usages:** `rg -n "Background|GradientText|HighlightText|Typewriter|CountingNumber|Scratcher|Flip|Ripple"`
+
+### Changed defaults at a glance
+
+These rows compile unchanged but behave differently. Each links to its component section.
+
+| Surface                                    | v2.4                                                     | v3                                                                          | Section                                                           |
+| ------------------------------------------ | -------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Toast auto-dismiss                         | `duration` defaulted to 5000 ms                          | `timeout` defaults to `0`: notifications persist until closed               | [Toast](#toast)                                                   |
+| Toast close control name                   | `"Close notification"`                                   | Toaster `closeLabel`, default `"Close toast"`                               | [Toast](#toast)                                                   |
+| Automatic visual-effect motion             | No time limit                                            | Settles five seconds after mount unless `loop`                              | [Visual effects and motion](#visual-effects-and-motion)           |
+| Skeleton pulse                             | Indefinite                                               | Two pulses (four seconds), then static                                      | [Skeleton and Spinner](#skeleton-and-spinner)                     |
+| ResizableHandle                            | No step buttons                                          | Native −/+ step buttons: two extra tab stops per handle                     | [Resizable](#resizable)                                           |
+| FireworksBackground                        | Clicking the canvas launched fireworks                   | Decorative canvas plus a native launch button                               | [Visual effects and motion](#visual-effects-and-motion)           |
+| Scratcher                                  | Pointer scratching only                                  | Native reveal button and completion status                                  | [Visual effects and motion](#visual-effects-and-motion)           |
+| PaginationPrevious / PaginationNext name   | `"Go to previous page"` / `"Go to next page"`            | The visible `text`: `"Previous"` / `"Next"`                                 | [Pagination](#pagination)                                         |
+| SidebarMenuButton tooltips                 | Base UI's 600 ms delay                                   | Collapsed-sidebar tooltips open without delay                               | [Sidebar](#sidebar)                                               |
+| TooltipProvider                            | Pass-through                                             | Real provider: `delay`, `closeDelay`, `timeout` (400 ms) grouping           | [Tooltip and HoverCard](#tooltip-and-hovercard)                   |
+| Carousel transitions                       | Embla's `duration` regardless of the motion preference   | Instant while `prefers-reduced-motion: reduce` matches                      | [Carousel](#carousel)                                             |
+| Table scroll viewport                      | Plain, non-focusable `<div>`                             | A tab stop with a focus ring                                                | [Table](#table)                                                   |
+| Dialog/Sheet content close                 | Hidden unless requested                                  | `showCloseButton` defaults to `true`                                        | [Dialog and Sheet](#dialog-and-sheet)                             |
+| Dialog/Sheet backdrop                      | Rendered for every modality                              | Rendered only for `modal={true}`                                            | [Dialog and Sheet](#dialog-and-sheet)                             |
+| AlertDialogAction                          | Closed the dialog                                        | Does not close                                                              | [AlertDialog](#alertdialog)                                       |
+| ContextMenuContent placement               | Base UI default (`bottom`, offsets −5/2)                 | `inline-end`, offsets 0/4                                                   | [Menus](#menus)                                                   |
+| ComboboxContent placement                  | Base UI default (`center`, 0)                            | `align="start"`, `sideOffset={6}`                                           | [Combobox](#combobox)                                             |
+| ScrollBar                                  | Mounted on overflow                                      | `keepMounted` defaults to `true`; stable 1.5rem gutter                      | [ScrollArea](#scrollarea)                                         |
+| Badge element                              | `div`                                                    | `span`                                                                      | [Badge](#badge)                                                   |
+| Sidebar mobile close                       | Named full-screen overlay button                         | Visible close control, `closeLabel` default `"Close sidebar"`               | [Sidebar](#sidebar)                                               |
+| Sidebar Ctrl+B / Cmd+B                     | Toggled regardless                                       | Yields to a `keydown` handler that calls `preventDefault()`                 | [Sidebar](#sidebar)                                               |
+| `useFocusManager` candidates               | Skipped only `disabled` and negative-`tabindex` elements | Also skips `aria-disabled`, hidden, `inert` and closed/disabled content     | [FocusScope and useFocusManager](#focusscope-and-usefocusmanager) |
+| Menu, Sidebar and DropDrawer `dir`         | No `dir` written                                         | `dir="rtl"` under an RTL `DirectionProvider`                                | [Menus](#menus)                                                   |
+| Calendar without `locale`                  | Runtime locale                                           | DayPicker's `en-US` default                                                 | [Calendar](#calendar)                                             |
+| `convertHslToHexString` out-of-range input | Malformed output                                         | Hue wraps, saturation/lightness clamp, non-finite input throws `RangeError` | [Color utilities](#color-utilities)                               |
 
 ### Repository website adoption checklist
 
@@ -445,13 +1046,12 @@ The repository website (`sites/arolariu.ro`) pins the published 2.4 tarball. Whe
    separate selected/search state and app-owned shortcuts.
 4. Async AlertDialog callers must own success-close/rejection/pending policies.
 5. Recheck native refs, form/value/callback contracts and affected application tests against the published package.
-6. Decide each changed default in [Changed defaults, motion and generated controls](#changed-defaults-motion-and-generated-controls)
-   explicitly. The site's `providers.tsx` renders `<Toaster />` without props, which in v3 makes every notification persistent: pass
-   `timeout` where v2.4's 5000 ms auto-dismissal is still intended (with enough reading time and a way to dismiss) and a localized
-   `closeLabel`. Choose between settled motion and `loop` plus a localized pause control for the decorative effects the site renders
-   (BackgroundBeams, DotBackground, GradientText, TypewriterTextSmooth), and expect two-pulse skeletons in route `loading.tsx` files.
-   CountingNumber (the platform statistics use `inView`) has no `loop` opt-in: five seconds after mount it shows its final value, so a
-   counter scrolled into view later no longer counts up.
+6. Decide each row of [Changed defaults at a glance](#changed-defaults-at-a-glance) explicitly. The site's `providers.tsx` renders
+   `<Toaster />` without props, which in v3 makes every notification persistent: pass `timeout` where v2.4's 5000 ms auto-dismissal is still
+   intended (with enough reading time and a way to dismiss) and a localized `closeLabel`. Choose between settled motion and `loop` plus a
+   localized pause control for the decorative effects the site renders (BackgroundBeams, DotBackground, GradientText, TypewriterTextSmooth),
+   and expect two-pulse skeletons in route `loading.tsx` files. CountingNumber (the platform statistics use `inView`) has no `loop` opt-in:
+   five seconds after mount it shows its final value, so a counter scrolled into view later no longer counts up.
 7. Localize every generated name this guide lists for the components the site renders, such as Toaster `closeLabel` and the Toaster viewport
    name (`viewportProps={{"aria-label": …}}`, default `"Notifications"`). Commander's CommandInput is named by its translated placeholder,
    so its English `fallbackLabel` does not apply there.
@@ -471,6 +1071,17 @@ ScanUploadContext and its test/types/uploadSession; ShareCollaborateCard; invoic
 ScanSelectionToolbar/CreateInvoiceDialog/useScans; useInvoiceDelete/useInvoiceShare/useScanAdd/useScanDelete/useScanRename/useScanRotation;
 detachScanFromInvoice/createScan. This inventory does not authorize route, auth, Next configuration or domain-logic changes.
 
+### Retained extensions and unselected families
+
+CSS Modules and `--ac-*` tokens remain; no Tailwind/CVA/external cn/runtime CSS-in-JS migration. Primitive-generated geometry/animation
+styles and narrowly approved data-driven bridges (e.g. chart series color/aspect ratio) are not a general styling exception. Recharts
+non-deprecated primitives/hooks/constants, RHF pass-throughs, existing calendar/OTP regex and imperative-panel types remain.
+Background/text/canvas extensions and Copy/Counting/Flip/Ripple/Stepper/Timeline/Typewriter/VisuallyHidden remain.
+
+Optional headless-UI, Sonner and cmdk engine families are not included: there are no root exports for them and no eager imports of absent
+engines. Native Command and canonical components are not renamed substitutes for those engines. Private underscore modules may ship
+transitively but are not supported imports.
+
 ### Verification and limits
 
 From the package directory, `npm test` builds the package, packs and extracts a real npm archive, and runs the complete Vitest suite with
@@ -485,6 +1096,9 @@ The run covers:
 - colocated component, hook and utility tests that exercise real modules and Base UI primitives, without replacement mocks or an alternate
   automated runner;
 - the complete source/test/story TypeScript graph (`src/type-contracts.test.ts`), including negative API assertions;
+- the public JSDoc contract (`src/jsdoc-contracts.test.ts`): every public export has a summary, components have examples, functions document
+  parameters and return values, package-declared props are documented, `@default` tags match the implementation and every `{@link}`
+  resolves;
 - the packed archive: every public ESM entry point loaded with the installed peers, strict compilation of the shipped declarations, client
   directives, stylesheets, private-import rejection and the absence of tests, stories and story-only styles;
 - the coverage thresholds configured in `vitest.config.ts`.

@@ -13,6 +13,34 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **💥 Breaking Changes**
 
+Start with MIGRATION's [Quick start](./MIGRATION.md#quick-start): it lists the upgrade steps and an `rg` search for each affected surface.
+Every breaking change below has a section in [Breaking changes by component](./MIGRATION.md#breaking-changes-by-component) with what
+changed, before/after code, the reason and a usage search:
+
+- **Global:** [dependencies and packaging](./MIGRATION.md#dependency-and-packaging-decision),
+  [client and server boundaries](./MIGRATION.md#client-and-server-boundaries),
+  [refs, render props and primitive state](./MIGRATION.md#refs-render-props-and-primitive-state),
+  [accessibility and visual behavior](./MIGRATION.md#accessibility-and-visual-behavior),
+  [public names](./MIGRATION.md#public-names-and-collision-rules), [removed APIs](./MIGRATION.md#removed-apis) and
+  [changed defaults at a glance](./MIGRATION.md#changed-defaults-at-a-glance).
+- **Components and hooks:** [Accordion](./MIGRATION.md#accordion),
+  [Alert and Empty](./MIGRATION.md#alert-empty-and-other-native-display-parts), [AlertDialog](./MIGRATION.md#alertdialog),
+  [AsyncBoundary, ErrorBoundary and LoadingOverlay](./MIGRATION.md#asyncboundary-errorboundary-and-loadingoverlay),
+  [Badge](./MIGRATION.md#badge), [Breadcrumb and Item](./MIGRATION.md#breadcrumb-and-item), [Button](./MIGRATION.md#button),
+  [Calendar](./MIGRATION.md#calendar), [Carousel](./MIGRATION.md#carousel), [Chart](./MIGRATION.md#chart),
+  [Checkbox](./MIGRATION.md#checkbox), [Collapsible](./MIGRATION.md#collapsible), [Color utilities](./MIGRATION.md#color-utilities),
+  [Combobox](./MIGRATION.md#combobox), [Command](./MIGRATION.md#command), [Dialog and Sheet](./MIGRATION.md#dialog-and-sheet),
+  [Drawer](./MIGRATION.md#drawer), [DropDrawer](./MIGRATION.md#dropdrawer),
+  [FocusScope and useFocusManager](./MIGRATION.md#focusscope-and-usefocusmanager), [Form and Field](./MIGRATION.md#form-and-field),
+  [Input, InputOTP, Textarea and Label](./MIGRATION.md#input-inputotp-textarea-and-label), [Menus](./MIGRATION.md#menus),
+  [NavigationMenu](./MIGRATION.md#navigationmenu), [Pagination](./MIGRATION.md#pagination), [Popover](./MIGRATION.md#popover),
+  [Progress and Slider](./MIGRATION.md#progress-and-slider), [Resizable](./MIGRATION.md#resizable), [ScrollArea](./MIGRATION.md#scrollarea),
+  [Select](./MIGRATION.md#select), [Sidebar](./MIGRATION.md#sidebar), [Skeleton and Spinner](./MIGRATION.md#skeleton-and-spinner),
+  [Stepper](./MIGRATION.md#stepper), [Table](./MIGRATION.md#table), [Tabs](./MIGRATION.md#tabs), [Toast](./MIGRATION.md#toast),
+  [Tooltip and HoverCard](./MIGRATION.md#tooltip-and-hovercard) and [Visual effects and motion](./MIGRATION.md#visual-effects-and-motion).
+
+The full list:
+
 - Require React and ReactDOM 19; package-owned DOM refs are ordinary typed props with callback cleanup.
 - Remove all `asChild` APIs, scalar Accordion/type adapters, Checkbox's legacy indeterminate shorthand, Tooltip delay aliases, obsolete
   navigation/anchor parts, no-op compatibility props, deprecated color aliases, Flip's misspelling and Cell.
@@ -189,6 +217,9 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Separator and ButtonGroupSeparator accept a Base UI state-callback `className` as well as a string (v2.4 typed it as a string);
   ButtonGroupSeparator merges the result after its group class.
 - Shipped MIGRATION guide, preserving historical v0 → v1 documentation and adding comprehensive 2.4 → 3 examples and behavior inventory.
+- A JSDoc contract test (`src/jsdoc-contracts.test.ts`) that compiles the public entry points and requires a summary on every export, an
+  example on every component, documented parameters and return values, documented package-declared props, `@default` tags that match the
+  implementation's defaults and resolvable `{@link}` targets.
 - Real-module root/type/namespace/export-generator contracts and packed-archive contract tests. Private underscore helpers are excluded from
   generated public subpaths and blocked through the retained dist wildcard.
 
@@ -205,6 +236,11 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   caller also passes `aria-describedby` or `aria-invalid`; caller tokens are merged as on the cloned-child path.
 - Calendar formats month-dropdown options and day-button labels/`data-day` without a `locale` with DayPicker's own `en-US` default instead
   of the runtime locale, which differed between server and browser and caused hydration mismatches.
+- HoleBackground keeps its scene while `motionPaused` toggles or the element scrolls out of and back into view: pausing stops the frame loop
+  instead of rebuilding the discs and particles, which caused a visible jump on resume.
+- `convertHslToHexString` wraps the hue into `[0, 360)`, clamps saturation and lightness to `0`–`100` and throws `RangeError` for a
+  non-finite component; v2.4 returned malformed hex for out-of-range input (see MIGRATION's
+  [Color utilities](./MIGRATION.md#color-utilities)).
 - Carousel, Chart, ResizablePanelGroup and ToggleGroup memoize their context values, so a parent re-render with unchanged inputs no longer
   re-renders every consumer part (and no longer rebuilds each ResizableHandle's geometry subscription).
 
