@@ -94,6 +94,11 @@ describe("Dialog", () => {
     expect(css).toMatch(/\.popup\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/u);
   });
 
+  it.each(["dialog", "sheet"])("%s reserves header room for the automatic close button", (family) => {
+    const css = readFileSync(join(import.meta.dirname, `${family}.module.css`), "utf8");
+    expect(css).toMatch(/\.popup:has\(> \.close\) \.header\s*\{[^}]*padding-inline-end:\s*var\(--ac-space-8\)/u);
+  });
+
   it("refresh accessibility: localizes both automatic dismissal controls", () => {
     render(
       <Dialog defaultOpen>

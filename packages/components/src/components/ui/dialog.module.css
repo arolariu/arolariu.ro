@@ -102,6 +102,11 @@
   height: var(--ac-space-4);
 }
 
+/* Reserve room so the title never runs under the automatic close button. */
+.popup:has(> .close) .header {
+  padding-inline-end: var(--ac-space-8);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .backdrop,
   .popup {

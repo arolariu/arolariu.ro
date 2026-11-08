@@ -1,4 +1,6 @@
 import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
@@ -355,5 +357,14 @@ describe("Card", () => {
     const footer = screen.getByTestId("footer");
     expect(footer).toHaveClass("custom-footer");
     expect(footer.className).not.toBe("custom-footer");
+  });
+
+  it("keeps the first-child content padding at single-class specificity so consumer overrides win", () => {
+    // Arrange
+    const css = readFileSync(join(import.meta.dirname, "card.module.css"), "utf8");
+
+    // Assert
+    expect(css).toMatch(/\.content:where\(:first-child\)\s*\{[^}]*padding-top:\s*var\(--ac-card-spacing\)/u);
+    expect(css).not.toMatch(/\.content:first-child/u);
   });
 });

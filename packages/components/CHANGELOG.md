@@ -27,7 +27,7 @@ changed, before/after code, the reason and a usage search:
   [Alert and Empty](./MIGRATION.md#alert-empty-and-other-native-display-parts), [AlertDialog](./MIGRATION.md#alertdialog),
   [AsyncBoundary, ErrorBoundary and LoadingOverlay](./MIGRATION.md#asyncboundary-errorboundary-and-loadingoverlay),
   [Badge](./MIGRATION.md#badge), [Breadcrumb and Item](./MIGRATION.md#breadcrumb-and-item), [Button](./MIGRATION.md#button),
-  [Calendar](./MIGRATION.md#calendar), [Carousel](./MIGRATION.md#carousel), [Chart](./MIGRATION.md#chart),
+  [Calendar](./MIGRATION.md#calendar), [Card](./MIGRATION.md#card), [Carousel](./MIGRATION.md#carousel), [Chart](./MIGRATION.md#chart),
   [Checkbox](./MIGRATION.md#checkbox), [Collapsible](./MIGRATION.md#collapsible), [Color utilities](./MIGRATION.md#color-utilities),
   [Combobox](./MIGRATION.md#combobox), [Command](./MIGRATION.md#command), [Dialog and Sheet](./MIGRATION.md#dialog-and-sheet),
   [Drawer](./MIGRATION.md#drawer), [DropDrawer](./MIGRATION.md#dropdrawer),
@@ -62,6 +62,11 @@ The full list:
   TS2312; use `type X = ButtonProps & {…}`. Links are native anchors styled with `buttonVariants()`, not Button render targets;
   `nativeButton={false}` is for non-link targets such as a `<div>`. A real anchor with the `link` variant stays underlined at rest, while
   `<Button variant="link">` underlines on hover.
+- Checkbox, Switch and RadioGroupItem render Base UI's `<span>` plus a hidden native `<input>` (v2.4 rendered a `<button>`) and
+  `nativeButton` defaults to `false`. A bare `nativeButton` left from v2.4 compiles but breaks Space/Enter and `<Label htmlFor>`; remove it.
+- CardContent that is a card's first child gets `--ac-card-spacing` top padding through a `:where(:first-child)` rule, so a single consumer
+  class still overrides it. Progress `className` styles the Root instead of the Track; restyle the bar with an explicit `ProgressTrack`.
+- Dialog and Sheet headers reserve inline-end room for the automatic close button, so long titles no longer run under it.
 - The pure class helpers `badgeVariants`, `buttonVariants`, `buttonGroupVariants`, `markerVariants`, `navigationMenuTriggerStyle`,
   `tabsListVariants` and `toggleVariants` live in directive-free modules that the package root re-exports, so Server Components can call
   them through `@arolariu/components`; in v2.4 only `badgeVariants` was callable there, and `markerVariants` and `tabsListVariants` are new.

@@ -60,7 +60,8 @@
   overflow-wrap: anywhere;
 }
 
-.content:first-child {
+/* :where keeps specificity at one class so consumer padding overrides still win. */
+.content:where(:first-child) {
   padding-top: var(--ac-card-spacing);
 }
 
