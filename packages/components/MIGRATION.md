@@ -365,6 +365,20 @@ DayPicker's own `en-US` default instead of the runtime locale.
 
 **Find usages:** `rg -n "<Calendar\b|CalendarDayButton|labelDayButton"`
 
+#### Card
+
+**What changed:** the Card root is a `flex` column and CardHeader is a grid (two columns when it contains CardAction). Spacing comes from
+`--ac-card-spacing` (`1.5rem`, or `1rem` for `size="sm"`). CardContent that is the card's first child, with no CardHeader above it, gets top
+padding equal to `--ac-card-spacing`.
+
+**Before → after:** check cards whose CardContent comes first: they gain top padding. For flush content, set `--ac-card-spacing: 0` or a
+`padding-top` override on the CardContent class. The first-child rule uses `:where()`, so a single consumer class overrides it with the same
+cascade order as v2.4.
+
+**Why:** content-only cards previously touched the top border.
+
+**Find usages:** `rg -n "<Card(Content|Header)\b"`
+
 #### Carousel
 
 **What changed:** `CarouselProps` is a naming union: pass a localized `aria-label` or `aria-labelledby` (preferably the `id` of a visible
@@ -403,13 +417,17 @@ replace `<Cell fill=… />` children with a series `shape`; use native `id`/clas
 
 #### Checkbox
 
-**What changed:** `checked="indeterminate"` is removed.
+**What changed:** `checked="indeterminate"` is removed. Checkbox, Switch and RadioGroupItem render Base UI's default `<span>` plus a hidden
+native `<input>` instead of v2.4's `<button>`, and `nativeButton` now defaults to `false`.
 
-**Before → after:** `<Checkbox checked='indeterminate' />` becomes `<Checkbox checked={false} indeterminate />`.
+**Before → after:** `<Checkbox checked='indeterminate' />` becomes `<Checkbox checked={false} indeterminate />`. Delete every bare
+`nativeButton` on Checkbox, Switch and RadioGroupItem; keep it only together with `render={<button />}`.
 
-**Why:** Base UI models the mixed state as an explicit boolean beside `checked`.
+**Why:** Base UI models the mixed state as an explicit boolean beside `checked`. A bare `nativeButton` on the default `<span>` drops Space/
+Enter toggling and moves the caller's `id` off the hidden input, so `<Label htmlFor>` no longer targets the control. TypeScript cannot catch
+this; it only fails at runtime.
 
-**Find usages:** `rg -n "indeterminate"`
+**Find usages:** `rg -n "indeterminate"` and `rg -n "<(Checkbox|Switch|RadioGroupItem)\b[^>]*nativeButton"` (also check multi-line JSX)
 
 #### Collapsible
 
@@ -718,6 +736,9 @@ empty range. An omitted default is the primitive's single minimum, not an invent
 named inputs.
 
 **Why:** an unknown progress value must be announced as indeterminate, not as 0%.
+
+`Progress` `className` now styles the Root, not the Track as in v2.4; the automatic track keeps its own `0.5rem` height. To restyle the bar,
+compose `<Progress value={v}><ProgressTrack className='bar'><ProgressIndicator /></ProgressTrack></Progress>`.
 
 **Find usages:** `rg -n "<(Progress|Slider)\b"`
 
@@ -1034,6 +1055,9 @@ These rows compile unchanged but behave differently. Each links to its component
 | `useFocusManager` candidates               | Skipped only `disabled` and negative-`tabindex` elements | Also skips `aria-disabled`, hidden, `inert` and closed/disabled content     | [FocusScope and useFocusManager](#focusscope-and-usefocusmanager) |
 | Menu, Sidebar and DropDrawer `dir`         | No `dir` written                                         | `dir="rtl"` under an RTL `DirectionProvider`                                | [Menus](#menus)                                                   |
 | Calendar without `locale`                  | Runtime locale                                           | DayPicker's `en-US` default                                                 | [Calendar](#calendar)                                             |
+| Checkbox / Switch / RadioGroupItem element | `<button>`                                               | `<span>` plus hidden `<input>`; drop bare `nativeButton`                    | [Checkbox](#checkbox)                                             |
+| CardContent as first child                 | No top padding                                           | Top padding `--ac-card-spacing`                                             | [Card](#card)                                                     |
+| Progress `className`                       | Styled the Track                                         | Styles the Root                                                             | [Progress and Slider](#progress-and-slider)                       |
 | `convertHslToHexString` out-of-range input | Malformed output                                         | Hue wraps, saturation/lightness clamp, non-finite input throws `RangeError` | [Color utilities](#color-utilities)                               |
 
 ### Repository website adoption checklist
