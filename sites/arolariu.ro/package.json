@@ -45,10 +45,11 @@
     "test:storybook": "storybook build -o storybook-static --test"
   },
   "dependencies": {
-    "@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.4.0.tgz",
+    "@arolariu/components": "3.0.0",
     "@azure/identity": "*",
     "@azure/monitor-opentelemetry-exporter": "*",
     "@azure/storage-blob": "*",
+    "@base-ui/react": "*",
     "@clerk/localizations": "*",
     "@clerk/nextjs": "*",
     "@opentelemetry/api": "*",
@@ -65,6 +66,7 @@
     "@opentelemetry/semantic-conventions": "*",
     "@react-pdf/renderer": "*",
     "comlink": "*",
+    "date-fns": "*",
     "dexie": "*",
     "jose": "*",
     "motion": "*",
@@ -76,6 +78,7 @@
     "react-dom": "*",
     "react-dropzone": "*",
     "react-email": "*",
+    "react-hook-form": "*",
     "react-icons": "*",
     "react-qr-code": "*",
     "recharts": "*",
