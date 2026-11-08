@@ -148,6 +148,7 @@ function HoleBackground({
   }
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const stateRef = React.useRef<HoleState>(createInitialState());
+  const sceneOwnerRef = React.useRef<(() => boolean) | null>(null);
   const {paused} = useVisualEffectPolicy(canvasRef, {loop, motionPaused});
   const setRefs = useMergedRefs(canvasRef, ref);
 
@@ -458,7 +459,17 @@ function HoleBackground({
     let active = true;
     let animationFrameId: number | null = null;
     const state = stateRef.current;
-    let drawable = init();
+    // Pause/resume re-runs this effect (offscreen, reduced motion); a scene already built by the same `init` is kept so
+    // the frozen frame matches the last animated one and the line cache is not rebuilt. Only a size change rebuilds it.
+    const reuseScene = sceneOwnerRef.current === init && state.linesCanvas !== null;
+    const {width: builtWidth, height: builtHeight} = state.rect;
+    let drawable = reuseScene ? setSize() : init();
+    if (reuseScene && drawable && (state.rect.width !== builtWidth || state.rect.height !== builtHeight)) {
+      setDiscs();
+      setLines();
+      setParticles();
+    }
+    sceneOwnerRef.current = drawable ? init : null;
     const animate = (): void => {
       if (!active || !drawable) return;
       tick();
@@ -478,6 +489,7 @@ function HoleBackground({
       setDiscs();
       setLines();
       setParticles();
+      sceneOwnerRef.current = init;
       // Restart a loop left idle by a box-less mount or a lost box; otherwise redraw immediately at the new size.
       if (animationFrameId === null) animate();
       else tick();
@@ -491,9 +503,17 @@ function HoleBackground({
       observer.disconnect();
       globalThis.window.removeEventListener("resize", handleResize);
       if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
-      state.linesCanvas = null;
     };
   }, [init, setDiscs, setLines, setParticles, setSize, tick, paused]);
+
+  React.useEffect(() => {
+    const state = stateRef.current;
+    return () => {
+      // Release the off-screen line cache on unmount only; pause/resume keeps it.
+      state.linesCanvas = null;
+      sceneOwnerRef.current = null;
+    };
+  }, []);
 
   return (
     <div

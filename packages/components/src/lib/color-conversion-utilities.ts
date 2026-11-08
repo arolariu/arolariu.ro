@@ -8,12 +8,16 @@
  * Converts a hexadecimal color code to an HSL string for CSS variables.
  * The output format is "h s% l%" for CSS custom property HSL components.
  *
- * @param hexColor - Hex color code (e.g., "#06b6d4" or "06b6d4")
+ * @remarks
+ * Expects a 6-digit hex color; check untrusted input with {@link validateHexColorFormat} first. Other input (for
+ * example 3-digit shorthand) is not rejected and produces `NaN` components.
+ *
+ * @param hexColor - 6-digit hex color code, with or without a leading `#` (e.g., `"#06b6d4"` or `"06b6d4"`).
  * @returns HSL values as "h s% l%" string suitable for CSS variables
  *
  * @example
  * ```typescript
- * convertHexToHslString("#06b6d4"); // "187 94% 43%"
+ * convertHexToHslString("#06b6d4"); // "189 94% 43%"
  * convertHexToHslString("#ec4899"); // "330 81% 60%"
  * ```
  */
@@ -52,25 +56,40 @@ export function convertHexToHslString(hexColor: string): string {
 /**
  * Converts HSL color values to a hexadecimal color string.
  *
- * @param hue - Hue value (0-360)
- * @param saturation - Saturation percentage (0-100)
- * @param lightness - Lightness percentage (0-100)
- * @returns Hex color code (e.g., "#06b6d4")
+ * @remarks
+ * Hue wraps around the color wheel (`360` is red, `480` equals `120`, `-120` equals `240`). Saturation and
+ * lightness are clamped to `0`–`100`, so the result is always a valid 6-digit lowercase hex color.
+ *
+ * @param hue - Hue in degrees; any finite value, normalized into `[0, 360)`.
+ * @param saturation - Saturation percentage; clamped to `0`–`100`.
+ * @param lightness - Lightness percentage; clamped to `0`–`100`.
+ * @returns Lowercase hex color code with a leading `#` (e.g., `"#06b6d4"`).
+ * @throws {RangeError} If any component is not a finite number.
+ *
+ * @example
+ * ```typescript
+ * convertHslToHexString(0, 100, 50);   // "#ff0000"
+ * convertHslToHexString(-120, 100, 50); // "#0000ff"
+ * ```
  */
 export function convertHslToHexString(hue: number, saturation: number, lightness: number): string {
-  const sNorm = saturation / 100;
-  const lNorm = lightness / 100;
+  if (![hue, saturation, lightness].every((component) => Number.isFinite(component))) {
+    throw new RangeError("convertHslToHexString components must be finite numbers.");
+  }
+  const h = ((hue % 360) + 360) % 360;
+  const sNorm = Math.min(100, Math.max(0, saturation)) / 100;
+  const lNorm = Math.min(100, Math.max(0, lightness)) / 100;
 
   const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
-  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = lNorm - c / 2;
 
   const getRgb = (): [number, number, number] => {
-    if (hue >= 0 && hue < 60) return [c, x, 0];
-    if (hue >= 60 && hue < 120) return [x, c, 0];
-    if (hue >= 120 && hue < 180) return [0, c, x];
-    if (hue >= 180 && hue < 240) return [0, x, c];
-    if (hue >= 240 && hue < 300) return [x, 0, c];
+    if (h < 60) return [c, x, 0];
+    if (h < 120) return [x, c, 0];
+    if (h < 180) return [0, c, x];
+    if (h < 240) return [0, x, c];
+    if (h < 300) return [x, 0, c];
     return [c, 0, x];
   };
 
@@ -105,8 +124,17 @@ export function validateHexColorFormat(hexColor: string): boolean {
 /**
  * Generates the complementary (inverse) color for a given hex color.
  *
- * @param hexColor - Hex color code
- * @returns Complementary hex color code
+ * @remarks
+ * Inverts each RGB channel (`255 - channel`). Expects a 6-digit hex color; check untrusted input with
+ * {@link validateHexColorFormat} first, because other input produces an invalid `NaN` result.
+ *
+ * @param hexColor - 6-digit hex color code, with or without a leading `#`.
+ * @returns Complementary lowercase hex color code with a leading `#`.
+ *
+ * @example
+ * ```typescript
+ * calculateComplementaryHexColor("#06b6d4"); // "#f9492b"
+ * ```
  */
 export function calculateComplementaryHexColor(hexColor: string): string {
   const cleanHex = hexColor.replace("#", "");
@@ -120,9 +148,19 @@ export function calculateComplementaryHexColor(hexColor: string): string {
 /**
  * Adjusts the lightness of a hexadecimal color by a specified amount.
  *
- * @param hexColor - Hex color code
- * @param lightnessAdjustment - Amount to adjust lightness (-100 to 100)
- * @returns Adjusted hex color code
+ * @remarks
+ * Round-trips through HSL with whole-number components, so channels can drift by a few steps from the input even for
+ * an adjustment of `0` (for example `"#ec4899"` becomes `"#ec4699"`). Expects a 6-digit hex color; check untrusted
+ * input with {@link validateHexColorFormat} first.
+ *
+ * @param hexColor - 6-digit hex color code, with or without a leading `#`.
+ * @param lightnessAdjustment - Lightness percentage points to add (negative darkens); the result is clamped to `0`–`100`.
+ * @returns Adjusted lowercase hex color code with a leading `#`.
+ *
+ * @example
+ * ```typescript
+ * adjustHexColorLightness("#ff0000", -50); // "#000000"
+ * ```
  */
 export function adjustHexColorLightness(hexColor: string, lightnessAdjustment: number): string {
   const hsl = convertHexToHslString(hexColor);

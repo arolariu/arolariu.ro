@@ -247,6 +247,29 @@ describe("HoleBackground", () => {
     expect(random).not.toHaveBeenCalled();
   });
 
+  it("keeps the animated scene and line cache across pause/resume instead of rebuilding it", () => {
+    reduced = false;
+    const ref = React.createRef<HTMLCanvasElement>();
+    render(<HoleBackground ref={ref} />);
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    const cache = context.drawImage.mock.calls.at(-1)?.[0];
+    expect(cache).toBeInstanceOf(HTMLCanvasElement);
+    const random = vi.spyOn(Math, "random");
+    random.mockClear();
+    act(() => {
+      views[0]?.visibility(false);
+    });
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "paused");
+    act(() => {
+      views[0]?.visibility(true);
+    });
+    expect(ref.current?.parentElement).toHaveAttribute("data-motion", "running");
+    expect(random).not.toHaveBeenCalled();
+    expect(context.drawImage.mock.calls.at(-1)?.[0]).toBe(cache);
+  });
+
   it("cancels motion on live preference changes and guards stale frame/resize callbacks", () => {
     reduced = false;
     const ref = React.createRef<HTMLCanvasElement>();

@@ -23,6 +23,26 @@ describe("color-conversion-utilities", () => {
     expect(convertHslToHexString(240, 100, 50)).toBe("#0000ff");
   });
 
+  it("convertHslToHexString wraps out-of-range hues and clamps saturation/lightness", () => {
+    expect(convertHslToHexString(360, 100, 50)).toBe("#ff0000");
+    expect(convertHslToHexString(480, 100, 50)).toBe("#00ff00");
+    expect(convertHslToHexString(-120, 100, 50)).toBe("#0000ff");
+    expect(convertHslToHexString(0, 150, 50)).toBe("#ff0000");
+    expect(convertHslToHexString(0, 100, 150)).toBe("#ffffff");
+    expect(convertHslToHexString(0, -10, -10)).toBe("#000000");
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])("convertHslToHexString rejects a non-finite component %s", (value) => {
+    expect(() => convertHslToHexString(value, 50, 50)).toThrow(RangeError);
+    expect(() => convertHslToHexString(0, value, 50)).toThrow(RangeError);
+    expect(() => convertHslToHexString(0, 50, value)).toThrow(RangeError);
+  });
+
+  it("matches the documented complementary and lightness examples", () => {
+    expect(calculateComplementaryHexColor("#06b6d4")).toBe("#f9492b");
+    expect(adjustHexColorLightness("#ff0000", -50)).toBe("#000000");
+  });
+
   it("validateHexColorFormat handles valid and invalid inputs", () => {
     expect(validateHexColorFormat("#06b6d4")).toBe(true);
     expect(validateHexColorFormat("06b6d4")).toBe(true);

@@ -59,13 +59,13 @@ export interface UseControllableStateOptions<T> {
 export function useControllableState<T>(options: UseControllableStateOptions<T>): [T, (value: T | ((prev: T) => T)) => void] {
   const {controlled, defaultValue, onChange} = options;
   const [uncontrolledState, setUncontrolledState] = React.useState<T>(defaultValue);
-  const previousUncontrolled = React.useRef(uncontrolledState);
+  const previousUncontrolledRef = React.useRef(uncontrolledState);
   const isControlled = controlled !== undefined;
   const value = isControlled ? controlled : uncontrolledState;
 
   React.useEffect(() => {
-    if (!Object.is(previousUncontrolled.current, uncontrolledState)) {
-      previousUncontrolled.current = uncontrolledState;
+    if (!Object.is(previousUncontrolledRef.current, uncontrolledState)) {
+      previousUncontrolledRef.current = uncontrolledState;
       if (!isControlled) onChange?.(uncontrolledState);
     }
   }, [isControlled, onChange, uncontrolledState]);

@@ -72,6 +72,9 @@ export function useIntersectionObserver(
   const rootMargin = options?.rootMargin;
   const observationRef = React.useRef<Observation | null>(null);
 
+  // The observed element lives in a ref, which cannot be a dependency; this effect runs after every commit and
+  // reconnects only when the element or an option actually changed, so setEntry cannot loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional per-commit check guarded by the comparison below.
   React.useEffect(() => {
     const element = ref.current;
     const {current} = observationRef;
