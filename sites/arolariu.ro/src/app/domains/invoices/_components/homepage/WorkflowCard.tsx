@@ -1,6 +1,6 @@
 "use client";
 
-import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
+import {buttonVariants, Card, CardContent, CardDescription, CardHeader, CardTitle, cn} from "@arolariu/components";
 import {motion} from "motion/react";
 import Link from "next/link";
 import {type IconType} from "react-icons/lib";
@@ -41,16 +41,12 @@ export default function WorkflowCard({step, title, description, icon: Icon, href
         </CardHeader>
 
         <CardContent className={styles["cardContentCompact"]}>
-          <Button
-            asChild
-            className={styles["stepButton"]}>
-            <Link
-              href={href}
-              className={styles["cardLink"]}>
-              {buttonText}
-              <TbArrowRight className={styles["cardArrowIcon"]} />
-            </Link>
-          </Button>
+          <Link
+            href={href}
+            className={cn(buttonVariants(), styles["stepButton"], styles["cardLink"])}>
+            {buttonText}
+            <TbArrowRight className={styles["cardArrowIcon"]} />
+          </Link>
         </CardContent>
       </Card>
     </motion.div>

@@ -37,7 +37,8 @@ export function SortFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
   );
 
   const handleSortChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       const parts = value.split("-");
       const direction = parts.pop() as "asc" | "desc";
       const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;

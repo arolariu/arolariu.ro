@@ -89,7 +89,12 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
    * Adapter: wraps handleSectionChange to accept string and cast to SettingsSection.
    * Used by the mobile Select component which provides string values.
    */
-  const handleMobileNavChange = useCallback((v: string) => handleSectionChange(v as SettingsSection), [handleSectionChange]);
+  const handleMobileNavChange = useCallback(
+    (v: string | null) => {
+      if (v !== null) handleSectionChange(v as SettingsSection);
+    },
+    [handleSectionChange],
+  );
 
   const handleAppearanceChange = useCallback((newSettings: Partial<UserSettings["appearance"]>) => {
     setSettings((prev) => ({

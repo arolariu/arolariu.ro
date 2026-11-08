@@ -52,7 +52,7 @@
  *
  * if (result.success) {
  *   scansStore.addScan({...result.data.scan, cachedAt: new Date()});
- *   toast.success("Scan uploaded successfully");
+ *   notify.success("Scan uploaded successfully");
  * }
  * ```
  *

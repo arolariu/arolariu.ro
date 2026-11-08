@@ -13,6 +13,7 @@ vi.mock("@/stores", () => ({
   useScansStore: vi.fn(),
 }));
 
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
@@ -50,10 +51,10 @@ vi.mock("next-intl-selector", () => ({
 }));
 
 const {useScansStore} = await import("@/stores");
-const {toast} = await import("@arolariu/components");
+const {notify} = await import("@/lib/notify");
 
 const mockUseScansStore = vi.mocked(useScansStore);
-const mockToast = vi.mocked(toast);
+const mockToast = vi.mocked(notify);
 
 describe("useScanRename", () => {
   const testScan = buildCachedScan({

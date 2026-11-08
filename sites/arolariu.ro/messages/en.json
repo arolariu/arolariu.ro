@@ -25,7 +25,9 @@
         "system": "System"
       },
       "noResults": "No results found.",
-      "placeholder": "Type a command or search..."
+      "placeholder": "Type a command or search...",
+      "title": "Command palette",
+      "description": "Search for a page or an action to run."
     },
     "errors": {
       "globalError": {
@@ -416,7 +418,8 @@
           "delete": "Delete",
           "edit": "Edit",
           "markAsFavorite": "Mark as Favorite",
-          "view": "View"
+          "view": "View",
+          "actions": "Recipe actions"
         },
         "ingredients": {
           "total": "{count} ingredients"
@@ -802,7 +805,8 @@
         "buttons": {
           "cancel": "Cancel",
           "upload": "Upload scan",
-          "uploading": "Uploading..."
+          "uploading": "Uploading...",
+          "removeFile": "Remove file"
         },
         "description": "Upload a new receipt image or document to attach to this invoice.",
         "dropzone": {
@@ -1183,7 +1187,9 @@
           "delete": "Delete",
           "deleting": "Deleting...",
           "save": "Save",
-          "saving": "Saving..."
+          "saving": "Saving...",
+          "removeIngredient": "Remove ingredient",
+          "removeStep": "Remove step"
         },
         "create": {
           "description": "Fill in the details to create a recipe.",
@@ -1400,7 +1406,9 @@
         "warning": {
           "description": "By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice details, items, and amounts. Only proceed if you intend to make this invoice accessible to the public.",
           "title": "Public access warning"
-        }
+        },
+        "copyLink": "Copy link",
+        "linkCopied": "Link copied"
       },
       "classificationPicker": {
         "clear": "Clear selection",
@@ -2641,7 +2649,8 @@
           },
           "dropdown": {
             "delete": "Delete",
-            "edit": "Edit"
+            "edit": "Edit",
+            "actions": "Metadata field actions"
           },
           "emptyState": {
             "noMetadataFields": "No metadata fields added yet"
@@ -2838,7 +2847,8 @@
         "header": {
           "description": "Upload receipt images or PDFs. Create invoices from them later.",
           "title": "Upload Scans",
-          "tooltip": "Upload your receipts, invoices, or bills here. You can select multiple files and organize them into invoices later from the View Scans page."
+          "tooltip": "Upload your receipts, invoices, or bills here. You can select multiple files and organize them into invoices later from the View Scans page.",
+          "infoLabel": "About uploading scans"
         },
         "metadata": {
           "description": "Upload receipt scans to your account for later processing into invoices.",
@@ -3276,7 +3286,8 @@
           "tooltips": {
             "viewDetails": "View Details"
           },
-          "unknownMerchant": "Unknown merchant"
+          "unknownMerchant": "Unknown merchant",
+          "scansCarousel": "Scans of {name}"
         },
         "invoicesHeader": {
           "actions": {
@@ -3418,7 +3429,8 @@
           "tooltip": "Select scans to create invoices from them. You can create one invoice per scan or combine multiple scans into a single invoice.",
           "upload": "Upload",
           "uploadMore": "Upload More",
-          "uploadTooltip": "Upload more scans to your account"
+          "uploadTooltip": "Upload more scans to your account",
+          "infoLabel": "About your scans"
         },
         "metadata": {
           "description": "View and manage your uploaded scans. Create invoices from selected scans.",
@@ -5034,7 +5046,11 @@
   "shared": {
     "accessibility": {
       "logoAlt": "arolariu.ro logo",
-      "toggleTheme": "Toggle theme"
+      "toggleTheme": "Toggle theme",
+      "notifications": {
+        "region": "Notifications",
+        "close": "Close notification"
+      }
     },
     "invoices": {
       "classification": {

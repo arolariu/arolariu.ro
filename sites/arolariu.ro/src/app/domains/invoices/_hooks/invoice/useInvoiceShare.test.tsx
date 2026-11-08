@@ -22,6 +22,7 @@ vi.mock("@/lib/actions/email", () => ({
   sendEmail: vi.fn(),
 }));
 
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
@@ -81,6 +82,7 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockPatchInvoice = vi.mocked(patchInvoice);
 const mockSendEmail = vi.mocked(sendEmail);
 const mockToast = vi.mocked(toast);
+const mockNotify = vi.mocked((await import("@/lib/notify")).notify);
 
 describe("useInvoiceShare", () => {
   const testInvoiceId = "11111111-1111-4111-8111-111111111111";
@@ -186,7 +188,7 @@ describe("useInvoiceShare", () => {
 
       expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
-      expect(mockToast.error).toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalled();
     });
 
     it("uses translated toggle fallback when the action returns no error", async () => {
@@ -200,7 +202,7 @@ describe("useInvoiceShare", () => {
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
       // Note: The hook's catch block always uses revokeError (implementation detail)
-      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
+      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
@@ -277,7 +279,7 @@ describe("useInvoiceShare", () => {
 
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "revoke"});
 
-      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
+      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
@@ -377,7 +379,7 @@ describe("useInvoiceShare", () => {
       });
 
       expect(failureResult).toBeNull();
-      expect(mockToast.error).toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalled();
       expect(mockToast.promise).toHaveBeenCalled();
     });
 
@@ -558,7 +560,7 @@ describe("useInvoiceShare", () => {
       const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
       expect(failureResult).toBeNull();
-      expect(mockToast.error).toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalled();
     });
 
     it("resets isSharing flag even on error", async () => {
@@ -619,7 +621,7 @@ describe("useInvoiceShare", () => {
         failedIds: unreadableIds,
         updatedInvoices: [],
       });
-      expect(mockToast.error).toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalled();
     });
 
     it("returns null for unsupported single share actions", async () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {
   AllergenCode,
   RecipeDifficulty,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -205,12 +205,12 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
         allergenWarnings: allergens,
       };
       await updateRecipeCallback(recipePayload.recipeIndex, updated);
-      toast.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
+      notify.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
       close();
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
+      notify.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
     }
   }, [
     recipePayload,
@@ -254,7 +254,8 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
   const handleServingsChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setServings(Number(event.currentTarget.value));
   }, []);
-  const handleDifficultyChange = useCallback((value: string) => {
+  const handleDifficultyChange = useCallback((value: string | null) => {
+    if (value === null) return;
     if (!isRecipeDifficulty(value)) throw new Error(`Unsupported recipe difficulty: ${value}`);
     setDifficulty(value);
   }, []);
@@ -543,6 +544,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                       type='button'
                       variant='ghost'
                       size='icon'
+                      aria-label={t((m) => m.dialogs.invoices.recipeDialog.buttons.removeIngredient)}
                       disabled={rows.length <= 1}
                       data-section={key}
                       data-row-id={row.id}
@@ -600,6 +602,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   type='button'
                   variant='ghost'
                   size='icon'
+                  aria-label={t((m) => m.dialogs.invoices.recipeDialog.buttons.removeStep)}
                   disabled={steps.length <= 1}
                   data-row-id={step.id}
                   onClick={handleStepRemove}>

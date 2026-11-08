@@ -28,9 +28,10 @@
  * - Computed status values are memoized with `useMemo`
  */
 
+import {notify} from "@/lib/notify";
 import {useInvoiceShare} from "@/app/domains/invoices/_hooks/invoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
@@ -193,12 +194,12 @@ export function ShareCollaborateCard(): React.JSX.Element {
           if (updatedInvoice) {
             setInvoice(updatedInvoice);
           }
-          toast.success(
+          notify.success(
             t(selectorFromPath(`pages.invoices.viewInvoice.shareCollaborate.${isCurrentlyPublic ? "madePrivate" : "madePublic"}`)),
           );
         } catch (error) {
           console.error("Failed to toggle public status:", error);
-          toast.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
+          notify.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
         }
       })();
     });

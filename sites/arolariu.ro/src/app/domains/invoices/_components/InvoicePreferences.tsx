@@ -6,6 +6,7 @@
  * @module app/domains/invoices/_components/InvoicePreferences
  */
 
+import {notify} from "@/lib/notify";
 import {
   Button,
   Card,
@@ -19,7 +20,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
   useLocalStorage,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
@@ -79,7 +79,7 @@ export default function InvoicePreferences(): React.JSX.Element {
    */
   const handleSave = useCallback(() => {
     // Preferences are already saved via useLocalStorage setter
-    toast.success(t((m) => m.shared.invoices.preferences.saved));
+    notify.success(t((m) => m.shared.invoices.preferences.saved));
   }, [t]);
 
   /**
@@ -96,7 +96,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the default view mode select.
    */
   const handleDefaultViewModeChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultViewMode", value as "table" | "grid");
     },
     [updatePreference],
@@ -106,7 +107,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the default sort-by select.
    */
   const handleDefaultSortByChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultSortBy", value);
     },
     [updatePreference],
@@ -116,7 +118,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the page size select.
    */
   const handleDefaultPageSizeChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultPageSize", Number.parseInt(value, 10));
     },
     [updatePreference],
@@ -126,7 +129,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the currency select.
    */
   const handleCurrencyChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("currency", value);
     },
     [updatePreference],

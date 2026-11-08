@@ -53,6 +53,7 @@ const {mockToast} = vi.hoisted(() => ({
     warning: vi.fn(),
   },
 }));
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: mockToast,
 }));

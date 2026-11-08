@@ -43,10 +43,7 @@ export default function Faq(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.5}}>
-          <Accordion
-            type='single'
-            collapsible
-            className={styles["accordion"]}>
+          <Accordion className={styles["accordion"]}>
             {questions.map((q, index) => (
               <motion.div
                 key={q}

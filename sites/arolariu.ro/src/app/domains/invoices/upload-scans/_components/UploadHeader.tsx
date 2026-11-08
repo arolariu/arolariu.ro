@@ -29,6 +29,7 @@ export default function UploadHeader(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
+                        aria-label={t((m) => m.pages.invoices.uploadScans.header.infoLabel)}
                         className={styles["infoButton"]}>
                         <TbInfoCircle className={styles["infoIcon"]} />
                       </Button>

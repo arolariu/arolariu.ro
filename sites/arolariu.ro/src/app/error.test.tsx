@@ -97,7 +97,7 @@ describe("GlobalErrorContent", () => {
     );
 
     fireEvent.click(screen.getByRole("button", {name: "app.errors.globalError.buttons.tryAgain"}));
-    fireEvent.click(screen.getByRole("button", {name: "app.errors.globalError.buttons.returnHome"}));
+    fireEvent.click(screen.getByRole("link", {name: "app.errors.globalError.buttons.returnHome"}));
 
     expect(reset).toHaveBeenCalledTimes(2);
   });

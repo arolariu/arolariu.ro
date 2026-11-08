@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-scans/_components/ScanSelectionToolbar
  */
 
+import {notify} from "@/lib/notify";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   Button,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -44,6 +44,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   const router = useRouter();
   const {selectedScans, clearSelection, removeScan} = useScans();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   /**
    * Handles deletion of all selected scans.
@@ -67,20 +68,21 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
       });
 
       if (failed === 0) {
-        toast.success(t((m) => m.pages.invoices.viewScans.toolbar.delete.success, {count: String(succeeded)}));
+        notify.success(t((m) => m.pages.invoices.viewScans.toolbar.delete.success, {count: String(succeeded)}));
       } else if (succeeded > 0) {
-        toast.warning(t((m) => m.pages.invoices.viewScans.toolbar.delete.partial, {success: String(succeeded), failed: String(failed)}));
+        notify.warning(t((m) => m.pages.invoices.viewScans.toolbar.delete.partial, {success: String(succeeded), failed: String(failed)}));
       } else {
-        toast.error(t((m) => m.pages.invoices.viewScans.toolbar.delete.failed));
+        notify.error(t((m) => m.pages.invoices.viewScans.toolbar.delete.failed));
       }
 
       clearSelection(); // Clear the selection after deletion
       router.refresh(); // Refresh to update the scan list
     } catch (error) {
       console.error("Failed to delete scans:", error);
-      toast.error(t((m) => m.pages.invoices.viewScans.toolbar.delete.error));
+      notify.error(t((m) => m.pages.invoices.viewScans.toolbar.delete.error));
     } finally {
       setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   }, [selectedScans, clearSelection, removeScan, router, t]);
 
@@ -126,7 +128,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <AlertDialog>
+                  <AlertDialog
+                    open={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogTrigger
                       render={
                         <Button
@@ -149,7 +153,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t((m) => m.pages.invoices.viewScans.toolbar.delete.cancel)}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteSelected}>
+                        <AlertDialogAction
+                          onClick={handleDeleteSelected}
+                          disabled={isDeleting}>
                           {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirm)}
                         </AlertDialogAction>
                       </AlertDialogFooter>

@@ -36,6 +36,6 @@ describe("GlobalNotFoundContent", () => {
 
     expect(screen.getByRole("heading", {level: 1, name: "404"})).toBeInTheDocument();
     expect(screen.getByText("Page not found")).toBeInTheDocument();
-    expect(screen.getByRole("button", {name: "Return to Homepage"})).toHaveAttribute("href", "https://arolariu.ro/");
+    expect(screen.getByRole("link", {name: "Return to Homepage"})).toHaveAttribute("href", "https://arolariu.ro/");
   });
 });

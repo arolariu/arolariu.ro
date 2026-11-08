@@ -10,6 +10,7 @@
  * delegates invitation delivery to the email server action.
  */
 
+import {notify} from "@/lib/notify";
 import {sendEmail} from "@/lib/actions/email";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
@@ -263,7 +264,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(`${t((m) => m.toasts.invoices.useInvoiceShare.revokeError)} ${message}`);
+      notify.error(`${t((m) => m.toasts.invoices.useInvoiceShare.revokeError)} ${message}`);
       console.error("Error executing share operation:", error);
       if (typeof invoiceIdOrIds === "string") {
         return null;

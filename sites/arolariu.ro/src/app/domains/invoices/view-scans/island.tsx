@@ -5,7 +5,7 @@
  * @module app/domains/invoices/view-scans/island
  */
 
-import {Button, Card, CardContent, Sheet, SheetContent, SheetTrigger, useIsMobile} from "@arolariu/components";
+import {Button, buttonVariants, Card, CardContent, Sheet, SheetContent, SheetTrigger, useIsMobile} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -170,12 +170,11 @@ function SidebarContent(): React.JSX.Element {
               <p className={styles["quickUploadTitle"]}>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.title)}</p>
               <p className={styles["quickUploadDescription"]}>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.description)}</p>
             </div>
-            <Button
-              asChild
-              size='sm'
-              variant='outline'>
-              <Link href='/domains/invoices/upload-scans'>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.button)}</Link>
-            </Button>
+            <Link
+              className={buttonVariants({variant: "outline", size: "sm"})}
+              href='/domains/invoices/upload-scans'>
+              {t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.button)}
+            </Link>
           </div>
         </CardContent>
       </Card>

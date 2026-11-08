@@ -1,6 +1,6 @@
 "use client";
 
-import {Button} from "@arolariu/components";
+import {buttonVariants, cn} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -101,25 +101,18 @@ export default function EnhancedCTASection(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.5}}>
-          <Button
-            asChild
-            size='lg'
-            className={`group ${styles["ctaPrimaryBtn"]}`}>
-            <Link href='/domains/invoices/upload-scans'>
-              <TbUpload className={styles["ctaUploadIcon"]} />
-              {translations.uploadButton}
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size='lg'
-            variant='outline'
-            className={styles["ctaSecondaryBtn"]}>
-            <Link href='/about/the-platform'>
-              {translations.learnMore}
-              <TbArrowRight className={styles["ctaArrowIcon"]} />
-            </Link>
-          </Button>
+          <Link
+            className={cn(buttonVariants({size: "lg"}), `group ${styles["ctaPrimaryBtn"]}`)}
+            href='/domains/invoices/upload-scans'>
+            <TbUpload className={styles["ctaUploadIcon"]} />
+            {translations.uploadButton}
+          </Link>
+          <Link
+            className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaSecondaryBtn"])}
+            href='/about/the-platform'>
+            {translations.learnMore}
+            <TbArrowRight className={styles["ctaArrowIcon"]} />
+          </Link>
         </motion.div>
 
         <motion.div

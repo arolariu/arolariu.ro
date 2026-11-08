@@ -25,7 +25,9 @@
         "system": "Sistem"
       },
       "noResults": "Niciun rezultat găsit.",
-      "placeholder": "Tastați o comandă sau căutați..."
+      "placeholder": "Tastați o comandă sau căutați...",
+      "title": "Paleta de comenzi",
+      "description": "Caută o pagină sau o acțiune de executat."
     },
     "errors": {
       "globalError": {
@@ -416,7 +418,8 @@
           "delete": "Șterge",
           "edit": "Editează",
           "markAsFavorite": "Marchează ca favorit",
-          "view": "Vezi"
+          "view": "Vezi",
+          "actions": "Acțiuni rețetă"
         },
         "ingredients": {
           "total": "{count} ingrediente"
@@ -802,7 +805,8 @@
         "buttons": {
           "cancel": "Anulează",
           "upload": "Încarcă scan",
-          "uploading": "Se încarcă..."
+          "uploading": "Se încarcă...",
+          "removeFile": "Elimină fișierul"
         },
         "description": "Încarcă o imagine nouă a bonului sau un document nou pentru a-l atașa la această factură.",
         "dropzone": {
@@ -1183,7 +1187,9 @@
           "delete": "Șterge",
           "deleting": "Se șterge...",
           "save": "Salvează",
-          "saving": "Se salvează..."
+          "saving": "Se salvează...",
+          "removeIngredient": "Elimină ingredientul",
+          "removeStep": "Elimină pasul"
         },
         "create": {
           "description": "Completează detaliile pentru a crea o rețetă.",
@@ -1400,7 +1406,9 @@
         "warning": {
           "description": "Prin partajarea publică a acestei facturi, <strong>oricine are linkul o va putea vedea</strong>. Asta include toate detaliile facturii, articolele și sumele. Continuă doar dacă vrei ca această factură să fie accesibilă publicului.",
           "title": "Avertisment privind accesul public"
-        }
+        },
+        "copyLink": "Copiază linkul",
+        "linkCopied": "Link copiat"
       },
       "classificationPicker": {
         "clear": "Șterge selecția",
@@ -2641,7 +2649,8 @@
           },
           "dropdown": {
             "delete": "Șterge",
-            "edit": "Editează"
+            "edit": "Editează",
+            "actions": "Acțiuni pentru câmpul de metadate"
           },
           "emptyState": {
             "noMetadataFields": "Nu au fost adăugate câmpuri de metadate"
@@ -2838,7 +2847,8 @@
         "header": {
           "description": "Încărcați imagini sau PDF-uri cu chitanțe. Creați facturi din ele mai târziu.",
           "title": "Încărcare Scanări",
-          "tooltip": "Încărcați chitanțele, facturile sau bonurile dvs. aici. Puteți selecta mai multe fișiere și le puteți organiza în facturi mai târziu din pagina Vizualizare Scanări."
+          "tooltip": "Încărcați chitanțele, facturile sau bonurile dvs. aici. Puteți selecta mai multe fișiere și le puteți organiza în facturi mai târziu din pagina Vizualizare Scanări.",
+          "infoLabel": "Despre încărcarea scanărilor"
         },
         "metadata": {
           "description": "Încărcați scanări de chitanțe în contul dvs. pentru procesare ulterioară în facturi.",
@@ -3276,7 +3286,8 @@
           "tooltips": {
             "viewDetails": "Vezi detalii"
           },
-          "unknownMerchant": "Comerciant necunoscut"
+          "unknownMerchant": "Comerciant necunoscut",
+          "scansCarousel": "Scanările pentru {name}"
         },
         "invoicesHeader": {
           "actions": {
@@ -3418,7 +3429,8 @@
           "tooltip": "Selectați scanări pentru a crea facturi din ele. Puteți crea o factură per scanare sau combina mai multe scanări într-o singură factură.",
           "upload": "Încărcați",
           "uploadMore": "Încărcați Mai Multe",
-          "uploadTooltip": "Încărcați mai multe scanări în contul dvs."
+          "uploadTooltip": "Încărcați mai multe scanări în contul dvs.",
+          "infoLabel": "Despre scanările tale"
         },
         "metadata": {
           "description": "Vizualizați și gestionați scanările încărcate. Creați facturi din scanările selectate.",
@@ -5034,7 +5046,11 @@
   "shared": {
     "accessibility": {
       "logoAlt": "logo arolariu.ro",
-      "toggleTheme": "Comută tema"
+      "toggleTheme": "Comută tema",
+      "notifications": {
+        "region": "Notificări",
+        "close": "Închide notificarea"
+      }
     },
     "invoices": {
       "classification": {

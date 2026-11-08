@@ -155,13 +155,13 @@ type ServerActionOutputType = ServerActionResult<void>;
  * if (!result.success) {
  *   if (result.error.includes("Cannot delete")) {
  *     // Last scan constraint - show message to user
- *     toast.error("Cannot delete the last scan. Upload a new scan first.");
+ *     notify.error("Cannot delete the last scan. Upload a new scan first.");
  *   } else if (result.error.includes("permission")) {
  *     // Ownership constraint - redirect or show auth error
- *     toast.error("You don't own this invoice.");
+ *     notify.error("You don't own this invoice.");
  *   } else if (result.error.includes("not found")) {
  *     // Scan doesn't exist - refresh invoice data
- *     toast.error("Scan already deleted or not found.");
+ *     notify.error("Scan already deleted or not found.");
  *   }
  * }
  * ```

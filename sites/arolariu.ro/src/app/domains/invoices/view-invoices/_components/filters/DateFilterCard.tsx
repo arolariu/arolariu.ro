@@ -10,6 +10,7 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../_utils/datePresets";
 import styles from "./DateFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
+import {getDateFnsLocale} from "@/lib/dateFnsLocale";
 
 type Props = Readonly<{
   readonly filters: FilterState;
@@ -38,6 +39,7 @@ function getDatePresetLabelKey(preset: DatePresetKey): string {
 export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const locale = useLocale();
+  const dateFnsLocale = getDateFnsLocale(locale);
   const isDateActive = filters.dateFrom !== null || filters.dateTo !== null;
   const activeDatePreset = useMemo(
     () => deriveActivePreset(filters.dateFrom, filters.dateTo, new Date()),
@@ -114,6 +116,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
           />
           <PopoverContent className={styles["calendarPopover"]}>
             <Calendar
+              locale={dateFnsLocale}
               mode='single'
               selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
               onSelect={handleDateFromChange}
@@ -133,6 +136,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
           />
           <PopoverContent className={styles["calendarPopover"]}>
             <Calendar
+              locale={dateFnsLocale}
               mode='single'
               selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
               onSelect={handleDateToChange}

@@ -36,14 +36,16 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
   const isInView = useInView(sectionRef, {once: true});
 
   const handleModelChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({model: value as AISettings["model"]});
     },
     [onSettingsChange],
   );
 
   const handleBehaviorChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({behaviorPreset: value as AISettings["behaviorPreset"]});
     },
     [onSettingsChange],

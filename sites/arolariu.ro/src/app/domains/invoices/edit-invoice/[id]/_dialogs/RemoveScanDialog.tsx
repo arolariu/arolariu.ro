@@ -1,7 +1,8 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {type Invoice, type InvoiceScan, InvoiceScanType} from "@/types/invoices";
-import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -52,7 +53,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
     if (!invoice || !scan) return;
 
     if (isLastScan) {
-      toast.error(
+      notify.error(
         t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastTitle),
         {
           description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastDescription),
@@ -68,7 +69,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
         scanLocation: scan.location,
       });
 
-      toast.success(
+      notify.success(
         t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedTitle),
         {
           description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedDescription),
@@ -84,7 +85,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
         t((m) => m.dialogs.invoices.removeScanDialog.console.deleteError),
         error,
       );
-      toast.error(
+      notify.error(
         t((m) => m.dialogs.invoices.removeScanDialog.toasts.removeFailedTitle),
         {
           description: error instanceof Error ? error.message : t((m) => m.dialogs.invoices.removeScanDialog.errors.unknown),

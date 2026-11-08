@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {usePaginationWithSearch} from "@/hooks";
 import type {RecipeSuggestion} from "@/types/invoices";
 import {
@@ -9,7 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -92,7 +92,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(
+    notify.message(
       t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title),
       {
         description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),

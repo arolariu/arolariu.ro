@@ -34,7 +34,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
   const isInView = useInView(sectionRef, {once: true});
 
   const handleFrequencyChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({reportFrequency: value as NotificationSettings["reportFrequency"]});
     },
     [onSettingsChange],

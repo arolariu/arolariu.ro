@@ -39,7 +39,7 @@ import {
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
+import {useCallback, useState} from "react";
 import {TbDownload, TbTrash, TbX} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
 import {useDialog} from "../../_contexts/DialogContext";
@@ -86,6 +86,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   );
 
   const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   /**
    * Opens the export dialog with selected invoices.
@@ -101,6 +102,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
 
     const {failedIds} = await deleteInvoiceCallback(invoiceIds);
+    setIsDeleteDialogOpen(false);
 
     if (failedIds.length === 0) {
       clearSelectedInvoices();
@@ -155,7 +157,9 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
             </Button>
 
             {/* Delete button with confirmation dialog */}
-            <AlertDialog>
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger
                 render={
                   <Button
@@ -178,7 +182,9 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.cancel)}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isDeleting}>
                     {t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.confirm)}
                   </AlertDialogAction>
                 </AlertDialogFooter>

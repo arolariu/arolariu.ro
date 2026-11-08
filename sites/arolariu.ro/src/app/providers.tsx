@@ -3,13 +3,13 @@
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
-import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {AbstractIntlMessages, Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React, {useEffect, useState} from "react";
+import GlobalToaster from "./_components/GlobalToaster";
 import PreferencesSubscriptions from "./_components/PreferencesSubscriptions";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
@@ -59,7 +59,7 @@ type Props = {
  *
  * **Global Components**: Renders global UI components that should be available
  * throughout the application:
- * - `ToastProvider`: Toast notification system (shadcn/ui)
+ * - `GlobalToaster`: Localized `@arolariu/components` Toaster for notifications emitted via `@/lib/notify`
  * - `Commander`: Command palette for keyboard shortcuts (Cmd+K)
  * - `WebVitals`: Performance monitoring and analytics reporting
  *
@@ -112,7 +112,7 @@ type Props = {
  * //         <Header />
  * //         <YourPageContent />
  * //         <Footer />
- * //         <ToastProvider />
+ * //         <GlobalToaster />
  * //         <Commander />
  * //         <WebVitals />
  * //       </TranslationProvider>
@@ -178,7 +178,7 @@ export default function ContextProviders({locale, messages, featureFlags, childr
             themes={["light", "dark"]}>
             <PreferencesSubscriptions />
             {children}
-            <ToastProvider />
+            <GlobalToaster />
             {commanderEnabled ? <Commander /> : null}
             {webVitalsEnabled ? <WebVitals /> : null}
           </ThemeProvider>

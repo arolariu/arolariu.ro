@@ -10,8 +10,9 @@
  * list — free-text allergen names are no longer accepted.
  */
 
+import {notify} from "@/lib/notify";
 import {AllergenAssessmentStatus, type AllergenAssessment} from "@/types/invoices/Allergen";
-import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {AllergenAssessmentEditor} from "../../../_components/allergens/AllergenAssessmentEditor";
@@ -93,16 +94,16 @@ export default function AllergenDialog(): React.JSX.Element | null {
       });
 
       if (result.success) {
-        toast.success(t((m) => m.dialogs.invoices.allergenDialog.success.saved));
+        notify.success(t((m) => m.dialogs.invoices.allergenDialog.success.saved));
         close();
         globalThis.window.location.reload();
       } else {
         console.error("Failed to save allergen assessment:", result.error);
-        toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
+        notify.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
       }
     } catch (error: unknown) {
       console.error("Failed to save allergen assessment:", error);
-      toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
+      notify.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
     } finally {
       setIsSaving(false);
     }

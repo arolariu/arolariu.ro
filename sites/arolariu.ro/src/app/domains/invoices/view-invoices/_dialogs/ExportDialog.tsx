@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {useInvoicesStore} from "@/stores";
 import {
   Button,
@@ -16,7 +17,6 @@ import {
   Label,
   RadioGroup,
   RadioGroupItem,
-  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import React, {useCallback, useMemo, useState} from "react";
@@ -112,7 +112,7 @@ export default function ExportDialog(): React.JSX.Element {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
-        toast.error("Failed to copy to clipboard");
+        notify.error("Failed to copy to clipboard");
         console.error("Clipboard error:", error);
       }
     },

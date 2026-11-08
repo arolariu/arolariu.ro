@@ -260,7 +260,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const handleSortDateKeyDown = useCallback((event: React.KeyboardEvent) => handleSortKeyDown(event, "date"), [handleSortKeyDown]);
   const handleSortAmountKeyDown = useCallback((event: React.KeyboardEvent) => handleSortKeyDown(event, "amount"), [handleSortKeyDown]);
   const handlePageSizeValueChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       handlePageSizeChange(Number(value));
     },
     [handlePageSizeChange],
@@ -293,7 +294,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             <Checkbox
               nativeButton
               className={styles["frostedCheckbox"]}
-              checked={isAllSelected || (isIndeterminate && "indeterminate")}
+              checked={isAllSelected}
+              indeterminate={!isAllSelected && isIndeterminate}
               onCheckedChange={handleSelectAllInvoices}
               aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectAllInvoices)}
             />

@@ -116,13 +116,13 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   }, []);
 
   /** Filters receipts by the selected date range. */
-  const handleDateFilterChange = useCallback((_value: string) => {
+  const handleDateFilterChange = useCallback((_value: string | null) => {
     // Handle date filter selection
   }, []);
 
   /** Sorts receipts by the selected criteria and resets pagination. */
   const handleSortChange = useCallback(
-    (_value: string) => {
+    (_value: string | null) => {
       // Handle sort option selection
       resetPagination();
     },

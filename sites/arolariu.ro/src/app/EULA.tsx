@@ -36,6 +36,9 @@ import EulaShimmer from "./EULA.shimmers";
 
 type Props = {locale: Locale};
 
+/** Cookie-policy accordion sections expanded on first render. */
+const EULA_DEFAULT_OPEN_COOKIE_SECTIONS: string[] = ["essential"];
+
 /**
  * EULA component to display the End User License Agreement.
  * The component includes sections for Terms of Service, Privacy Policy, and Cookies Policy.
@@ -247,9 +250,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <span className={styles["cookiesSubtitle"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.subtitle)}</span>
 
                 <Accordion
-                  type='single'
-                  collapsible
-                  defaultValue='essential'
+                  defaultValue={EULA_DEFAULT_OPEN_COOKIE_SECTIONS}
                   className={styles["accordion"]}>
                   <AccordionItem value='essential'>
                     <AccordionTrigger className={styles["accordionTrigger"]}>

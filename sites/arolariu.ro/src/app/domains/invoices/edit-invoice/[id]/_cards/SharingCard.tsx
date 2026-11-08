@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {useUserInformation} from "@/hooks";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -90,7 +91,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
   const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
-    toast(
+    notify.message(
       t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.title),
       {
         description: t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.description),

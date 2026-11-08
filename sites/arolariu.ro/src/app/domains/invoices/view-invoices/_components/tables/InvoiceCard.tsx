@@ -9,7 +9,7 @@ import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {InvoiceScanType, type Invoice, type InvoiceScan} from "@/types/invoices";
 import {
-  Button,
+  buttonVariants,
   Card,
   CardContent,
   CardDescription,
@@ -22,6 +22,7 @@ import {
   CarouselNext,
   CarouselPrevious,
   Checkbox,
+  cn,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -87,6 +88,7 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
       <Card className={styles["card"]}>
         <div className={styles["mediaContainer"]}>
           <Carousel
+            aria-label={t((m) => m.pages.invoices.viewInvoices.gridView.scansCarousel, {name: invoice.name})}
             className={styles["carousel"]}
             opts={{align: "start"}}>
             <CarouselContent className={styles["carouselContent"]}>
@@ -116,18 +118,12 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
                 <TooltipTrigger
                   className={styles["tooltipTrigger"]}
                   render={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className={styles["imageButton"]}
-                      render={
-                        <Link
-                          href={`/domains/invoices/view-invoice/${invoice.id}`}
-                          aria-label={t((m) => m.pages.invoices.viewInvoices.gridView.tooltips.viewDetails)}>
-                          <TbEye className={styles["viewIcon"]} />
-                        </Link>
-                      }
-                    />
+                    <Link
+                      href={`/domains/invoices/view-invoice/${invoice.id}`}
+                      aria-label={t((m) => m.pages.invoices.viewInvoices.gridView.tooltips.viewDetails)}
+                      className={cn(buttonVariants({variant: "ghost", size: "icon"}), styles["imageButton"])}>
+                      <TbEye className={styles["viewIcon"]} />
+                    </Link>
                   }
                 />
                 <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.gridView.tooltips.viewDetails)}</TooltipContent>

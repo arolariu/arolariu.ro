@@ -2,11 +2,13 @@
 
 import {
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Label,
   Select,
   SelectContent,
@@ -35,14 +37,16 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
   const isInView = useInView(sectionRef, {once: true});
 
   const handleRetentionChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({retention: value as DataSettings["retention"]});
     },
     [onSettingsChange],
   );
 
   const handleBackupFrequencyChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({backupFrequency: value as DataSettings["backupFrequency"]});
     },
     [onSettingsChange],
@@ -239,17 +243,13 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   <p>{t((m) => m.pages.profile.settings.data.danger.deleteAccount)}</p>
                   <p>{t((m) => m.pages.profile.settings.data.danger.deleteAccountHint)}</p>
                 </div>
-                <Button
-                  variant='outline'
-                  className={styles["selectCursor"]}
-                  asChild>
-                  <a
-                    href='https://accounts.arolariu.ro/user'
-                    target='_blank'
-                    rel='noopener noreferrer'>
-                    {t((m) => m.pages.profile.settings.data.danger.manageAccount)}
-                  </a>
-                </Button>
+                <a
+                  className={cn(buttonVariants({variant: "outline"}), styles["selectCursor"])}
+                  href='https://accounts.arolariu.ro/user'
+                  target='_blank'
+                  rel='noopener noreferrer'>
+                  {t((m) => m.pages.profile.settings.data.danger.manageAccount)}
+                </a>
               </div>
             </CardContent>
           </Card>

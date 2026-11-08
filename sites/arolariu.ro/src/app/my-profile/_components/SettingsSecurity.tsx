@@ -3,11 +3,13 @@
 import {
   Badge,
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Label,
   Select,
   SelectContent,
@@ -35,7 +37,8 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
   const isInView = useInView(sectionRef, {once: true});
 
   const handleSessionTimeoutChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({sessionTimeout: Number.parseInt(value, 10)});
     },
     [onSettingsChange],
@@ -169,17 +172,13 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
               <CardDescription>{t((m) => m.pages.profile.settings.security.password.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
-              <Button
-                variant='outline'
-                className={styles["buttonFullCursor"]}
-                asChild>
-                <a
-                  href='https://accounts.arolariu.ro/user/security'
-                  target='_blank'
-                  rel='noopener noreferrer'>
-                  {t((m) => m.pages.profile.settings.security.password.changePassword)}
-                </a>
-              </Button>
+              <a
+                className={cn(buttonVariants({variant: "outline"}), styles["buttonFullCursor"])}
+                href='https://accounts.arolariu.ro/user/security'
+                target='_blank'
+                rel='noopener noreferrer'>
+                {t((m) => m.pages.profile.settings.security.password.changePassword)}
+              </a>
               <p className={styles["clerkNote"]}>{t((m) => m.pages.profile.settings.security.password.clerkNote)}</p>
             </CardContent>
           </Card>

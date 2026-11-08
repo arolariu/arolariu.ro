@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
   Textarea,
-  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -118,18 +118,8 @@ export default function FeedbackDialog(): React.JSX.Element {
         return;
       }
 
-      // Show loading toast
-      const loadingToast = toast(
-        t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.title),
-        {
-          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.description),
-          className: "z-100",
-        },
-      );
-
       if (rating === 0) {
-        toast.dismiss(loadingToast);
-        toast(
+        notify.warning(
           t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.title),
           {
             description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.description),
@@ -137,6 +127,13 @@ export default function FeedbackDialog(): React.JSX.Element {
         );
         return;
       }
+
+      const loadingToast = notify.loading(
+        t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.title),
+        {
+          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.description),
+        },
+      );
 
       try {
         // Send feedback to the server
@@ -157,12 +154,11 @@ export default function FeedbackDialog(): React.JSX.Element {
           throw new Error(`>>> Failed to send feedback: ${response.status}`);
         }
 
-        toast.dismiss(loadingToast);
-        toast(
+        notify.success(
           t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.title),
           {
+            id: loadingToast,
             description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.description),
-            className: "z-100",
           },
         );
         setRating(0);
@@ -171,10 +167,10 @@ export default function FeedbackDialog(): React.JSX.Element {
         setHoveredRating(0);
       } catch (error: unknown) {
         console.error(">>> Failed to send feedback:", error);
-        toast.dismiss(loadingToast);
-        toast(
+        notify.error(
           t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.title),
           {
+            id: loadingToast,
             description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.description),
           },
         );

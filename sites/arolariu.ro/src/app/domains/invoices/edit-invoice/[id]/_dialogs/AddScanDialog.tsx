@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {type Invoice, InvoiceScanType} from "@/types/invoices";
 import {
   Button,
@@ -15,7 +16,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
@@ -106,7 +106,7 @@ export default function AddScanDialog(): React.JSX.Element {
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
-        toast.error(
+        notify.error(
           t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeTitle),
           {
             description: t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeDescription),
@@ -162,7 +162,8 @@ export default function AddScanDialog(): React.JSX.Element {
     close();
   }, [close]);
 
-  const handleScanTypeChange = useCallback((value: string) => {
+  const handleScanTypeChange = useCallback((value: string | null) => {
+    if (value === null) return;
     setScanType(Number(value) as InvoiceScanType);
   }, []);
 
@@ -217,6 +218,7 @@ export default function AddScanDialog(): React.JSX.Element {
                 type='button'
                 variant='ghost'
                 size='icon'
+                aria-label={t((m) => m.dialogs.invoices.addScanDialog.buttons.removeFile)}
                 onClick={removeFile}
                 disabled={isAdding}
                 className={styles["removeFileButton"]}>

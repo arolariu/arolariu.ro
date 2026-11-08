@@ -32,11 +32,13 @@ import {
   SelectValue,
   Textarea,
 } from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
+import {getDateFnsLocale} from "@/lib/dateFnsLocale";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
 
@@ -81,6 +83,7 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
  */
 export default function InvoiceDetailsForm(): React.JSX.Element {
   const t = useTranslations();
+  const dateFnsLocale = getDateFnsLocale(useLocale());
   const {
     invoiceDetails,
     setName,
@@ -110,7 +113,8 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
 
   /** Updates the payment type selection. */
   const handlePaymentTypeChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       setPaymentType(Number.parseInt(value, 10) as PaymentType);
     },
     [setPaymentType],
@@ -232,6 +236,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   className={styles["calendarPopover"]}
                   align='start'>
                   <Calendar
+                    locale={dateFnsLocale}
                     mode='single'
                     selected={invoiceDetails.transactionDate}
                     onSelect={handleTransactionDateChange}

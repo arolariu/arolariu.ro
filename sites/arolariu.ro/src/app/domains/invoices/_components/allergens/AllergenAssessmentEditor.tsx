@@ -118,7 +118,8 @@ type SignalFieldProps = Readonly<{
 function AllergenCodeField({signal, signalId, signalIndex, onChange}: SignalFieldProps): React.JSX.Element {
   const t = useTranslations();
   const handleValueChange = useCallback(
-    (rawCode: string): void => {
+    (rawCode: string | null): void => {
+      if (rawCode === null) return;
       onChange(signalIndex, {code: resolveAllergenCode(rawCode)});
     },
     [onChange, signalIndex],
@@ -157,7 +158,8 @@ function AllergenCodeField({signal, signalId, signalIndex, onChange}: SignalFiel
 function EvidenceLevelField({signal, signalId, signalIndex, onChange}: SignalFieldProps): React.JSX.Element {
   const t = useTranslations();
   const handleValueChange = useCallback(
-    (rawLevel: string): void => {
+    (rawLevel: string | null): void => {
+      if (rawLevel === null) return;
       onChange(signalIndex, {evidenceLevel: resolveEvidenceLevel(rawLevel)});
     },
     [onChange, signalIndex],
@@ -242,7 +244,8 @@ export function AllergenAssessmentEditor({value, onChange, onValidityChange}: Re
 
   /** Updates the non-detected status (only valid when signals are empty). */
   const handleStatusChange = useCallback(
-    (status: string) => {
+    (status: string | null) => {
+      if (status === null) return;
       if (status === AllergenAssessmentStatus.NoSignals || status === AllergenAssessmentStatus.InsufficientData) {
         updateWorking({status, signals: []});
       }

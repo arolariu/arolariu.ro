@@ -34,14 +34,16 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
   const isInView = useInView(sectionRef, {once: true});
 
   const handleGranularityChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({granularity: value as AnalyticsSettings["granularity"]});
     },
     [onSettingsChange],
   );
 
   const handleExportFormatChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({exportFormat: value as AnalyticsSettings["exportFormat"]});
     },
     [onSettingsChange],

@@ -210,7 +210,7 @@ function DayCell({day, currency, locale}: Readonly<{day: CalendarDay; currency: 
   }
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <TooltipProvider delay={100}>
       <Tooltip>
         <TooltipTrigger
           render={

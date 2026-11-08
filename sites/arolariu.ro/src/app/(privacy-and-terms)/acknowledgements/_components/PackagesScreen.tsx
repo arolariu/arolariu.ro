@@ -122,7 +122,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handlePackageType = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
       type PackageType = Readonly<"all" | "production" | "development">;
       setPackageType(e as PackageType);
     },
@@ -131,7 +132,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handleSortField = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
       type SortField = Readonly<"name" | "dependencies" | "type">;
       setSortField(e as SortField);
     },
@@ -140,7 +142,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handleSortDirection = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
       type SortDirection = Readonly<"asc" | "desc">;
       setSortDirection(e as SortDirection);
     },
