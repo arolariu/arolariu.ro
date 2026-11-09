@@ -1,6 +1,6 @@
 "use client";
 
-import {useTranslations} from "next-intl-selector";
+import {RouteErrorContent} from "@/app/_components/RouteErrorContent";
 import {useEffect} from "react";
 
 type AboutErrorProps = Readonly<{
@@ -9,29 +9,15 @@ type AboutErrorProps = Readonly<{
 }>;
 
 export default function AboutError({error, reset}: AboutErrorProps): React.JSX.Element {
-  const t = useTranslations();
-
   useEffect(() => {
     console.error("[app/about/error.tsx]", error);
   }, [error]);
 
   return (
-    <section
-      role='alert'
-      aria-live='assertive'
-      data-scope='about'>
-      <h1>{t((m) => m.app.errors.globalError.hero.title)}</h1>
-      <p>{t((m) => m.app.errors.globalError.hero.subtitle)}</p>
-      {error.digest ? (
-        <p>
-          <span>{t((m) => m.app.errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
-        </p>
-      ) : null}
-      <button
-        type='button'
-        onClick={reset}>
-        {t((m) => m.app.errors.globalError.buttons.tryAgain)}
-      </button>
-    </section>
+    <RouteErrorContent
+      error={error}
+      reset={reset}
+      scope='about'
+    />
   );
 }

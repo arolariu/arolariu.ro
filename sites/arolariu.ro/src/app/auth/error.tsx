@@ -1,6 +1,6 @@
 "use client";
 
-import {useTranslations} from "next-intl-selector";
+import {RouteErrorContent} from "@/app/_components/RouteErrorContent";
 import {useEffect} from "react";
 
 type AuthErrorProps = Readonly<{
@@ -9,29 +9,15 @@ type AuthErrorProps = Readonly<{
 }>;
 
 export default function AuthError({error, reset}: AuthErrorProps): React.JSX.Element {
-  const t = useTranslations();
-
   useEffect(() => {
     console.error("[app/auth/error.tsx]", error);
   }, [error]);
 
   return (
-    <section
-      role='alert'
-      aria-live='assertive'
-      data-scope='auth'>
-      <h1>{t((m) => m.app.errors.globalError.hero.title)}</h1>
-      <p>{t((m) => m.app.errors.globalError.hero.subtitle)}</p>
-      {error.digest ? (
-        <p>
-          <span>{t((m) => m.app.errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
-        </p>
-      ) : null}
-      <button
-        type='button'
-        onClick={reset}>
-        {t((m) => m.app.errors.globalError.buttons.tryAgain)}
-      </button>
-    </section>
+    <RouteErrorContent
+      error={error}
+      reset={reset}
+      scope='auth'
+    />
   );
 }

@@ -1,0 +1,134 @@
+// ===========================================
+// ROUTE ERROR BOUNDARY STYLES
+// Shared by the segment error.tsx boundaries
+// ===========================================
+@use "../../styles/abstracts" as *;
+
+// Rendered inside the root layout <main>: the vertical padding clears the fixed
+// header nav above and the footer's overlapping wave below.
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: space(24) space(4) space(16);
+
+  @include respond-to("sm") {
+    padding-inline: space(6);
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 36rem;
+  text-align: center;
+}
+
+.iconCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: space(6);
+  padding: space(4);
+  border-radius: radius("full");
+  background-color: color-alpha("destructive", 0.1);
+
+  @include respond-to("sm") {
+    padding: space(6);
+  }
+
+  // The dark destructive token is too dim for tinted surfaces; use the solid pairing.
+  :global(.dark) & {
+    background-color: color("destructive");
+  }
+}
+
+.icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: color("destructive");
+
+  @include respond-to("sm") {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  :global(.dark) & {
+    color: color("destructive-foreground");
+  }
+}
+
+.title {
+  margin-bottom: space(3);
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
+  line-height: line-height("tight");
+  color: color("destructive");
+  text-wrap: balance;
+
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
+  }
+
+  :global(.dark) & {
+    color: color("foreground");
+  }
+}
+
+.subtitle {
+  font-size: font-size("base");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
+  text-wrap: pretty;
+
+  @include respond-to("sm") {
+    font-size: font-size("lg");
+  }
+}
+
+.digest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+  max-width: 100%;
+  margin-top: space(6);
+  font-size: font-size("sm");
+  color: color("muted-foreground");
+}
+
+.digestCode {
+  max-width: 100%;
+  padding: space(0.5) space(2);
+  border-radius: radius("md");
+  background-color: color("muted");
+  font-family: monospace;
+  font-size: font-size("xs");
+  color: color("foreground");
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+  width: 100%;
+  margin-top: space(8);
+
+  @include respond-to("sm") {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.actionButton {
+  width: 100%;
+
+  @include respond-to("sm") {
+    width: auto;
+  }
+}

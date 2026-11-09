@@ -1,7 +1,11 @@
 import {act, fireEvent, render, screen} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {GlobalErrorContent} from "./_components/GlobalErrorContent";
+import AboutError from "./about/error";
+import AuthError from "./auth/error";
+import DomainsError from "./domains/error";
 import AppError from "./error";
+import ProfileError from "./my-profile/error";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -51,6 +55,32 @@ describe("app/error.tsx", () => {
       />,
     );
     expect(spy).toHaveBeenCalledWith("[app/error.tsx]", expect.any(Error));
+    spy.mockRestore();
+  });
+});
+
+describe("route segment error boundaries", () => {
+  it.each([
+    {Boundary: AppError, logPrefix: "[app/error.tsx]", scope: null},
+    {Boundary: AboutError, logPrefix: "[app/about/error.tsx]", scope: "about"},
+    {Boundary: AuthError, logPrefix: "[app/auth/error.tsx]", scope: "auth"},
+    {Boundary: DomainsError, logPrefix: "[app/domains/error.tsx]", scope: "domains"},
+    {Boundary: ProfileError, logPrefix: "[app/my-profile/error.tsx]", scope: "my-profile"},
+  ])("renders the shared recovery UI and logs with $logPrefix", ({Boundary, logPrefix, scope}) => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("boom");
+
+    render(
+      <Boundary
+        error={error}
+        reset={vi.fn()}
+      />,
+    );
+
+    expect(spy).toHaveBeenCalledWith(logPrefix, error);
+    expect(screen.getByRole("alert").getAttribute("data-scope")).toBe(scope);
+    expect(screen.getByRole("heading", {level: 1, name: "app.errors.globalError.hero.title"})).toBeInTheDocument();
+    expect(screen.getByRole("link", {name: "app.errors.globalError.buttons.returnHome"})).toHaveAttribute("href", "/");
     spy.mockRestore();
   });
 });
