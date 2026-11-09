@@ -60,7 +60,10 @@ export const Single: Story = {
       </AccordionItem>
       <AccordionItem value='item-3'>
         <AccordionTrigger>Is it animated?</AccordionTrigger>
-        <AccordionContent>Yes. It uses CSS animations for smooth transitions.</AccordionContent>
+        <AccordionContent>
+          Yes. Panel heights transition smoothly when opening, closing, or switching between answers of different lengths. Reduced-motion
+          preferences keep these changes instant.
+        </AccordionContent>
       </AccordionItem>
     </Accordion>
   ),

@@ -1,5 +1,6 @@
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {Window} from "happy-dom";
 import {Features, transform} from "lightningcss";
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
@@ -879,6 +880,55 @@ describe("Accordion", () => {
     expect(hover["color"]).toBe("var(--ac-primary-emphasis)");
     expect(["none", "transparent"]).toContain(hover["background"]);
   });
+
+  it.each(["no-preference", "reduce"] as const)(
+    "collapses panel space during transitions with motion preference %s",
+    async (preference) => {
+      const {unmount} = render(
+        <Accordion defaultValue={["motion"]}>
+          <AccordionItem value='motion'>
+            <AccordionTrigger>Motion preference</AccordionTrigger>
+            <AccordionContent>Panel content</AccordionContent>
+          </AccordionItem>
+        </Accordion>,
+      );
+      const renderedPanel = screen.getByRole("region", {name: "Motion preference"});
+      unmount();
+      const browser = new Window({settings: {device: {prefersReducedMotion: preference}}});
+
+      try {
+        const stylesheet = browser.document.createElement("style");
+        stylesheet.textContent = compiledAccordionCss.toString();
+        browser.document.head.append(stylesheet);
+        browser.document.body.innerHTML = renderedPanel.outerHTML;
+        browser.document.body.style.setProperty("--ac-transition-normal", "150ms ease");
+        const panel = browser.document.querySelector('[data-slot="accordion-content"]');
+        if (!(panel instanceof browser.HTMLElement)) {
+          throw new Error("The cascade document must retain the rendered accordion panel.");
+        }
+
+        panel.classList.add("panel");
+        panel.style.setProperty("--accordion-panel-height", "96px");
+        expect(browser.getComputedStyle(panel).height).toBe("96px");
+        const transition = browser.getComputedStyle(panel).transition.replace(/\s+/gu, " ");
+        expect(transition).toBe(preference === "reduce" ? "none" : "height 150ms ease, opacity 150ms ease");
+
+        for (const phase of ["data-starting-style", "data-ending-style"]) {
+          panel.setAttribute(phase, "");
+          expect(browser.getComputedStyle(panel).height).toBe("0px");
+          expect(browser.getComputedStyle(panel).opacity).toBe("0");
+          panel.removeAttribute(phase);
+        }
+
+        panel.style.setProperty("--accordion-panel-height", "144px");
+        expect(browser.getComputedStyle(panel).height).toBe("144px");
+        panel.style.setProperty("--accordion-panel-height", "auto");
+        expect(browser.getComputedStyle(panel).height).toBe("auto");
+      } finally {
+        await browser.happyDOM.close();
+      }
+    },
+  );
 });
 
 describe("AccordionTrigger headerProps", () => {
