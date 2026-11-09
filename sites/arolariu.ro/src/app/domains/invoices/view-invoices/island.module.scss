@@ -70,8 +70,9 @@
     display: none;
   }
 
-  // Full width on mobile for better touch targets
+  // Full width on mobile for better touch targets, separated from the stacked header actions
   @include respond-below("md") {
+    margin-top: space(4);
     max-width: 100%;
     gap: space(2);
   }
