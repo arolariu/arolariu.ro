@@ -5,7 +5,7 @@
  * @module app/domains/invoices/upload-scans/_components/_sidebar/NextStepsCard
  */
 
-import {Button, Card, CardContent} from "@arolariu/components";
+import {buttonVariants, Card, CardContent, cn} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -31,16 +31,12 @@ export default function NextStepsCard(): React.JSX.Element | null {
         <CardContent className={styles["sidebarCardContent"]}>
           <h3 className={styles["nextStepsTitle"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.title)}</h3>
           <p className={styles["nextStepsDescription"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.description)}</p>
-          <Button
-            size='sm'
-            className={styles["nextStepsButton"]}
-            render={
-              <Link href='/domains/invoices/view-scans'>
-                {t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.button)}
-                <TbArrowRight className={styles["arrowIcon"]} />
-              </Link>
-            }
-          />
+          <Link
+            href='/domains/invoices/view-scans'
+            className={cn(buttonVariants({size: "sm"}), styles["nextStepsButton"])}>
+            {t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.button)}
+            <TbArrowRight className={styles["arrowIcon"]} />
+          </Link>
         </CardContent>
       </Card>
     </motion.div>

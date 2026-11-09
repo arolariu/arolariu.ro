@@ -11,11 +11,6 @@ import NextStepsCard from "./NextStepsCard";
 
 vi.mock("../../_context/ScanUploadContext", () => ({useScanUpload: vi.fn()}));
 vi.mock("motion/react", () => ({motion: {div: ({children}: {children: ReactNode}) => <div>{children}</div>}}));
-vi.mock("@arolariu/components", () => ({
-  Card: ({children}: {children: ReactNode}) => <div>{children}</div>,
-  CardContent: ({children}: {children: ReactNode}) => <div>{children}</div>,
-  Button: ({render: node}: {render: ReactNode}) => <div>{node}</div>,
-}));
 
 function mockUpload(overrides: {totalCompleted: number; pendingCount: number}): void {
   vi.mocked(useScanUpload).mockReturnValue({
@@ -29,6 +24,16 @@ describe("NextStepsCard", () => {
     mockUpload({totalCompleted: 2, pendingCount: 0});
     render(<NextStepsCard />);
     expect(screen.getByText(/sidebar\.nextSteps\.title/)).toBeInTheDocument();
+  });
+
+  it("links to the scans page with native link semantics", () => {
+    mockUpload({totalCompleted: 2, pendingCount: 0});
+    render(<NextStepsCard />);
+
+    const link = screen.getByRole("link", {name: /sidebar\.nextSteps\.button/});
+    expect(link).toHaveAttribute("href", "/domains/invoices/view-scans");
+    expect(link).not.toHaveAttribute("role");
+    expect(link).not.toHaveAttribute("type");
   });
 
   it("renders nothing while uploads are still pending", () => {
