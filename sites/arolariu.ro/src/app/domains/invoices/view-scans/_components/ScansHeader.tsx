@@ -6,7 +6,7 @@
  */
 
 import {formatRelativeTime} from "@/lib/utils.generic";
-import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {Button, buttonVariants, cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -75,16 +75,13 @@ export default function ScansHeader(): React.JSX.Element {
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button
-                  className={styles["uploadButton"]}
-                  render={
-                    <Link href='/domains/invoices/upload-scans'>
-                      <TbUpload className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.uploadMore)}</span>
-                      <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.upload)}</span>
-                    </Link>
-                  }
-                />
+                <Link
+                  href='/domains/invoices/upload-scans'
+                  className={cn(buttonVariants(), styles["uploadButton"])}>
+                  <TbUpload className={styles["actionIcon"]} />
+                  <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.uploadMore)}</span>
+                  <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.upload)}</span>
+                </Link>
               }
             />
             <TooltipContent>{t((m) => m.pages.invoices.viewScans.header.uploadTooltip)}</TooltipContent>
@@ -95,17 +92,13 @@ export default function ScansHeader(): React.JSX.Element {
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button
-                  variant='outline'
-                  className={styles["outlineButton"]}
-                  render={
-                    <Link href='/domains/invoices/view-invoices'>
-                      <TbFileInvoice className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.myInvoices)}</span>
-                      <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.invoices)}</span>
-                    </Link>
-                  }
-                />
+                <Link
+                  href='/domains/invoices/view-invoices'
+                  className={cn(buttonVariants({variant: "outline"}), styles["outlineButton"])}>
+                  <TbFileInvoice className={styles["actionIcon"]} />
+                  <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.myInvoices)}</span>
+                  <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.invoices)}</span>
+                </Link>
               }
             />
             <TooltipContent>{t((m) => m.pages.invoices.viewScans.header.myInvoicesTooltip)}</TooltipContent>
