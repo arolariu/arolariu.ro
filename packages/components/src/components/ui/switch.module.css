@@ -1,6 +1,4 @@
 .root {
-  min-inline-size: 24px;
-  min-block-size: 24px;
   --switch-inline-size: 2rem;
   --switch-block-size: 1.125rem;
   --switch-thumb-size: calc(var(--switch-block-size) - 0.25rem - 2px);
@@ -21,6 +19,14 @@
   cursor: pointer;
   outline: none;
   transition: background-color var(--ac-transition-fast);
+}
+
+/* Keep the pointer target at 24px (WCAG 2.5.8) without growing the painted track. Offsets are measured from the padding box, hence the 2px border. */
+.root::before {
+  position: absolute;
+  inset-block: min(0px, calc((var(--switch-block-size) - 2px - 24px) / 2));
+  inset-inline: min(0px, calc((var(--switch-inline-size) - 2px - 24px) / 2));
+  content: "";
 }
 
 .root[data-size="sm"] {

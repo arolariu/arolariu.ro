@@ -9,6 +9,14 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### [Unreleased]
+
+**🐛 Fixed**
+
+- Switch paints its track at the declared size again: the default track is 32×18 and `sm` is a 24×14 pill. 3.0.0 gave the root a 24px
+  `min-inline-size` and `min-block-size`, which inflated the default track to 32×24 and turned `sm` into a 24×24 circle. The 24px pointer
+  target (WCAG 2.5.8) now comes from an invisible `::before` overlay, so the hit area is unchanged and no call-site change is needed.
+
 ### [3.0.0] - Unreleased
 
 **💥 Breaking Changes**
