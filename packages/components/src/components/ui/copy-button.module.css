@@ -1,5 +1,7 @@
 .copyButton {
   display: inline-flex;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
   align-items: center;
   justify-content: center;
   padding: var(--ac-space-2);
@@ -33,4 +35,30 @@
 .icon {
   width: 1rem;
   height: 1rem;
+}
+
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copyButton {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .copyButton {
+    color: ButtonText;
+    border-color: ButtonText;
+    background: ButtonFace;
+  }
+  .copyButton:focus-visible {
+    outline-color: Highlight;
+  }
 }

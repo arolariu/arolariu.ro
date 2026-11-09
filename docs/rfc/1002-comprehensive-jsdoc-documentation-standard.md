@@ -29,6 +29,44 @@ structured, cross-referenced documentation that transforms the codebase into a *
 If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be
 updated.
 
+### Component package contract documentation
+
+For `@arolariu/components`, document the actual primitive/native owner of render state, callback details, DOM refs and namespace types. Do
+not describe a polymorphic ref as a fixed button/div, a nullable generic value as string-only, or a primitive callback as stateless. Public
+standalone prop/state names accompany supported namespaces through explicit package exports; collision aliases such as `RHFFieldError`,
+`RechartsLabel` and `ToastData` must be deliberate and explained.
+
+Version-scoped MIGRATION/README/EXAMPLES/CHANGELOG entries must distinguish canonical APIs from removed ones, with exact before/after
+imports and composition. Preserve historical guides rather than overwriting old-version instructions. Document breaking defaults, native
+tags, error/count limits, value/nullability, callback/render ownership, retained extensions and intentional no-ops. Private underscore
+helpers must not appear as advertised package APIs.
+
+Source tests/types, built/packed declarations/modules/CSS, React-floor source evidence, React-floor packed evidence and physical-browser
+limits are different claims; attribute each to its own evidence. Shipped documentation and RFCs state the verification commands and what
+they cover, not dated run logs, test or file counts, or review identifiers, which go stale with every change.
+
+#### Package prop documentation
+
+Every public prop that an `@arolariu/components` component declares or re-declares carries its own JSDoc description, whether the prop is
+declared in an interface, a type alias or an intersection member. An optional prop with a default states it with `@default`, matching the
+implementation, and the tag changes whenever the default does; required props have no `@default`. A wrapper that overrides an inherited
+default (for example Base UI placement) re-declares that prop with its own description and `@default` instead of inheriting the primitive's
+documentation. Props passed through unchanged may rely on the primitive's documentation.
+
+```typescript
+export type ExampleTriggerProps = Readonly<{
+  /**
+   * Accessible name for the icon-only trigger. Localize it.
+   */
+  label: string;
+  /**
+   * Side of the trigger the popup opens on.
+   * @default "bottom"
+   */
+  side?: "top" | "bottom";
+}>;
+```
+
 ---
 
 ## Table of Contents
@@ -1507,7 +1545,9 @@ Use this checklist when documenting new code:
 
 - [ ] Component purpose documented
 - [ ] Rendering context specified (Server/Client/Edge)
-- [ ] Props documented (if not using TypeScript interface)
+- [ ] Props documented: application components may rely on a TypeScript props interface; `@arolariu/components` props follow
+      [Package prop documentation](#package-prop-documentation) (a description on every public prop the package declares or re-declares and
+      `@default` on every such defaulted optional prop, whether in an interface or a type alias; pass-through props excepted)
 - [ ] Dependencies documented (context providers, hooks required)
 - [ ] Performance considerations (memoization, dynamic imports)
 - [ ] `@example` showing typical usage in JSX

@@ -5,10 +5,31 @@ import {describe, expect, it} from "vitest";
 import {Kbd, KbdGroup} from "./kbd";
 
 describe("Kbd", () => {
+  it("keeps the group and key refs correctly typed as native kbd elements and preserves shortcut semantics", () => {
+    const groupRef = createRef<HTMLElement>();
+    const keyRef = createRef<HTMLElement>();
+    render(
+      <KbdGroup
+        ref={groupRef}
+        aria-label='Open command menu'
+        title='Shortcut'
+        dir='rtl'>
+        <Kbd ref={keyRef}>⌘</Kbd>
+        <span>+</span>
+        <Kbd>K</Kbd>
+      </KbdGroup>,
+    );
+    expect(groupRef.current?.tagName).toBe("KBD");
+    expect(keyRef.current?.tagName).toBe("KBD");
+    expect(groupRef.current).toHaveAttribute("aria-label", "Open command menu");
+    expect(groupRef.current).toHaveAttribute("title", "Shortcut");
+    expect(groupRef.current).toHaveAttribute("dir", "rtl");
+    expect(groupRef.current).toHaveTextContent("⌘+K");
+  });
   it("renders Kbd components with children, custom classes, and forwarded refs", () => {
     // Arrange
-    const groupRef = {current: null as HTMLElement | null};
-    const keyRef = {current: null as HTMLElement | null};
+    const groupRef = createRef<HTMLElement>();
+    const keyRef = createRef<HTMLElement>();
 
     // Act
     render(

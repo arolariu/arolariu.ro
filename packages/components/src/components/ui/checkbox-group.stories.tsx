@@ -1,66 +1,90 @@
-import React from "react";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Checkbox} from "./checkbox";
 import {CheckboxGroup} from "./checkbox-group";
+
+const storyStyles = `
+.ac-story-checkbox-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+.ac-story-checkbox-group-demo {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+`;
 
 const meta = {
   title: "Components/Forms/CheckboxGroup",
   component: CheckboxGroup,
   tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
-  },
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
+  parameters: {layout: "centered"},
 } satisfies Meta<typeof CheckboxGroup>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Basic checkbox group with multiple options.
- */
+function NotificationOptions(): React.JSX.Element {
+  return (
+    <>
+      {[
+        ["news", "Newsletter"],
+        ["events", "Events"],
+        ["updates", "Product updates"],
+      ].map(([value, label]) => (
+        <label
+          key={value}
+          className='ac-story-checkbox-group-row'>
+          <Checkbox value={value} />
+          {label}
+        </label>
+      ))}
+    </>
+  );
+}
+
 export const Default: Story = {
   render: () => (
-    <CheckboxGroup defaultValue={["news"]}>
-      <Checkbox value='news'>Newsletter</Checkbox>
-      <Checkbox value='events'>Events</Checkbox>
-      <Checkbox value='updates'>Product Updates</Checkbox>
+    <CheckboxGroup
+      aria-label='Notifications'
+      defaultValue={["news"]}>
+      <NotificationOptions />
     </CheckboxGroup>
   ),
 };
 
-/**
- * Checkbox group with pre-selected values.
- */
 export const MultipleSelected: Story = {
   render: () => (
-    <CheckboxGroup defaultValue={["news", "events"]}>
-      <Checkbox value='news'>Newsletter</Checkbox>
-      <Checkbox value='events'>Events</Checkbox>
-      <Checkbox value='updates'>Product Updates</Checkbox>
+    <CheckboxGroup
+      aria-label='Notifications'
+      defaultValue={["news", "events"]}>
+      <NotificationOptions />
     </CheckboxGroup>
   ),
 };
 
-/**
- * Controlled checkbox group.
- */
-function ControlledDemo() {
+function ControlledDemo(): React.JSX.Element {
   const [value, setValue] = React.useState<string[]>(["events"]);
-
   return (
-    <div className='space-y-4'>
+    <div className='ac-story-checkbox-group-demo'>
       <CheckboxGroup
+        aria-label='Notifications'
         value={value}
-        onValueChange={(newValue) => setValue(newValue)}>
-        <Checkbox value='news'>Newsletter</Checkbox>
-        <Checkbox value='events'>Events</Checkbox>
-        <Checkbox value='updates'>Product Updates</Checkbox>
+        onValueChange={setValue}>
+        <NotificationOptions />
       </CheckboxGroup>
-      <p className='text-muted-foreground text-sm'>Selected: {value.join(", ") || "none"}</p>
+      <output>Selected: {value.join(", ") || "none"}</output>
     </div>
   );
 }
 
-export const Controlled: Story = {
-  render: () => <ControlledDemo />,
-};
+export const Controlled: Story = {render: () => <ControlledDemo />};

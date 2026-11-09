@@ -1,31 +1,36 @@
 "use client";
 
-import {useInView, useMotionValue, useSpring, type SpringOptions, type UseInViewOptions} from "motion/react";
+import {useInView, useSpring, type SpringOptions, type UseInViewOptions} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import styles from "./counting-number.module.css";
+import {useVisualEffectPolicy} from "./_visual-effects";
+import {VisuallyHidden} from "./visually-hidden";
+
+const defaultTransition: SpringOptions = {stiffness: 90, damping: 50};
 
 /** Props accepted by {@link CountingNumber}. */
-export interface CountingNumberProps extends React.HTMLAttributes<HTMLSpanElement> {
+export interface CountingNumberProps extends Readonly<React.ComponentPropsWithRef<"span">> {
   /** Final numeric value to animate toward. @default undefined */
-  number: number;
+  readonly number: number;
   /** Initial numeric value used before the spring animation starts. @default 0 */
-  fromNumber?: number;
+  readonly fromNumber?: number;
   /** Pads the integer portion so it matches the target value width. @default false */
-  padStart?: boolean;
+  readonly padStart?: boolean;
   /** Delays the animation until the element enters the viewport. @default false */
-  inView?: boolean;
+  readonly inView?: boolean;
   /** Margin passed to the in-view observer when `inView` is enabled. @default "0px" */
-  inViewMargin?: UseInViewOptions["margin"];
+  readonly inViewMargin?: UseInViewOptions["margin"];
   /** Prevents the in-view animation from replaying after the first reveal. @default true */
-  inViewOnce?: boolean;
+  readonly inViewOnce?: boolean;
   /** Character used between the integer and decimal portions. @default "." */
-  decimalSeparator?: string;
+  readonly decimalSeparator?: string;
   /** Spring physics applied to the counting animation. @default {stiffness: 90, damping: 50} */
-  transition?: SpringOptions;
+  readonly transition?: SpringOptions;
   /** Number of decimal places rendered during the animation. @default 0 */
-  decimalPlaces?: number;
+  readonly decimalPlaces?: number;
 }
 
 /**
@@ -44,86 +49,67 @@ export interface CountingNumberProps extends React.HTMLAttributes<HTMLSpanElemen
  *
  * @see {@link CountingNumberProps} for available props
  */
-const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
-  (
-    {
-      number,
-      fromNumber = 0,
-      padStart = false,
-      inView = false,
-      inViewMargin = "0px",
-      inViewOnce = true,
-      decimalSeparator = ".",
-      transition = {stiffness: 90, damping: 50},
-      decimalPlaces = 0,
-      className,
-      ...props
-    },
-    ref,
-  ) => {
-    const localRef = React.useRef<HTMLSpanElement>(null);
+function CountingNumber({
+  ref,
+  number,
+  fromNumber = 0,
+  padStart = false,
+  inView = false,
+  inViewMargin = "0px",
+  inViewOnce = true,
+  decimalSeparator = ".",
+  transition = defaultTransition,
+  decimalPlaces = 0,
+  className,
+  ...props
+}: Readonly<CountingNumberProps>): React.JSX.Element {
+  const localRef = React.useRef<HTMLSpanElement>(null);
 
-    React.useImperativeHandle(ref, () => localRef.current!, []);
+  const setRefs = useMergedRefs(localRef, ref);
+  const {paused, reducedMotion, settled} = useVisualEffectPolicy(localRef);
+  const [displayedNumber, setDisplayedNumber] = React.useState(fromNumber);
 
-    const numberStr = number.toString();
-    const decimals = numberStr.includes(".") ? (numberStr.split(".")[1]?.length ?? 0) : 0;
-    const resolvedDecimalPlaces = typeof decimalPlaces === "number" ? decimalPlaces : decimals;
+  const springValue = useSpring(fromNumber, transition);
+  const inViewResult = useInView(localRef, {
+    once: inViewOnce,
+    margin: inViewMargin,
+  });
+  const isInView = !inView || inViewResult;
 
-    const motionValue = useMotionValue(fromNumber);
-    const springValue = useSpring(motionValue, transition);
-    const inViewResult = useInView(localRef, {
-      once: inViewOnce,
-      margin: inViewMargin,
-    });
-    const isInView = !inView || inViewResult;
+  React.useEffect(() => springValue.on("change", setDisplayedNumber), [springValue]);
 
-    React.useEffect(() => {
-      if (isInView) {
-        motionValue.set(number);
-      }
-    }, [isInView, motionValue, number]);
+  React.useEffect(() => {
+    if (reducedMotion || settled) springValue.jump(number);
+    else if (paused) springValue.stop();
+    else if (isInView) springValue.set(number);
+  }, [isInView, number, paused, reducedMotion, settled, springValue]);
 
-    React.useEffect(() => {
-      const unsubscribe = springValue.on("change", (latest) => {
-        if (!localRef.current) {
-          return;
-        }
+  const visualValue = reducedMotion || settled ? number : displayedNumber;
+  const formatted = decimalPlaces > 0 ? visualValue.toFixed(decimalPlaces) : Math.round(visualValue).toString();
+  const negative = formatted.startsWith("-");
+  const unsigned = negative ? formatted.slice(1) : formatted;
+  const [integerPart = "0", fractionPart] = unsigned.split(".");
+  const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
+  const integer = padStart ? integerPart.padStart(finalIntegerLength, "0") : integerPart;
+  const fraction = fractionPart === undefined ? "" : decimalSeparator + fractionPart;
+  const text = `${negative ? "-" : ""}${integer}${fraction}`;
 
-        let formatted = resolvedDecimalPlaces > 0 ? latest.toFixed(resolvedDecimalPlaces) : Math.round(latest).toString();
-
-        if (resolvedDecimalPlaces > 0) {
-          formatted = formatted.replace(".", decimalSeparator);
-        }
-
-        if (padStart) {
-          const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
-          const [integerPart, fractionPart] = formatted.split(decimalSeparator);
-          const paddedInteger = integerPart.padStart(finalIntegerLength, "0");
-          formatted = fractionPart ? `${paddedInteger}${decimalSeparator}${fractionPart}` : paddedInteger;
-        }
-
-        localRef.current.textContent = formatted;
-      });
-
-      return () => {
-        unsubscribe();
-      };
-    }, [decimalSeparator, number, padStart, resolvedDecimalPlaces, springValue]);
-
-    const finalIntegerLength = Math.floor(Math.abs(number)).toString().length;
-    const suffix = resolvedDecimalPlaces > 0 ? `${decimalSeparator}${"0".repeat(resolvedDecimalPlaces)}` : "";
-    const initialText = padStart ? `${"0".padStart(finalIntegerLength, "0")}${suffix}` : `0${suffix}`;
-
-    return (
+  return (
+    <span
+      ref={setRefs}
+      className={cn(styles.countingNumber, className)}
+      {...props}>
       <span
-        ref={localRef}
-        className={cn(styles.countingNumber, className)}
-        {...props}>
-        {initialText}
+        aria-hidden='true'
+        data-slot='counting-number-visual'>
+        {text}
       </span>
-    );
-  },
-);
+      <VisuallyHidden>
+        {(decimalPlaces > 0 ? number.toFixed(decimalPlaces) : Math.round(number).toString()).replace(".", decimalSeparator)}
+      </VisuallyHidden>
+    </span>
+  );
+}
 
 CountingNumber.displayName = "CountingNumber";
 

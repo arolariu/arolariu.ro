@@ -1,6 +1,7 @@
 .timeline {
   position: relative;
   display: flex;
+  min-inline-size: 0;
   flex-direction: column;
   gap: 0;
 }
@@ -8,6 +9,7 @@
 .item {
   position: relative;
   display: flex;
+  min-inline-size: 0;
   gap: var(--ac-space-3);
   padding-bottom: var(--ac-space-4);
 }
@@ -19,7 +21,7 @@
 .item:not(:last-child)::before {
   content: "";
   position: absolute;
-  left: 0.5625rem;
+  inset-inline-start: 0.5625rem;
   top: 1.5rem;
   bottom: 0;
   width: 2px;
@@ -39,5 +41,17 @@
 .content {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
   padding-bottom: var(--ac-space-1);
+}
+
+@media (forced-colors: active) {
+  .dot {
+    border-color: CanvasText;
+    background-color: Canvas;
+  }
+
+  .item:not(:last-child)::before {
+    background-color: CanvasText;
+  }
 }

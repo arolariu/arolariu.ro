@@ -1,4 +1,5 @@
 .root {
+  aspect-ratio: var(--ac-aspect-ratio, 1);
   position: relative;
   display: block;
   width: 100%;

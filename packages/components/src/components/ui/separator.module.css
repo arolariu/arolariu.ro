@@ -12,3 +12,9 @@
   width: 1px;
   height: 100%;
 }
+
+@media (forced-colors: active) {
+  .separator {
+    background-color: CanvasText;
+  }
+}

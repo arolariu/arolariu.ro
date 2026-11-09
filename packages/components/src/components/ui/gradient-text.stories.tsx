@@ -1,86 +1,87 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {GradientText} from "./gradient-text";
+const storyStyles = `
+.ac-story-gradient-text-demo {
+  display: grid;
+  place-content: center;
+  padding: 3rem;
+  border-radius: var(--ac-radius-lg);
+  color: var(--ac-foreground);
+  background: var(--ac-background);
+}
+
+.ac-story-gradient-text-demoHeading {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+}
+
+.ac-story-gradient-text-customGradientDemo {
+  background: #fff;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-gradient-text-demo",
+  demoHeading: "ac-story-gradient-text-demoHeading",
+  customGradientDemo: "ac-story-gradient-text-customGradientDemo",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Typography/GradientText",
   component: GradientText,
   tags: ["autodocs"],
-  argTypes: {
-    neon: {
-      control: "boolean",
-      description: "Adds a blurred neon duplicate behind the primary text layer",
+  args: {text: "Gradient text", neon: false},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Intentional decorative text effect. Neon is an aria-hidden duplicate. Reduced motion is static; forced colors restore CanvasText glyphs and remove the neon copy.",
+      },
     },
   },
+  render: (args) => (
+    <div className={storyClasses.demo}>
+      <h2 className={storyClasses.demoHeading}>
+        <GradientText {...args} />
+      </h2>
+    </div>
+  ),
 } satisfies Meta<typeof GradientText>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/**
- * Animated gradient-filled text with default settings.
- */
-export const Default: Story = {
-  args: {
-    text: "Gradient Text",
-    neon: false,
+/** Looping text keeps a keyboard-operable pause control alongside it. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <div className={storyClasses.demo}>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume text motion" : "Pause text motion"}</Button>
+        <GradientText
+          {...args}
+          loop
+          motionPaused={paused}
+        />
+      </div>
+    );
   },
-  render: (args) => (
-    <div
-      style={{
-        padding: "3rem",
-        background: "#0f172a",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-      <h1 style={{fontSize: "3rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
 };
-
-/**
- * Gradient text with neon glow effect.
- */
-export const WithNeon: Story = {
-  args: {
-    text: "Neon Glow",
-    neon: true,
-  },
-  render: (args) => (
-    <div
-      style={{padding: "3rem", background: "#000", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center"}}>
-      <h1 style={{fontSize: "4rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
-};
-
-/**
- * Gradient text with custom gradient colors.
- */
+export const Default: Story = {};
+export const WithNeon: Story = {args: {text: "Neon glow", neon: true}};
 export const CustomGradient: Story = {
   args: {
-    text: "Custom Colors",
-    gradient: "linear-gradient(90deg, #ff0080 0%, #ff8c00 25%, #40e0d0 50%, #ff8c00 75%, #ff0080 100%)",
-    neon: false,
+    text: "Custom colors",
+    gradient: "linear-gradient(90deg, #9d174d, #92400e, #115e59, #9d174d)",
+    className: storyClasses.customGradientDemo,
   },
-  render: (args) => (
-    <div
-      style={{
-        padding: "3rem",
-        background: "#1e1b4b",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-      <h1 style={{fontSize: "3rem", fontWeight: "bold"}}>
-        <GradientText {...args} />
-      </h1>
-    </div>
-  ),
 };
+/** Check one accessible copy while the original image/content semantics remain intact. */
+export const WithContent: Story = {args: {text: "Related content", neon: true, children: <span> — supplementary copy</span>}};

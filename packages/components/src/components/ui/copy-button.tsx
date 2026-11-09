@@ -13,17 +13,29 @@ import styles from "./copy-button.module.css";
  * Extends native `<button>` attributes while reserving `children` for the internal icon
  * swap and exposing a required clipboard value.
  */
-interface CopyButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+interface CopyButtonProps extends Readonly<Omit<React.ComponentPropsWithRef<"button">, "children">> {
+  /** Localizable idle accessible name. @default "Copy to clipboard" */
+  readonly copyLabel?: string;
+  /** Localizable success name and polite status announcement. @default "Copied" */
+  readonly copiedLabel?: string;
+  /** Localizable failure name and polite status announcement. @default "Copy failed" */
+  readonly errorLabel?: string;
   /**
    * The text value copied to the clipboard when the button is activated.
    */
-  value: string;
+  readonly value: string;
   /**
    * Duration in milliseconds to show the success state before restoring the copy icon.
    *
    * @default 2000
    */
-  timeout?: number;
+  readonly timeout?: number;
+  /**
+   * Receives clipboard failures, including an unavailable Clipboard API.
+   * Not called for canceled activations or work completed after unmount.
+   * The button also exposes `data-state="error"` and a default failure label.
+   */
+  readonly onCopyError?: (error: unknown) => void;
 }
 
 /**
@@ -34,7 +46,8 @@ interface CopyButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
  *
  * Uses `navigator.clipboard.writeText` when available and swaps from a copy icon to a
  * confirmation icon for a configurable duration after a successful copy. If clipboard
- * access fails, the button remains interactive without throwing to the UI.
+ * access fails, `onCopyError` receives the failure and the button exposes an error
+ * state. Caller-provided accessible labels are preserved.
  *
  * @example
  * ```tsx
@@ -43,59 +56,80 @@ interface CopyButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
  *
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText | MDN Clipboard.writeText}
  */
-const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
-  ({value, timeout = 2000, className, onClick, disabled, ...props}, ref) => {
-    const [copied, setCopied] = React.useState(false);
-    const timeoutRef = React.useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+function CopyButton({
+  ref,
+  value,
+  timeout = 2000,
+  className,
+  onClick,
+  onCopyError,
+  disabled,
+  copyLabel = "Copy to clipboard",
+  copiedLabel = "Copied",
+  errorLabel = "Copy failed",
+  ...props
+}: Readonly<CopyButtonProps>): React.JSX.Element {
+  const [status, setStatus] = React.useState<"idle" | "copied" | "error">("idle");
+  const timeoutRef = React.useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const mountedRef = React.useRef(false);
+  const requestRef = React.useRef(0);
 
-    React.useEffect(
-      () => () => {
-        if (timeoutRef.current !== null) {
-          globalThis.clearTimeout(timeoutRef.current);
-        }
-      },
-      [],
-    );
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      requestRef.current += 1;
+      if (timeoutRef.current !== null) {
+        globalThis.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
-    const handleCopy = React.useCallback(
-      async (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event);
+  const showCopied = React.useCallback((): void => {
+    setStatus("copied");
+    timeoutRef.current = globalThis.setTimeout(() => {
+      timeoutRef.current = null;
+      setStatus("idle");
+    }, timeout);
+  }, [timeout]);
 
-        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Clipboard access is browser-only and required for this client component.
-        const {clipboard} = globalThis.navigator;
+  const handleCopy = React.useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+      if (event.defaultPrevented || disabled) return;
+      const request = ++requestRef.current;
+      if (timeoutRef.current !== null) globalThis.clearTimeout(timeoutRef.current);
 
-        if (event.defaultPrevented || disabled || !clipboard?.writeText) {
-          return;
-        }
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Clipboard access is browser-only and required for this client component.
+      const {clipboard} = globalThis.navigator;
 
-        try {
-          await clipboard.writeText(value);
-          setCopied(true);
+      try {
+        if (!clipboard?.writeText) throw new Error("Clipboard API is unavailable");
+        await clipboard.writeText(value);
+        if (!mountedRef.current || request !== requestRef.current) return;
+        showCopied();
+      } catch (error: unknown) {
+        if (!mountedRef.current || request !== requestRef.current) return;
+        setStatus("error");
+        onCopyError?.(error);
+      }
+    },
+    [disabled, onClick, onCopyError, showCopied, value],
+  );
 
-          if (timeoutRef.current !== null) {
-            globalThis.clearTimeout(timeoutRef.current);
-          }
-
-          timeoutRef.current = globalThis.setTimeout(() => {
-            setCopied(false);
-          }, timeout);
-        } catch {
-          // Clipboard access can fail in unsupported or insecure contexts.
-        }
-      },
-      [disabled, onClick, timeout, value],
-    );
-
-    return (
+  const message = status === "copied" ? copiedLabel : status === "error" ? errorLabel : "";
+  return (
+    <>
       <button
         ref={ref}
         type='button'
-        aria-label={copied ? "Copied" : "Copy to clipboard"}
+        aria-label={message || copyLabel}
         className={cn(styles.copyButton, className)}
         disabled={disabled}
         onClick={handleCopy}
+        data-state={status}
         {...props}>
-        {copied ? (
+        {status === "copied" ? (
           <Check
             aria-hidden='true'
             className={styles.icon}
@@ -107,9 +141,15 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
           />
         )}
       </button>
-    );
-  },
-);
+      <span
+        role='status'
+        aria-atomic='true'
+        className={styles.status}>
+        {message}
+      </span>
+    </>
+  );
+}
 CopyButton.displayName = "CopyButton";
 
 export {CopyButton};

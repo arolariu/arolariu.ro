@@ -1,8 +1,21 @@
 import {act, render, renderHook} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type {FocusEventHandler} from "react";
 import {describe, expect, it} from "vitest";
 
 import {useFocusVisible} from "./useFocusVisible";
+
+function focusTarget(onFocus: FocusEventHandler<HTMLButtonElement>): void {
+  const {getByRole, unmount} = render(
+    <button
+      type='button'
+      onFocus={onFocus}>
+      Hook focus target
+    </button>,
+  );
+  act(() => getByRole("button", {name: "Hook focus target"}).focus());
+  unmount();
+}
 
 describe("useFocusVisible", () => {
   it("returns isFocusVisible as false initially", () => {
@@ -28,10 +41,7 @@ describe("useFocusVisible", () => {
     });
 
     // Simulate focus event
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
   });
@@ -46,10 +56,7 @@ describe("useFocusVisible", () => {
     });
 
     // Simulate focus event
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(false);
   });
@@ -63,10 +70,7 @@ describe("useFocusVisible", () => {
       document.dispatchEvent(keydownEvent);
     });
 
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
 
@@ -125,10 +129,7 @@ describe("useFocusVisible", () => {
     });
 
     // Focus
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
 
@@ -140,10 +141,7 @@ describe("useFocusVisible", () => {
     expect(result.current.isFocusVisible).toBe(false);
 
     // Refocus again with keyboard still active
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
   });
@@ -164,10 +162,7 @@ describe("useFocusVisible", () => {
     });
 
     // Focus after pointer
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(false);
 
@@ -178,10 +173,7 @@ describe("useFocusVisible", () => {
     });
 
     // Focus after keyboard
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
   });
@@ -195,10 +187,7 @@ describe("useFocusVisible", () => {
       document.dispatchEvent(pointerdownEvent);
     });
 
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(false);
 
@@ -213,10 +202,7 @@ describe("useFocusVisible", () => {
       document.dispatchEvent(keydownEvent);
     });
 
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     expect(result.current.isFocusVisible).toBe(true);
   });
@@ -225,10 +211,7 @@ describe("useFocusVisible", () => {
     const {result} = renderHook(() => useFocusVisible());
 
     // Focus without any prior interaction
-    act(() => {
-      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
-      result.current.focusProps.onFocus(focusEvent);
-    });
+    focusTarget(result.current.focusProps.onFocus);
 
     // Should remain false since no keyboard interaction occurred
     expect(result.current.isFocusVisible).toBe(false);

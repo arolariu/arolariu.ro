@@ -1,15 +1,104 @@
+import {useEffect, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {FormSkeleton} from "./form-skeleton";
+import {VisuallyHidden} from "./visually-hidden";
+const storyStyles = `
+.ac-story-form-skeleton-storyPreview {
+  width: 32rem;
+  max-width: 100%;
+}
+
+.ac-story-form-skeleton-storyPanel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-form-skeleton-storyHeading {
+  margin: 0 0 var(--ac-space-6);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-form-skeleton-storyPreview",
+  storyPanel: "ac-story-form-skeleton-storyPanel",
+  storyHeading: "ac-story-form-skeleton-storyHeading",
+} as const;
+
+/**
+ * Caller-owned announcement: a persistent visually hidden status region is mounted empty and receives the localized
+ * `loadingAnnouncement` story parameter (in `loadingAnnouncementLang`, when set) once loading begins. The skeleton
+ * itself stays decorative.
+ */
+function LoadingAnnouncement({
+  message,
+  lang,
+  children,
+}: Readonly<{message: string; lang: string | undefined; children: React.ReactNode}>): React.JSX.Element {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+  return (
+    <>
+      <VisuallyHidden
+        role='status'
+        lang={lang}>
+        {loading ? message : null}
+      </VisuallyHidden>
+      {children}
+    </>
+  );
+}
 
 const meta = {
   title: "Components/Feedback/FormSkeleton",
   component: FormSkeleton,
   tags: ["autodocs"],
+  parameters: {
+    loadingAnnouncement: "Loading form",
+    docs: {
+      description: {
+        component:
+          "Decorative form placeholders. Each story writes its localized loading message into a persistent visually hidden status region after that region mounts; the skeleton never carries a role or label.",
+      },
+    },
+  },
+  decorators: [
+    (Story, {parameters}) => {
+      const {loadingAnnouncement, loadingAnnouncementLang}: Readonly<Record<string, unknown>> = parameters;
+      return (
+        <LoadingAnnouncement
+          message={typeof loadingAnnouncement === "string" ? loadingAnnouncement : ""}
+          lang={typeof loadingAnnouncementLang === "string" ? loadingAnnouncementLang : undefined}>
+          <Story />
+        </LoadingAnnouncement>
+      );
+    },
+
+    (Story) => (
+      <div className={storyClasses.storyPreview}>
+        <Story />
+      </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   argTypes: {
     fields: {
-      control: {type: "range", min: 1, max: 10, step: 1},
-      description: "Number of labeled field placeholders rendered before the submit action",
+      control: {type: "range", min: 0, max: 10, step: 1},
+      description: "Fields: integer 0–10,000; invalid values throw RangeError. This demo limits the slider to 10.",
     },
+    animated: {control: "boolean", description: "Shared Skeleton motion; reduced-motion preferences always keep it static"},
   },
 } satisfies Meta<typeof FormSkeleton>;
 
@@ -43,25 +132,30 @@ export const Long: Story = {
   },
 };
 
+/** Zero fields retain only the submit action shape. */
+export const EmptyFields: Story = {
+  args: {fields: 0},
+};
+
+/** Explicitly static placeholders retain their visible loading surface. */
+export const Static: Story = {
+  args: {animated: false},
+};
+
+/** The announcement is caller-owned text, so it follows the page language. */
+export const LocalizedAnnouncement: Story = {
+  args: {fields: 4},
+  parameters: {loadingAnnouncement: "Se încarcă formularul", loadingAnnouncementLang: "ro"},
+};
+
 /**
- * Form skeleton in a card container.
+ * Form skeleton in a card container; the visible heading is ordinary text, not the announcement.
  */
 export const InCard: Story = {
   render: () => (
-    <div
-      style={{
-        maxWidth: "500px",
-        padding: "2rem",
-        background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: "8px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      }}>
-      <h2 style={{marginBottom: "1.5rem", fontSize: "1.5rem", fontWeight: "600"}}>Loading Form...</h2>
-      <FormSkeleton
-        fields={5}
-        aria-label='Loading profile form'
-      />
-    </div>
+    <section className={storyClasses.storyPanel}>
+      <h2 className={storyClasses.storyHeading}>Loading form</h2>
+      <FormSkeleton fields={5} />
+    </section>
   ),
 };

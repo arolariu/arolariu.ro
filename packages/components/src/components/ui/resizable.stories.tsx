@@ -1,192 +1,251 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {cn} from "@/lib/utilities";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./resizable";
+const storyStyles = `
+.ac-story-resizable-storyFrame {
+  width: min(100%, 48rem);
+  height: 20rem;
+  overflow: hidden;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius);
+}
+
+.ac-story-resizable-storyPanel {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background-color: var(--ac-muted);
+  color: var(--ac-foreground);
+  text-align: center;
+}
+
+.ac-story-resizable-storyPanelAlternate {
+  background-color: var(--ac-background);
+}
+
+.ac-story-resizable-storyDescription {
+  color: var(--ac-muted-foreground);
+  font-size: 0.875rem;
+}
+`;
+
+const storyClasses = {
+  storyFrame: "ac-story-resizable-storyFrame",
+  storyPanel: "ac-story-resizable-storyPanel",
+  storyPanelAlternate: "ac-story-resizable-storyPanelAlternate",
+  storyDescription: "ac-story-resizable-storyDescription",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Layout/Resizable",
   component: ResizablePanelGroup,
+  subcomponents: {ResizablePanel, ResizableHandle},
   tags: ["autodocs"],
+  args: {orientation: "horizontal"},
+  argTypes: {
+    orientation: {
+      control: "inline-radio",
+      options: ["horizontal", "vertical"],
+      description: "Panel layout direction. The separator's ARIA orientation is perpendicular to the group.",
+    },
+    disabled: {control: "boolean"},
+  },
   parameters: {
     layout: "padded",
+    docs: {
+      description: {
+        component:
+          "react-resizable-panels v4 Group/Panel/Separator composition. Drag a separator or focus it and use the arrow keys, Home or End. Each handle also renders −/+ step buttons after the separator (two extra tab stops) as the single-pointer alternative to dragging; withControls={false} omits them. Percentage sizes use strings; numeric sizes use pixels. DOM refs use elementRef; imperative refs use groupRef/panelRef.",
+      },
+    },
   },
 } satisfies Meta<typeof ResizablePanelGroup>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
 /**
- * Horizontal resizable panels.
+ * Native −/+ step buttons are the single-pointer alternative to dragging and add two tab stops per handle; they sit
+ * clear of the separator's drag area. Separator arrow/Home/End keys remain SDK-owned.
  */
+export const LocalizedClickControls: Story = {
+  render: () => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup orientation='horizontal'>
+        <ResizablePanel defaultSize='50%'>First panel</ResizablePanel>
+        <ResizableHandle
+          aria-label='Resize panels'
+          decreaseLabel='Réduire le panneau précédent'
+          increaseLabel='Agrandir le panneau précédent'
+          resizeStep={5}
+          withHandle
+        />
+        <ResizablePanel defaultSize='50%'>Second panel</ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  ),
+};
+
+/** Side-by-side panels with a vertical separator and an optional visual grip. */
 export const Horizontal: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='horizontal'
-      className='min-h-[200px] max-w-md rounded-lg border'>
-      <ResizablePanel defaultSize='50%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Panel One</span>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize='50%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Panel Two</span>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  args: {orientation: "horizontal"},
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel defaultSize='50%'>
+          <div className={storyClasses.storyPanel}>First panel</div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize side-by-side panels'
+        />
+        <ResizablePanel defaultSize='50%'>
+          <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Second panel</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };
 
-/**
- * Vertical resizable panels.
- */
+/** A bounded-height vertical group with the actual horizontal separator and rotated grip. */
 export const Vertical: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='vertical'
-      className='min-h-[400px] max-w-md rounded-lg border'>
-      <ResizablePanel defaultSize='50%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Top Panel</span>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize='50%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Bottom Panel</span>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  args: {orientation: "vertical"},
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel defaultSize='50%'>
+          <div className={storyClasses.storyPanel}>Top panel</div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize stacked panels'
+        />
+        <ResizablePanel defaultSize='50%'>
+          <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Bottom panel</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };
 
-/**
- * Three-column layout with resizable panels.
- */
+/** Three panels demonstrate two keyboard-accessible separators. */
 export const ThreeColumn: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='horizontal'
-      className='min-h-[200px] max-w-2xl rounded-lg border'>
-      <ResizablePanel defaultSize='25%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Sidebar</span>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize='50%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Main Content</span>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize='25%'>
-        <div className='flex h-full items-center justify-center p-6'>
-          <span className='font-semibold'>Details</span>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel defaultSize='25%'>
+          <div className={storyClasses.storyPanel}>Sidebar</div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize sidebar'
+        />
+        <ResizablePanel defaultSize='50%'>
+          <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Main content</div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize details panel'
+        />
+        <ResizablePanel defaultSize='25%'>
+          <div className={storyClasses.storyPanel}>Details</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };
 
-/**
- * Panels with minimum and maximum size constraints.
- */
+/** A constrained panel uses percentage strings for v4 minimum/maximum sizing. */
 export const WithMinMax: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='horizontal'
-      className='min-h-[250px] max-w-2xl rounded-lg border'>
-      <ResizablePanel
-        defaultSize='30%'
-        minSize='20%'
-        maxSize='40%'>
-        <div style={{height: "100%", padding: "24px", background: "#fef3c7"}}>
-          <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Constrained Panel</h4>
-          <p style={{fontSize: "12px", color: "#78350f"}}>Min: 20% | Max: 40%</p>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel>
-        <div style={{height: "100%", padding: "24px", background: "#dbeafe"}}>
-          <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Flexible Panel</h4>
-          <p style={{fontSize: "12px", color: "#1e3a8a"}}>No constraints</p>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel
+          defaultSize='30%'
+          minSize='20%'
+          maxSize='40%'>
+          <div className={storyClasses.storyPanel}>
+            <strong>Constrained panel</strong>
+            <span className={storyClasses.storyDescription}>Min: 20% | Max: 40%</span>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize constrained panel'
+        />
+        <ResizablePanel>
+          <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Flexible panel</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };
 
-/**
- * Collapsible panel that can shrink to zero width.
- */
+/** Enter collapses/expands the sidebar; dragging past its minimum also collapses it. */
 export const Collapsible: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='horizontal'
-      className='min-h-[250px] max-w-2xl rounded-lg border'>
-      <ResizablePanel
-        defaultSize='25%'
-        minSize='0%'
-        collapsible>
-        <div style={{height: "100%", padding: "24px", background: "#f3e8ff"}}>
-          <h4 style={{fontWeight: "600", marginBottom: "8px", color: "#6b21a8"}}>Sidebar</h4>
-          <p style={{fontSize: "12px", color: "#7c3aed"}}>This panel can collapse to zero width. Drag the handle all the way left.</p>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel>
-        <div style={{height: "100%", padding: "24px"}}>
-          <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Main Content</h4>
-          <p style={{fontSize: "14px", color: "#6b7280"}}>The main content expands when the sidebar collapses.</p>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel
+          defaultSize='25%'
+          minSize='15%'
+          collapsedSize='0%'
+          collapsible>
+          <div className={storyClasses.storyPanel}>
+            <strong>Collapsible sidebar</strong>
+            <span className={storyClasses.storyDescription}>Focus the separator and press Enter.</span>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize or collapse sidebar'
+        />
+        <ResizablePanel>
+          <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Main content</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };
 
-/**
- * Nested resizable panels creating a complex layout.
- */
+/** A nested vertical group demonstrates perpendicular separator styling without an extra sizing API. */
 export const NestedPanels: Story = {
-  render: () => (
-    <ResizablePanelGroup
-      orientation='horizontal'
-      className='min-h-[400px] max-w-4xl rounded-lg border'>
-      <ResizablePanel defaultSize='30%'>
-        <div style={{height: "100%", padding: "16px", background: "#f9fafb"}}>
-          <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Left Sidebar</h4>
-          <p style={{fontSize: "12px", color: "#6b7280"}}>Fixed content area</p>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize='70%'>
-        <ResizablePanelGroup orientation='vertical'>
-          <ResizablePanel defaultSize='60%'>
-            <div style={{height: "100%", padding: "16px"}}>
-              <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Top Panel</h4>
-              <p style={{fontSize: "12px", color: "#6b7280"}}>This is a nested vertical layout</p>
-            </div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize='40%'>
-            <ResizablePanelGroup orientation='horizontal'>
-              <ResizablePanel>
-                <div style={{height: "100%", padding: "16px", background: "#fef2f2"}}>
-                  <h4 style={{fontWeight: "600", marginBottom: "8px", fontSize: "14px"}}>Bottom Left</h4>
-                  <p style={{fontSize: "11px", color: "#991b1b"}}>Nested horizontal</p>
-                </div>
-              </ResizablePanel>
-              <ResizableHandle />
-              <ResizablePanel>
-                <div style={{height: "100%", padding: "16px", background: "#f0fdf4"}}>
-                  <h4 style={{fontWeight: "600", marginBottom: "8px", fontSize: "14px"}}>Bottom Right</h4>
-                  <p style={{fontSize: "11px", color: "#166534"}}>Nested horizontal</p>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+  render: (args) => (
+    <div className={storyClasses.storyFrame}>
+      <ResizablePanelGroup {...args}>
+        <ResizablePanel defaultSize='30%'>
+          <div className={storyClasses.storyPanel}>Left sidebar</div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          aria-label='Resize sidebar and content'
+        />
+        <ResizablePanel defaultSize='70%'>
+          <ResizablePanelGroup orientation='vertical'>
+            <ResizablePanel defaultSize='60%'>
+              <div className={cn(storyClasses.storyPanel, storyClasses.storyPanelAlternate)}>Top panel</div>
+            </ResizablePanel>
+            <ResizableHandle
+              withHandle
+              aria-label='Resize nested stacked panels'
+            />
+            <ResizablePanel defaultSize='40%'>
+              <div className={storyClasses.storyPanel}>Bottom panel</div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   ),
 };

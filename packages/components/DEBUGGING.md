@@ -4,26 +4,36 @@ This guide provides practical information for debugging and troubleshooting the 
 
 ## 📋 Table of Contents
 
-- [Source Maps](#source-maps)
-- [TypeScript Support](#typescript-support)
-- [Browser DevTools Setup](#browser-devtools-setup)
-- [IDE Configuration](#ide-configuration)
-- [Common Issues](#common-issues)
-- [Performance Debugging](#performance-debugging)
-- [Component Introspection](#component-introspection)
-- [Build Analysis](#build-analysis)
+- [Source Maps](#-source-maps)
+- [TypeScript Support](#-typescript-support)
+- [Browser DevTools Setup](#-browser-devtools-setup)
+- [IDE Configuration](#-ide-configuration)
+- [Common Issues](#-common-issues)
+- [Performance Debugging](#-performance-debugging)
+- [Component Introspection](#-component-introspection)
+- [Build Analysis](#-build-analysis)
 
-## 🗺️ Source Maps
+## 🧭 Source Maps
 
-All distribution files include source maps for a strong debugging experience.
+The build is bundleless: every module keeps its source directory under `dist/` (`src/components/ui/button.tsx` becomes
+`dist/components/ui/button.js`), and each compiled JavaScript, CSS and declaration file ships with a source map. Pure re-export and stub
+entry points, such as `dist/index.js` and `dist/styles.d.ts`, have no code of their own to map.
 
 ### JavaScript Source Maps
 
 ```text
 dist/
-├── button.js
-├── button.js.map      ✅ ESM source map
-└── ...
+├── components/ui/
+│   ├── button.js               ✅ ESM module
+│   ├── button.js.map           ✅ ESM source map
+│   ├── button_module.css       ✅ Component styles
+│   ├── button_module.css.map   ✅ CSS source map
+│   └── ...
+├── hooks/
+│   ├── useIsMobile.js
+│   └── ...
+├── index.css                   ✅ Design tokens (@arolariu/components/styles)
+└── index.js                    ✅ Root entry point
 ```
 
 ### Benefits
@@ -37,14 +47,17 @@ dist/
 
 ### Declaration Files
 
-Every component includes comprehensive TypeScript declarations.
+Every component includes comprehensive TypeScript declarations next to its compiled module.
 
 ```text
-dist/types/
-├── button.d.ts           ✅ Type definitions
-├── card.d.ts             ✅ Component props
-├── form.d.ts             ✅ Form utilities
-└── ...
+dist/
+├── components/ui/
+│   ├── button.d.ts       ✅ Type definitions
+│   ├── button.d.ts.map   ✅ Declaration map
+│   ├── card.d.ts         ✅ Component props
+│   ├── form.d.ts         ✅ Form utilities
+│   └── ...
+└── index.d.ts            ✅ Root declarations
 ```
 
 ### Source Access
@@ -59,7 +72,7 @@ src/
 │   ├── card.tsx          ✅ Implementation details
 │   └── ...
 ├── hooks/
-│   ├── useIsMobile.ts    ✅ Custom hooks
+│   ├── useIsMobile.tsx   ✅ Custom hooks
 │   └── ...
 └── lib/
     ├── utilities.ts      ✅ cn() helper
@@ -98,7 +111,7 @@ When inspecting components:
 - Use the **Styles** panel source links to jump back to the original `.module.css` file
 - Inspect **Base UI data attributes** like `[data-open]`, `[data-disabled]`, and `[data-checked]` to understand state-driven styling
 
-## 🛠️ IDE Configuration
+## 🔧 IDE Configuration
 
 ### VS Code Setup
 
@@ -207,12 +220,13 @@ export function MyComponent() {
 ```css
 /* Scope theme changes intentionally */
 .themeScope {
-  --ac-primary: oklch(0.65 0.2 255);
+  --ac-primary: oklch(0.5 0.16 255);
+  /* Overriding --ac-primary: also override --ac-primary-emphasis in every theme (4.5:1 on --ac-background, 3:1 on --ac-secondary). */
   --ac-radius-md: 0.75rem;
 }
 
-/* Target Base UI state attributes from your own module */
-.menuTrigger :global([data-open]) {
+/* Target Base UI state attributes from your own module: a menu trigger reports its open popup with data-popup-open */
+.menuTrigger[data-popup-open] {
   outline: 2px solid var(--ac-ring);
 }
 ```
@@ -252,7 +266,7 @@ Use the package `Form*` or `Field*` primitives when you need grouped field seman
 **Symptoms**
 
 - Console warning when rendering a non-`button` element through a trigger or button primitive
-- Events or semantics behave unexpectedly when using links or custom elements
+- Events or semantics behave unexpectedly when a custom element replaces the native button
 
 **Cause**
 
@@ -260,54 +274,81 @@ Base UI button-like primitives assume a native `<button>` unless told otherwise.
 
 **Solution**
 
-When rendering a non-button element, ensure `nativeButton={false}` is set on the underlying primitive. The package already handles this for
-some compatibility shims such as `Button asChild`.
+When a button-like primitive renders a non-link element that takes button semantics, such as a `<div>` or `<span>`, set
+`nativeButton={false}` on the underlying primitive. Base UI then adds `role="button"`, focusability and Enter/Space activation. The removed
+`asChild` shim no longer infers this for you.
 
 ```tsx
-import {BaseButton} from "@base-ui/react/button";
+import {Button as BaseButton} from "@base-ui/react/button";
 
-export function DocsLink() {
+export function RunTask() {
   return (
     <BaseButton
       nativeButton={false}
-      render={<a href='/docs' />}>
-      Documentation
+      render={<div />}>
+      Run task
     </BaseButton>
   );
 }
 ```
 
-If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the rendered element is not a real `<button>`.
+If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the element that takes button semantics is not a
+real `<button>`.
 
-### Issue: `asChild` Compatibility
+Do not use `nativeButton={false}` to render links. A link rendered through a button primitive is announced as a button, is missing from the
+page's list of links and activates on Space. Keep navigation as a native `<a href>` and give it the button appearance with
+`buttonVariants()`. Imported from the package root, it also runs in a Server Component, so the link needs no `"use client"`:
+
+```tsx
+import {buttonVariants} from "@arolariu/components";
+
+export function DocsLink() {
+  return (
+    <a
+      href='/docs'
+      className={buttonVariants({variant: "outline"})}>
+      Documentation
+    </a>
+  );
+}
+```
+
+Imported from `@arolariu/components/button` instead, the helper is a client reference in a Server Component and throws when called there.
+
+### Issue: Removed `asChild` API
 
 **Symptoms**
 
-- Legacy Radix-style examples still work, but new composition patterns feel inconsistent
-- Some wrappers behave differently than old Radix implementations
+- TypeScript rejects an old `asChild` prop
+- An old child-slot example no longer composes the intended element
 
 **Cause**
 
-`asChild` is maintained as a compatibility shim, but Base UI uses `render` as the native composition API.
+The React 19-only major removes the compatibility shim. Base UI uses `render` as the composition API.
 
 **Solution**
 
-Prefer `render` for new code:
+Replace the removed prop with `render`:
 
 ```tsx
-import {Dialog, DialogContent, DialogTrigger} from "@arolariu/components/dialog";
+import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "@arolariu/components/dialog";
 
 export function Example() {
   return (
     <Dialog>
       <DialogTrigger render={<button type='button' />}>Open dialog</DialogTrigger>
-      <DialogContent>Dialog content</DialogContent>
+      <DialogContent>
+        <DialogTitle>Rename project</DialogTitle>
+        <DialogDescription>Dialog content</DialogDescription>
+      </DialogContent>
     </Dialog>
   );
 }
 ```
 
-Use `asChild` only when maintaining older consumers.
+`DialogTitle` names the dialog, so keep one in every `DialogContent`.
+
+Do not restore `asChild` or bypass the declaration error with a cast. See [MIGRATION.md](./MIGRATION.md).
 
 ### Issue: TypeScript Errors
 
@@ -360,9 +401,13 @@ import {ChartContainer} from "@arolariu/components/chart";
 import {Button} from "@arolariu/components/button";
 import {Card} from "@arolariu/components/card";
 
-// ❌ Avoid: imports the entire library surface
+// ❌ Avoid: loads the entire library surface when the bundler does not tree-shake it
 import {Button, Card} from "@arolariu/components";
 ```
+
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path; bundlers
+that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js `optimizePackageImports`, still load only the
+modules you use.
 
 ### Performance Monitoring
 
@@ -393,7 +438,7 @@ function App() {
 import {Button} from "@arolariu/components/button";
 
 console.log(Button.displayName); // "Button"
-console.log(Button.$$typeof); // Symbol(react.forward_ref)
+console.log(typeof Button); // "function": a plain function component, not a forwardRef object; `ref` is an ordinary prop
 ```
 
 ### State Attribute Inspection
@@ -407,8 +452,8 @@ export function Example() {
 
 // Inspect the DOM for attributes such as:
 // [data-checked]
+// [data-unchecked]
 // [data-disabled]
-// [data-focus-visible]
 ```
 
 ### Props Validation
@@ -419,7 +464,7 @@ import type {ButtonProps} from "@arolariu/components/button";
 
 const buttonProps: ButtonProps = {
   variant: "default",
-  size: "md",
+  size: "lg",
   disabled: false,
 };
 

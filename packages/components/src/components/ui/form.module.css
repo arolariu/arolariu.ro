@@ -9,11 +9,20 @@
 
 .description {
   color: var(--ac-muted-foreground);
-  font-size: 0.8rem;
+  font-size: var(--ac-text-sm);
+  margin: 0;
 }
 
 .message {
   color: var(--ac-destructive);
-  font-size: 0.8rem;
+  font-size: var(--ac-text-sm);
   font-weight: 500;
+  margin: 0;
+}
+
+@media (forced-colors: active) {
+  .labelError,
+  .message {
+    color: LinkText;
+  }
 }

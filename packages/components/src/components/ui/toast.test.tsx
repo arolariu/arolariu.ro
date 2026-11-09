@@ -1,766 +1,892 @@
-import {act, render, screen, waitFor} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import * as React from "react";
+import {readFileSync} from "node:fs";
+import {dirname, join} from "node:path";
+import {fileURLToPath} from "node:url";
+import {parse} from "postcss";
+import {composeStories} from "storybook-react-rsbuild";
+import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 
-import {toast, Toaster} from "./toast";
+import {
+  Toast,
+  ToastAction,
+  ToastClose,
+  ToastContent,
+  ToastDescription,
+  ToastPortal,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+  Toaster,
+  createToastManager,
+  toast,
+  useToastManager,
+  type ToastData,
+  type ToastProps,
+  type ToastState,
+  type ToastViewportProps,
+  type ToasterProps,
+} from "./toast";
+import styles from "./toast.module.css";
+import * as ToastStories from "./toast.stories";
 
-describe("Sonner", () => {
+function CompoundList(): React.JSX.Element {
+  const {toasts} = useToastManager();
+  return (
+    <ToastPortal>
+      <ToastViewport aria-label='Compound notifications'>
+        {toasts.map((item) => (
+          <Toast
+            key={item.id}
+            toast={item}
+            data-testid={item.id}>
+            <ToastContent>
+              <ToastTitle />
+              <ToastDescription />
+              <ToastAction />
+              <ToastClose />
+            </ToastContent>
+          </Toast>
+        ))}
+      </ToastViewport>
+    </ToastPortal>
+  );
+}
+
+describe("canonical Toast", () => {
   afterEach(() => {
     act(() => {
-      toast.dismiss();
+      toast.close();
     });
+    vi.useRealTimers();
   });
 
-  it("renders the toaster viewport without crashing", () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Assert
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-  });
-
-  it("renders toast content when toast() is called imperatively", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Profile updated", {
-        description: "Your changes were saved.",
-      });
-    });
-
-    // Assert
-    expect(await screen.findByText("Profile updated")).toBeInTheDocument();
-    expect(screen.getByText("Your changes were saved.")).toBeInTheDocument();
-  });
-
-  it("merges the toaster className", () => {
-    // Arrange
-    render(<Toaster className='custom-toaster' />);
-
-    // Assert
-    expect(screen.getByLabelText("Notifications")).toHaveClass("custom-toaster");
-  });
-
-  it("renders custom toast content", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.custom(() => <div>Custom toast content</div>);
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Custom toast content")).toBeInTheDocument();
-    });
-  });
-
-  it("updates an existing toast in place", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    let toastId = "";
-    act(() => {
-      toastId = toast.loading("Uploading avatar", {
-        description: "Please wait.",
-      });
-    });
-
-    expect(await screen.findByText("Uploading avatar")).toBeInTheDocument();
-
-    act(() => {
-      toast.update(toastId, {
-        description: "Avatar uploaded successfully.",
-        message: "Upload complete",
-        variant: "success",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Upload complete")).toBeInTheDocument();
-      expect(screen.getByText("Avatar uploaded successfully.")).toBeInTheDocument();
-      expect(screen.queryByText("Uploading avatar")).not.toBeInTheDocument();
-    });
-  });
-
-  it("updates promise toasts in place instead of creating a new toast", async () => {
-    // Arrange
-    let resolvePromise: ((value: string) => void) | undefined;
-    const promise = new Promise<string>((resolve) => {
-      resolvePromise = resolve;
-    });
-
-    render(<Toaster />);
-
-    // Act
-    void toast.promise(promise, {
-      loading: "Saving profile",
-      success: "Profile saved",
-    });
-
-    expect(await screen.findByText("Saving profile")).toBeInTheDocument();
-
-    await act(async () => {
-      resolvePromise?.("done");
-      await promise;
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Profile saved")).toBeInTheDocument();
-      expect(screen.queryByText("Saving profile")).not.toBeInTheDocument();
-      expect(toast.getToasts()).toHaveLength(1);
-      expect(toast.getToasts()[0]?.variant).toBe("success");
-    });
-  });
-
-  it("renders success toast with correct variant", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.success("Operation successful", {
-        description: "Your action completed successfully.",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Operation successful")).toBeInTheDocument();
-      expect(screen.getByText("Your action completed successfully.")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("success");
-    });
-  });
-
-  it("normalizes explicit toast ids to strings", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Explicit id toast", {id: 123});
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Explicit id toast")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.id).toBe("123");
-    });
-  });
-
-  it("falls back to sequence ids when crypto.randomUUID is unavailable", async () => {
-    // Arrange
-    render(<Toaster />);
-    const originalCrypto = globalThis.crypto;
-    Object.defineProperty(globalThis, "crypto", {
-      configurable: true,
-      value: {
-        ...originalCrypto,
-        randomUUID: undefined,
-      },
-    });
-
-    try {
-      // Act
+  it.each(["top-right", "bottom-right"] as const)(
+    "keeps the %s gap bridge unclipped, tall content scrollable and SDK hover timers paused",
+    (position) => {
+      vi.useFakeTimers();
+      const manager = createToastManager();
+      const onClose = vi.fn();
+      const source = readFileSync(join(import.meta.dirname, "toast.module.css"), "utf8");
+      render(
+        <>
+          <style>
+            {source.replace(/\.([a-zA-Z][\w-]*)/g, (selector: string, name: string): string =>
+              styles[name] ? `.${styles[name]}` : selector,
+            )}
+          </style>
+          <Toaster
+            toastManager={manager}
+            position={position}
+            timeout={1000}
+          />
+        </>,
+      );
       act(() => {
-        toast("Sequence id toast");
+        manager.add({title: "Tall notice", description: "Long caller content. ".repeat(200), onClose});
+        manager.add({title: "Persistent notice", timeout: 0});
+        vi.advanceTimersByTime(250);
       });
+      const timed = screen.getByText("Tall notice").closest("[data-slot=toast]");
+      const persistent = screen.getByText("Persistent notice").closest("[data-slot=toast]");
+      const content = timed?.querySelector("[data-slot=toast-content]");
+      if (!timed || !persistent || !content) throw new Error("Missing real toast composition");
 
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText("Sequence id toast")).toBeInTheDocument();
-        expect(toast.getToasts()[0]?.id.startsWith("toast-")).toBe(true);
-      });
-    } finally {
-      Object.defineProperty(globalThis, "crypto", {
-        configurable: true,
-        value: originalCrypto,
-      });
-    }
+      // Happy DOM cannot hit-test a pseudo-element at native pointer coordinates.
+      // Prove the authored bridge is outside an unclipped pointer-active root,
+      // then exercise the SDK's real descendant-to-descendant hover lifecycle.
+      expect(getComputedStyle(timed).overflowY).not.toMatch(/auto|scroll|hidden|clip/);
+      expect(getComputedStyle(timed).overflow).toBe("visible");
+      expect(getComputedStyle(timed).pointerEvents).toBe("auto");
+      expect(getComputedStyle(content).overflowY).toBe("auto");
+      expect(getComputedStyle(content).maxBlockSize).toBe("calc(100dvh - 2rem - 2px)");
+      const bridge: Record<string, string> = {};
+      parse(source).walkRules(".root::after", (rule) => rule.walkDecls((decl) => void (bridge[decl.prop] = decl.value)));
+      expect(bridge).toMatchObject({position: "absolute", top: "100%", width: "100%", height: "calc(var(--toast-gap) + 1px)"});
+      const topBridge: Record<string, string> = {};
+      parse(source).walkRules('.viewport[data-position^="top"] .root::after', (rule) =>
+        rule.walkDecls((decl) => void (topBridge[decl.prop] = decl.value)),
+      );
+      expect(topBridge).toMatchObject({top: "auto", bottom: "100%"});
+
+      fireEvent.mouseOver(persistent, {relatedTarget: document.body});
+      expect(timed).toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(2000));
+      fireEvent.mouseOut(persistent, {relatedTarget: timed});
+      fireEvent.mouseOver(timed, {relatedTarget: persistent});
+      expect(timed).toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(2000));
+      expect(onClose).not.toHaveBeenCalled();
+      fireEvent.mouseOut(timed, {relatedTarget: document.body});
+      expect(timed).not.toHaveAttribute("data-expanded");
+      act(() => vi.advanceTimersByTime(749));
+      expect(onClose).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+      expect(onClose).toHaveBeenCalledOnce();
+      expect(persistent).not.toHaveAttribute("data-ending-style");
+    },
+  );
+
+  it("exports all 13 pinned runtime values and a real non-callable manager", () => {
+    expect([
+      Toast,
+      ToastAction,
+      ToastClose,
+      ToastContent,
+      ToastDescription,
+      ToastPortal,
+      ToastProvider,
+      ToastTitle,
+      ToastViewport,
+      Toaster,
+      createToastManager,
+      toast,
+      useToastManager,
+    ]).toHaveLength(13);
+    expect(typeof toast).toBe("object");
+    expect(toast).toEqual(
+      expect.objectContaining({
+        add: expect.any(Function),
+        close: expect.any(Function),
+        update: expect.any(Function),
+        promise: expect.any(Function),
+      }),
+    );
+    expect(typeof Toast).toBe("function");
+    expect(typeof Toaster).toBe("function");
   });
 
-  it("renders error toast with correct variant", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.error("Operation failed", {
-        description: "Something went wrong.",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Operation failed")).toBeInTheDocument();
-      expect(screen.getByText("Something went wrong.")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("error");
-    });
-  });
-
-  it("renders warning toast with correct variant", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.warning("Warning message", {
-        description: "Please be careful.",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Warning message")).toBeInTheDocument();
-      expect(screen.getByText("Please be careful.")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("warning");
-    });
-  });
-
-  it("renders info toast with correct variant", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.info("Information", {
-        description: "Here is some useful info.",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Information")).toBeInTheDocument();
-      expect(screen.getByText("Here is some useful info.")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("info");
-    });
-  });
-
-  it("renders toast with action button", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const mockAction = {
-      label: "Undo",
-      onClick: () => {
-        /* noop */
-      },
-    };
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Item deleted", {
-        description: "Your item was removed.",
-        action: mockAction,
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Item deleted")).toBeInTheDocument();
-      expect(screen.getByRole("button", {name: "Undo"})).toBeInTheDocument();
-    });
-  });
-
-  it("renders Toaster with all supported positions", () => {
-    // Arrange
-    const positions = ["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"] as const;
-
-    // Act / Assert
-    for (const position of positions) {
-      const {unmount} = render(<Toaster position={position} />);
-      expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-      unmount();
-    }
-  });
-
-  it("renders toast without description when only message is provided", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Simple message");
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Simple message")).toBeInTheDocument();
-    });
-  });
-
-  it("renders toast with cancel button", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Item deleted", {
-        cancel: {
-          label: "Cancel",
-          onClick: () => {
-            /* noop */
-          },
-        },
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Item deleted")).toBeInTheDocument();
-      expect(screen.getByRole("button", {name: "Cancel"})).toBeInTheDocument();
-    });
-  });
-
-  it("renders Toaster with different theme props", () => {
-    // Arrange & Act
-    const {unmount} = render(<Toaster duration={10_000} />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount();
-  });
-
-  it("renders toast with custom duration", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Custom duration", {
-        duration: 10_000,
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Custom duration")).toBeInTheDocument();
-    });
-  });
-
-  it("renders Toaster with custom visibleToasts limit", () => {
-    // Arrange
-    const {unmount} = render(<Toaster visibleToasts={5} />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount();
-  });
-
-  it("renders Toaster with closeButton={false}", () => {
-    // Arrange
-    const {unmount} = render(<Toaster closeButton={false} />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount();
-  });
-
-  it("renders Toaster with custom containerAriaLabel", () => {
-    // Arrange
-    render(<Toaster containerAriaLabel='Custom Notifications' />);
-
-    // Assert
-    expect(screen.getByLabelText("Custom Notifications")).toBeInTheDocument();
-  });
-
-  it("renders loading toast with correct variant", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.loading("Loading operation", {
-        description: "Please wait...",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Loading operation")).toBeInTheDocument();
-      expect(screen.getByText("Please wait...")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("loading");
-    });
-  });
-
-  it("dismisses specific toast by id", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    let toastId = "";
-    act(() => {
-      toastId = toast("First toast");
-      toast("Second toast");
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("First toast")).toBeInTheDocument();
-      expect(screen.getByText("Second toast")).toBeInTheDocument();
-    });
-
-    act(() => {
-      toast.dismiss(toastId);
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.queryByText("First toast")).not.toBeInTheDocument();
-      expect(screen.getByText("Second toast")).toBeInTheDocument();
-    });
-  });
-
-  it("dismisses all active toasts when called without an id", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("First toast");
-      toast("Second toast");
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("First toast")).toBeInTheDocument();
-      expect(screen.getByText("Second toast")).toBeInTheDocument();
-    });
-
-    act(() => {
-      toast.dismiss();
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.queryByText("First toast")).not.toBeInTheDocument();
-      expect(screen.queryByText("Second toast")).not.toBeInTheDocument();
-      expect(toast.getToasts()).toHaveLength(0);
-    });
-  });
-
-  it("returns toast history via getHistory", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Toast 1");
-      toast("Toast 2");
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Toast 1")).toBeInTheDocument();
-    });
-
-    // Assert
-    const history = toast.getHistory();
-    expect(history.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("renders Toaster with custom toastOptions", async () => {
-    // Arrange
+  it("React 19 refresh: keeps notifications available until dismissed by default", () => {
+    vi.useFakeTimers();
+    const manager = createToastManager<{source: string}>();
+    const ref = React.createRef<HTMLDivElement>();
     render(
       <Toaster
-        toastOptions={{
-          className: "custom-toast-class",
-        }}
+        ref={ref}
+        toastManager={manager}
+        closeLabel='Fermer la notification'
       />,
     );
-
-    // Act
     act(() => {
-      toast("Toast with options");
+      manager.add({title: "Read at your own pace", data: {source: "test"}});
     });
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByText("Read at your own pace")).toBeInTheDocument();
+    expect(screen.getByText("Read at your own pace").closest("[data-slot=toast]")).not.toHaveAttribute("data-ending-style");
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Fermer la notification"})).toBeInTheDocument();
+    expect(ref.current).toBe(screen.getByLabelText("Notifications"));
+    expect(typeof Toast).toBe("function");
+    expect(typeof Toaster).toBe("function");
+  });
 
-    // Assert
+  it("React 19 refresh: lets visible close content own its accessible name", () => {
+    const manager = createToastManager();
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}>
+              <ToastTitle />
+              <ToastClose>Dismiss notice</ToastClose>
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Saved"});
+    });
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Dismiss notice"})).toBeInTheDocument();
+  });
+
+  it("React 19 refresh: preserves the visible name of a custom close render target", () => {
+    const manager = createToastManager();
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}>
+              <ToastTitle />
+              <ToastClose render={<button type='button'>Fermer</button>} />
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider toastManager={manager}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Saved"});
+    });
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByRole("button", {name: "Fermer"})).toBeInTheDocument();
+  });
+
+  it.each(["hover", "focus"] as const)("preserves SDK timer pause and remaining time on %s", (interaction) => {
+    vi.useFakeTimers();
+    const manager = createToastManager();
+    const onClose = vi.fn();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={1000}
+      />,
+    );
+    act(() => {
+      manager.add({title: "Timed notification", onClose});
+    });
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+    const viewport = screen.getByLabelText("Notifications");
+    if (interaction === "hover") fireEvent.mouseEnter(viewport);
+    else fireEvent.focusIn(viewport);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    if (interaction === "hover") fireEvent.mouseLeave(viewport);
+    else fireEvent.focusOut(viewport, {relatedTarget: document.body});
+    act(() => {
+      vi.advanceTimersByTime(749);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("merges Toaster and viewport React 19 refs and disposes both without null callbacks", () => {
+    const disposed = [vi.fn(), vi.fn()];
+    const attached: HTMLDivElement[] = [];
+    const first: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node) attached.push(node);
+      else throw new Error("React 19 disposer must own detach");
+      return disposed[0];
+    };
+    const second: React.RefCallback<HTMLDivElement> = (node) => {
+      if (node) attached.push(node);
+      else throw new Error("React 19 disposer must own detach");
+      return disposed[1];
+    };
+    const {unmount} = render(
+      <Toaster
+        ref={first}
+        viewportProps={{ref: second}}
+      />,
+    );
+    expect(attached).toEqual([screen.getByLabelText("Notifications"), screen.getByLabelText("Notifications")]);
+    unmount();
+    for (const dispose of disposed) expect(dispose).toHaveBeenCalledOnce();
+  });
+
+  it("renders compound parts, valid zero content, manager action props and default close", async () => {
+    const manager = createToastManager();
+    const action = vi.fn();
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <CompoundList />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({id: "zero", title: 0, description: 0, actionProps: {children: "Undo", onClick: action}});
+    });
+    const root = screen.getByTestId("zero");
+    expect(within(root).getAllByText("0")).toHaveLength(2);
+    expect(root).toHaveAttribute("aria-labelledby", within(root).getByRole("heading").id);
+    await userEvent.setup().click(within(root).getByRole("button", {name: "Undo"}));
+    expect(action).toHaveBeenCalledOnce();
+    await userEvent.setup().click(within(root).getByRole("button", {name: "Close toast"}));
     await waitFor(() => {
-      expect(screen.getByText("Toast with options")).toBeInTheDocument();
+      expect(screen.queryByTestId("zero")).not.toBeInTheDocument();
     });
   });
 
-  it("supports function-based titles and descriptions", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
+  it("keeps independent provider/manager contexts and nested hooks isolated", () => {
+    const first = createToastManager();
+    const second = createToastManager();
+    render(
+      <>
+        <Toaster
+          toastManager={first}
+          timeout={0}
+          viewportProps={{"aria-label": "First"}}
+        />
+        <Toaster
+          toastManager={second}
+          timeout={0}
+          viewportProps={{"aria-label": "Second"}}
+        />
+      </>,
+    );
     act(() => {
-      toast(() => "Factory title", {
-        description: () => "Factory description",
+      first.add({title: "One"});
+      second.add({title: "Two"});
+    });
+    expect(within(screen.getByLabelText("First")).getByText("One")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("First")).queryByText("Two")).not.toBeInTheDocument();
+    expect(within(screen.getByLabelText("Second")).getByText("Two")).toBeInTheDocument();
+    act(() => {
+      first.close();
+    });
+    expect(within(screen.getByLabelText("Second")).getByText("Two")).toBeInTheDocument();
+  });
+
+  it("keeps default action render-template props and handlers isolated across typed providers and updates", async () => {
+    const user = userEvent.setup();
+    const first = createToastManager<{owner: "first"}>();
+    const second = createToastManager<{owner: "second"}>();
+    const firstAction = vi.fn();
+    const secondAction = vi.fn();
+    const updatedFirstAction = vi.fn();
+    render(
+      <>
+        <Toaster
+          toastManager={first}
+          viewportProps={{"aria-label": "First actions"}}
+        />
+        <Toaster
+          toastManager={second}
+          viewportProps={{"aria-label": "Second actions"}}
+        />
+      </>,
+    );
+    act(() => {
+      first.add({
+        id: "first-action",
+        title: "First notice",
+        data: {owner: "first"},
+        actionProps: {children: "Undo first", onClick: firstAction},
+      });
+      second.add({
+        id: "second-action",
+        title: "Second notice",
+        data: {owner: "second"},
+        actionProps: {children: "Undo second", onClick: secondAction},
       });
     });
+    const firstViewport = screen.getByLabelText("First actions");
+    const secondViewport = screen.getByLabelText("Second actions");
+    fireEvent.focusIn(firstViewport);
+    fireEvent.focusIn(secondViewport);
+    const firstButton = within(firstViewport).getByRole("button", {name: "Undo first"});
+    const secondButton = within(secondViewport).getByRole("button", {name: "Undo second"});
+    expect(firstButton).not.toBe(secondButton);
+    for (const button of [firstButton, secondButton]) {
+      expect(button).toHaveAttribute("type", "button");
+      expect(button).toHaveAttribute("data-variant", "outline");
+      expect(button).toHaveAttribute("data-size", "sm");
+    }
+    await user.click(firstButton);
+    expect(firstAction).toHaveBeenCalledOnce();
+    expect(secondAction).not.toHaveBeenCalled();
+    act(() => {
+      first.update("first-action", {actionProps: {children: "Restore first", onClick: updatedFirstAction}});
+    });
+    fireEvent.focusIn(firstViewport);
+    await user.click(within(firstViewport).getByRole("button", {name: "Restore first"}));
+    expect(updatedFirstAction).toHaveBeenCalledOnce();
+    expect(firstAction).toHaveBeenCalledOnce();
+    fireEvent.focusIn(secondViewport);
+    await user.click(within(secondViewport).getByRole("button", {name: "Undo second"}));
+    expect(secondAction).toHaveBeenCalledOnce();
+    expect(within(secondViewport).queryByText("Restore first")).not.toBeInTheDocument();
+  });
 
-    // Assert
+  it("emits actual limited/behind/expanded data attributes and uses matching CSS contracts", () => {
+    const manager = createToastManager();
+    render(
+      <Toaster
+        toastManager={manager}
+        limit={1}
+        timeout={0}
+      />,
+    );
+    act(() => {
+      manager.add({title: "Old"});
+      manager.add({title: "Front"});
+    });
+    expect(screen.getByText("Old").closest("[data-slot=toast]")).toHaveAttribute("data-limited");
+    expect(screen.getByText("Old").closest("[data-slot=toast-content]")).toHaveAttribute("data-behind");
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    expect(screen.getByText("Front").closest("[data-slot=toast]")).toHaveAttribute("data-expanded");
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "toast.module.css"), "utf8");
+    for (const attribute of ["limited", "starting-style", "ending-style", "expanded", "behind", "swiping", "swipe-direction"]) {
+      expect(css).toContain(`[data-${attribute}`);
+    }
+    expect(css).not.toMatch(/\[data-(?:starting|ending)\]/u);
+    expect(css).toContain("prefers-reduced-motion");
+    expect(css).toContain("forced-colors");
+  });
+
+  it("forwards canonical callbacks without inventing reasons for manual close or timeout", async () => {
+    const manager = createToastManager();
+    const onClose = vi.fn();
+    const onRemove = vi.fn();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={0}
+      />,
+    );
+    act(() => {
+      manager.add({title: "Manual", onClose, onRemove});
+    });
+    fireEvent.focusIn(screen.getByLabelText("Notifications"));
+    await userEvent.setup().click(screen.getByRole("button", {name: "Close toast"}));
     await waitFor(() => {
-      expect(screen.getByText("Factory title")).toBeInTheDocument();
-      expect(screen.getByText("Factory description")).toBeInTheDocument();
+      expect(onRemove).toHaveBeenCalledOnce();
+    });
+    expect(onClose.mock.calls).toEqual([[]]);
+    expect(onRemove.mock.calls).toEqual([[]]);
+    act(() => {
+      manager.add({title: "Timed", timeout: 10, onClose, onRemove});
+    });
+    await waitFor(() => {
+      expect(onRemove).toHaveBeenCalledTimes(2);
+    });
+    expect(onClose.mock.calls).toEqual([[], []]);
+    expect(onRemove.mock.calls).toEqual([[], []]);
+  });
+
+  it("passes actual primitive state through className and render callbacks, with correct refs", () => {
+    const manager = createToastManager<{code: number}>();
+    const rootRef = React.createRef<HTMLDivElement>();
+    const titleRef = React.createRef<HTMLHeadingElement>();
+    const contentRef = React.createRef<HTMLDivElement>();
+    const descriptionRef = React.createRef<HTMLParagraphElement>();
+    const actionRef = React.createRef<HTMLButtonElement>();
+    const closeRef = React.createRef<HTMLButtonElement>();
+    const viewportRef = React.createRef<HTMLDivElement>();
+    const portalRef = React.createRef<HTMLDivElement>();
+    const rootRender = vi.fn((props: React.HTMLAttributes<HTMLDivElement>, state: {type: string | undefined; limited: boolean}) => (
+      <div
+        {...props}
+        data-render-type={state.type}
+        data-render-limited={String(state.limited)}
+      />
+    ));
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager<{code: number}>();
+      return (
+        <ToastPortal
+          ref={portalRef}
+          className={() => "portal-class"}>
+          <ToastViewport
+            ref={viewportRef}
+            className={(state) => (state.expanded ? "viewport-expanded" : "viewport-collapsed")}>
+            {toasts.map((item) => (
+              <Toast
+                key={item.id}
+                toast={item}
+                ref={rootRef}
+                render={(props, state) => rootRender(props, state)}
+                className={(state) => (state.limited ? "limited" : "visible")}>
+                <ToastContent
+                  ref={contentRef}
+                  className={(state) => (state.expanded ? "content-expanded" : "content-collapsed")}>
+                  <ToastTitle
+                    ref={titleRef}
+                    className={(state) => `title-${state.type}`}>
+                    Explicit title
+                  </ToastTitle>
+                  <ToastDescription
+                    ref={descriptionRef}
+                    className={(state) => `description-${state.type}`}>
+                    Explicit description
+                  </ToastDescription>
+                  <ToastAction
+                    ref={actionRef}
+                    className={(state) => `action-${state.type}`}>
+                    Explicit action
+                  </ToastAction>
+                  <ToastClose
+                    ref={closeRef}
+                    className={(state) => `close-${state.type}`}>
+                    0
+                  </ToastClose>
+                </ToastContent>
+              </Toast>
+            ))}
+          </ToastViewport>
+        </ToastPortal>
+      );
+    }
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Ignored title", type: "success", data: {code: 200}});
+    });
+    expect(rootRef.current).toHaveAttribute("data-render-type", "success");
+    expect(rootRef.current).toHaveAttribute("data-render-limited", "false");
+    expect(rootRef.current).toHaveClass("visible");
+    expect(rootRender).toHaveBeenCalled();
+    expect(titleRef.current).toHaveTextContent("Explicit title");
+    expect(descriptionRef.current).toHaveTextContent("Explicit description");
+    expect(actionRef.current).toHaveTextContent("Explicit action");
+    expect(closeRef.current).toHaveTextContent("0");
+    expect(contentRef.current).toHaveClass("content-collapsed");
+    expect(viewportRef.current).toHaveClass("viewport-collapsed");
+    expect(portalRef.current).toHaveClass("portal-class");
+    fireEvent.focusIn(viewportRef.current ?? screen.getByLabelText("Notifications"));
+    expect(contentRef.current).toHaveClass("content-expanded");
+    expect(viewportRef.current).toHaveClass("viewport-expanded");
+  });
+
+  it.each(["top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"] as const)(
+    "retains useful %s positioning, viewport props and refs",
+    (position) => {
+      const ref = React.createRef<HTMLDivElement>();
+      render(
+        <Toaster
+          position={position}
+          ref={ref}
+          viewportProps={{className: "consumer"}}
+        />,
+      );
+      expect(ref.current).toHaveAttribute("data-position", position);
+      expect(ref.current).toHaveClass("consumer");
+    },
+  );
+
+  it("supports provider-local hook operations without attaching the global manager", async () => {
+    function Local(): React.JSX.Element {
+      const {add, update, close, toasts} = useToastManager<{key: number}>();
+      return (
+        <>
+          <button
+            type='button'
+            onClick={() => {
+              const id = add({title: "Local", data: {key: 1}});
+              update(id, (previous) => ({title: `Local ${previous.data?.key}`}));
+            }}>
+            Add local
+          </button>
+          <button
+            type='button'
+            onClick={() => close()}>
+            Close local
+          </button>
+          <output>{toasts.length}</output>
+          <CompoundList />
+        </>
+      );
+    }
+    render(
+      <ToastProvider timeout={0}>
+        <Local />
+      </ToastProvider>,
+    );
+    await userEvent.setup().click(screen.getByRole("button", {name: "Add local"}));
+    expect(screen.getByText("Local 1")).toBeInTheDocument();
+    act(() => {
+      toast.add({title: "Global should not appear"});
+    });
+    expect(screen.queryByText("Global should not appear")).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", {name: "Close local"}));
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("0");
     });
   });
 
-  it("omits the close button when disabled via toaster defaults", async () => {
-    // Arrange
-    render(<Toaster closeButton={false} />);
-
-    // Act
+  it("uses actual manager promise timing and updates the same toast", async () => {
+    const manager = createToastManager();
+    const {promise, resolve} = Promise.withResolvers<number>();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={0}
+      />,
+    );
+    let pending: Promise<number> | undefined;
     act(() => {
-      toast("No close button toast");
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("No close button toast")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Close notification")).not.toBeInTheDocument();
-    });
-  });
-
-  it("renders toast with custom style", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Styled toast", {
-        style: {backgroundColor: "red"},
+      pending = manager.promise(promise, {
+        loading: {title: 0},
+        success: (value) => ({title: value}),
+        error: (error) => (error instanceof Error ? error.message : String(error)),
       });
     });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Styled toast")).toBeInTheDocument();
-    });
-  });
-
-  it("renders toast with priority prop", () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act - Just verify it doesn't throw
-    act(() => {
-      toast("High priority", {
-        priority: "high",
-      });
-    });
-
-    // Assert - Basic check that toast was created
-    expect(toast.getToasts().length).toBeGreaterThan(0);
-  });
-
-  it("renders toast with closeButton and custom closeButtonAriaLabel", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Closeable toast", {
-        closeButton: true,
-        closeButtonAriaLabel: "Custom close",
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Closeable toast")).toBeInTheDocument();
-      expect(screen.getByLabelText("Custom close")).toBeInTheDocument();
-    });
-  });
-
-  it("handles toast.message as alias for toast", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.message("Message toast");
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Message toast")).toBeInTheDocument();
-    });
-  });
-
-  it("renders toast with cancel as ReactNode", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast("Toast with node cancel", {
-        cancel: <button type='button'>Custom Cancel</button>,
-      });
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Toast with node cancel")).toBeInTheDocument();
-      expect(screen.getByRole("button", {name: "Custom Cancel"})).toBeInTheDocument();
-    });
-  });
-
-  it("shows a resolved promise toast even without a loading state", async () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    const promise = toast.promise(Promise.resolve("profile"), {
-      success: (value) => ({message: `Saved ${value}`}),
-    });
-
+    const root = screen.getByText("0").closest("[data-slot=toast]");
+    expect(root).toHaveAttribute("data-type", "loading");
     await act(async () => {
+      resolve(42);
+      expect(await pending).toBe(42);
+    });
+    expect(screen.getByText("42").closest("[data-slot=toast]")).toBe(root);
+    expect(root).toHaveAttribute("data-type", "success");
+  });
+
+  it.each(["success", "info", "warning", "error", "loading", "custom"])("renders %s default composition", (type) => {
+    const manager = createToastManager();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={0}
+      />,
+    );
+    act(() => {
+      manager.add({title: type, type});
+    });
+    expect(screen.getByText(type).closest("[data-slot=toast]")).toHaveAttribute("data-type", type);
+  });
+
+  it("preserves strict generic notification-data and state types", () => {
+    expectTypeOf<ToastData<{code: number}>["id"]>().toEqualTypeOf<string>();
+    expectTypeOf<NonNullable<ToastData<{code: number}>["data"]>["code"]>().toEqualTypeOf<number>();
+    expectTypeOf<ToastProps<{code: number}>["toast"]>().toEqualTypeOf<ToastData<{code: number}>>();
+    expectTypeOf<ToastState["swipeDirection"]>().toEqualTypeOf<"up" | "down" | "left" | "right" | undefined>();
+    expectTypeOf<"children" extends keyof NonNullable<ToasterProps["viewportProps"]> ? true : false>().toEqualTypeOf<false>();
+    // The documented `aria-label` default keeps the native, explicitly-undefinable attribute type.
+    expectTypeOf<ToastViewportProps["aria-label"]>().toEqualTypeOf<React.ComponentPropsWithRef<"div">["aria-label"]>();
+  });
+
+  it("emits real starting-style/ending-style props without wrapper-owned transition state", async () => {
+    const manager = createToastManager();
+    const observations: Array<{state: ToastState; props: object}> = [];
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}
+              render={(props, state) => {
+                observations.push({state, props});
+                return <div {...props} />;
+              }}>
+              <ToastContent>
+                <ToastTitle />
+              </ToastContent>
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <List />
+      </ToastProvider>,
+    );
+    let id = "";
+    act(() => {
+      id = manager.add({title: "Transition"});
+    });
+    const starting = observations.find((observation) => observation.state.transitionStatus === "starting");
+    expect(starting).toBeDefined();
+    expect(starting?.props).toHaveProperty("data-starting-style");
+    act(() => {
+      manager.close(id);
+    });
+    const ending = observations.find((observation) => observation.state.transitionStatus === "ending");
+    expect(ending?.props).toHaveProperty("data-ending-style");
+    await waitFor(() => {
+      expect(screen.queryByText("Transition")).not.toBeInTheDocument();
+    });
+  });
+
+  it("supports actual pointer swipe state and emitted swipe direction", async () => {
+    const manager = createToastManager();
+    const observations: ToastState[] = [];
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}
+              swipeDirection='right'
+              render={(props, state) => {
+                observations.push(state);
+                return <div {...props} />;
+              }}>
+              <ToastContent>
+                <ToastTitle />
+              </ToastContent>
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <ToastProvider
+        toastManager={manager}
+        timeout={0}>
+        <List />
+      </ToastProvider>,
+    );
+    act(() => {
+      manager.add({title: "Swipe"});
+    });
+    const root = screen.getByText("Swipe").closest("[data-slot=toast]");
+    if (!root) {
+      throw new Error("Missing swipe root");
+    }
+    fireEvent.pointerDown(root, {button: 0, pointerId: 1, pointerType: "touch", clientX: 0, clientY: 0});
+    expect(root).toHaveAttribute("data-swiping");
+    fireEvent.pointerMove(root, {pointerId: 1, clientX: 1, clientY: 0, movementX: 1, movementY: 0});
+    fireEvent.pointerMove(root, {pointerId: 1, clientX: 80, clientY: 0, movementX: 79, movementY: 0});
+    expect(root).toHaveAttribute("data-swipe-direction", "right");
+    fireEvent.pointerUp(root, {pointerId: 1});
+    expect(observations.some((state) => state.transitionStatus === "ending" && state.swipeDirection === "right")).toBe(true);
+    await waitFor(() => {
+      expect(screen.queryByText("Swipe")).not.toBeInTheDocument();
+    });
+  });
+
+  it("supports React lazy render elements without evaluating them outside a Suspense boundary", async () => {
+    const {promise, resolve} = Promise.withResolvers<{default: React.ComponentType<React.ComponentPropsWithRef<"div">>}>();
+    const LazyRoot = React.lazy(() => promise);
+    const manager = createToastManager();
+    const ref = React.createRef<HTMLDivElement>();
+    function List(): React.JSX.Element {
+      const {toasts} = useToastManager();
+      return (
+        <ToastViewport>
+          {toasts.map((item) => (
+            <Toast
+              key={item.id}
+              toast={item}
+              ref={ref}
+              render={<LazyRoot />}>
+              <ToastContent>
+                <ToastTitle />
+              </ToastContent>
+            </Toast>
+          ))}
+        </ToastViewport>
+      );
+    }
+    render(
+      <React.Suspense fallback={<div>Suspended</div>}>
+        <ToastProvider
+          toastManager={manager}
+          timeout={0}>
+          <List />
+        </ToastProvider>
+      </React.Suspense>,
+    );
+    act(() => {
+      manager.add({title: "Lazy root content"});
+    });
+    expect(screen.getByText("Suspended")).toBeInTheDocument();
+    await act(async () => {
+      resolve({default: (props) => <div {...props} />});
       await promise;
     });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Saved profile")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("success");
-    });
+    expect(await screen.findByText("Lazy root content")).toBeInTheDocument();
+    expect(ref.current).toHaveAttribute("data-slot", "toast");
   });
 
-  it("updates rejected promise toasts and runs finally callbacks", async () => {
-    // Arrange
-    let rejectPromise: ((reason?: unknown) => void) | undefined;
-    const promise = new Promise<string>((_resolve, reject) => {
-      rejectPromise = reject;
+  it("keeps loading manager toasts alive, then starts the success timeout", async () => {
+    vi.useFakeTimers();
+    const manager = createToastManager();
+    const source = Promise.withResolvers<number>();
+    const onClose = vi.fn();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={20}
+      />,
+    );
+    let pending: Promise<number> | undefined;
+    act(() => {
+      pending = manager.promise(source.promise, {
+        loading: {title: "Still loading", onClose},
+        success: {title: "Timed success"},
+        error: "Failed",
+      });
     });
-    const handleFinally = vi.fn();
-    render(<Toaster />);
-
-    const pendingToast = toast.promise(promise, {
-      loading: "Saving profile",
-      error: () => ({
-        description: "Please retry.",
-        message: "Profile failed",
-      }),
-      finally: handleFinally,
+    act(() => {
+      vi.advanceTimersByTime(1000);
     });
-
-    expect(await screen.findByText("Saving profile")).toBeInTheDocument();
-
-    let rejectionMessage = "";
-
-    // Act
+    expect(screen.getByText("Still loading")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
     await act(async () => {
-      rejectPromise?.(new Error("Boom"));
-
-      try {
-        await pendingToast;
-      } catch (error) {
-        rejectionMessage = error instanceof Error ? error.message : String(error);
-      }
+      source.resolve(42);
+      await pending;
     });
-
-    // Assert
-    expect(rejectionMessage).toBe("Boom");
-    await waitFor(() => {
-      expect(screen.getByText("Profile failed")).toBeInTheDocument();
-      expect(screen.getByText("Please retry.")).toBeInTheDocument();
-      expect(toast.getToasts()[0]?.variant).toBe("error");
-      expect(handleFinally).toHaveBeenCalledOnce();
-    });
-  });
-
-  it("dismisses toasts after action button clicks", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const handleAction = vi.fn();
-    render(<Toaster />);
-
+    expect(screen.getByText("Timed success")).toBeInTheDocument();
     act(() => {
-      toast("Undoable toast", {
-        action: {
-          label: "Undo",
-          onClick: handleAction,
-        },
-      });
+      vi.advanceTimersByTime(20);
     });
-
-    const actionButton = await screen.findByRole("button", {name: "Undo"});
-
-    // Act
-    await user.click(actionButton);
-
-    // Assert
-    expect(handleAction).toHaveBeenCalledOnce();
-    await waitFor(() => {
-      expect(screen.queryByText("Undoable toast")).not.toBeInTheDocument();
-    });
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("renders toast actions passed as React nodes", async () => {
-    // Arrange
-    render(<Toaster />);
-
+  it("keeps top-position default swipes directed off the top edge", async () => {
+    const manager = createToastManager();
+    render(
+      <Toaster
+        toastManager={manager}
+        position='top-right'
+        timeout={0}
+      />,
+    );
     act(() => {
-      toast("Toast with custom action", {
-        action: <button type='button'>Custom Action</button>,
-      });
+      manager.add({title: "Top swipe"});
     });
-
-    // Assert
+    const root = screen.getByText("Top swipe").closest("[data-slot=toast]");
+    if (!root) {
+      throw new Error("Missing top root");
+    }
+    fireEvent.pointerDown(root, {button: 0, pointerId: 1, pointerType: "touch", clientX: 0, clientY: 0});
+    fireEvent.pointerMove(root, {pointerId: 1, clientX: 0, clientY: -1, movementX: 0, movementY: -1});
+    fireEvent.pointerMove(root, {pointerId: 1, clientX: 0, clientY: -80, movementX: 0, movementY: -79});
+    expect(root).toHaveAttribute("data-swipe-direction", "up");
+    fireEvent.pointerUp(root, {pointerId: 1});
     await waitFor(() => {
-      expect(screen.getByText("Toast with custom action")).toBeInTheDocument();
-      expect(screen.getByRole("button", {name: "Custom Action"})).toBeInTheDocument();
+      expect(screen.queryByText("Top swipe")).not.toBeInTheDocument();
     });
   });
 
-  it("renders no action control for non-element renderables that are not toast actions", async () => {
-    // Arrange
-    render(<Toaster />);
+  it.each(Object.entries(composeStories(ToastStories)))("mounts the real composed %s story", (_name, Story) => {
+    render(<Story />);
+    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+  });
 
+  it.each(["constructor", "toString", "__proto__"])("treats custom type %s as iconless without prototype lookups", (type) => {
+    const manager = createToastManager();
+    render(
+      <Toaster
+        toastManager={manager}
+        timeout={0}
+      />,
+    );
     act(() => {
-      toast("Toast with ignored action", {
-        action: "Ignored action",
-      });
+      manager.add({title: type, type});
     });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Toast with ignored action")).toBeInTheDocument();
-      expect(screen.queryByRole("button", {name: "Ignored action"})).not.toBeInTheDocument();
-    });
-  });
-
-  it("adds updated orphan toasts to history", () => {
-    // Arrange
-    render(<Toaster />);
-
-    // Act
-    act(() => {
-      toast.update("orphan-toast", {
-        message: "Recovered toast",
-        variant: "warning",
-      });
-    });
-
-    // Assert
-    expect(
-      toast.getHistory().some((entry) => entry.id === "orphan-toast" && entry.variant === "warning" && entry.title === "Recovered toast"),
-    ).toBe(true);
-  });
-
-  it("dismisses loading toasts when a promise resolves without success content", async () => {
-    // Arrange
-    let resolvePromise: ((value: string) => void) | undefined;
-    const promise = new Promise<string>((resolve) => {
-      resolvePromise = resolve;
-    });
-    render(<Toaster />);
-
-    const pendingToast = toast.promise(promise, {
-      loading: "Loading only",
-    });
-
-    expect(await screen.findByText("Loading only")).toBeInTheDocument();
-
-    // Act
-    await act(async () => {
-      resolvePromise?.("done");
-      await pendingToast;
-    });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.queryByText("Loading only")).not.toBeInTheDocument();
-      expect(toast.getToasts()).toHaveLength(0);
-    });
+    expect(screen.getByText(type).closest("[data-slot=toast]")?.querySelector("[data-slot=toast-icon]")).toBeNull();
   });
 });

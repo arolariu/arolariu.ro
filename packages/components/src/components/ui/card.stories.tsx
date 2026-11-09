@@ -1,211 +1,176 @@
+"use client";
+
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
+import {Button} from "./button";
+import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
+import {Skeleton} from "./skeleton";
+const storyStyles = `
+.ac-story-card-storyCard {
+  width: min(100%, 28rem);
+}
+
+.ac-story-card-storyImage {
+  width: 100%;
+  height: auto;
+  color: var(--ac-muted-foreground);
+  background-color: var(--ac-muted);
+}
+
+.ac-story-card-storyLoadingLine {
+  width: 100%;
+  height: 1rem;
+}
+`;
+
+const storyClasses = {
+  storyCard: "ac-story-card-storyCard",
+  storyImage: "ac-story-card-storyImage",
+  storyLoadingLine: "ac-story-card-storyLoadingLine",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Card",
   component: Card,
   tags: ["autodocs"],
-  argTypes: {},
+  argTypes: {size: {control: "select", options: ["default", "sm"]}},
 } satisfies Meta<typeof Card>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
-    <Card>
+  render: (args): React.JSX.Element => (
+    <Card
+      {...args}
+      className={storyClasses.storyCard}>
       <CardHeader>
-        <CardTitle>Card Title</CardTitle>
-        <CardDescription>Card description goes here</CardDescription>
+        <CardTitle>Card title</CardTitle>
+        <CardDescription>Supporting information for the content below.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p>This is the card content area where you can put any content.</p>
+        <p>Related content lives together in this surface.</p>
       </CardContent>
-      <CardFooter>
-        <p className='text-sm text-gray-500'>Card footer</p>
-      </CardFooter>
+      <CardFooter>Updated today</CardFooter>
     </Card>
   ),
 };
 
+export const Small: Story = {...Default, args: {size: "sm"}};
+
 export const WithoutFooter: Story = {
-  render: () => (
-    <Card>
+  render: (): React.JSX.Element => (
+    <Card className={storyClasses.storyCard}>
       <CardHeader>
-        <CardTitle>Simple Card</CardTitle>
-        <CardDescription>A card without a footer</CardDescription>
+        <CardTitle>Simple card</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p>Card content without footer section.</p>
-      </CardContent>
+      <CardContent>No footer is required.</CardContent>
     </Card>
   ),
 };
 
 export const ContentOnly: Story = {
-  render: () => (
-    <Card>
-      <CardContent>
-        <p>A minimal card with just content.</p>
-      </CardContent>
+  render: (): React.JSX.Element => (
+    <Card className={storyClasses.storyCard}>
+      <CardContent>Content-only cards keep their interior padding.</CardContent>
     </Card>
   ),
 };
 
-/**
- * Card with a header image.
- */
-function CardWithImage(): React.JSX.Element {
-  return (
-    <Card style={{maxWidth: "400px"}}>
-      <div
-        style={{
-          width: "100%",
-          height: "200px",
-          backgroundColor: "#e5e7eb",
-          backgroundImage: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          borderTopLeftRadius: "8px",
-          borderTopRightRadius: "8px",
-        }}></div>
+export const WithAction: Story = {
+  render: (): React.JSX.Element => (
+    <Card
+      size='sm'
+      className={storyClasses.storyCard}>
       <CardHeader>
-        <CardTitle>Mountain Landscape</CardTitle>
-        <CardDescription>Beautiful scenery from the mountains</CardDescription>
+        <CardTitle>A_long_unbroken_title_that_should_not_push_the_header_action_out_of_its_column</CardTitle>
+        <CardDescription>Descriptions wrap independently of header controls.</CardDescription>
+        <CardAction>
+          <Button
+            size='sm'
+            variant='outline'>
+            Manage
+          </Button>
+        </CardAction>
       </CardHeader>
-      <CardContent>
-        <p style={{fontSize: "14px", color: "#4b5563"}}>
-          Experience breathtaking views and pristine nature in this stunning mountain location.
-        </p>
-      </CardContent>
-      <CardFooter>
-        <button
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}>
-          View Details
-        </button>
-      </CardFooter>
+      <CardContent>Compact sizing applies to every section.</CardContent>
     </Card>
-  );
-}
+  ),
+};
 
 export const WithImage: Story = {
-  render: () => <CardWithImage />,
-};
-
-/**
- * Interactive card with hover effect.
- */
-function InteractiveCard(): React.JSX.Element {
-  const [isHovered, setIsHovered] = React.useState(false);
-
-  return (
-    <Card
-      style={{
-        maxWidth: "400px",
-        cursor: "pointer",
-        transition: "all 0.2s ease",
-        transform: isHovered ? "translateY(-4px)" : "translateY(0)",
-        boxShadow: isHovered
-          ? "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-          : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}>
+  render: (): React.JSX.Element => (
+    <Card className={storyClasses.storyCard}>
+      <svg
+        className={storyClasses.storyImage}
+        role='img'
+        aria-label='Mountain illustration'
+        viewBox='0 0 320 160'>
+        <path
+          d='M0 160 100 20 180 120 240 60 320 160Z'
+          fill='currentColor'
+        />
+      </svg>
       <CardHeader>
-        <CardTitle>Interactive Card</CardTitle>
-        <CardDescription>Hover over this card to see the effect</CardDescription>
+        <CardTitle>Mountain landscape</CardTitle>
+        <CardDescription>Media follows the card's rounded clipping.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <p>This card responds to hover interactions with smooth animations.</p>
-      </CardContent>
-      <CardFooter style={{color: "#6b7280", fontSize: "12px"}}>Click to explore</CardFooter>
-    </Card>
-  );
-}
-
-export const Interactive: Story = {
-  render: () => <InteractiveCard />,
-};
-
-/**
- * Card showing skeleton loading state.
- */
-function LoadingCard(): React.JSX.Element {
-  return (
-    <Card style={{maxWidth: "400px"}}>
-      <CardHeader>
-        <div
-          style={{
-            width: "60%",
-            height: "24px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            marginBottom: "8px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
-        <div
-          style={{
-            width: "80%",
-            height: "16px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
-      </CardHeader>
-      <CardContent>
-        <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-          <div
-            style={{
-              width: "100%",
-              height: "16px",
-              backgroundColor: "#e5e7eb",
-              borderRadius: "4px",
-              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            }}></div>
-          <div
-            style={{
-              width: "90%",
-              height: "16px",
-              backgroundColor: "#e5e7eb",
-              borderRadius: "4px",
-              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            }}></div>
-          <div
-            style={{
-              width: "75%",
-              height: "16px",
-              backgroundColor: "#e5e7eb",
-              borderRadius: "4px",
-              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            }}></div>
-        </div>
-      </CardContent>
+      <CardContent>Explore a new route.</CardContent>
       <CardFooter>
-        <div
-          style={{
-            width: "100px",
-            height: "36px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
+        <Button>View details</Button>
       </CardFooter>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
+    </Card>
+  ),
+};
+
+function InteractiveCard(): React.JSX.Element {
+  const [saved, setSaved] = React.useState(false);
+  return (
+    <Card className={storyClasses.storyCard}>
+      <CardHeader>
+        <CardTitle>Reading list</CardTitle>
+        <CardDescription>Native button behavior, not a clickable div.</CardDescription>
+        <CardAction>
+          <Button
+            size='sm'
+            aria-pressed={saved}
+            onClick={() => setSaved(!saved)}>
+            {saved ? "Saved" : "Save"}
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <p role='status'>{saved ? "Added to the list." : "Not saved yet."}</p>
+      </CardContent>
     </Card>
   );
 }
+export const Interactive: Story = {render: (): React.JSX.Element => <InteractiveCard />};
 
 export const Loading: Story = {
-  render: () => <LoadingCard />,
+  render: (): React.JSX.Element => (
+    <>
+      <p role='status'>Preparing content…</p>
+      <Card
+        aria-busy='true'
+        className={storyClasses.storyCard}>
+        <CardHeader>
+          <Skeleton className={storyClasses.storyLoadingLine} />
+          <Skeleton className={storyClasses.storyLoadingLine} />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className={storyClasses.storyLoadingLine} />
+        </CardContent>
+        <CardFooter>Loading preview</CardFooter>
+      </Card>
+    </>
+  ),
 };

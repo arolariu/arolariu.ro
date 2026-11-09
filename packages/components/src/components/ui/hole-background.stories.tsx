@@ -1,92 +1,98 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {HoleBackground} from "./hole-background";
+const storyStyles = `
+.ac-story-hole-background-demo,
+.ac-story-hole-background-resizableDemo {
+  position: relative;
+  height: 30rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-hole-background-resizableDemo {
+  width: 70%;
+  min-width: 12rem;
+  min-height: 10rem;
+  resize: both;
+}
+
+.ac-story-hole-background-demoContent {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  min-height: 100%;
+  place-content: center;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-hole-background-demo",
+  resizableDemo: "ac-story-hole-background-resizableDemo",
+  demoContent: "ac-story-hole-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/HoleBackground",
   component: HoleBackground,
   tags: ["autodocs"],
-  argTypes: {
-    numberOfLines: {
-      control: {type: "range", min: 10, max: 100, step: 10},
-      description: "Number of radial line groups drawn through the tunnel",
+  args: {strokeColor: "#737373", numberOfLines: 50, numberOfDiscs: 50},
+  argTypes: {numberOfLines: {control: {type: "range", min: 1, max: 256}}, numberOfDiscs: {control: {type: "range", min: 1, max: 256}}},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Element/DPR-observed tunnel geometry with cached lines and particles. Motion pauses when reduced/offscreen; foreground children and the public canvas ref remain intact.",
+      },
     },
-    numberOfDiscs: {
-      control: {type: "range", min: 10, max: 100, step: 10},
-      description: "Number of animated discs used to build the tunnel depth effect",
-    },
-  },
-} satisfies Meta<typeof HoleBackground>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/**
- * Vortex-style tunnel animation with default settings.
- */
-export const Default: Story = {
-  args: {
-    strokeColor: "#737373",
-    numberOfLines: 50,
-    numberOfDiscs: 50,
   },
   render: (args) => (
-    <div style={{position: "relative", height: "500px", background: "#000", borderRadius: "8px", overflow: "hidden"}}>
+    <div className={storyClasses.demo}>
       <HoleBackground {...args} />
     </div>
   ),
-};
-
-/**
- * Colored tunnel effect.
- */
-export const Colored: Story = {
-  args: {
-    strokeColor: "#3b82f6",
-    numberOfLines: 50,
-    numberOfDiscs: 50,
-    particleRGBColor: [59, 130, 246],
-  },
-  render: (args) => (
-    <div style={{position: "relative", height: "500px", background: "#0f172a", borderRadius: "8px", overflow: "hidden"}}>
-      <HoleBackground {...args}>
-        <div
-          style={{
-            position: "relative",
-            zIndex: 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            color: "white",
-          }}>
-          <h2 style={{fontSize: "2rem", fontWeight: "bold", textShadow: "0 0 10px rgba(59,130,246,0.5)"}}>Enter the Vortex</h2>
+} satisfies Meta<typeof HoleBackground>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+/** A persistent control pauses a deliberately continued tunnel animation. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume tunnel" : "Pause tunnel"}</Button>
+        <div className={storyClasses.demo}>
+          <HoleBackground
+            {...args}
+            loop
+            motionPaused={paused}
+          />
         </div>
-      </HoleBackground>
-    </div>
-  ),
-};
-
-/**
- * Dense tunnel with more details.
- */
-export const Dense: Story = {
-  args: {
-    strokeColor: "#8b5cf6",
-    numberOfLines: 80,
-    numberOfDiscs: 80,
-    particleRGBColor: [139, 92, 246],
+      </>
+    );
   },
+};
+export const Default: Story = {};
+export const Colored: Story = {args: {strokeColor: "#3b82f6", particleRGBColor: [59, 130, 246]}};
+export const Dense: Story = {args: {numberOfLines: 80, numberOfDiscs: 80, particleRGBColor: [139, 92, 246]}};
+/** Resize the element; only decoration is hidden in forced colors. */
+export const ElementResize: Story = {
   render: (args) => (
-    <div style={{position: "relative", height: "600px", background: "#1e1b4b", borderRadius: "8px", overflow: "hidden"}}>
+    <div className={storyClasses.resizableDemo}>
       <HoleBackground {...args}>
-        <div style={{position: "relative", zIndex: 10, padding: "3rem", color: "white"}}>
-          <h1 style={{fontSize: "3rem", fontWeight: "bold", marginBottom: "1rem", textShadow: "0 0 10px rgba(139,92,246,0.5)"}}>
-            Deep Space
-          </h1>
-          <p style={{fontSize: "1.25rem", maxWidth: "600px", textShadow: "0 0 8px rgba(139,92,246,0.5)"}}>
-            A more detailed tunnel effect with increased disc and line counts.
-          </p>
-        </div>
+        <h2 className={storyClasses.demoContent}>Foreground content</h2>
       </HoleBackground>
     </div>
   ),

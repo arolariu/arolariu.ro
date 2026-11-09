@@ -45,6 +45,8 @@ export interface UseClipboardReturn {
  * the Clipboard API. It manages the `copied` state that automatically resets
  * after a configurable timeout, and handles errors gracefully when the Clipboard
  * API is unavailable or the operation fails.
+ * Only the latest invocation may update the result; pending completions after
+ * unmount are ignored and cannot create reset timers.
  *
  * The hook is SSR-safe and will handle the case where `navigator.clipboard` is
  * not available (e.g., in non-secure contexts or older browsers).
@@ -87,6 +89,8 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
   const [copied, setCopied] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = React.useRef(true);
+  const generationRef = React.useRef(0);
 
   // Synchronous helper: clears any pending reset and schedules a fresh one.
   // Extracted to keep the ref read+write off the async path (satisfies
@@ -103,6 +107,8 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
 
   const copy = React.useCallback(
     async (text: string): Promise<void> => {
+      if (!mountedRef.current) return;
+      const generation = ++generationRef.current;
       setError(null);
 
       try {
@@ -111,9 +117,11 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
         }
 
         await globalThis.navigator.clipboard.writeText(text);
+        if (!mountedRef.current || generation !== generationRef.current) return;
         setCopied(true);
         scheduleReset();
       } catch (error_) {
+        if (!mountedRef.current || generation !== generationRef.current) return;
         const errorMessage = error_ instanceof Error ? error_ : new Error("Failed to copy to clipboard");
         setError(errorMessage);
         setCopied(false);
@@ -122,11 +130,14 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
     [scheduleReset],
   );
 
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      generationRef.current += 1;
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, []);

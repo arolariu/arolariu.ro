@@ -1,5 +1,6 @@
 .container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   aspect-ratio: 16 / 9;
   color: var(--ac-foreground);
@@ -30,10 +31,11 @@
   stroke: transparent;
 }
 
-.container :global(.recharts-layer),
-.container :global(.recharts-sector),
-.container :global(.recharts-surface) {
-  outline: none;
+.container :global(.recharts-layer):focus-visible,
+.container :global(.recharts-sector):focus-visible,
+.container :global(.recharts-surface):focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
 }
 
 .tooltip {
@@ -67,6 +69,12 @@
 
 .tooltipItemCenter {
   align-items: center;
+}
+
+.tooltipItem > svg {
+  width: 0.625rem;
+  height: 0.625rem;
+  color: var(--ac-muted-foreground);
 }
 
 .tooltipValueRow {
@@ -149,6 +157,44 @@
   gap: var(--ac-space-2);
 }
 
+.legendButton {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+@media (forced-colors: active) {
+  .container :global(.recharts-layer):focus-visible,
+  .container :global(.recharts-sector):focus-visible,
+  .container :global(.recharts-surface):focus-visible {
+    outline-color: Highlight;
+  }
+  .legendButton {
+    color: ButtonText;
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+  }
+  .legendButton:focus-visible {
+    outline-color: Highlight;
+  }
+  .tooltip {
+    color: CanvasText;
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+}
+
+.legendButton:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
 .legendItem svg {
   width: 0.75rem;
   height: 0.75rem;
@@ -160,4 +206,5 @@
   height: 0.5rem;
   flex-shrink: 0;
   border-radius: 2px;
+  background-color: var(--ac-chart-indicator-background, transparent);
 }

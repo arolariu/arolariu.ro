@@ -1,10 +1,36 @@
 import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
 import {Label} from "./label";
 
 describe("Label", () => {
+  it("exposes a label slot and retains native click association", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Label htmlFor='native-label'>Name</Label>
+        <input id='native-label' />
+      </>,
+    );
+    expect(screen.getByText("Name")).toHaveAttribute("data-slot", "label");
+    await user.click(screen.getByText("Name"));
+    expect(screen.getByRole("textbox", {name: "Name"})).toHaveFocus();
+  });
+
+  it("does not turn a disabled fieldset label into an enabled control", async () => {
+    const user = userEvent.setup();
+    render(
+      <fieldset disabled>
+        <Label htmlFor='disabled-label'>Disabled name</Label>
+        <input id='disabled-label' />
+      </fieldset>,
+    );
+    await user.click(screen.getByText("Disabled name"));
+    expect(screen.getByRole("textbox", {name: "Disabled name"})).toBeDisabled();
+    expect(screen.getByRole("textbox")).not.toHaveFocus();
+  });
   it("renders without crashing", () => {
     render(<Label>Content</Label>);
 

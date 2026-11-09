@@ -6,20 +6,20 @@ A modern, accessible React component library built on **Base UI** primitives wit
 
 ## ✨ Highlights
 
-- **84+ components** — From buttons to data tables, charts to animated backgrounds
-- **23 hooks** — Utility hooks for state, media queries, clipboard, local storage
+- **Components** — From buttons to data tables, charts to animated backgrounds
+- **Hooks** — Utility hooks for state, media queries, clipboard, local storage
 - **Base UI foundation** — Accessible, composable, lightweight
 - **CSS Modules** — Scoped styles, zero Tailwind dependency
 - **OKLCH color space** — Perceptually uniform, modern color tokens
-- **95%+ test coverage** — 1300+ tests across all components
+- **Tested** — Colocated Vitest tests for every component and hook
 - **TypeScript strict** — Full type safety, no `any` types
 - **Dark mode** — Built-in light/dark theme support via CSS variables
-- **Motion system** — Animation tokens, presets, and utilities
+- **Motion tokens** — Shared `--ac-transition-*` durations; animated effects follow `prefers-reduced-motion`
 
 ## 🚀 Quick Start
 
 ```bash
-npm install @arolariu/components @base-ui/react motion
+npm install @arolariu/components @base-ui/react@^1.9 motion react@^19 react-dom@^19 react-hook-form recharts
 ```
 
 ```tsx
@@ -35,7 +35,8 @@ function App() {
 
 - **[Design Tokens](?path=/docs/foundations-design-tokens--docs)** — Colors, spacing, typography, radius
 - **[Components](?path=/docs/components-actions-button--docs)** — Interactive UI building blocks
-- **[Hooks](?path=/docs/components-actions-button--docs)** — Utility hooks for common patterns
+- **Hooks** — Utility hooks for common patterns, imported from the package root or their own subpaths (for example
+  `@arolariu/components/useMediaQuery`)
 
 ## 🔗 Links
 

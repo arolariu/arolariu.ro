@@ -10,36 +10,36 @@ import styles from "./timeline.module.css";
  * Extends native `<div>` attributes so timelines can expose test hooks, ARIA metadata,
  * and layout overrides while delegating item composition to child components.
  */
-interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {
+interface TimelineProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Timeline items composed as children.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 /**
  * Represents the configurable props for the {@link TimelineItem} component.
  */
-interface TimelineItemProps extends React.HTMLAttributes<HTMLDivElement> {
+interface TimelineItemProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * The composed timeline dot and content for an individual event.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 /**
  * Represents the configurable props for the {@link TimelineDot} component.
  */
-type TimelineDotProps = React.HTMLAttributes<HTMLDivElement>;
+type TimelineDotProps = Readonly<React.ComponentPropsWithRef<"div">>;
 
 /**
  * Represents the configurable props for the {@link TimelineContent} component.
  */
-interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface TimelineContentProps extends Readonly<React.ComponentPropsWithRef<"div">> {
   /**
    * Content rendered alongside the timeline marker.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 /**
@@ -64,14 +64,14 @@ interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {
  * @see {@link TimelineItem}
  * @see {@link TimelineContent}
  */
-const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(({className, ...props}, ref) => (
+const Timeline = ({ref, className, ...props}: Readonly<TimelineProps>): React.JSX.Element => (
   <div
     ref={ref}
     role='list'
     className={cn(styles.timeline, className)}
     {...props}
   />
-));
+);
 Timeline.displayName = "Timeline";
 
 /**
@@ -90,14 +90,14 @@ Timeline.displayName = "Timeline";
  *
  * @see {@link Timeline}
  */
-const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(({className, ...props}, ref) => (
+const TimelineItem = ({ref, className, ...props}: Readonly<TimelineItemProps>): React.JSX.Element => (
   <div
     ref={ref}
     role='listitem'
     className={cn(styles.item, className)}
     {...props}
   />
-));
+);
 TimelineItem.displayName = "TimelineItem";
 
 /**
@@ -114,14 +114,14 @@ TimelineItem.displayName = "TimelineItem";
  *
  * @see {@link TimelineItem}
  */
-const TimelineDot = React.forwardRef<HTMLDivElement, TimelineDotProps>(({className, ...props}, ref) => (
+const TimelineDot = ({ref, className, ...props}: Readonly<TimelineDotProps>): React.JSX.Element => (
   <div
     ref={ref}
     aria-hidden='true'
     className={cn(styles.dot, className)}
     {...props}
   />
-));
+);
 TimelineDot.displayName = "TimelineDot";
 
 /**
@@ -140,13 +140,13 @@ TimelineDot.displayName = "TimelineDot";
  *
  * @see {@link Timeline}
  */
-const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(({className, ...props}, ref) => (
+const TimelineContent = ({ref, className, ...props}: Readonly<TimelineContentProps>): React.JSX.Element => (
   <div
     ref={ref}
     className={cn(styles.content, className)}
     {...props}
   />
-));
+);
 TimelineContent.displayName = "TimelineContent";
 
 export {Timeline, TimelineContent, TimelineDot, TimelineItem};

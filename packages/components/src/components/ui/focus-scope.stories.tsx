@@ -1,281 +1,393 @@
-import {useState} from "react";
+import {useId, useRef, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {FocusScope} from "./focus-scope";
+import {Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger} from "./dialog";
+import {FocusScope, type FocusScopeProps} from "./focus-scope";
+const storyStyles = `
+.ac-story-focus-scope-button:focus-visible,
+.ac-story-focus-scope-input:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.ac-story-focus-scope-demo,
+.ac-story-focus-scope-controls {
+  display: grid;
+  gap: var(--ac-space-4);
+  color: var(--ac-foreground);
+}
+
+.ac-story-focus-scope-panel {
+  padding: var(--ac-space-6);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-background);
+}
+
+.ac-story-focus-scope-input {
+  display: block;
+  margin-block-start: var(--ac-space-2);
+  padding: var(--ac-space-2);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+  font: inherit;
+}
+
+.ac-story-focus-scope-button {
+  justify-self: start;
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ac-story-focus-scope-button:hover {
+  background: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.ac-story-focus-scope-hidden {
+  display: none;
+}
+`;
+
+const storyClasses = {
+  button: "ac-story-focus-scope-button",
+  input: "ac-story-focus-scope-input",
+  demo: "ac-story-focus-scope-demo",
+  controls: "ac-story-focus-scope-controls",
+  panel: "ac-story-focus-scope-panel",
+  hidden: "ac-story-focus-scope-hidden",
+} as const;
+
+type EscapeExitScopeProps = Omit<FocusScopeProps, "aria-describedby" | "onKeyDown"> & {
+  /** Visible name of the control outside the scope that receives focus on Escape. */
+  readonly exitLabel: string;
+  /** Story explanation rendered before the announced exit instructions. */
+  readonly description?: React.ReactNode;
+};
+
+/**
+ * Story-only consumer pattern for a contained scope: visible instructions referenced by
+ * `aria-describedby` announce the exit, and Escape moves focus to a named outside control.
+ * Escape pressed inside a nested scope bubbles to this handler as well.
+ */
+function EscapeExitScope({exitLabel, description, ...scopeProps}: Readonly<EscapeExitScopeProps>): React.JSX.Element {
+  const instructionsId = useId();
+  const exitRef = useRef<HTMLButtonElement>(null);
+  return (
+    <section className={storyClasses.demo}>
+      {description}
+      <p id={instructionsId}>
+        Press Escape to leave this scope and move focus to <q>{exitLabel}</q>.
+      </p>
+      <FocusScope
+        {...scopeProps}
+        aria-describedby={instructionsId}
+        onKeyDown={(event) => {
+          if (event.key !== "Escape" || event.defaultPrevented) return;
+          event.preventDefault();
+          exitRef.current?.focus();
+        }}
+      />
+      <button
+        type='button'
+        ref={exitRef}
+        className={storyClasses.button}>
+        {exitLabel}
+      </button>
+    </section>
+  );
+}
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Utilities/FocusScope",
   component: FocusScope,
+  args: {children: null as React.ReactNode},
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "A local Tab controller for visible, natively enabled, non-inert tab stops (focusable aria-disabled controls included), not a modal. Containment has no built-in exit: like every contained story here, consumers must provide and announce a keyboard exit. Base UI dialogs own their focus; never layer this trap over a modal popup.",
+      },
+    },
+  },
   argTypes: {
-    contain: {
-      control: "boolean",
-      description: "Whether focus should be trapped within the scope",
-    },
-    autoFocus: {
-      control: "boolean",
-      description: "Whether to auto-focus the first focusable element on mount",
-    },
-    restoreFocus: {
-      control: "boolean",
-      description: "Whether to restore focus to the previously focused element on unmount",
-    },
+    contain: {control: "boolean"},
+    autoFocus: {control: "boolean"},
+    restoreFocus: {control: "boolean"},
   },
 } satisfies Meta<typeof FocusScope>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Focus scope with contained focus and auto-focus enabled.
- */
+/** Both Tab directions wrap across the available controls, not the hidden final button; Escape leaves the scope. */
 export const Default: Story = {
   args: {
     contain: true,
     autoFocus: true,
-    restoreFocus: true,
     children: (
-      <div style={{padding: "1.5rem", background: "#f3f4f6", borderRadius: "8px", border: "2px solid #3b82f6"}}>
-        <h3 style={{marginBottom: "1rem"}}>Focus is trapped here</h3>
-        <input
-          placeholder='First input'
-          style={{width: "100%", padding: "0.5rem", marginBottom: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
-        />
-        <input
-          placeholder='Second input'
-          style={{width: "100%", padding: "0.5rem", marginBottom: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
-        />
+      <div className={storyClasses.controls}>
+        <label>
+          First field
+          <input className={storyClasses.input} />
+        </label>
+        <label>
+          Second field
+          <input className={storyClasses.input} />
+        </label>
         <button
           type='button'
-          style={{padding: "0.5rem 1rem", background: "#3b82f6", color: "white", border: "none", borderRadius: "4px"}}>
-          Submit
+          className={storyClasses.button}>
+          Final visible action
         </button>
-      </div>
-    ),
-  },
-};
-
-/**
- * Focus scope without containment.
- */
-export const NoContain: Story = {
-  args: {
-    contain: false,
-    autoFocus: true,
-    children: (
-      <div style={{padding: "1.5rem", background: "#f3f4f6", borderRadius: "8px"}}>
-        <h3 style={{marginBottom: "1rem"}}>Focus can escape</h3>
-        <input
-          placeholder='Input field'
-          style={{width: "100%", padding: "0.5rem", marginBottom: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
-        />
         <button
           type='button'
-          style={{padding: "0.5rem 1rem", background: "#6b7280", color: "white", border: "none", borderRadius: "4px"}}>
-          Button
+          hidden>
+          Hidden final action
         </button>
-      </div>
-    ),
-  },
-};
-
-/**
- * Focus scope in a modal-like container.
- */
-export const ModalExample: Story = {
-  args: {
-    contain: true,
-    autoFocus: true,
-    restoreFocus: true,
-    children: (
-      <div style={{padding: "2rem", background: "white", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", maxWidth: "400px"}}>
-        <h2 style={{marginBottom: "1rem"}}>Sign In</h2>
-        <input
-          type='email'
-          placeholder='Email'
-          style={{width: "100%", padding: "0.75rem", marginBottom: "0.75rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
-        />
-        <input
-          type='password'
-          placeholder='Password'
-          style={{width: "100%", padding: "0.75rem", marginBottom: "1rem", borderRadius: "4px", border: "1px solid #d1d5db"}}
-        />
-        <div style={{display: "flex", gap: "0.5rem"}}>
-          <button
-            type='button'
-            style={{flex: 1, padding: "0.75rem", background: "#3b82f6", color: "white", border: "none", borderRadius: "4px"}}>
-            Sign In
-          </button>
-          <button
-            type='button'
-            style={{flex: 1, padding: "0.75rem", background: "#e5e7eb", color: "#111827", border: "none", borderRadius: "4px"}}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    ),
-  },
-};
-
-/**
- * Focus scope simulating a modal dialog focus trap.
- */
-export const ModalTrap: Story = {
-  args: {
-    contain: true,
-    autoFocus: true,
-    restoreFocus: true,
-    children: (
-      <div
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "white",
-          padding: "32px",
-          borderRadius: "12px",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
-          maxWidth: "500px",
-          width: "90%",
-        }}>
-        <h2 style={{fontSize: "24px", fontWeight: "700", marginBottom: "16px"}}>Confirm Action</h2>
-        <p style={{color: "#6b7280", marginBottom: "24px", lineHeight: "1.5"}}>
-          Are you sure you want to proceed? This action cannot be undone. Focus is trapped within this modal until you make a choice.
-        </p>
-        <div style={{display: "flex", gap: "12px", justifyContent: "flex-end"}}>
-          <button
-            type='button'
-            style={{
-              padding: "10px 20px",
-              background: "#f3f4f6",
-              color: "#374151",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}>
-            Cancel
-          </button>
-          <button
-            type='button'
-            style={{
-              padding: "10px 20px",
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}>
-            Confirm
-          </button>
-        </div>
       </div>
     ),
   },
   render: (args) => (
-    <>
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(4px)",
-        }}
-      />
-      <FocusScope {...args} />
-    </>
+    <EscapeExitScope
+      {...args}
+      aria-label='Local workbench'
+      className={storyClasses.panel}
+      description={<p>Tab from the final visible action returns to the first field.</p>}
+      exitLabel='Outside the scope'
+    />
   ),
 };
 
-/**
- * Focus scope that restores focus when closed.
- */
-function RestoreFocusDemo(): React.JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
+/** The same content allows ordinary focus navigation outside when containment is disabled. */
+export const NoContain: Story = {...Default, args: {...Default.args, contain: false}};
 
+/** Hidden, inert, disabled and negative-tab-index descendants do not become edge targets. */
+export const UnavailableControls: Story = {
+  render: () => (
+    <EscapeExitScope
+      autoFocus
+      aria-label='Available controls'
+      className={storyClasses.panel}
+      exitLabel='After the available controls'>
+      <div className={storyClasses.controls}>
+        <div hidden>
+          <button type='button'>Hidden ancestor</button>
+        </div>
+        <div inert>
+          <button type='button'>Inert action</button>
+        </div>
+        <fieldset disabled>
+          <button type='button'>Disabled action</button>
+        </fieldset>
+        <button
+          type='button'
+          tabIndex={-1}>
+          Programmatic-only action
+        </button>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          First available
+        </button>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          Last available
+        </button>
+        <div className={storyClasses.hidden}>
+          <button type='button'>CSS-hidden final action</button>
+        </div>
+      </div>
+    </EscapeExitScope>
+  ),
+};
+
+/** With no tabbable descendants, the container is the focus entry and Tab fallback; Escape still leaves it. */
+export const EmptyScope: Story = {
+  args: {autoFocus: true, contain: true, children: <p>No available controls; Tab stays on this scope until Escape leaves it.</p>},
+  render: (args) => (
+    <EscapeExitScope
+      {...args}
+      aria-label='Empty workbench'
+      className={storyClasses.panel}
+      exitLabel='After the empty workbench'
+    />
+  ),
+};
+
+function RestoreFocusDemo(): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const instructionsId = useId();
   return (
-    <div style={{padding: "24px"}}>
-      <p style={{marginBottom: "16px", color: "#6b7280"}}>
-        Click the button below to open a dialog. When closed, focus returns to the trigger button.
-      </p>
+    <section className={storyClasses.demo}>
+      <p>The draft's native autofocus takes entry focus. Closing the inline scope still returns focus to its original trigger.</p>
+      <p id={instructionsId}>Press Escape or choose Close workbench to leave the inline workbench.</p>
       <button
         type='button'
-        onClick={() => setIsOpen(true)}
-        style={{
-          padding: "10px 20px",
-          background: "#3b82f6",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontWeight: "500",
-        }}>
-        Open Dialog
+        className={storyClasses.button}
+        onClick={() => setOpen(true)}>
+        Open inline workbench
       </button>
-
-      {isOpen && (
-        <>
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
-            }}
-            onClick={() => setIsOpen(false)}
-          />
-          <FocusScope
-            contain
-            autoFocus
-            restoreFocus>
-            <div
-              style={{
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                background: "white",
-                padding: "24px",
-                borderRadius: "8px",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-                maxWidth: "400px",
-              }}>
-              <h3 style={{marginBottom: "12px"}}>Dialog Title</h3>
-              <p style={{color: "#6b7280", marginBottom: "16px", fontSize: "14px"}}>
-                This dialog captures focus. When you close it, focus will return to the trigger button.
-              </p>
+      {open && (
+        <FocusScope
+          aria-label='Inline workbench'
+          aria-describedby={instructionsId}
+          className={storyClasses.panel}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || event.defaultPrevented) return;
+            event.preventDefault();
+            setOpen(false);
+          }}>
+          <div className={storyClasses.controls}>
+            <label>
+              Draft
               <input
-                type='text'
-                placeholder='Type something...'
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "4px",
-                  marginBottom: "16px",
-                }}
+                autoFocus
+                className={storyClasses.input}
               />
-              <button
-                type='button'
-                onClick={() => setIsOpen(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#3b82f6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}>
-                Close Dialog
-              </button>
-            </div>
-          </FocusScope>
-        </>
+            </label>
+            <button
+              type='button'
+              className={storyClasses.button}
+              onClick={() => setOpen(false)}>
+              Close workbench
+            </button>
+          </div>
+        </FocusScope>
       )}
-    </div>
+    </section>
   );
 }
 
-export const WithRestoreFocus: Story = {
-  render: () => <RestoreFocusDemo />,
+/** Escape or the close action unmounts the scope; native descendant autofocus does not replace its restoration owner. */
+export const WithRestoreFocus: Story = {render: () => <RestoreFocusDemo />};
+
+function UncheckedRadioGroupDemo(): React.JSX.Element {
+  const groupName = useId();
+  return (
+    <EscapeExitScope
+      autoFocus
+      aria-label='Unchecked radio workbench'
+      className={storyClasses.panel}
+      description={
+        <p>
+          Until a choice is checked, this controller uses the first locally eligible radio as one logical stop. Tab from that stop wraps to
+          the first action. Reverse wrapping uses the same representative; a different peer reached by native navigation resolves to that
+          logical group stop.
+        </p>
+      }
+      exitLabel='Outside the workbench'>
+      <div className={storyClasses.controls}>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          First workbench action
+        </button>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          First unchecked choice
+        </label>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          Second unchecked choice
+        </label>
+      </div>
+    </EscapeExitScope>
+  );
+}
+
+/** Deliberate single-representative radio policy, not a universal native-browser order claim. */
+export const UncheckedRadioGroup: Story = {render: () => <UncheckedRadioGroupDemo />};
+
+function NestedScopeOwnershipDemo(): React.JSX.Element {
+  const groupName = useId();
+  return (
+    <EscapeExitScope
+      autoFocus
+      aria-label='Outer local scope'
+      className={storyClasses.panel}
+      description={
+        <p>
+          These radios share one native group across two local scopes. Once focus enters the contained child, its native interior Tab and
+          Shift+Tab transitions belong to that child, not the ancestor's radio alias sequence. Pointer focus remains available outside
+          because these are local controllers, not modals. Escape inside the contained child bubbles to the outer scope's exit.
+        </p>
+      }
+      exitLabel='Outside both scopes'>
+      <div className={storyClasses.controls}>
+        <label>
+          <input
+            type='radio'
+            name={groupName}
+          />
+          Outer unchecked choice
+        </label>
+        <button
+          type='button'
+          className={storyClasses.button}>
+          Outer intervening action
+        </button>
+        <FocusScope
+          aria-label='Contained child scope'
+          className={storyClasses.panel}>
+          <div className={storyClasses.controls}>
+            <label>
+              <input
+                type='radio'
+                name={groupName}
+              />
+              Inner unchecked choice
+            </label>
+            <button
+              type='button'
+              className={storyClasses.button}>
+              Inner next action
+            </button>
+          </div>
+        </FocusScope>
+      </div>
+    </EscapeExitScope>
+  );
+}
+
+/** Nested local keyboard ownership without a competing SDK modal trap or altered native group. */
+export const NestedScopeOwnership: Story = {render: () => <NestedScopeOwnershipDemo />};
+
+/** SDK modal comparison: Dialog supplies focus ownership without any FocusScope wrapper. */
+export const SdkOwnedModal: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger>Open SDK-owned modal</DialogTrigger>
+      <DialogContent>
+        <DialogTitle>SDK focus ownership</DialogTitle>
+        <DialogDescription>Base UI handles focus entry, containment and restoration. No manual trap is added.</DialogDescription>
+        <label>
+          Example field
+          <input className={storyClasses.input} />
+        </label>
+      </DialogContent>
+    </Dialog>
+  ),
 };
