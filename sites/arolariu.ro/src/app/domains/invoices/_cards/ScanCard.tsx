@@ -94,7 +94,7 @@ function ActionItem({action, isLocked}: ActionItemProps): React.JSX.Element {
     <DropdownMenuItem
       onClick={handleSelect}
       disabled={isLocked || action.disabled}
-      className={action.destructive ? styles["deleteMenuItem"] : undefined}>
+      className={action.destructive ? `${styles["menuItem"]} ${styles["deleteMenuItem"]}` : styles["menuItem"]}>
       {action.icon}
       {action.label}
     </DropdownMenuItem>
