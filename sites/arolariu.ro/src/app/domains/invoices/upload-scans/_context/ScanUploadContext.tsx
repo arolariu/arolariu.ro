@@ -10,8 +10,8 @@
  * strings are localized via `next-intl-selector`.
  */
 
+import {notify} from "@/lib/notify";
 import {extractBase64FromBlob} from "@/lib/utils.client";
-import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
@@ -28,7 +28,6 @@ import {initialUploadState} from "../_model/state";
 import type {PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
 import {runUploadSession} from "../_upload/uploadSession";
 
-type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
 type UploadIntakeSource = "input" | "drop" | "paste";
 
 interface ScanUploadContextType {
@@ -68,6 +67,8 @@ const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undef
  * @returns Provider wrapping the upload route subtree.
  */
 export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
+  type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
+
   const t = useTranslations();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());
@@ -88,15 +89,26 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       const validation = validateUploadFiles(Array.from(files));
 
       for (const invalid of validation.invalidFiles) {
+        // A stable id per file and reason re-uses the existing toast when the same file is dropped again.
+        const rejectionToast = {id: `scan-upload-rejected:${invalid.reason}:${invalid.file.name}`};
         switch (invalid.reason) {
           case "file-too-large":
-            toast.error(t((m) => m.pages.invoices.uploadScans.errors.tooLarge, {name: invalid.file.name}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.tooLarge, {name: invalid.file.name}),
+              rejectionToast,
+            );
             break;
           case "unsupported-type":
-            toast.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedType, {type: invalid.file.type || "unknown"}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.unsupportedType, {type: invalid.file.type || "unknown"}),
+              rejectionToast,
+            );
             break;
           case "unsupported-extension":
-            toast.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}));
+            notify.error(
+              t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}),
+              rejectionToast,
+            );
             break;
           default:
             break;
@@ -109,7 +121,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       }
 
       dispatch({type: "scanUpload.queue.filesAccepted", occurredAt: Date.now(), source, uploads});
-      toast.success(t((m) => m.pages.invoices.uploadScans.toast.filesAdded, {count: uploads.length}));
+      notify.success(t((m) => m.pages.invoices.uploadScans.toast.filesAdded, {count: uploads.length}));
     },
     [t],
   );
@@ -129,7 +141,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
   const clearAll = useCallback((): void => {
     revokePreviews(selectRemovableUploads(state));
     dispatch({type: "scanUpload.queue.removableItemsCleared", occurredAt: Date.now(), source: "input"});
-    toast.info(t((m) => m.pages.invoices.uploadScans.toast.allFilesCleared));
+    notify.info(t((m) => m.pages.invoices.uploadScans.toast.allFilesCleared));
   }, [revokePreviews, state, t]);
 
   const renameFile = useCallback((id: string, newName: string): void => {
@@ -144,7 +156,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       }
 
       if (!upload.file) {
-        toast.error(t((m) => m.pages.invoices.uploadScans.toast.rotateUnavailable));
+        notify.error(t((m) => m.pages.invoices.uploadScans.toast.rotateUnavailable));
         return;
       }
 
@@ -161,7 +173,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
           size: rotated.size,
         });
       } catch {
-        toast.error(t((m) => m.pages.invoices.uploadScans.toast.rotateFailed));
+        notify.error(t((m) => m.pages.invoices.uploadScans.toast.rotateFailed));
       }
     },
     [state.pendingUploads, t],
@@ -179,7 +191,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
   const uploadAll = useCallback(async (): Promise<void> => {
     const uploadsToProcess = selectUploadableItems(state);
     if (uploadsToProcess.length === 0) {
-      toast.info(t((m) => m.pages.invoices.uploadScans.toast.noFilesToUpload));
+      notify.info(t((m) => m.pages.invoices.uploadScans.toast.noFilesToUpload));
       return;
     }
 
@@ -200,9 +212,9 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
 
     for (const code of outcome.toasts) {
       if (code.key === "uploadSucceeded") {
-        toast.success(t((m) => m.pages.invoices.uploadScans.toast.uploadSucceeded, {count: code.count}));
+        notify.success(t((m) => m.pages.invoices.uploadScans.toast.uploadSucceeded, {count: code.count}));
       } else {
-        toast.error(t((m) => m.pages.invoices.uploadScans.toast.uploadFailed, {count: code.count}));
+        notify.error(t((m) => m.pages.invoices.uploadScans.toast.uploadFailed, {count: code.count}));
       }
     }
   }, [dispatchProgress, revokePreviewUrl, scheduleUploadRemoval, state, t]);

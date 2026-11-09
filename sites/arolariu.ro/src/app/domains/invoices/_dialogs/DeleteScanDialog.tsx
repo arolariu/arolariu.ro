@@ -86,13 +86,15 @@ export default function DeleteScanDialog(): React.JSX.Element | null {
    * @remarks
    * The callback delegates to `useScanDelete`, which owns the Azure-backed
    * deletion server action, scans store cleanup, and toast feedback. The
-   * confirm button disables itself while `isDeleting` is true.
+   * confirm button disables itself while `isDeleting` is true, and the dialog
+   * closes once the hook settles because `AlertDialogAction` does not close it.
    *
    * @returns A promise that resolves after the scan delete hook completes.
    */
   const handleDelete = useCallback(async () => {
     await deleteScanCallback();
-  }, [deleteScanCallback]);
+    close();
+  }, [deleteScanCallback, close]);
 
   /**
    * Handles dialog open-state transitions while protecting active deletions.

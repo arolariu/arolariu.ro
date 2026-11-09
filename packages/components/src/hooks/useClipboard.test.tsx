@@ -112,6 +112,53 @@ describe("useClipboard", () => {
     expect(result.current.error).toEqual(writeError);
   });
 
+  it("ignores an older failure after the latest copy succeeds", async () => {
+    const older = Promise.withResolvers<void>();
+    const latest = Promise.withResolvers<void>();
+    writeTextMock.mockReturnValueOnce(older.promise).mockReturnValueOnce(latest.promise);
+    const {result} = renderHook(() => useClipboard());
+    act(() => {
+      void result.current.copy("older");
+      void result.current.copy("latest");
+    });
+    await act(async () => latest.resolve());
+    await act(async () => older.reject(new Error("Obsolete failure")));
+
+    expect(result.current.copied).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("ignores an older success after the latest copy fails", async () => {
+    const older = Promise.withResolvers<void>();
+    const latest = Promise.withResolvers<void>();
+    const failure = new Error("Latest failure");
+    writeTextMock.mockReturnValueOnce(older.promise).mockReturnValueOnce(latest.promise);
+    const {result} = renderHook(() => useClipboard());
+    act(() => {
+      void result.current.copy("older");
+      void result.current.copy("latest");
+    });
+    await act(async () => latest.reject(failure));
+    await act(async () => older.resolve());
+
+    expect(result.current.copied).toBe(false);
+    expect(result.current.error).toBe(failure);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("does not create a timer when a pending copy resolves after unmount", async () => {
+    const pending = Promise.withResolvers<void>();
+    writeTextMock.mockReturnValueOnce(pending.promise);
+    const {result, unmount} = renderHook(() => useClipboard());
+    act(() => {
+      void result.current.copy("pending");
+    });
+    unmount();
+    await act(async () => pending.resolve());
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("clears previous error on successful copy", async () => {
     writeTextMock.mockRejectedValueOnce(new Error("First error"));
 

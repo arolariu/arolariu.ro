@@ -2,6 +2,7 @@
 
 import {useMediaQuery} from "./useMediaQuery";
 
+/** System color scheme preference returned by {@link useColorScheme}. */
 type ColorScheme = "light" | "dark";
 
 /**

@@ -129,12 +129,17 @@ describe("file filters", () => {
 });
 
 describe("suitesForTypeScriptChanges", () => {
-  it("selects only website for website-only changes", () => {
-    expect(suitesForTypeScriptChanges(known(["sites/arolariu.ro/src/app/page.tsx"]))).toEqual(["website"]);
+  it("selects website and its repository contract guards for website changes", () => {
+    expect(suitesForTypeScriptChanges(known(["sites/arolariu.ro/src/app/page.tsx"]))).toEqual(["tooling", "website"]);
+  });
+
+  it("selects docs-site unit tests without broadening repository prose changes", () => {
+    expect(suitesForTypeScriptChanges(known(["sites/docs.arolariu.ro/docusaurus.config.ts"]))).toEqual(["tooling", "docs"]);
+    expect(suitesForTypeScriptChanges(known(["docs/rfc/1003.md"]))).toEqual([]);
   });
 
   it("selects components/cv/status/scripts by path", () => {
-    expect(suitesForTypeScriptChanges(known(["packages/components/src/Button.tsx"]))).toEqual(["components"]);
+    expect(suitesForTypeScriptChanges(known(["packages/components/src/Button.tsx"]))).toEqual(["tooling", "components"]);
     expect(suitesForTypeScriptChanges(known(["sites/cv.arolariu.ro/src/routes/+page.svelte"]))).toEqual(["cv"]);
     expect(suitesForTypeScriptChanges(known(["sites/status.arolariu.ro/src/App.svelte"]))).toEqual(["status"]);
     expect(suitesForTypeScriptChanges(known([".github/scripts/src/hygiene/pipeline/runProvider.ts"]))).toEqual(["scripts"]);

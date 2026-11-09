@@ -16,6 +16,7 @@ import type {CliSubcommand} from "../../cli.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
 import {withCommandOutput} from "../flags.ts";
 import {assembleDocumentation, type DocumentationAssemblyResult} from "./assemble.ts";
+import {prepareSiteDocs} from "./prepare-site.ts";
 
 /** `[arolariu::<context>]` prefix context of the `docs` family. */
 const DOCS_LOG_CONTEXT = "docs";
@@ -46,6 +47,14 @@ export function renderDocsAssembleCompletion(result: Readonly<DocumentationAssem
  * @returns The `docs` group with its `assemble` subcommand.
  */
 export function makeDocsCommand(): CliSubcommand {
+  const prepareSite = Command.make("prepare-site", {}, () =>
+    Effect.gen(function* () {
+      yield* prepareSiteDocs();
+      const presenter = yield* Presenter;
+      yield* presenter.json({scope: "prose-only"});
+      yield* presenter.success("Authored documentation prepared; generated references are excluded from this preview.");
+    }).pipe(withCommandOutput(DOCS_LOG_CONTEXT)),
+  ).pipe(Command.withDescription("Mirrors authored prose only, without running reference extractors or application builds."));
   const assemble = Command.make("assemble", {}, () =>
     Effect.gen(function* () {
       yield* renderDocsAssembleCompletion(yield* assembleDocumentation);
@@ -55,5 +64,5 @@ export function makeDocsCommand(): CliSubcommand {
       "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
     ),
   );
-  return Command.make("docs").pipe(Command.withDescription("Documentation tooling."), Command.withSubcommands([assemble]));
+  return Command.make("docs").pipe(Command.withDescription("Documentation tooling."), Command.withSubcommands([assemble, prepareSite]));
 }

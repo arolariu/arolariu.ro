@@ -3,7 +3,7 @@
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";
-import {Button} from "@arolariu/components/button";
+import {buttonVariants, cn} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import Link from "next/link";
 import {useRef} from "react";
@@ -110,44 +110,37 @@ export default function CallToAction(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.05}}
               whileTap={{scale: 0.95}}>
-              <Button
-                asChild
-                size='lg'
-                className={styles["ctaButton"]}>
-                <Link href='/domains'>
-                  <TbRocket className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.sections.about.platform.callToAction.cta.exploreApplications)}</span>
-                  <TbArrowRight className={styles["ctaArrow"]} />
-                  <motion.span
-                    className={styles["ctaOverlay"]}
-                    initial={{x: "-100%", opacity: 0}}
-                    whileHover={{x: "100%", opacity: 1}}
-                    transition={{duration: 0.6}}
-                  />
-                </Link>
-              </Button>
+              <Link
+                className={cn(buttonVariants({size: "lg"}), styles["ctaButton"])}
+                href='/domains'>
+                <TbRocket className={styles["ctaIcon"]} />
+                <span>{t((m) => m.sections.about.platform.callToAction.cta.exploreApplications)}</span>
+                <TbArrowRight className={styles["ctaArrow"]} />
+                <motion.span
+                  className={styles["ctaOverlay"]}
+                  initial={{x: "-100%", opacity: 0}}
+                  whileHover={{x: "100%", opacity: 1}}
+                  transition={{duration: 0.6}}
+                />
+              </Link>
             </motion.div>
 
             {/* Secondary CTAs */}
             <motion.div
               whileHover={{scale: 1.05}}
               whileTap={{scale: 0.95}}>
-              <Button
-                asChild
-                size='lg'
-                variant='outline'
-                className={styles["ctaButton"]}>
-                <Link href='/auth/sign-up'>
-                  <TbUser className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.sections.about.platform.callToAction.cta.createAccount)}</span>
-                  <motion.span
-                    className={styles["ctaOverlay"]}
-                    initial={{x: "-100%", opacity: 0}}
-                    whileHover={{x: "100%", opacity: 1}}
-                    transition={{duration: 0.6}}
-                  />
-                </Link>
-              </Button>
+              <Link
+                className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaButton"])}
+                href='/auth/sign-up'>
+                <TbUser className={styles["ctaIcon"]} />
+                <span>{t((m) => m.sections.about.platform.callToAction.cta.createAccount)}</span>
+                <motion.span
+                  className={styles["ctaOverlay"]}
+                  initial={{x: "-100%", opacity: 0}}
+                  whileHover={{x: "100%", opacity: 1}}
+                  transition={{duration: 0.6}}
+                />
+              </Link>
             </motion.div>
           </motion.div>
 

@@ -11,13 +11,15 @@
  */
 
 import {Effect} from "effect";
-import {Argument, Command} from "effect/cli";
+import {Argument, Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
-import {ReportedFailure} from "../../platform/exit.ts";
+import {Environment} from "../../platform/Environment.ts";
+import {reportUsageFailure, ReportedFailure} from "../../platform/exit.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
 import {VerboseFlag, withCommandOutput} from "../flags.ts";
 import {generateTaskDisplayName, runGenerate, type GenerateInput, type GenerateResult, type GenerateTaskName} from "./index.ts";
+import {prepareWebsiteLicenses} from "./prepare-website-licenses.ts";
 
 /** Every generator name accepted by the `task` argument. */
 const generateTaskNames = ["env", "i18n", "gql", "artifacts"] as const satisfies readonly GenerateTaskName[];
@@ -62,13 +64,27 @@ export function makeGenerateCommand(): CliSubcommand {
   return Command.make(
     "generate",
     {
+      websiteLicensesOnly: Flag.Boolean("website-licenses-only").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Generate only website attribution from the repository working directory; do not select other tasks."),
+      ),
       tasks: Argument.Literals("task", generateTaskNames).pipe(
         Argument.withDescription("Generators to run: env, i18n, gql, or artifacts."),
         Argument.variadic(),
       ),
     },
-    ({tasks}) =>
+    ({tasks, websiteLicensesOnly}) =>
       Effect.gen(function* () {
+        if (websiteLicensesOnly) {
+          if (tasks.length > 0) {
+            return yield* reportUsageFailure("--website-licenses-only cannot be combined with generator tasks.");
+          }
+          const environment = yield* Environment;
+          const paths = yield* prepareWebsiteLicenses(environment.cwd);
+          const presenter = yield* Presenter;
+          yield* presenter.json(toJsonValue({paths}));
+          return;
+        }
         const verbose = yield* VerboseFlag;
         const selected = new Set<GenerateTaskName>(tasks);
         const input: GenerateInput = {

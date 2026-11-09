@@ -2,6 +2,10 @@
 
 > **Real-world examples to get you building faster.** Copy, paste, and customize these patterns for your projects.
 
+> **Version 3:** see [MIGRATION.md](./MIGRATION.md) for precise 2.4 → 3 changes and the preserved historical guide. The package is React
+> 19-only. Mount the canonical `Toaster` once before using its manager. Deprecated composition and facade APIs are removed; examples use
+> `render` and typed ref props. Read [ACCESSIBILITY.md](./ACCESSIBILITY.md) for component and consumer responsibilities.
+
 ## 🚀 Getting Started
 
 ### Installation & Setup
@@ -10,7 +14,7 @@
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
 ```
 
 ```tsx
@@ -28,7 +32,8 @@ import {Button, Card} from "@arolariu/components";
 import styles from "./my-component.module.css";
 ```
 
-No utility CSS framework is required as a peer dependency in v1.0.0.
+No utility CSS framework is required. In v3 the Base UI peer minimum becomes `^1.9` (2.4 accepted `^1`), and React and ReactDOM require
+`^19`. Browser and assistive-technology behavior is not inferred from emulated tests.
 
 ### Useful Subpath Imports
 
@@ -36,17 +41,35 @@ No utility CSS framework is required as a peer dependency in v1.0.0.
 import {Button} from "@arolariu/components/button";
 import {useIsMobile} from "@arolariu/components/useIsMobile";
 import {cn} from "@arolariu/components/utilities";
-import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
+import {convertHexToHslString} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ### Composition with the `render` Prop
 
 ```tsx
-import {Button} from "@arolariu/components";
+"use client";
 
-// Use render prop instead of asChild
-<Button render={<a href='/dashboard' />}>Go to Dashboard</Button>;
+import {Button, buttonVariants} from "@arolariu/components/button";
+
+// Use render instead of asChild. nativeButton={false} is for non-link targets that take button semantics.
+<Button
+  nativeButton={false}
+  render={<div />}>
+  Run task
+</Button>;
+
+// Links stay native anchors; buttonVariants() gives them the button appearance.
+<a
+  href='/dashboard'
+  className={buttonVariants({variant: "outline"})}>
+  Go to Dashboard
+</a>;
 ```
+
+A link rendered through `Button` would be announced as a button, missing from the page's list of links and activated by Space. With
+`variant: "link"`, a real anchor stays underlined at rest, while `<Button variant="link">` underlines only on hover. Imported from
+`@arolariu/components`, `buttonVariants` is also callable in a Server Component; this sample imports it from the
+`@arolariu/components/button` subpath, a client module, so it keeps `"use client"`.
 
 ```css
 /* my-component.module.css */
@@ -59,6 +82,106 @@ import {Button} from "@arolariu/components";
 ---
 
 ## 🎨 Layout Examples
+
+### Canonical manager notifications and explicit Command root
+
+Canonical toast is not callable and has no `.success()`/`.dismiss()` helpers. Manager fields use `title`/`timeout`/`type`/`actionProps`;
+provider configuration uses `timeout`/`limit`. `timeout` defaults to `0`, so notifications persist until closed; the example below passes
+`timeout={5000}` for auto-dismissal. Scoped `createToastManager<T>()` managers can be passed via `toastManager`; `useToastManager<T>()` sees
+only the nearest provider.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {toast, Toaster} from "@arolariu/components/toast";
+
+export function SaveNotification({save}: Readonly<{save: () => Promise<{name: string}>}>) {
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function notifySave(): Promise<void> {
+    setFailure(null);
+    try {
+      await toast.promise(save(), {
+        loading: "Saving...",
+        success: (result) => ({title: `Saved ${result.name}`, type: "success"}),
+        error: (error: unknown) => ({
+          title: error instanceof Error ? error.message : "Save failed",
+          type: "error",
+        }),
+      });
+    } catch (error: unknown) {
+      setFailure(error instanceof Error ? error.message : "Save failed");
+    }
+  }
+
+  return (
+    <Toaster
+      timeout={5000}
+      limit={3}>
+      <Button onClick={() => void notifySave()}>Save</Button>
+      {failure !== null && <p>{failure}</p>}
+    </Toaster>
+  );
+}
+```
+
+The Toaster is mounted before event-driven notification calls. Its children share the real provider manager. For custom lists use
+ToastProvider/ToastPortal/ToastViewport and Toast/Content/Title/Description/Action/Close rather than overriding `viewportProps.children`.
+
+```tsx
+"use client";
+import {useState} from "react";
+import {Button} from "@arolariu/components/button";
+import {Command, CommandDialog, CommandInput, CommandItem, CommandList} from "@arolariu/components/command";
+
+export function ActionsPalette() {
+  const [open, setOpen] = useState(false);
+  const [selection, setSelection] = useState("");
+  const [search, setSearch] = useState("");
+  const [lastAction, setLastAction] = useState("");
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open actions</Button>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title='Actions'
+        description='Choose an action'>
+        <Command
+          value={selection}
+          onValueChange={setSelection}>
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder='Search actions'
+          />
+          <CommandList>
+            <CommandItem
+              value='copy'
+              onSelect={setLastAction}>
+              Copy
+            </CommandItem>
+            <CommandItem
+              value='rename'
+              onSelect={setLastAction}>
+              Rename
+            </CommandItem>
+          </CommandList>
+        </Command>
+      </CommandDialog>
+      <p>Last action: {lastAction || "None"}</p>
+    </>
+  );
+}
+```
+
+Selected action and search are separate. Command is a native substring/custom-score controller, not cmdk. CommandDialog no longer creates
+the Command root (v2.4 did); always include the explicit Command root. The placeholder names the search input here; CommandInput's
+localizable `fallbackLabel` (default `"Search commands"`) applies only when no label, `aria-label`, `aria-labelledby`, `title` or
+placeholder names it. For explicit before/after examples, nullable Select/Combobox, async AlertDialog completion and exact Skeleton caps,
+see [MIGRATION.md](./MIGRATION.md).
 
 ### Simple Card Layout
 
@@ -172,7 +295,10 @@ export function Dashboard() {
                 <CardTitle>Project Progress</CardTitle>
               </CardHeader>
               <CardContent className={styles.stack}>
-                <Progress value={75} />
+                <Progress
+                  value={75}
+                  aria-label='Project progress'
+                />
                 <p className={styles.mutedText}>75% complete</p>
               </CardContent>
             </Card>
@@ -184,11 +310,17 @@ export function Dashboard() {
               <CardContent>
                 <div className={styles.avatarRow}>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src='/avatar1.jpg' />
+                    <AvatarImage
+                      src='/avatar1.jpg'
+                      alt='Jane Doe'
+                    />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src='/avatar2.jpg' />
+                    <AvatarImage
+                      src='/avatar2.jpg'
+                      alt='Sam Miller'
+                    />
                     <AvatarFallback>SM</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
@@ -204,6 +336,9 @@ export function Dashboard() {
   );
 }
 ```
+
+SidebarProvider writes a `sidebar_state` cookie on desktop toggles (Ctrl+B / Cmd+B included) but never reads it. To restore the state, read
+the cookie on the server and pass `defaultOpen`; pass `persistState={false}` if you persist it yourself.
 
 ---
 
@@ -468,7 +603,7 @@ export function ProfileForm() {
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@arolariu/components/dropdown-menu";
 import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
-import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {Sheet, SheetContent, SheetTitle, SheetTrigger} from "@arolariu/components/sheet";
 import {LogOut, MenuIcon, Settings, User} from "lucide-react";
 import styles from "./app-header.module.css";
 
@@ -500,6 +635,7 @@ export function AppHeader() {
 
         <Sheet>
           <SheetTrigger
+            aria-label='Open navigation'
             render={
               <button
                 type='button'
@@ -509,6 +645,7 @@ export function AppHeader() {
             <MenuIcon />
           </SheetTrigger>
           <SheetContent side='left'>
+            <SheetTitle>Navigation</SheetTitle>
             <nav className={styles.mobileNav}>
               <a href='/dashboard'>Dashboard</a>
               <a href='/projects'>Projects</a>
@@ -520,6 +657,7 @@ export function AppHeader() {
         <div className={styles.actions}>
           <DropdownMenu>
             <DropdownMenuTrigger
+              aria-label='Open account menu'
               render={
                 <button
                   type='button'
@@ -619,8 +757,8 @@ export function UsersTable() {
   return (
     <div className={styles.wrapper}>
       <div className={styles.tableShell}>
-        <Table>
-          <TableCaption>A list of your team members.</TableCaption>
+        <Table containerProps={{role: "region", "aria-labelledby": "team-members-caption"}}>
+          <TableCaption id='team-members-caption'>A list of your team members.</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -642,6 +780,7 @@ export function UsersTable() {
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger
+                      aria-label={`Actions for ${user.name}`}
                       render={
                         <button
                           type='button'
@@ -659,7 +798,7 @@ export function UsersTable() {
                         <Edit />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className={styles.dangerItem}>
+                      <DropdownMenuItem variant='destructive'>
                         <Trash />
                         Delete
                       </DropdownMenuItem>
@@ -695,11 +834,40 @@ import {
   AlertDialogTrigger,
 } from "@arolariu/components/alert-dialog";
 import {Trash} from "lucide-react";
+import {useState, type JSX} from "react";
 import styles from "./delete-confirmation.module.css";
 
-export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onConfirm: () => void}) {
+export function DeleteConfirmation({
+  itemName,
+  onConfirm,
+}: Readonly<{itemName: string; onConfirm: () => void | Promise<void>}>): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function confirm(): Promise<void> {
+    setPending(true);
+    setFailure(null);
+    try {
+      await onConfirm();
+      setOpen(false);
+    } catch (error: unknown) {
+      setFailure(error instanceof Error && error.message ? error.message : "Could not delete the item. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        if (!nextOpen && pending) details.cancel();
+        else {
+          setOpen(nextOpen);
+          if (nextOpen) setFailure(null);
+        }
+      }}>
       <AlertDialogTrigger
         render={
           <button
@@ -717,15 +885,24 @@ export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onC
             This action cannot be undone. This will permanently delete {itemName} and remove all associated data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {failure !== null && <p role='alert'>{failure}</p>}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Yes, delete it</AlertDialogAction>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            aria-busy={pending}
+            onClick={() => void confirm()}>
+            {pending ? "Deleting..." : "Yes, delete it"}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
 ```
+
+The example owns dismissal: successful completion closes it, pending work prevents duplicate confirmation and dismissal, and rejection keeps
+the dialog open with a visible error. `AlertDialogAction` itself still does not close automatically.
 
 ### Settings Modal
 
@@ -796,7 +973,7 @@ export function SettingsDialog() {
             <div className={styles.field}>
               <Label htmlFor='timezone'>Timezone</Label>
               <Select defaultValue='utc'>
-                <SelectTrigger>
+                <SelectTrigger id='timezone'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -813,17 +990,31 @@ export function SettingsDialog() {
             className={styles.panel}>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
-                <Label>Email Notifications</Label>
-                <div className={styles.mutedText}>Receive emails about your account activity.</div>
+                <Label htmlFor='email-notifications'>Email Notifications</Label>
+                <div
+                  id='email-notifications-description'
+                  className={styles.mutedText}>
+                  Receive emails about your account activity.
+                </div>
               </div>
-              <Switch />
+              <Switch
+                id='email-notifications'
+                aria-describedby='email-notifications-description'
+              />
             </div>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
-                <Label>Push Notifications</Label>
-                <div className={styles.mutedText}>Receive push notifications on your devices.</div>
+                <Label htmlFor='push-notifications'>Push Notifications</Label>
+                <div
+                  id='push-notifications-description'
+                  className={styles.mutedText}>
+                  Receive push notifications on your devices.
+                </div>
               </div>
-              <Switch />
+              <Switch
+                id='push-notifications'
+                aria-describedby='push-notifications-description'
+              />
             </div>
           </TabsContent>
 
@@ -872,7 +1063,8 @@ export function SettingsDialog() {
 
 ```css
 :root {
-  --ac-primary: oklch(0.6 0.2 250);
+  --ac-primary: oklch(0.5 0.14 250);
+  /* Overriding --ac-primary: also override --ac-primary-emphasis in every theme (4.5:1 on --ac-background, 3:1 on --ac-secondary). */
   --ac-radius: 0.5rem;
 }
 ```
@@ -880,8 +1072,9 @@ export function SettingsDialog() {
 ```css
 /* app-theme.module.css */
 .themeScope {
-  --ac-primary: oklch(0.68 0.2 258);
-  --ac-primary-foreground: oklch(0.98 0.01 258);
+  --ac-primary: oklch(0.5 0.18 258);
+  --ac-primary-foreground: oklch(0.98 0.009 258);
+  --ac-primary-emphasis: oklch(0.5 0.18 258);
   --ac-secondary: oklch(0.95 0.02 286);
   --ac-background: oklch(0.99 0 0);
   --ac-radius-md: 0.75rem;
@@ -892,6 +1085,8 @@ export function SettingsDialog() {
   --ac-background: oklch(0.17 0.01 286);
   --ac-foreground: oklch(0.98 0 0);
   --ac-card: oklch(0.2 0.01 286);
+  --ac-secondary: oklch(0.27 0.01 286);
+  --ac-primary-emphasis: oklch(0.72 0.14 258);
 }
 ```
 
@@ -956,6 +1151,7 @@ export function MobileAddForm() {
   return (
     <Sheet>
       <SheetTrigger
+        aria-label='Add new item'
         render={
           <button
             type='button'
@@ -1020,6 +1216,10 @@ import {Card} from "@arolariu/components/card";
 import {Button, Card} from "@arolariu/components";
 ```
 
+Exception: Server Components import the pure class helpers such as `buttonVariants` from the root, their only server-callable path; bundlers
+that honour the package's `sideEffects` field (only CSS files have side effects), and Next.js `optimizePackageImports`, still load only the
+modules you use.
+
 ### Accessibility Best Practices
 
 ```tsx
@@ -1080,25 +1280,21 @@ Ready to build something amazing? **[🚀 Start with our Quick Start Guide](./RE
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Alert, AlertDescription} from "@arolariu/components/alert";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Checkbox} from "@arolariu/components/checkbox";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./login-form.module.css";
-
 // Define validation schema
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   rememberMe: z.boolean().default(false),
 });
-
 type LoginFormValues = z.infer<typeof loginSchema>;
-
 export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -1108,25 +1304,28 @@ export function LoginForm() {
       rememberMe: false,
     },
   });
-
   async function onSubmit(values: LoginFormValues) {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
       // Check credentials (mock)
       if (values.email === "demo@example.com" && values.password === "password123") {
-        toast.success("Login successful! Redirecting...");
+        toast.add({
+          title: "Login successful! Redirecting...",
+          type: "success",
+        });
         // Redirect to dashboard
         window.location.href = "/dashboard";
       } else {
         throw new Error("Invalid credentials");
       }
     } catch (error) {
-      toast.error("Login failed. Please check your credentials and try again.");
+      toast.add({
+        title: "Login failed. Please check your credentials and try again.",
+        type: "error",
+      });
     }
   }
-
   return (
     <div className={styles.page}>
       <Card className={styles.card}>
@@ -1281,7 +1480,7 @@ export function LoginForm() {
 }
 
 .link {
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
   text-decoration: none;
 }
 
@@ -1308,7 +1507,6 @@ import {
 } from "@tanstack/react-table";
 import {ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal} from "lucide-react";
 import {useState} from "react";
-
 import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
 import {
@@ -1321,9 +1519,8 @@ import {
 } from "@arolariu/components/dropdown-menu";
 import {Input} from "@arolariu/components/input";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@arolariu/components/table";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./data-table.module.css";
-
 interface User {
   id: string;
   name: string;
@@ -1332,7 +1529,6 @@ interface User {
   status: "active" | "inactive";
   createdAt: Date;
 }
-
 const data: User[] = [
   {
     id: "1",
@@ -1359,13 +1555,25 @@ const data: User[] = [
     createdAt: new Date("2024-03-10"),
   },
 ];
-
 const columnHelper = createColumnHelper<User>();
-
+// Report success only after the clipboard write resolves; it can be rejected (permissions, insecure context).
+async function copyUserId(id: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(id);
+    toast.add({
+      title: "User ID copied to clipboard",
+      type: "success",
+    });
+  } catch {
+    toast.add({
+      title: "Could not copy the user ID",
+      type: "error",
+    });
+  }
+}
 export function DataTableWithSorting() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-
   const columns = [
     columnHelper.accessor("name", {
       header: ({column}) => (
@@ -1413,6 +1621,7 @@ export function DataTableWithSorting() {
       cell: ({row}) => (
         <DropdownMenu>
           <DropdownMenuTrigger
+            aria-label={`Actions for ${row.original.name}`}
             render={
               <button
                 type='button'
@@ -1423,22 +1632,31 @@ export function DataTableWithSorting() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(row.original.id);
-                toast.success("User ID copied to clipboard");
-              }}>
-              Copy ID
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void copyUserId(row.original.id)}>Copy ID</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast.info(`Viewing user: ${row.original.name}`)}>View details</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info(`Editing user: ${row.original.name}`)}>Edit user</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                toast.add({
+                  title: `Viewing user: ${row.original.name}`,
+                  type: "info",
+                })
+              }>
+              View details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                toast.add({
+                  title: `Editing user: ${row.original.name}`,
+                  type: "info",
+                })
+              }>
+              Edit user
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     }),
   ];
-
   const table = useReactTable({
     data,
     columns,
@@ -1457,7 +1675,6 @@ export function DataTableWithSorting() {
       },
     },
   });
-
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
@@ -1470,7 +1687,7 @@ export function DataTableWithSorting() {
       </div>
 
       <div className={styles.tableWrapper}>
-        <Table>
+        <Table containerProps={{role: "region", "aria-label": "Users"}}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -1625,7 +1842,6 @@ import {Plus} from "lucide-react";
 import {useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Button} from "@arolariu/components/button";
 import {
   Dialog,
@@ -1640,9 +1856,8 @@ import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, Form
 import {Input} from "@arolariu/components/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./modal-form.module.css";
-
 const projectSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters"),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
@@ -1651,12 +1866,9 @@ const projectSchema = z.object({
   }),
   budget: z.string().regex(/^\d+$/, "Budget must be a valid number"),
 });
-
 type ProjectFormValues = z.infer<typeof projectSchema>;
-
 export function CreateProjectModal() {
   const [open, setOpen] = useState(false);
-
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -1666,23 +1878,25 @@ export function CreateProjectModal() {
       budget: "",
     },
   });
-
   async function onSubmit(values: ProjectFormValues) {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       console.log("Project created:", values);
-      toast.success("Project created successfully!");
-
+      toast.add({
+        title: "Project created successfully!",
+        type: "success",
+      });
       // Close modal and reset form
       setOpen(false);
       form.reset();
     } catch (error) {
-      toast.error("Failed to create project. Please try again.");
+      toast.add({
+        title: "Failed to create project. Please try again.",
+        type: "error",
+      });
     }
   }
-
   return (
     <Dialog
       open={open}
@@ -1823,96 +2037,117 @@ export function CreateProjectModal() {
 
 ---
 
-### Recipe 4: Toast Notifications (Sonner)
+### Recipe 4: Toast Notifications (canonical manager)
 
-**Comprehensive toast notification patterns for all use cases.**
+Mount the canonical Toaster before using its manager. Keep important feedback in persistent application content as well as notifications.
+This Toaster sets no `timeout`, so its notifications stay until closed (`timeout` defaults to `0`); the loading example sets one explicitly.
 
 ```tsx
 import {CheckCircle2, Info, Loader2, XCircle} from "lucide-react";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
-import {toast, Toaster} from "@arolariu/components/sonner";
+import {toast, Toaster} from "@arolariu/components/toast";
 import styles from "./toast-demo.module.css";
-
 export function ToastDemo() {
   // Basic toasts
   const showSuccess = () => {
-    toast.success("Operation completed successfully!");
+    toast.add({
+      title: "Operation completed successfully!",
+      type: "success",
+    });
   };
-
   const showError = () => {
-    toast.error("Something went wrong. Please try again.");
+    toast.add({
+      title: "Something went wrong. Please try again.",
+      type: "error",
+    });
   };
-
   const showInfo = () => {
-    toast.info("This is an informational message.");
+    toast.add({
+      title: "This is an informational message.",
+      type: "info",
+    });
   };
-
   const showWarning = () => {
-    toast.warning("Warning: This action cannot be undone!");
+    toast.add({
+      title: "Warning: This action cannot be undone!",
+      type: "warning",
+    });
   };
-
   // Toast with action
   const showWithAction = () => {
-    toast.success("File uploaded successfully", {
-      action: {
-        label: "View",
+    toast.add({
+      title: "File uploaded successfully",
+      type: "success",
+      actionProps: {
+        children: "View",
         onClick: () => console.log("View clicked"),
       },
     });
   };
-
   // Toast with description
   const showWithDescription = () => {
-    toast.success("Project created", {
+    toast.add({
+      title: "Project created",
+      type: "success",
       description: "Your project has been created and is now live.",
     });
   };
-
   // Promise toast (loading → success/error)
-  const showPromiseToast = () => {
-    const uploadPromise = new Promise((resolve, reject) => {
+  const showPromiseToast = async () => {
+    const uploadPromise = new Promise<{
+      name: string;
+    }>((resolve, reject) => {
       setTimeout(() => {
         Math.random() > 0.5 ? resolve({name: "document.pdf"}) : reject(new Error("Upload failed"));
       }, 2000);
     });
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading file...",
-      success: (data: {name: string}) => `${data.name} uploaded successfully!`,
-      error: "Failed to upload file.",
-    });
+    try {
+      await toast.promise(uploadPromise, {
+        loading: "Uploading file...",
+        success: (data) => `${data.name} uploaded successfully!`,
+        error: "Failed to upload file.",
+      });
+    } catch {
+      // The notification displays failure; the caller still owns the rejected operation.
+      return;
+    }
   };
-
   // Custom styled toast
   const showCustomToast = () => {
-    toast.custom(
-      <div className={styles.customToast}>
-        <CheckCircle2 className={styles.customIcon} />
-        <div className={styles.customContent}>
-          <div className={styles.customTitle}>Custom Toast</div>
-          <div className={styles.customDescription}>This is a fully customized toast notification.</div>
-        </div>
-      </div>,
-    );
+    toast.add({
+      title: (
+        <span className={styles.customToast}>
+          <CheckCircle2
+            aria-hidden='true'
+            className={styles.customIcon}
+          />
+          <span className={styles.customContent}>
+            <span className={styles.customTitle}>Custom Toast</span>
+            <span className={styles.customDescription}>This is a customized notification.</span>
+          </span>
+        </span>
+      ),
+    });
   };
-
   // Loading toast (manual control)
   const showLoadingToast = () => {
-    const toastId = toast.loading("Processing your request...");
-
+    const toastId = toast.add({
+      title: "Processing your request...",
+      type: "loading",
+      timeout: 0,
+    });
     setTimeout(() => {
-      toast.success("Request processed!", {id: toastId});
+      toast.update(toastId, {
+        title: "Request processed!",
+        type: "success",
+        timeout: 5000,
+      });
     }, 3000);
   };
-
   return (
     <>
-      <Toaster
-        position='top-right'
-        richColors
-      />
+      <Toaster position='top-right' />
 
       <div className={styles.container}>
         <Card>
@@ -2038,7 +2273,7 @@ export function ToastDemo() {
   flex-shrink: 0;
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--ac-primary);
+  color: var(--ac-primary-emphasis);
 }
 
 .customContent {
@@ -2138,20 +2373,33 @@ export function AppSidebar() {
                           key={item.title}
                           defaultOpen={isActive}>
                           <SidebarMenuItem>
-                            <CollapsibleTrigger asChild>
-                              <SidebarMenuButton isActive={isActive}>
-                                <item.icon />
-                                <span>{item.title}</span>
-                                <ChevronDown className={styles.chevron} />
-                              </SidebarMenuButton>
+                            {/* A section trigger is not a destination: keep its active styling without aria-current="page". */}
+                            <CollapsibleTrigger
+                              render={
+                                <SidebarMenuButton
+                                  isActive={isActive}
+                                  aria-current={undefined}
+                                />
+                              }>
+                              <item.icon aria-hidden='true' />
+                              <span>{item.title}</span>
+                              <ChevronDown
+                                aria-hidden='true'
+                                className={styles.chevron}
+                              />
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <SidebarMenuSub>
                                 {item.submenu.map((subitem) => (
                                   <SidebarMenuSubItem key={subitem.title}>
                                     <SidebarMenuSubButton
+                                      href={subitem.url}
                                       isActive={activeItem === subitem.url}
-                                      onClick={() => setActiveItem(subitem.url)}>
+                                      onClick={(event) => {
+                                        // Demo routing only: a real app lets its router navigate.
+                                        event.preventDefault();
+                                        setActiveItem(subitem.url);
+                                      }}>
                                       {subitem.title}
                                     </SidebarMenuSubButton>
                                   </SidebarMenuSubItem>
@@ -2167,7 +2415,12 @@ export function AppSidebar() {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => setActiveItem(item.url)}>
+                          render={<a href={item.url} />}
+                          onClick={(event) => {
+                            // Demo routing only: a real app lets its router navigate.
+                            event.preventDefault();
+                            setActiveItem(item.url);
+                          }}>
                           <item.icon />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
@@ -2231,7 +2484,8 @@ export function AppSidebar() {
   transition: transform 150ms;
 }
 
-:global([data-state="open"]) .chevron {
+/* Base UI marks the Collapsible trigger with data-panel-open while its panel is open. */
+:global([data-panel-open]) .chevron {
   transform: rotate(180deg);
 }
 ```
@@ -2244,7 +2498,6 @@ export function AppSidebar() {
 
 ```tsx
 import {Copy, Download, Edit, LogOut, MoreVertical, Share2, Trash2, User} from "lucide-react";
-
 import {Button} from "@arolariu/components/button";
 import {
   DropdownMenu,
@@ -2256,14 +2509,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@arolariu/components/dropdown-menu";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./dropdown-demo.module.css";
-
 export function AccessibleDropdownMenu() {
   const handleAction = (action: string) => {
-    toast.info(`Action: ${action}`);
+    toast.add({
+      title: `Action: ${action}`,
+      type: "info",
+    });
   };
-
   return (
     <div className={styles.container}>
       <DropdownMenu>
@@ -2318,8 +2572,8 @@ export function AccessibleDropdownMenu() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => handleAction("Delete")}
-            className={styles.dangerItem}>
+            variant='destructive'
+            onClick={() => handleAction("Delete")}>
             <Trash2 />
             <span>Delete</span>
             <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
@@ -2371,10 +2625,6 @@ export function AccessibleDropdownMenu() {
   min-width: 14rem;
 }
 
-.dangerItem {
-  color: var(--ac-destructive);
-}
-
 .instructions {
   display: grid;
   gap: 0.5rem;
@@ -2415,7 +2665,7 @@ export function AccessibleDropdownMenu() {
 ```tsx
 import {format} from "date-fns";
 import {Calendar as CalendarIcon} from "lucide-react";
-import {useState} from "react";
+import {useId, useState} from "react";
 
 import {Button} from "@arolariu/components/button";
 import {Calendar} from "@arolariu/components/calendar";
@@ -2425,13 +2675,22 @@ import styles from "./date-picker.module.css";
 
 export function DatePicker() {
   const [date, setDate] = useState<Date | undefined>();
+  const labelId = useId();
+  const triggerId = useId();
 
   return (
     <div className={styles.container}>
       <div className={styles.field}>
-        <label className={styles.label}>Select Date</label>
+        {/* Visible label for the trigger; the trigger's own text adds the selected date to its name. */}
+        <span
+          id={labelId}
+          className={styles.label}>
+          Select Date
+        </span>
         <Popover>
           <PopoverTrigger
+            id={triggerId}
+            aria-labelledby={`${labelId} ${triggerId}`}
             render={
               <Button
                 variant='outline'
@@ -2448,7 +2707,7 @@ export function DatePicker() {
               mode='single'
               selected={date}
               onSelect={setDate}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -2462,13 +2721,21 @@ export function DateRangePicker() {
     from: undefined,
     to: undefined,
   });
+  const labelId = useId();
+  const triggerId = useId();
 
   return (
     <div className={styles.container}>
       <div className={styles.field}>
-        <label className={styles.label}>Select Date Range</label>
+        <span
+          id={labelId}
+          className={styles.label}>
+          Select Date Range
+        </span>
         <Popover>
           <PopoverTrigger
+            id={triggerId}
+            aria-labelledby={`${labelId} ${triggerId}`}
             render={
               <Button
                 variant='outline'
@@ -2501,7 +2768,7 @@ export function DateRangePicker() {
                 })
               }
               numberOfMonths={2}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -2558,46 +2825,37 @@ export function DateRangePicker() {
 ```tsx
 import {Upload, X} from "lucide-react";
 import {useState} from "react";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Progress} from "@arolariu/components/progress";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./file-upload.module.css";
-
 interface FileUpload {
   id: string;
   file: File;
   progress: number;
   status: "uploading" | "complete" | "error";
 }
-
 export function FileUploadArea() {
   const [uploads, setUploads] = useState<FileUpload[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
   };
-
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     handleFiles(files);
   };
-
   const handleFiles = (files: File[]) => {
     const newUploads: FileUpload[] = files.map((file) => ({
       id: Math.random().toString(36).substring(7),
@@ -2605,40 +2863,32 @@ export function FileUploadArea() {
       progress: 0,
       status: "uploading" as const,
     }));
-
     setUploads((prev) => [...prev, ...newUploads]);
-
     // Simulate upload progress
     newUploads.forEach((upload) => {
-      simulateUpload(upload.id);
+      simulateUpload(upload);
     });
   };
-
-  const simulateUpload = (id: string) => {
+  const simulateUpload = (upload: FileUpload) => {
+    // Keep the state updater pure: React may call it twice in Strict Mode, so the timer and toast side effects run outside it.
+    let progress = 0;
     const interval = setInterval(() => {
-      setUploads((prev) =>
-        prev.map((upload) => {
-          if (upload.id === id) {
-            const newProgress = Math.min(upload.progress + 10, 100);
-            const newStatus = newProgress === 100 ? "complete" : upload.status;
-
-            if (newStatus === "complete") {
-              clearInterval(interval);
-              toast.success(`${upload.file.name} uploaded successfully`);
-            }
-
-            return {...upload, progress: newProgress, status: newStatus};
-          }
-          return upload;
-        }),
-      );
+      const nextProgress = Math.min(progress + 10, 100);
+      const nextStatus: FileUpload["status"] = nextProgress === 100 ? "complete" : "uploading";
+      progress = nextProgress;
+      setUploads((prev) => prev.map((item) => (item.id === upload.id ? {...item, progress: nextProgress, status: nextStatus} : item)));
+      if (nextStatus === "complete") {
+        clearInterval(interval);
+        toast.add({
+          title: `${upload.file.name} uploaded successfully`,
+          type: "success",
+        });
+      }
     }, 300);
   };
-
   const removeUpload = (id: string) => {
     setUploads((prev) => prev.filter((upload) => upload.id !== id));
   };
-
   return (
     <div className={styles.container}>
       <Card className={styles.card}>
@@ -2659,6 +2909,7 @@ export function FileUploadArea() {
             <input
               type='file'
               multiple
+              aria-label='Upload files'
               className={styles.fileInput}
               onChange={handleFileInput}
             />
@@ -2678,6 +2929,7 @@ export function FileUploadArea() {
                   <div className={styles.uploadProgress}>
                     <Progress
                       value={upload.progress}
+                      aria-label={`Upload progress for ${upload.file.name}`}
                       className={styles.progressBar}
                     />
                     <span className={styles.uploadPercent}>{upload.progress}%</span>
@@ -2687,6 +2939,7 @@ export function FileUploadArea() {
                     <Button
                       variant='ghost'
                       size='icon'
+                      aria-label={`Remove ${upload.file.name}`}
                       onClick={() => removeUpload(upload.id)}
                       className={styles.removeButton}>
                       <X />
@@ -2744,6 +2997,12 @@ export function FileUploadArea() {
 .dropZoneActive {
   border-color: var(--ac-primary);
   background-color: color-mix(in oklch, var(--ac-primary) 10%, var(--ac-muted));
+}
+
+/* The transparent file input covers the zone, so show its keyboard focus on the zone itself. */
+.dropZone:focus-within {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
 }
 
 .uploadIcon {
@@ -2836,7 +3095,6 @@ export function FileUploadArea() {
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
-
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
@@ -2845,26 +3103,22 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@ar
 import {Switch} from "@arolariu/components/switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {Textarea} from "@arolariu/components/textarea";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./settings-page.module.css";
-
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
 });
-
 const notificationSchema = z.object({
   emailNotifications: z.boolean(),
   pushNotifications: z.boolean(),
   weeklyDigest: z.boolean(),
 });
-
 const appearanceSchema = z.object({
   theme: z.enum(["light", "dark", "system"]),
   language: z.string(),
 });
-
 export function SettingsPage() {
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -2874,7 +3128,6 @@ export function SettingsPage() {
       bio: "",
     },
   });
-
   const notificationForm = useForm<z.infer<typeof notificationSchema>>({
     resolver: zodResolver(notificationSchema),
     defaultValues: {
@@ -2883,7 +3136,6 @@ export function SettingsPage() {
       weeklyDigest: true,
     },
   });
-
   const appearanceForm = useForm<z.infer<typeof appearanceSchema>>({
     resolver: zodResolver(appearanceSchema),
     defaultValues: {
@@ -2891,22 +3143,27 @@ export function SettingsPage() {
       language: "en",
     },
   });
-
   const onProfileSubmit = (values: z.infer<typeof profileSchema>) => {
     console.log("Profile updated:", values);
-    toast.success("Profile updated successfully!");
+    toast.add({
+      title: "Profile updated successfully!",
+      type: "success",
+    });
   };
-
   const onNotificationSubmit = (values: z.infer<typeof notificationSchema>) => {
     console.log("Notifications updated:", values);
-    toast.success("Notification preferences updated!");
+    toast.add({
+      title: "Notification preferences updated!",
+      type: "success",
+    });
   };
-
   const onAppearanceSubmit = (values: z.infer<typeof appearanceSchema>) => {
     console.log("Appearance updated:", values);
-    toast.success("Appearance settings updated!");
+    toast.add({
+      title: "Appearance settings updated!",
+      type: "success",
+    });
   };
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -3217,38 +3474,28 @@ export function SettingsPage() {
 
 **Comprehensive error handling pattern with boundaries and toast notifications.**
 
-```tsx
-import {AlertTriangle, RefreshCw} from "lucide-react";
-import {Component, Suspense, type ReactNode} from "react";
+The caller supplies a stable initial promise started in server data loading or a client event. The client retry factory starts a replacement
+request only when Retry is activated. Do not create a new suspending promise on each render or share user-specific resources in
+module-global state. The custom `loadingFallback` below replaces AsyncBoundary's default spinner together with its persistent loading
+announcement: omit it (optionally setting `loadingLabel`) to keep that announcement, or announce loading through your own status region
+mounted before loading starts.
 
+```tsx
+"use client";
+
+import {AlertTriangle, RefreshCw} from "lucide-react";
+import {use, useState, type JSX} from "react";
 import {Alert, AlertDescription, AlertTitle} from "@arolariu/components/alert";
 import {AsyncBoundary} from "@arolariu/components/async-boundary";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
-import {ErrorBoundary} from "@arolariu/components/error-boundary";
 import {Skeleton} from "@arolariu/components/skeleton";
-import {toast} from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/toast";
 import styles from "./error-handling.module.css";
+type UserProfileData = Readonly<{id: string; name: string; email: string}>;
 
-// Async data fetching component
-async function fetchUserData(userId: string) {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // Simulate random error
-  if (Math.random() > 0.7) {
-    throw new Error("Failed to fetch user data");
-  }
-
-  return {
-    id: userId,
-    name: "John Doe",
-    email: "john@example.com",
-  };
-}
-
-function UserProfile({userId}: {userId: string}) {
-  const user = use(fetchUserData(userId));
-
+function UserProfile({resource}: Readonly<{resource: Promise<UserProfileData>}>): JSX.Element {
+  const user = use(resource);
   return (
     <Card>
       <CardHeader>
@@ -3267,9 +3514,8 @@ function UserProfile({userId}: {userId: string}) {
     </Card>
   );
 }
-
 // Loading fallback
-function ProfileSkeleton() {
+function ProfileSkeleton(): JSX.Element {
   return (
     <Card>
       <CardHeader>
@@ -3282,9 +3528,8 @@ function ProfileSkeleton() {
     </Card>
   );
 }
-
 // Error fallback
-function ProfileError({error, reset}: {error: Error; reset: () => void}) {
+function ProfileError({error, reset}: Readonly<{error: Error; reset: () => void}>): JSX.Element {
   return (
     <Alert variant='destructive'>
       <AlertTriangle />
@@ -3303,32 +3548,42 @@ function ProfileError({error, reset}: {error: Error; reset: () => void}) {
     </Alert>
   );
 }
-
-export function ErrorHandlingDemo() {
+export function ErrorHandlingDemo({
+  initialProfile,
+  reloadProfile,
+}: Readonly<{
+  initialProfile: Promise<UserProfileData>;
+  reloadProfile: () => Promise<UserProfileData>;
+}>): JSX.Element {
+  const [profileResource, setProfileResource] = useState(initialProfile);
   const handleAPIError = async () => {
     try {
       // Simulate API call that fails
       await new Promise((_, reject) => setTimeout(() => reject(new Error("API request failed")), 1000));
     } catch (error) {
-      toast.error("Failed to load data. Please try again.", {
-        action: {
-          label: "Retry",
+      toast.add({
+        title: "Failed to load data. Please try again.",
+        type: "error",
+        actionProps: {
+          children: "Retry",
           onClick: () => handleAPIError(),
         },
       });
     }
   };
-
   const handleValidationError = () => {
-    toast.error("Validation failed: Email is required");
-  };
-
-  const handleNetworkError = () => {
-    toast.error("Network error. Please check your connection.", {
-      duration: 5000,
+    toast.add({
+      title: "Validation failed: Email is required",
+      type: "error",
     });
   };
-
+  const handleNetworkError = () => {
+    toast.add({
+      title: "Network error. Please check your connection.",
+      type: "error",
+      timeout: 5000,
+    });
+  };
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -3341,14 +3596,17 @@ export function ErrorHandlingDemo() {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>1. AsyncBoundary (Suspense + ErrorBoundary)</h2>
           <AsyncBoundary
-            suspenseFallback={<ProfileSkeleton />}
-            errorFallback={({error, reset}) => (
+            loadingFallback={<ProfileSkeleton />}
+            fallback={(error, reset) => (
               <ProfileError
                 error={error}
-                reset={reset}
+                reset={() => {
+                  setProfileResource(reloadProfile());
+                  reset();
+                }}
               />
             )}>
-            <UserProfile userId='123' />
+            <UserProfile resource={profileResource} />
           </AsyncBoundary>
         </div>
 
@@ -3388,7 +3646,12 @@ export function ErrorHandlingDemo() {
                 variant='outline'
                 size='sm'
                 className={styles.loginButton}
-                onClick={() => toast.info("Redirecting to login...")}>
+                onClick={() =>
+                  toast.add({
+                    title: "Redirecting to login...",
+                    type: "info",
+                  })
+                }>
                 Log In
               </Button>
             </AlertDescription>
@@ -3397,26 +3660,6 @@ export function ErrorHandlingDemo() {
       </div>
     </div>
   );
-}
-
-// React 19 use() hook polyfill (remove when React 19 is stable)
-function use<T>(promise: Promise<T>): T {
-  if ((promise as any).status === "fulfilled") {
-    return (promise as any).value;
-  } else if ((promise as any).status === "rejected") {
-    throw (promise as any).reason;
-  } else {
-    throw promise.then(
-      (value) => {
-        (promise as any).status = "fulfilled";
-        (promise as any).value = value;
-      },
-      (reason) => {
-        (promise as any).status = "rejected";
-        (promise as any).reason = reason;
-      },
-    );
-  }
 }
 ```
 
@@ -3512,7 +3755,8 @@ function use<T>(promise: Promise<T>): T {
 
 1. **Form Validation**: Always use `zod` + `react-hook-form` for type-safe validation
 2. **Error Handling**: Combine boundaries, inline errors, and toast notifications
-3. **Loading States**: Use `Skeleton` components and `AsyncBoundary` for async data
+3. **Loading States**: Use `Skeleton` components and `AsyncBoundary` for async data. AsyncBoundary's default fallback announces loading
+   through a persistent status region; a custom fallback, such as Recipe 10's skeleton, needs its own region mounted before loading starts
 4. **Accessibility**: Keyboard navigation, ARIA attributes, and semantic HTML
 5. **Responsive Design**: CSS Modules with container queries and media queries
 6. **Type Safety**: Leverage namespace types (`Component.Props`, `Component.State`)

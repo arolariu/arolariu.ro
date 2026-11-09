@@ -25,7 +25,9 @@
         "system": "Système"
       },
       "noResults": "Aucun résultat trouvé.",
-      "placeholder": "Tapez une commande ou recherchez..."
+      "placeholder": "Tapez une commande ou recherchez...",
+      "title": "Palette de commandes",
+      "description": "Recherchez une page ou une action à exécuter."
     },
     "errors": {
       "globalError": {
@@ -416,7 +418,8 @@
           "delete": "Supprimer",
           "edit": "Modifier",
           "markAsFavorite": "Marquer comme favori",
-          "view": "Voir"
+          "view": "Voir",
+          "actions": "Actions de la recette"
         },
         "ingredients": {
           "total": "{count} ingrédients"
@@ -802,7 +805,8 @@
         "buttons": {
           "cancel": "Annuler",
           "upload": "Téléverser le scan",
-          "uploading": "Téléversement..."
+          "uploading": "Téléversement...",
+          "removeFile": "Retirer le fichier"
         },
         "description": "Téléversez une nouvelle image ou un nouveau document de reçu à joindre à cette facture.",
         "dropzone": {
@@ -1183,7 +1187,9 @@
           "delete": "Supprimer",
           "deleting": "Suppression...",
           "save": "Enregistrer",
-          "saving": "Enregistrement..."
+          "saving": "Enregistrement...",
+          "removeIngredient": "Retirer l'ingrédient",
+          "removeStep": "Retirer l'étape"
         },
         "create": {
           "description": "Remplissez les détails pour créer une recette.",
@@ -1400,7 +1406,9 @@
         "warning": {
           "description": "En partageant cette facture publiquement, <strong>toute personne disposant du lien pourra la consulter</strong>. Cela inclut tous les détails de la facture, les articles et les montants. Continuez uniquement si vous souhaitez rendre cette facture accessible au publique.",
           "title": "Avertissement d’accès public"
-        }
+        },
+        "copyLink": "Copier le lien",
+        "linkCopied": "Lien copié"
       },
       "classificationPicker": {
         "clear": "Effacer la sélection",
@@ -2641,7 +2649,8 @@
           },
           "dropdown": {
             "delete": "Supprimer",
-            "edit": "Modifier"
+            "edit": "Modifier",
+            "actions": "Actions du champ de métadonnées"
           },
           "emptyState": {
             "noMetadataFields": "Aucun champ de métadonnées ajouté"
@@ -2838,7 +2847,8 @@
         "header": {
           "description": "Téléchargez des images de reçus ou des PDF. Créez des factures à partir de ceux-ci plus tard.",
           "title": "Télécharger des Scans",
-          "tooltip": "Téléchargez vos reçus, factures ou notes ici. Vous pouvez sélectionner plusieurs fichiers et les organiser en factures plus tard depuis la page Voir les Scans."
+          "tooltip": "Téléchargez vos reçus, factures ou notes ici. Vous pouvez sélectionner plusieurs fichiers et les organiser en factures plus tard depuis la page Voir les Scans.",
+          "infoLabel": "À propos de l'importation des numérisations"
         },
         "metadata": {
           "description": "Téléchargez des scans de reçus sur votre compte pour un traitement ultérieur en factures.",
@@ -3276,7 +3286,8 @@
           "tooltips": {
             "viewDetails": "Voir les détails"
           },
-          "unknownMerchant": "Commerçant inconnu"
+          "unknownMerchant": "Commerçant inconnu",
+          "scansCarousel": "Numérisations de {name}"
         },
         "invoicesHeader": {
           "actions": {
@@ -3331,7 +3342,8 @@
             "selectAllInvoices": "Sélectionner toutes les factures",
             "selectInvoice": "Sélectionner facture {name}",
             "sortByAmount": "Trier par montant",
-            "sortByDate": "Trier par date"
+            "sortByDate": "Trier par date",
+            "table": "Factures"
           },
           "columns": {
             "actions": "Opérations",
@@ -3418,7 +3430,8 @@
           "tooltip": "Sélectionnez des scans pour créer des factures. Vous pouvez créer une facture par scan ou combiner plusieurs scans en une seule facture.",
           "upload": "Télécharger",
           "uploadMore": "Télécharger Plus",
-          "uploadTooltip": "Téléchargez plus de scans sur votre compte"
+          "uploadTooltip": "Téléchargez plus de scans sur votre compte",
+          "infoLabel": "À propos de vos numérisations"
         },
         "metadata": {
           "description": "Consultez et gérez vos scans téléchargés. Créez des factures à partir des scans sélectionnés.",
@@ -5034,7 +5047,12 @@
   "shared": {
     "accessibility": {
       "logoAlt": "logo arolariu.ro",
-      "toggleTheme": "Basculer le thème"
+      "toggleTheme": "Basculer le thème",
+      "notifications": {
+        "region": "Notifications",
+        "close": "Fermer la notification"
+      },
+      "close": "Fermer"
     },
     "invoices": {
       "classification": {

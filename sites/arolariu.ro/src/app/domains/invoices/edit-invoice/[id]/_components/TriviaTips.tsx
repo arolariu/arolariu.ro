@@ -35,22 +35,6 @@ type Props = {
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 /**
- * Represents a context-aware tip suggestion.
- */
-type ContextTip = {
-  /** Unique identifier for the tip */
-  readonly id: string;
-  /** Selector for the tip message */
-  readonly messageSelector: MessageSelector;
-  /** Selector for the action button */
-  readonly actionSelector: MessageSelector;
-  /** Action handler function */
-  readonly handleAction: () => void;
-  /** Icon component */
-  readonly icon: React.JSX.Element;
-};
-
-/**
  * Displays personalized savings tips and context-aware invoice completion suggestions.
  *
  * @remarks
@@ -110,6 +94,22 @@ type ContextTip = {
  * @see {@link InvoiceHealthScore} - Reference implementation for scoring logic
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
+  /**
+   * Represents a context-aware tip suggestion.
+   */
+  type ContextTip = {
+    /** Unique identifier for the tip */
+    readonly id: string;
+    /** Selector for the tip message */
+    readonly messageSelector: MessageSelector;
+    /** Selector for the action button */
+    readonly actionSelector: MessageSelector;
+    /** Action handler function */
+    readonly handleAction: () => void;
+    /** Icon component */
+    readonly icon: React.JSX.Element;
+  };
+
   const t = useTranslations();
 
   // State for dismissed tips (persisted to localStorage)

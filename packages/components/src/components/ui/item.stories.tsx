@@ -1,8 +1,66 @@
-import * as React from "react";
+import {ArrowUpRight, Bell, FileText, Folder, Mail, MessageCircle, Settings, User} from "lucide-react";
+import type * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle} from "./item";
+
+import {Badge} from "./badge";
+import {Button} from "./button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemHeader,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
+} from "./item";
+const storyStyles = `
+.ac-story-item-storyStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  width: min(36rem, 90vw);
+}
+
+.ac-story-item-storyCheckbox {
+  width: var(--ac-space-4);
+  height: var(--ac-space-4);
+  accent-color: var(--ac-primary);
+}
+
+.ac-story-item-storyTruncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The doubled class outranks the module's single-class \`display: block\` in any stylesheet order. */
+.ac-story-item-storyClamp.ac-story-item-storyClamp {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+`;
+
+const storyClasses = {
+  storyStack: "ac-story-item-storyStack",
+  storyCheckbox: "ac-story-item-storyCheckbox",
+  storyTruncate: "ac-story-item-storyTruncate",
+  storyClamp: "ac-story-item-storyClamp",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Data Display/Item",
   component: Item,
   tags: ["autodocs"],
@@ -14,7 +72,7 @@ const meta = {
     },
     size: {
       control: "select",
-      options: ["default", "sm"],
+      options: ["default", "sm", "xs"],
       description: "Compactness applied to the item container",
     },
   },
@@ -27,26 +85,17 @@ type Story = StoryObj<typeof meta>;
  * Basic item with media, content, and actions.
  */
 export const Default: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Item>
-      <ItemMedia variant='icon'>📧</ItemMedia>
+      <ItemMedia variant='icon'>
+        <Mail />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>New message received</ItemTitle>
         <ItemDescription>You have a new message from John Doe</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <button
-          type='button'
-          style={{
-            padding: "0.25rem 0.75rem",
-            fontSize: "0.875rem",
-            background: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-          }}>
-          View
-        </button>
+        <Button size='sm'>View</Button>
       </ItemActions>
     </Item>
   ),
@@ -56,9 +105,11 @@ export const Default: Story = {
  * Item with outline variant.
  */
 export const Outline: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Item variant='outline'>
-      <ItemMedia variant='icon'>🔔</ItemMedia>
+      <ItemMedia variant='icon'>
+        <Bell />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>Notification settings</ItemTitle>
         <ItemDescription>Manage how you receive notifications</ItemDescription>
@@ -71,26 +122,38 @@ export const Outline: Story = {
  * Group of items with separators.
  */
 export const Group: Story = {
-  render: () => (
-    <ItemGroup>
-      <Item>
-        <ItemMedia variant='icon'>👤</ItemMedia>
+  render: (): React.JSX.Element => (
+    <ItemGroup role='list'>
+      <Item role='listitem'>
+        <ItemMedia variant='icon'>
+          <User />
+        </ItemMedia>
         <ItemContent>
           <ItemTitle>John Doe</ItemTitle>
           <ItemDescription>john@example.com</ItemDescription>
         </ItemContent>
       </Item>
-      <ItemSeparator />
-      <Item>
-        <ItemMedia variant='icon'>👤</ItemMedia>
+      <ItemSeparator
+        role='presentation'
+        aria-hidden='true'
+      />
+      <Item role='listitem'>
+        <ItemMedia variant='icon'>
+          <User />
+        </ItemMedia>
         <ItemContent>
           <ItemTitle>Jane Smith</ItemTitle>
           <ItemDescription>jane@example.com</ItemDescription>
         </ItemContent>
       </Item>
-      <ItemSeparator />
-      <Item>
-        <ItemMedia variant='icon'>👤</ItemMedia>
+      <ItemSeparator
+        role='presentation'
+        aria-hidden='true'
+      />
+      <Item role='listitem'>
+        <ItemMedia variant='icon'>
+          <User />
+        </ItemMedia>
         <ItemContent>
           <ItemTitle>Bob Johnson</ItemTitle>
           <ItemDescription>bob@example.com</ItemDescription>
@@ -104,28 +167,19 @@ export const Group: Story = {
  * Small size variant for compact layouts.
  */
 export const SmallSize: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Item
       size='sm'
       variant='muted'>
-      <ItemMedia variant='icon'>⚙️</ItemMedia>
+      <ItemMedia variant='icon'>
+        <Settings />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>Settings</ItemTitle>
         <ItemDescription>Configure your preferences</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <button
-          type='button'
-          style={{
-            padding: "0.125rem 0.5rem",
-            fontSize: "0.75rem",
-            background: "#6b7280",
-            color: "white",
-            border: "none",
-            borderRadius: "3px",
-          }}>
-          Edit
-        </button>
+        <Button size='xs'>Edit</Button>
       </ItemActions>
     </Item>
   ),
@@ -135,21 +189,20 @@ export const SmallSize: Story = {
  * Item with leading checkbox for selection.
  */
 export const WithCheckbox: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Item>
       <input
+        id='export-project'
         type='checkbox'
-        style={{
-          width: "16px",
-          height: "16px",
-          cursor: "pointer",
-          accentColor: "#3b82f6",
-        }}
-        aria-label='Select item'
+        className={storyClasses.storyCheckbox}
       />
-      <ItemMedia variant='icon'>📁</ItemMedia>
+      <ItemMedia variant='icon'>
+        <Folder />
+      </ItemMedia>
       <ItemContent>
-        <ItemTitle>Project files</ItemTitle>
+        <ItemTitle>
+          <label htmlFor='export-project'>Project files</label>
+        </ItemTitle>
         <ItemDescription>Select to include in export</ItemDescription>
       </ItemContent>
     </Item>
@@ -160,61 +213,165 @@ export const WithCheckbox: Story = {
  * Item showing notification badge count.
  */
 export const WithBadge: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Item>
-      <ItemMedia variant='icon'>💬</ItemMedia>
+      <ItemMedia variant='icon'>
+        <MessageCircle />
+      </ItemMedia>
       <ItemContent>
         <ItemTitle>Messages</ItemTitle>
         <ItemDescription>You have unread messages</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <span
-          style={{
-            padding: "0.125rem 0.5rem",
-            fontSize: "0.75rem",
-            fontWeight: "600",
-            background: "#ef4444",
-            color: "white",
-            borderRadius: "9999px",
-            minWidth: "20px",
-            textAlign: "center",
-          }}>
-          12
-        </span>
+        <Badge variant='secondary'>12</Badge>
       </ItemActions>
     </Item>
   ),
 };
 
-function ClickableItemContent(): React.JSX.Element {
-  const [clicked, setClicked] = React.useState(false);
-
-  return (
-    <Item
-      onClick={() => setClicked(!clicked)}
-      style={{
-        cursor: "pointer",
-        transition: "background-color 0.2s",
-        backgroundColor: clicked ? "#f3f4f6" : "transparent",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = "#f9fafb";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = clicked ? "#f3f4f6" : "transparent";
-      }}>
-      <ItemMedia variant='icon'>📄</ItemMedia>
-      <ItemContent>
-        <ItemTitle>Document.pdf</ItemTitle>
-        <ItemDescription>{clicked ? "Selected" : "Click to select"}</ItemDescription>
-      </ItemContent>
-    </Item>
-  );
-}
-
 /**
- * Item with hover effect and click handler.
+ * Canonical render composition preserves native anchor navigation and keyboard behavior.
  */
 export const Clickable: Story = {
-  render: () => <ClickableItemContent />,
+  render: (): React.JSX.Element => (
+    <Item
+      variant='outline'
+      render={<a href='#document-details' />}>
+      <ItemMedia variant='icon'>
+        <FileText />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>Document.pdf</ItemTitle>
+        <ItemDescription>Open document details</ItemDescription>
+      </ItemContent>
+      <ItemMedia>
+        <ArrowUpRight aria-hidden='true' />
+      </ItemMedia>
+    </Item>
+  ),
+};
+
+/** Render composition produces one real link with original content. */
+export const RenderLink: Story = {
+  render: (): React.JSX.Element => (
+    <Item
+      size='sm'
+      variant='outline'
+      render={
+        <a href='#render-document'>
+          <ItemContent>
+            <ItemTitle>Rendered document link</ItemTitle>
+            <ItemDescription>Native navigation, not a synthetic keyboard button</ItemDescription>
+          </ItemContent>
+        </a>
+      }
+    />
+  ),
+};
+
+/** Extra-small sizing scales leading media and retains header/footer/action slots. */
+export const ExtraSmall: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyStack}>
+      <Item
+        size='xs'
+        variant='outline'>
+        <ItemHeader>
+          <span>Shared file</span>
+          <Badge variant='outline'>Ready</Badge>
+        </ItemHeader>
+        <ItemMedia variant='icon'>
+          <FileText />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>Release notes</ItemTitle>
+          <ItemDescription>Compact icon media with action controls</ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button size='xs'>Open</Button>
+        </ItemActions>
+        <ItemFooter>Updated today</ItemFooter>
+      </Item>
+      <Item
+        size='xs'
+        variant='muted'>
+        <ItemMedia variant='image'>
+          <img
+            src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" fill="silver"/%3E%3Ccircle cx="32" cy="24" r="12" fill="gray"/%3E%3Cpath d="M8 64a24 24 0 0 1 48 0" fill="gray"/%3E%3C/svg%3E'
+            alt=''
+          />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>Profile preview</ItemTitle>
+          <ItemDescription>Image media is cropped without stretching</ItemDescription>
+        </ItemContent>
+      </Item>
+    </div>
+  ),
+};
+
+/**
+ * Titles and rich descriptions wrap instead of clamping, so every line stays visible. Truncation is an opt-in caller
+ * class; the truncated example links to a detail view, because hidden text is unavailable to sighted users.
+ */
+export const RichOverflow: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyStack}>
+      <Item variant='outline'>
+        <ItemMedia variant='icon'>
+          <Folder />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>
+            A very long collection title that wraps onto further lines and stays inside the item without expanding the row
+          </ItemTitle>
+          <ItemDescription>
+            This <strong>rich description</strong> includes <a href='#documentation'>documentation</a> and enough additional text to show
+            that every line stays visible: nothing is clamped, hidden or removed from the accessibility tree.
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+      <Item
+        variant='outline'
+        render={<a href='#collection-details' />}>
+        <ItemMedia variant='icon'>
+          <Folder />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle className={storyClasses.storyTruncate}>
+            A very long collection title truncated to one line by an opt-in caller class
+          </ItemTitle>
+          <ItemDescription className={storyClasses.storyClamp}>
+            An opt-in caller class clamps this description to two lines. The item links to a detail view that shows the complete title and
+            description, since clamped text stays in the accessibility tree but is hidden from sighted users.
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+    </div>
+  ),
+};
+
+/** Render callbacks receive item-owned state and can produce a correctly typed native label. */
+export const RenderCallback: Story = {
+  render: (): React.JSX.Element => (
+    <div className={storyClasses.storyStack}>
+      <Item
+        size='xs'
+        variant='muted'
+        render={(props, state): React.ReactElement => (
+          <label
+            {...props}
+            htmlFor='callback-project'
+            data-demo-size={state.size}
+          />
+        )}>
+        <span>Select the project through its native label</span>
+      </Item>
+      <input
+        id='callback-project'
+        type='checkbox'
+        className={storyClasses.storyCheckbox}
+      />
+    </div>
+  ),
 };

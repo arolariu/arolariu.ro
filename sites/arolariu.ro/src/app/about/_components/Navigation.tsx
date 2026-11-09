@@ -2,7 +2,7 @@
 
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 
-import {Badge, Button, Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
+import {Badge, buttonVariants, Card, CardContent, CardFooter, CardHeader, cn} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -106,15 +106,12 @@ export default function Navigation(): React.JSX.Element {
                   </CardContent>
 
                   <CardFooter className={styles["cardFooter"]}>
-                    <Button
-                      asChild
-                      className={styles["ctaButton"]}
-                      size='lg'>
-                      <Link href={item.href}>
-                        {t(selectorFromPath(`pages.about.hub.navigation.${item.key}.cta`))}
-                        <TbArrowRight className={styles["ctaIcon"]} />
-                      </Link>
-                    </Button>
+                    <Link
+                      className={cn(buttonVariants({size: "lg"}), styles["ctaButton"])}
+                      href={item.href}>
+                      {t(selectorFromPath(`pages.about.hub.navigation.${item.key}.cta`))}
+                      <TbArrowRight className={styles["ctaIcon"]} />
+                    </Link>
                   </CardFooter>
                 </Card>
               </motion.div>

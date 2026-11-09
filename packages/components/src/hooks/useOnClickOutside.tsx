@@ -32,6 +32,12 @@ import * as React from "react";
  * ```
  */
 export function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, handler: (event: MouseEvent | TouchEvent) => void): void {
+  const handlerRef = React.useRef(handler);
+
+  React.useLayoutEffect(() => {
+    handlerRef.current = handler;
+  });
+
   React.useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {
       const element = ref.current;
@@ -41,7 +47,7 @@ export function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, hand
         return;
       }
 
-      handler(event);
+      handlerRef.current(event);
     };
 
     globalThis.document.addEventListener("mousedown", listener);
@@ -51,5 +57,5 @@ export function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, hand
       globalThis.document.removeEventListener("mousedown", listener);
       globalThis.document.removeEventListener("touchstart", listener);
     };
-  }, [ref, handler]);
+  }, [ref]);
 }

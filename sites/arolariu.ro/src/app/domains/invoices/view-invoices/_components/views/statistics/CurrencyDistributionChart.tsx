@@ -22,7 +22,17 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
-import {Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Progress,
+  ProgressIndicator,
+  ProgressTrack,
+} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -224,9 +234,11 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element | nu
                 {/* Progress Bar */}
                 <Progress
                   value={currency.percentage}
-                  className={styles["progressBar"]}
-                  aria-label={`${currency.currencyCode} spending: ${currency.percentage}%`}
-                />
+                  aria-label={`${currency.currencyCode} spending: ${currency.percentage}%`}>
+                  <ProgressTrack className={styles["progressBar"]}>
+                    <ProgressIndicator />
+                  </ProgressTrack>
+                </Progress>
 
                 {/* Secondary Amount (Original or RON) */}
                 {currency.currencyCode !== "RON" && (

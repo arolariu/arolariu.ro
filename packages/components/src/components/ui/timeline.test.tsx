@@ -1,9 +1,48 @@
-import {render, screen} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import * as React from "react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
+import {fireEvent, render, screen} from "@testing-library/react";
+import {describe, expect, it, vi} from "vitest";
 
 import {Timeline, TimelineContent, TimelineDot, TimelineItem} from "./timeline";
 
 describe("Timeline", () => {
+  it("React 19 refresh: authors logical connectors, wrapping content and forced-color markers", () => {
+    const css = readFileSync(join(import.meta.dirname, "timeline.module.css"), "utf8");
+    expect(css).toContain("inset-inline-start: 0.5625rem");
+    expect(css).toContain("overflow-wrap: anywhere");
+    expect(css).toContain("forced-colors: active");
+  });
+
+  it("preserves native list/listitem decoration, caller handlers and all actual refs", () => {
+    const root = React.createRef<HTMLDivElement>();
+    const item = React.createRef<HTMLDivElement>();
+    const dot = React.createRef<HTMLDivElement>();
+    const content = React.createRef<HTMLDivElement>();
+    const onClick = vi.fn();
+    render(
+      <Timeline
+        ref={root}
+        aria-label='History'
+        className='caller'>
+        <TimelineItem
+          ref={item}
+          onClick={onClick}>
+          <TimelineDot ref={dot} />
+          <TimelineContent ref={content}>
+            <button type='button'>Inspect event</button>
+          </TimelineContent>
+        </TimelineItem>
+      </Timeline>,
+    );
+    expect(root.current).toBe(screen.getByRole("list", {name: "History"}));
+    expect(root.current).toHaveClass("caller");
+    expect(item.current).toBe(screen.getByRole("listitem"));
+    expect(dot.current).toHaveAttribute("aria-hidden", "true");
+    expect(content.current?.tagName).toBe("DIV");
+    fireEvent.click(screen.getByRole("button", {name: "Inspect event"}));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
   it("renders timeline items", () => {
     render(
       <Timeline>

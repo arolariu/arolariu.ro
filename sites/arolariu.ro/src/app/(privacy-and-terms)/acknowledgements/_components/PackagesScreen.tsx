@@ -35,16 +35,12 @@ import {
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 
-import {useCallback} from "react";
+import {useCallback, useMemo} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
 import styles from "./PackagesScreen.module.scss";
 
 type Props = Readonly<{packages: NodePackagesJSON}>;
-
-type SortDirection = Readonly<"asc" | "desc">;
-type SortField = Readonly<"name" | "dependencies" | "type">;
-type PackageType = Readonly<"all" | "production" | "development">;
 
 /**
  * Component that displays a dialog with the dependencies of a package.
@@ -64,7 +60,9 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
           </Button>
         }
       />
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.sections.legal.acknowledgements.packagesScreen.dialog.dependencies, {name: pkg.name})}</DialogTitle>
           <DialogDescription>
@@ -75,7 +73,11 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
           </DialogDescription>
         </DialogHeader>
         <div className={styles["dialogScrollArea"]}>
-          <Table>
+          <Table
+            containerProps={{
+              role: "region",
+              "aria-label": t((m) => m.sections.legal.acknowledgements.packagesScreen.dialog.dependencies, {name: pkg.name}),
+            }}>
             <TableHeader>
               <TableRow>
                 <TableHead>{t((m) => m.sections.legal.acknowledgements.packagesScreen.table.package)}</TableHead>
@@ -126,7 +128,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handlePackageType = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
+      type PackageType = Readonly<"all" | "production" | "development">;
       setPackageType(e as PackageType);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPackageType is a stable function.
@@ -134,7 +138,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handleSortField = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
+      type SortField = Readonly<"name" | "dependencies" | "type">;
       setSortField(e as SortField);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortField is a stable function.
@@ -142,11 +148,40 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   const handleSortDirection = useCallback(
-    (e: string) => {
+    (e: string | null) => {
+      if (e === null) return;
+      type SortDirection = Readonly<"asc" | "desc">;
       setSortDirection(e as SortDirection);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortDirection is a stable function.
     [],
+  );
+
+  // Single sources for both the rendered options and the trigger label lookups.
+  const packageTypeItems = useMemo(
+    () => [
+      {value: "all", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.allPackages)},
+      {value: "production", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.productionOnly)},
+      {value: "development", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.developmentOnly)},
+    ],
+    [t],
+  );
+
+  const sortFieldItems = useMemo(
+    () => [
+      {value: "name", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.name)},
+      {value: "dependencies", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.dependenciesCount)},
+      {value: "type", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.packageType)},
+    ],
+    [t],
+  );
+
+  const sortDirectionItems = useMemo(
+    () => [
+      {value: "asc", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.ascending)},
+      {value: "desc", label: t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.descending)},
+    ],
+    [t],
   );
 
   return (
@@ -165,18 +200,19 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
           <div className={styles["filterItem"]}>
             <Select
               value={packageType}
-              onValueChange={handlePackageType}>
+              onValueChange={handlePackageType}
+              items={packageTypeItems}>
               <SelectTrigger>
                 <SelectValue placeholder={t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.filterByType)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>{t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.allPackages)}</SelectItem>
-                <SelectItem value='production'>
-                  {t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.productionOnly)}
-                </SelectItem>
-                <SelectItem value='development'>
-                  {t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.developmentOnly)}
-                </SelectItem>
+                {packageTypeItems.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -184,16 +220,19 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
           <div className={styles["filterItem"]}>
             <Select
               value={sortField}
-              onValueChange={handleSortField}>
+              onValueChange={handleSortField}
+              items={sortFieldItems}>
               <SelectTrigger>
                 <SelectValue placeholder={t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.sortBy)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='name'>{t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.name)}</SelectItem>
-                <SelectItem value='dependencies'>
-                  {t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.dependenciesCount)}
-                </SelectItem>
-                <SelectItem value='type'>{t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.packageType)}</SelectItem>
+                {sortFieldItems.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -201,13 +240,19 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
           <div className={styles["filterItem"]}>
             <Select
               value={sortDirection}
-              onValueChange={handleSortDirection}>
+              onValueChange={handleSortDirection}
+              items={sortDirectionItems}>
               <SelectTrigger>
                 <SelectValue placeholder={t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.sortDirection)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='asc'>{t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.ascending)}</SelectItem>
-                <SelectItem value='desc'>{t((m) => m.sections.legal.acknowledgements.packagesScreen.filters.descending)}</SelectItem>
+                {sortDirectionItems.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -296,7 +341,11 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 animate={{opacity: 1}}
                 transition={{duration: 0.5}}
                 className={styles["tableContainer"]}>
-                <Table>
+                <Table
+                  containerProps={{
+                    role: "region",
+                    "aria-label": t((m) => m.sections.legal.acknowledgements.packagesScreen.views.tableView),
+                  }}>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t((m) => m.sections.legal.acknowledgements.packagesScreen.table.package)}</TableHead>

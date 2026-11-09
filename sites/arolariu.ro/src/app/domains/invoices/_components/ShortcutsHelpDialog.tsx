@@ -36,16 +36,6 @@ type ShortcutsHelpDialogProps = {
 };
 
 /**
- * Keyboard shortcut display item.
- */
-type ShortcutItem = {
-  /** The keys to display (e.g., ["Ctrl", "N"]). */
-  keys: string[];
-  /** Translation key for the shortcut description. */
-  descriptionKey: "newInvoice" | "uploadScan" | "showHelp" | "closeDialog";
-};
-
-/**
  * Displays a modal dialog showing all available keyboard shortcuts.
  *
  * @remarks
@@ -83,6 +73,16 @@ type ShortcutItem = {
  * ```
  */
 export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsHelpDialogProps>): React.JSX.Element {
+  /**
+   * Keyboard shortcut display item.
+   */
+  type ShortcutItem = {
+    /** The keys to display (e.g., ["Ctrl", "N"]). */
+    keys: string[];
+    /** Translation key for the shortcut description. */
+    descriptionKey: "newInvoice" | "uploadScan" | "showHelp" | "closeDialog";
+  };
+
   const t = useTranslations();
 
   // Detect if user is on macOS for Cmd vs Ctrl display
@@ -113,7 +113,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
     <Dialog
       open={open}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialog"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialog"]}>
         <DialogHeader className={styles["header"]}>
           <div className={styles["titleRow"]}>
             <TbKeyboard

@@ -120,6 +120,22 @@ describe("useOnClickOutside", () => {
     expect(handler2).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps its document listeners when an inline handler changes identity", () => {
+    const ref = {current: element};
+    const addEventListenerSpy = vi.spyOn(document, "addEventListener");
+    const calls: string[] = [];
+
+    const {rerender} = renderHook(({label}) => useOnClickOutside(ref, () => calls.push(label)), {
+      initialProps: {label: "first"},
+    });
+    rerender({label: "second"});
+    rerender({label: "third"});
+
+    expect(addEventListenerSpy.mock.calls.filter(([type]) => type === "mousedown")).toHaveLength(1);
+    outsideElement.dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
+    expect(calls).toEqual(["third"]);
+  });
+
   it("passes the event to the handler", () => {
     const handler = vi.fn();
     const ref = {current: element};

@@ -32,6 +32,9 @@ import type {Presenter} from "../../platform/Output.ts";
 import {Process, type ProcessError} from "../../platform/Process.ts";
 import {DocumentationOutputMissing, DotnetBuildRootUnresolved} from "./errors.ts";
 import {normalizeDirectory, readDirectoryEntries, serializeFrontmatter} from "./normalize.ts";
+import {syncProse} from "./prose.ts";
+
+export {syncProse} from "./prose.ts";
 
 /** Services the documentation assembly requires. */
 export type DocsAssembleRequirements = Process | FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles | Environment | Presenter;
@@ -48,27 +51,6 @@ export type DocsAssembleError =
  * without parsing MSBuild props on every run.
  */
 const DOTNET_TFM = "net10.0";
-
-/**
- * Mirror the repo's top-level `/docs/` prose into the Docusaurus source
- * tree under `docs/monorepo/`, wiping the destination first so stale
- * files never survive a rename. The `superpowers/` subtree is excluded
- * because it holds per-author planning docs that are gitignored and
- * must never reach the published site.
- *
- * @param src  - Source directory (normally the repo's `/docs`).
- * @param dest - Destination directory (normally `docs/monorepo/`).
- * @returns An effect that replaces `dest` with a copy of `src` minus `superpowers/`.
- */
-export const syncProse: (src: string, dest: string) => Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem> = Effect.fn(
-  "docs.syncProse",
-)(function* (src: string, dest: string) {
-  const fs = yield* FileSystem.FileSystem;
-  yield* fs.remove(dest, {recursive: true, force: true});
-  yield* fs.makeDirectory(dest, {recursive: true});
-  yield* fs.copy(src, dest, {overwrite: true});
-  yield* fs.remove(join(dest, "superpowers"), {recursive: true, force: true});
-});
 
 function isDocumentationOutputFile(fileName: string): boolean {
   return /\.mdx?$|\.json$/i.test(fileName);
@@ -325,7 +307,7 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
  *
  * @remarks
  * The multi-value `--GeneratedAccessModifiers Public Protected Internal Private`
- * form follows the DefaultDocumentation.Console 1.2.4 option shape verified via
+ * form follows the DefaultDocumentation.Console 1.2.6 option shape verified via
  * `defaultdocumentation --help` and parser behavior.
  *
  * @param dll - Absolute path to the compiled assembly.

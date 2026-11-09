@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {patchInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {usePaginationWithSearch} from "@/hooks";
 import {formatCurrency} from "@/lib/utils.generic";
@@ -23,7 +24,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -46,8 +46,6 @@ function isSelectedProduct(product: Product | undefined): product is Product {
 }
 
 type EditingCell = {rowIndex: number; field: "name" | "price" | "quantity" | "quantityUnit"} | null;
-type SortField = "name" | "price" | "quantity" | null;
-type SortDirection = "asc" | "desc";
 
 type ItemNameCellProps = {
   readonly item: Product;
@@ -354,7 +352,6 @@ function ItemTableRow({
       } ${indicatorClass}`}>
       <td className={styles["tableCellCheckbox"]}>
         <Checkbox
-          nativeButton
           checked={isSelected}
           onCheckedChange={onSelectRow}
           aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.columns.selectRow, {name: item.name})}
@@ -428,6 +425,9 @@ function ItemTableRow({
  * @returns Client-rendered table with paginated items and edit controls
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
+  type SortField = "name" | "price" | "quantity" | null;
+  type SortDirection = "asc" | "desc";
+
   const locale = useLocale();
   const t = useTranslations();
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
@@ -562,7 +562,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       return newItems;
     });
     setEditingCell(null);
-    toast.success(t((m) => m.pages.invoices.editInvoice.itemsTable.editing.saved));
+    notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.editing.saved));
   }, [editingCell, editValues, sortedItems, t]);
 
   const handleCancelEdit = useCallback(() => {
@@ -609,7 +609,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setLocalItems((prev) => prev.filter((item) => !itemsToDelete.includes(item)));
     setSelectedIndices(new Set());
     setShowDeleteDialog(false);
-    toast.success(t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.success, {count: itemsToDelete.length}));
+    notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.success, {count: itemsToDelete.length}));
   }, [selectedIndices, sortedItems, t]);
 
   const handleAddItem = useCallback(() => {
@@ -631,7 +631,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       allergenAssessment: null,
     };
     setLocalItems((prev) => [...prev, newItem]);
-    toast.success(t((m) => m.pages.invoices.editInvoice.itemsTable.newItem.added));
+    notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.newItem.added));
   }, [t]);
 
   const handleSoftDelete = useCallback(
@@ -658,13 +658,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         if (result.success) {
           setLocalItems(updatedItems);
-          toast.success(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.success, {name: product.name}));
+          notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.success, {name: product.name}));
         } else {
-          toast.error(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.error));
+          notify.error(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.error));
         }
       } catch (error) {
         console.error("Failed to soft-delete product:", error);
-        toast.error(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.error));
+        notify.error(t((m) => m.pages.invoices.editInvoice.itemsTable.softDelete.error));
       } finally {
         setIsSaving(false);
       }
@@ -696,13 +696,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         if (result.success) {
           setLocalItems(updatedItems);
-          toast.success(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.success, {name: product.name}));
+          notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.success, {name: product.name}));
         } else {
-          toast.error(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.error));
+          notify.error(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.error));
         }
       } catch (error) {
         console.error("Failed to restore product:", error);
-        toast.error(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.error));
+        notify.error(t((m) => m.pages.invoices.editInvoice.itemsTable.restore.error));
       } finally {
         setIsSaving(false);
       }
@@ -823,12 +823,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       </div>
 
       <div className={styles["tableWrapper"]}>
-        <Table className={styles["table"]}>
+        <Table
+          containerProps={{role: "region", "aria-label": t((m) => m.pages.invoices.editInvoice.itemsTable.title)}}
+          className={styles["table"]}>
           <TableHeader>
             <TableRow className={styles["mutedRow"]}>
               <TableHead className={styles["tableHeaderCheckbox"]}>
                 <Checkbox
-                  nativeButton
                   checked={selectedIndices.size === sortedItems.length && sortedItems.length > 0}
                   onCheckedChange={handleSelectAll}
                   aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.columns.selectAll)}

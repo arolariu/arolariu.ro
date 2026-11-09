@@ -28,25 +28,16 @@
  * - Computed status values are memoized with `useMemo`
  */
 
+import {notify} from "@/lib/notify";
 import {useInvoiceShare} from "@/app/domains/invoices/_hooks/invoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
-
-/**
- * Type for sharing status computed from invoice.sharedWith array.
- *
- * @remarks
- * - `private`: No sharing enabled
- * - `public`: Public access enabled (LAST_GUID sentinel present)
- * - `shared`: Shared with specific users
- */
-type SharingStatus = "private" | "public" | "shared";
 
 /**
  * Share & Collaborate card component.
@@ -82,6 +73,16 @@ type SharingStatus = "private" | "public" | "shared";
  * ```
  */
 export function ShareCollaborateCard(): React.JSX.Element {
+  /**
+   * Type for sharing status computed from invoice.sharedWith array.
+   *
+   * @remarks
+   * - `private`: No sharing enabled
+   * - `public`: Public access enabled (LAST_GUID sentinel present)
+   * - `shared`: Shared with specific users
+   */
+  type SharingStatus = "private" | "public" | "shared";
+
   const t = useTranslations();
   const {invoice, setInvoice} = useInvoiceContext();
   const {shareInvoiceCallback} = useInvoiceShare();
@@ -193,12 +194,12 @@ export function ShareCollaborateCard(): React.JSX.Element {
           if (updatedInvoice) {
             setInvoice(updatedInvoice);
           }
-          toast.success(
+          notify.success(
             t(selectorFromPath(`pages.invoices.viewInvoice.shareCollaborate.${isCurrentlyPublic ? "madePrivate" : "madePublic"}`)),
           );
         } catch (error) {
           console.error("Failed to toggle public status:", error);
-          toast.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
+          notify.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
         }
       })();
     });
@@ -236,7 +237,6 @@ export function ShareCollaborateCard(): React.JSX.Element {
               {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.publicAccess)}
             </Label>
             <Switch
-              nativeButton
               id='public-toggle'
               checked={sharingStatus === "public"}
               onCheckedChange={handleTogglePublic}

@@ -2,6 +2,7 @@ import {expect, test} from "@playwright/test";
 import {readFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
+import type {AggregateFile} from "../../src/lib/types/status";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -11,9 +12,18 @@ const fixtures = {
   daily: readFileSync(join(__dirname, "../fixtures/aggregate-365d-with-outage.json"), "utf8"),
   incidents: readFileSync(join(__dirname, "../fixtures/incidents-active.json"), "utf8"),
 };
+const FIXTURE_NOW = new Date((JSON.parse(fixtures.fine) as AggregateFile).generatedAt);
 
 test.describe("status page", () => {
-  test.beforeEach(async ({page}) => {
+  test.beforeEach(async ({page, baseURL}) => {
+    // Window slicing and incident filtering must use the fixture's own timeline.
+    // setFixedTime leaves timers/RAF running so interactions still execute normally.
+    await page.clock.setFixedTime(FIXTURE_NOW);
+    const localOrigin = new URL(baseURL ?? "http://localhost:4175").origin;
+    // Only the fixture routes below may fulfill external data requests.
+    await page.route("**/*", (route) =>
+      new URL(route.request().url()).origin === localOrigin ? route.continue() : route.abort("blockedbyclient"),
+    );
     // Clear localStorage to avoid 30-min cache from previous tests
     await page.addInitScript(() => {
       try {
@@ -47,20 +57,26 @@ test.describe("status page", () => {
 
   test("filter pill click loads different granularity", async ({page}) => {
     await page.goto("/?mocks=off");
-    await expect(page.getByText("api.arolariu.ro").first()).toBeVisible();
-    await page.getByRole("radio", {name: "90d"}).click();
-    await expect(page.getByRole("button").first()).toBeVisible();
+    await expect(page.getByRole("button", {name: "api.arolariu.ro", exact: true})).toBeVisible();
+    const hourlyRequest = page.waitForRequest(/raw\.githubusercontent\.com.+hourly\.json/);
+    const hourlyWindow = page.getByRole("radio", {name: "90d"});
+    await hourlyWindow.click();
+    await hourlyRequest;
+    await expect(hourlyWindow).toBeChecked();
+    await expect(page.getByRole("button", {name: "arolariu.ro", exact: true})).toBeVisible();
+    await expect(page.getByRole("button", {name: "api.arolariu.ro", exact: true})).toHaveCount(0);
   });
 
   test("hover on degraded segment shows tooltip", async ({page}) => {
     await page.goto("/?mocks=off");
+    await expect(page.getByRole("button", {name: "api.arolariu.ro", exact: true})).toBeVisible();
     // Switch to 14d window to ensure all degraded buckets are in view
-    await page.getByRole("radio", {name: "14d"}).click();
-    await expect(page.getByText("api.arolariu.ro", {exact: true}).first()).toBeVisible();
-    // Wait for segments to render, then locate degraded ones
-    await expect(page.locator(".seg-degraded").first()).toBeVisible({timeout: 10000});
-    const degraded = page.locator(".seg-degraded").first();
-    await degraded.hover({force: true});
+    const fortnight = page.getByRole("radio", {name: "14d"});
+    await fortnight.click();
+    await expect(fortnight).toBeChecked();
+    const degraded = page.getByRole("button", {name: /, Degraded\b/}).first();
+    await expect(degraded).toBeVisible();
+    await degraded.hover();
     await expect(page.getByRole("tooltip")).toBeVisible();
     await expect(page.getByRole("tooltip")).toContainText("Degraded");
   });
@@ -84,11 +100,11 @@ test.describe("status page", () => {
       route.fulfill({status: 200, contentType: "application/json", body: fixtures.fine});
     });
     await page.goto("/?mocks=off");
-    await expect(page.getByText("arolariu.ro").first()).toBeVisible();
+    await expect(page.getByRole("button", {name: "arolariu.ro", exact: true})).toBeVisible();
     const before = fetchCount;
     await page.getByLabel("Refresh status data").click();
-    await page.waitForTimeout(500);
-    expect(fetchCount).toBeGreaterThan(before);
+    await expect.poll(() => fetchCount).toBeGreaterThan(before);
+    await expect(page.getByLabel("Refresh status data")).toBeEnabled();
   });
 
   test("network error shows retry button", async ({page}) => {
@@ -99,13 +115,33 @@ test.describe("status page", () => {
 
   test("refresh button is disabled during in-flight refresh (double-click safe)", async ({page}) => {
     await page.goto("/?mocks=off");
-    await expect(page.getByText("arolariu.ro").first()).toBeVisible();
+    await expect(page.getByRole("button", {name: "arolariu.ro", exact: true})).toBeVisible();
     const btn = page.getByLabel("Refresh status data");
-    await btn.click();
-    // The button should be disabled while refreshing. Attempting a second
-    // click via .click({trial: true}) asserts the button is interactive,
-    // which would fail if disabled. Instead, check the disabled attribute.
-    await expect(btn).toBeDisabled();
+    let releaseResponse: (() => void) | undefined;
+    const responseGate = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+    let refreshRequests = 0;
+    await page.route(/raw\.githubusercontent\.com.+fine\.json/, async (route) => {
+      refreshRequests++;
+      await responseGate;
+      await route.fulfill({status: 200, contentType: "application/json", body: fixtures.fine});
+    });
+
+    try {
+      await btn.click();
+      await expect.poll(() => refreshRequests).toBe(1);
+      await expect(btn).toBeDisabled();
+      await expect(btn).toHaveAttribute("aria-busy", "true");
+      // Native activation respects disabled without Playwright waiting for re-enablement.
+      await btn.evaluate((button: HTMLButtonElement) => button.click());
+    } finally {
+      releaseResponse?.();
+    }
+
+    await expect(btn).toBeEnabled();
+    await expect(btn).toHaveAttribute("aria-busy", "false");
+    expect(refreshRequests).toBe(1);
   });
 
   test("shows summary stats with correct values", async ({page}) => {
@@ -127,21 +163,19 @@ test.describe("status page", () => {
 
   test("clicking a service row expands the latency chart", async ({page}) => {
     await page.goto("/?mocks=off");
-    await expect(page.getByText("arolariu.ro").first()).toBeVisible();
-    // Pick the first collapsed service row and expand it.
-    const collapsedRow = page.locator('[role="button"][aria-expanded="false"]').first();
+    const collapsedRow = page.getByRole("button", {name: "arolariu.ro", exact: true});
     await expect(collapsedRow).toBeVisible();
+    await expect(collapsedRow).toHaveAttribute("aria-expanded", "false");
     await collapsedRow.click();
     // The detail panel uses role="region"; it should contain a latency chart
     // <svg> with at least one <polyline>. Polylines with axis-aligned points
     // have zero bounding-box height in Chromium's visibility heuristic, so use
     // toBeAttached rather than toBeVisible on the polyline itself.
-    const detailPanel = page
-      .locator('[role="region"]')
-      .filter({hasText: /Latency trend/i})
-      .first();
+    const detailPanel = page.getByRole("region", {name: "Detail for arolariu.ro", exact: true});
     await expect(detailPanel).toBeVisible();
-    await expect(detailPanel.locator("svg polyline").first()).toBeAttached();
+    const chart = detailPanel.getByRole("img", {name: "Latency trend chart", exact: true});
+    await expect(chart).toBeVisible();
+    await expect(chart.locator("polyline").first()).toBeAttached();
     // Press Escape to collapse — this also verifies the keyboard shortcut wiring.
     await page.keyboard.press("Escape");
     await expect(detailPanel).toBeHidden();
@@ -161,6 +195,7 @@ test.describe("status page", () => {
 
   test("? opens keyboard help overlay, Esc closes", async ({page}) => {
     await page.goto("/?mocks=off");
+    await expect(page.getByRole("button", {name: "arolariu.ro", exact: true})).toBeVisible();
     await page.keyboard.press("?");
     await expect(page.getByRole("dialog", {name: /keyboard shortcuts/i})).toBeVisible();
     await page.keyboard.press("Escape");
@@ -169,22 +204,21 @@ test.describe("status page", () => {
 
   test("incident filter chip narrows the list", async ({page}) => {
     await page.goto("/?mocks=off");
-    // The fixture incident is 2 days old, so widen the window to 7d to make
-    // sure at least one card shows up before we measure narrowing.
+    await expect(page.getByRole("button", {name: "arolariu.ro", exact: true})).toBeVisible();
+    // Include both fixture incidents before filtering down to one service.
     await page.getByRole("radio", {name: "7d"}).click();
     // Make sure incidents are loaded before we measure the baseline count.
     const chipGroup = page.getByRole("radiogroup", {name: /Filter incidents by service/});
     await expect(chipGroup).toBeVisible();
-    const cards = page.locator(".incidents .item");
+    const cards = page.getByRole("article");
     await expect(cards.first()).toBeVisible();
     const baseline = await cards.count();
-    expect(baseline).toBeGreaterThan(0);
-    // Click the first non-"All" chip (index 1) and verify narrowing + aria-checked.
-    const serviceChip = chipGroup.getByRole("radio").nth(1);
+    expect(baseline).toBe(2);
+    const serviceChip = chipGroup.getByRole("radio", {name: "api.arolariu.ro", exact: true});
     await serviceChip.click();
     await expect(serviceChip).toHaveAttribute("aria-checked", "true");
-    const filteredCount = await cards.count();
-    expect(filteredCount).toBeLessThanOrEqual(baseline);
+    await expect(cards).toHaveCount(1);
+    await expect(cards).toContainText("api.arolariu.ro");
     // Click "All" to reset.
     await chipGroup.getByRole("radio", {name: "All"}).click();
     await expect(cards).toHaveCount(baseline);

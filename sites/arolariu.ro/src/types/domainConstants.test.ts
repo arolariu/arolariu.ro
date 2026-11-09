@@ -33,7 +33,7 @@ describe("domain constant type/value exports", () => {
     const host = ts.createCompilerHost(options);
     const getSourceFile = host.getSourceFile.bind(host);
     host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) =>
-      fileName === fixturePath
+      resolve(fileName) === fixturePath
         ? ts.createSourceFile(fileName, fixture, options.target ?? ts.ScriptTarget.ESNext, true)
         : getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
     const program = ts.createProgram([fixturePath], options, host);

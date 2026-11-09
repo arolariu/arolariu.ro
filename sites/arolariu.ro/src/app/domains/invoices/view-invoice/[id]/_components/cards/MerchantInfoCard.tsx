@@ -27,23 +27,24 @@
 import {formatAmount, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {type Invoice} from "@/types/invoices";
-import {Area, AreaChart, Button, Card, CardContent, CardFooter, CardHeader, CardTitle, ResponsiveContainer} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  buttonVariants,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  cn,
+  ResponsiveContainer,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useMemo, useReducer} from "react";
 import {TbCalendar, TbChartBar, TbGlobe, TbMapPin, TbPhone, TbReceipt, TbShoppingBag} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
-
-/**
- * Type for monthly spending data point used in the sparkline chart.
- */
-type MonthlySpending = {
-  /** Month label (e.g., "Jan", "Feb") */
-  readonly month: string;
-  /** Total spending amount for the month */
-  readonly amount: number;
-};
 
 /**
  * Merchant information card component with rich analytics.
@@ -73,6 +74,16 @@ type MonthlySpending = {
  * ```
  */
 export function MerchantInfoCard(): React.JSX.Element {
+  /**
+   * Type for monthly spending data point used in the sparkline chart.
+   */
+  type MonthlySpending = {
+    /** Month label (e.g., "Jan", "Feb") */
+    readonly month: string;
+    /** Total spending amount for the month */
+    readonly amount: number;
+  };
+
   const {invoice, merchant} = useInvoiceContext();
   const {entities: invoices} = useInvoicesStore();
   const t = useTranslations();
@@ -267,28 +278,23 @@ export function MerchantInfoCard(): React.JSX.Element {
 
           {/* Google Maps Link */}
           {googleMapsUrl ? (
-            <Button
-              variant='outline'
-              asChild
-              className={styles["mapButton"]}>
-              <a
-                href={googleMapsUrl}
-                target='_blank'
-                rel='noopener noreferrer'>
-                <TbMapPin className={styles["buttonIcon"]} />
-                {t((m) => m.cards.invoices.merchantInfoCard.viewOnMap)}
-              </a>
-            </Button>
+            <a
+              className={cn(buttonVariants({variant: "outline"}), styles["mapButton"])}
+              href={googleMapsUrl}
+              target='_blank'
+              rel='noopener noreferrer'>
+              <TbMapPin className={styles["buttonIcon"]} />
+              {t((m) => m.cards.invoices.merchantInfoCard.viewOnMap)}
+            </a>
           ) : null}
         </div>
       </CardContent>
       <CardFooter>
-        <Button
-          variant='outline'
-          asChild
-          className={styles["fullWidth"]}>
-          <Link href={viewAllInvoicesUrl}>{t((m) => m.cards.invoices.merchantInfoCard.viewAllInvoices)}</Link>
-        </Button>
+        <Link
+          className={cn(buttonVariants({variant: "outline"}), styles["fullWidth"])}
+          href={viewAllInvoicesUrl}>
+          {t((m) => m.cards.invoices.merchantInfoCard.viewAllInvoices)}
+        </Link>
       </CardFooter>
     </Card>
   );

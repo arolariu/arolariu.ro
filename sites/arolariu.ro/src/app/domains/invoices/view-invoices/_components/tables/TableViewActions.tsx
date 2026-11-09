@@ -43,6 +43,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                   <Button
                     variant='ghost'
                     size='icon'
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.tableViewActions.tooltips.moreActions)}
                     className={styles["actionButton"]}>
                     <TbMenu3 className={styles["menuIcon"]} />
                   </Button>

@@ -6,6 +6,7 @@
  * @module app/domains/invoices/_components/InvoicePreferences
  */
 
+import {notify} from "@/lib/notify";
 import {
   Button,
   Card,
@@ -19,11 +20,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
   useLocalStorage,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
+import {useCallback, useMemo} from "react";
 import {TbSettings} from "react-icons/tb";
 import styles from "./InvoicePreferences.module.scss";
 
@@ -55,6 +55,26 @@ const DEFAULT_PREFERENCES: InvoicePreferencesType = {
 };
 
 /**
+ * Page size options; labels are locale-independent numbers.
+ */
+const PAGE_SIZE_ITEMS = [
+  {value: "5", label: "5"},
+  {value: "10", label: "10"},
+  {value: "20", label: "20"},
+  {value: "50", label: "50"},
+] as const;
+
+/**
+ * Currency options; labels are locale-independent currency names.
+ */
+const CURRENCY_ITEMS = [
+  {value: "RON", label: "RON (Lei)"},
+  {value: "EUR", label: "EUR (Euro)"},
+  {value: "USD", label: "USD (Dollar)"},
+  {value: "GBP", label: "GBP (Pound)"},
+] as const;
+
+/**
  * Invoice preferences component.
  *
  * @remarks
@@ -79,7 +99,7 @@ export default function InvoicePreferences(): React.JSX.Element {
    */
   const handleSave = useCallback(() => {
     // Preferences are already saved via useLocalStorage setter
-    toast.success(t((m) => m.shared.invoices.preferences.saved));
+    notify.success(t((m) => m.shared.invoices.preferences.saved));
   }, [t]);
 
   /**
@@ -96,7 +116,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the default view mode select.
    */
   const handleDefaultViewModeChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultViewMode", value as "table" | "grid");
     },
     [updatePreference],
@@ -106,7 +127,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the default sort-by select.
    */
   const handleDefaultSortByChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultSortBy", value);
     },
     [updatePreference],
@@ -116,7 +138,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the page size select.
    */
   const handleDefaultPageSizeChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("defaultPageSize", Number.parseInt(value, 10));
     },
     [updatePreference],
@@ -126,7 +149,8 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Handles changes to the currency select.
    */
   const handleCurrencyChange = useCallback(
-    (value: string): void => {
+    (value: string | null): void => {
+      if (value === null) return;
       updatePreference("currency", value);
     },
     [updatePreference],
@@ -140,6 +164,26 @@ export default function InvoicePreferences(): React.JSX.Element {
       updatePreference("showStatisticsOnHome", checked === true);
     },
     [updatePreference],
+  );
+
+  // Single sources for both the rendered options and the trigger label lookups.
+  const viewModeItems = useMemo(
+    () => [
+      {value: "table", label: t((m) => m.shared.invoices.preferences.views.table)},
+      {value: "grid", label: t((m) => m.shared.invoices.preferences.views.grid)},
+    ],
+    [t],
+  );
+
+  const sortByItems = useMemo(
+    () => [
+      {value: "dateDesc", label: t((m) => m.shared.invoices.preferences.sortOptions.dateDesc)},
+      {value: "dateAsc", label: t((m) => m.shared.invoices.preferences.sortOptions.dateAsc)},
+      {value: "amountDesc", label: t((m) => m.shared.invoices.preferences.sortOptions.amountDesc)},
+      {value: "amountAsc", label: t((m) => m.shared.invoices.preferences.sortOptions.amountAsc)},
+      {value: "nameAsc", label: t((m) => m.shared.invoices.preferences.sortOptions.nameAsc)},
+    ],
+    [t],
   );
 
   return (
@@ -162,15 +206,21 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultViewMode}
-            onValueChange={handleDefaultViewModeChange}>
+            onValueChange={handleDefaultViewModeChange}
+            items={viewModeItems}>
             <SelectTrigger
               id='defaultViewMode'
               className={styles["select"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='table'>{t((m) => m.shared.invoices.preferences.views.table)}</SelectItem>
-              <SelectItem value='grid'>{t((m) => m.shared.invoices.preferences.views.grid)}</SelectItem>
+              {viewModeItems.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -183,18 +233,21 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultSortBy}
-            onValueChange={handleDefaultSortByChange}>
+            onValueChange={handleDefaultSortByChange}
+            items={sortByItems}>
             <SelectTrigger
               id='defaultSortBy'
               className={styles["select"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='dateDesc'>{t((m) => m.shared.invoices.preferences.sortOptions.dateDesc)}</SelectItem>
-              <SelectItem value='dateAsc'>{t((m) => m.shared.invoices.preferences.sortOptions.dateAsc)}</SelectItem>
-              <SelectItem value='amountDesc'>{t((m) => m.shared.invoices.preferences.sortOptions.amountDesc)}</SelectItem>
-              <SelectItem value='amountAsc'>{t((m) => m.shared.invoices.preferences.sortOptions.amountAsc)}</SelectItem>
-              <SelectItem value='nameAsc'>{t((m) => m.shared.invoices.preferences.sortOptions.nameAsc)}</SelectItem>
+              {sortByItems.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -207,17 +260,21 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultPageSize.toString()}
-            onValueChange={handleDefaultPageSizeChange}>
+            onValueChange={handleDefaultPageSizeChange}
+            items={PAGE_SIZE_ITEMS}>
             <SelectTrigger
               id='defaultPageSize'
               className={styles["select"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='5'>5</SelectItem>
-              <SelectItem value='10'>10</SelectItem>
-              <SelectItem value='20'>20</SelectItem>
-              <SelectItem value='50'>50</SelectItem>
+              {PAGE_SIZE_ITEMS.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -230,17 +287,21 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.currency}
-            onValueChange={handleCurrencyChange}>
+            onValueChange={handleCurrencyChange}
+            items={CURRENCY_ITEMS}>
             <SelectTrigger
               id='currency'
               className={styles["select"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='RON'>RON (Lei)</SelectItem>
-              <SelectItem value='EUR'>EUR (Euro)</SelectItem>
-              <SelectItem value='USD'>USD (Dollar)</SelectItem>
-              <SelectItem value='GBP'>GBP (Pound)</SelectItem>
+              {CURRENCY_ITEMS.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

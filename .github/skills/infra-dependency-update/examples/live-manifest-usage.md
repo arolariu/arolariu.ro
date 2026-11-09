@@ -41,6 +41,7 @@ crosses them.
 - [`Invoices/packages.lock.json`](../../../../sites/api.arolariu.ro/src/Invoices/packages.lock.json)
 - [`AppHost.csproj`](../../../../tooling/src/AppHost/AppHost.csproj)
 - [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj)
+- [`LocalDevelopment.Data.csproj`](../../../../tooling/src/LocalDevelopment.Data/LocalDevelopment.Data.csproj)
 - [`LocalDevelopment.Identity.csproj`](../../../../tooling/src/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj)
 - [`AzureDocumentIntelligenceBroker.cs`](../../../../sites/api.arolariu.ro/src/Invoices/Brokers/DocumentIntelligenceBroker/AzureDocumentIntelligenceBroker.cs)
 - [`AzureDocumentIntelligenceBroker.Internals.cs`](../../../../sites/api.arolariu.ro/src/Invoices/Brokers/DocumentIntelligenceBroker/AzureDocumentIntelligenceBroker.Internals.cs)

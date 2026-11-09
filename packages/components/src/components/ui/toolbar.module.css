@@ -35,6 +35,8 @@
 }
 
 .item {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   box-sizing: border-box;
   display: inline-flex;
   min-height: var(--ac-size-md);
@@ -57,7 +59,8 @@
 
   &:focus-visible {
     background-color: var(--ac-accent);
-    box-shadow: inset 0 0 0 1px var(--ac-ring);
+    outline: 2px solid var(--ac-ring);
+    outline-offset: -2px;
     color: var(--ac-accent-foreground);
   }
 
@@ -111,5 +114,31 @@
     min-width: 1px;
     height: 1rem;
     margin-block: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root {
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .item:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .item[data-disabled] {
+    color: GrayText;
+    opacity: 1;
+  }
+
+  .separator {
+    background-color: CanvasText;
   }
 }

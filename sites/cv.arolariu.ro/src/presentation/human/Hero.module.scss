@@ -292,10 +292,10 @@
   }
 
   :global(.dark) & {
-    background: var(--cv-color-blue-500);
+    background: var(--cv-color-blue-600);
 
     &:hover {
-      background: var(--cv-color-blue-600);
+      background: var(--cv-color-blue-700);
     }
   }
 }

@@ -84,7 +84,9 @@ export default function MerchantDialog(): React.JSX.Element | null {
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader className={styles["dialogHeader"]}>
           <DialogTitle>{t((m) => m.dialogs.invoices.merchantDialog.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.merchantDialog.description, {merchantName: merchant.name})}</DialogDescription>
@@ -104,7 +106,7 @@ export default function MerchantDialog(): React.JSX.Element | null {
             </div>
           </div>
 
-          <Table>
+          <Table containerProps={{role: "region", "aria-label": t((m) => m.dialogs.invoices.merchantDialog.title)}}>
             <TableBody>
               <TableRow>
                 <TableCell className={styles["labelCell"]}>

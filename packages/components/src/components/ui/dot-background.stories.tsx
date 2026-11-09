@@ -1,106 +1,99 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {DotBackground} from "./dot-background";
+const storyStyles = `
+.ac-story-dot-background-demo,
+.ac-story-dot-background-resizableDemo {
+  position: relative;
+  height: 24rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-background);
+  color: var(--ac-foreground);
+}
+
+.ac-story-dot-background-resizableDemo {
+  width: 70%;
+  min-width: 12rem;
+  min-height: 10rem;
+  resize: both;
+}
+
+.ac-story-dot-background-demoContent {
+  position: relative;
+  display: grid;
+  place-content: center;
+  min-height: 100%;
+  padding: 2rem;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-dot-background-demo",
+  resizableDemo: "ac-story-dot-background-resizableDemo",
+  demoContent: "ac-story-dot-background-demoContent",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Backgrounds/DotBackground",
   component: DotBackground,
   tags: ["autodocs"],
-  argTypes: {
-    glow: {
-      control: "boolean",
-      description: "Enables pulsing radial glow animation for every dot",
+  args: {glow: false},
+  argTypes: {width: {control: {type: "number", min: 1}}, height: {control: {type: "number", min: 1}}},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Width/height are positive dot spacing, not SVG dimensions. The element is observed for resize; dense grids are evenly bounded to 4096 dots. Glow pauses with reduced motion/offscreen policy.",
+      },
     },
   },
+  render: (args) => (
+    <div className={storyClasses.demo}>
+      <DotBackground {...args} />
+      <h2 className={storyClasses.demoContent}>Dot background</h2>
+    </div>
+  ),
 } satisfies Meta<typeof DotBackground>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/**
- * Static dot grid background.
- */
-export const Default: Story = {
-  args: {
-    glow: false,
+/** Pause remains available to keyboard and pointer users throughout a continued glow. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume glow" : "Pause glow"}</Button>
+        <div className={storyClasses.demo}>
+          <DotBackground
+            {...args}
+            glow
+            loop
+            motionPaused={paused}
+          />
+        </div>
+      </>
+    );
   },
-  render: (args) => (
-    <div style={{position: "relative", height: "400px", background: "#0f172a", borderRadius: "8px", overflow: "hidden"}}>
-      <DotBackground
-        {...args}
-        style={{color: "#3b82f6"}}
-      />
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          color: "white",
-        }}>
-        <h2 style={{fontSize: "2rem", fontWeight: "bold"}}>Dot Background</h2>
-      </div>
-    </div>
-  ),
 };
-
-/**
- * Animated glowing dot grid.
- */
-export const Glowing: Story = {
-  args: {
-    glow: true,
-  },
+export const Default: Story = {};
+export const Glowing: Story = {args: {glow: true}};
+export const Dense: Story = {args: {width: 4, height: 4, glow: true}};
+/** Resize the native element without resizing the browser window. */
+export const ElementResize: Story = {
   render: (args) => (
-    <div style={{position: "relative", height: "400px", background: "#1e1b4b", borderRadius: "8px", overflow: "hidden"}}>
-      <DotBackground
-        {...args}
-        style={{color: "#8b5cf6"}}
-      />
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          color: "white",
-        }}>
-        <h2 style={{fontSize: "2rem", fontWeight: "bold"}}>Glowing Dots</h2>
-      </div>
-    </div>
-  ),
-};
-
-/**
- * Dense dot pattern with custom spacing.
- */
-export const Dense: Story = {
-  args: {
-    width: 10,
-    height: 10,
-    glow: false,
-  },
-  render: (args) => (
-    <div style={{position: "relative", height: "400px", background: "#111827", borderRadius: "8px", overflow: "hidden"}}>
-      <DotBackground
-        {...args}
-        style={{color: "#10b981"}}
-      />
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          color: "white",
-        }}>
-        <h2 style={{fontSize: "2rem", fontWeight: "bold"}}>Dense Pattern</h2>
-      </div>
+    <div className={storyClasses.resizableDemo}>
+      <DotBackground {...args} />
+      <p className={storyClasses.demoContent}>Drag the resize handle</p>
     </div>
   ),
 };

@@ -1,7 +1,7 @@
 .skeleton {
   border-radius: var(--ac-radius-md);
   background-color: var(--ac-muted);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 2;
 }
 
 @keyframes pulse {
@@ -11,5 +11,24 @@
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+.skeleton[data-animated="false"] {
+  animation: none;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@media (forced-colors: active) {
+  .skeleton {
+    border: 1px solid CanvasText;
+    background-color: Canvas;
   }
 }

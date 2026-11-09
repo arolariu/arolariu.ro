@@ -230,8 +230,9 @@ installs or upgrades Git, Node.js, or npm:
 
 ### Quick Start
 
-> [!WARNING] The Aspire start command below resets all guarded local invoice/merchant documents, invoice blobs, and analysis queue messages
-> before restoring the deterministic local scenarios.
+> [!NOTE] Aspire initializes the local scenarios once and preserves custom data on restart. Only the dashboard's confirmed **Reset local
+> data** command clears the local stores; review its
+> [scope and recovery instructions](infra/Local/readme.md#persistent-data-and-explicit-reset).
 
 ```bash
 # 1️⃣ Clone the repository
@@ -248,7 +249,7 @@ npm run setup
 # 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
 npm run dev
 # → Aspire dashboard auto-opens at https://localhost:17080
-# → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
+# → Website https://localhost:3000 · API https://localhost:5000 · CV http://localhost:4173
 #   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
 
 # Or start a single service standalone (no orchestration):
@@ -374,9 +375,12 @@ npx nx show project website      # 🔍 Show project details
 `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The
 AppHost orchestrates the entire dev stack:
 
-- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and Charlie, Aspire deletes all documents in the guarded local
-  invoice/merchant Cosmos containers, removes the local invoice blob container, and clears the analysis queue. Preserve local work before
-  starting.
+- **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
+  dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
+  scenario.
+- **Pinned Aspire CLI** — `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK. The first launch, or the first
+  after an SDK change, can download the CLI bundle (Dashboard and DCP) through the configured NuGet sources; see the
+  [tooling guide](tooling/README.md#development-and-debugging).
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via
@@ -395,10 +399,12 @@ not hardcode platform-specific PATH or socket values.
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate
 `rancher-desktop` runtime.
 
-The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`; `RepositoryLayout` provides
-project-rooted paths. Bootstrap's invoice scenario and Identity's persona capability remain separate executables. Owner-specific coverage
-lives in `tooling/tests/AppHost.Tests/`, `tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
-`tooling/tests/LocalDevelopment.Identity.Tests/`. See the
+The host uses capability-first slices under `Infrastructure`, `Applications`, and `LocalDevelopment`, composed by `LocalApplication`;
+`RepositoryLayout` provides project-rooted paths. The Aspire-independent `LocalDevelopment.Data` library owns the invoice scenario and
+provider operations that the Bootstrap executable runs; `LocalDevelopment.Common` supplies shared retry contracts and execution. Identity's
+persona capability remains a separate executable. Owner-specific coverage lives in `tooling/tests/AppHost.Tests/`,
+`tooling/tests/LocalDevelopment.Bootstrap.Tests/`, `tooling/tests/LocalDevelopment.Common.Tests/`,
+`tooling/tests/LocalDevelopment.Data.Tests/`, and `tooling/tests/LocalDevelopment.Identity.Tests/`. See the
 [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points) for ownership, native resource contracts, and
 verification commands.
 
@@ -406,7 +412,7 @@ verification commands.
 | -------------------- | ------------------------------ | ----------------------------------------------------- |
 | Aspire dashboard     | `https://localhost:17080`      | OTel traces · metrics · logs · resource graph         |
 | Website (Next.js)    | `https://localhost:3000`       | HTTPS via `--experimental-https` (mkcert root CA)     |
-| API (.NET)           | `http://localhost:5000`        | Swagger UI at `/`                                     |
+| API (.NET)           | `https://localhost:5000`       | Swagger UI at `/`                                     |
 | CV (SvelteKit)       | `http://localhost:4173`        | Preview server                                        |
 | Docs (Docusaurus)    | `http://localhost:3100`        |                                                       |
 | Status               | `http://localhost:3002`        |                                                       |
@@ -471,7 +477,7 @@ Each resource has a health check; check the dashboard's **Health** column for th
 
 | Resource   | Health endpoint                     | What it checks                                            |
 | ---------- | ----------------------------------- | --------------------------------------------------------- |
-| API        | `http://localhost:5000/health`      | DB + Cosmos + Azurite + Redis + exp connectivity          |
+| API        | `https://localhost:5000/health`     | DB + Cosmos + Azurite + Redis + exp connectivity          |
 | Website    | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
 | exp        | `https://localhost:5002/api/ready`  | FastAPI ready + runtime configuration available           |
 | SQL Server | TDS handshake                       | Aspire's built-in `WaitFor` gate (`sql-ready`)            |
@@ -529,7 +535,7 @@ before running:
 # Install/reinstall the local CA after approval
 mkcert -install
 
-# Regenerate the wildcard cert (devcontainer does this automatically in postCreate.sh)
+# Regenerate the wildcard cert only for an explicitly selected selfhost setup
 cd infra/Local/Management/certs
 mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
 ```

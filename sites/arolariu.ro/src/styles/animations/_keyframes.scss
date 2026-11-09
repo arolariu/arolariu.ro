@@ -9,7 +9,7 @@
 /// @author arolariu
 ///
 /// ## Keyframe Categories
-/// - **UI** — `accordion-down`, `accordion-up` (Radix UI)
+/// - **UI** — `accordion-down`, `accordion-up` (Base UI Accordion)
 /// - **Fade** — `fade-in`, `fade-out`
 /// - **Scale** — `scale-in`, `scale-out`
 /// - **Decorative** — `float`, `glow`, `pulse`, `spin`, `bounce`, `shimmer`
@@ -17,19 +17,19 @@
 /// @see animations/_transitions.scss — `.animate-*` classes consuming these
 /// ===========================================
 
-// Accordion (for Radix UI components)
+// Accordion (Base UI exposes the panel height as --accordion-panel-height)
 @keyframes accordion-down {
   from {
     height: 0;
   }
   to {
-    height: var(--radix-accordion-content-height);
+    height: var(--accordion-panel-height);
   }
 }
 
 @keyframes accordion-up {
   from {
-    height: var(--radix-accordion-content-height);
+    height: var(--accordion-panel-height);
   }
   to {
     height: 0;

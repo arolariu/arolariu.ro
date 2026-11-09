@@ -1,5 +1,5 @@
 .root {
-  font-size: 1rem;
+  font-size: var(--ac-text-base);
   font-weight: 700;
   text-align: center;
 }
@@ -13,7 +13,7 @@
 }
 
 .hiddenCharacter {
-  display: none;
+  display: inline-block;
   color: var(--ac-foreground);
   opacity: 0;
 }
@@ -27,7 +27,7 @@
   display: inline-block;
   width: 4px;
   border-radius: var(--ac-radius-xs);
-  background: #3b82f6;
+  background: var(--ac-primary);
 }
 
 .cursor {

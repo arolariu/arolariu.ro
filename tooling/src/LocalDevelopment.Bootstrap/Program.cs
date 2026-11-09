@@ -3,8 +3,8 @@ namespace LocalDevelopment.Bootstrap;
 using System.Runtime.InteropServices;
 using LocalDevelopment.Bootstrap.Configuration;
 using LocalDevelopment.Bootstrap.Safety;
-using LocalDevelopment.Bootstrap.Scenarios.Invoices;
-using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
+using LocalDevelopment.Data.Scenarios.Invoices;
+using LocalDevelopment.Data.Storage;
 
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
@@ -74,14 +74,10 @@ internal static class Program
         new BlobServiceClient(options.BlobStorageConnectionString);
       var queueServiceClient =
         new QueueServiceClient(options.QueueStorageConnectionString);
-      var storage = new LocalAzuriteResetter(
-        blobServiceClient,
-        queueServiceClient);
-
       if (ensureStorageOnly)
       {
-        await storage
-          .EnsureStorageAsync(cancellationToken)
+        await StorageDataProvider
+          .EnsureStorageAsync(blobServiceClient, queueServiceClient, cancellationToken)
           .ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return 0;
@@ -95,19 +91,21 @@ internal static class Program
             ConnectionMode = ConnectionMode.Gateway,
             LimitToEndpoint = true,
           });
-      var bootstrap = new LocalScenarioBootstrap(
-        new LocalCosmosResetter(cosmosClient),
-        storage,
-        TimeProvider.System);
+      var bootstrap = new InvoiceScenarioInitializer(
+        cosmosClient,
+        blobServiceClient,
+        queueServiceClient,
+        TimeProvider.System,
+        Console.Out);
       await bootstrap
-        .RunAsync(options.ManifestPath, cancellationToken)
+        .InitializeAsync(options.SeedDataDirectory, cancellationToken)
         .ConfigureAwait(false);
       cancellationToken.ThrowIfCancellationRequested();
       return 0;
     }
     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
     {
-      Console.Error.WriteLine("Local development bootstrap cancelled; completed reset phases are not rolled back.");
+      Console.Error.WriteLine("Local development bootstrap cancelled; completed initialization operations are not rolled back.");
       return 1;
     }
     catch (Exception exception)

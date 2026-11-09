@@ -9,9 +9,10 @@
  * Zustand scans store cleanup after the server action succeeds.
  */
 
+import {notify} from "@/lib/notify";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {deleteScan as removeScanServerSide} from "../../_actions/scans";
@@ -78,12 +79,12 @@ export function useScanDelete(scan: CachedScan | null): Readonly<HookOutputType>
       const result = await removeScanServerSide({scanId: scan.id});
       if (result.success) {
         removeScanClientSide(scan.id);
-        toast.success(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.success));
+        notify.success(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.success));
       } else {
-        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
+        notify.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       }
     } catch (error) {
-      toast.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
+      notify.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       console.error("Error deleting scan:", error);
     } finally {
       setIsDeleting(false);

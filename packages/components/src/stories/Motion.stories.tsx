@@ -1,7 +1,65 @@
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+const storyStyles = `
+.ac-story-motion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ac-story-motion-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.ac-story-motion-toggle {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--ac-border);
+  background-color: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.ac-story-motion-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ac-story-motion-tokenName {
+  width: 200px;
+  font-size: 12px;
+  color: var(--ac-muted-foreground);
+}
+
+.ac-story-motion-preview {
+  height: 48px;
+  background-color: var(--ac-primary);
+  border-radius: 8px;
+}
+`;
+
+const storyClasses = {
+  list: "ac-story-motion-list",
+  heading: "ac-story-motion-heading",
+  toggle: "ac-story-motion-toggle",
+  row: "ac-story-motion-row",
+  tokenName: "ac-story-motion-tokenName",
+  preview: "ac-story-motion-preview",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Foundations/Motion",
   tags: ["autodocs"],
   parameters: {layout: "padded"},
@@ -20,39 +78,26 @@ export const Transitions: Story = {
   render: () => {
     const [active, setActive] = React.useState(false);
     return (
-      <div style={{display: "flex", flexDirection: "column", gap: 32}}>
+      <div className={storyClasses.list}>
         <div>
-          <h3 style={{fontSize: 18, fontWeight: 600, marginBottom: 16}}>Transition Durations</h3>
+          <h3 className={storyClasses.heading}>Transition Durations</h3>
           <button
             type='button'
             onClick={() => setActive(!active)}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 6,
-              border: "1px solid var(--ac-border)",
-              backgroundColor: "var(--ac-primary)",
-              color: "var(--ac-primary-foreground)",
-              cursor: "pointer",
-              marginBottom: 24,
-            }}>
+            className={storyClasses.toggle}>
             Toggle Animation
           </button>
         </div>
-        {transitions.map(({token, label, duration}) => (
+        {transitions.map(({token, duration}) => (
           <div
             key={token}
-            style={{display: "flex", alignItems: "center", gap: 16}}>
-            <code style={{width: 200, fontSize: 12, color: "var(--ac-muted-foreground)"}}>
+            className={storyClasses.row}>
+            <code className={storyClasses.tokenName}>
               {token} ({duration})
             </code>
             <div
-              style={{
-                width: active ? 200 : 48,
-                height: 48,
-                backgroundColor: "var(--ac-primary)",
-                borderRadius: 8,
-                transition: `width var(${token})`,
-              }}
+              className={storyClasses.preview}
+              style={{width: active ? 200 : 48, transition: `width var(${token})`}}
             />
           </div>
         ))}

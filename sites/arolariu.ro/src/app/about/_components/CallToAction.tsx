@@ -1,6 +1,6 @@
 "use client";
 
-import {Button} from "@arolariu/components";
+import {buttonVariants, cn} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -72,28 +72,20 @@ export default function CallToAction(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.2, duration: 0.5}}>
-          <Button
-            asChild
-            size='lg'
-            className={styles["ctaButton"]}>
-            <a
-              href='https://github.com/arolariu/arolariu.ro'
-              target='_blank'
-              rel='noopener noreferrer'>
-              <TbBrandGithub className={styles["ctaIcon"]} />
-              {t((m) => m.pages.about.hub.cta.primary)}
-            </a>
-          </Button>
-          <Button
-            asChild
-            variant='outline'
-            size='lg'
-            className={styles["ctaButton"]}>
-            <Link href='/about/the-author#contact'>
-              <TbMail className={styles["ctaIcon"]} />
-              {t((m) => m.pages.about.hub.cta.secondary)}
-            </Link>
-          </Button>
+          <a
+            className={cn(buttonVariants({size: "lg"}), styles["ctaButton"])}
+            href='https://github.com/arolariu/arolariu.ro'
+            target='_blank'
+            rel='noopener noreferrer'>
+            <TbBrandGithub className={styles["ctaIcon"]} />
+            {t((m) => m.pages.about.hub.cta.primary)}
+          </a>
+          <Link
+            className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaButton"])}
+            href='/about/the-author#contact'>
+            <TbMail className={styles["ctaIcon"]} />
+            {t((m) => m.pages.about.hub.cta.secondary)}
+          </Link>
         </motion.div>
 
         {/* Footer text */}

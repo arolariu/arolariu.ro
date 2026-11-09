@@ -1,67 +1,91 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {useState} from "react";
+import {Button} from "./button";
 import {HighlightText} from "./highlight-text";
+const storyStyles = `
+.ac-story-highlight-text-demo {
+  padding: 2rem;
+  font-size: 1.25rem;
+  line-height: 2;
+  color: var(--ac-foreground);
+  background: var(--ac-background);
+}
+
+.ac-story-highlight-text-demoLead {
+  display: grid;
+  min-height: 100svh;
+  place-content: center;
+}
+`;
+
+const storyClasses = {
+  demo: "ac-story-highlight-text-demo",
+  demoLead: "ac-story-highlight-text-demoLead",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Typography/HighlightText",
   component: HighlightText,
   tags: ["autodocs"],
-  argTypes: {
-    inView: {
-      control: "boolean",
-      description: "Delays the highlight animation until the text enters the viewport",
+  args: {text: "highlighted text", inView: false},
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Inline span semantics are preserved. Viewport options gate the highlight, never the text. OS reduced motion renders a completed static highlight.",
+      },
     },
   },
+  render: (args) => (
+    <p className={storyClasses.demo}>
+      Content with <HighlightText {...args} /> in the middle of a paragraph.
+    </p>
+  ),
 } satisfies Meta<typeof HighlightText>;
-
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/**
- * Animated gradient highlight fill behind text.
- */
-export const Default: Story = {
-  args: {
-    text: "highlighted text",
-    inView: false,
+/** Custom repeated sweeps must offer pause, not merely pause when offscreen. */
+export const ControlledLoop: Story = {
+  render: function ControlledLoop(args) {
+    const [paused, setPaused] = useState(false);
+    return (
+      <div className={storyClasses.demo}>
+        <Button onClick={() => setPaused(!paused)}>{paused ? "Resume highlight" : "Pause highlight"}</Button>
+        <HighlightText
+          loop
+          motionPaused={paused}
+          animate={{backgroundSize: ["0% 100%", "100% 100%"]}}
+          transition={{duration: 2, repeat: Infinity}}
+          {...args}
+        />
+      </div>
+    );
   },
-  render: (args) => (
-    <div style={{padding: "2rem", fontSize: "1.5rem", lineHeight: "2"}}>
-      This is some content with <HighlightText {...args} /> in the middle of the paragraph.
-    </div>
-  ),
 };
-
-/**
- * Highlight animation triggered on scroll into view.
- */
+export const Default: Story = {};
 export const OnScroll: Story = {
-  args: {
-    text: "important information",
-    inView: true,
-    inViewOnce: true,
-  },
+  args: {text: "important information", inView: true, inViewOnce: false},
   render: (args) => (
     <div>
-      <div style={{height: "100vh", padding: "2rem", display: "flex", alignItems: "center", justifyContent: "center"}}>
-        <p style={{fontSize: "1.25rem"}}>Scroll down to see the highlight animation</p>
-      </div>
-      <div style={{padding: "2rem", fontSize: "1.5rem", lineHeight: "2", background: "#f9fafb", borderRadius: "8px"}}>
-        When you scroll to this section, you'll see the <HighlightText {...args} /> appear with animation.
-      </div>
+      <div className={storyClasses.demoLead}>Scroll down to the highlight</div>
+      <p className={storyClasses.demo}>
+        Read the <HighlightText {...args} />. Reduced motion shows the completed highlight immediately.
+      </p>
     </div>
   ),
 };
-
-/**
- * Multiple highlighted text segments.
- */
 export const Multiple: Story = {
   render: () => (
-    <div style={{padding: "2rem", fontSize: "1.25rem", lineHeight: "2", maxWidth: "800px"}}>
-      <p>
-        Our platform helps you <HighlightText text='build faster' /> with modern tools, <HighlightText text='deploy easier' /> with
-        automated workflows, and <HighlightText text='scale effortlessly' /> with cloud infrastructure.
-      </p>
-    </div>
+    <p className={storyClasses.demo}>
+      Build <HighlightText text='faster' />, deploy <HighlightText text='easier' />, and scale <HighlightText text='confidently' />.
+    </p>
   ),
 };

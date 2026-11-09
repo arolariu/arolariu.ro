@@ -38,7 +38,7 @@ export default function BackToTop(): React.JSX.Element | null {
   return (
     <button
       type='button'
-      className={styles.btn}
+      className={styles["btn"]}
       onClick={toTop}
       aria-label='back to top'>
       [↑ top]

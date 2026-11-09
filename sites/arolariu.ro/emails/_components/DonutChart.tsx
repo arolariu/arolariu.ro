@@ -23,19 +23,6 @@ type Props = {
   readonly alt: string;
 };
 
-type QuickChartConfig = {
-  readonly type: "doughnut";
-  readonly data: {
-    readonly labels: readonly string[];
-    readonly datasets: ReadonlyArray<{readonly data: readonly number[]}>;
-  };
-  readonly options: {
-    readonly legend: {readonly display: boolean; readonly position: "bottom"};
-    readonly tooltips: {readonly enabled: boolean};
-    readonly cutoutPercentage: number;
-  };
-};
-
 const styles = {
   wrap: {
     border: `1px solid ${EMAIL_COLORS.border}`,
@@ -71,6 +58,19 @@ const styles = {
 } as const;
 
 function buildQuickChartUrl(data: readonly Datum[]): string {
+  type QuickChartConfig = {
+    readonly type: "doughnut";
+    readonly data: {
+      readonly labels: readonly string[];
+      readonly datasets: ReadonlyArray<{readonly data: readonly number[]}>;
+    };
+    readonly options: {
+      readonly legend: {readonly display: boolean; readonly position: "bottom"};
+      readonly tooltips: {readonly enabled: boolean};
+      readonly cutoutPercentage: number;
+    };
+  };
+
   const labels = data.map((d) => d.label);
   const values = data.map((d) => d.value);
 

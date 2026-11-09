@@ -490,7 +490,8 @@ Below the hero, pages alternate:
    icon (`@include icon-size(2.5rem)` or larger), heading, description.
 3. **Stats row** — 4 columns at `lg`, large fluid numbers in `--primary`, label below.
 4. **Explore further** — 2-column horizontal cards with image, title, bulleted feature list, CTA.
-5. **FAQ accordion** — Radix-driven, uses `@keyframes accordion-down/up` from `_keyframes.scss`.
+5. **FAQ accordion** — `@arolariu/components` `Accordion` (Base UI; `multiple` + array `value`), uses `@keyframes accordion-down/up` from
+   `_keyframes.scss`.
 6. **Closing CTA** — centered headline + 2 buttons (primary + outline).
 
 This is a **template**, not a mandate — but new about-style pages should feel familiar.
@@ -499,8 +500,8 @@ This is a **template**, not a mandate — but new about-style pages should feel 
 
 Three layers of card primitives:
 
-- **`@arolariu/components`** `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter` — the shadcn-style baseline. Use this **first**
-  when the card is generic.
+- **`@arolariu/components`** `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter` — the Base UI-backed baseline. Use this
+  **first** when the card is generic.
 - **Global BEM** `.card`, `.card__header`, `.card--featured`, `.card--elevated`, `.card--gradient-overlay`, `.card-grid` (in
   `styles/components/_cards.scss`) — when you need the gradient-border feature card or grid layout.
 - **CSS Module ad-hoc** — for one-off card visuals (e.g., `Features.module.scss` `.card`). Avoid when a shared variant exists.
@@ -510,7 +511,8 @@ modifier adds a gradient border via `mask-composite: exclude`.
 
 ### 5.5 Buttons
 
-- **Primary action** — `@arolariu/components` `Button` (the shadcn default).
+- **Primary action** — `@arolariu/components` `Button`. v3 has no `asChild`; style navigation links as buttons with
+  `<Link className={buttonVariants({variant, size})}>`. Icon-only buttons require a localized `aria-label`.
 - **Gradient filled** — `.btn-gradient` (with `--sm`, `--lg`).
 - **Gradient outline** — `.btn-outline-gradient` (mask-composite gradient border).
 - **Icon button** — `.btn-icon` (with `--sm` 32px+44px-target, `--lg` 48px, `--ghost` no-border).

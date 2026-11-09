@@ -11,8 +11,9 @@
  * reported without overwhelming the backend.
  */
 
+import {notify} from "@/lib/notify";
 import {useInvoicesStore} from "@/stores";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -243,7 +244,7 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
     try {
       if (typeof invoiceIdOrIds === "string") {
         await performMutation(invoiceIdOrIds);
-        toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
+        notify.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
         router.push("/domains/invoices/view-invoices");
       } else {
         const result = await processBulkRecursive(invoiceIdOrIds, 0, {
@@ -256,11 +257,11 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
         const hasSuccess = result.successCount > 0;
 
         if (!hasFailure) {
-          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
+          notify.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
         } else if (!hasSuccess) {
-          toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
+          notify.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
         } else {
-          toast.info(
+          notify.info(
             t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {
               successCount: String(result.successCount),
               failureCount: String(result.failureCount),
@@ -272,7 +273,7 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
+      notify.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
       console.error("Error deleting invoice:", error);
     } finally {
       setIsDeleting(false);

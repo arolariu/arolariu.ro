@@ -1,0 +1,47 @@
+name: ${AROLARIU_LOCAL_DATA_TEST_SCOPE:?Set an explicit arolariu-seed-tests scope}
+
+volumes:
+  cosmos:
+    name: ${AROLARIU_LOCAL_DATA_TEST_SCOPE:?}-cosmos
+  storage:
+    name: ${AROLARIU_LOCAL_DATA_TEST_SCOPE:?}-storage
+
+services:
+  cosmos:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38
+    pull_policy: never
+    container_name: ${AROLARIU_LOCAL_DATA_TEST_SCOPE:?}-cosmos
+    environment:
+      ENABLE_EXPLORER: "false"
+      ENABLE_TELEMETRY: "false"
+      PROTOCOL: http
+    ports:
+      - "127.0.0.1:18083:8081"
+    volumes:
+      - cosmos:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/"]
+      interval: 2s
+      timeout: 2s
+      retries: 45
+
+  storage:
+    image: mcr.microsoft.com/azure-storage/azurite@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37
+    pull_policy: never
+    container_name: ${AROLARIU_LOCAL_DATA_TEST_SCOPE:?}-storage
+    command: azurite --location /data --skipApiVersionCheck --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+    ports:
+      - "127.0.0.1:19000:10000"
+      - "127.0.0.1:19001:10001"
+      - "127.0.0.1:19002:10002"
+    volumes:
+      - storage:/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const s=require('node:net').connect(10000,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));"
+      interval: 2s
+      timeout: 2s
+      retries: 45

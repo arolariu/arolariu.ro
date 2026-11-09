@@ -91,7 +91,12 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
           <Button
             size='icon'
             onClick={onCopyLink}
-            variant='outline'>
+            variant='outline'
+            aria-label={
+              copied
+                ? t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.linkCopied)
+                : t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.copyLink)
+            }>
             {copied ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
           </Button>
         </div>

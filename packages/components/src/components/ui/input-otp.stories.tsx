@@ -1,10 +1,25 @@
-import React from "react";
+import {type JSX, useRef, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot, REGEXP_ONLY_DIGITS} from "./input-otp";
+import {Field, FieldDescription, FieldError, FieldLabel} from "./field";
+import {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS} from "./input-otp";
 
 const meta = {
   title: "Components/Forms/InputOTP",
   component: InputOTP,
+  args: {
+    maxLength: 6,
+    "aria-label": "Verification code",
+    children: (
+      <InputOTPGroup>
+        {[0, 1, 2, 3, 4, 5].map((index) => (
+          <InputOTPSlot
+            key={index}
+            index={index}
+          />
+        ))}
+      </InputOTPGroup>
+    ),
+  },
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
@@ -19,7 +34,9 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <InputOTP maxLength={6}>
+    <InputOTP
+      maxLength={6}
+      aria-label='Verification code'>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -37,7 +54,9 @@ export const Default: Story = {
  */
 export const WithSeparator: Story = {
   render: () => (
-    <InputOTP maxLength={6}>
+    <InputOTP
+      maxLength={6}
+      aria-label='Grouped verification code'>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -58,9 +77,11 @@ export const WithSeparator: Story = {
  */
 export const DigitsOnly: Story = {
   render: () => (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium'>Enter verification code</label>
+    <Field>
+      <FieldLabel htmlFor='digit-code'>Enter verification code</FieldLabel>
       <InputOTP
+        id='digit-code'
+        aria-describedby='digit-code-hint'
         maxLength={6}
         pattern={REGEXP_ONLY_DIGITS}>
         <InputOTPGroup>
@@ -75,8 +96,8 @@ export const DigitsOnly: Story = {
           <InputOTPSlot index={5} />
         </InputOTPGroup>
       </InputOTP>
-      <p className='text-muted-foreground text-xs'>A 6-digit code was sent to your email</p>
-    </div>
+      <FieldDescription id='digit-code-hint'>Enter the six digits from your verification message.</FieldDescription>
+    </Field>
   ),
 };
 
@@ -85,9 +106,11 @@ export const DigitsOnly: Story = {
  */
 export const FourDigitPIN: Story = {
   render: () => (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium'>Enter your PIN</label>
+    <Field>
+      <FieldLabel htmlFor='pin-code'>Enter your PIN</FieldLabel>
       <InputOTP
+        id='pin-code'
+        aria-describedby='pin-code-hint'
         maxLength={4}
         pattern={REGEXP_ONLY_DIGITS}>
         <InputOTPGroup>
@@ -97,89 +120,24 @@ export const FourDigitPIN: Story = {
           <InputOTPSlot index={3} />
         </InputOTPGroup>
       </InputOTP>
-      <p className='text-muted-foreground text-xs'>Enter your 4-digit security PIN</p>
-    </div>
+      <FieldDescription id='pin-code-hint'>Enter your four-digit PIN.</FieldDescription>
+    </Field>
   ),
 };
 
 /**
- * OTP input showing error state with red border styling.
+ * Actual invalid input state styles all slots and links its error.
  */
 export const WithError: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-      <label style={{fontSize: "14px", fontWeight: 500}}>Enter verification code</label>
+    <Field data-invalid='true'>
+      <FieldLabel htmlFor='invalid-code'>Enter verification code</FieldLabel>
       <InputOTP
+        id='invalid-code'
+        aria-invalid='true'
+        aria-describedby='invalid-code-error'
         maxLength={6}
         pattern={REGEXP_ONLY_DIGITS}>
-        <InputOTPGroup>
-          <InputOTPSlot
-            index={0}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-          <InputOTPSlot
-            index={1}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-          <InputOTPSlot
-            index={2}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-        </InputOTPGroup>
-        <InputOTPSeparator />
-        <InputOTPGroup>
-          <InputOTPSlot
-            index={3}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-          <InputOTPSlot
-            index={4}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-          <InputOTPSlot
-            index={5}
-            style={{borderColor: "#ef4444", borderWidth: "2px"}}
-          />
-        </InputOTPGroup>
-      </InputOTP>
-      <p style={{fontSize: "12px", color: "#ef4444", display: "flex", alignItems: "center", gap: "4px"}}>
-        <svg
-          style={{width: "14px", height: "14px"}}
-          fill='none'
-          viewBox='0 0 24 24'
-          stroke='currentColor'>
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth={2}
-            d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-          />
-        </svg>
-        Invalid code. Please check and try again.
-      </p>
-    </div>
-  ),
-};
-
-/**
- * OTP input that auto-focuses the first slot on mount.
- */
-function AutoFocusDemo() {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  return (
-    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-      <label style={{fontSize: "14px", fontWeight: 500}}>Two-Factor Authentication</label>
-      <InputOTP
-        maxLength={6}
-        pattern={REGEXP_ONLY_DIGITS}
-        ref={inputRef as never}>
         <InputOTPGroup>
           <InputOTPSlot index={0} />
           <InputOTPSlot index={1} />
@@ -192,11 +150,112 @@ function AutoFocusDemo() {
           <InputOTPSlot index={5} />
         </InputOTPGroup>
       </InputOTP>
-      <p style={{fontSize: "12px", color: "#6b7280"}}>The first field is automatically focused when the component loads</p>
-    </div>
+      <FieldError id='invalid-code-error'>Invalid code. Please check and try again.</FieldError>
+    </Field>
+  ),
+};
+
+/**
+ * OTP input that auto-focuses the first slot on mount.
+ */
+function AutoFocusDemo(): JSX.Element {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <Field>
+      <FieldLabel htmlFor='autofocus-code'>Two-factor authentication code</FieldLabel>
+      <InputOTP
+        id='autofocus-code'
+        aria-describedby='autofocus-code-hint'
+        maxLength={6}
+        pattern={REGEXP_ONLY_DIGITS}
+        autoFocus
+        ref={inputRef}>
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+          <InputOTPSlot index={2} />
+        </InputOTPGroup>
+        <InputOTPSeparator />
+        <InputOTPGroup>
+          <InputOTPSlot index={3} />
+          <InputOTPSlot index={4} />
+          <InputOTPSlot index={5} />
+        </InputOTPGroup>
+      </InputOTP>
+      <FieldDescription id='autofocus-code-hint'>The backing input receives native autofocus.</FieldDescription>
+    </Field>
   );
 }
 
 export const AutoFocus: Story = {
   render: () => <AutoFocusDemo />,
+};
+
+function PasteDemo(): JSX.Element {
+  const [value, setValue] = useState("");
+  const [completed, setCompleted] = useState("");
+  return (
+    <Field>
+      <FieldLabel htmlFor='paste-code'>Paste a code such as 12-34</FieldLabel>
+      <InputOTP
+        id='paste-code'
+        maxLength={4}
+        pattern={REGEXP_ONLY_DIGITS}
+        value={value}
+        onChange={setValue}
+        onComplete={setCompleted}
+        pasteTransformer={(text) => text.replaceAll("-", "")}>
+        <InputOTPGroup>
+          {[0, 1, 2, 3].map((index) => (
+            <InputOTPSlot
+              key={index}
+              index={index}
+            />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+      <output aria-live='polite'>{completed ? `Completed: ${completed}` : "Waiting for four digits"}</output>
+    </Field>
+  );
+}
+
+export const ControlledPaste: Story = {render: () => <PasteDemo />};
+
+export const Disabled: Story = {
+  render: () => (
+    <InputOTP
+      maxLength={4}
+      aria-label='Disabled code'
+      disabled
+      value='1234'>
+      <InputOTPGroup>
+        {[0, 1, 2, 3].map((index) => (
+          <InputOTPSlot
+            key={index}
+            index={index}
+          />
+        ))}
+      </InputOTPGroup>
+    </InputOTP>
+  ),
+};
+
+export const Alphanumeric: Story = {
+  render: () => (
+    <InputOTP
+      maxLength={4}
+      aria-label='Alphanumeric code'
+      pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+      placeholder='AB12'>
+      <InputOTPGroup>
+        {[0, 1, 2, 3].map((index) => (
+          <InputOTPSlot
+            key={index}
+            index={index}
+          />
+        ))}
+      </InputOTPGroup>
+    </InputOTP>
+  ),
 };

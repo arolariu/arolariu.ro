@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable complexity, sonarjs/cognitive-complexity, react/no-object-type-as-default-prop, react/no-danger, react-dom/no-dangerously-set-innerhtml, unicorn/no-negated-condition */
+/* eslint-disable complexity, sonarjs/cognitive-complexity, unicorn/no-negated-condition */
 
 import * as React from "react";
 import type {
@@ -17,6 +17,8 @@ import {cn} from "@/lib/utilities";
 import styles from "./chart.module.css";
 
 const THEMES = {light: "", dark: ".dark"} as const;
+const INITIAL_DIMENSION = {width: 320, height: 200} as const;
+const HEX_COLOR_LENGTHS: ReadonlySet<number> = new Set([4, 5, 7, 9]);
 
 /**
  * Describes per-series chart metadata used by legend and tooltip renderers.
@@ -26,36 +28,46 @@ type ChartConfigItem = {
    * Label rendered by shared legends and tooltips for the series.
    * @default undefined
    */
-  label?: React.ReactNode;
+  readonly label?: React.ReactNode;
   /**
    * Optional icon rendered in legends and tooltips instead of the color swatch.
    * @default undefined
    */
-  icon?: React.ComponentType;
+  readonly icon?: React.ComponentType;
   /**
    * Unit suffix appended to rendered values when the payload does not provide one.
    * @default undefined
    */
-  unit?: string;
+  readonly unit?: string;
   /**
    * Shared numeric formatter used by helper content renderers when no Recharts tooltip formatter is supplied.
    * @default undefined
    */
-  formatter?: (value: number) => string;
+  readonly formatter?: (value: number) => string;
   /**
    * Recharts stack identifier that consuming chart primitives can read from config.
    * @default undefined
    */
-  stackId?: string;
+  readonly stackId?: string;
 };
 
-export type ChartConfig = Record<
-  string,
-  ChartConfigItem & ({color?: string; theme?: never} | {color?: never; theme: Record<keyof typeof THEMES, string>})
+/** Readonly series metadata; color and theme are mutually exclusive. */
+export type ChartConfig = Readonly<
+  Record<
+    string,
+    ChartConfigItem
+      & (
+        | {readonly color?: string; readonly theme?: never}
+        | {
+            readonly color?: never;
+            readonly theme: Readonly<Record<keyof typeof THEMES, string>>;
+          }
+      )
+  >
 >;
 
 interface ChartContextProps {
-  config: ChartConfig;
+  readonly config: ChartConfig;
 }
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
@@ -70,34 +82,34 @@ function useChart(): ChartContextProps {
   return context;
 }
 
-interface ChartContainerProps
+/** Native chart root props plus the actual Recharts responsive sizing contract. */
+export interface ChartContainerProps
   extends
-    Omit<React.ComponentProps<"div">, "children" | "className" | "id">,
+    Omit<React.ComponentPropsWithRef<"div">, "children" | "onResize">,
     Pick<
       ResponsiveContainerProps,
-      | "initialDimension"
-      | "aspect"
-      | "debounce"
-      | "minHeight"
-      | "minWidth"
-      | "maxHeight"
-      | "height"
-      | "width"
-      | "onResize"
-      | "children"
-      | "className"
-      | "id"
+      "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
     > {
   /**
-   * Series configuration used to resolve labels, icons, and colors.
-   * @default undefined
+   * Chart size used until the container is first measured (including server rendering).
+   * @default {width: 320, height: 200}
    */
-  config: ChartConfig;
+  readonly initialDimension?: ResponsiveContainerProps["initialDimension"];
+  /**
+   * Series configuration used to resolve labels, icons, and colors.
+   */
+  readonly config: ChartConfig;
+  /**
+   * Persistent equivalent text/table for the chart's information, not a tooltip.
+   * Supply this for meaningful charts; caller owns the localized caption and data.
+   * Rendered outside ResponsiveContainer so it remains available without SVG/hover.
+   */
+  readonly accessibleData?: React.ReactNode;
   /**
    * Inline styles applied to the inner `ResponsiveContainer`.
    * @default undefined
    */
-  innerResponsiveContainerStyle?: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["style"];
+  readonly innerResponsiveContainerStyle?: ResponsiveContainerProps["style"];
 }
 
 /**
@@ -107,6 +119,14 @@ interface ChartContainerProps
  * - Renders a wrapping `<div>` element
  * - Built on `recharts` `ResponsiveContainer`
  * - Injects CSS variables so legends and tooltips can share theme-aware colors
+ * - `ref`, `id`, `className`, and native attributes belong to the outer chart div.
+ *   The responsive implementation receives only sizing options and the existing
+ *   caller-owned `innerResponsiveContainerStyle` compatibility passthrough.
+ * - CSS scope preserves React's identifier identity, independently of native id.
+ *   When combining separate SSR roots in one document, callers must assign a
+ *   distinct React `identifierPrefix` to each server root and pass the same
+ *   prefix to that root's hydrateRoot. Uncoordinated server roots can share useId
+ *   values; this helper does not invent a global or random namespace for them.
  *
  * @example
  * ```tsx
@@ -117,62 +137,69 @@ interface ChartContainerProps
  *
  * @see {@link https://recharts.org/en-US/api/ResponsiveContainer | Recharts ResponsiveContainer Docs}
  */
-const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
-  (
-    {
-      id,
-      config,
-      initialDimension = {width: 320, height: 200},
-      className,
-      children,
-      innerResponsiveContainerStyle,
-      aspect,
-      debounce,
-      height,
-      maxHeight,
-      minHeight,
-      minWidth,
-      onResize,
-      width,
-      ...props
-    },
-    ref,
-  ) => {
-    const uniqueId = React.useId();
-    const chartId = `chart-${id ?? uniqueId.replaceAll(":", "")}`;
+function ChartContainer({
+  ref,
+  accessibleData,
+  id,
+  config,
+  initialDimension = INITIAL_DIMENSION,
+  className,
+  children,
+  innerResponsiveContainerStyle,
+  aspect,
+  debounce,
+  height,
+  maxHeight,
+  minHeight,
+  minWidth,
+  onResize,
+  width,
+  ...props
+}: Readonly<ChartContainerProps>): React.JSX.Element {
+  const uniqueId = React.useId();
+  const chartId = `chart-${encodeChartScope(uniqueId)}`;
+  const contextValue = React.useMemo<ChartContextProps>(() => ({config}), [config]);
 
-    return (
-      <ChartContext.Provider value={{config}}>
-        <div
-          data-slot='chart'
-          data-chart={chartId}
-          className={cn(styles.container, className)}
-          {...props}>
-          <ChartStyle
-            id={chartId}
-            config={config}
-          />
-          <RechartsPrimitive.ResponsiveContainer
-            ref={ref}
-            id={id}
-            className={className}
-            initialDimension={initialDimension}
-            aspect={aspect}
-            debounce={debounce}
-            height={height}
-            maxHeight={maxHeight}
-            minHeight={minHeight}
-            minWidth={minWidth}
-            onResize={onResize}
-            style={innerResponsiveContainerStyle}
-            width={width}>
-            {children}
-          </RechartsPrimitive.ResponsiveContainer>
-        </div>
-      </ChartContext.Provider>
-    );
-  },
-);
+  return (
+    <ChartContext.Provider value={contextValue}>
+      <div
+        ref={ref}
+        id={id}
+        role='group'
+        data-slot='chart'
+        data-chart={chartId}
+        className={cn(styles.container, className)}
+        {...props}>
+        <ChartStyle
+          id={chartId}
+          config={config}
+        />
+        <RechartsPrimitive.ResponsiveContainer
+          initialDimension={initialDimension}
+          aspect={aspect}
+          debounce={debounce}
+          height={height}
+          maxHeight={maxHeight}
+          minHeight={minHeight}
+          minWidth={minWidth}
+          onResize={onResize}
+          style={innerResponsiveContainerStyle}
+          width={width}>
+          {children}
+        </RechartsPrimitive.ResponsiveContainer>
+        {accessibleData}
+      </div>
+    </ChartContext.Provider>
+  );
+}
+
+/** Scope and palette inputs for the generated chart stylesheet. */
+export interface ChartStyleProps {
+  /** Exact data-chart scope to target; escaped before inclusion in CSS. */
+  readonly id: string;
+  /** Palette and metadata; unsafe palette entries are omitted independently. */
+  readonly config: ChartConfig;
+}
 
 /**
  * Emits theme-aware CSS variables for configured chart series colors.
@@ -180,6 +207,11 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
  * @remarks
  * - Renders a `<style>` element
  * - Built on the shared chart configuration contract
+ * - Series keys must be ASCII letters, digits, underscores or hyphens.
+ * - Colors accept hex/named colors and balanced CSS color/var functions, not
+ *   declaration delimiters, comments, URLs, escapes or HTML. Invalid entries
+ *   are omitted. Standard CSS whitespace is normalized to spaces. Selectors
+ *   are escaped and quoted; theme scope remains `.dark`.
  *
  * @example
  * ```tsx
@@ -188,34 +220,66 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
  *
  * @see {@link https://recharts.org | Recharts Docs}
  */
-const ChartStyle = ({id, config}: Readonly<{id: string; config: ChartConfig}>): React.JSX.Element | null => {
-  const colorConfig = Object.entries(config).filter(([, itemConfig]) => itemConfig.theme ?? itemConfig.color);
+const ChartStyle = ({id, config}: Readonly<ChartStyleProps>): React.JSX.Element | null => {
+  const rules = (["light", "dark"] as const)
+    .map((theme) => {
+      const declarations = Object.entries(config)
+        .map(([key, itemConfig]) => {
+          if (!/^[\w-]+$/u.test(key)) {
+            return null;
+          }
+          const color = getSafeChartColor(itemConfig.theme?.[theme] ?? itemConfig.color);
+          return color ? `  --color-${key}: ${color};` : null;
+        })
+        .filter((declaration) => declaration !== null);
+      return declarations.length ? `${THEMES[theme]} [data-chart="${escapeChartSelector(id)}"] {\n${declarations.join("\n")}\n}` : null;
+    })
+    .filter((rule) => rule !== null);
 
-  if (!colorConfig.length) {
+  if (!rules.length) {
     return null;
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ?? itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
-  })
-  .join("\n")}
-}
-`,
-          )
-          .join("\n"),
-      }}
-    />
-  );
+  return <style>{rules.join("\n")}</style>;
 };
+
+function encodeChartScope(id: string): string {
+  // Fixed-width UTF-16 encoding is injective, including literal escape-like prefixes.
+  let encoded = "";
+  for (let index = 0; index < id.length; index++) {
+    // eslint-disable-next-line unicorn/prefer-code-point -- Preserve every UTF-16 code unit, including lone surrogates.
+    encoded += id.charCodeAt(index).toString(16).padStart(4, "0");
+  }
+  return encoded;
+}
+
+function escapeChartSelector(id: string): string {
+  return id.replaceAll(/[^\w-]/gu, (character) => `\\${character.codePointAt(0)?.toString(16)} `);
+}
+
+function getSafeChartColor(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const color = value.replaceAll(/[\t\n\f\r ]+/gu, " ").trim();
+  if ((HEX_COLOR_LENGTHS.has(color.length) && /^#[\da-f]+$/iu.test(color)) || /^[a-z]+$/iu.test(color)) {
+    return color;
+  }
+  if (
+    !/^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix|light-dark|var)\(/iu.test(color)
+    || !/^[\w#%.,()+*/ -]+$/u.test(color)
+    || /\/\*|\*\/|\b(?:url|expression)\s*\(/iu.test(color)
+  ) {
+    return undefined;
+  }
+  let depth = 0;
+  for (const character of color) {
+    if (character === "(") depth++;
+    if (character === ")") depth--;
+    if (depth < 0) return undefined;
+  }
+  return depth === 0 && color.endsWith(")") ? color : undefined;
+}
 
 /**
  * Re-exports the Recharts tooltip primitive for use with shared chart helpers.
@@ -233,6 +297,28 @@ ${colorConfig
  */
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+/** Tooltip renderer props derived from Recharts 3 content and native div attributes. */
+export type ChartTooltipContentProps = Omit<
+  React.ComponentPropsWithoutRef<"div">,
+  keyof React.ComponentProps<typeof RechartsPrimitive.Tooltip> | keyof DefaultTooltipContentProps
+>
+  & Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, keyof DefaultTooltipContentProps>
+  & Omit<DefaultTooltipContentProps, "accessibilityLayer">
+  & Partial<Pick<RechartsPrimitive.TooltipContentProps, "coordinate" | "activeIndex" | "accessibilityLayer">> & {
+    /** React 19 ref to the tooltip div. */
+    readonly ref?: React.Ref<HTMLDivElement>;
+    /** Hides the heading, including a nested single-series heading. */
+    readonly hideLabel?: boolean;
+    /** Hides color swatches; explicit config icons remain available. */
+    readonly hideIndicator?: boolean;
+    /** Shape of the color swatch. @default "dot" */
+    readonly indicator?: "line" | "dot" | "dashed";
+    /** Direct or nested payload field identifying a config entry. */
+    readonly nameKey?: string;
+    /** Direct or nested payload field identifying the heading config entry. */
+    readonly labelKey?: string;
+  };
+
 /**
  * Renders shared tooltip content for charts configured with {@link ChartContainer}.
  *
@@ -241,8 +327,17 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
  * - Built on `recharts` tooltip payloads and shared chart config context
  * - Honors `active`, `payload`, `label`, `labelFormatter`, `formatter`, `separator`,
  *   `className`, `labelClassName`, `color`, `nameKey`, and `labelKey`
+ * - Name lookup prefers `nameKey`, then the series name. With no explicit
+ *   nameKey, an unmatched name falls back to dataKey config metadata.
+ * - The explicit formatter precedes a payload formatter, receives the full
+ *   payload array, and can return a row node, a value/name tuple or null to hide
+ *   a row. Config formatters/units apply when no row formatter supplies a value.
+ * - Native DOM attributes and the ref target the tooltip div.
+ * - Instantiate configured content as `content={<ChartTooltipContent />}` or
+ *   `content={(props) => <ChartTooltipContent {...props} />}`.
  * - Ignores `wrapperClassName`, `contentStyle`, `itemStyle`, `labelStyle`, and
- *   `accessibilityLayer` because this helper renders its own DOM structure
+ *   primitive positioning/animation/sorting props because this helper renders
+ *   its own DOM structure. Accessibility-layer content uses a live status.
  *
  * @example
  * ```tsx
@@ -252,6 +347,7 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
  * @see {@link https://recharts.org/en-US/api/Tooltip | Recharts Tooltip Docs}
  */
 function ChartTooltipContent({
+  ref,
   active,
   payload,
   className,
@@ -266,14 +362,36 @@ function ChartTooltipContent({
   nameKey,
   labelKey,
   separator,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip>
-  & React.ComponentProps<"div"> & {
-    hideLabel?: boolean;
-    hideIndicator?: boolean;
-    indicator?: "line" | "dot" | "dashed";
-    nameKey?: string;
-    labelKey?: string;
-  } & Omit<DefaultTooltipContentProps, "accessibilityLayer">): React.JSX.Element | null {
+  accessibilityLayer,
+  children: _children,
+  wrapperClassName: _wrapperClassName,
+  contentStyle: _contentStyle,
+  itemStyle: _itemStyle,
+  labelStyle: _labelStyle,
+  itemSorter: _itemSorter,
+  allowEscapeViewBox: _allowEscapeViewBox,
+  animationDuration: _animationDuration,
+  animationEasing: _animationEasing,
+  axisId: _axisId,
+  content: _content,
+  cursor: _cursor,
+  defaultIndex: _defaultIndex,
+  filterNull: _filterNull,
+  includeHidden: _includeHidden,
+  isAnimationActive: _isAnimationActive,
+  offset: _offset,
+  payloadUniqBy: _payloadUniqBy,
+  portal: _portal,
+  position: _position,
+  reverseDirection: _reverseDirection,
+  shared: _shared,
+  trigger: _trigger,
+  useTranslate3d: _useTranslate3d,
+  wrapperStyle: _wrapperStyle,
+  coordinate: _coordinate,
+  activeIndex: _activeIndex,
+  ...props
+}: Readonly<ChartTooltipContentProps>): React.JSX.Element | null {
   const {config} = useChart();
 
   const tooltipLabel = React.useMemo(() => {
@@ -281,10 +399,16 @@ function ChartTooltipContent({
       return null;
     }
 
-    const [item] = payload;
+    const item = payload.find((entry) => entry.type !== "none");
+    if (!item) return null;
     const key = `${labelKey ?? item?.dataKey ?? item?.name ?? "value"}`;
     const itemConfig = getPayloadConfigFromPayload(config, item, key);
-    const value = !labelKey && typeof label === "string" ? (config[label]?.label ?? label) : itemConfig?.label;
+    const value =
+      !labelKey && (typeof label === "string" || typeof label === "number")
+        ? typeof label === "string"
+          ? (getConfigItem(config, label)?.label ?? label)
+          : label
+        : itemConfig?.label;
 
     if (labelFormatter) {
       return <div className={cn(styles.tooltipLabel, labelClassName)}>{labelFormatter(value, payload)}</div>;
@@ -297,80 +421,99 @@ function ChartTooltipContent({
     return <div className={cn(styles.tooltipLabel, labelClassName)}>{value}</div>;
   }, [config, hideLabel, label, labelClassName, labelFormatter, labelKey, payload]);
 
-  if (!active || !payload?.length) {
+  const visiblePayload = payload?.filter((item) => item.type !== "none");
+  if (!active || !payload?.length || !visiblePayload?.length) {
     return null;
   }
 
-  const nestLabel = payload.length === 1 && indicator !== "dot";
+  const nestLabel = visiblePayload.length === 1 && indicator !== "dot";
 
   return (
-    <div className={cn(styles.tooltip, className)}>
+    <div
+      ref={ref}
+      data-slot='chart-tooltip'
+      role={props.role ?? (accessibilityLayer ? "status" : undefined)}
+      aria-live={props["aria-live"] ?? (accessibilityLayer ? "polite" : undefined)}
+      className={cn(styles.tooltip, className)}
+      {...props}>
       {!nestLabel ? tooltipLabel : null}
       <div className={styles.tooltipBody}>
-        {payload
-          .filter((item) => item.type !== "none")
-          .map((item, index) => {
-            const key = `${nameKey ?? item.dataKey ?? item.name ?? "value"}`;
-            const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color ?? item.payload?.fill ?? item.color ?? "transparent";
-            const indicatorStyle = {
-              "--ac-chart-indicator-background": indicatorColor,
-              "--ac-chart-indicator-border": indicatorColor,
-            } as React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string>;
+        {visiblePayload.map((item, index) => {
+          const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
+          const itemConfig =
+            getPayloadConfigFromPayload(config, item, key)
+            ?? (!nameKey ? getPayloadConfigFromPayload(config, item, `${item.dataKey ?? "value"}`) : undefined);
+          const indicatorColor =
+            getSafeChartColor(color)
+            ?? getSafeChartColor(getRecordValue(item.payload, "fill"))
+            ?? getSafeChartColor(item.color)
+            ?? "transparent";
+          // D4: runtime palette only; all indicator presentation lives in CSS.
+          const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string> = {
+            "--ac-chart-indicator-background": indicatorColor,
+            "--ac-chart-indicator-border": indicatorColor,
+          };
 
-            const itemFormatter = formatter ?? item.formatter;
-            const hasFormatter = typeof itemFormatter === "function" && item.value !== undefined && item.name !== undefined;
-            const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
-            const formattedEntry = Array.isArray(formatterResult) && formatterResult.length === 2 ? formatterResult : undefined;
-            const resolvedName = formattedEntry?.[1] ?? itemConfig?.label ?? item.name;
-            const resolvedUnit = item.unit ?? itemConfig?.unit;
-            const resolvedValue =
-              formattedEntry?.[0] ?? (item.value !== null && item.value !== undefined ? formatChartValue(item.value, itemConfig) : null);
+          const itemFormatter = formatter ?? item.formatter;
+          const hasFormatter = typeof itemFormatter === "function";
+          const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
+          if (hasFormatter && (formatterResult === null || formatterResult === undefined)) return null;
+          const formattedEntry = isFormatterTuple(formatterResult) ? formatterResult : undefined;
+          const resolvedName = formattedEntry ? formattedEntry[1] : (itemConfig?.label ?? item.name);
+          const resolvedUnit = item.unit ?? itemConfig?.unit;
+          const resolvedValue = formattedEntry
+            ? formattedEntry[0]
+            : item.value !== null && item.value !== undefined
+              ? formatChartValue(item.value, itemConfig)
+              : null;
 
-            return (
-              <div
-                key={`${key}-${index}`}
-                className={cn(styles.tooltipItem, indicator === "dot" && styles.tooltipItemCenter)}>
-                {formatterResult !== null && formatterResult !== undefined && !formattedEntry ? (
-                  formatterResult
-                ) : (
-                  <>
-                    {itemConfig?.icon ? (
-                      <itemConfig.icon />
-                    ) : (
-                      !hideIndicator && (
-                        <div
-                          className={cn(
-                            styles.tooltipIndicator,
-                            indicator === "dot" && styles.tooltipIndicatorDot,
-                            indicator === "line" && styles.tooltipIndicatorLine,
-                            indicator === "dashed" && styles.tooltipIndicatorDashed,
-                            nestLabel && indicator === "dashed" && styles.tooltipIndicatorDashedNested,
-                          )}
-                          style={indicatorStyle}
-                        />
-                      )
-                    )}
-                    <div className={cn(styles.tooltipValueRow, nestLabel && styles.tooltipValueRowNested)}>
-                      <div className={styles.tooltipNameWrapper}>
-                        {nestLabel ? tooltipLabel : null}
-                        {resolvedName !== null && resolvedName !== undefined && <span className={styles.tooltipName}>{resolvedName}</span>}
-                      </div>
-                      {resolvedValue !== null && resolvedValue !== undefined && (
-                        <span className={styles.tooltipValue}>
-                          {resolvedName !== null && resolvedName !== undefined && separator ? (
-                            <span aria-hidden='true'>{separator}</span>
-                          ) : null}
-                          {resolvedValue}
-                          {resolvedUnit !== null && resolvedUnit !== undefined ? <span> {resolvedUnit}</span> : null}
-                        </span>
-                      )}
+          return (
+            <div
+              key={`${key}-${index}`}
+              data-slot='chart-tooltip-item'
+              className={cn(styles.tooltipItem, indicator === "dot" && styles.tooltipItemCenter)}>
+              {formatterResult !== null && formatterResult !== undefined && !formattedEntry ? (
+                formatterResult
+              ) : (
+                <>
+                  {itemConfig?.icon ? (
+                    <itemConfig.icon />
+                  ) : (
+                    !hideIndicator && (
+                      <div
+                        data-slot='chart-tooltip-indicator'
+                        data-indicator={indicator}
+                        className={cn(
+                          styles.tooltipIndicator,
+                          indicator === "dot" && styles.tooltipIndicatorDot,
+                          indicator === "line" && styles.tooltipIndicatorLine,
+                          indicator === "dashed" && styles.tooltipIndicatorDashed,
+                          nestLabel && indicator === "dashed" && styles.tooltipIndicatorDashedNested,
+                        )}
+                        style={indicatorStyle}
+                      />
+                    )
+                  )}
+                  <div className={cn(styles.tooltipValueRow, nestLabel && styles.tooltipValueRowNested)}>
+                    <div className={styles.tooltipNameWrapper}>
+                      {nestLabel ? tooltipLabel : null}
+                      {resolvedName !== null && resolvedName !== undefined && <span className={styles.tooltipName}>{resolvedName}</span>}
                     </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+                    {resolvedValue !== null && resolvedValue !== undefined && (
+                      <span className={styles.tooltipValue}>
+                        {resolvedName !== null && resolvedName !== undefined && separator ? (
+                          <span aria-hidden='true'>{separator}</span>
+                        ) : null}
+                        {resolvedValue}
+                        {resolvedUnit !== null && resolvedUnit !== undefined ? <span> {resolvedUnit}</span> : null}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -392,6 +535,68 @@ function ChartTooltipContent({
  */
 const ChartLegend = RechartsPrimitive.Legend;
 
+type LegendItemEventKey = Extract<keyof DefaultLegendContentProps, `on${string}`>;
+type LegendRootAttributes = Omit<React.ComponentPropsWithRef<"div">, `on${string}`>;
+
+/** Recharts item-event signatures, native non-event div attributes and config lookup options. */
+export type ChartLegendContentProps = LegendRootAttributes
+  & Omit<DefaultLegendContentProps, keyof React.ComponentPropsWithoutRef<"div"> | "layout" | "align" | "verticalAlign" | LegendItemEventKey>
+  & Pick<DefaultLegendContentProps, "onClick" | "onMouseEnter" | "onMouseLeave">
+  & Pick<
+    RechartsPrimitive.LegendProps,
+    | "layout"
+    | "content"
+    | "wrapperStyle"
+    | "width"
+    | "height"
+    | "payloadUniqBy"
+    | "onBBoxUpdate"
+    | "portal"
+    | "itemSorter"
+    | "position"
+    | "offset"
+  > & {
+    /** Replaces a configured icon with its series swatch. */
+    readonly hideIcon?: boolean;
+    /** Direct or nested payload field identifying a config entry. */
+    readonly nameKey?: string;
+    /**
+     * Caller-owned text appended to series the SDK reports as inactive (hidden).
+     * It is visible and, for clickable items, part of the button's accessible name.
+     * Pass localized text, or `""`/`null` to suppress it.
+     *
+     * @default " (hidden)"
+     */
+    readonly inactiveSuffix?: React.ReactNode;
+    /** Content spacing only; outer legend positioning remains primitive-owned. @default "bottom" */
+    readonly verticalAlign?: "top" | "bottom" | "middle";
+  };
+
+// Recharts clones content with engine-owned fields beyond its declared public
+// props. Strip their keys without depending on deprecated SDK field declarations.
+const legendEngineFields: ReadonlySet<string> = new Set([
+  "align",
+  "layout",
+  "iconSize",
+  "iconType",
+  "inactiveColor",
+  "labelStyle",
+  "children",
+  "content",
+  "wrapperStyle",
+  "width",
+  "height",
+  "payloadUniqBy",
+  "onBBoxUpdate",
+  "portal",
+  "itemSorter",
+  "position",
+  "offset",
+  "chartWidth",
+  "chartHeight",
+  "margin",
+]);
+
 /**
  * Renders shared legend content for charts configured with {@link ChartContainer}.
  *
@@ -399,74 +604,139 @@ const ChartLegend = RechartsPrimitive.Legend;
  * - Renders a `<div>` element when legend payload exists
  * - Built on `recharts` legend payloads and shared chart config context
  * - Honors `payload`, `verticalAlign`, `className`, and the custom `hideIcon`
- *   and `nameKey` props
+ *   and `nameKey` props, formatters, native non-event attributes and DOM refs.
+ * - Only `onClick`, `onMouseEnter` and `onMouseLeave` are invoked per item with
+ *   Recharts' entry/index/event arguments. Engine-injected legacy fields
+ *   are consumed without leaking to the DOM. Attach native handlers to a parent
+ *   element or ChartContainer instead.
+ * - Items with an onClick handler use native, non-submit buttons for keyboard
+ *   activation. Other items remain display-only divs.
+ * - SDK-inactive series append `inactiveSuffix` (English `" (hidden)"` by
+ *   default), which is visible and announced as part of a clickable item's
+ *   name. Pass localized text, or `""`/`null` to suppress it.
+ *   Click handlers are not assumed to toggle visibility.
+ * - Migrate `content={ChartLegendContent}` to `content={<ChartLegendContent />}`
+ *   or `content={(props) => <ChartLegendContent {...props} />}`.
+ * - Text falls back from config label to payload value to a string/number dataKey.
+ * - `middle` uses the same content spacing as `bottom`; positioning remains
+ *   owned by the Recharts Legend primitive.
  * - Ignores Recharts presentational props such as `align`, `layout`, `iconSize`,
- *   `iconType`, `formatter`, and item mouse handlers because it renders custom markup
+ *   `iconType` and `labelStyle` because it renders custom CSS Module markup.
+ *   Container sizing, positioning, sorting and portal props remain owned by
+ *   ChartLegend and are not forwarded to the content DOM.
  *
  * @example
  * ```tsx
  * <ChartLegend content={<ChartLegendContent />} />
+ * <ChartLegend content={<ChartLegendContent inactiveSuffix=' (masquée)' />} onClick={toggleSeries} />
  * ```
  *
  * @see {@link https://recharts.org/en-US/api/Legend | Recharts Legend Docs}
  */
-function ChartLegendContent({
-  className,
-  hideIcon = false,
-  nameKey,
-  payload,
-  verticalAlign,
-}: React.ComponentProps<"div">
-  & Omit<RechartsPrimitive.DefaultLegendContentProps, "verticalAlign"> & {
-    hideIcon?: boolean;
-    nameKey?: string;
-    /**
-     * Controls content spacing independently of Recharts' deprecated legend container positioning prop.
-     * @default undefined
-     */
-    verticalAlign?: "top" | "bottom" | "middle";
-  }): React.JSX.Element | null {
+function ChartLegendContent(publicProps: Readonly<ChartLegendContentProps>): React.JSX.Element | null {
+  const {
+    ref,
+    className,
+    hideIcon = false,
+    nameKey,
+    inactiveSuffix = " (hidden)",
+    payload,
+    verticalAlign = "bottom",
+    formatter,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    ...props
+  } = publicProps;
   const {config} = useChart();
 
-  if (!payload?.length) {
+  if (!payload?.some((item) => item.type !== "none")) {
     return null;
   }
 
   return (
-    <div className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}>
-      {payload
-        .filter((item) => item.type !== "none")
-        .map((item) => {
-          const key = `${nameKey ?? item.dataKey ?? "value"}`;
-          const itemConfig = getPayloadConfigFromPayload(config, item, key);
+    <div
+      ref={ref}
+      data-slot='chart-legend'
+      className={cn(styles.legend, verticalAlign === "top" ? styles.legendTop : styles.legendBottom, className)}
+      {...getLegendRootAttributes(props)}>
+      {payload.map((item, index) => {
+        if (item.type === "none") return null;
+        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const itemConfig = getPayloadConfigFromPayload(config, item, key);
+        const value = itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey);
+        const itemFormatter = item.formatter ?? formatter;
+        // D4: series color only, not inline authored presentation.
+        const indicatorStyle: React.CSSProperties & Record<"--ac-chart-indicator-background", string> = {
+          "--ac-chart-indicator-background": getSafeChartColor(item.color) ?? "transparent",
+        };
 
-          return (
-            <div
-              key={String(item.value)}
-              className={styles.legendItem}>
-              {itemConfig?.icon && !hideIcon ? (
-                <itemConfig.icon />
-              ) : (
-                <div
-                  className={styles.legendColor}
-                  style={{backgroundColor: item.color}}
-                />
-              )}
-              {itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey)}
-            </div>
-          );
-        })}
+        const mouseHandlers: Pick<React.HTMLAttributes<HTMLElement>, "onMouseEnter" | "onMouseLeave"> = {
+          onMouseEnter: onMouseEnter ? (event) => onMouseEnter(item, index, event) : undefined,
+          onMouseLeave: onMouseLeave ? (event) => onMouseLeave(item, index, event) : undefined,
+        };
+        const content = (
+          <>
+            {itemConfig?.icon && !hideIcon ? (
+              <itemConfig.icon />
+            ) : (
+              <div
+                data-slot='chart-legend-indicator'
+                className={styles.legendColor}
+                style={indicatorStyle}
+              />
+            )}
+            {itemFormatter ? itemFormatter(value, item, index) : value}
+            {item.inactive ? inactiveSuffix : null}
+          </>
+        );
+
+        return onClick ? (
+          <button
+            key={`${key}-${index}`}
+            type='button'
+            data-slot='chart-legend-item'
+            onClick={(event) => onClick(item, index, event)}
+            className={cn(styles.legendItem, styles.legendButton)}
+            {...mouseHandlers}>
+            {content}
+          </button>
+        ) : (
+          <div
+            key={`${key}-${index}`}
+            data-slot='chart-legend-item'
+            className={styles.legendItem}
+            {...mouseHandlers}>
+            {content}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// eslint-disable-next-line sonarjs/function-return-type
-function formatChartValue(value: TooltipValueType, itemConfig: ChartConfig[string] | undefined): React.ReactNode {
+function getLegendRootAttributes(
+  props: Readonly<LegendRootAttributes & Pick<DefaultLegendContentProps, LegendItemEventKey>>,
+): LegendRootAttributes {
+  const attributes = {...props};
+  for (const key of Object.keys(attributes)) {
+    if (key.startsWith("on") || legendEngineFields.has(key)) {
+      Reflect.deleteProperty(attributes, key);
+    }
+  }
+  return attributes;
+}
+
+function isFormatterTuple(value: React.ReactNode): value is readonly [React.ReactNode, React.ReactNode] {
+  return Array.isArray(value) && value.length === 2;
+}
+
+function formatChartValue(value: TooltipValueType, itemConfig: ChartConfig[string] | undefined): string {
   if (typeof value === "number") {
     return itemConfig?.formatter ? itemConfig.formatter(value) : value.toLocaleString();
   }
 
-  return String(value);
+  return typeof value === "string" ? value : value.map((entry) => formatChartValue(entry, itemConfig)).join(" ~ ");
 }
 
 // eslint-disable-next-line sonarjs/function-return-type
@@ -479,68 +749,67 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
     return undefined;
   }
 
-  const payloadObject = payload as Record<string, unknown>;
-  const nestedPayload =
-    typeof payloadObject["payload"] === "object" && payloadObject["payload"] !== null
-      ? (payloadObject["payload"] as Record<string, unknown>)
-      : undefined;
+  const directKey = getRecordValue(payload, key);
+  const nestedKey = getRecordValue(getRecordValue(payload, "payload"), key);
+  const configLabelKey = typeof directKey === "string" ? directKey : typeof nestedKey === "string" ? nestedKey : key;
+  return getConfigItem(config, configLabelKey) ?? getConfigItem(config, key);
+}
 
-  let configLabelKey = key;
+function getRecordValue(value: unknown, key: string): unknown {
+  return isRecord(value) && Object.hasOwn(value, key) ? value[key] : undefined;
+}
 
-  if (typeof payloadObject[key] === "string") {
-    configLabelKey = payloadObject[key] as string;
-  } else if (nestedPayload && typeof nestedPayload[key] === "string") {
-    configLabelKey = nestedPayload[key] as string;
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-  return config[configLabelKey] ?? config[key];
+function getConfigItem(config: ChartConfig, key: string): ChartConfig[string] | undefined {
+  return Object.hasOwn(config, key) ? config[key] : undefined;
 }
 
 ChartContainer.displayName = "ChartContainer";
 ChartStyle.displayName = "ChartStyle";
-Object.assign(ChartTooltip, {displayName: "ChartTooltip"});
 ChartTooltipContent.displayName = "ChartTooltipContent";
-Object.assign(ChartLegend, {displayName: "ChartLegend"});
 ChartLegendContent.displayName = "ChartLegendContent";
 
 export {ChartContainer, ChartLegend, ChartLegendContent, ChartStyle, ChartTooltip, ChartTooltipContent};
 
 // ---------------------------------------------------------------------------
-// Recharts v3.8+ primitive re-exports
+// Recharts primitive re-exports (identity and typing remain dependency-owned)
 // Consumers should import chart primitives from "@arolariu/components/chart"
 // instead of importing directly from "recharts".
 // ---------------------------------------------------------------------------
 
 // -- Chart containers -------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/AreaChart | AreaChart API} */
+/** Cartesian chart container for area series. @see {@link https://recharts.github.io/en-US/api/AreaChart | AreaChart API} */
 export const {AreaChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/BarChart | BarChart API} */
+/** Cartesian chart container for bar series. @see {@link https://recharts.github.io/en-US/api/BarChart | BarChart API} */
 export const {BarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ComposedChart | ComposedChart API} */
+/** Cartesian chart container that mixes area, bar, line and scatter series. @see {@link https://recharts.github.io/en-US/api/ComposedChart | ComposedChart API} */
 export const {ComposedChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/FunnelChart | FunnelChart API} */
+/** Chart container for funnel series. @see {@link https://recharts.github.io/en-US/api/FunnelChart | FunnelChart API} */
 export const {FunnelChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/LineChart | LineChart API} */
+/** Cartesian chart container for line series. @see {@link https://recharts.github.io/en-US/api/LineChart | LineChart API} */
 export const {LineChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PieChart | PieChart API} */
+/** Polar chart container for pie series. @see {@link https://recharts.github.io/en-US/api/PieChart | PieChart API} */
 export const {PieChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadarChart | RadarChart API} */
+/** Polar chart container for radar series. @see {@link https://recharts.github.io/en-US/api/RadarChart | RadarChart API} */
 export const {RadarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadialBarChart | RadialBarChart API} */
+/** Polar chart container for radial bar series. @see {@link https://recharts.github.io/en-US/api/RadialBarChart | RadialBarChart API} */
 export const {RadialBarChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ScatterChart | ScatterChart API} */
+/** Cartesian chart container for scatter series. @see {@link https://recharts.github.io/en-US/api/ScatterChart | ScatterChart API} */
 export const {ScatterChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Sankey | Sankey API} */
+/** Flow diagram whose link widths are proportional to their values. @see {@link https://recharts.github.io/en-US/api/Sankey | Sankey API} */
 export const {Sankey} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/SunburstChart | SunburstChart API} */
+/** Hierarchical chart rendered as concentric rings. @see {@link https://recharts.github.io/en-US/api/SunburstChart | SunburstChart API} */
 export const {SunburstChart} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Treemap | Treemap API} */
+/** Hierarchical chart rendered as nested rectangles sized by value. @see {@link https://recharts.github.io/en-US/api/Treemap | Treemap API} */
 export const {Treemap} = RechartsPrimitive;
 
 // -- Series elements --------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/Area | Area API} */
+/** Area series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Area | Area API} */
 export const {Area} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Bar | Bar API} */
+/** Bar series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Bar | Bar API} */
 export const {Bar} = RechartsPrimitive;
 /**
  * Groups stacked bars and configures shared stack properties such as radius.
@@ -548,49 +817,49 @@ export const {Bar} = RechartsPrimitive;
  * @see {@link https://recharts.github.io/en-US/guide/roundedBars | BarStack Guide}
  */
 export const {BarStack} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Funnel | Funnel API} */
+/** Funnel series for a funnel chart. @see {@link https://recharts.github.io/en-US/api/Funnel | Funnel API} */
 export const {Funnel} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Line | Line API} */
+/** Line series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Line | Line API} */
 export const {Line} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Pie | Pie API} */
+/** Pie or donut series for a pie chart. @see {@link https://recharts.github.io/en-US/api/Pie | Pie API} */
 export const {Pie} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Radar | Radar API} */
+/** Radar polygon series for a radar chart. @see {@link https://recharts.github.io/en-US/api/Radar | Radar API} */
 export const {Radar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/RadialBar | RadialBar API} */
+/** Radial bar series for a radial bar chart. @see {@link https://recharts.github.io/en-US/api/RadialBar | RadialBar API} */
 export const {RadialBar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Scatter | Scatter API} */
+/** Scatter (point) series for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/Scatter | Scatter API} */
 export const {Scatter} = RechartsPrimitive;
 
 // -- Axis & grid ------------------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/CartesianGrid | CartesianGrid API} */
+/** Background grid lines for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/CartesianGrid | CartesianGrid API} */
 export const {CartesianGrid} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarAngleAxis | PolarAngleAxis API} */
+/** Angle (circumferential) axis for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarAngleAxis | PolarAngleAxis API} */
 export const {PolarAngleAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarGrid | PolarGrid API} */
+/** Background grid for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarGrid | PolarGrid API} */
 export const {PolarGrid} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/PolarRadiusAxis | PolarRadiusAxis API} */
+/** Radius axis for a polar chart. @see {@link https://recharts.github.io/en-US/api/PolarRadiusAxis | PolarRadiusAxis API} */
 export const {PolarRadiusAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/XAxis | XAxis API} – supports `type: "auto"` since v3.7. */
+/** Horizontal axis for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/XAxis | XAxis API} – supports `type: "auto"` since v3.7. */
 export const {XAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/YAxis | YAxis API} – supports `type: "auto"` since v3.7. */
+/** Vertical axis for a Cartesian chart. @see {@link https://recharts.github.io/en-US/api/YAxis | YAxis API} – supports `type: "auto"` since v3.7. */
 export const {YAxis} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ZAxis | ZAxis API} */
+/** Size dimension for scatter points; renders nothing itself. @see {@link https://recharts.github.io/en-US/api/ZAxis | ZAxis API} */
 export const {ZAxis} = RechartsPrimitive;
 
 // -- Annotations & overlays ------------------------------------------------
-/** @see {@link https://recharts.github.io/en-US/api/Brush | Brush API} */
+/** Range selector that zooms a Cartesian chart to a slice of its data. @see {@link https://recharts.github.io/en-US/api/Brush | Brush API} */
 export const {Brush} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ErrorBar | ErrorBar API} */
+/** Error bars for a bar, line, area or scatter series. @see {@link https://recharts.github.io/en-US/api/ErrorBar | ErrorBar API} */
 export const {ErrorBar} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Label | Label API} */
+/** Text label for a chart element (Recharts `Label`, renamed to avoid name collisions). @see {@link https://recharts.github.io/en-US/api/Label | Label API} */
 export const {Label: RechartsLabel} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/LabelList | LabelList API} */
+/** Value labels for every data point of a series. @see {@link https://recharts.github.io/en-US/api/LabelList | LabelList API} */
 export const {LabelList} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceArea | ReferenceArea API} */
+/** Highlighted rectangular region between axis values. @see {@link https://recharts.github.io/en-US/api/ReferenceArea | ReferenceArea API} */
 export const {ReferenceArea} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceDot | ReferenceDot API} */
+/** Marker at a fixed data coordinate. @see {@link https://recharts.github.io/en-US/api/ReferenceDot | ReferenceDot API} */
 export const {ReferenceDot} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/ReferenceLine | ReferenceLine API} */
+/** Horizontal or vertical line at an axis value. @see {@link https://recharts.github.io/en-US/api/ReferenceLine | ReferenceLine API} */
 export const {ReferenceLine} = RechartsPrimitive;
 
 // -- Layout -----------------------------------------------------------------
@@ -600,27 +869,29 @@ export const {ReferenceLine} = RechartsPrimitive;
  * @see {@link https://recharts.github.io/en-US/api/ResponsiveContainer | ResponsiveContainer API}
  */
 export const {ResponsiveContainer} = RechartsPrimitive;
-/** @see {@link https://recharts.github.io/en-US/api/Customized | Customized API} */
+/** Renders a custom component with access to the chart's internal state. @see {@link https://recharts.github.io/en-US/api/Customized | Customized API} */
 export const {Customized} = RechartsPrimitive;
 
 // -- Shapes -----------------------------------------------------------------
-/**
- * @deprecated Since recharts 3.7. Use the `shape` prop on chart series elements instead.
- * @see {@link https://recharts.github.io/en-US/api/Cell | Cell API}
- */
-// eslint-disable-next-line sonarjs/deprecation
-export const {Cell} = RechartsPrimitive;
+/** SVG crosshair shape primitive. */
 export const {Cross} = RechartsPrimitive;
+/** SVG curve (path through points) shape primitive. */
 export const {Curve} = RechartsPrimitive;
+/** SVG circle shape primitive. */
 export const {Dot} = RechartsPrimitive;
+/** SVG polygon shape primitive. */
 export const {Polygon} = RechartsPrimitive;
+/** SVG rectangle shape primitive with optional rounded corners. */
 export const {Rectangle} = RechartsPrimitive;
+/** SVG annular-sector shape primitive. */
 export const {Sector} = RechartsPrimitive;
+/** SVG symbol (circle, cross, diamond, star, …) shape primitive. */
 export const {Symbols} = RechartsPrimitive;
+/** SVG trapezoid shape primitive. */
 export const {Trapezoid} = RechartsPrimitive;
 
 // -- Z-index (v3.4+) -------------------------------------------------------
-/** @since recharts 3.4 @see {@link https://recharts.github.io/en-US/guide/zIndex | Z-Index Guide} */
+/** Renders its children in a chosen z-index layer of the chart. @since recharts 3.4 @see {@link https://recharts.github.io/en-US/guide/zIndex | Z-Index Guide} */
 export const {ZIndexLayer} = RechartsPrimitive;
 /** Default z-index ordering constants. @since recharts 3.4 */
 export const {DefaultZIndexes} = RechartsPrimitive;

@@ -19,6 +19,19 @@ function plan(
 }
 
 describe("dependency-aware hygiene planning", () => {
+  it.each([
+    ["sites/arolariu.ro/tsconfig.json", ["tooling", "website"]],
+    ["sites/arolariu.ro/package.json", ["tooling", "website"]],
+    ["packages/components/postcss.config.ts", ["tooling", "website", "components"]],
+    ["packages/components/package.json", ["tooling", "website", "components"]],
+  ] as const)("runs repository contract guards when %s changes", (path, suites) => {
+    const result = plan([{kind: "modified", path}]);
+
+    expect(result.mode).toBe("affected");
+    expect(result.suites).toEqual(suites);
+    expect(result.providers.filter((provider) => provider.setup.dotnet || provider.setup.python)).toEqual([]);
+  });
+
   it("uses graph roots and reverse dependencies rather than guessed project names", () => {
     const result = plan([{kind: "modified", path: "packages/components/src/Button.tsx"}]);
     expect(result.suites).toEqual(expect.arrayContaining(["components", "website"]));
@@ -28,9 +41,31 @@ describe("dependency-aware hygiene planning", () => {
   });
   it("keeps website-only work away from unrelated toolchains", () => {
     const result = plan([{kind: "modified", path: "sites/arolariu.ro/src/page.tsx"}]);
-    expect(result.suites).toEqual(["website"]);
+    expect(result.suites).toEqual(["tooling", "website"]);
     expect(result.providers.filter((provider) => provider.setup.dotnet || provider.setup.python)).toEqual([]);
     expect(toProviderMatrix(result).provider).toHaveLength(6);
+  });
+  it("owns the docs test target without broadening scope or preparing reference toolchains", () => {
+    const graph = workspace();
+    if (graph.kind !== "available") throw new Error("Invalid fixture");
+    const result = plan([{kind: "modified", path: "sites/docs.arolariu.ro/src/lib/siteMode.ts"}], {
+      workspace: {
+        ...graph,
+        value: {
+          ...graph.value,
+          projects: [...graph.value.projects, {name: "canonical-docs", root: "sites/docs.arolariu.ro", targets: ["test"]}],
+        },
+      },
+    });
+
+    expect(result.mode).toBe("affected");
+    expect(result.suites).toEqual(["tooling", "docs"]);
+    expect(result.affectedProjects).toEqual(["canonical-docs"]);
+    expect(result.providers.find((provider) => provider.id === "test-typescript")).toMatchObject({
+      selected: true,
+      setup: {rootNodeDependencies: true, dotnet: false, python: false, buildComponents: false, generateArtifacts: false},
+    });
+    expect(decodeHygienePlan(JSON.parse(JSON.stringify(result)))).toEqual(result);
   });
   it("retains both rename owners and deleted ownership without formatting deleted files", () => {
     const result = plan([
@@ -41,7 +76,7 @@ describe("dependency-aware hygiene planning", () => {
     expect(result.providers.find((provider) => provider.id === "test-dotnet")?.selected).toBe(true);
     const deleted = plan([{kind: "deleted", path: "sites/arolariu.ro/old.ts"}]);
     expect(deleted.providers.find((provider) => provider.id === "format")?.selected).toBe(false);
-    expect(deleted.suites).toEqual(["website"]);
+    expect(deleted.suites).toEqual(["tooling", "website"]);
   });
   it("keeps CI scripts and root tooling as explicit suites", () => {
     expect(plan([{kind: "modified", path: ".github/scripts/helpers/core.ts"}]).suites).toEqual(
@@ -69,7 +104,7 @@ describe("dependency-aware hygiene planning", () => {
     const result = plan([{kind: "modified", path: "sites/arolariu.ro/page.tsx"}], extra);
     expect(result.mode).toBe("full");
     expect(result.providers.every((provider) => provider.selected)).toBe(true);
-    expect(result.suites).toHaveLength(6);
+    expect(result.suites).toHaveLength(7);
     expect(result.diagnostics.length).toBeGreaterThan(0);
   });
   it("respects shared-input globs from Nx and does not broaden docs-only changes", () => {

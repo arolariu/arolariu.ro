@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {usePaginationWithSearch} from "@/hooks";
 import type {RecipeSuggestion} from "@/types/invoices";
 import {
@@ -9,7 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -26,11 +26,6 @@ import styles from "./RecipesTab.module.scss";
 type Props = {
   recipes: readonly RecipeSuggestion[];
 };
-
-type IndexedRecipe = Readonly<{
-  recipe: RecipeSuggestion;
-  recipeIndex: number;
-}>;
 
 /**
  * Displays recipes that can be made with invoice items, with add and generate capabilities.
@@ -69,6 +64,11 @@ type IndexedRecipe = Readonly<{
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
+  type IndexedRecipe = Readonly<{
+    recipe: RecipeSuggestion;
+    recipeIndex: number;
+  }>;
+
   const t = useTranslations();
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 
@@ -92,7 +92,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(
+    notify.message(
       t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title),
       {
         description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),

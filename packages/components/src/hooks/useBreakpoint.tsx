@@ -10,6 +10,7 @@ const BREAKPOINTS = [
   ["sm", "(min-width: 640px)"],
 ] as const;
 
+/** Tailwind-compatible viewport breakpoint name returned by {@link useBreakpoint}. */
 type Breakpoint = (typeof BREAKPOINTS)[number][0];
 
 /**

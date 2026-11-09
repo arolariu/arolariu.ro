@@ -1,7 +1,5 @@
-using AppHost.Applications;
+using AppHost;
 using AppHost.Applications.Exp;
-using AppHost.Infrastructure;
-using AppHost.LocalDevelopment;
 using AppHost.Repository;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -15,9 +13,6 @@ ExpConfigGenerator.GenerateAspireConfig(
     targetPath: layout.GeneratedConfigPath,
     endpointOverrides: ExpResources.CreateEndpointOverrides(sqlPasswordValue));
 
-LocalInfrastructure infrastructure = builder.AddInfrastructure(sqlPasswordValue);
-var exp = builder.AddExp(infrastructure, layout);
-LocalResources local = builder.AddLocalResources(infrastructure, exp, layout);
-builder.AddApplications(layout, exp, local);
+LocalApplication.Compose(builder, layout, sqlPasswordValue);
 
 builder.Build().Run();

@@ -21,7 +21,7 @@ import {
   type TestSuitesPayload,
 } from "../../../lib/testing/suites.ts";
 
-/** Existing CI suite plus root tooling and the four frontend suites, in stable order. */
+/** CI scripts, root tooling and all frontend suites, in stable registry order. */
 export const TYPESCRIPT_SUITES: ReadonlyArray<readonly [TypeScriptSuiteName, string]> = TYPESCRIPT_SUITE_PROJECTS.map(({name, root}) => [
   name,
   name === "tooling" ? "" : path.join(...root.split("/")),

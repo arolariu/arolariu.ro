@@ -26,13 +26,13 @@ source changes; downstream instructions, agents, skills, and prompts reference t
 | Node.js    | 24.15.0+ (24.x) or >=26 | `package.json` engines                                                               |
 | npm        | >=11                    | `package.json` engines                                                               |
 | .NET SDK   | 10.0                    | `sites/api.arolariu.ro/Directory.Build.props`                                        |
-| Aspire     | 13.6.2                  | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props`          |
+| Aspire     | 13.6.4                  | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props`          |
 | C#         | 14                      | `<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props` |
-| Next.js    | 16.4.0                  | `package.json`                                                                       |
-| React      | 19.3.0                  | `package.json`                                                                       |
+| Next.js    | 16.4.3                  | `package.json`                                                                       |
+| React      | 19.3.1                  | `package.json`                                                                       |
 | TypeScript | 6.0.3                   | `package.json`                                                                       |
 | SvelteKit  | 2.70.3                  | `package.json`                                                                       |
-| Nx         | 23.3.0                  | `package.json`                                                                       |
+| Nx         | 24.0.1                  | `package.json`                                                                       |
 
 ## Commands
 
@@ -99,10 +99,10 @@ Rancher Desktop or Podman Desktop. The Aspire dashboard is available at `https:/
 
 **Standalone service scripts are narrow fallbacks.** Use one when full-stack coordination is unnecessary.
 
-Aspire's local bootstrap restores deterministic Alice, Bob, and Charlie scenarios. Before seeding, it deletes **all** documents from the
-guarded local invoice and merchant Cosmos containers, removes the entire local invoice blob container, and clears the `invoice-analysis`
-queue while preserving warm infrastructure state. Selfhost instead performs SQL/Cosmos/Azurite provisioning without the Aspire scenario
-reset. No development token or signing secret is committed.
+Aspire persists local data and initializes deterministic Alice, Bob, Charlie, and Dmitryi scenarios once. Ordinary restarts preserve custom
+data and seed edits/deletions. The dashboard's confirmed **Reset local data** command clears the owned Cosmos, storage, and SQL user data
+before restoring the scenario; see the [local-environment runbook](infra/Local/readme.md) for exact scope and recovery. Selfhost performs
+SQL/Cosmos/Azurite provisioning without scenario initialization or dashboard reset. No development token or signing secret is committed.
 
 ## Agent Operating Contract
 

@@ -60,6 +60,9 @@ describe("ESLint generated-output boundary", () => {
     expect(await eslint.isPathIgnored("sites/arolariu.ro/.next/server/app/page.js")).toBe(true);
     expect(await eslint.isPathIgnored("packages/components/dist/index.js")).toBe(true);
     expect(await eslint.isPathIgnored("packages/components/storybook-static/sb-manager/globals-runtime.js")).toBe(true);
+    expect(await eslint.isPathIgnored("packages/components/code-cov/vitest/prettify.js")).toBe(true);
+    expect(await eslint.isPathIgnored(".github/scripts/coverage/prettify.js")).toBe(true);
+    expect(await eslint.isPathIgnored("sites/status.arolariu.ro/test-results/report.js")).toBe(true);
     expect(await eslint.isPathIgnored("sites/arolariu.ro/src/app/page.tsx")).toBe(false);
     expect(await eslint.isPathIgnored("scripts/cli.ts")).toBe(false);
   });

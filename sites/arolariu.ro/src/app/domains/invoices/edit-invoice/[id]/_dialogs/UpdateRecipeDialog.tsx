@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {
   AllergenCode,
   RecipeDifficulty,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -51,7 +51,6 @@ type StepRow = {id: string; instruction: string; notes: string};
 type IngredientSectionKey = "purchased" | "pantry" | "missing";
 type IngredientField = "name" | "quantity" | "preparation";
 type StepField = "instruction" | "notes";
-type IngredientRowsSetter = Dispatch<SetStateAction<IngredientRow[]>>;
 type UpdateRecipePayload = Readonly<{recipe: RecipeSuggestion; recipeIndex: number}>;
 
 let rowIdentifierSequence = 0;
@@ -140,6 +139,8 @@ function getIngredientQuantityErrorId(row: IngredientRow, message: string | unde
 const ALL_ALLERGEN_CODES = Object.values(AllergenCode);
 
 export default function UpdateRecipeDialog(): React.JSX.Element {
+  type IngredientRowsSetter = Dispatch<SetStateAction<IngredientRow[]>>;
+
   const t = useTranslations();
   const router = useRouter();
   const {
@@ -204,12 +205,12 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
         allergenWarnings: allergens,
       };
       await updateRecipeCallback(recipePayload.recipeIndex, updated);
-      toast.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
+      notify.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
       close();
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
+      notify.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
     }
   }, [
     recipePayload,
@@ -253,10 +254,20 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
   const handleServingsChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setServings(Number(event.currentTarget.value));
   }, []);
-  const handleDifficultyChange = useCallback((value: string) => {
+  const handleDifficultyChange = useCallback((value: string | null) => {
+    if (value === null) return;
     if (!isRecipeDifficulty(value)) throw new Error(`Unsupported recipe difficulty: ${value}`);
     setDifficulty(value);
   }, []);
+  // Single source for both the rendered options and the trigger label lookup.
+  const difficultyItems = useMemo(
+    () => [
+      {value: RecipeDifficulty.Easy, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)},
+      {value: RecipeDifficulty.Medium, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)},
+      {value: RecipeDifficulty.Hard, label: t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)},
+    ],
+    [t],
+  );
   const handlePreparationMinutesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setPreparationMinutes(Number(event.currentTarget.value));
   }, []);
@@ -318,7 +329,9 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
       <Dialog
         open={isOpen}
         onOpenChange={handleOpenChange}>
-        <DialogContent className={styles["dialogContent"]}>
+        <DialogContent
+          closeLabel={t((m) => m.shared.accessibility.close)}
+          className={styles["dialogContent"]}>
           <DialogHeader>
             <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.update.title)}</DialogTitle>
             <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.update.missingRecipe)}</DialogDescription>
@@ -335,7 +348,9 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContentWide"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContentWide"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.update.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.update.description)}</DialogDescription>
@@ -405,14 +420,19 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               <Label htmlFor='recipe-update-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
               <Select
                 value={difficulty}
-                onValueChange={handleDifficultyChange}>
+                onValueChange={handleDifficultyChange}
+                items={difficultyItems}>
                 <SelectTrigger id='recipe-update-difficulty'>
                   <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={RecipeDifficulty.Easy}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
-                  <SelectItem value={RecipeDifficulty.Medium}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
-                  <SelectItem value={RecipeDifficulty.Hard}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
+                  {difficultyItems.map((item) => (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -542,6 +562,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                       type='button'
                       variant='ghost'
                       size='icon'
+                      aria-label={t((m) => m.dialogs.invoices.recipeDialog.buttons.removeIngredient)}
                       disabled={rows.length <= 1}
                       data-section={key}
                       data-row-id={row.id}
@@ -599,6 +620,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   type='button'
                   variant='ghost'
                   size='icon'
+                  aria-label={t((m) => m.dialogs.invoices.recipeDialog.buttons.removeStep)}
                   disabled={steps.length <= 1}
                   data-row-id={step.id}
                   onClick={handleStepRemove}>

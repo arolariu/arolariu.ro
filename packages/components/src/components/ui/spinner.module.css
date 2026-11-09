@@ -1,7 +1,8 @@
 .spinner {
   width: 1rem;
   height: 1rem;
-  color: var(--ac-foreground);
+  color: inherit;
+  flex-shrink: 0;
   animation: spin 0.8s linear infinite;
   transform-origin: center;
 }
@@ -18,8 +19,30 @@
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
+  }
+}
+
+.spinner[data-animated="false"] {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .spinner {
+    color: CanvasText;
+  }
+  .track {
+    opacity: 1;
+    stroke: GrayText;
+  }
+  .indicator {
+    stroke: CanvasText;
   }
 }

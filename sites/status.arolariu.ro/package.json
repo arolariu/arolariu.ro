@@ -28,6 +28,8 @@
     "@testing-library/jest-dom": "*",
     "@testing-library/svelte": "*",
     "@types/node": "*",
+    "@vitejs/plugin-react": "*",
+    "@vitest/coverage-v8": "*",
     "jsdom": "*",
     "sass": "*",
     "svelte-adapter-azure-swa": "*",

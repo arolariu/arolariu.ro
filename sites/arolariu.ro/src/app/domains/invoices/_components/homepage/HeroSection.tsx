@@ -1,6 +1,6 @@
 "use client";
 
-import {Button} from "@arolariu/components";
+import {buttonVariants, cn} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
@@ -38,25 +38,19 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
               <p className={styles["heroDescription"]}>{t((m) => m.pages.invoices.landing.hero.description)}</p>
 
               <div className={styles["heroButtons"]}>
-                <Button
-                  asChild
-                  size='lg'
-                  className={styles["heroPrimaryBtn"]}>
-                  <Link href='/domains/invoices/upload-scans'>
-                    <TbUpload className={styles["heroButtonIcon"]} />
-                    {t((m) => m.pages.invoices.landing.hero.getStarted)}
-                  </Link>
-                </Button>
+                <Link
+                  className={cn(buttonVariants({size: "lg"}), styles["heroPrimaryBtn"])}
+                  href='/domains/invoices/upload-scans'>
+                  <TbUpload className={styles["heroButtonIcon"]} />
+                  {t((m) => m.pages.invoices.landing.hero.getStarted)}
+                </Link>
                 {isAuthenticated ? (
-                  <Button
-                    asChild
-                    variant='outline'
-                    size='lg'>
-                    <Link href='/domains/invoices/view-invoices'>
-                      <TbFileInvoice className={styles["heroButtonIcon"]} />
-                      {t((m) => m.pages.invoices.landing.hero.viewMyInvoices)}
-                    </Link>
-                  </Button>
+                  <Link
+                    className={buttonVariants({variant: "outline", size: "lg"})}
+                    href='/domains/invoices/view-invoices'>
+                    <TbFileInvoice className={styles["heroButtonIcon"]} />
+                    {t((m) => m.pages.invoices.landing.hero.viewMyInvoices)}
+                  </Link>
                 ) : null}
               </div>
             </motion.div>

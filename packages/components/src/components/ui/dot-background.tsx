@@ -1,161 +1,174 @@
 "use client";
 
 import {motion} from "motion/react";
-import React, {useEffect, useId, useRef, useState} from "react";
+import * as React from "react";
 
+import {useMergedRefs} from "@/hooks/useMergedRefs";
 import {cn} from "@/lib/utilities";
 import styles from "./dot-background.module.css";
+import {useVisualEffectPolicy, type VisualEffectOptions} from "./_visual-effects";
 
-/** Props accepted by {@link DotBackground}. */
-export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
-  /** Horizontal spacing between generated dots. @default 16 */
-  width?: number;
-  /** Vertical spacing between generated dots. @default 16 */
-  height?: number;
-  /** Horizontal offset applied to the dot grid. @default 0 */
-  x?: number;
-  /** Vertical offset applied to the dot grid. @default 0 */
-  y?: number;
-  /** Horizontal center offset for each generated circle. @default 1 */
-  cx?: number;
-  /** Vertical center offset for each generated circle. @default 1 */
-  cy?: number;
-  /** Radius used for each generated dot. @default 1 */
-  cr?: number;
-  /** Additional CSS classes merged with the root SVG element. @default undefined */
-  className?: string;
-  /** Enables pulsing radial glow animation for every dot. @default false */
-  glow?: boolean;
+/** Props accepted by {@link DotBackground}. Width/height are dot spacing, not SVG dimensions. */
+export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement>, VisualEffectOptions {
+  /** Positive finite horizontal spacing. @default 16 */
+  readonly width?: number;
+  /** Positive finite vertical spacing. @default 16 */
+  readonly height?: number;
+  /** Finite horizontal grid offset. @default 0 */
+  readonly x?: number;
+  /** Finite vertical grid offset. @default 0 */
+  readonly y?: number;
+  /** Finite circle-center horizontal offset. @default 1 */
+  readonly cx?: number;
+  /** Finite circle-center vertical offset. @default 1 */
+  readonly cy?: number;
+  /** Positive finite dot radius. @default 1 */
+  readonly cr?: number;
+  /** Enables pulsing dots while visible and motion is permitted. @default false */
+  readonly glow?: boolean;
+}
+
+function isDecorativeSvg(children: React.ReactNode): boolean {
+  return children === null || children === undefined;
 }
 
 /**
- * Renders an animated dot grid with an optional glowing pulse effect.
+ * Renders a decorative element-sized dot grid, capped at 4096 dots.
  *
  * @remarks
- * - Animated component using the `motion` library
- * - Renders an `<svg>` element
+ * - `width`/`height` are dot spacing, not SVG dimensions: the absolutely positioned SVG fills its positioned ancestor and is
+ *   measured with a `ResizeObserver` and window resize; dense requests are evenly downsampled to at most 4096 dots
+ * - Decorative by default: `aria-hidden` while it has no children. Meaningful SVG children (for example `<text>`) stay exposed and
+ *   must carry their own accessible text
+ * - Dots paint with `currentColor` (muted foreground; `CanvasText` in forced colors). `glow` pulses them while visible and motion
+ *   is permitted, settling to a static frame five seconds after mount unless `loop`, which needs a caller-owned, localized pause
+ *   control that sets `motionPaused` (WCAG 2.2.2). Reduced motion, a hidden document and offscreen instances show the static frame
+ * - A box-less SVG (for example `display: none`, an inactive kept-mounted tab panel or a collapsed section) is not an error: it
+ *   renders no dots before its first positive measurement and otherwise keeps its last grid until a positive `ResizeObserver` or
+ *   window resize measurement regenerates it
+ * - Animated component using the `motion` library; renders an `<svg>` element with `pointer-events: none`
  * - Styling via CSS Modules with `--ac-*` custom properties
  * - Client-side only (`"use client"` directive)
  *
  * @example
  * ```tsx
- * <DotBackground glow />
+ * <section className={styles.hero}>
+ *   <DotBackground glow width={24} height={24} />
+ *   <h2>Launch week</h2>
+ * </section>
  * ```
  *
  * @see {@link DotBackgroundProps} for available props
+ * @throws {RangeError} Only for invalid props: spacing, radius or offsets. Measured geometry never throws.
  */
-const DotBackground = React.forwardRef<SVGSVGElement, DotBackgroundProps>(
-  (
-    {width = 16, height = 16, x = 0, y = 0, cx = 1, cy = 1, cr = 1, className, glow = false, ...props}: Readonly<DotBackgroundProps>,
-    ref,
-  ): React.JSX.Element => {
-    const id = useId();
-    const containerRef = useRef<SVGSVGElement>(null);
-    const [dimensions, setDimensions] = useState({width: 0, height: 0});
+function DotBackground({
+  ref,
+  loop,
+  motionPaused,
+  width = 16,
+  height = 16,
+  x = 0,
+  y = 0,
+  cx = 1,
+  cy = 1,
+  cr = 1,
+  className,
+  children,
+  glow = false,
+  ...props
+}: Readonly<DotBackgroundProps>): React.JSX.Element {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new RangeError("DotBackground spacing must be positive and finite.");
+  }
+  if (!Number.isFinite(cr) || cr <= 0) throw new RangeError("DotBackground radius must be positive and finite.");
+  if (![x, y, cx, cy].every((value) => Number.isFinite(value))) throw new RangeError("DotBackground offsets must be finite.");
+  const id = React.useId();
+  const containerRef = React.useRef<SVGSVGElement>(null);
+  const [dimensions, setDimensions] = React.useState({width: 0, height: 0});
+  const {paused} = useVisualEffectPolicy(containerRef, {loop, motionPaused});
+  const setRefs = useMergedRefs(containerRef, ref);
 
-    const setRefs = React.useCallback(
-      (node: SVGSVGElement | null): void => {
-        containerRef.current = node;
+  React.useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    let active = true;
+    const resize = (): void => {
+      if (!active) return;
+      const rect = element.getBoundingClientRect();
+      // A box-less SVG (display:none, an inactive kept-mounted panel, a collapsed section) is a normal runtime state,
+      // not an error: keep the last measured grid (none before the first positive measurement) until measurable.
+      if (![rect.width, rect.height].every((value) => Number.isFinite(value)) || rect.width <= 0 || rect.height <= 0) return;
+      setDimensions((previous) =>
+        previous.width === rect.width && previous.height === rect.height ? previous : {width: rect.width, height: rect.height},
+      );
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    window.addEventListener("resize", resize);
+    return (): void => {
+      active = false;
+      observer.disconnect();
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
 
-        if (typeof ref === "function") {
-          ref(node);
-          return;
-        }
-
-        if (ref) {
-          ref.current = node;
-        }
-      },
-      [ref],
-    );
-
-    useEffect(() => {
-      const updateDimensions = (): void => {
-        if (!containerRef.current) {
-          return;
-        }
-
-        const rect = containerRef.current.getBoundingClientRect();
-        // eslint-disable-next-line react-x/set-state-in-effect -- resize observer style update is the hook's purpose
-        setDimensions({width: rect.width, height: rect.height});
-      };
-
-      updateDimensions();
-      globalThis.window.addEventListener("resize", updateDimensions);
-      return () => globalThis.window.removeEventListener("resize", updateDimensions);
-    }, []);
-
-    const totalColumns = Math.ceil(dimensions.width / width);
-    const dots = Array.from(
-      {
-        length: totalColumns * Math.ceil(dimensions.height / height),
-      },
-      (_, index) => {
-        const column = index % Math.max(totalColumns, 1);
-        const row = Math.floor(index / Math.max(totalColumns, 1));
-        return {
-          x: x + column * width + cx,
-          y: y + row * height + cy,
-          delay: Math.random() * 5,
-          duration: Math.random() * 3 + 2,
-        };
-      },
-    );
-
-    return (
-      <svg
-        ref={setRefs}
-        aria-hidden='true'
-        className={cn(styles.root, className)}
-        {...props}>
-        <defs>
-          <radialGradient id={`${id}-gradient`}>
-            <stop
-              offset='0%'
-              stopColor='currentColor'
-              stopOpacity='1'
-            />
-            <stop
-              offset='100%'
-              stopColor='currentColor'
-              stopOpacity='0'
-            />
-          </radialGradient>
-        </defs>
-        {dots.map((dot) => (
-          <motion.circle
-            key={`${dot.x}-${dot.y}`}
-            cx={dot.x}
-            cy={dot.y}
-            r={cr}
-            fill={glow ? `url(#${id}-gradient)` : "currentColor"}
-            className={styles.dot}
-            initial={glow ? {opacity: 0.4, scale: 1} : {}}
-            animate={
-              glow
-                ? {
-                    opacity: [0.4, 1, 0.4],
-                    scale: [1, 1.5, 1],
-                  }
-                : {}
-            }
-            transition={
-              glow
-                ? {
-                    duration: dot.duration,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    delay: dot.delay,
-                    ease: "easeInOut",
-                  }
-                : {}
-            }
+  const requestedColumns = dimensions.width === 0 ? 0 : Math.max(1, Math.min(4096, Math.ceil(dimensions.width / width)));
+  const requestedRows = dimensions.height === 0 ? 0 : Math.max(1, Math.min(4096, Math.ceil(dimensions.height / height)));
+  const stride = Math.max(1, Math.ceil(Math.sqrt((requestedColumns * requestedRows) / 4096)));
+  const columns = Math.min(4096, Math.ceil(requestedColumns / stride));
+  const rows = Math.min(Math.floor(4096 / Math.max(columns, 1)), Math.ceil(requestedRows / stride));
+  const horizontalStep = Math.max(width, dimensions.width / Math.max(columns, 1));
+  const verticalStep = Math.max(height, dimensions.height / Math.max(rows, 1));
+  const dots = Array.from({length: columns * rows}, (_, index) => ({
+    x: x + (index % columns) * horizontalStep + cx,
+    y: y + Math.floor(index / columns) * verticalStep + cy,
+    delay: ((index * 37) % 50) / 10,
+    duration: 2 + ((index * 13) % 30) / 10,
+  }));
+  return (
+    <svg
+      ref={setRefs}
+      aria-hidden={isDecorativeSvg(children) ? true : undefined}
+      focusable='false'
+      className={cn(styles.root, className)}
+      data-motion={paused ? "paused" : "running"}
+      {...props}>
+      <defs>
+        <radialGradient id={`${id}-gradient`}>
+          <stop
+            offset='0%'
+            stopColor='currentColor'
+            stopOpacity='1'
           />
-        ))}
-      </svg>
-    );
-  },
-);
+          <stop
+            offset='100%'
+            stopColor='currentColor'
+            stopOpacity='0'
+          />
+        </radialGradient>
+      </defs>
+      {dots.map((dot, index) => (
+        <motion.circle
+          aria-hidden='true'
+          key={`dot-${index}`}
+          cx={dot.x}
+          cy={dot.y}
+          r={cr}
+          fill={glow ? `url(#${id}-gradient)` : "currentColor"}
+          className={styles.dot}
+          initial={false}
+          animate={glow && !paused ? {opacity: [0.4, 1, 0.4], scale: [1, 1.5, 1]} : {opacity: glow ? 0.4 : 1, scale: 1}}
+          transition={
+            glow && !paused
+              ? {duration: dot.duration, repeat: Infinity, repeatType: "reverse", delay: dot.delay, ease: "easeInOut"}
+              : {duration: 0}
+          }
+        />
+      ))}
+      {children}
+    </svg>
+  );
+}
 DotBackground.displayName = "DotBackground";
-
 export {DotBackground};

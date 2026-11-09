@@ -23,6 +23,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    fsModuleCachePath: "node_modules/.vitest-cache",
     include: ["**/*.test.ts"],
     coverage: {
       provider: "v8",

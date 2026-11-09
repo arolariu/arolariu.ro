@@ -1,4 +1,6 @@
 .trigger {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   outline: none;
 
   &:focus-visible {
@@ -20,5 +22,22 @@
   &[data-starting-style],
   &[data-ending-style] {
     opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .trigger:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .trigger[data-disabled] {
+    color: GrayText;
+    opacity: 1;
   }
 }

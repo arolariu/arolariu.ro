@@ -1,5 +1,7 @@
 .fallback {
   display: flex;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -18,11 +20,14 @@
   max-width: 32rem;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
+  overflow-wrap: anywhere;
 }
 
 .retry {
+  min-inline-size: 24px;
+  min-block-size: 24px;
   cursor: pointer;
-  border: 1px solid var(--ac-border);
+  border: 1px solid var(--ac-input);
   border-radius: var(--ac-radius-md);
   background-color: var(--ac-background);
   padding: var(--ac-space-2) var(--ac-space-4);
@@ -33,4 +38,28 @@
 
 .retry:hover {
   background-color: var(--ac-accent);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .retry {
+    transition: none;
+  }
+}
+
+/* Root-level, so forced-colors styling never depends on a reduced-motion preference. */
+@media (forced-colors: active) {
+  .retry {
+    border-color: ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  .retry:focus-visible {
+    outline-color: Highlight;
+  }
 }

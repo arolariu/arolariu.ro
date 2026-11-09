@@ -2,18 +2,13 @@ import {describe, expect, it} from "vitest";
 
 import {
   adjustHexColorLightness,
-  adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
   convertHslToHexString,
-  getComplementaryColor,
-  hexToHsl,
-  hslToHex,
-  isValidHexColor,
-  parseHslString,
   parseHslStringToComponents,
   validateHexColorFormat,
 } from "./color-conversion-utilities";
+import * as colorUtilities from "./color-conversion-utilities";
 
 describe("color-conversion-utilities", () => {
   it("convertHexToHslString handles known color conversions", () => {
@@ -26,6 +21,26 @@ describe("color-conversion-utilities", () => {
     expect(convertHslToHexString(0, 100, 50)).toBe("#ff0000");
     expect(convertHslToHexString(120, 100, 50)).toBe("#00ff00");
     expect(convertHslToHexString(240, 100, 50)).toBe("#0000ff");
+  });
+
+  it("convertHslToHexString wraps out-of-range hues and clamps saturation/lightness", () => {
+    expect(convertHslToHexString(360, 100, 50)).toBe("#ff0000");
+    expect(convertHslToHexString(480, 100, 50)).toBe("#00ff00");
+    expect(convertHslToHexString(-120, 100, 50)).toBe("#0000ff");
+    expect(convertHslToHexString(0, 150, 50)).toBe("#ff0000");
+    expect(convertHslToHexString(0, 100, 150)).toBe("#ffffff");
+    expect(convertHslToHexString(0, -10, -10)).toBe("#000000");
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])("convertHslToHexString rejects a non-finite component %s", (value) => {
+    expect(() => convertHslToHexString(value, 50, 50)).toThrow(RangeError);
+    expect(() => convertHslToHexString(0, value, 50)).toThrow(RangeError);
+    expect(() => convertHslToHexString(0, 50, value)).toThrow(RangeError);
+  });
+
+  it("matches the documented complementary and lightness examples", () => {
+    expect(calculateComplementaryHexColor("#06b6d4")).toBe("#f9492b");
+    expect(adjustHexColorLightness("#ff0000", -50)).toBe("#000000");
   });
 
   it("validateHexColorFormat handles valid and invalid inputs", () => {
@@ -56,12 +71,14 @@ describe("color-conversion-utilities", () => {
     expect(parseHslStringToComponents("187 94 43")).toBeNull();
   });
 
-  it("deprecated aliases still work", () => {
-    expect(hexToHsl("#06b6d4")).toBe(convertHexToHslString("#06b6d4"));
-    expect(hslToHex(0, 100, 50)).toBe(convertHslToHexString(0, 100, 50));
-    expect(isValidHexColor("#06b6d4")).toBe(validateHexColorFormat("#06b6d4"));
-    expect(getComplementaryColor("#123456")).toBe(calculateComplementaryHexColor("#123456"));
-    expect(adjustLightness("#000000", 20)).toBe(adjustHexColorLightness("#000000", 20));
-    expect(parseHslString("187 94% 43%")).toStrictEqual(parseHslStringToComponents("187 94% 43%"));
+  it("exports only the canonical color operations", () => {
+    expect(Object.keys(colorUtilities).sort()).toEqual([
+      "adjustHexColorLightness",
+      "calculateComplementaryHexColor",
+      "convertHexToHslString",
+      "convertHslToHexString",
+      "parseHslStringToComponents",
+      "validateHexColorFormat",
+    ]);
   });
 });

@@ -10,3 +10,9 @@
 .dot {
   color: inherit;
 }
+
+@media (forced-colors: active) {
+  .root {
+    color: CanvasText;
+  }
+}

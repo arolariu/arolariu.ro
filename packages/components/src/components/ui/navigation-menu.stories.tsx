@@ -1,230 +1,303 @@
+import {DirectionProvider} from "@base-ui/react/direction-provider";
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+
+import {cn} from "@/lib/utilities";
 import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuPositioner,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "./navigation-menu";
+import styles from "./navigation-menu.module.css";
+const storyStyles = `
+.ac-story-navigation-menu-storyPanel {
+  box-sizing: border-box;
+  display: grid;
+  width: 22rem;
+  max-width: calc(100vw - var(--ac-space-8));
+  gap: var(--ac-space-3);
+  margin: 0;
+  padding: var(--ac-space-4);
+  list-style: none;
+}
 
-const meta = {
+.ac-story-navigation-menu-storyWidePanel {
+  width: 32rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ac-story-navigation-menu-storyLink {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-3);
+}
+
+.ac-story-navigation-menu-storyDescription,
+.ac-story-navigation-menu-storyHint {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+}
+
+.ac-story-navigation-menu-storyStack {
+  display: grid;
+  justify-items: start;
+  gap: var(--ac-space-4);
+}
+
+@media (max-width: 36rem) {
+  .ac-story-navigation-menu-storyWidePanel {
+    grid-template-columns: 1fr;
+  }
+}
+`;
+
+const storyClasses = {
+  storyPanel: "ac-story-navigation-menu-storyPanel",
+  storyWidePanel: "ac-story-navigation-menu-storyWidePanel",
+  storyLink: "ac-story-navigation-menu-storyLink",
+  storyDescription: "ac-story-navigation-menu-storyDescription",
+  storyHint: "ac-story-navigation-menu-storyHint",
+  storyStack: "ac-story-navigation-menu-storyStack",
+} as const;
+
+const meta: Meta<typeof NavigationMenu> = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Components/Navigation/NavigationMenu",
   component: NavigationMenu,
   tags: ["autodocs"],
-  parameters: {
-    layout: "centered",
+  parameters: {layout: "centered"},
+  args: {align: "start"},
+  argTypes: {
+    align: {control: "select", options: ["start", "center", "end"]},
+    orientation: {control: "select", options: ["horizontal", "vertical"]},
+    delay: {control: "number"},
+    closeDelay: {control: "number"},
   },
-} satisfies Meta<typeof NavigationMenu>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default navigation menu with dropdown content.
- */
+function DemoItems(): React.ReactElement {
+  return (
+    <NavigationMenuList>
+      <NavigationMenuItem value='products'>
+        <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className={storyClasses.storyPanel}>
+            <li>
+              <NavigationMenuLink
+                href='#analytics'
+                className={storyClasses.storyLink}>
+                <strong>Analytics</strong>
+                <span className={storyClasses.storyDescription}>Understand trends with accessible charts.</span>
+              </NavigationMenuLink>
+            </li>
+            <li>
+              <NavigationMenuLink
+                href='#automation'
+                className={storyClasses.storyLink}>
+                <strong>Automation</strong>
+                <span className={storyClasses.storyDescription}>Build repeatable workflows.</span>
+              </NavigationMenuLink>
+            </li>
+          </ul>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      <NavigationMenuItem value='resources'>
+        <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className={cn(storyClasses.storyPanel, storyClasses.storyWidePanel)}>
+            {["Introduction", "Installation", "Components", "Accessibility", "Theming", "Changelog"].map((label) => (
+              <li key={label}>
+                <NavigationMenuLink
+                  href={`#${label.toLowerCase()}`}
+                  className={storyClasses.storyLink}>
+                  <strong>{label}</strong>
+                  <span className={storyClasses.storyDescription}>Explore Base UI components and CSS Modules.</span>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      <NavigationMenuItem>
+        <NavigationMenuLink
+          href='#pricing'
+          className={navigationMenuTriggerStyle()}
+          active>
+          Pricing
+        </NavigationMenuLink>
+      </NavigationMenuItem>
+    </NavigationMenuList>
+  );
+}
+
+/** Switch Products/Resources to see the primitive-owned popup resize between unequal content sizes. */
 export const Default: Story = {
-  render: () => (
-    <NavigationMenu>
-      <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Getting Started</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className='grid w-[400px] gap-3 p-6 lg:w-[500px] lg:grid-cols-[.75fr_1fr]'>
-              <li className='row-span-3'>
-                <a
-                  className='from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-gradient-to-b p-6 no-underline outline-none select-none focus:shadow-md'
-                  href='/'>
-                  <div className='mt-4 mb-2 text-lg font-medium'>arolariu/components</div>
-                  <p className='text-muted-foreground text-sm leading-tight'>
-                    Beautifully designed components built with Radix UI and Tailwind CSS.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs'>
-                  <div className='text-sm leading-none font-medium'>Introduction</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    Re-usable components built using Radix UI and Tailwind CSS.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/installation'>
-                  <div className='text-sm leading-none font-medium'>Installation</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    How to install dependencies and structure your app.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/primitives/typography'>
-                  <div className='text-sm leading-none font-medium'>Typography</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>Styles for headings, paragraphs, lists...etc</p>
-                </a>
-              </li>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Components</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/primitives/alert-dialog'>
-                  <div className='text-sm leading-none font-medium'>Alert Dialog</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    A modal dialog that interrupts the user with important content.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/primitives/hover-card'>
-                  <div className='text-sm leading-none font-medium'>Hover Card</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    For sighted users to preview content available behind a link.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/primitives/progress'>
-                  <div className='text-sm leading-none font-medium'>Progress</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    Displays an indicator showing the completion progress of a task.
-                  </p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/docs/primitives/scroll-area'>
-                  <div className='text-sm leading-none font-medium'>Scroll Area</div>
-                  <p className='text-muted-foreground line-clamp-2 text-sm leading-snug'>
-                    Augments native scroll functionality for custom, cross-browser styling.
-                  </p>
-                </a>
-              </li>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/docs'>
-            Documentation
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-      </NavigationMenuList>
+  args: {defaultValue: "products"},
+  render: (args) => (
+    <NavigationMenu {...args}>
+      <DemoItems />
     </NavigationMenu>
   ),
 };
 
-/**
- * Simple navigation menu with direct links.
- */
+/** Native direct links require no popup; the current link keeps aria-current="page" and an underline that hover never shows. */
 export const SimpleLinks: Story = {
-  render: () => (
-    <NavigationMenu>
+  render: (args) => (
+    <NavigationMenu {...args}>
       <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/'>
-            Home
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/about'>
-            About
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/services'>
-            Services
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/contact'>
-            Contact
-          </NavigationMenuLink>
-        </NavigationMenuItem>
+        {["Home", "About", "Services", "Contact"].map((label) => (
+          <NavigationMenuItem key={label}>
+            <NavigationMenuLink
+              href={`#${label.toLowerCase()}`}
+              className={navigationMenuTriggerStyle()}
+              active={label === "Home"}>
+              {label}
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        ))}
       </NavigationMenuList>
     </NavigationMenu>
   ),
 };
 
-/**
- * Navigation menu with mixed links and dropdowns.
- */
+/** Mixed direct links and dropdowns; Root's align control configures its automatic Positioner. */
 export const MixedNavigation: Story = {
-  render: () => (
-    <NavigationMenu>
+  render: (args) => (
+    <NavigationMenu {...args}>
+      <DemoItems />
+    </NavigationMenu>
+  ),
+};
+
+/** An explicit public Positioner with custom placement and correctly owned Popup/Viewport callbacks. */
+export const ExplicitPositioner: Story = {
+  args: {defaultValue: "resources", align: "end"},
+  render: (args) => (
+    <div className={storyClasses.storyStack}>
+      <p className={storyClasses.storyHint}>Root's automatic popup is disabled when composing an explicit Positioner.</p>
+      <NavigationMenu
+        {...args}
+        positionerProps={false}>
+        <DemoItems />
+        <NavigationMenuPositioner
+          side='bottom'
+          align={args.align}
+          sideOffset={12}
+          alignOffset={0}
+          popupProps={{
+            "aria-label": "Resource navigation",
+            render: (props, state) => (
+              <nav
+                {...props}
+                data-placement={`${state.side}:${state.align}`}
+              />
+            ),
+          }}
+          viewportProps={{className: () => styles.viewport}}
+        />
+      </NavigationMenu>
+    </div>
+  ),
+};
+
+/** Explicit native positioning with caller-owned viewport options. */
+export const ExplicitViewport: Story = {
+  render: (args) => (
+    <div className={storyClasses.storyStack}>
+      <p className={storyClasses.storyHint}>Positioner viewportProps target the clipping viewport.</p>
+      <NavigationMenu
+        {...args}
+        positionerProps={false}>
+        <DemoItems />
+        <NavigationMenuPositioner align={args.align} />
+      </NavigationMenu>
+    </div>
+  ),
+};
+
+/** RTL keyboard navigation uses Base UI's scoped direction context, including the portaled popup. */
+export const RightToLeft: Story = {
+  render: (args) => (
+    <DirectionProvider direction='rtl'>
+      <div
+        dir='rtl'
+        className={storyClasses.storyStack}>
+        <p className={storyClasses.storyHint}>Use Left/Right arrows across items, Down to open, and Tab to enter links.</p>
+        <NavigationMenu {...args}>
+          <DemoItems />
+        </NavigationMenu>
+      </div>
+    </DirectionProvider>
+  ),
+};
+
+/** Vertical orientation uses Up/Down across items and Right (Left in RTL) to open content. */
+export const Vertical: Story = {
+  args: {orientation: "vertical"},
+  render: (args) => (
+    <NavigationMenu
+      {...args}
+      positionerProps={{side: "inline-end", align: "start"}}>
+      <DemoItems />
+    </NavigationMenu>
+  ),
+};
+
+function ResizeExample(props: Readonly<NavigationMenu.Props>): React.ReactElement {
+  const [expanded, setExpanded] = React.useState(false);
+  return (
+    <NavigationMenu
+      {...props}
+      defaultValue='updates'>
       <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/'>
-            Home
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+        <NavigationMenuItem value='updates'>
+          <NavigationMenuTrigger>Updates</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className='grid w-[400px] gap-3 p-4'>
-              <li>
-                <a
-                  className='hover:bg-accent block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/products/software'>
-                  <div className='text-sm font-medium'>Software</div>
-                  <p className='text-muted-foreground text-sm leading-snug'>Enterprise software solutions</p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/products/hardware'>
-                  <div className='text-sm font-medium'>Hardware</div>
-                  <p className='text-muted-foreground text-sm leading-snug'>Physical products and devices</p>
-                </a>
-              </li>
-              <li>
-                <a
-                  className='hover:bg-accent block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none'
-                  href='/products/services'>
-                  <div className='text-sm font-medium'>Services</div>
-                  <p className='text-muted-foreground text-sm leading-snug'>Professional consulting services</p>
-                </a>
-              </li>
-            </ul>
+            <div className={storyClasses.storyPanel}>
+              <NavigationMenuLink
+                href='#latest'
+                className={storyClasses.storyLink}>
+                Latest release
+              </NavigationMenuLink>
+              <button
+                type='button'
+                className={navigationMenuTriggerStyle()}
+                aria-expanded={expanded}
+                onClick={() => setExpanded(!expanded)}>
+                {expanded ? "Show fewer details" : "Show release details"}
+              </button>
+              {expanded && (
+                <p className={storyClasses.storyDescription}>
+                  More content changes the measured popup size without local geometry tokens or wrapper-owned observers.
+                </p>
+              )}
+            </div>
           </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink
-            className={navigationMenuTriggerStyle()}
-            href='/pricing'>
-            Pricing
-          </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
-  ),
+  );
+}
+
+/** Dynamic content remains inside the real primitive's measurement and transition lifecycle. */
+export const DynamicContent: Story = {
+  render: (args) => <ResizeExample {...args} />,
 };

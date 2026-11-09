@@ -3,19 +3,20 @@
 import * as React from "react";
 
 /**
- * Tracks and returns the previous value of a state or prop.
+ * Tracks and returns the value from the previous committed render.
  *
  * @remarks
- * This hook stores the value from the previous render cycle, allowing you to compare
- * current and previous values. On the initial render, it returns `undefined` since
- * there is no previous value yet.
+ * The stored value is updated in an effect after each commit in which `value` changed. Therefore:
+ * - on the first render it returns `undefined`;
+ * - on the render where `value` changes it returns the prior value;
+ * - on a later render where `value` did not change it returns the current value (it is not "the previous distinct
+ *   value"). Compare against it only on renders caused by a change of `value`.
  *
- * Useful for detecting changes, implementing undo functionality, or creating
- * animations based on value transitions.
+ * Useful for detecting changes or creating animations based on value transitions.
  *
  * @typeParam T - The type of the value being tracked.
  * @param value - The current value to track.
- * @returns The value from the previous render, or `undefined` on the first render.
+ * @returns The value as of the previous committed render, or `undefined` on the first render.
  *
  * @example
  * ```tsx

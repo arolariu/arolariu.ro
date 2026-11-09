@@ -22,17 +22,10 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useRef, useState} from "react";
+import {useMemo, useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
 import {MessageList} from "../MessageList";
 import styles from "./GenerativeView.module.scss";
-
-type Message = {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: string;
-};
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice>;
@@ -44,6 +37,13 @@ type Props = Readonly<{
  * @returns This function renders the generative view for invoice analysis.
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
+  type Message = {
+    id: string;
+    content: string;
+    role: "user" | "assistant";
+    timestamp: string;
+  };
+
   const t = useTranslations();
   const [messages, setMessages] = useState<Message[]>(() => [
     {
@@ -54,6 +54,17 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
     },
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Single source for both the rendered options and the trigger label lookup.
+  const retentionItems = useMemo(
+    () => [
+      {value: "30", label: t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item30)},
+      {value: "60", label: t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item60)},
+      {value: "90", label: t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item90)},
+      {value: "0", label: t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.none)},
+    ],
+    [t],
+  );
 
   // todo: complete this.
   console.log(invoices);
@@ -127,15 +138,20 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               <div className={styles["settingsContainer"]}>
                 <div className={styles["settingsField"]}>
                   <Label htmlFor='history'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.historyLabel)}</Label>
-                  <Select defaultValue='30'>
+                  <Select
+                    defaultValue='30'
+                    items={retentionItems}>
                     <SelectTrigger id='history'>
                       <SelectValue placeholder={t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retentionPlaceholder)} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='30'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item30)}</SelectItem>
-                      <SelectItem value='60'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item60)}</SelectItem>
-                      <SelectItem value='90'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item90)}</SelectItem>
-                      <SelectItem value='0'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.none)}</SelectItem>
+                      {retentionItems.map((item) => (
+                        <SelectItem
+                          key={item.value}
+                          value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -146,7 +162,6 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
-                      nativeButton
                       id='access-invoices'
                       defaultChecked
                     />
@@ -158,7 +173,6 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </div>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
-                      nativeButton
                       id='access-merchants'
                       defaultChecked
                     />
@@ -176,7 +190,6 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
-                      nativeButton
                       id='notify-insights'
                       defaultChecked
                     />

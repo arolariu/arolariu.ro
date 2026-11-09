@@ -1,32 +1,61 @@
 "use client";
 
-import {mergeProps} from "@base-ui/react/merge-props";
 import {Tabs as BaseTabs} from "@base-ui/react/tabs";
-import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import {tabsListVariants} from "./_tabs-list-variants";
 import styles from "./tabs.module.css";
 
-interface TabsProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Root>, "className"> {
-  /** Additional CSS classes merged with the tabs root styles. @default undefined */
-  className?: string;
+/** Readonly Base UI root props, including orientation and controlled selection. */
+export type TabsProps = Readonly<React.ComponentPropsWithRef<typeof BaseTabs.Root>>;
+/** Readonly Base UI tab props, including native and composed button behavior. */
+export type TabsTriggerProps = Readonly<React.ComponentPropsWithRef<typeof BaseTabs.Tab>>;
+/** Readonly Base UI panel props, including hidden-panel mounting behavior. */
+export type TabsContentProps = Readonly<React.ComponentPropsWithRef<typeof BaseTabs.Panel>>;
+
+/** Primitive-owned root state, including orientation and activation direction. */
+export type TabsState = Readonly<BaseTabs.Root.State>;
+/** Primitive-owned tab state, including active and disabled status. */
+export type TabsTriggerState = Readonly<BaseTabs.Tab.State>;
+/** Primitive-owned panel state, including visibility and transition status. */
+export type TabsContentState = Readonly<BaseTabs.Panel.State>;
+/** Supported tab list presentations. */
+export type TabsListVariant = "default" | "line";
+
+/** Primitive-owned list state augmented with its visual presentation. */
+export interface TabsListState extends Readonly<BaseTabs.List.State> {
+  /** The list's presentation: TabsList's `variant` prop, or `"default"` when omitted; also rendered as `data-variant`. */
+  readonly variant: TabsListVariant;
 }
 
-interface TabsListProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.List>, "className"> {
-  /** Additional CSS classes merged with the tabs list styles. @default undefined */
-  className?: string;
+/** Options for generating tab list classes with {@link tabsListVariants} without rendering a component. */
+export interface TabsListVariantOptions {
+  /** Visual presentation. @default "default" */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+  readonly variant?: TabsListVariant | undefined;
+  /** Additional classes merged with the CSS Module classes. */
+  // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+  readonly className?: string | undefined;
 }
 
-interface TabsTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Tab>, "className"> {
-  /** Additional CSS classes merged with the individual tab trigger styles. @default undefined */
-  className?: string;
-}
+type PrimitiveListRenderCallback = Exclude<BaseTabs.List.Props["render"], React.ReactElement | undefined>;
 
-interface TabsContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Panel>, "className"> {
-  /** Additional CSS classes merged with the tab panel styles. @default undefined */
-  className?: string;
-}
+/** Readonly Base UI list props with state-aware default and line presentations. */
+export type TabsListProps = Readonly<
+  Omit<React.ComponentPropsWithRef<typeof BaseTabs.List>, "className" | "render"> & {
+    /** Visual presentation. The line variant retains the animated underline. @default "default" */
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    variant?: TabsListVariant | undefined;
+    /** Additional classes, optionally derived from the primitive and variant state. */
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    className?: string | ((state: TabsListState) => string | undefined) | undefined;
+    /** Element or callback composed by Base UI with current list and variant state. */
+    // eslint-disable-next-line sonarjs/no-redundant-optional -- explicit undefined preserves exactOptionalPropertyTypes consumer compatibility
+    render?:
+      React.ReactElement | ((props: Parameters<PrimitiveListRenderCallback>[0], state: TabsListState) => React.ReactElement) | undefined;
+  }
+>;
 
 /**
  * Coordinates a tabbed interface for switching between related panels.
@@ -49,21 +78,20 @@ interface TabsContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseT
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-function Tabs(props: Readonly<Tabs.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const Tabs = (props: Readonly<Tabs.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
   return (
     <BaseTabs.Root
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
+      ref={ref}
+      data-slot='tabs'
+      className={typeof className === "function" ? (state) => cn(styles.root, className(state)) : cn(styles.root, className)}
+      render={render}
+      {...otherProps}>
       {children}
     </BaseTabs.Root>
   );
-}
+};
 Tabs.displayName = "Tabs";
 
 /**
@@ -73,6 +101,8 @@ Tabs.displayName = "Tabs";
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/tabs | Base UI Tabs}
  * - Supports the `render` prop for element composition
+ * - `default` uses a muted list and a sliding surface; `line` preserves the animated underline
+ * - The shared indicator follows Base UI measurements in either orientation
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage
@@ -84,22 +114,29 @@ Tabs.displayName = "Tabs";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-function TabsList(props: Readonly<TabsList.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const TabsList = (props: Readonly<TabsList.Props>): React.ReactElement => {
+  const {ref, className, children, render, variant = "default", ...otherProps} = props;
 
   return (
     <BaseTabs.List
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.list, className)}, {}),
-      })}>
+      ref={ref}
+      data-slot='tabs-list'
+      data-variant={variant}
+      className={
+        typeof className === "function"
+          ? (state) => tabsListVariants({variant, className: className({...state, variant})})
+          : tabsListVariants({variant, className})
+      }
+      render={typeof render === "function" ? (elementProps, state) => render(elementProps, {...state, variant}) : render}
+      {...otherProps}>
       {children}
-      <BaseTabs.Indicator className={styles.indicator} />
+      <BaseTabs.Indicator
+        data-slot='tabs-indicator'
+        className={styles.indicator}
+      />
     </BaseTabs.List>
   );
-}
+};
 TabsList.displayName = "TabsList";
 
 /**
@@ -118,24 +155,20 @@ TabsList.displayName = "TabsList";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const TabsTrigger = React.forwardRef<React.ComponentRef<typeof BaseTabs.Tab>, TabsTrigger.Props>(
-  (props: Readonly<TabsTrigger.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const TabsTrigger = (props: Readonly<TabsTrigger.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseTabs.Tab
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: render as never,
-          props: mergeProps({className: cn(styles.tab, className)}, {}),
-        })}>
-        {children}
-      </BaseTabs.Tab>
-    );
-  },
-);
+  return (
+    <BaseTabs.Tab
+      ref={ref}
+      data-slot='tabs-trigger'
+      className={typeof className === "function" ? (state) => cn(styles.tab, className(state)) : cn(styles.tab, className)}
+      render={render}
+      {...otherProps}>
+      {children}
+    </BaseTabs.Tab>
+  );
+};
 TabsTrigger.displayName = "TabsTrigger";
 
 /**
@@ -154,48 +187,51 @@ TabsTrigger.displayName = "TabsTrigger";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-const TabsContent = React.forwardRef<React.ComponentRef<typeof BaseTabs.Panel>, TabsContent.Props>(
-  (props: Readonly<TabsContent.Props>, ref): React.ReactElement => {
-    const {className, children, render, ...otherProps} = props;
+const TabsContent = (props: Readonly<TabsContent.Props>): React.ReactElement => {
+  const {ref, className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseTabs.Panel
-        ref={ref}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.panel, className)}, {}),
-        })}>
-        {children}
-      </BaseTabs.Panel>
-    );
-  },
-);
+  return (
+    <BaseTabs.Panel
+      ref={ref}
+      data-slot='tabs-content'
+      className={typeof className === "function" ? (state) => cn(styles.panel, className(state)) : cn(styles.panel, className)}
+      render={render}
+      {...otherProps}>
+      {children}
+    </BaseTabs.Panel>
+  );
+};
 TabsContent.displayName = "TabsContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Tabs {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsProps;
-  export type State = BaseTabs.Root.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = TabsState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsList {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsListProps;
-  export type State = BaseTabs.List.State;
+  export type State = TabsListState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsTrigger {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsTriggerProps;
-  export type State = BaseTabs.Tab.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = TabsTriggerState;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace TabsContent {
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
   export type Props = TabsContentProps;
-  export type State = BaseTabs.Panel.State;
+  // eslint-disable-next-line sonarjs/redundant-type-aliases -- public namespace alias preserves the canonical component typing API
+  export type State = TabsContentState;
 }
 
-export {Tabs, TabsContent, TabsList, TabsTrigger};
+export {Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants};

@@ -1,15 +1,95 @@
+import {useEffect, useState} from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CardSkeleton} from "./card-skeleton";
+import {VisuallyHidden} from "./visually-hidden";
+const storyStyles = `
+.ac-story-card-skeleton-storyPreview {
+  width: 48rem;
+  max-width: 100%;
+}
+
+.ac-story-card-skeleton-storyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--ac-space-6);
+}
+`;
+
+const storyClasses = {
+  storyPreview: "ac-story-card-skeleton-storyPreview",
+  storyGrid: "ac-story-card-skeleton-storyGrid",
+} as const;
+
+/**
+ * Caller-owned announcement: a persistent visually hidden status region is mounted empty and receives the localized
+ * `loadingAnnouncement` story parameter (in `loadingAnnouncementLang`, when set) once loading begins. The skeleton
+ * itself stays decorative.
+ */
+function LoadingAnnouncement({
+  message,
+  lang,
+  children,
+}: Readonly<{message: string; lang: string | undefined; children: React.ReactNode}>): React.JSX.Element {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+  return (
+    <>
+      <VisuallyHidden
+        role='status'
+        lang={lang}>
+        {loading ? message : null}
+      </VisuallyHidden>
+      {children}
+    </>
+  );
+}
 
 const meta = {
   title: "Components/Feedback/CardSkeleton",
   component: CardSkeleton,
   tags: ["autodocs"],
+  parameters: {
+    loadingAnnouncement: "Loading summary",
+    docs: {
+      description: {
+        component:
+          "Decorative card placeholders. Each story writes its localized loading message into a persistent visually hidden status region after that region mounts; the skeleton never carries a role or label.",
+      },
+    },
+  },
+  decorators: [
+    (Story, {parameters}) => {
+      const {loadingAnnouncement, loadingAnnouncementLang}: Readonly<Record<string, unknown>> = parameters;
+      return (
+        <LoadingAnnouncement
+          message={typeof loadingAnnouncement === "string" ? loadingAnnouncement : ""}
+          lang={typeof loadingAnnouncementLang === "string" ? loadingAnnouncementLang : undefined}>
+          <Story />
+        </LoadingAnnouncement>
+      );
+    },
+
+    (Story) => (
+      <div className={storyClasses.storyPreview}>
+        <Story />
+      </div>
+    ),
+
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   argTypes: {
     lines: {
-      control: {type: "range", min: 1, max: 10, step: 1},
-      description: "Number of body placeholder lines rendered in the card content area",
+      control: {type: "range", min: 0, max: 10, step: 1},
+      description: "Body lines: integer 0–10,000; invalid values throw RangeError. This demo limits the slider to 10.",
     },
+    animated: {control: "boolean", description: "Shared Skeleton motion; reduced-motion preferences always keep it static"},
   },
 } satisfies Meta<typeof CardSkeleton>;
 
@@ -43,24 +123,32 @@ export const Extended: Story = {
   },
 };
 
+/** Empty content preserves the decorative card header and action shape. */
+export const EmptyContent: Story = {
+  args: {lines: 0},
+};
+
+/** Explicitly static placeholders retain their visible loading surface. */
+export const Static: Story = {
+  args: {animated: false},
+};
+
+/** The announcement is caller-owned text, so it follows the page language. */
+export const LocalizedAnnouncement: Story = {
+  args: {lines: 3},
+  parameters: {loadingAnnouncement: "Se încarcă rezumatul", loadingAnnouncementLang: "ro"},
+};
+
 /**
- * Multiple card skeletons in a grid layout.
+ * Multiple card skeletons in a grid layout, with one shared status region for the whole grid.
  */
 export const Grid: Story = {
+  parameters: {loadingAnnouncement: "Loading summaries"},
   render: () => (
-    <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem"}}>
-      <CardSkeleton
-        lines={3}
-        aria-label='Loading card 1'
-      />
-      <CardSkeleton
-        lines={4}
-        aria-label='Loading card 2'
-      />
-      <CardSkeleton
-        lines={2}
-        aria-label='Loading card 3'
-      />
-    </div>
+    <section className={storyClasses.storyGrid}>
+      <CardSkeleton lines={3} />
+      <CardSkeleton lines={4} />
+      <CardSkeleton lines={2} />
+    </section>
   ),
 };

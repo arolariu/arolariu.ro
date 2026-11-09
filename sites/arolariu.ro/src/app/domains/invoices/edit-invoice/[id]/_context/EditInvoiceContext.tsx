@@ -18,8 +18,9 @@
  * @see patchInvoice server action for persistence
  */
 
+import {notify} from "@/lib/notify";
 import type {Invoice, Merchant, PaymentType} from "@/types/invoices";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useMemo, useState} from "react";
 import {patchInvoice} from "../../../_actions/invoices";
@@ -155,7 +156,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!hasChanges) {
-      toast.info(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.noChanges));
+      notify.info(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.noChanges));
       return true;
     }
 
@@ -195,13 +196,13 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       });
 
       if (result.success) {
-        toast.success(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.updated));
+        notify.success(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.updated));
         setPendingChanges({});
         // Trigger a page refresh to get the updated data
         globalThis.window.location.reload();
         return true;
       } else {
-        toast.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
+        notify.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
         return false;
       }
     } catch (error) {
@@ -209,7 +210,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         t((m) => m.pages.invoices.editInvoice.editInvoiceContext.console.saveFailed),
         error,
       );
-      toast.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
+      notify.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
       return false;
     } finally {
       setIsSaving(false);

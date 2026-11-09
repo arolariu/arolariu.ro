@@ -1,7 +1,7 @@
 "use client";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";
-import {Button} from "@arolariu/components/button";
+import {buttonVariants, cn} from "@arolariu/components";
 import {GradientText} from "@arolariu/components/gradient-text";
 import {motion, useScroll, useTransform} from "motion/react";
 import {useTranslations} from "next-intl-selector";
@@ -199,46 +199,38 @@ export default function Hero(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.05}}
               whileTap={{scale: 0.95}}>
-              <Button
-                asChild
-                size='lg'
-                className={styles["ctaButton"]}>
-                <Link href='/domains'>
-                  <TbRocket className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.sections.about.platform.hero.cta.exploreFeatures)}</span>
-                  <TbArrowRight className={styles["ctaArrow"]} />
-                  <motion.span
-                    className={styles["ctaOverlay"]}
-                    initial={{x: "-100%", opacity: 0}}
-                    whileHover={{x: "100%", opacity: 1}}
-                    transition={{duration: 0.6}}
-                  />
-                </Link>
-              </Button>
+              <Link
+                className={cn(buttonVariants({size: "lg"}), styles["ctaButton"])}
+                href='/domains'>
+                <TbRocket className={styles["ctaIcon"]} />
+                <span>{t((m) => m.sections.about.platform.hero.cta.exploreFeatures)}</span>
+                <TbArrowRight className={styles["ctaArrow"]} />
+                <motion.span
+                  className={styles["ctaOverlay"]}
+                  initial={{x: "-100%", opacity: 0}}
+                  whileHover={{x: "100%", opacity: 1}}
+                  transition={{duration: 0.6}}
+                />
+              </Link>
             </motion.div>
 
             <motion.div
               whileHover={{scale: 1.05}}
               whileTap={{scale: 0.95}}>
-              <Button
-                asChild
-                size='lg'
-                variant='outline'
-                className={styles["ctaButton"]}>
-                <Link
-                  href='https://github.com/arolariu/arolariu.ro'
-                  target='_blank'
-                  rel='noopener noreferrer'>
-                  <TbBrandGithub className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.sections.about.platform.hero.cta.viewSource)}</span>
-                  <motion.span
-                    className={styles["ctaOverlay"]}
-                    initial={{x: "-100%", opacity: 0}}
-                    whileHover={{x: "100%", opacity: 1}}
-                    transition={{duration: 0.6}}
-                  />
-                </Link>
-              </Button>
+              <Link
+                className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaButton"])}
+                href='https://github.com/arolariu/arolariu.ro'
+                target='_blank'
+                rel='noopener noreferrer'>
+                <TbBrandGithub className={styles["ctaIcon"]} />
+                <span>{t((m) => m.sections.about.platform.hero.cta.viewSource)}</span>
+                <motion.span
+                  className={styles["ctaOverlay"]}
+                  initial={{x: "-100%", opacity: 0}}
+                  whileHover={{x: "100%", opacity: 1}}
+                  transition={{duration: 0.6}}
+                />
+              </Link>
             </motion.div>
           </motion.div>
         </div>

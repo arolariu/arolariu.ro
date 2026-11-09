@@ -1,10 +1,36 @@
 import {render, screen} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
 
 describe("Card", () => {
+  it("exposes compact sizing and direct header actions without replacing native content semantics", () => {
+    render(
+      <Card
+        size='sm'
+        role='region'
+        aria-label='Summary'>
+        <CardHeader data-testid='header'>
+          <CardTitle>
+            <h2>Summary</h2>
+          </CardTitle>
+          <CardDescription>Long supporting content</CardDescription>
+          <CardAction>
+            <button type='button'>Manage</button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>Details</CardContent>
+        <CardFooter>Last updated today</CardFooter>
+      </Card>,
+    );
+    expect(screen.getByRole("region", {name: "Summary"})).toHaveAttribute("data-size", "sm");
+    expect(screen.getByRole("button", {name: "Manage"}).parentElement).toHaveAttribute("data-slot", "card-action");
+    expect(screen.getByRole("button", {name: "Manage"}).parentElement?.parentElement).toBe(screen.getByTestId("header"));
+    expect(screen.getByRole("heading", {name: "Summary", level: 2})).toBeInTheDocument();
+  });
   it("renders without crashing", () => {
     render(<Card>Content</Card>);
 
@@ -331,5 +357,14 @@ describe("Card", () => {
     const footer = screen.getByTestId("footer");
     expect(footer).toHaveClass("custom-footer");
     expect(footer.className).not.toBe("custom-footer");
+  });
+
+  it("keeps the first-child content padding at single-class specificity so consumer overrides win", () => {
+    // Arrange
+    const css = readFileSync(join(import.meta.dirname, "card.module.css"), "utf8");
+
+    // Assert
+    expect(css).toMatch(/\.content:where\(:first-child\)\s*\{[^}]*padding-top:\s*var\(--ac-card-spacing\)/u);
+    expect(css).not.toMatch(/\.content:first-child/u);
   });
 });

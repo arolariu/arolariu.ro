@@ -205,8 +205,10 @@ export function buildHygienePlan(
     }
     for (const project of inspection.value.projects.filter((project) => affected.has(project.name))) {
       const suite = TYPESCRIPT_SUITE_PROJECTS.find((suite) => suite.root === project.root);
-      if (suite) selectedSuites.add(suite.name);
-      else if (project.targets.includes("test") && project.root !== "sites/api.arolariu.ro" && project.root !== "sites/exp.arolariu.ro")
+      if (suite) {
+        selectedSuites.add(suite.name);
+        if (suite.name === "website" || suite.name === "components" || suite.name === "docs") selectedSuites.add("tooling");
+      } else if (project.targets.includes("test") && project.root !== "sites/api.arolariu.ro" && project.root !== "sites/exp.arolariu.ro")
         diagnostics.push({code: "unmapped-test-project", message: `No declared test suite maps project: ${project.name}`});
     }
   }

@@ -73,7 +73,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
               </Button>
             }
           />
-          <SheetContent>
+          <SheetContent closeLabel={t((m) => m.shared.accessibility.close)}>
             <SheetHeader>
               <SheetTitle>{t((m) => m.pages.profile.header.editProfileTitle)}</SheetTitle>
               <SheetDescription>{t((m) => m.pages.profile.header.editProfileDescription)}</SheetDescription>

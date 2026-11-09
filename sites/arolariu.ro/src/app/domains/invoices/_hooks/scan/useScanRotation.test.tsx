@@ -18,6 +18,7 @@ vi.mock("../../_actions/scans", () => ({
   updateScan: vi.fn(),
 }));
 
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
@@ -65,11 +66,11 @@ vi.mock("next-intl-selector", () => ({
 
 const {useScansStore} = await import("@/stores");
 const {updateScan} = await import("../../_actions/scans");
-const {toast} = await import("@arolariu/components");
+const {notify} = await import("@/lib/notify");
 
 const mockUseScansStore = vi.mocked(useScansStore);
 const mockUpdateScan = vi.mocked(updateScan);
-const mockToast = vi.mocked(toast);
+const mockToast = vi.mocked(notify);
 
 type CanvasHarness = Readonly<{
   canvas: HTMLCanvasElement;

@@ -14,7 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj" />
-    <Content Include="..\..\src\LocalDevelopment.Bootstrap\SeedData\scenario.v1.json"
-             Link="SeedData\scenario.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\src\LocalDevelopment.Bootstrap\SeedData\*.json"
+             Link="SeedData\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

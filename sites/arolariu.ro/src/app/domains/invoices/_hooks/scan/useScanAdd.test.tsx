@@ -19,6 +19,7 @@ vi.mock("../../_actions/invoices", () => ({
   attachScanToInvoice: vi.fn(),
 }));
 
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
@@ -61,11 +62,11 @@ vi.mock("next-intl-selector", () => ({
 
 const {createScan} = await import("../../_actions/scans");
 const {attachScanToInvoice} = await import("../../_actions/invoices");
-const {toast} = await import("@arolariu/components");
+const {notify} = await import("@/lib/notify");
 
 const mockCreateScan = vi.mocked(createScan);
 const mockAttachScanToInvoice = vi.mocked(attachScanToInvoice);
-const mockToast = vi.mocked(toast);
+const mockToast = vi.mocked(notify);
 
 function dispatchStoredListener(listener: EventListenerOrEventListenerObject | undefined, event: Event): void {
   if (typeof listener === "function") {

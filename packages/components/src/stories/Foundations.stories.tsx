@@ -1,7 +1,134 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import "../index.css";
+const storyStyles = `
+.ac-story-foundations-swatchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.ac-story-foundations-swatch {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--ac-border);
+  flex-shrink: 0;
+}
+
+.ac-story-foundations-tokenLabel {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ac-story-foundations-tokenName {
+  font-size: 12px;
+  color: var(--ac-muted-foreground);
+}
+
+.ac-story-foundations-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ac-story-foundations-groupHeading {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--ac-border);
+  padding-bottom: 8px;
+}
+
+.ac-story-foundations-colorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.ac-story-foundations-spacingList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ac-story-foundations-spacingHeading {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ac-story-foundations-spacingRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ac-story-foundations-spacingName {
+  width: 140px;
+  font-size: 12px;
+  color: var(--ac-muted-foreground);
+}
+
+.ac-story-foundations-spacingBar {
+  height: 24px;
+  background-color: var(--ac-primary);
+  border-radius: 4px;
+  min-width: 4px;
+}
+
+.ac-story-foundations-radiusList {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ac-story-foundations-radiusItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ac-story-foundations-radiusSwatch {
+  width: 64px;
+  height: 64px;
+  background-color: var(--ac-primary);
+}
+
+.ac-story-foundations-radiusName {
+  font-size: 11px;
+  color: var(--ac-muted-foreground);
+}
+`;
+
+const storyClasses = {
+  swatchRow: "ac-story-foundations-swatchRow",
+  swatch: "ac-story-foundations-swatch",
+  tokenLabel: "ac-story-foundations-tokenLabel",
+  tokenName: "ac-story-foundations-tokenName",
+  groups: "ac-story-foundations-groups",
+  groupHeading: "ac-story-foundations-groupHeading",
+  colorGrid: "ac-story-foundations-colorGrid",
+  spacingList: "ac-story-foundations-spacingList",
+  spacingHeading: "ac-story-foundations-spacingHeading",
+  spacingRow: "ac-story-foundations-spacingRow",
+  spacingName: "ac-story-foundations-spacingName",
+  spacingBar: "ac-story-foundations-spacingBar",
+  radiusList: "ac-story-foundations-radiusList",
+  radiusItem: "ac-story-foundations-radiusItem",
+  radiusSwatch: "ac-story-foundations-radiusSwatch",
+  radiusName: "ac-story-foundations-radiusName",
+} as const;
 
 const meta = {
+  decorators: [
+    (Story) => (
+      <>
+        <style>{storyStyles}</style>
+        <Story />
+      </>
+    ),
+  ],
   title: "Foundations/Design Tokens",
   tags: ["autodocs"],
   parameters: {
@@ -18,6 +145,7 @@ const tokenGroups = {
     {name: "--ac-foreground", label: "Foreground"},
     {name: "--ac-primary", label: "Primary"},
     {name: "--ac-primary-foreground", label: "Primary Foreground"},
+    {name: "--ac-primary-emphasis", label: "Primary Emphasis"},
     {name: "--ac-secondary", label: "Secondary"},
     {name: "--ac-secondary-foreground", label: "Secondary Foreground"},
     {name: "--ac-muted", label: "Muted"},
@@ -44,20 +172,14 @@ const tokenGroups = {
 
 function ColorSwatch({name, label}: {name: string; label: string}) {
   return (
-    <div style={{display: "flex", alignItems: "center", gap: 12, padding: "8px 0"}}>
+    <div className={storyClasses.swatchRow}>
       <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 8,
-          backgroundColor: `var(${name})`,
-          border: "1px solid var(--ac-border)",
-          flexShrink: 0,
-        }}
+        className={storyClasses.swatch}
+        style={{backgroundColor: `var(${name})`}}
       />
       <div>
-        <div style={{fontWeight: 600, fontSize: 14}}>{label}</div>
-        <code style={{fontSize: 12, color: "var(--ac-muted-foreground)"}}>{name}</code>
+        <div className={storyClasses.tokenLabel}>{label}</div>
+        <code className={storyClasses.tokenName}>{name}</code>
       </div>
     </div>
   );
@@ -65,13 +187,11 @@ function ColorSwatch({name, label}: {name: string; label: string}) {
 
 export const Colors: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: 32}}>
+    <div className={storyClasses.groups}>
       {Object.entries(tokenGroups).map(([group, tokens]) => (
         <div key={group}>
-          <h3 style={{marginBottom: 12, fontSize: 18, fontWeight: 600, borderBottom: "1px solid var(--ac-border)", paddingBottom: 8}}>
-            {group}
-          </h3>
-          <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 8}}>
+          <h3 className={storyClasses.groupHeading}>{group}</h3>
+          <div className={storyClasses.colorGrid}>
             {tokens.map((t) => (
               <ColorSwatch
                 key={t.name}
@@ -89,21 +209,16 @@ const spacingTokens = ["--ac-space-1", "--ac-space-2", "--ac-space-3", "--ac-spa
 
 export const Spacing: Story = {
   render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: 16}}>
-      <h3 style={{fontSize: 18, fontWeight: 600}}>Spacing Scale</h3>
+    <div className={storyClasses.spacingList}>
+      <h3 className={storyClasses.spacingHeading}>Spacing Scale</h3>
       {spacingTokens.map((token) => (
         <div
           key={token}
-          style={{display: "flex", alignItems: "center", gap: 16}}>
-          <code style={{width: 140, fontSize: 12, color: "var(--ac-muted-foreground)"}}>{token}</code>
+          className={storyClasses.spacingRow}>
+          <code className={storyClasses.spacingName}>{token}</code>
           <div
-            style={{
-              height: 24,
-              width: `var(${token})`,
-              backgroundColor: "var(--ac-primary)",
-              borderRadius: 4,
-              minWidth: 4,
-            }}
+            className={storyClasses.spacingBar}
+            style={{width: `var(${token})`}}
           />
         </div>
       ))}
@@ -115,20 +230,16 @@ const radiusTokens = ["--ac-radius-xs", "--ac-radius-sm", "--ac-radius-md", "--a
 
 export const BorderRadius: Story = {
   render: () => (
-    <div style={{display: "flex", gap: 24, flexWrap: "wrap"}}>
+    <div className={storyClasses.radiusList}>
       {radiusTokens.map((token) => (
         <div
           key={token}
-          style={{display: "flex", flexDirection: "column", alignItems: "center", gap: 8}}>
+          className={storyClasses.radiusItem}>
           <div
-            style={{
-              width: 64,
-              height: 64,
-              backgroundColor: "var(--ac-primary)",
-              borderRadius: `var(${token})`,
-            }}
+            className={storyClasses.radiusSwatch}
+            style={{borderRadius: `var(${token})`}}
           />
-          <code style={{fontSize: 11, color: "var(--ac-muted-foreground)"}}>{token.replace("--ac-radius-", "")}</code>
+          <code className={storyClasses.radiusName}>{token.replace("--ac-radius-", "")}</code>
         </div>
       ))}
     </div>

@@ -25,13 +25,6 @@ import {
   type SubCheck,
 } from "./status.ts";
 
-type SubCheckCandidate = Partial<Record<keyof SubCheck, unknown>>;
-type ProbeResultCandidate = Partial<Record<keyof ProbeResult, unknown>>;
-type BucketCandidate = Partial<Record<keyof Bucket, unknown>>;
-type ServiceSeriesCandidate = Partial<Record<keyof ServiceSeries, unknown>>;
-type IncidentsFileCandidate = Partial<Record<keyof IncidentsFile, unknown>>;
-type AggregateFileCandidate = Partial<Record<keyof AggregateFile, unknown>>;
-
 interface ProbeCountsCandidate {
   readonly healthy?: unknown;
   readonly total?: unknown;
@@ -117,6 +110,7 @@ export function isServiceId(value: unknown): value is ServiceId {
 
 /** Validates a sub-check shape: required name/status/durationMs, optional description/sampleDurationsMs. */
 export function isSubCheck(value: unknown): value is SubCheck {
+  type SubCheckCandidate = Partial<Record<keyof SubCheck, unknown>>;
   if (!isObject(value)) return false;
   const {name, status, durationMs, description, sampleDurationsMs} = value as SubCheckCandidate;
   return (
@@ -134,6 +128,7 @@ export function isSubCheck(value: unknown): value is SubCheck {
  * must be an array of valid sub-checks — one bad entry rejects the whole probe.
  */
 export function isProbeResult(value: unknown): value is ProbeResult {
+  type ProbeResultCandidate = Partial<Record<keyof ProbeResult, unknown>>;
   if (!isObject(value)) return false;
   const {service, timestamp, latencyMs, httpStatus, overall, error, subChecks, sampleCount, sampleLatenciesMs} =
     value as ProbeResultCandidate;
@@ -160,6 +155,7 @@ export function isProbeResult(value: unknown): value is ProbeResult {
  *  - Optional `worstSubCheck` shape matches `SubCheckSummary` when carried.
  */
 export function isBucket(value: unknown): value is Bucket {
+  type BucketCandidate = Partial<Record<keyof Bucket, unknown>>;
   if (!isObject(value)) return false;
   const {t: timestamp, status, probes, latency, httpStatus, worstSubCheck} = value as BucketCandidate;
 
@@ -175,6 +171,7 @@ export function isBucket(value: unknown): value is Bucket {
 
 /** Validates a single service's series, including optional sub-series map. */
 export function isServiceSeries(value: unknown): value is ServiceSeries {
+  type ServiceSeriesCandidate = Partial<Record<keyof ServiceSeries, unknown>>;
   if (!isObject(value)) return false;
   const {service, buckets, subSeries} = value as ServiceSeriesCandidate;
 
@@ -205,14 +202,12 @@ const VALID_AGGREGATE_PAIRS: ReadonlyMap<string, 14 | 90 | 365> = new Map([
  * that every service's series passes `isServiceSeries`.
  */
 export function isAggregateFile(value: unknown): value is AggregateFile {
+  type AggregateFileCandidate = Partial<Record<keyof AggregateFile, unknown>>;
   if (!isObject(value)) return false;
   const {generatedAt, bucketSize, windowDays, services} = value as AggregateFileCandidate;
   if (typeof generatedAt !== "string" || typeof bucketSize !== "string") return false;
   const expectedWindowDays = VALID_AGGREGATE_PAIRS.get(bucketSize);
-  // Unknown bucketSize.
-  if (expectedWindowDays === undefined) return false;
-  // Mismatched pair.
-  if (windowDays !== expectedWindowDays) return false;
+  if (expectedWindowDays === undefined || windowDays !== expectedWindowDays) return false;
   return Array.isArray(services) && services.every(isServiceSeries);
 }
 
@@ -248,6 +243,7 @@ export function isIncident(value: unknown): value is Incident {
 
 /** Validates the top-level incidents file (generatedAt + array of incidents). */
 export function isIncidentsFile(value: unknown): value is IncidentsFile {
+  type IncidentsFileCandidate = Partial<Record<keyof IncidentsFile, unknown>>;
   if (!isObject(value)) return false;
   const candidate = value as IncidentsFileCandidate;
   return typeof candidate.generatedAt === "string" && Array.isArray(candidate.incidents) && candidate.incidents.every(isIncident);

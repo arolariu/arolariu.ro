@@ -1,3 +1,4 @@
+import type * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {
   Breadcrumb,
@@ -25,7 +26,7 @@ type Story = StoryObj<typeof meta>;
  * Default breadcrumb navigation with multiple levels.
  */
 export const Default: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
@@ -48,7 +49,7 @@ export const Default: Story = {
  * Simple two-level breadcrumb.
  */
 export const Simple: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
@@ -67,7 +68,7 @@ export const Simple: Story = {
  * Breadcrumb with ellipsis to indicate collapsed items.
  */
 export const WithEllipsis: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
@@ -94,7 +95,7 @@ export const WithEllipsis: Story = {
  * Deep hierarchy breadcrumb showing file system navigation.
  */
 export const DeepHierarchy: Story = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
@@ -157,7 +158,7 @@ function CollapsedBreadcrumb(): React.JSX.Element {
 }
 
 export const Collapsed: Story = {
-  render: () => <CollapsedBreadcrumb />,
+  render: (): React.JSX.Element => <CollapsedBreadcrumb />,
 };
 
 /**
@@ -168,11 +169,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink
-            href='/'
-            style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink href='/'>
             <svg
-              style={{width: "16px", height: "16px"}}
+              aria-hidden='true'
               fill='none'
               viewBox='0 0 24 24'
               stroke='currentColor'>
@@ -188,11 +187,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink
-            href='/products'
-            style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink href='/products'>
             <svg
-              style={{width: "16px", height: "16px"}}
+              aria-hidden='true'
               fill='none'
               viewBox='0 0 24 24'
               stroke='currentColor'>
@@ -208,11 +205,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink
-            href='/products/electronics'
-            style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink href='/products/electronics'>
             <svg
-              style={{width: "16px", height: "16px"}}
+              aria-hidden='true'
               fill='none'
               viewBox='0 0 24 24'
               stroke='currentColor'>
@@ -236,5 +231,92 @@ function BreadcrumbWithIcons(): React.JSX.Element {
 }
 
 export const WithIcons: Story = {
-  render: () => <BreadcrumbWithIcons />,
+  render: (): React.JSX.Element => <BreadcrumbWithIcons />,
+};
+
+/** Render elements preserve their own content or accept wrapper-provided children. */
+export const ComposedLinks: Story = {
+  render: (): React.JSX.Element => (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink render={<a href='#render-home' />}>Rendered home</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbLink render={<a href='#render-components'>Rendered components</a>} />
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>Current page</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  ),
+};
+
+/** Inherited RTL direction flips only default chevrons; custom separators remain untouched. */
+export const RightToLeft: Story = {
+  render: (): React.JSX.Element => (
+    <Breadcrumb
+      dir='rtl'
+      aria-label='مسار التنقل'>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href='#rtl-home'>الرئيسية</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbLink href='#rtl-components'>المكونات</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator>/</BreadcrumbSeparator>
+        <BreadcrumbItem>
+          <BreadcrumbPage>الصفحة الحالية</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  ),
+};
+
+/** Custom separator content belongs to the separator part. */
+export const CustomSeparator: Story = {
+  render: (): React.JSX.Element => (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href='#custom-home'>Home</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator>/</BreadcrumbSeparator>
+        <BreadcrumbItem>
+          <BreadcrumbPage>Custom path</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  ),
+};
+
+/** Render callbacks receive breadcrumb-link-owned state and the real merged callback ref. */
+export const RenderCallback: Story = {
+  render: (): React.JSX.Element => (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink
+            href='#callback-home'
+            render={(props, state): React.ReactElement => (
+              <a
+                {...props}
+                data-demo-slot={state.slot}
+              />
+            )}>
+            Callback home
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>Current page</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  ),
 };

@@ -5,9 +5,9 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans
  */
 
+import {notify} from "@/lib/notify";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
-import {toast} from "@arolariu/components";
 import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
 import {fetchScans} from "../../_actions/scans";
@@ -103,9 +103,7 @@ export function useScans(): UseScansOutput {
       setIsSyncing(true);
 
       try {
-        const result = await fetchScans({
-          includeArchived: false,
-        });
+        const result = await fetchScans();
 
         if (result.success && result.data) {
           const fetchedScans = result.data;
@@ -120,7 +118,7 @@ export function useScans(): UseScansOutput {
 
           // Only show success toast for manual sync
           if (manual && isMountedRef.current) {
-            toast.success("Scans synced successfully");
+            notify.success("Scans synced successfully");
           }
         }
       } catch (error) {
@@ -129,7 +127,7 @@ export function useScans(): UseScansOutput {
         // failures must stay silent to avoid the toast-spam UX seen on
         // unreliable mobile networks.
         if (manual && isMountedRef.current) {
-          toast.error("Failed to sync scans");
+          notify.error("Failed to sync scans");
         }
       } finally {
         setIsSyncing(false);

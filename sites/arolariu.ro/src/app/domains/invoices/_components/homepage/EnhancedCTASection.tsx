@@ -1,6 +1,6 @@
 "use client";
 
-import {Button} from "@arolariu/components";
+import {buttonVariants, cn} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -8,20 +8,20 @@ import {useRef} from "react";
 import {TbArrowRight, TbBrain, TbCloud, TbLock, TbSparkles, TbUpload} from "react-icons/tb";
 import styles from "./EnhancedCTASection.module.scss";
 
-type CtaTranslations = Readonly<{
-  title: string;
-  description: string;
-  uploadButton: string;
-  learnMore: string;
-  badges: {secure: string; cloud: string; ai: string};
-}>;
-
 /**
  * Renders the call-to-action section for invoices.
  *
  * @returns The CTA section.
  */
 export default function EnhancedCTASection(): React.JSX.Element {
+  type CtaTranslations = Readonly<{
+    title: string;
+    description: string;
+    uploadButton: string;
+    learnMore: string;
+    badges: {secure: string; cloud: string; ai: string};
+  }>;
+
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-50px"});
@@ -101,25 +101,18 @@ export default function EnhancedCTASection(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.5}}>
-          <Button
-            asChild
-            size='lg'
-            className={`group ${styles["ctaPrimaryBtn"]}`}>
-            <Link href='/domains/invoices/upload-scans'>
-              <TbUpload className={styles["ctaUploadIcon"]} />
-              {translations.uploadButton}
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size='lg'
-            variant='outline'
-            className={styles["ctaSecondaryBtn"]}>
-            <Link href='/about/the-platform'>
-              {translations.learnMore}
-              <TbArrowRight className={styles["ctaArrowIcon"]} />
-            </Link>
-          </Button>
+          <Link
+            className={cn(buttonVariants({size: "lg"}), `group ${styles["ctaPrimaryBtn"]}`)}
+            href='/domains/invoices/upload-scans'>
+            <TbUpload className={styles["ctaUploadIcon"]} />
+            {translations.uploadButton}
+          </Link>
+          <Link
+            className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaSecondaryBtn"])}
+            href='/about/the-platform'>
+            {translations.learnMore}
+            <TbArrowRight className={styles["ctaArrowIcon"]} />
+          </Link>
         </motion.div>
 
         <motion.div
