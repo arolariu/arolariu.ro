@@ -414,7 +414,7 @@ describe("complete supported public surface", () => {
     }
   });
 
-  it("reconciles the 3.0 workspace and links the website to it", () => {
+  it("reconciles the 3.0 workspace while the website consumes the published 3.0.0 registry artifact", () => {
     const repositoryDirectory = path.resolve(import.meta.dirname, "../../..");
     const readManifest = (relativePath: string) => JSON.parse(fs.readFileSync(path.join(repositoryDirectory, relativePath), "utf8"));
     const root = readManifest("package.json");
@@ -422,6 +422,8 @@ describe("complete supported public surface", () => {
     const component = readManifest("packages/components/package.json");
     const website = readManifest("sites/arolariu.ro/package.json");
     const workspaceEntry = lock.packages["packages/components"];
+    const publishedEntry = lock.packages["sites/arolariu.ro/node_modules/@arolariu/components"];
+    const tarball = "https://registry.npmjs.org/@arolariu/components/-/components-3.0.0.tgz";
 
     expect(root.devDependencies["@arolariu/components"]).toBe("3.0.0");
     expect(root.devDependencies["@base-ui/react"]).toBe("1.9.0");
@@ -431,13 +433,21 @@ describe("complete supported public surface", () => {
     expect(workspaceEntry.devDependencies).toEqual(component.devDependencies);
     expect(workspaceEntry.peerDependencies).toEqual(component.peerDependencies);
     expect(lock.packages["node_modules/@arolariu/components"]).toEqual({resolved: "packages/components", link: true});
-    // The website temporarily consumes the workspace through the hoisted link until v3 is published.
-    expect(website.dependencies["@arolariu/components"]).toBe(component.version);
-    expect(lock.packages["sites/arolariu.ro"].dependencies["@arolariu/components"]).toBe(component.version);
-    expect(lock.packages["sites/arolariu.ro/node_modules/@arolariu/components"]).toBeUndefined();
+    expect(website.dependencies["@arolariu/components"]).toBe(tarball);
+    expect(lock.packages["sites/arolariu.ro"].dependencies["@arolariu/components"]).toBe(tarball);
+    expect(publishedEntry.version).toBe("3.0.0");
+    expect(publishedEntry.resolved).toBe(tarball);
+    expect(publishedEntry.integrity).toBe(
+      "sha512-h3gkcgCf4ZVimBrWbP471hezEhS5hW+eJlykQlWKMryNQn+1/t/xATDyiYqJIY1jeU+g/CXhYVGUQAnUlikJjA==",
+    );
+    expect(publishedEntry.link).toBeUndefined();
     const workspaceDirectory = fs.realpathSync(path.join(repositoryDirectory, "node_modules", "@arolariu", "components"));
+    const publishedDirectory = fs.realpathSync(
+      path.join(repositoryDirectory, "sites", "arolariu.ro", "node_modules", "@arolariu", "components"),
+    );
     expect(workspaceDirectory).toBe(fs.realpathSync(path.join(repositoryDirectory, "packages", "components")));
-    expect(fs.existsSync(path.join(repositoryDirectory, "sites", "arolariu.ro", "node_modules", "@arolariu", "components"))).toBe(false);
+    expect(publishedDirectory).not.toBe(workspaceDirectory);
+    expect(JSON.parse(fs.readFileSync(path.join(publishedDirectory, "package.json"), "utf8")).version).toBe("3.0.0");
   });
 
   it.each(supportedComponentModules)("preserves every runtime export from the real %s module", async (name) => {
