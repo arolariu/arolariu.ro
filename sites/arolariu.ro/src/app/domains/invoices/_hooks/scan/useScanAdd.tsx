@@ -10,9 +10,10 @@
  * exposes loading state plus toast feedback for the calling component.
  */
 
+import {notify} from "@/lib/notify";
 import type {InvoiceScanType} from "@/types/invoices";
 import {ScanDocumentKind, ScanDocumentRole} from "@/types/scans";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {attachScanToInvoice} from "../../_actions/invoices";
@@ -122,10 +123,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           },
         });
 
-        toast.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
+        notify.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(
+        notify.error(
           t((m) => m.toasts.invoices.useScanAdd.addError),
           {description: message},
         );

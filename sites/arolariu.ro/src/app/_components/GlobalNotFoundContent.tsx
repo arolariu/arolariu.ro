@@ -2,7 +2,7 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import {Button} from "@arolariu/components";
+import {buttonVariants, cn} from "@arolariu/components";
 import Link from "next/link";
 import QRCode from "react-qr-code";
 import styles from "../global-not-found.module.scss";
@@ -95,17 +95,16 @@ export function GlobalNotFoundContent({qrCodeData, copy}: Readonly<NotFoundConte
         <section className={styles["bottomSection"]}>
           <span className={styles["falsePositive"]}>{copy.falsePositive}</span>
           <div className={styles["buttonRow"]}>
-            <Button
-              asChild
-              variant='outline'
-              className={styles["actionButtonOutline"]}>
-              <Link href='/'>{copy.submitErrorButton}</Link>
-            </Button>
-            <Button
-              asChild
-              className={styles["actionButtonDefault"]}>
-              <Link href='https://arolariu.ro/'>{copy.returnButton}</Link>
-            </Button>
+            <Link
+              className={cn(buttonVariants({variant: "outline"}), styles["actionButtonOutline"])}
+              href='/'>
+              {copy.submitErrorButton}
+            </Link>
+            <Link
+              className={cn(buttonVariants(), styles["actionButtonDefault"])}
+              href='https://arolariu.ro/'>
+              {copy.returnButton}
+            </Link>
           </div>
         </section>
       </div>

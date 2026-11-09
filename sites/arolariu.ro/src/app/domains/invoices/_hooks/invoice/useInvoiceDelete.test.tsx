@@ -17,6 +17,7 @@ vi.mock("../../_actions/invoices", () => ({
   deleteInvoice: vi.fn(),
 }));
 
+vi.mock("@/lib/notify", async () => ({notify: (await import("@arolariu/components")).toast}));
 vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
@@ -58,12 +59,12 @@ vi.mock("next/navigation", () => ({
 // Import mocked modules
 const {useInvoicesStore} = await import("@/stores");
 const {deleteInvoice} = await import("../../_actions/invoices");
-const {toast} = await import("@arolariu/components");
+const {notify} = await import("@/lib/notify");
 const {useRouter} = await import("next/navigation");
 
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockDeleteInvoice = vi.mocked(deleteInvoice);
-const mockToast = vi.mocked(toast);
+const mockToast = vi.mocked(notify);
 const mockUseRouter = vi.mocked(useRouter);
 
 describe("useInvoiceDelete", () => {

@@ -191,7 +191,9 @@ export default function FilterBar({
                 </Button>
               }
             />
-            <SheetContent className={styles["filterSheet"]}>
+            <SheetContent
+              closeLabel={t((m) => m.shared.accessibility.close)}
+              className={styles["filterSheet"]}>
               <div className={styles["sheetHeader"]}>
                 <h3 className={styles["sheetTitle"]}>
                   {t((m) => m.forms.invoices.filters.title)}

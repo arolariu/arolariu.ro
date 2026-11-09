@@ -29,8 +29,9 @@
  * - Blob generation happens on-demand, not during render
  */
 
+import {notify} from "@/lib/notify";
 import {formatAmount, formatDate} from "@/lib/utils.generic";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -135,11 +136,11 @@ export function ExportDialog(): React.JSX.Element {
       link.remove();
       URL.revokeObjectURL(url);
 
-      toast.success(t((m) => m.pages.invoices.viewInvoice.export.csvSuccess));
+      notify.success(t((m) => m.pages.invoices.viewInvoice.export.csvSuccess));
       close();
     } catch (error) {
       console.error("Failed to export CSV:", error);
-      toast.error(t((m) => m.pages.invoices.viewInvoice.export.csvError));
+      notify.error(t((m) => m.pages.invoices.viewInvoice.export.csvError));
     }
   }, [invoice, close, t]);
 
@@ -170,11 +171,11 @@ export function ExportDialog(): React.JSX.Element {
       link.remove();
       URL.revokeObjectURL(url);
 
-      toast.success(t((m) => m.pages.invoices.viewInvoice.export.jsonSuccess));
+      notify.success(t((m) => m.pages.invoices.viewInvoice.export.jsonSuccess));
       close();
     } catch (error) {
       console.error("Failed to export JSON:", error);
-      toast.error(t((m) => m.pages.invoices.viewInvoice.export.jsonError));
+      notify.error(t((m) => m.pages.invoices.viewInvoice.export.jsonError));
     }
   }, [invoice, close, t]);
 
@@ -206,11 +207,11 @@ Items: ${invoice.items.length}
       `.trim();
 
       await navigator.clipboard.writeText(summary);
-      toast.success(t((m) => m.pages.invoices.viewInvoice.export.copySuccess));
+      notify.success(t((m) => m.pages.invoices.viewInvoice.export.copySuccess));
       close();
     } catch (error) {
       console.error("Failed to copy summary:", error);
-      toast.error(t((m) => m.pages.invoices.viewInvoice.export.copyError));
+      notify.error(t((m) => m.pages.invoices.viewInvoice.export.copyError));
     }
   }, [invoice, merchant, close, t]);
 
@@ -238,7 +239,7 @@ Items: ${invoice.items.length}
    */
   const handleExportPDF = useCallback(async (): Promise<void> => {
     setIsGeneratingPDF(true);
-    const loadingToastId = toast.loading(t((m) => m.pages.invoices.viewInvoice.export.pdfGenerating));
+    const loadingToastId = notify.loading(t((m) => m.pages.invoices.viewInvoice.export.pdfGenerating));
 
     try {
       // Generate PDF blob
@@ -268,13 +269,13 @@ Items: ${invoice.items.length}
       link.remove();
       URL.revokeObjectURL(url);
 
-      toast.dismiss(loadingToastId);
-      toast.success(t((m) => m.pages.invoices.viewInvoice.export.pdfSuccess));
+      notify.dismiss(loadingToastId);
+      notify.success(t((m) => m.pages.invoices.viewInvoice.export.pdfSuccess));
       close();
     } catch (error) {
       console.error("Failed to generate PDF:", error);
-      toast.dismiss(loadingToastId);
-      toast.error(t((m) => m.pages.invoices.viewInvoice.export.pdfError));
+      notify.dismiss(loadingToastId);
+      notify.error(t((m) => m.pages.invoices.viewInvoice.export.pdfError));
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -284,7 +285,9 @@ Items: ${invoice.items.length}
     <Dialog
       open={isOpen}
       onOpenChange={close}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.pages.invoices.viewInvoice.export.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.pages.invoices.viewInvoice.export.description)}</DialogDescription>

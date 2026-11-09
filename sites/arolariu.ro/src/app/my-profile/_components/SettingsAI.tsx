@@ -30,20 +30,26 @@ type Props = Readonly<{
   onSettingsChange: (settings: Partial<AISettings>) => void;
 }>;
 
+/** Trigger label lookups derived from the same constants that render the options. */
+const AI_MODEL_ITEMS = AI_MODELS.map((model) => ({value: model.id, label: model.name}));
+const AI_BEHAVIOR_ITEMS = AI_BEHAVIOR_PRESETS.map((preset) => ({value: preset.id, label: preset.name}));
+
 export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 
   const handleModelChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({model: value as AISettings["model"]});
     },
     [onSettingsChange],
   );
 
   const handleBehaviorChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       onSettingsChange({behaviorPreset: value as AISettings["behaviorPreset"]});
     },
     [onSettingsChange],
@@ -102,7 +108,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardContent className={styles["cardContentSpaced"]}>
               <Select
                 value={settings.model}
-                onValueChange={handleModelChange}>
+                onValueChange={handleModelChange}
+                items={AI_MODEL_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
@@ -149,16 +156,17 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardContent>
               <Select
                 value={settings.behaviorPreset}
-                onValueChange={handleBehaviorChange}>
+                onValueChange={handleBehaviorChange}
+                items={AI_BEHAVIOR_ITEMS}>
                 <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {AI_BEHAVIOR_PRESETS.map((preset) => (
+                  {AI_BEHAVIOR_ITEMS.map((item) => (
                     <SelectItem
-                      key={preset.id}
-                      value={preset.id}>
-                      {preset.name}
+                      key={item.value}
+                      value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -250,7 +258,6 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t((m) => m.pages.profile.settings.ai.features.autoSuggestHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.autoSuggestEnabled}
                   onCheckedChange={handleToggle("autoSuggestEnabled")}
                 />
@@ -262,7 +269,6 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t((m) => m.pages.profile.settings.ai.features.contextAwarenessHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.contextAwareness}
                   onCheckedChange={handleToggle("contextAwareness")}
                 />
@@ -274,7 +280,6 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t((m) => m.pages.profile.settings.ai.features.memoryHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.memoryEnabled}
                   onCheckedChange={handleToggle("memoryEnabled")}
                 />
@@ -303,7 +308,6 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t((m) => m.pages.profile.settings.ai.voice.enabledHint)}</p>
                 </div>
                 <Switch
-                  nativeButton
                   checked={settings.voiceEnabled}
                   onCheckedChange={handleToggle("voiceEnabled")}
                 />

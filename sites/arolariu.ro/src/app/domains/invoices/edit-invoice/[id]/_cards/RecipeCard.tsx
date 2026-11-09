@@ -98,7 +98,8 @@ export default function RecipeCard({recipe, recipeIndex}: Readonly<Props>): Reac
               render={
                 <Button
                   variant='ghost'
-                  size='icon'>
+                  size='icon'
+                  aria-label={t((m) => m.cards.invoices.recipeCard.dropdown.actions)}>
                   <TbSeparatorHorizontal className={styles["icon4"]} />
                 </Button>
               }

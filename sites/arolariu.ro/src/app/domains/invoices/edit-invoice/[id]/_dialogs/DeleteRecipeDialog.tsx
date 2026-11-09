@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +10,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  toast,
 } from "@arolariu/components";
 import {isRecipeSuggestion, type RecipeSuggestion} from "@/types/invoices";
 import {useTranslations} from "next-intl-selector";
@@ -54,18 +54,18 @@ export default function DeleteRecipeDialog(): React.JSX.Element {
 
   const handleDelete = useCallback(async () => {
     if (recipePayload === null) {
-      toast.error(t((m) => m.dialogs.invoices.recipeDialog.delete.missingRecipe));
+      notify.error(t((m) => m.dialogs.invoices.recipeDialog.delete.missingRecipe));
       return;
     }
 
     try {
       await removeRecipeCallback(recipePayload.recipeIndex);
-      toast.success(t((m) => m.dialogs.invoices.recipeDialog.delete.success));
+      notify.success(t((m) => m.dialogs.invoices.recipeDialog.delete.success));
       close();
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.delete.error));
+      notify.error(message || t((m) => m.dialogs.invoices.recipeDialog.delete.error));
     }
   }, [recipePayload, removeRecipeCallback, close, router, t]);
 

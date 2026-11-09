@@ -36,8 +36,22 @@ export function SortFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
     [filters.sortBy, filters.sortOrder, isSortActive, t],
   );
 
+  // Single source for both the rendered options and the trigger label lookup.
+  const sortItems = useMemo(
+    () => [
+      {value: "date-desc", label: t((m) => m.forms.invoices.filters.sortOptions.dateNewest)},
+      {value: "date-asc", label: t((m) => m.forms.invoices.filters.sortOptions.dateOldest)},
+      {value: "amount-desc", label: t((m) => m.forms.invoices.filters.sortOptions.amountHighToLow)},
+      {value: "amount-asc", label: t((m) => m.forms.invoices.filters.sortOptions.amountLowToHigh)},
+      {value: "name-asc", label: t((m) => m.forms.invoices.filters.sortOptions.nameAZ)},
+      {value: "name-desc", label: t((m) => m.forms.invoices.filters.sortOptions.nameZA)},
+    ],
+    [t],
+  );
+
   const handleSortChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       const parts = value.split("-");
       const direction = parts.pop() as "asc" | "desc";
       const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
@@ -54,17 +68,19 @@ export function SortFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
       inactiveLabel={t((m) => m.forms.invoices.filters.defaultValue)}>
       <Select
         value={`${filters.sortBy}-${filters.sortOrder}`}
-        onValueChange={handleSortChange}>
+        onValueChange={handleSortChange}
+        items={sortItems}>
         <SelectTrigger className={styles["sortSelect"]}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value='date-desc'>{t((m) => m.forms.invoices.filters.sortOptions.dateNewest)}</SelectItem>
-          <SelectItem value='date-asc'>{t((m) => m.forms.invoices.filters.sortOptions.dateOldest)}</SelectItem>
-          <SelectItem value='amount-desc'>{t((m) => m.forms.invoices.filters.sortOptions.amountHighToLow)}</SelectItem>
-          <SelectItem value='amount-asc'>{t((m) => m.forms.invoices.filters.sortOptions.amountLowToHigh)}</SelectItem>
-          <SelectItem value='name-asc'>{t((m) => m.forms.invoices.filters.sortOptions.nameAZ)}</SelectItem>
-          <SelectItem value='name-desc'>{t((m) => m.forms.invoices.filters.sortOptions.nameZA)}</SelectItem>
+          {sortItems.map((item) => (
+            <SelectItem
+              key={item.value}
+              value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </FilterCardFrame>

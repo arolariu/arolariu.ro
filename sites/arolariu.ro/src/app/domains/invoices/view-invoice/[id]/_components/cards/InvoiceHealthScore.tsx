@@ -40,11 +40,13 @@
 import type {Invoice, Product} from "@/types/invoices";
 import {
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -496,16 +498,12 @@ export function InvoiceHealthScore(): React.JSX.Element {
                       : t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.suggestions.${suggestion.key}`))}
                   </span>
                   {suggestion.link ? (
-                    <Button
-                      asChild
-                      variant='ghost'
-                      size='sm'
-                      className={styles["suggestionAction"]}>
-                      <Link href={suggestion.link}>
-                        <TbExternalLink className={styles["actionIcon"]} />
-                        {t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.fix)}
-                      </Link>
-                    </Button>
+                    <Link
+                      className={cn(buttonVariants({variant: "ghost", size: "sm"}), styles["suggestionAction"])}
+                      href={suggestion.link}>
+                      <TbExternalLink className={styles["actionIcon"]} />
+                      {t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.fix)}
+                    </Link>
                   ) : null}
                 </div>
               ))}
@@ -556,15 +554,12 @@ export function InvoiceHealthScore(): React.JSX.Element {
         {/* CTA Button */}
         {showCTA ? (
           <div className={styles["ctaContainer"]}>
-            <Button
-              asChild
-              variant='default'
-              className={styles["ctaButton"]}>
-              <Link href={`/domains/invoices/edit-invoice/${invoice.id}`}>
-                <TbSparkles className={styles["ctaIcon"]} />
-                {t((m) => m.pages.invoices.viewInvoice.healthScore.cta.edit)}
-              </Link>
-            </Button>
+            <Link
+              className={cn(buttonVariants({variant: "default"}), styles["ctaButton"])}
+              href={`/domains/invoices/edit-invoice/${invoice.id}`}>
+              <TbSparkles className={styles["ctaIcon"]} />
+              {t((m) => m.pages.invoices.viewInvoice.healthScore.cta.edit)}
+            </Link>
           </div>
         ) : null}
       </CardContent>

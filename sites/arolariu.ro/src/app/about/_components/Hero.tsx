@@ -1,6 +1,6 @@
 "use client";
 
-import {Badge, Button} from "@arolariu/components";
+import {Badge, buttonVariants, cn} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -107,22 +107,17 @@ export default function Hero(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.5}}>
-          <Button
-            asChild
-            size='lg'
-            className={styles["ctaButton"]}>
-            <Link href='/about/the-platform'>
-              <TbRocket className={styles["ctaIcon"]} />
-              {t((m) => m.pages.about.hub.hero.ctaPrimary)}
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant='outline'
-            size='lg'
-            className={styles["ctaButton"]}>
-            <Link href='/about/the-author'>{t((m) => m.pages.about.hub.hero.ctaSecondary)}</Link>
-          </Button>
+          <Link
+            className={cn(buttonVariants({size: "lg"}), styles["ctaButton"])}
+            href='/about/the-platform'>
+            <TbRocket className={styles["ctaIcon"]} />
+            {t((m) => m.pages.about.hub.hero.ctaPrimary)}
+          </Link>
+          <Link
+            className={cn(buttonVariants({variant: "outline", size: "lg"}), styles["ctaButton"])}
+            href='/about/the-author'>
+            {t((m) => m.pages.about.hub.hero.ctaSecondary)}
+          </Link>
         </motion.div>
       </motion.div>
 

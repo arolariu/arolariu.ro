@@ -24,10 +24,11 @@
  * creation, and retries only the work that did not complete.
  */
 
+import {notify} from "@/lib/notify";
 import {useScansStore} from "@/stores";
 import {PaymentType, type ClassificationSelection} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
@@ -339,7 +340,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       if (!patchResult.success) {
         const message = patchResult.error?.message ?? t((m) => m.forms.invoices.createInvoice.errors.patchFailed);
         setPartialOutcome({status: "partial", invoiceIdentifier: invoiceId, failedStep: "patch", message});
-        toast.error(t((m) => m.forms.invoices.createInvoice.toasts.patchFailed));
+        notify.error(t((m) => m.forms.invoices.createInvoice.toasts.patchFailed));
         return;
       }
 
@@ -362,7 +363,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
           failedStep: "scans",
           message: attachOutcome.message,
         });
-        toast.error(t((m) => m.forms.invoices.createInvoice.toasts.scanAttachFailed));
+        notify.error(t((m) => m.forms.invoices.createInvoice.toasts.scanAttachFailed));
         return;
       }
 
@@ -405,13 +406,13 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         console.error("Background invoice analysis failed (non-critical):", analysisError);
       });
 
-      toast.success(t((m) => m.forms.invoices.createInvoice.toasts.created));
+      notify.success(t((m) => m.forms.invoices.createInvoice.toasts.created));
 
       // ── Step 5: Navigate ──────────────────────────────────────────────────
       router.push(`/domains/invoices/view-invoice/${invoiceId}`);
     } catch (error: unknown) {
       console.error("Error creating invoice:", error);
-      toast.error(error instanceof Error ? error.message : t((m) => m.forms.invoices.createInvoice.errors.createFailed));
+      notify.error(error instanceof Error ? error.message : t((m) => m.forms.invoices.createInvoice.errors.createFailed));
     } finally {
       setIsCreating(false);
     }

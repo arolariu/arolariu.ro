@@ -288,7 +288,11 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               {t((m) => m.cards.invoices.invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)})}
             </h3>
             <div className={styles["tableContainer"]}>
-              <Table>
+              <Table
+                containerProps={{
+                  role: "region",
+                  "aria-label": t((m) => m.cards.invoices.invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)}),
+                }}>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.item)}</TableHead>

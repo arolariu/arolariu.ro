@@ -1,5 +1,6 @@
 "use client";
 
+import {DEFAULT_CONFIRMATION_TIMEOUT_MS} from "@/lib/notify";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {
   Alert,
@@ -211,9 +212,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element | null {
       loading: isInvoicePublic
         ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingPublic)
         : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingMakePublic),
-      success: isInvoicePublic
-        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successPublic)
-        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successMadePublic),
+      success: {
+        title: isInvoicePublic
+          ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successPublic)
+          : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successMadePublic),
+        timeout: DEFAULT_CONFIRMATION_TIMEOUT_MS,
+      },
       error: (error: unknown) =>
         t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.error, {
           message: error instanceof Error ? error.message : String(error),
@@ -254,9 +258,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element | null {
       loading: isInvoicePublic
         ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingPublic)
         : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingMakePublic),
-      success: isInvoicePublic
-        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successPublic)
-        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successMadePublic),
+      success: {
+        title: isInvoicePublic
+          ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successPublic)
+          : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successMadePublic),
+        timeout: DEFAULT_CONFIRMATION_TIMEOUT_MS,
+      },
       error: (error: unknown) =>
         t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.error, {
           message: error instanceof Error ? error.message : String(error),
@@ -298,7 +305,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element | null {
 
     toast.promise(shareInvoiceCallback(invoice.id, {type: "revoke"}), {
       loading: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.loading),
-      success: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.success),
+      success: {title: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.success), timeout: DEFAULT_CONFIRMATION_TIMEOUT_MS},
       error: (error: unknown) =>
         t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.error, {
           message: error instanceof Error ? error.message : String(error),
@@ -353,7 +360,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element | null {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContentMd"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContentMd"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.shareInvoiceDialog.title)}</DialogTitle>
           <DialogDescription>{getDialogDescription()}</DialogDescription>

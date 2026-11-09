@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-scans/_dialogs/CreateInvoiceDialog
  */
 
+import {notify} from "@/lib/notify";
 import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import {useInvoicesStore, useScansStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
@@ -25,12 +26,11 @@ import {
   Progress,
   RadioGroup,
   RadioGroupItem,
-  toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useState} from "react";
+import {useCallback, useId, useState} from "react";
 import {
   TbAlertCircle,
   TbAlertTriangle,
@@ -133,6 +133,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
   const t = useTranslations();
   const router = useRouter();
+  const selectedScansLabelId = useId();
 
   // Dialog state from context
   const {
@@ -228,7 +229,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         const partialFailMessage = t((m) => m.dialogs.invoices.createInvoiceDialog.errors.partialFail, {
           count: String(result.errors.length),
         });
-        toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
+        notify.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t((m) => m.dialogs.invoices.createInvoiceDialog.errors.unknown);
@@ -237,7 +238,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       setProgress(100);
       setStep("complete");
       // Show error toast with backend details
-      toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed, {message: errorMessage}));
+      notify.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed, {message: errorMessage}));
     }
   }, [selectedScans, mode, upsertInvoice, markScansAsUsedByInvoice, archiveScans, clearSelectedScans, t]);
 
@@ -283,7 +284,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       {/* Scans Preview */}
       <div className={styles["scansPreviewBox"]}>
         <div className={styles["scansPreviewHeader"]}>
-          <span className={styles["scansPreviewLabel"]}>
+          <span
+            id={selectedScansLabelId}
+            className={styles["scansPreviewLabel"]}>
             {t((m) => m.dialogs.invoices.createInvoiceDialog.selectedScans)} ({selectedScans.length})
           </span>
           <span className={styles["scansPreviewSize"]}>
@@ -291,6 +294,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           </span>
         </div>
         <Carousel
+          aria-labelledby={selectedScansLabelId}
           opts={{align: "start"}}
           className={styles["scansCarousel"]}>
           <CarouselContent>
@@ -332,7 +336,6 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='single'
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
-                nativeButton
                 value='single'
                 id='single'
                 className={styles["radioItem"]}
@@ -352,7 +355,6 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='batch'
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
-                nativeButton
                 value='batch'
                 id='batch'
                 className={styles["radioItem"]}
@@ -621,7 +623,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        showCloseButton={step !== "creating"}
+        className={styles["dialogContent"]}>
         <AnimatePresence mode='wait'>
           {step === "select" ? renderSelectStep() : null}
           {step === "creating" ? renderCreatingStep() : null}

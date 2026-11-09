@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_components/EmptyState
  */
 
-import {Button} from "@arolariu/components";
+import {buttonVariants} from "@arolariu/components";
 import {motion} from "motion/react";
 import Link from "next/link";
 import styles from "./EmptyState.module.scss";
@@ -64,19 +64,18 @@ export default function EmptyState({icon, title, description, primaryAction, sec
       {primaryAction || secondaryAction ? (
         <div className={styles["actions"]}>
           {primaryAction ? (
-            <Button
-              asChild
-              size='lg'>
-              <Link href={primaryAction.href}>{primaryAction.label}</Link>
-            </Button>
+            <Link
+              className={buttonVariants({size: "lg"})}
+              href={primaryAction.href}>
+              {primaryAction.label}
+            </Link>
           ) : null}
           {secondaryAction ? (
-            <Button
-              asChild
-              variant='outline'
-              size='lg'>
-              <Link href={secondaryAction.href}>{secondaryAction.label}</Link>
-            </Button>
+            <Link
+              className={buttonVariants({variant: "outline", size: "lg"})}
+              href={secondaryAction.href}>
+              {secondaryAction.label}
+            </Link>
           ) : null}
         </div>
       ) : null}

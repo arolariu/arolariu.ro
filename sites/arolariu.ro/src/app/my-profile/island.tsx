@@ -89,7 +89,12 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
    * Adapter: wraps handleSectionChange to accept string and cast to SettingsSection.
    * Used by the mobile Select component which provides string values.
    */
-  const handleMobileNavChange = useCallback((v: string) => handleSectionChange(v as SettingsSection), [handleSectionChange]);
+  const handleMobileNavChange = useCallback(
+    (v: string | null) => {
+      if (v !== null) handleSectionChange(v as SettingsSection);
+    },
+    [handleSectionChange],
+  );
 
   const handleAppearanceChange = useCallback((newSettings: Partial<UserSettings["appearance"]>) => {
     setSettings((prev) => ({
@@ -139,6 +144,12 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
       if (section) handleSectionChange(section);
     },
     [handleSectionChange],
+  );
+
+  // Single source for both the mobile-nav options and the trigger label lookup.
+  const mobileNavItems = useMemo(
+    () => TAB_CONFIG.map(({id, key}) => ({value: id, label: t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))})),
+    [t],
   );
 
   if (!user) {
@@ -231,16 +242,17 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
           {/* Mobile nav — replaces fixed bottom nav */}
           <Select
             value={activeSection}
-            onValueChange={handleMobileNavChange}>
+            onValueChange={handleMobileNavChange}
+            items={mobileNavItems}>
             <SelectTrigger className={styles["mobileNav"]}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TAB_CONFIG.map(({id, key}) => (
+              {mobileNavItems.map((item) => (
                 <SelectItem
-                  key={id}
-                  value={id}>
-                  {t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))}
+                  key={item.value}
+                  value={item.value}>
+                  {item.label}
                 </SelectItem>
               ))}
             </SelectContent>

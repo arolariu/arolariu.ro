@@ -320,7 +320,7 @@
     flex-shrink: 0;
     background-color: color("input");
 
-    &[data-state="checked"] {
+    &[data-checked] {
       @include gradient-bg();
     }
   }

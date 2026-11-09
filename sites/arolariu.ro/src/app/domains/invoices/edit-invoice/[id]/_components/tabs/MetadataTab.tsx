@@ -137,6 +137,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                               <Button
                                 variant='ghost'
                                 size='icon'
+                                aria-label={t((m) => m.pages.invoices.editInvoice.metadataTab.dropdown.actions)}
                                 className={styles["editIconButton"]}>
                                 <TbPencil className={styles["icon4"]} />
                               </Button>

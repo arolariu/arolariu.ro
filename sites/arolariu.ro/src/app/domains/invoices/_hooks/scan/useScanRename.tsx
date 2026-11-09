@@ -10,9 +10,10 @@
  * is local client state.
  */
 
+import {notify} from "@/lib/notify";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
-import {toast} from "@arolariu/components";
+
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef, useState} from "react";
 
@@ -119,7 +120,7 @@ export function useScanRename(scan: CachedScan): Readonly<HookOutputType> {
 
     // Update store locally (no server action needed for rename)
     updateScanName(scan.id, trimmedValue);
-    toast.success(t((m) => m.pages.invoices.viewScans.scanCard.rename));
+    notify.success(t((m) => m.pages.invoices.viewScans.scanCard.rename));
     setIsEditing(false);
     setJustRenamed(true);
     setTimeout(() => setJustRenamed(false), 300);

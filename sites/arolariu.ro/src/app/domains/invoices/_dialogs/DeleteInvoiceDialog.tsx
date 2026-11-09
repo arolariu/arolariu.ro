@@ -185,18 +185,19 @@ export default function DeleteInvoiceDialog(): React.JSX.Element | null {
    * @remarks
    * The shared dialog component reports both open and close transitions. This
    * handler only acts on close requests, routing them through `handleClose` so
-   * state cleanup remains centralized.
+   * state cleanup remains centralized. Close requests are ignored while the
+   * deletion is in flight, matching the disabled Cancel button.
    *
    * @param shouldOpen - Next open state requested by the dialog primitive.
-   * @returns Nothing; closes and resets the dialog when `shouldOpen` is false.
+   * @returns Nothing; closes and resets the dialog when `shouldOpen` is false and no deletion is running.
    */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
-      if (!shouldOpen) {
+      if (!shouldOpen && !isDeleting) {
         handleClose();
       }
     },
-    [handleClose],
+    [handleClose, isDeleting],
   );
 
   if (invoice === null) return null;
@@ -205,7 +206,10 @@ export default function DeleteInvoiceDialog(): React.JSX.Element | null {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContentMaxW"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        showCloseButton={!isDeleting}
+        className={styles["dialogContentMaxW"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>
             <TbTrash className={styles["titleIcon"]} />
@@ -288,7 +292,6 @@ export default function DeleteInvoiceDialog(): React.JSX.Element | null {
                 {/* Understanding Checkbox */}
                 <div className={styles["checkboxCard"]}>
                   <Checkbox
-                    nativeButton
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}

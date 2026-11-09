@@ -364,7 +364,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
             {/* Items Table */}
             <div className={styles["tableContainer"]}>
               <TooltipProvider>
-                <Table>
+                <Table containerProps={{role: "region", "aria-label": t((m) => m.pages.invoices.viewInvoice.itemAnalytics.title)}}>
                   <TableHeader>
                     <TableRow>
                       <TableHead>

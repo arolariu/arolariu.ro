@@ -3,6 +3,7 @@
 import {useFontContext} from "@/contexts/FontContext";
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -14,7 +15,7 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
-import {memo, useCallback, useEffect, useState} from "react";
+import {memo, useCallback, useEffect, useMemo, useState} from "react";
 import {
   TbAccessible,
   TbBrandGithub,
@@ -41,6 +42,27 @@ function Commander(): React.JSX.Element {
   const {setFont} = useFontContext();
   const [open, setOpen] = useState<boolean>(false);
   const t = useTranslations();
+
+  // Command filtering matches `value` + `keywords`: stable slugs keep selection locale-independent while the
+  // translated labels stay searchable.
+  const itemKeywords = useMemo(
+    () => ({
+      homepage: [t((m) => m.app.commander.items.homepage)],
+      light: [t((m) => m.app.commander.items.light)],
+      dark: [t((m) => m.app.commander.items.dark)],
+      system: [t((m) => m.app.commander.items.system)],
+      english: [t((m) => m.app.commander.items.english)],
+      romanian: [t((m) => m.app.commander.items.romanian)],
+      french: [t((m) => m.app.commander.items.french)],
+      fontNormal: [t((m) => m.app.commander.items.fontNormal)],
+      fontDyslexic: [t((m) => m.app.commander.items.fontDyslexic)],
+      rainbow: [t((m) => m.app.commander.items.rainbow)],
+      disco: [t((m) => m.app.commander.items.disco)],
+      matrix: [t((m) => m.app.commander.items.matrix)],
+      github: [t((m) => m.app.commander.items.github)],
+    }),
+    [t],
+  );
 
   // Helper to close the palette and run a command action
   const runCommand = useCallback((command: () => void) => {
@@ -292,114 +314,160 @@ function Commander(): React.JSX.Element {
   return (
     <CommandDialog
       open={open}
-      onOpenChange={setOpen}>
-      <CommandInput placeholder={t((m) => m.app.commander.placeholder)} />
-      <CommandList>
-        <CommandEmpty>{t((m) => m.app.commander.noResults)}</CommandEmpty>
+      onOpenChange={setOpen}
+      title={t((m) => m.app.commander.title)}
+      description={t((m) => m.app.commander.description)}>
+      <Command label={t((m) => m.app.commander.title)}>
+        <CommandInput
+          aria-label={t((m) => m.app.commander.placeholder)}
+          placeholder={t((m) => m.app.commander.placeholder)}
+        />
+        <CommandList>
+          <CommandEmpty>{t((m) => m.app.commander.noResults)}</CommandEmpty>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.navigation)}>
-          <CommandItem onSelect={onSelectHome}>
-            <div className={styles["commandItemContent"]}>
-              <TbHome className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.homepage)}</span>
-            </div>
-            <CommandShortcut>H</CommandShortcut>
-          </CommandItem>
-        </CommandGroup>
+          <CommandGroup heading={t((m) => m.app.commander.groups.navigation)}>
+            <CommandItem
+              value='homepage'
+              keywords={itemKeywords.homepage}
+              onSelect={onSelectHome}>
+              <div className={styles["commandItemContent"]}>
+                <TbHome className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.homepage)}</span>
+              </div>
+              <CommandShortcut>H</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.theme)}>
-          <CommandItem onSelect={onSelectThemeLight}>
-            <div className={styles["commandItemContent"]}>
-              <TbSun className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.light)}</span>
-            </div>
-            <CommandShortcut>L</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={onSelectThemeDark}>
-            <div className={styles["commandItemContent"]}>
-              <TbMoon className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.dark)}</span>
-            </div>
-            <CommandShortcut>D</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={onSelectThemeSystem}>
-            <div className={styles["commandItemContent"]}>
-              <TbSettings className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.system)}</span>
-            </div>
-          </CommandItem>
-        </CommandGroup>
+          <CommandGroup heading={t((m) => m.app.commander.groups.theme)}>
+            <CommandItem
+              value='theme-light'
+              keywords={itemKeywords.light}
+              onSelect={onSelectThemeLight}>
+              <div className={styles["commandItemContent"]}>
+                <TbSun className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.light)}</span>
+              </div>
+              <CommandShortcut>L</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              value='theme-dark'
+              keywords={itemKeywords.dark}
+              onSelect={onSelectThemeDark}>
+              <div className={styles["commandItemContent"]}>
+                <TbMoon className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.dark)}</span>
+              </div>
+              <CommandShortcut>D</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              value='theme-system'
+              keywords={itemKeywords.system}
+              onSelect={onSelectThemeSystem}>
+              <div className={styles["commandItemContent"]}>
+                <TbSettings className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.system)}</span>
+              </div>
+            </CommandItem>
+          </CommandGroup>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.language)}>
-          <CommandItem onSelect={onSelectLangEnglish}>
-            <div className={styles["commandItemContent"]}>
-              <TbLanguage className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.english)}</span>
-            </div>
-            <CommandShortcut>EN</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={onSelectLangRomanian}>
-            <div className={styles["commandItemContent"]}>
-              <TbLanguage className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.romanian)}</span>
-            </div>
-            <CommandShortcut>RO</CommandShortcut>
-          </CommandItem>
-          <CommandItem onSelect={onSelectLangFrench}>
-            <div className={styles["commandItemContent"]}>
-              <TbLanguage className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.french)}</span>
-            </div>
-            <CommandShortcut>FR</CommandShortcut>
-          </CommandItem>
-        </CommandGroup>
+          <CommandGroup heading={t((m) => m.app.commander.groups.language)}>
+            <CommandItem
+              value='language-en'
+              keywords={itemKeywords.english}
+              onSelect={onSelectLangEnglish}>
+              <div className={styles["commandItemContent"]}>
+                <TbLanguage className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.english)}</span>
+              </div>
+              <CommandShortcut>EN</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              value='language-ro'
+              keywords={itemKeywords.romanian}
+              onSelect={onSelectLangRomanian}>
+              <div className={styles["commandItemContent"]}>
+                <TbLanguage className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.romanian)}</span>
+              </div>
+              <CommandShortcut>RO</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              value='language-fr'
+              keywords={itemKeywords.french}
+              onSelect={onSelectLangFrench}>
+              <div className={styles["commandItemContent"]}>
+                <TbLanguage className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.french)}</span>
+              </div>
+              <CommandShortcut>FR</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.accessibility)}>
-          <CommandItem onSelect={onSelectFontNormal}>
-            <div className={styles["commandItemContent"]}>
-              <TbTypeface className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.fontNormal)}</span>
-            </div>
-          </CommandItem>
-          <CommandItem onSelect={onSelectFontDyslexic}>
-            <div className={styles["commandItemContent"]}>
-              <TbAccessible className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.fontDyslexic)}</span>
-            </div>
-          </CommandItem>
-        </CommandGroup>
+          <CommandGroup heading={t((m) => m.app.commander.groups.accessibility)}>
+            <CommandItem
+              value='font-normal'
+              keywords={itemKeywords.fontNormal}
+              onSelect={onSelectFontNormal}>
+              <div className={styles["commandItemContent"]}>
+                <TbTypeface className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.fontNormal)}</span>
+              </div>
+            </CommandItem>
+            <CommandItem
+              value='font-dyslexic'
+              keywords={itemKeywords.fontDyslexic}
+              onSelect={onSelectFontDyslexic}>
+              <div className={styles["commandItemContent"]}>
+                <TbAccessible className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.fontDyslexic)}</span>
+              </div>
+            </CommandItem>
+          </CommandGroup>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.fun)}>
-          <CommandItem onSelect={onSelectRainbow}>
-            <div className={styles["commandItemContent"]}>
-              <TbPalette className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.rainbow)}</span>
-            </div>
-          </CommandItem>
-          <CommandItem onSelect={onSelectDisco}>
-            <div className={styles["commandItemContent"]}>
-              <TbConfetti className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.disco)}</span>
-            </div>
-          </CommandItem>
-          <CommandItem onSelect={onSelectMatrix}>
-            <div className={styles["commandItemContent"]}>
-              <TbCode className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.matrix)}</span>
-            </div>
-          </CommandItem>
-        </CommandGroup>
+          <CommandGroup heading={t((m) => m.app.commander.groups.fun)}>
+            <CommandItem
+              value='effect-rainbow'
+              keywords={itemKeywords.rainbow}
+              onSelect={onSelectRainbow}>
+              <div className={styles["commandItemContent"]}>
+                <TbPalette className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.rainbow)}</span>
+              </div>
+            </CommandItem>
+            <CommandItem
+              value='effect-disco'
+              keywords={itemKeywords.disco}
+              onSelect={onSelectDisco}>
+              <div className={styles["commandItemContent"]}>
+                <TbConfetti className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.disco)}</span>
+              </div>
+            </CommandItem>
+            <CommandItem
+              value='effect-matrix'
+              keywords={itemKeywords.matrix}
+              onSelect={onSelectMatrix}>
+              <div className={styles["commandItemContent"]}>
+                <TbCode className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.matrix)}</span>
+              </div>
+            </CommandItem>
+          </CommandGroup>
 
-        <CommandGroup heading={t((m) => m.app.commander.groups.links)}>
-          <CommandItem onSelect={onSelectGithub}>
-            <div className={styles["commandItemContent"]}>
-              <TbBrandGithub className={styles["commandIcon"]} />
-              <span>{t((m) => m.app.commander.items.github)}</span>
-            </div>
-            <CommandShortcut>G</CommandShortcut>
-          </CommandItem>
-        </CommandGroup>
-      </CommandList>
+          <CommandGroup heading={t((m) => m.app.commander.groups.links)}>
+            <CommandItem
+              value='link-github'
+              keywords={itemKeywords.github}
+              onSelect={onSelectGithub}>
+              <div className={styles["commandItemContent"]}>
+                <TbBrandGithub className={styles["commandIcon"]} />
+                <span>{t((m) => m.app.commander.items.github)}</span>
+              </div>
+              <CommandShortcut>G</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </Command>
     </CommandDialog>
   );
 }

@@ -139,7 +139,7 @@ export default function Loading(): React.JSX.Element {
 
           <TabsContent value='table'>
             <div className={styles["tableBorder"]}>
-              <Table>
+              <Table containerProps={{tabIndex: -1}}>
                 <TableHeader>
                   <TableRow>
                     <TableHead>

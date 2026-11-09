@@ -1,5 +1,6 @@
 "use client";
 
+import {notify} from "@/lib/notify";
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {
@@ -16,7 +17,6 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -90,7 +90,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     const item = new ClipboardItem({[blob.type]: blob});
     await navigator.clipboard.write([item]);
 
-    toast(
+    notify.message(
       t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.title),
       {
         description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.description),
@@ -101,7 +101,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   const handleSendEmail = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      toast(
+      notify.message(
         t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.title),
         {
           description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.description, {email}),
@@ -118,7 +118,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     }
 
     // In a real app, this would generate and download an image
-    toast(
+    notify.message(
       t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.title),
       {
         description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.description, {merchant: merchant.name}),
@@ -133,7 +133,9 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.title)}</DialogTitle>
           <DialogDescription>

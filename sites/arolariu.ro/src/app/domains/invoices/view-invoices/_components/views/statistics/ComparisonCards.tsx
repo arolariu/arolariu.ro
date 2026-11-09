@@ -6,7 +6,7 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
-import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {Card, CardContent, CardHeader, CardTitle, Progress, ProgressIndicator, ProgressTrack} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {TbArrowDown, TbArrowUp, TbBuildingStore, TbMinus, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
@@ -65,10 +65,11 @@ function ComparisonCard({icon, label, value, delta, isPositive, progressValue, i
               <span>{delta}</span>
             </div>
           </div>
-          <Progress
-            value={progressValue}
-            className={styles["progress"]}
-          />
+          <Progress value={progressValue}>
+            <ProgressTrack className={styles["progress"]}>
+              <ProgressIndicator />
+            </ProgressTrack>
+          </Progress>
         </CardContent>
       </Card>
     </motion.div>

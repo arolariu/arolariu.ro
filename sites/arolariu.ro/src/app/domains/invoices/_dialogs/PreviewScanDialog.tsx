@@ -90,7 +90,9 @@ export default function PreviewScanDialog(): React.JSX.Element | null {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["previewDialog"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["previewDialog"]}>
         <DialogHeader>
           <DialogTitle>
             {t((m) => m.pages.invoices.viewScans.scanCard.previewTitle)}: {scan.name}

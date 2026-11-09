@@ -59,7 +59,9 @@ const AddDialog = () => {
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.add.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.add.description)}</DialogDescription>
@@ -130,7 +132,9 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.edit.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.edit.description)}</DialogDescription>
@@ -193,7 +197,9 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       onOpenChange={(shouldOpen) => {
         if (!shouldOpen) close();
       }}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent
+        closeLabel={t((m) => m.shared.accessibility.close)}
+        className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.delete.title)}</DialogTitle>
           <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.delete.description)}</DialogDescription>

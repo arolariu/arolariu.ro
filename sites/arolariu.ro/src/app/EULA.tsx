@@ -36,6 +36,9 @@ import EulaShimmer from "./EULA.shimmers";
 
 type Props = {locale: Locale};
 
+/** Cookie-policy accordion sections expanded on first render. */
+const EULA_DEFAULT_OPEN_COOKIE_SECTIONS: string[] = ["essential"];
+
 /**
  * EULA component to display the End User License Agreement.
  * The component includes sections for Terms of Service, Privacy Policy, and Cookies Policy.
@@ -184,7 +187,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           </Button>
                         }
                       />
-                      <DialogContent className={styles["dialogContent"]}>
+                      <DialogContent
+                        closeLabel={t((m) => m.shared.accessibility.close)}
+                        className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.termsOfService.cta)}</DialogTitle>
                           <RenderTermsOfServiceScreen />
@@ -218,7 +223,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           </Button>
                         }
                       />
-                      <DialogContent className={styles["dialogContent"]}>
+                      <DialogContent
+                        closeLabel={t((m) => m.shared.accessibility.close)}
+                        className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.privacyPolicy.cta)}</DialogTitle>
                           <RenderPrivacyPolicyScreen />
@@ -247,9 +254,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <span className={styles["cookiesSubtitle"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.subtitle)}</span>
 
                 <Accordion
-                  type='single'
-                  collapsible
-                  defaultValue='essential'
+                  defaultValue={EULA_DEFAULT_OPEN_COOKIE_SECTIONS}
                   className={styles["accordion"]}>
                   <AccordionItem value='essential'>
                     <AccordionTrigger className={styles["accordionTrigger"]}>
@@ -266,7 +271,6 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         </p>
                         <div className={styles["switchRow"]}>
                           <Switch
-                            nativeButton
                             id='essential'
                             checked
                             disabled
@@ -300,7 +304,6 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         </p>
                         <div className={styles["switchRow"]}>
                           <Switch
-                            nativeButton
                             id='analytics'
                             checked={cookieState.analytics}
                             onCheckedChange={handleAnalyticsCheckedChange}

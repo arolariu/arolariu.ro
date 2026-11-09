@@ -36,6 +36,7 @@ import {TbCalendar, TbCreditCard, TbHeart} from "react-icons/tb";
 import ItemsTable from "../_components/tables/ItemsTable";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 import styles from "./InvoiceCard.module.scss";
+import {getCalendarLocale} from "@/lib/calendarLocale";
 
 /**
  * Displays comprehensive invoice details with inline editing capabilities.
@@ -75,6 +76,7 @@ import styles from "./InvoiceCard.module.scss";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
+  const calendarLocale = getCalendarLocale(locale);
   const t = useTranslations();
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} = useEditInvoiceContext();
   const {paymentInformation, isImportant, description} = invoice;
@@ -106,8 +108,10 @@ export default function InvoiceCard(): React.JSX.Element {
   /** Generic handler for enum select changes */
   const createEnumHandler = useCallback(
     <T extends number>(setter: (value: T) => void) =>
-      (value: string) =>
-        setter(Number(value) as T),
+      (value: string | null) => {
+        if (value === null) return;
+        setter(Number(value) as T);
+      },
     [],
   );
 
@@ -230,6 +234,7 @@ export default function InvoiceCard(): React.JSX.Element {
                     className={styles["popoverContent"]}
                     align='start'>
                     <Calendar
+                      locale={calendarLocale}
                       mode='single'
                       hideNavigation
                       selected={currentTransactionDate}

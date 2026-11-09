@@ -11,12 +11,14 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  buttonVariants,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  cn,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -209,18 +211,13 @@ export function GlobalErrorContent({error, reset}: GlobalErrorContentProps): Rea
             </Button>
 
             {/* Secondary Action - Return Home */}
-            <Button
-              variant='outline'
-              size='default'
-              className={styles["actionButton"]}
-              asChild>
-              <Link
-                href='/'
-                onClick={handleReset}>
-                <TbHome className={styles["buttonIcon"]} />
-                {t((m) => m.app.errors.globalError.buttons.returnHome)}
-              </Link>
-            </Button>
+            <Link
+              className={cn(buttonVariants({variant: "outline", size: "default"}), styles["actionButton"])}
+              href='/'
+              onClick={handleReset}>
+              <TbHome className={styles["buttonIcon"]} />
+              {t((m) => m.app.errors.globalError.buttons.returnHome)}
+            </Link>
 
             {/* Tertiary Action - Copy Error ID */}
             {Boolean(error.digest) && (
