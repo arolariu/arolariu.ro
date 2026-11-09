@@ -2041,12 +2041,6 @@
           "subtitle": "Completați detaliile pentru factura nouă",
           "title": "Detalii factură"
         },
-        "emptyState": {
-          "description": "Încărcați mai întâi câteva scanări de bonuri pentru a crea o factură.",
-          "title": "Nicio scanare disponibilă",
-          "uploadButton": "Încarcă scanări",
-          "viewScansButton": "Vezi scanările"
-        },
         "header": {
           "backToInvoices": "Înapoi la facturi",
           "subtitle": "Urmați pașii de mai jos pentru a crea o factură nouă din scanările dvs.",

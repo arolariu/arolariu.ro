@@ -136,7 +136,6 @@ interface CreateInvoiceContextValue {
   toggleScan: (scan: CachedScan) => void;
   selectAllScans: () => void;
   clearSelection: () => void;
-  hasScans: boolean;
 
   // Invoice details
   invoiceDetails: InvoiceDetails;
@@ -438,7 +437,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       toggleScan,
       selectAllScans,
       clearSelection,
-      hasScans: readyScans.length > 0,
       invoiceDetails,
       setName,
       setPaymentType,
@@ -460,7 +458,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       toggleScan,
       selectAllScans,
       clearSelection,
-      readyScans.length,
       invoiceDetails,
       setName,
       setPaymentType,

@@ -2041,12 +2041,6 @@
           "subtitle": "Provide the details for your new invoice",
           "title": "Invoice Details"
         },
-        "emptyState": {
-          "description": "Upload some receipt scans first to create an invoice.",
-          "title": "No Scans Available",
-          "uploadButton": "Upload Scans",
-          "viewScansButton": "View Scans"
-        },
         "header": {
           "backToInvoices": "Back to Invoices",
           "subtitle": "Follow the steps below to create a new invoice from your scans",

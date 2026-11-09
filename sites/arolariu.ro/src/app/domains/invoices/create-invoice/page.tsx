@@ -36,7 +36,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * Unauthenticated users are redirected to sign-in with return URL.
  *
  * **Data Flow:**
- * - Fetches available scans from Zustand store (IndexedDB-persisted)
+ * - The client island fetches scans into the Zustand store (IndexedDB-persisted) before mounting the wizard,
+ *   holding on the loading skeleton meanwhile
+ * - Redirects to the upload-scans page when no READY scan is available
  * - Creates invoice via server action with selected scans
  * - Optionally triggers AI analysis post-creation
  * - Redirects to view-invoice page on success

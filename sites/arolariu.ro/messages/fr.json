@@ -2041,12 +2041,6 @@
           "subtitle": "Renseignez les détails de votre nouvelle facture",
           "title": "Détails de la facture"
         },
-        "emptyState": {
-          "description": "Téléchargez d'abord des numérisations de reçus pour créer une facture.",
-          "title": "Aucune numérisation disponible",
-          "uploadButton": "Télécharger des numérisations",
-          "viewScansButton": "Voir les numérisations"
-        },
         "header": {
           "backToInvoices": "Retour aux factures",
           "subtitle": "Suivez les étapes ci-dessous pour créer une nouvelle facture à partir de vos numérisations",
