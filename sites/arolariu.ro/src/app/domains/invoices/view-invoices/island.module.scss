@@ -60,7 +60,10 @@
   width: 100%;
 }
 
-.tabsList {
+// Tab overrides are anchored to the Tabs root (specificity 0,2,0) so they beat the library's
+// single-class tabs rules regardless of stylesheet order: a lazily loaded dialog chunk
+// (e.g. ImportDialog) can re-append the `@arolariu/components` tabs CSS after this module.
+.fullWidth .tabsList {
   display: grid;
   width: 100%;
   max-width: 28rem;
@@ -78,7 +81,7 @@
   }
 }
 
-.tabTrigger {
+.fullWidth .tabTrigger {
   cursor: pointer;
 
   // Larger touch target on mobile
