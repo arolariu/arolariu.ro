@@ -217,7 +217,6 @@ describe("Controls accessibility CSS contracts", () => {
   it.each([
     ["checkbox", ".checkbox"],
     ["radio-group", ".item"],
-    ["switch", ".root"],
     ["slider", ".thumb"],
     ["button", ".button"],
     ["toolbar", ".item"],
@@ -227,6 +226,32 @@ describe("Controls accessibility CSS contracts", () => {
     const rule = declarations(family, selector);
     expect(rule.get("min-inline-size") ?? rule.get("min-width")).toBe("24px");
     expect(rule.get("min-block-size") ?? rule.get("min-height")).toBe("24px");
+  });
+
+  it("switch reaches the 24px target through a hit-area overlay instead of a min-size that inflates its painted track", () => {
+    const authored = parse(readFileSync(join(import.meta.dirname, "switch.module.css"), "utf8"));
+    const topLevel = (selector: string): ReadonlyMap<string, string> => {
+      const result = new Map<string, string>();
+      authored.walkRules(selector, (rule) => {
+        if (rule.parent?.type === "root")
+          rule.walkDecls((decl) => {
+            result.set(decl.prop, decl.value);
+          });
+      });
+      return result;
+    };
+
+    // A min-size on the root paints the default track at 32x24 and turns the small one into a 24x24 circle.
+    const track = topLevel(".root");
+    expect(track.has("min-inline-size") || track.has("min-width")).toBe(false);
+    expect(track.has("min-block-size") || track.has("min-height")).toBe(false);
+
+    // An invisible overlay sized from the track supplies the target, so the painted track keeps its declared size.
+    const overlay = topLevel(".root::before");
+    expect(overlay.get("content")).toBe('""');
+    expect(overlay.get("position")).toBe("absolute");
+    expect(overlay.get("inset-block")).toMatch(/var\(--switch-block-size\)[^;]*24px/);
+    expect(overlay.get("inset-inline")).toMatch(/var\(--switch-inline-size\)[^;]*24px/);
   });
 
   it.each(["button", "accordion", "select", "number-field", "toolbar", "meter", "collapsible"])(
