@@ -1,4 +1,9 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {pathToFileURL} from "node:url";
+import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
+import {getExecOutput} from "../../../helpers/sdk/exec.ts";
 import {computeTopDirectories, computeTopExtensions, type FolderSize, foldersToComparisons} from "./statsProvider.ts";
 
 describe("computeTopExtensions", () => {
@@ -155,4 +160,70 @@ describe("statsProvider.run", () => {
       "sites/docs.arolariu.ro",
     ]);
   });
+});
+
+describe("statsProvider.run on a full-history checkout", () => {
+  let root = "";
+  let workspace = "";
+  let mainTip = "";
+  let headTip = "";
+
+  async function git(cwd: string, ...args: string[]): Promise<string> {
+    return (await getExecOutput("git", args, {cwd, silent: true})).stdout.trim();
+  }
+
+  // Release topology: main merged preview with --no-ff, then preview gained work without that merge commit.
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), "ci-stats-provider-"));
+    const remote = join(root, "remote");
+    workspace = join(root, "workspace");
+    await git(root, "init", "--initial-branch=main", remote);
+    await git(remote, "config", "user.name", "CI fixture");
+    await git(remote, "config", "user.email", "fixture@example.invalid");
+    await git(remote, "config", "commit.gpgsign", "false");
+    await git(remote, "config", "core.autocrlf", "false");
+    await writeFile(join(remote, "README.md"), "base\n");
+    await git(remote, "add", ".");
+    await git(remote, "commit", "-m", "base");
+    await git(remote, "switch", "-c", "preview");
+    await writeFile(join(remote, "released.md"), "released\n");
+    await git(remote, "add", ".");
+    await git(remote, "commit", "-m", "released work");
+    await git(remote, "switch", "main");
+    await git(remote, "merge", "--no-ff", "-m", "release merge", "preview");
+    mainTip = await git(remote, "rev-parse", "HEAD");
+    await git(remote, "switch", "preview");
+    await writeFile(join(remote, "follow-up.md"), "follow-up\n");
+    await git(remote, "add", ".");
+    await git(remote, "commit", "-m", "follow-up work");
+    headTip = await git(remote, "rev-parse", "HEAD");
+    await git(root, "clone", "--quiet", pathToFileURL(remote).href, workspace);
+  }, 60_000);
+
+  afterAll(async () => {
+    if (root) await rm(root, {recursive: true, force: true, maxRetries: 3, retryDelay: 100});
+  });
+
+  beforeEach(() => {
+    vi.doUnmock("@actions/exec");
+    vi.resetModules();
+  });
+
+  it("finds the merge base when the head lacks main's merge commit and keeps the clone unshallow", async () => {
+    const {statsProvider} = await import("./statsProvider.ts");
+
+    const result = await statsProvider.run({
+      workspaceRoot: workspace,
+      baseRef: mainTip,
+      headRef: headTip,
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+
+    expect(result.executionStatus).toBe("passed");
+    expect(result.payload).toMatchObject({filesChanged: 1, linesAdded: 1, linesDeleted: 0});
+    expect(result.payload.topDirectories).toEqual([{directory: "(root)", count: 1}]);
+    expect(await git(workspace, "rev-parse", "--is-shallow-repository")).toBe("false");
+  }, 30_000);
 });
