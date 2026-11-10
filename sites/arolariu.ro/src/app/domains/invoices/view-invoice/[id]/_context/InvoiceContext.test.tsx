@@ -6,6 +6,7 @@
 import {act, render, screen} from "@testing-library/react";
 import {Component, type ReactNode} from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 import {InvoiceContextProvider, useInvoiceContext} from "./InvoiceContext";
 
@@ -44,33 +45,48 @@ describe("useInvoiceContext", () => {
     expect(screen.queryByText("consumed")).not.toBeInTheDocument();
   });
 
-  it("exposes the provided invoice and merchant and lets consumers replace the invoice", () => {
-    const first = TestDataBuilder.build("invoice", {id: "invoice-1", name: "First"});
-    const second = TestDataBuilder.build("invoice", {id: "invoice-1", name: "Second"});
-    let replace: ((invoice: typeof first) => void) | null = null;
+  function renderConsumer(invoice: Invoice, merchant: Merchant | null): {readonly replaceInvoice: (next: Invoice) => void} {
+    let replace: ((next: Invoice) => void) | null = null;
 
     function Consumer(): React.JSX.Element {
-      const {invoice, merchant, setInvoice} = useInvoiceContext();
-      replace = setInvoice;
+      const context = useInvoiceContext();
+      replace = context.setInvoice;
       return (
         <p>
-          {invoice.name}|{merchant === null ? "no-merchant" : "merchant"}
+          {context.invoice.name}|{context.merchant?.name ?? "no-merchant"}
         </p>
       );
     }
 
     render(
       <InvoiceContextProvider
-        invoice={first}
-        merchant={null}>
+        invoice={invoice}
+        merchant={merchant}>
         <Consumer />
       </InvoiceContextProvider>,
     );
+
+    return {replaceInvoice: (next) => act(() => replace?.(next))};
+  }
+
+  it("exposes the provided invoice and merchant and lets consumers replace the invoice", () => {
+    const first = TestDataBuilder.build("invoice", {id: "invoice-1", name: "First"});
+    const second = TestDataBuilder.build("invoice", {id: "invoice-1", name: "Second"});
+    const merchant = TestDataBuilder.build("merchant", {id: "merchant-1", name: "Local Shop"});
+    const {replaceInvoice} = renderConsumer(first, merchant);
+    expect(screen.getByText("First|Local Shop")).toBeInTheDocument();
+
+    replaceInvoice(second);
+
+    expect(screen.getByText("Second|Local Shop")).toBeInTheDocument();
+    expect(screen.queryByText("First|Local Shop")).not.toBeInTheDocument();
+  });
+
+  it("exposes a null merchant when the server found none", () => {
+    const invoice = TestDataBuilder.build("invoice", {id: "invoice-1", name: "First"});
+
+    renderConsumer(invoice, null);
+
     expect(screen.getByText("First|no-merchant")).toBeInTheDocument();
-
-    act(() => replace?.(second));
-
-    expect(screen.getByText("Second|no-merchant")).toBeInTheDocument();
-    expect(screen.queryByText("First|no-merchant")).not.toBeInTheDocument();
   });
 });
