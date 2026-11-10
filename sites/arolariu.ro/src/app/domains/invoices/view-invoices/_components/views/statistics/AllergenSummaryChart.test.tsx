@@ -201,6 +201,25 @@ describe("AllergenSummaryChart rendering", () => {
     expect(screen.getByText(/allergens\.codes\.milk/i)).toBeInTheDocument();
   });
 
+  it.each([
+    {percentage: 25, level: "high"},
+    {percentage: 15, level: "medium"},
+    {percentage: 5, level: "low"},
+  ])("applies the $level warning class for a $percentage% allergen", ({percentage, level}) => {
+    render(
+      <AllergenSummaryChart
+        assessedProductCount={20}
+        data={[{code: AllergenCode.Milk, productCount: 1, percentage}]}
+      />,
+    );
+
+    const card = screen.getByRole("listitem");
+    expect(card.className).toMatch(new RegExp(`_${level}_`));
+    for (const other of ["high", "medium", "low"].filter((l) => l !== level)) {
+      expect(card.className).not.toMatch(new RegExp(`_${other}_`));
+    }
+  });
+
   it("reports no detections when products were assessed but nothing was found", () => {
     render(
       <AllergenSummaryChart
