@@ -227,6 +227,19 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?grp=Food%2C+beverages&grp=Transport`, {scroll: false});
     });
 
+    it("should skip empty classification group labels when writing the URL", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act
+      result.current.setFilters({classificationGroups: ["", "Transport"]});
+
+      // Assert
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?grp=Transport`, {scroll: false});
+    });
+
     it("should remove param from URL when value is empty/null", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams("?q=test&min=10");
