@@ -165,9 +165,7 @@
   display: inline-flex;
   align-items: center;
   transform: scale(1);
-  transition:
-    transform 300ms ease-in-out,
-    color 300ms ease-in-out;
+  transition: transform 300ms ease-in-out;
 
   &:hover {
     transform: scale(1.1);
@@ -190,11 +188,11 @@
   text-transform: uppercase;
   letter-spacing: 0.025em; // tracking-wide
   color: color("primary-foreground");
-  transition: color 300ms ease-in-out;
 
-  // Mirrors the header title hover; keyed to the whole brand link so hovering the logo also recolors the name.
-  .footer__brand-link:hover & {
-    color: color("link");
+  .footer__brand-link:hover &,
+  .footer__brand-link:focus-visible & {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 }
 
