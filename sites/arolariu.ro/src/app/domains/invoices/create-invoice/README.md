@@ -37,8 +37,7 @@ create-invoice/
 ├── _context/
 │   └── CreateInvoiceContext.tsx    # Wizard state management
 └── _components/
-    ├── CreateInvoiceSkeleton.tsx   # Wizard skeleton (route fallback + scan check hold)
-    ├── CreateInvoiceSkeleton.module.scss
+    ├── CreateInvoiceSkeleton.module.scss # Shared styles for the route and island skeleton markup
     ├── StepIndicator.tsx           # Visual step progress indicator
     ├── StepIndicator.module.scss
     ├── ScanSelector.tsx            # Step 1: Select scans
@@ -48,6 +47,9 @@ create-invoice/
     ├── ReviewStep.tsx              # Step 3: Review & create
     └── ReviewStep.module.scss
 ```
+
+The route `loading.tsx` and the island's scan-check hold state render their skeleton markup separately. This keeps the route fallback
+limited to skeleton primitives instead of importing an application component.
 
 ## Wizard Flow
 

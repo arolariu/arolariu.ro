@@ -18,7 +18,7 @@
 
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
-import {Button} from "@arolariu/components";
+import {Button, Skeleton} from "@arolariu/components";
 import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
@@ -26,7 +26,7 @@ import {useRouter} from "next/navigation";
 import {useEffect, useState} from "react";
 import {TbArrowLeft} from "react-icons/tb";
 import {fetchScans} from "../_actions/scans";
-import CreateInvoiceSkeleton from "./_components/CreateInvoiceSkeleton";
+import skeletonStyles from "./_components/CreateInvoiceSkeleton.module.scss";
 import InvoiceDetailsForm from "./_components/InvoiceDetailsForm";
 import ReviewStep from "./_components/ReviewStep";
 import ScanSelector from "./_components/ScanSelector";
@@ -162,6 +162,35 @@ function useScanAvailability(): ScanAvailability {
   return availability;
 }
 
+function ScanAvailabilitySkeleton(): React.JSX.Element {
+  return (
+    <div className={skeletonStyles["container"]}>
+      <div className={skeletonStyles["stepIndicator"]}>
+        <Skeleton className={skeletonStyles["stepDot"]} />
+        <Skeleton className={skeletonStyles["stepDot"]} />
+        <Skeleton className={skeletonStyles["stepDot"]} />
+      </div>
+
+      <div className={skeletonStyles["content"]}>
+        <Skeleton className={skeletonStyles["title"]} />
+        <Skeleton className={skeletonStyles["subtitle"]} />
+
+        <div className={skeletonStyles["grid"]}>
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
+        </div>
+      </div>
+
+      <div className={skeletonStyles["navigation"]}>
+        <Skeleton className={skeletonStyles["button"]} />
+        <Skeleton className={skeletonStyles["button"]} />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Main wizard component wrapped with context.
  */
@@ -214,7 +243,7 @@ export default function RenderCreateInvoiceScreen(): React.JSX.Element {
   }, [availability, router]);
 
   if (availability !== "available") {
-    return <CreateInvoiceSkeleton />;
+    return <ScanAvailabilitySkeleton />;
   }
 
   return (
