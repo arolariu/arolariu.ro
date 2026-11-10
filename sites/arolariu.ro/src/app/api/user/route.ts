@@ -24,6 +24,12 @@ import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Keeps every identity response out of shared and browser caches. Production sits behind Azure Front Door,
+ * which caches a GET response lacking `Cache-Control` and leaves cookies out of its cache key.
+ */
+const NO_STORE_HEADERS = {"Cache-Control": "no-store"} as const;
+
 // Metrics with type-safe names
 const userRequestCounter = createCounter("user.api.requests", "Total number of /api/user requests", "1");
 const guestUserCounter = createCounter("user.guest.requests", "Total number of guest user requests", "1");
@@ -60,6 +66,7 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  * - Short expiration (5 min) limits exposure window if token is compromised
  * - Guest tokens have sentinel GUID (`00000000-0000-0000-0000-000000000000`)
  * - Backend validates JWT signature and expiration before processing requests
+ * - Every response sends `Cache-Control: no-store`, so no cache replays one visitor's identity or token to another
  *
  * **Observability & Telemetry** (see Frontend RFC 1001):
  * - **Distributed Tracing**: Parent span `api.user.get` with child spans for auth/guest paths
@@ -222,7 +229,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
               "api",
             );
 
-            return NextResponse.json(userInformation, {status: 200});
+            return NextResponse.json(userInformation, {status: 200, headers: NO_STORE_HEADERS});
           });
         } else {
           return withSpan("api.user.guest", async (guestSpan) => {
@@ -287,7 +294,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
               "api",
             );
 
-            return NextResponse.json(guestUserInformation, {status: 200});
+            return NextResponse.json(guestUserInformation, {status: 200, headers: NO_STORE_HEADERS});
           });
         }
       } catch (error) {
@@ -325,7 +332,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
           ...errorAttrs,
         });
 
-        return NextResponse.json(fallbackUserInformation, {status: 200});
+        return NextResponse.json(fallbackUserInformation, {status: 200, headers: NO_STORE_HEADERS});
       }
     },
     {
