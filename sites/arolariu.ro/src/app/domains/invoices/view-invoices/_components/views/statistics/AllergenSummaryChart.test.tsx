@@ -214,9 +214,12 @@ describe("AllergenSummaryChart rendering", () => {
     );
 
     const card = screen.getByRole("listitem");
-    expect(card.className).toMatch(new RegExp(`_${level}_`));
+    // Match the level as a whole class-name token so the assertion holds for any CSS-module naming strategy.
+    const hasLevelClass = (name: string): boolean => new RegExp(`(^|[\\s_])${name}([\\s_]|$)`).test(card.className);
+
+    expect(hasLevelClass(level)).toBe(true);
     for (const other of ["high", "medium", "low"].filter((l) => l !== level)) {
-      expect(card.className).not.toMatch(new RegExp(`_${other}_`));
+      expect(hasLevelClass(other)).toBe(false);
     }
   });
 
