@@ -103,6 +103,51 @@ describe("uploadPendingScanMultiple", () => {
     expect(result.results.map((item) => item.uploadId)).toEqual(["success-1", "failed-1", "success-2"]);
   });
 
+  it("uses the generic message when an item upload rejects with a non-Error value", async () => {
+    const result = await uploadPendingScanMultiple({
+      uploads: [createUpload("throws-string")],
+      dependencies: {createUploadTarget: vi.fn(), uploadScan: vi.fn(), readFileAsBase64: vi.fn()},
+      callbacks: {onProgress: vi.fn()},
+      concurrencyLimit: 1,
+      uploadOne: vi.fn().mockRejectedValue("nope"),
+    });
+
+    expect(result.results).toEqual([
+      {success: false, uploadId: "throws-string", attempts: 0, reason: "unexpected-error", error: "Unexpected upload error"},
+    ]);
+    expect(result.failureCount).toBe(1);
+  });
+
+  it("runs no uploads and returns empty results when the concurrency limit is zero", async () => {
+    const uploadOne = vi.fn();
+
+    const result = await uploadPendingScanMultiple({
+      uploads: [createUpload("never-1")],
+      dependencies: {createUploadTarget: vi.fn(), uploadScan: vi.fn(), readFileAsBase64: vi.fn()},
+      callbacks: {onProgress: vi.fn()},
+      concurrencyLimit: 0,
+      uploadOne,
+    });
+
+    expect(uploadOne).not.toHaveBeenCalled();
+    expect(result).toEqual({results: [], successCount: 0, failureCount: 0});
+  });
+
+  it("normalizes an Error resolved by the item runner into a failure result", async () => {
+    const result = await uploadPendingScanMultiple({
+      uploads: [createUpload("resolved-error")],
+      dependencies: {createUploadTarget: vi.fn(), uploadScan: vi.fn(), readFileAsBase64: vi.fn()},
+      callbacks: {onProgress: vi.fn()},
+      concurrencyLimit: 1,
+      // Cast: a runner contract violation (resolving an Error) exercises the defensive normalization.
+      uploadOne: vi.fn().mockResolvedValue(new Error("resolved boom") as unknown as UploadRunnerResult),
+    });
+
+    expect(result.results).toEqual([
+      {success: false, uploadId: "resolved-error", attempts: 0, reason: "unexpected-error", error: "resolved boom"},
+    ]);
+  });
+
   it("normalizes thrown item uploads into failure results", async () => {
     const uploads = [createUpload("throws-1")];
     const uploadOne = vi.fn().mockRejectedValue(new Error("Network exploded"));
