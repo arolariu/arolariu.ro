@@ -139,6 +139,24 @@ describe("toRONDetailed", () => {
     expect(result.rateUsed).toBe(1);
     expect(result.isExactYearMatch).toBe(false);
   });
+
+  it("should skip years without data for the currency when falling back (AED starts in 2018)", () => {
+    const result = toRONDetailed(100, "AED", 2005);
+
+    expect(result.isExactYearMatch).toBe(false);
+    expect(result.rateYear).toBeGreaterThanOrEqual(2018);
+    expect(result.rateUsed).not.toBe(1);
+    expect(toRON(100, "AED", 2005)).toBe(result.amountInRon);
+  });
+
+  it("should fall back to identity when the year is NaN and no nearest year can be found", () => {
+    const result = toRONDetailed(100, "EUR", Number.NaN);
+
+    expect(toRON(100, "EUR", Number.NaN)).toBe(100);
+    expect(result.amountInRon).toBe(100);
+    expect(result.rateUsed).toBe(1);
+    expect(result.isExactYearMatch).toBe(false);
+  });
 });
 
 describe("getTransactionYear", () => {
