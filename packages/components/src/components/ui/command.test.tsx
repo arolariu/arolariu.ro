@@ -3846,3 +3846,29 @@ it.each([false, true])(
     expect(compiledCommandDeclarations(input, forcedColors).get("outline")).toBe("none");
   },
 );
+
+it("keeps CommandList groups and separators at content height so a short list scrolls instead of clipping them", () => {
+  // Arrange
+  render(
+    <Command>
+      <CommandInput aria-label='Short list input' />
+      <CommandList>
+        <CommandGroup heading='Navigation'>
+          <CommandItem>Home</CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading='Theme'>
+          <CommandItem>Dark</CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </Command>,
+  );
+
+  // Act
+  const group = screen.getByRole("group", {name: "Navigation"});
+  const separator = screen.getByRole("separator");
+
+  // Assert
+  expect(compiledCommandDeclarations(group, false).get("flex-shrink")).toBe("0");
+  expect(compiledCommandDeclarations(separator, false).get("flex-shrink")).toBe("0");
+});
