@@ -104,6 +104,27 @@ describe("runUploadSession", () => {
     });
   });
 
+  it("skips revoke, success event and removal for a successful result with an unknown upload id", async () => {
+    const emit = vi.fn<(event: UploadEvent) => void>();
+    const revokePreview = vi.fn();
+    const scheduleRemoval = vi.fn();
+
+    const outcome = await runUploadSession({
+      uploads: [createUpload("known-1")],
+      dependencies: noopDeps,
+      emit,
+      onProgress: vi.fn(),
+      revokePreview,
+      scheduleRemoval,
+      runBatch: fakeBatch({results: [successResult("ghost-1")], successCount: 1, failureCount: 0}),
+    });
+
+    expect(emit.mock.calls.map(([event]) => event.type)).not.toContain("scanUpload.item.uploadSucceeded");
+    expect(revokePreview).not.toHaveBeenCalled();
+    expect(scheduleRemoval).not.toHaveBeenCalled();
+    expect(outcome.toasts).toEqual([{kind: "success", key: "uploadSucceeded", count: 1}]);
+  });
+
   it("returns no toasts and schedules nothing for an empty batch", async () => {
     const emit = vi.fn<(event: UploadEvent) => void>();
     const scheduleRemoval = vi.fn();
