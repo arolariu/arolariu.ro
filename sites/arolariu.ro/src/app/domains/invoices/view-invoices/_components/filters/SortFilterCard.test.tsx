@@ -71,8 +71,8 @@ describe("SortFilterCard", () => {
       />,
     );
 
-    const pills = screen.getAllByText(`forms.invoices.filters.sortOptions.${label}`);
-    expect(pills.length).toBeGreaterThanOrEqual(2);
+    // The label appears twice: once in the trigger and once in the active pill.
+    expect(screen.getAllByText(`forms.invoices.filters.sortOptions.${label}`)).toHaveLength(2);
     expect(screen.queryByText("forms.invoices.filters.defaultValue")).not.toBeInTheDocument();
   });
 
@@ -89,13 +89,16 @@ describe("SortFilterCard", () => {
   });
 
   it("renders an empty active pill when no sort field is set", () => {
-    render(
+    const {container} = render(
       <SortFilterCard
         filters={makeFilters({sortBy: null, sortOrder: null})}
         onFiltersChange={vi.fn()}
       />,
     );
 
+    // A cleared sort is not the default sort, so the card is active but has no label to summarize.
+    const pill = container.querySelector("[class*='activeValuePill']");
+    expect(pill).toBeEmptyDOMElement();
     expect(screen.queryByText("forms.invoices.filters.defaultValue")).not.toBeInTheDocument();
   });
 
