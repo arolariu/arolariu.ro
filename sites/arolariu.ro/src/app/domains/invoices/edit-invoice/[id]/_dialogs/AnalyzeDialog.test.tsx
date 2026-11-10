@@ -113,4 +113,40 @@ describe("AnalyzeDialog", () => {
     // Profile radios from InvoiceAnalysisControls should be present.
     expect(screen.getAllByRole("radio").length).toBeGreaterThan(0);
   });
+
+  it("selects a different profile when a profile radio is clicked", async () => {
+    render(<Wrapper />);
+    await userEvent.click(screen.getByRole("button", {name: /open/i}));
+    const radios = screen.getAllByRole("radio");
+    const initiallyChecked = radios.filter((radio) => (radio as HTMLInputElement).checked);
+    const target = radios.find((radio) => !(radio as HTMLInputElement).checked);
+    expect(initiallyChecked).toHaveLength(1);
+    expect(target).toBeDefined();
+
+    await userEvent.click(target as HTMLElement);
+
+    expect(target).toBeChecked();
+    expect(initiallyChecked[0]).not.toBeChecked();
+  });
+
+  it("closes the dialog and keeps analysis unsubmitted when Cancel is clicked", async () => {
+    render(<Wrapper />);
+    await userEvent.click(screen.getByRole("button", {name: /open/i}));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", {name: /buttons\.cancel/i}));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
+  });
+
+  it("closes the dialog when Escape is pressed", async () => {
+    render(<Wrapper />);
+    await userEvent.click(screen.getByRole("button", {name: /open/i}));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
