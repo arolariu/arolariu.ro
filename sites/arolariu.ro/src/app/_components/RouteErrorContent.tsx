@@ -44,7 +44,7 @@ export interface RouteErrorContentProps {
  * />
  * ```
  */
-export function RouteErrorContent({error, reset, scope}: RouteErrorContentProps): React.JSX.Element {
+export function RouteErrorContent({error, reset, scope = undefined}: RouteErrorContentProps): React.JSX.Element {
   const t = useTranslations();
 
   return (
