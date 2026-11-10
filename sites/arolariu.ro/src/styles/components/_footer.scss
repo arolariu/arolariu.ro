@@ -190,9 +190,11 @@
   text-transform: uppercase;
   letter-spacing: 0.025em; // tracking-wide
   color: color("primary-foreground");
+  transition: color 300ms ease-in-out;
 
-  &:hover {
-    color: color("primary-foreground");
+  // Mirrors the header title hover; keyed to the whole brand link so hovering the logo also recolors the name.
+  .footer__brand-link:hover & {
+    color: color("link");
   }
 }
 
