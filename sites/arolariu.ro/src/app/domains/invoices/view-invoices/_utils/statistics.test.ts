@@ -19,7 +19,7 @@
  * - getPaymentTypeLabel
  */
 
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 // Import types
 import type {Invoice, Product} from "@/types/invoices";
@@ -44,6 +44,7 @@ import {
   computeProductClassificationSpending,
   computeTimeOfDay,
   computeTopProducts,
+  countAssessedProducts,
   getPaymentTypeLabel,
 } from "./statistics";
 
@@ -1845,6 +1846,105 @@ describe("Statistics Functions", () => {
         const result = computeMonthComparison(invoices);
 
         expect(result.newMerchantCount).toBe(0);
+      });
+    });
+
+    describe("computeMonthComparison - missing payment information", () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("falls back to createdAt when payment information is missing", () => {
+        const january = createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-10T12:00:00")});
+        const february = createTestInvoice({merchantId: "merchant-2", amount: 50, date: new Date("2025-02-10T12:00:00")});
+        // @ts-expect-error - Intentionally testing missing payment information
+        february.paymentInformation = null;
+
+        const result = computeMonthComparison([january, february]);
+
+        expect(result.currentMonth.monthKey).toBe("2025-02");
+        expect(result.currentMonth.invoiceCount).toBe(1);
+        expect(result.newMerchantCount).toBe(1);
+      });
+
+      it("falls back to the current date when payment information and createdAt are both missing", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2025-03-15T12:00:00"));
+        const january = createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-10T12:00:00")});
+        const undated = createTestInvoice({merchantId: "merchant-2", amount: 50});
+        // @ts-expect-error - Intentionally testing missing payment information
+        undated.paymentInformation = null;
+        // @ts-expect-error - Intentionally testing missing createdAt
+        undated.createdAt = null;
+
+        const result = computeMonthComparison([january, undated]);
+
+        expect(result.currentMonth.monthKey).toBe("2025-03");
+        expect(result.previousMonth?.monthKey).toBe("2025-01");
+        expect(result.newMerchantCount).toBe(1);
+      });
+    });
+
+    describe("computeMerchantVisitFrequency - missing dates and items", () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("uses the current date and an empty basket when dates and items are missing", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2025-03-15T12:00:00"));
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 80});
+        // @ts-expect-error - Intentionally testing missing payment information
+        invoice.paymentInformation = null;
+        // @ts-expect-error - Intentionally testing missing createdAt
+        invoice.createdAt = null;
+        // @ts-expect-error - Intentionally testing missing items
+        invoice.items = null;
+
+        const [pattern] = computeMerchantVisitFrequency([invoice]);
+
+        expect(pattern?.merchantId).toBe("merchant-1");
+        expect(pattern?.totalVisits).toBe(1);
+        expect(pattern?.averageBasketSize).toBe(0);
+        expect(pattern?.mostCommonDayOfWeek).toBe(new Date("2025-03-15T12:00:00").getDay());
+      });
+    });
+
+    describe("countAssessedProducts", () => {
+      const assessed = {status: "noSignals", signals: []} as const;
+
+      it("counts assessed products and excludes unassessed and soft-deleted ones", () => {
+        const invoices = [
+          createTestInvoice({
+            items: [
+              createTestProduct({allergenAssessment: assessed}),
+              createTestProduct({allergenAssessment: assessed, isSoftDeleted: true}),
+              createTestProduct({allergenAssessment: null}),
+            ],
+          }),
+          createTestInvoice({items: [createTestProduct({allergenAssessment: assessed})]}),
+        ];
+
+        expect(countAssessedProducts(invoices)).toBe(2);
+        expect(countAssessedProducts([])).toBe(0);
+      });
+
+      it("treats an invoice with null items as having no assessed products", () => {
+        const withItems = createTestInvoice({items: [createTestProduct({allergenAssessment: assessed})]});
+        const nullItems = createTestInvoice({});
+        // @ts-expect-error - Intentionally testing null items
+        nullItems.items = null;
+
+        expect(countAssessedProducts([nullItems])).toBe(0);
+        expect(countAssessedProducts([nullItems, withItems])).toBe(1);
+      });
+
+      it("counts a product with missing metadata as not deleted (defensive invariant)", () => {
+        const product = createTestProduct({allergenAssessment: assessed});
+        // @ts-expect-error - Intentionally testing missing metadata
+        product.metadata = null;
+
+        expect(countAssessedProducts([createTestInvoice({items: [product]})])).toBe(1);
       });
     });
 
