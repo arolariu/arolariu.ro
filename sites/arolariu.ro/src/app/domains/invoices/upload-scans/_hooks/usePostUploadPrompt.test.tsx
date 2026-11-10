@@ -40,6 +40,47 @@ describe("usePostUploadPrompt", () => {
     expect(clearCompletedBatch).toHaveBeenCalledOnce();
   });
 
+  it("re-arms and prompts again after a new batch passes through a non-empty queue", () => {
+    const clearCompletedBatch = vi.fn();
+    const firstBatch = [{id: "scan-1", name: "a.jpg", preview: "https://storage/a.jpg"}];
+    const secondBatch = [{id: "scan-2", name: "b.jpg", preview: "https://storage/b.jpg"}];
+
+    const {result, rerender} = renderHook(
+      (props: {pending: number; batch: typeof firstBatch}) =>
+        usePostUploadPrompt({
+          pendingUploadCount: props.pending,
+          totalCompleted: 1,
+          completedBatch: props.batch,
+          clearCompletedBatch,
+        }),
+      {initialProps: {pending: 0, batch: firstBatch}},
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(result.current.isVisible).toBe(true);
+    act(() => {
+      result.current.dismissPrompt();
+    });
+
+    rerender({pending: 2, batch: secondBatch});
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(result.current.isVisible).toBe(false);
+    expect(clearCompletedBatch).toHaveBeenCalledTimes(1);
+
+    rerender({pending: 0, batch: secondBatch});
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(result.current.isVisible).toBe(true);
+    expect(result.current.completedScans).toEqual(secondBatch);
+    expect(clearCompletedBatch).toHaveBeenCalledTimes(2);
+  });
+
   it("dismisses the visible prompt", () => {
     const completedBatch = [{id: "scan-1", name: "receipt.jpg", preview: "https://storage/scan-1.jpg"}];
     const {result} = renderHook(() =>
