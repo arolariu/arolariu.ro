@@ -14,7 +14,7 @@ import styles from "./UploadHeaderActions.module.scss";
 
 type LinkHref = ComponentProps<typeof Link>["href"];
 
-/** One tooltip-wrapped header link button (full label on desktop, first word on mobile). */
+/** One tooltip-wrapped header link button showing its full label at every width. */
 function HeaderActionLink({href, icon, label}: Readonly<{href: LinkHref; icon: ReactNode; label: string}>): React.JSX.Element {
   return (
     <TooltipProvider>
@@ -25,8 +25,7 @@ function HeaderActionLink({href, icon, label}: Readonly<{href: LinkHref; icon: R
               href={href}
               className={cn(buttonVariants({variant: "outline"}), styles["outlineButton"])}>
               {icon}
-              <span className={styles["hiddenMobile"]}>{label}</span>
-              <span className={styles["visibleMobile"]}>{label.split(" ")[0]}</span>
+              <span>{label}</span>
             </Link>
           }
         />

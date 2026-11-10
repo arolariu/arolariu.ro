@@ -34,4 +34,12 @@ describe("UploadHeaderActions", () => {
     expect(link).not.toHaveAttribute("role");
     expect(link).not.toHaveAttribute("type");
   });
+
+  it.each(["buttons.viewScans", "buttons.myInvoices"])("shows the full %s label once instead of a truncated mobile variant", (labelKey) => {
+    render(<UploadHeaderActions />);
+
+    const label = `pages.invoices.uploadScans.${labelKey}`;
+    const link = screen.getByRole("link", {name: new RegExp(labelKey.replace(".", "\\."))});
+    expect(link.textContent).toBe(label);
+  });
 });
