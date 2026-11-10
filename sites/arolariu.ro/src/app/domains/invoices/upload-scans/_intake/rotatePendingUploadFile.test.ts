@@ -79,6 +79,70 @@ describe("rotatePendingUploadFile", () => {
     expect(drawImage).toHaveBeenCalled();
   });
 
+  it("rotates counter-clockwise by negative quarter turn", async () => {
+    class MockImage {
+      public width = 20;
+      public height = 10;
+      private listeners = new Map<string, () => void>();
+
+      public addEventListener(type: string, listener: () => void): void {
+        this.listeners.set(type, listener);
+      }
+
+      public set src(_value: string) {
+        queueMicrotask(() => this.listeners.get("load")?.());
+      }
+    }
+
+    globalThis.Image = MockImage as unknown as typeof Image;
+
+    const rotate = vi.fn();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({drawImage: vi.fn(), rotate, translate: vi.fn()})),
+      toBlob: vi.fn((callback: BlobCallback) => callback(new Blob([new Uint8Array([2])], {type: "image/jpeg"}))),
+    } as unknown as HTMLCanvasElement;
+
+    vi.spyOn(document, "createElement").mockReturnValue(canvas);
+
+    await rotatePendingUploadFile({
+      file: new File([new Uint8Array([1])], "receipt.jpg", {type: "image/jpeg"}),
+      preview: "blob:old-preview",
+      direction: "ccw",
+    });
+
+    expect(rotate).toHaveBeenCalledWith(-Math.PI / 2);
+    expect(rotate).not.toHaveBeenCalledWith(Math.PI / 2);
+  });
+
+  it("rejects and revokes the source URL when the image fails to load", async () => {
+    class MockImage {
+      private listeners = new Map<string, () => void>();
+
+      public addEventListener(type: string, listener: () => void): void {
+        this.listeners.set(type, listener);
+      }
+
+      public set src(_value: string) {
+        queueMicrotask(() => this.listeners.get("error")?.());
+      }
+    }
+
+    globalThis.Image = MockImage as unknown as typeof Image;
+
+    await expect(
+      rotatePendingUploadFile({
+        file: new File([new Uint8Array([1])], "receipt.jpg", {type: "image/jpeg"}),
+        preview: "blob:old-preview",
+        direction: "cw",
+      }),
+    ).rejects.toThrow("Failed to load pending upload image");
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:rotated-preview");
+    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith("blob:old-preview");
+  });
+
   it("throws an error when canvas context is unavailable", async () => {
     class MockImage {
       public width = 20;
