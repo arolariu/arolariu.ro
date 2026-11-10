@@ -127,6 +127,16 @@ describe("useScanDelete", () => {
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");
   });
 
+  it("rejects without calling the server when the dialog payload is null", async () => {
+    const {result} = renderHook(() => useScanDelete(null));
+
+    await expect(result.current.deleteScanCallback()).rejects.toThrow("Cannot delete a scan before the dialog payload is available.");
+
+    expect(mockDeleteScan).not.toHaveBeenCalled();
+    expect(mockRemoveScan).not.toHaveBeenCalled();
+    expect(result.current.isDeleting).toBe(false);
+  });
+
   it("swallows thrown server errors after notifying and logging", async () => {
     const thrownError = new Error("network down");
     mockDeleteScan.mockRejectedValue(thrownError);
