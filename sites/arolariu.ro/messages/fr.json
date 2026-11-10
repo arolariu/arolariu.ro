@@ -4054,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Terminé"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "Voir plus de détails",
+              "aboutTheProgramDescription": "Un parcours d'études autonome, à son propre rythme et entièrement à distance, destiné aux professionnels du secteur et fondé sur des cours du MIT.",
+              "aboutTheProgramLearnings": "# 6.8300 - Progrès en vision par ordinateur # 6.5950 - Conception de matériel sécurisé # 6.5060 - Ingénierie des algorithmes",
+              "aboutTheProgramLearningsTitle": "Cours supplémentaires",
+              "aboutTheProgramTitle": "À propos du parcours d'études",
+              "degree": "Programme d'études supérieures en conception et ingénierie logicielle",
+              "description": "Parcours d'études autonome, à son propre rythme et entièrement à distance, destiné aux professionnels du secteur.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introduction au Deep Learning # 6.5660 / 6.858 - Sécurité des systèmes informatiques # 6.172 - Ingénierie des performances des systèmes logiciels # 18.225 - Théorie des graphes et combinatoire additive # 6.033 - Ingénierie des systèmes informatiques # 6.8300 - Progrès en vision par ordinateur # 6.5950 - Conception de matériel sécurisé # 6.5060 - Ingénierie des algorithmes",
+              "keyCoursesTitle": "Cours principaux",
+              "location": "En ligne, États-Unis",
+              "period": "2025 - 2029",
+              "status": "En cours (étude autonome)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "Voir plus de détails",
+              "aboutTheProgramDescription": "Les cours portaient sur la visualisation des données et la veille stratégique, l'analyse exploratoire des données, le big data et l'apprentissage automatique, ainsi que l'IA explicable, responsable et transparente.",
+              "aboutTheProgramLearnings": "# Études en ligne et à distance # Parrainé par Microsoft Corporation # La collaboration a pris fin en 2024 pour des raisons personnelles # Le diplôme n'a pas été obtenu",
+              "aboutTheProgramLearningsTitle": "Détails du programme",
+              "aboutTheProgramTitle": "À propos du programme",
+              "degree": "MSc. en science des données",
+              "description": "Précédemment inscrit à un programme de MSc. en science des données en ligne et à distance à l'University of Portsmouth, parrainé par Microsoft Corporation. La collaboration a pris fin en 2024 pour des raisons personnelles ; le diplôme n'a pas été obtenu.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Visualisation des données et veille stratégique # Concepts d'analyse exploratoire des données # Big data et apprentissage automatique # IA explicable, responsable et transparente",
+              "keyCoursesTitle": "Cours principaux",
+              "location": "Portsmouth, Royaume-Uni",
+              "period": "2024 - 2024",
+              "status": "Non terminé"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "Voir plus de détails",
               "aboutTheProgramDescription": "Le Master en Internet des Objets à l'Université de Malmö est un programme de pointe qui prépare les étudiants aux défis et opportunités de la révolution IoT. Le programme met l'accent sur l'apprentissage pratique, la collaboration interdisciplinaire et les applications du monde réel.",

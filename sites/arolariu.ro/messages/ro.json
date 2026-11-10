@@ -4054,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Completat"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "Vezi mai multe detalii",
+              "aboutTheProgramDescription": "Un program de studiu independent, în ritm propriu și desfășurat complet la distanță, destinat profesioniștilor din industrie și construit în jurul cursurilor MIT.",
+              "aboutTheProgramLearnings": "# 6.8300 - Progrese în viziunea computerizată # 6.5950 - Proiectarea hardware-ului securizat # 6.5060 - Ingineria algoritmilor",
+              "aboutTheProgramLearningsTitle": "Cursuri suplimentare",
+              "aboutTheProgramTitle": "Despre programul de studiu",
+              "degree": "Program postuniversitar în Proiectare și Inginerie Software",
+              "description": "Program de studiu independent, în ritm propriu și exclusiv la distanță, destinat profesioniștilor din industrie.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introducere în Deep Learning # 6.5660 / 6.858 - Securitatea sistemelor de calculatoare # 6.172 - Ingineria performanței sistemelor software # 18.225 - Teoria grafurilor și combinatorică aditivă # 6.033 - Ingineria sistemelor de calculatoare # 6.8300 - Progrese în viziunea computerizată # 6.5950 - Proiectarea hardware-ului securizat # 6.5060 - Ingineria algoritmilor",
+              "keyCoursesTitle": "Cursuri cheie",
+              "location": "Online, Statele Unite",
+              "period": "2025 - 2029",
+              "status": "În desfășurare (studiu independent)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "Vezi mai multe detalii",
+              "aboutTheProgramDescription": "Programul a inclus vizualizarea datelor și business intelligence, analiza exploratorie a datelor, big data și învățare automată, precum și inteligență artificială explicabilă, responsabilă și transparentă.",
+              "aboutTheProgramLearnings": "# Studii online, la distanță # Sponsorizat de Microsoft Corporation # Colaborarea s-a încheiat în 2024 din motive personale # Programul de masterat nu a fost finalizat",
+              "aboutTheProgramLearningsTitle": "Detalii despre program",
+              "aboutTheProgramTitle": "Despre program",
+              "degree": "MSc. în Știința Datelor",
+              "description": "Înscris anterior într-un program MSc. în Știința Datelor online, la distanță, la University of Portsmouth, sponsorizat de Microsoft Corporation. Colaborarea s-a încheiat în 2024 din motive personale; programul de masterat nu a fost finalizat.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Vizualizarea datelor și business intelligence # Concepte de analiză exploratorie a datelor # Big data și învățare automată # Inteligență artificială explicabilă, responsabilă și transparentă",
+              "keyCoursesTitle": "Cursuri cheie",
+              "location": "Portsmouth, Regatul Unit",
+              "period": "2024 - 2024",
+              "status": "Neîncheiat"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "Vezi mai multe detalii",
               "aboutTheProgramDescription": "MSc în Internet of Things la Universitatea Malmö este un program de ultimă oră care pregătește studenții pentru provocările și oportunitățile revoluției IoT. Planul de învățământ pune accentul pe învățarea practică, colaborarea interdisciplinară și aplicațiile din lumea reală.",

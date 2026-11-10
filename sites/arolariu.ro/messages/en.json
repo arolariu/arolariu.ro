@@ -4054,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Completed"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "See more details",
+              "aboutTheProgramDescription": "A self-directed, self-paced, fully remote course of study for industry professionals, built around MIT courses.",
+              "aboutTheProgramLearnings": "# 6.8300 - Advances in Computer Vision # 6.5950 - Secure Hardware Design # 6.5060 - Algorithm Engineering",
+              "aboutTheProgramLearningsTitle": "Additional courses",
+              "aboutTheProgramTitle": "About the course of study",
+              "degree": "Graduate Program in Software Design & Engineering",
+              "description": "A self-directed, self-paced, remote-only course of study for industry professionals.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introduction to Deep Learning # 6.5660 / 6.858 - Computer Systems Security # 6.172 - Performance Engineering of Software Systems # 18.225 - Graph Theory and Additive Combinatorics # 6.033 - Computer System Engineering # 6.8300 - Advances in Computer Vision # 6.5950 - Secure Hardware Design # 6.5060 - Algorithm Engineering",
+              "keyCoursesTitle": "Key courses",
+              "location": "Online, United States",
+              "period": "2025 - 2029",
+              "status": "In progress (self-directed)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "See more details",
+              "aboutTheProgramDescription": "The coursework covered data visualization and business intelligence, exploratory data analysis, big data and machine learning, and explainable, responsible and transparent AI.",
+              "aboutTheProgramLearnings": "# Online, remote study # Sponsored by Microsoft Corporation # The collaboration ended in 2024 due to personal circumstances # The degree was not completed",
+              "aboutTheProgramLearningsTitle": "Program details",
+              "aboutTheProgramTitle": "About the program",
+              "degree": "MSc. in Data Science",
+              "description": "Previously enrolled in an online, remote MSc. in Data Science program at the University of Portsmouth, sponsored by Microsoft Corporation. The collaboration ended in 2024 due to personal circumstances; the degree was not completed.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Data Visualization and Business Intelligence # Exploratory Data Analysis Concepts # Big Data and Machine Learning # Explainable, Responsible and Transparent AI",
+              "keyCoursesTitle": "Key courses",
+              "location": "Portsmouth, United Kingdom",
+              "period": "2024 - 2024",
+              "status": "Not completed"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "See more details",
               "aboutTheProgramDescription": "The MSc in Internet of Things at Malmö University is a cutting-edge program that prepares students for the challenges and opportunities of the IoT revolution. The curriculum emphasizes hands-on learning, interdisciplinary collaboration, and real-world applications.",
