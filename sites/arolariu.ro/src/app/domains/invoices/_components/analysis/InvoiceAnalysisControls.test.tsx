@@ -15,13 +15,33 @@
  * All queries use accessible roles to simultaneously prove accessibility.
  */
 
-import {render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
 import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import InvoiceAnalysisControls from "./InvoiceAnalysisControls";
 
+/**
+ * Runs `action` while swallowing window ErrorEvents React dispatches for event-handler throws.
+ * Returns the captured error messages so the test can assert the handler rejected the malformed DOM value.
+ */
+async function captureHandlerErrors(action: () => Promise<void> | void): Promise<string[]> {
+  const messages: string[] = [];
+  const listener = (event: ErrorEvent): void => {
+    event.preventDefault();
+    messages.push(event.error instanceof Error ? event.error.message : String(event.message));
+  };
+  window.addEventListener("error", listener);
+  const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    await action();
+  } finally {
+    window.removeEventListener("error", listener);
+    consoleSpy.mockRestore();
+  }
+  return messages;
+}
 describe("InvoiceAnalysisControls", () => {
   // ── 1. Profile radio → exact preset shape ──────────────────────────────────
 
@@ -185,5 +205,67 @@ describe("InvoiceAnalysisControls", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toMatch(/overwrite/i);
+  });
+
+  it("emits the parsed maximumRecipes when the spinbutton changes and ignores a cleared (NaN) value", () => {
+    const onChange = vi.fn();
+    const value: InvoiceAnalysisCapabilities = {...resolveAnalysisCapabilities("invoice", "comprehensive"), maximumRecipes: 2};
+    render(
+      <InvoiceAnalysisControls
+        profile='comprehensive'
+        value={value}
+        onChange={onChange}
+      />,
+    );
+
+    const spinbutton = screen.getByRole("spinbutton");
+    fireEvent.change(spinbutton, {target: {value: "3"}});
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [profile, emitted] = onChange.mock.calls[0] as [AnalysisProfile, InvoiceAnalysisCapabilities];
+    expect(profile).toBe("comprehensive");
+    expect(emitted.maximumRecipes).toBe(3);
+
+    onChange.mockClear();
+    fireEvent.change(spinbutton, {target: {value: ""}});
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("defensive invariant: rejects an unsupported profile radio value without calling onChange", async () => {
+    const onChange = vi.fn();
+    render(
+      <InvoiceAnalysisControls
+        profile='fast'
+        value={resolveAnalysisCapabilities("invoice", "fast")}
+        onChange={onChange}
+      />,
+    );
+    const radio = screen.getByRole<HTMLInputElement>("radio", {name: /profiles\.balanced/i});
+    radio.value = "bogus";
+
+    const errors = await captureHandlerErrors(() => userEvent.click(radio));
+
+    expect(errors).toContain("Unsupported invoice analysis profile: bogus");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("defensive invariant: rejects an unsupported capability checkbox value without calling onChange", async () => {
+    const onChange = vi.fn();
+    render(
+      <InvoiceAnalysisControls
+        profile='balanced'
+        value={resolveAnalysisCapabilities("invoice", "balanced")}
+        onChange={onChange}
+      />,
+    );
+    const checkbox = screen.getAllByRole<HTMLInputElement>("checkbox").find((box) => !box.disabled);
+    expect(checkbox).toBeDefined();
+    if (checkbox === undefined) return;
+    checkbox.value = "bogus";
+
+    const errors = await captureHandlerErrors(() => userEvent.click(checkbox));
+
+    expect(errors).toContain("Unsupported invoice analysis capability: bogus");
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
