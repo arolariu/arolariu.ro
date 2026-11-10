@@ -188,7 +188,8 @@ describe("useInvoiceShare", () => {
 
       expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
-      expect(mockNotify.error).toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Server error"));
+      expect(mockNotify.error).not.toHaveBeenCalledWith(expect.stringContaining("[object Object]"));
     });
 
     it("uses translated toggle fallback when the action returns no error", async () => {
@@ -201,8 +202,8 @@ describe("useInvoiceShare", () => {
 
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
-      // Note: The hook's catch block always uses revokeError (implementation detail)
-      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
+      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Failed to toggle public access"));
+      expect(mockNotify.error).not.toHaveBeenCalledWith(expect.stringContaining("[object Object]"));
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
@@ -267,6 +268,8 @@ describe("useInvoiceShare", () => {
 
       expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
+      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Server error"));
+      expect(mockNotify.error).not.toHaveBeenCalledWith(expect.stringContaining("[object Object]"));
     });
 
     it("uses translated revoke fallback when the action returns no error", async () => {
@@ -279,7 +282,8 @@ describe("useInvoiceShare", () => {
 
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "revoke"});
 
-      expect(mockNotify.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
+      // The toast is the revoke prefix followed by the thrown message, which is the translated fallback here.
+      expect(mockNotify.error).toHaveBeenCalledWith("Failed to revoke access Failed to revoke access");
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
