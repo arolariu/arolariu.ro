@@ -196,7 +196,9 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
             isCompressionEnabled: false
             contentTypesToCompress: []
           }
-          queryStringCachingBehavior: 'IgnoreQueryString'
+          // Next.js serves every optimized image from /_next/image/?url=...&w=...&q=..., so the query
+          // string is part of the asset identity. Ignoring it serves one cached image for all of them.
+          queryStringCachingBehavior: 'UseQueryString'
         }
         customDomains: [
           { id: apexCustomDomain.id }
