@@ -3,7 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {TbBrandGithub, TbBrandLinkedin, TbCheck, TbCopy, TbExternalLink, TbMail, TbWorld} from "react-icons/tb";
 import styles from "./Contact.module.scss";
 
@@ -59,10 +59,18 @@ const itemVariants: Variants = {
  */
 export default function Contact(): React.JSX.Element {
   const t = useTranslations();
+  const contactSectionRef = useRef<HTMLElement | null>(null);
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
   const [copiedEmail, setCopiedEmail] = useState<boolean>(false);
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Client navigations commit loading.tsx first; Next.js then drops the hash scroll because this target is not rendered yet.
+    if (globalThis.location.hash === "#contact") {
+      contactSectionRef.current?.scrollIntoView();
+    }
+  }, []);
 
   const copyEmail = useCallback(() => {
     navigator.clipboard.writeText("admin@arolariu.ro");
@@ -82,7 +90,10 @@ export default function Contact(): React.JSX.Element {
   }, []);
 
   return (
-    <section className={styles["section"]}>
+    <section
+      id='contact'
+      ref={contactSectionRef}
+      className={styles["section"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
