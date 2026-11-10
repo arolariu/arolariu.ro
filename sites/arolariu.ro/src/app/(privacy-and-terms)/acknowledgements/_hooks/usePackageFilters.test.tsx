@@ -425,6 +425,41 @@ describe("usePackageFilters", () => {
     });
   });
 
+  describe("sorting by type with a later non-matching element as the comparator's first argument", () => {
+    // Flat order is [development, production, peer]: eslint(dev), react(prod), peer-only(all), eslint(dev again).
+    const mixedPackages: NodePackagesJSON = {
+      development: [createPackage("eslint")],
+      production: [createPackage("react")],
+      peer: [createPackage("peer-only"), createPackage("eslint")],
+    };
+
+    test("places production packages before every other package in ascending order", () => {
+      const {result} = renderHook(() => usePackageFilters(mixedPackages));
+
+      act(() => {
+        result.current.setSortField("type");
+        result.current.setSortDirection("asc");
+      });
+
+      const names = result.current.filteredAndSortedPackages.map((p) => p.name);
+      expect(names).toHaveLength(4);
+      expect(names[0]).toBe("react");
+    });
+
+    test("places both development packages before the production package in descending order", () => {
+      const {result} = renderHook(() => usePackageFilters(mixedPackages));
+
+      act(() => {
+        result.current.setSortField("type");
+        result.current.setSortDirection("desc");
+      });
+
+      const names = result.current.filteredAndSortedPackages.map((p) => p.name);
+      expect(names).toHaveLength(4);
+      expect(names.lastIndexOf("eslint")).toBeLessThan(names.indexOf("react"));
+    });
+  });
+
   describe("state setters", () => {
     test("setSearchQuery updates search query", () => {
       const {result} = renderHook(() => usePackageFilters(samplePackages));
