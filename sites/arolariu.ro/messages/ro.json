@@ -4104,14 +4104,24 @@
             "title": "E + D Inginer Software II - Cloud-uri Suverane"
           },
           "microsoft3": {
-            "achievements": " ",
+            "achievements": "# (Microsoft M365 Copilot Platform) Am livrat contribuții de inginerie full-stack pentru experiența unificată Microsoft Copilot, oferind o fundație comună bazată pe AI în Teams, Outlook, Microsoft 365 Apps, Edge și Windows. # (Sisteme AI agentice) Am participat la dezvoltarea și evoluția unor experiențe agentice avansate, inclusiv agentul Researcher, contribuind la crearea unor fluxuri de lucru inteligente capabile de raționament în mai mulți pași, sinteză de informații și orchestrare de sarcini.",
             "company": "Microsoft",
-            "description": "Alexandru lucrează în prezent la Microsoft ca inginer software în cadrul organizației E+D MSAI (M365 AI Experiences).",
+            "description": "Fac parte din organizația M365 AI Experiences, care conectează oamenii cu inteligența artificială.\n\nEchipa noastră deschide drumul unui design orientat spre modele (model-forward), integrând agenți inteligenți în instrumentele de productivitate de zi cu zi, precum Copilot și Windows. Colaborez îndeaproape cu echipe interfuncționale pentru a prototipa, evalua și scala funcționalități bazate pe AI care îmbunătățesc fluxurile de lucru și procesul decizional al utilizatorilor.\n\nLucrez într-o organizație care deservește peste 1.000 de miliarde (1T+) de cereri pe zi și oferă o fiabilitate de până la „șase de nouă” (99.9999x%). Codul meu are un impact pozitiv asupra a peste 500 de milioane de utilizatori activi săptămânal (WAU), pe toate platformele principale (Linux, Apple, Microsoft) și pe toate canalele principale de distribuție (Web, Desktop, Mobile).",
             "location": "Remote (Norvegia)",
-            "period": "11/2024 - prezent",
-            "responsibilites": " ",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Conducerea designului de produs orientat spre modele (model-forward) prin integrarea fluxurilor de lucru bazate pe LLM, a agenților inteligenți și a experiențelor de tip retrieval-augmented în aplicațiile de productivitate de zi cu zi. # Contribuția la inițiativele de modernizare a platformei în Teams și Outlook, îmbunătățind consistența arhitecturală, fiabilitatea și ritmul de dezvoltare. # Livrarea de servicii cu disponibilitate ridicată care funcționează la scară globală, respectând standardele Microsoft de fiabilitate, securitate și conformitate.",
             "techAndSkills": "# React # GraphQL # Dezvoltare la scară largă # Aplicații Cloud-Native # Metodologii Agile # Excelență în inginerie # Leadership",
-            "title": "E + D Inginer Software Fullstack II - M365 AI"
+            "title": "Inginer Software Fullstack II - M365 AI"
+          },
+          "microsoft4": {
+            "achievements": "Realizările rolului actual sunt în curs de colectare.",
+            "company": "Microsoft",
+            "description": "Fac parte din organizația Copilot Platform a Microsoft, unde dezvolt infrastructura de bază din spatele lui Copilot, al agenților și al soluțiilor AI pentru întreprinderi.\n\nPlatforma permite experiențe bazate pe AI, continue și la cerere, prin ancorarea în contextul de business (business-context grounding), sisteme de memorie și regăsire, orchestrarea agenților, ecosisteme de instrumente și conectori, execuție securizată în cloud și framework-uri de extensibilitate care ajută clienții să automatizeze activități complexe dincolo de granița Microsoft 365 și în sistemele enterprise externe.",
+            "location": "Remote (Regatul Unit)",
+            "period": "09/2026 - prezent",
+            "responsibilites": "Responsabilitățile rolului actual sunt în curs de definire.",
+            "techAndSkills": "# AI Harness # Orchestrarea agenților # Retrieval-Augmented Generation # Sisteme de memorie și regăsire # Conectori și extensibilitate # Sisteme distribuite # Model Context Protocol # Dezvoltare la scară largă",
+            "title": "Copilot Platform – Arhitect Software Fullstack"
           },
           "responsibilitiesLabel": "Responsabilități",
           "subtitle": "O călătorie prin cariera profesională a lui Alexandru și prin companiile cu care a lucrat.",

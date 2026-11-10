@@ -4104,14 +4104,24 @@
             "title": "E + D Ingénieur Logiciel II - Clouds Souverains"
           },
           "microsoft3": {
-            "achievements": " ",
+            "achievements": "# (Microsoft M365 Copilot Platform) J'ai livré des contributions d'ingénierie full-stack à l'expérience unifiée Microsoft Copilot, offrant une base commune alimentée par l'IA dans Teams, Outlook, Microsoft 365 Apps, Edge et Windows. # (Systèmes d'IA agentiques) J'ai participé au développement et à l'évolution d'expériences agentiques avancées, dont l'agent Researcher, contribuant à établir des flux de travail intelligents capables de raisonnement en plusieurs étapes, de synthèse d'informations et d'orchestration de tâches.",
             "company": "Microsoft",
-            "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI (M365 AI Experiences).",
+            "description": "Je fais partie de l'organisation M365 AI Experiences, qui connecte les personnes à l'IA.\n\nNotre équipe est pionnière d'une conception centrée sur les modèles (model-forward), en intégrant des agents intelligents dans les outils de productivité du quotidien comme Copilot et Windows. Je collabore étroitement avec des équipes transverses pour prototyper, évaluer et déployer à grande échelle des fonctionnalités basées sur l'IA qui améliorent les flux de travail et la prise de décision des utilisateurs.\n\nJe travaille dans une organisation qui traite plus de 1 000 milliards (1T+) de requêtes par jour et offre une fiabilité allant jusqu'à « six neuf » (99.9999x%). Mon code a un impact positif sur plus de 500 millions d'utilisateurs actifs hebdomadaires (WAU), sur toutes les principales plateformes (Linux, Apple, Microsoft) et tous les principaux canaux de distribution (Web, Desktop, Mobile).",
             "location": "Télétravail (Norvège)",
-            "period": "11/2024 - Présent",
-            "responsibilites": " ",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Piloter une conception produit centrée sur les modèles (model-forward) en intégrant des flux de travail basés sur les LLM, des agents intelligents et des expériences augmentées par la récupération (retrieval-augmented) dans les applications de productivité du quotidien. # Contribuer aux initiatives de modernisation de la plateforme dans Teams et Outlook, en améliorant la cohérence architecturale, la fiabilité et la vélocité d'ingénierie. # Livrer des services hautement disponibles fonctionnant à l'échelle mondiale, tout en respectant les normes de fiabilité, de sécurité et de conformité de Microsoft.",
             "techAndSkills": "# React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
-            "title": "E + D Ingénieur Logiciel Fullstack II - M365 AI"
+            "title": "Ingénieur Logiciel Fullstack II - M365 AI"
+          },
+          "microsoft4": {
+            "achievements": "Les réalisations du poste actuel sont en cours de collecte.",
+            "company": "Microsoft",
+            "description": "Je fais partie de l'organisation Copilot Platform de Microsoft, où je fais avancer l'infrastructure centrale de Copilot, des agents et de l'IA d'entreprise.\n\nLa plateforme permet des expériences alimentées par l'IA, continues et à la demande, grâce à l'ancrage dans le contexte métier, aux systèmes de mémoire et de récupération, à l'orchestration d'agents, aux écosystèmes d'outils et de connecteurs, à l'exécution sécurisée dans le cloud et aux frameworks d'extensibilité qui aident les clients à automatiser des tâches complexes au-delà des frontières de Microsoft 365 et dans les systèmes d'entreprise externes.",
+            "location": "Télétravail (Royaume-Uni)",
+            "period": "09/2026 - Présent",
+            "responsibilites": "Les responsabilités du poste actuel sont en cours de définition.",
+            "techAndSkills": "# AI Harness # Orchestration d'agents # Retrieval-Augmented Generation # Systèmes de mémoire et de récupération # Connecteurs et extensibilité # Systèmes distribués # Model Context Protocol # Développement à grande échelle",
+            "title": "Copilot Platform – Architecte Logiciel Fullstack"
           },
           "responsibilitiesLabel": "Responsabilités",
           "subtitle": "Un parcours à travers la carrière professionnelle d'Alexandru et les entreprises avec lesquelles il a travaillé.",

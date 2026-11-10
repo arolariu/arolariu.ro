@@ -4104,14 +4104,24 @@
             "title": "E + D Sovereign Clouds Software Engineer II"
           },
           "microsoft3": {
+            "achievements": "# (Microsoft M365 Copilot Platform) Delivered full-stack engineering contributions to the unified Microsoft Copilot experience, enabling a common AI-powered foundation across Teams, Outlook, Microsoft 365 Apps, Edge and Windows. # (Agentic AI Systems) Participated in the development and evolution of advanced agentic experiences, including the Researcher agent, helping establish intelligent workflows capable of multi-step reasoning, information synthesis and task orchestration.",
+            "company": "Microsoft",
+            "description": "I am part of the M365 AI Experiences organization, connecting people with AI.\n\nOur team is pioneering model-forward design, embedding intelligent agents into everyday productivity tools like Copilot and Windows. I collaborate closely with cross-functional teams to prototype, evaluate, and scale AI-driven features that enhance user workflows and decision-making.\n\nI work in an organization that serves over 1 trillion (1T+) requests per day and provides up to six nines of reliability (99.9999x%). My code positively impacts over 500M WAU across all core platforms (Linux, Apple, Microsoft) and core distribution channels (Web, Desktop, Mobile).",
+            "location": "Remote (Norway)",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Drive model-forward product design by integrating LLM-powered workflows, intelligent agents and retrieval-augmented experiences into everyday productivity applications. # Contribute to platform modernization initiatives across Teams and Outlook, improving architectural consistency, reliability and engineering velocity. # Deliver highly available services that operate at global scale while maintaining Microsoft's reliability, security and compliance standards.",
+            "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
+            "title": "M365 AI Fullstack Software Engineer II"
+          },
+          "microsoft4": {
             "achievements": "Current role achievements are being actively collected.",
             "company": "Microsoft",
-            "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI (M365 AI Experiences) organization.",
-            "location": "Remote (Norway)",
-            "period": "11/2024 - Present",
+            "description": "I am part of Microsoft's Copilot Platform organization, driving the core infrastructure behind Copilot, agents, and enterprise AI.\n\nThe platform enables continuous and on-demand AI-powered experiences through business-context grounding, memory and retrieval systems, agent orchestration, tool and connector ecosystems, secure cloud execution, and extensibility frameworks that help customers automate complex work across the Microsoft 365 boundary and external enterprise systems.",
+            "location": "Remote (United Kingdom)",
+            "period": "09/2026 - Present",
             "responsibilites": "Current role responsibilities are being actively refined.",
-            "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
-            "title": "E + D M365 AI Fullstack Software Engineer II"
+            "techAndSkills": "# AI Harness # Agent Orchestration # Retrieval-Augmented Generation # Memory & Retrieval Systems # Connectors & Extensibility # Distributed Systems # Model Context Protocol # Large-Scale Development",
+            "title": "Copilot Platform – Fullstack Software Architect"
           },
           "responsibilitiesLabel": "Responsibilities",
           "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
