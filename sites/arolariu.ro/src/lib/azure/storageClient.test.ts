@@ -3,7 +3,7 @@
  * @module sites/arolariu.ro/src/lib/azure/storageClient.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 const {
   mockFromConnectionString,
@@ -424,6 +424,97 @@ describe("storageClient", () => {
       } finally {
         if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;
       }
+    });
+  });
+
+  describe("sparse blob properties and update variants", () => {
+    const endpoint = "http://azurite:10000/devstoreaccount1";
+    const blobUrl = `${endpoint}/test-container/sparse.bin`;
+    let originalClientId: string | undefined;
+
+    beforeEach(() => {
+      originalClientId = process.env["AZURE_CLIENT_ID"];
+      delete process.env["AZURE_CLIENT_ID"];
+    });
+
+    afterEach(() => {
+      if (originalClientId !== undefined) process.env["AZURE_CLIENT_ID"] = originalClientId;
+    });
+
+    it("listBlobObjects applies defaults for a blob without metadata, content type or length", async () => {
+      mockGetContainerClient.mockReturnValue({
+        listBlobsFlat: mockListBlobsFlat,
+        getBlockBlobClient: () => ({url: blobUrl}),
+      });
+      mockListBlobsFlat.mockReturnValue({
+        async *[Symbol.asyncIterator]() {
+          yield {name: "sparse.bin", properties: {}};
+        },
+      });
+
+      const result = await listBlobObjects({storageEndpoint: endpoint, containerName: "test-container"});
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.metadata).toEqual({});
+      expect(result[0]?.contentType).toBe("application/octet-stream");
+      expect(result[0]?.contentLength).toBe(0);
+    });
+
+    it("getBlobObject applies defaults when getProperties resolves an empty object", async () => {
+      mockGetContainerClient.mockReturnValue({getBlockBlobClient: mockGetBlockBlobClient});
+      mockGetBlockBlobClient.mockReturnValue({url: blobUrl, getProperties: mockGetProperties});
+      mockGetProperties.mockResolvedValue({});
+
+      const result = await getBlobObject({storageEndpoint: endpoint, containerName: "test-container", blobName: "sparse.bin"});
+
+      expect(result.metadata).toEqual({});
+      expect(result.contentType).toBe("application/octet-stream");
+      expect(result.contentLength).toBe(0);
+    });
+
+    it("updateBlobObject uploads without a content-type header when none is provided", async () => {
+      const content = new Uint8Array([1]);
+      mockGetContainerClient.mockReturnValue({getBlockBlobClient: mockGetBlockBlobClient});
+      mockGetBlockBlobClient.mockReturnValue({url: blobUrl, uploadData: mockUploadData, getProperties: mockGetProperties});
+      mockUploadData.mockResolvedValue({});
+      mockGetProperties.mockResolvedValue({});
+
+      await updateBlobObject({storageEndpoint: endpoint, containerName: "test-container", blobName: "sparse.bin", content});
+
+      expect(mockUploadData).toHaveBeenCalledWith(content, {blobHTTPHeaders: undefined, metadata: undefined});
+    });
+
+    it("updateBlobObject skips both upload and setMetadata when neither content nor metadata is provided", async () => {
+      mockGetContainerClient.mockReturnValue({getBlockBlobClient: mockGetBlockBlobClient});
+      mockGetBlockBlobClient.mockReturnValue({
+        url: blobUrl,
+        uploadData: mockUploadData,
+        setMetadata: mockSetMetadata,
+        getProperties: mockGetProperties,
+      });
+      mockGetProperties.mockResolvedValue({contentType: "text/plain"});
+
+      const result = await updateBlobObject({storageEndpoint: endpoint, containerName: "test-container", blobName: "sparse.bin"});
+
+      expect(mockUploadData).not.toHaveBeenCalled();
+      expect(mockSetMetadata).not.toHaveBeenCalled();
+      expect(result.contentType).toBe("text/plain");
+    });
+
+    it("updateBlobObject sets metadata without conditions when no etag is provided", async () => {
+      mockGetContainerClient.mockReturnValue({getBlockBlobClient: mockGetBlockBlobClient});
+      mockGetBlockBlobClient.mockReturnValue({url: blobUrl, setMetadata: mockSetMetadata, getProperties: mockGetProperties});
+      mockSetMetadata.mockResolvedValue({});
+      mockGetProperties.mockResolvedValue({});
+
+      await updateBlobObject({
+        storageEndpoint: endpoint,
+        containerName: "test-container",
+        blobName: "sparse.bin",
+        metadata: {status: "new"},
+      });
+
+      expect(mockSetMetadata).toHaveBeenCalledWith({status: "new"}, undefined);
     });
   });
 
