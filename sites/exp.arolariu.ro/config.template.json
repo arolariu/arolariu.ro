@@ -16,6 +16,6 @@
   "Site:Environment": "Development",
   "Site:Name": "dev.arolariu.ro",
   "Site:Url": "https://localhost:5000",
-  "FeatureManagement:website.commander.enabled": "false",
+  "FeatureManagement:website.commander.enabled": "true",
   "FeatureManagement:website.web-vitals.enabled": "false"
 }
