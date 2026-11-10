@@ -5,7 +5,13 @@
 
 import {describe, expect, it} from "vitest";
 import {ACCEPTED_SCAN_FILE_EXTENSIONS} from "../../_utils/mimeTypeUtilities";
-import {extractFilesFromDataTransferItems, MAX_UPLOAD_FILE_SIZE_BYTES, SCAN_UPLOAD_INPUT_ACCEPT, validateUploadFiles} from "./validation";
+import {
+  extractFilesFromDataTransferItems,
+  MAX_UPLOAD_FILE_SIZE_BYTES,
+  resolveValidatedScanMimeType,
+  SCAN_UPLOAD_INPUT_ACCEPT,
+  validateUploadFiles,
+} from "./validation";
 import type {UploadBatchValidationResult} from "../_types";
 
 /**
@@ -114,6 +120,14 @@ describe("validateUploadFile", () => {
   });
 });
 
+describe("resolveValidatedScanMimeType", () => {
+  it("returns an empty string for unsupported or missing extensions", () => {
+    expect(resolveValidatedScanMimeType(createFile("receipt.gif", "image/gif"))).toBe("");
+    expect(resolveValidatedScanMimeType(createFile("receipt", "image/jpeg"))).toBe("");
+    expect(resolveValidatedScanMimeType(createFile("receipt.jpg", "image/jpeg"))).toBe("image/jpeg");
+  });
+});
+
 describe("validateUploadFiles", () => {
   it("splits valid files and validation errors", () => {
     const validFile = createFile("receipt.jpg", "image/jpeg");
@@ -139,6 +153,16 @@ describe("extractFilesFromDataTransferItems", () => {
     dataTransfer.items.add(file);
 
     expect(extractFilesFromDataTransferItems(dataTransfer.items)).toEqual([file]);
+  });
+
+  it("skips file items whose getAsFile returns null", () => {
+    const file = createFile("receipt.jpg", "image/jpeg");
+    const items = [
+      {kind: "file", getAsFile: () => null},
+      {kind: "file", getAsFile: () => file},
+    ] as unknown as DataTransferItemList; // Array-like stand-in: happy-dom cannot create null-file items.
+
+    expect(extractFilesFromDataTransferItems(items)).toEqual([file]);
   });
 
   it("skips string data transfer items", () => {
