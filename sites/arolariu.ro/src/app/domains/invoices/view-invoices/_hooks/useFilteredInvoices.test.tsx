@@ -210,6 +210,48 @@ describe("useFilteredInvoices", () => {
       expect(result.current[1]).toEqual(invoiceWithoutCurrency);
     });
 
+    it("should treat missing currency as RON regardless of input ordering", () => {
+      // Arrange
+      const buildInvoice = (name: string, amount: number, hasCurrency: boolean) =>
+        new InvoiceBuilder()
+          .withName(name)
+          .withPaymentInformation({
+            totalCostAmount: amount,
+            currency: hasCurrency ? {code: "RON", name: "Romanian Leu", symbol: "lei"} : (undefined as unknown as never),
+            transactionDate: new Date("2024-01-15"),
+            paymentType: PaymentType.Cash,
+            totalTaxAmount: 0,
+            subtotalAmount: 0,
+            tipAmount: 0,
+          })
+          .build();
+      const noCurrency = buildInvoice("No Currency", 150, false);
+      const ron = buildInvoice("RON", 200, true);
+      const filters: FilterState = {...createDefaultFilters(), sortBy: "amount", sortOrder: "asc"};
+
+      // Act
+      const missingFirst = renderHook(() => useFilteredInvoices([noCurrency, ron], filters));
+      const missingLast = renderHook(() => useFilteredInvoices([ron, noCurrency], filters));
+
+      // Assert
+      expect(missingFirst.result.current.map((i) => i.name)).toEqual(["No Currency", "RON"]);
+      expect(missingLast.result.current.map((i) => i.name)).toEqual(["No Currency", "RON"]);
+    });
+
+    it("should keep natural order when sortBy is an unknown field from a malformed URL", () => {
+      // Arrange
+      const first = new InvoiceBuilder().withName("Zed").build();
+      const second = new InvoiceBuilder().withName("Alpha").build();
+      // sortBy arrives from URL params via a type assertion, so an out-of-union value is a real runtime input.
+      const filters: FilterState = {...createDefaultFilters(), sortBy: "foo" as unknown as FilterState["sortBy"], sortOrder: "asc"};
+
+      // Act
+      const {result} = renderHook(() => useFilteredInvoices([first, second], filters));
+
+      // Assert
+      expect(result.current.map((i) => i.name)).toEqual(["Zed", "Alpha"]);
+    });
+
     it("should use transaction year for currency conversion", () => {
       // Arrange: Create EUR invoices from different years with same amount
       // Exchange rates vary by year, so the RON equivalent should differ
