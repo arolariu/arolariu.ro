@@ -4,7 +4,7 @@
  */
 
 import {jwtVerify, SignJWT} from "jose";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
 import {
   convertBase64ToBlob,
@@ -516,6 +516,66 @@ describe("createErrorResult", () => {
       expect(result.error?.code).toBe("UNKNOWN_ERROR");
       expect(result.error?.message).toBe("Unexpected error");
     }
+  });
+
+  it("uses the transport validation error message when no default message is given", async () => {
+    const error = new Error("$.items[0]: invalid invoice");
+    error.name = "TransportValidationError";
+
+    const result = await createErrorResult<string>(error);
+
+    expect(result).toEqual({success: false, error: {code: "SERVER_ERROR", message: "$.items[0]: invalid invoice"}});
+  });
+
+  it("uses a thrown string as the message when no default message is given", async () => {
+    const result = await createErrorResult<string>("boom");
+
+    expect(result).toEqual({success: false, error: {code: "UNKNOWN_ERROR", message: "boom"}});
+  });
+
+  it.each([null, 42])("falls back to the generic message for thrown %s without a default message", async (thrown) => {
+    const result = await createErrorResult<string>(thrown);
+
+    expect(result).toEqual({success: false, error: {code: "UNKNOWN_ERROR", message: "An unknown error occurred"}});
+  });
+
+  it("preserves the numeric status of a non-Error object", async () => {
+    const result = await createErrorResult<string>({status: 404}, "Not found");
+
+    expect(result).toEqual({success: false, error: {code: "UNKNOWN_ERROR", message: "Not found", status: 404}});
+  });
+});
+
+describe("fetchWithTimeout - abort timer", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("aborts the request signal and reports a timeout once the timeout elapses", async () => {
+    vi.useFakeTimers();
+    mockFetchApiUrl.mockResolvedValue("https://api.example.com");
+    let capturedSignal: AbortSignal | undefined;
+    globalThis.fetch = vi.fn().mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          capturedSignal = init.signal ?? undefined;
+          init.signal?.addEventListener("abort", () => {
+            const abortError = new Error("aborted");
+            abortError.name = "AbortError";
+            reject(abortError);
+          });
+        }),
+    );
+
+    const pending = fetchWithTimeout("https://api.example.com/data", {}, 50);
+    const assertion = expect(pending).rejects.toThrow("Request timed out after 50ms");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(capturedSignal?.aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(50);
+
+    await assertion;
+    expect(capturedSignal?.aborted).toBe(true);
   });
 });
 
