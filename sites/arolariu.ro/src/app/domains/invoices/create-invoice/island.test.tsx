@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for the create-invoice island scan availability gate.
+ * @fileoverview Tests for the create-invoice island scan availability gate and wizard step flow.
  * @module app/domains/invoices/create-invoice/island.test
  *
  * @remarks
@@ -10,6 +10,7 @@
 import {useScansStore} from "@/stores";
 import {type CachedScan, type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
 import {act, render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -37,6 +38,7 @@ import RenderCreateInvoiceScreen from "./island";
 
 const UPLOAD_SCANS_PATH = "/domains/invoices/upload-scans";
 const WIZARD_HEADING = /createInvoice\.header\.title/;
+const NEXT_BUTTON = /createInvoice\.navigation\.next/;
 
 function buildScan(id: string, status: ScanStatus = ScanStatus.READY): Scan {
   return {
@@ -145,6 +147,32 @@ describe("RenderCreateInvoiceScreen scan availability gate", () => {
     expect(await screen.findByRole("heading", {name: WIZARD_HEADING})).toBeInTheDocument();
     expect(useScansStore.getState().scans.map((scan) => scan.id)).toEqual(["scan-ready"]);
     expect(useScansStore.getState().scans[0]?.cachedAt).toBeInstanceOf(Date);
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("advances a selected READY scan through the details and review steps", async () => {
+    const user = userEvent.setup();
+    mockFetchScans.mockResolvedValue({success: true, data: [buildScan("scan-ready")]});
+
+    render(<RenderCreateInvoiceScreen />);
+    expect(await screen.findByRole("heading", {name: WIZARD_HEADING})).toBeInTheDocument();
+
+    const nextButton = screen.getByRole("button", {name: NEXT_BUTTON});
+    expect(nextButton).toBeDisabled();
+
+    await user.click(screen.getByRole("button", {name: /createInvoice\.scanSelector\.selectAll/}));
+    expect(nextButton).toBeEnabled();
+    await user.click(nextButton);
+
+    expect(await screen.findByRole("heading", {name: /createInvoice\.detailsForm\.title/})).toBeInTheDocument();
+    expect(screen.getByLabelText(/createInvoice\.detailsForm\.fields\.name\.label/)).toHaveValue("Scan scan-ready");
+    await user.type(screen.getByLabelText(/createInvoice\.detailsForm\.fields\.description\.label/), "Weekly groceries");
+    await user.click(screen.getByRole("button", {name: NEXT_BUTTON}));
+
+    expect(await screen.findByRole("heading", {name: /createInvoice\.reviewStep\.title/})).toBeInTheDocument();
+    expect(screen.getByText("Weekly groceries")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: /createInvoice\.reviewStep\.actions\.create/})).toBeEnabled();
+    expect(screen.queryByRole("button", {name: NEXT_BUTTON})).not.toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
