@@ -479,6 +479,130 @@ describe("ClassificationPicker", () => {
     expect(onChange).toHaveBeenCalledWith({system: SYSTEM, code: RESULT_A.code});
   });
 
+  it("ignores ArrowDown, ArrowUp and Enter on a closed combobox without results", async () => {
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+
+    render(
+      <ClassificationPicker
+        system={SYSTEM}
+        value={null}
+        onChange={onChange}
+        label='Test'
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox");
+    combobox.focus();
+    await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
+
+    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("does not select when Enter is pressed on an open listbox with no active option", async () => {
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+    mockSearch.mockResolvedValue({success: true, data: [RESULT_A]});
+
+    render(
+      <ClassificationPicker
+        system={SYSTEM}
+        value={null}
+        onChange={onChange}
+        label='Test'
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox");
+    await user.type(combobox, "ju");
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    await user.keyboard("{Enter}");
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("option", {name: new RegExp(RESULT_A.code)})).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("ignores keys other than Enter and Space on a focused option", async () => {
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    mockSearch.mockResolvedValue({success: true, data: [RESULT_A]});
+
+    render(
+      <ClassificationPicker
+        system={SYSTEM}
+        value={null}
+        onChange={onChange}
+        label='Test'
+      />,
+    );
+
+    await user.type(screen.getByRole("combobox"), "ju");
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    const option = screen.getByRole("option", {name: new RegExp(RESULT_A.code)});
+    option.focus();
+    await user.keyboard("a");
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      title: "an unknown data-code",
+      mutate: (option: HTMLElement) => option.setAttribute("data-code", "bogus"),
+      message: /not found: bogus/,
+    },
+    {title: "a missing data-code", mutate: (option: HTMLElement) => option.removeAttribute("data-code"), message: /not found: missing/},
+  ])("defensive invariant: rejects an option click with $title", async ({mutate, message}) => {
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    mockSearch.mockResolvedValue({success: true, data: [RESULT_A]});
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent): void => {
+      event.preventDefault();
+      errors.push(event.error);
+    };
+    window.addEventListener("error", onError);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    try {
+      render(
+        <ClassificationPicker
+          system={SYSTEM}
+          value={null}
+          onChange={onChange}
+          label='Test'
+        />,
+      );
+      await user.type(screen.getByRole("combobox"), "ju");
+      await act(async () => {
+        vi.advanceTimersByTime(DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+      const option = screen.getByRole("option", {name: new RegExp(RESULT_A.code)});
+      mutate(option);
+
+      await user.click(option);
+
+      expect(errors).toHaveLength(1);
+      expect((errors[0] as Error).message).toMatch(message);
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByRole("listbox")).toBeInTheDocument();
+    } finally {
+      window.removeEventListener("error", onError);
+      consoleError.mockRestore();
+    }
+  });
+
   it("disables both the combobox and clear control", () => {
     render(
       <ClassificationPicker
