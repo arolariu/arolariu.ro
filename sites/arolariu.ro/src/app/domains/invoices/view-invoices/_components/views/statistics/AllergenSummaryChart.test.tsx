@@ -201,6 +201,28 @@ describe("AllergenSummaryChart rendering", () => {
     expect(screen.getByText(/allergens\.codes\.milk/i)).toBeInTheDocument();
   });
 
+  it.each([
+    {percentage: 25, level: "high"},
+    {percentage: 15, level: "medium"},
+    {percentage: 5, level: "low"},
+  ])("applies the $level warning class for a $percentage% allergen", ({percentage, level}) => {
+    render(
+      <AllergenSummaryChart
+        assessedProductCount={20}
+        data={[{code: AllergenCode.Milk, productCount: 1, percentage}]}
+      />,
+    );
+
+    const card = screen.getByRole("listitem");
+    // Match the level as a whole class-name token so the assertion holds for any CSS-module naming strategy.
+    const hasLevelClass = (name: string): boolean => new RegExp(`(^|[\\s_])${name}([\\s_]|$)`).test(card.className);
+
+    expect(hasLevelClass(level)).toBe(true);
+    for (const other of ["high", "medium", "low"].filter((l) => l !== level)) {
+      expect(hasLevelClass(other)).toBe(false);
+    }
+  });
+
   it("reports no detections when products were assessed but nothing was found", () => {
     render(
       <AllergenSummaryChart

@@ -2,7 +2,6 @@
 
 .ctaSection {
   position: relative;
-  overflow: hidden;
   padding: abstracts.space(20) abstracts.space(4);
 
   @include abstracts.respond-to("sm") {
@@ -14,9 +13,14 @@
   }
 }
 
+// The orb layer extends past the section vertically so the blurred glow fades out instead of ending at a hard
+// edge, while still clipping horizontally so the animated orbs never cause sideways scrolling.
 .ctaBackground {
+  --orb-bleed: 6rem;
   position: absolute;
-  inset: 0;
+  inset: calc(-1 * var(--orb-bleed)) 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .ctaContent {
@@ -87,7 +91,7 @@
 
 .orbTopLeft {
   position: absolute;
-  top: 2.5rem;
+  top: calc(2.5rem + var(--orb-bleed));
   left: 2.5rem;
   height: 8rem;
   width: 8rem;
@@ -99,7 +103,7 @@
 .orbBottomRight {
   position: absolute;
   right: 5rem;
-  bottom: 2.5rem;
+  bottom: calc(2.5rem + var(--orb-bleed));
   height: 10rem;
   width: 10rem;
   border-radius: abstracts.radius("full");

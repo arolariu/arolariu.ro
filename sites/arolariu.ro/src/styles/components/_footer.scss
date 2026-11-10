@@ -165,9 +165,7 @@
   display: inline-flex;
   align-items: center;
   transform: scale(1);
-  transition:
-    transform 300ms ease-in-out,
-    color 300ms ease-in-out;
+  transition: transform 300ms ease-in-out;
 
   &:hover {
     transform: scale(1.1);
@@ -191,8 +189,10 @@
   letter-spacing: 0.025em; // tracking-wide
   color: color("primary-foreground");
 
-  &:hover {
-    color: color("primary-foreground");
+  .footer__brand-link:hover &,
+  .footer__brand-link:focus-visible & {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 }
 

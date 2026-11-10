@@ -2041,12 +2041,6 @@
           "subtitle": "Renseignez les détails de votre nouvelle facture",
           "title": "Détails de la facture"
         },
-        "emptyState": {
-          "description": "Téléchargez d'abord des numérisations de reçus pour créer une facture.",
-          "title": "Aucune numérisation disponible",
-          "uploadButton": "Télécharger des numérisations",
-          "viewScansButton": "Voir les numérisations"
-        },
         "header": {
           "backToInvoices": "Retour aux factures",
           "subtitle": "Suivez les étapes ci-dessous pour créer une nouvelle facture à partir de vos numérisations",
@@ -3897,7 +3891,7 @@
       "author": {
         "biography": {
           "fifthPoint": "Alexandru est ouvert à la collaboration dans des projets impliquant l'Internet des objets, l'ingénierie logicielle et l'ingénierie réseau. Il a fait ses preuves en fournissant des solutions de haute qualité à des problèmes complexes et est toujours à la recherche de nouveaux défis.",
-          "firstPoint": "Alexandru est un ingénieur logiciel et architecte de solutions de {age} ans. Il travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI FAST, développant des solutions utilisées par des millions d'utilisateurs dans le monde entier.",
+          "firstPoint": "Alexandru est un ingénieur logiciel et architecte de solutions de {age} ans. Il travaille actuellement chez Microsoft en tant qu'architecte logiciel full-stack au sein de l'organisation Copilot Platform, contribuant à l'infrastructure derrière Copilot, les agents et l'IA d'entreprise.",
           "fourthPoint": "Alexandru aime lire des livres techniques et expérimenter de nouvelles technologies. Il a construit cette plateforme comme un \"banc d'essai\" pour les nouvelles technologies et comme un moyen d'apprendre de nouvelles choses. Il est également un grand partisan du mouvement \"open-source\" et a contribué aux dépôts OSS de Microsoft (dotnet/core, dotnet/docs, azure/docs).",
           "secondPoint": "Alexandru est né le 8 janvier 2000 dans une petite ville appelée Curtea de Argeș en Roumanie. Il a eu son premier ordinateur à l'âge de 5 ans - un Pentium 4 E2200 2,2 GHz Dual-Core avec 512 Mo de RAM. Depuis lors, il a utilisé différentes versions de Windows (en commençant par Windows 98 !), bricolant son ordinateur personnel et développant ses compétences informatiques en jouant à des jeux vidéo. Il a également appris beaucoup d'anglais et était capable de lire, écrire et parler couramment l'anglais à l'âge de 12 ans !",
           "thirdPoint": "Alexandru est un passionné de jeux vidéo. Il était autrefois joueur professionnel, classé n°70 en Roumanie pour le jeu vidéo \"DotA 2\". Il aime les jeux de stratégie axés sur la mécanique et l'aspect technique comme Age of Empires, Age of Mythology, etc. Il apprécie également les jeux tels que Red Alert, StarCraft et d'autres jeux RTS.",
@@ -4060,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Terminé"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "Voir plus de détails",
+              "aboutTheProgramDescription": "Un parcours d'études autonome, à son propre rythme et entièrement à distance, destiné aux professionnels du secteur et fondé sur des cours du MIT.",
+              "aboutTheProgramLearnings": "# 6.8300 - Progrès en vision par ordinateur # 6.5950 - Conception de matériel sécurisé # 6.5060 - Ingénierie des algorithmes",
+              "aboutTheProgramLearningsTitle": "Cours supplémentaires",
+              "aboutTheProgramTitle": "À propos du parcours d'études",
+              "degree": "Programme d'études supérieures en conception et ingénierie logicielle",
+              "description": "Parcours d'études autonome, à son propre rythme et entièrement à distance, destiné aux professionnels du secteur.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introduction au Deep Learning # 6.5660 / 6.858 - Sécurité des systèmes informatiques # 6.172 - Ingénierie des performances des systèmes logiciels # 18.225 - Théorie des graphes et combinatoire additive # 6.033 - Ingénierie des systèmes informatiques # 6.8300 - Progrès en vision par ordinateur # 6.5950 - Conception de matériel sécurisé # 6.5060 - Ingénierie des algorithmes",
+              "keyCoursesTitle": "Cours principaux",
+              "location": "En ligne, États-Unis",
+              "period": "2025 - 2029",
+              "status": "En cours (étude autonome)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "Voir plus de détails",
+              "aboutTheProgramDescription": "Les cours portaient sur la visualisation des données et la veille stratégique, l'analyse exploratoire des données, le big data et l'apprentissage automatique, ainsi que l'IA explicable, responsable et transparente.",
+              "aboutTheProgramLearnings": "# Études en ligne et à distance # Parrainé par Microsoft Corporation # La collaboration a pris fin en 2024 pour des raisons personnelles # Le diplôme n'a pas été obtenu",
+              "aboutTheProgramLearningsTitle": "Détails du programme",
+              "aboutTheProgramTitle": "À propos du programme",
+              "degree": "MSc. en science des données",
+              "description": "Précédemment inscrit à un programme de MSc. en science des données en ligne et à distance à l'University of Portsmouth, parrainé par Microsoft Corporation. La collaboration a pris fin en 2024 pour des raisons personnelles ; le diplôme n'a pas été obtenu.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Visualisation des données et veille stratégique # Concepts d'analyse exploratoire des données # Big data et apprentissage automatique # IA explicable, responsable et transparente",
+              "keyCoursesTitle": "Cours principaux",
+              "location": "Portsmouth, Royaume-Uni",
+              "period": "2024 - 2024",
+              "status": "Non terminé"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "Voir plus de détails",
               "aboutTheProgramDescription": "Le Master en Internet des Objets à l'Université de Malmö est un programme de pointe qui prépare les étudiants aux défis et opportunités de la révolution IoT. Le programme met l'accent sur l'apprentissage pratique, la collaboration interdisciplinaire et les applications du monde réel.",
@@ -4110,14 +4134,24 @@
             "title": "E + D Ingénieur Logiciel II - Clouds Souverains"
           },
           "microsoft3": {
-            "achievements": " ",
+            "achievements": "# (Microsoft M365 Copilot Platform) J'ai livré des contributions d'ingénierie full-stack à l'expérience unifiée Microsoft Copilot, offrant une base commune alimentée par l'IA dans Teams, Outlook, Microsoft 365 Apps, Edge et Windows. # (Systèmes d'IA agentiques) J'ai participé au développement et à l'évolution d'expériences agentiques avancées, dont l'agent Researcher, contribuant à établir des flux de travail intelligents capables de raisonnement en plusieurs étapes, de synthèse d'informations et d'orchestration de tâches.",
             "company": "Microsoft",
-            "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI (M365 AI Experiences).",
+            "description": "J'ai fait partie de l'organisation M365 AI Experiences, qui connectait les personnes à l'IA.\n\nNotre équipe a été pionnière d'une conception centrée sur les modèles (model-forward), en intégrant des agents intelligents dans les outils de productivité du quotidien comme Copilot et Windows. J'ai collaboré étroitement avec des équipes transverses pour prototyper, évaluer et déployer à grande échelle des fonctionnalités basées sur l'IA qui amélioraient les flux de travail et la prise de décision des utilisateurs.\n\nJ'ai travaillé dans une organisation qui traitait plus de 1 000 milliards (1T+) de requêtes par jour et offrait une fiabilité allant jusqu'à « six neuf » (99.9999x%). Mon code a eu un impact positif sur plus de 500 millions d'utilisateurs actifs hebdomadaires (WAU), sur toutes les principales plateformes (Linux, Apple, Microsoft) et tous les principaux canaux de distribution (Web, Desktop, Mobile).",
             "location": "Télétravail (Norvège)",
-            "period": "11/2024 - Présent",
-            "responsibilites": " ",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Piloter une conception produit centrée sur les modèles (model-forward) en intégrant des flux de travail basés sur les LLM, des agents intelligents et des expériences augmentées par la récupération (retrieval-augmented) dans les applications de productivité du quotidien. # Contribuer aux initiatives de modernisation de la plateforme dans Teams et Outlook, en améliorant la cohérence architecturale, la fiabilité et la vélocité d'ingénierie. # Livrer des services hautement disponibles fonctionnant à l'échelle mondiale, tout en respectant les normes de fiabilité, de sécurité et de conformité de Microsoft.",
             "techAndSkills": "# React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
-            "title": "E + D Ingénieur Logiciel Fullstack II - M365 AI"
+            "title": "Ingénieur Logiciel Fullstack II - M365 AI"
+          },
+          "microsoft4": {
+            "achievements": "Les réalisations du poste actuel sont en cours de collecte.",
+            "company": "Microsoft",
+            "description": "Je fais partie de l'organisation Copilot Platform de Microsoft, où je fais avancer l'infrastructure centrale de Copilot, des agents et de l'IA d'entreprise.\n\nLa plateforme permet des expériences alimentées par l'IA, continues et à la demande, grâce à l'ancrage dans le contexte métier, aux systèmes de mémoire et de récupération, à l'orchestration d'agents, aux écosystèmes d'outils et de connecteurs, à l'exécution sécurisée dans le cloud et aux frameworks d'extensibilité qui aident les clients à automatiser des tâches complexes au-delà des frontières de Microsoft 365 et dans les systèmes d'entreprise externes.",
+            "location": "Télétravail (Royaume-Uni)",
+            "period": "09/2026 - Présent",
+            "responsibilites": "Les responsabilités du poste actuel sont en cours de définition.",
+            "techAndSkills": "# AI Harness # Orchestration d'agents # Retrieval-Augmented Generation # Systèmes de mémoire et de récupération # Connecteurs et extensibilité # Systèmes distribués # Model Context Protocol # Développement à grande échelle",
+            "title": "Copilot Platform – Architecte Logiciel Fullstack"
           },
           "responsibilitiesLabel": "Responsabilités",
           "subtitle": "Un parcours à travers la carrière professionnelle d'Alexandru et les entreprises avec lesquelles il a travaillé.",

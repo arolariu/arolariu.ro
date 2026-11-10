@@ -31,13 +31,13 @@ StepIndicator, ScanSelector, InvoiceDetailsForm, ReviewStep (Components)
 create-invoice/
 ├── page.tsx                    # RSC with auth check
 ├── page.module.scss            # Page container styles
-├── loading.tsx                 # Suspense fallback
-├── loading.module.scss         # Loading skeleton styles
-├── island.tsx                  # Client island (wizard orchestrator)
+├── loading.tsx                 # Suspense fallback (page container + wizard skeleton)
+├── island.tsx                  # Client island (scan check + wizard orchestrator)
 ├── island.module.scss          # Island styles
 ├── _context/
 │   └── CreateInvoiceContext.tsx    # Wizard state management
 └── _components/
+    ├── CreateInvoiceSkeleton.module.scss # Shared styles for the route and island skeleton markup
     ├── StepIndicator.tsx           # Visual step progress indicator
     ├── StepIndicator.module.scss
     ├── ScanSelector.tsx            # Step 1: Select scans
@@ -47,6 +47,9 @@ create-invoice/
     ├── ReviewStep.tsx              # Step 3: Review & create
     └── ReviewStep.module.scss
 ```
+
+The route `loading.tsx` and the island's scan-check hold state render their skeleton markup separately. This keeps the route fallback
+limited to skeleton primitives instead of importing an application component.
 
 ## Wizard Flow
 
@@ -164,13 +167,16 @@ const stepVariants: Variants = {
 };
 ```
 
-## Empty States
+## Scan Availability Check
 
-When no READY scans available:
+Before the wizard mounts, the island:
 
-- Shows friendly empty state card
-- Links to Upload Scans page
-- Links to View Scans page
+1. Waits for the scans store to hydrate from IndexedDB
+2. Fetches the user's scans via the `fetchScans` server action and writes them into the store (IndexedDB)
+3. Holds on the wizard skeleton until the fetch settles (cached scans are used if the fetch fails)
+4. Redirects to `/domains/invoices/upload-scans` with `router.replace` when no READY scan exists
+
+The check runs once on landing; scans attached by invoice creation do not trigger a redirect.
 
 ## Error Handling
 
@@ -207,12 +213,6 @@ Add to `messages/en.json` and `messages/ro.json`:
       "navigation": {
         "back": "Back",
         "next": "Next"
-      },
-      "emptyState": {
-        "title": "No Scans Available",
-        "description": "You need to upload scans before creating an invoice",
-        "uploadButton": "Upload Scans",
-        "viewScansButton": "View Scans"
       },
       "steps": {
         "selectScans": "Select Scans",
@@ -319,6 +319,7 @@ Add to `messages/en.json` and `messages/ro.json`:
 
 - [ ] Page loads without errors
 - [ ] Auth redirect works for unauthenticated users
+- [ ] Redirects to upload-scans when no READY scan exists
 - [ ] Step indicator shows correct state
 - [ ] Scan selection toggles work
 - [ ] Select All / Clear All buttons work
@@ -339,7 +340,7 @@ Add to `messages/en.json` and `messages/ro.json`:
 - Images loaded lazily in ScanSelector
 - Motion animations are GPU-accelerated
 - Context prevents unnecessary re-renders
-- Scans loaded from IndexedDB (fast)
+- Scans fetched once on landing and cached in IndexedDB
 - SCSS modules enable CSS code-splitting
 
 ## Security
@@ -370,11 +371,11 @@ Add to `messages/en.json` and `messages/ro.json`:
 
 ## Troubleshooting
 
-### "No scans available"
+### Redirected to upload-scans
 
 - User hasn't uploaded any scans yet
-- Scans are not in READY status
-- IndexedDB not hydrated yet
+- No scan is in READY status (all are attached to invoices)
+- The scans fetch failed and the IndexedDB cache holds no READY scan
 
 ### Create button doesn't work
 
@@ -406,4 +407,4 @@ All functions include:
 - ✅ i18n for all user-facing text
 - ✅ Error boundaries for resilience
 - ✅ Loading states for async operations
-- ✅ Empty states for no-data scenarios
+- ✅ Redirect instead of an empty state when no scans exist

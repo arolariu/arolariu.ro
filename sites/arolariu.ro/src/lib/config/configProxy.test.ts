@@ -692,6 +692,19 @@ describe("configProxy typed helpers", () => {
       expect(result).toBe("https://api-fallback.example.com");
     });
 
+    it("returns empty string when exp returns an empty value and the env var is unset", async () => {
+      const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "")));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const {fetchApiUrl, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiUrl();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result).toBe("");
+    });
+
     it("falls back to API_URL env var when exp throws", async () => {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
       process.env["API_URL"] = "https://api-env.example.com";
@@ -769,6 +782,19 @@ describe("configProxy typed helpers", () => {
 
       expect(result).toBe("env-jwt-from-empty-exp");
     });
+
+    it("returns empty string when exp returns an empty value and the env var is unset", async () => {
+      const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Auth:JWT:Secret", "")));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const {fetchApiJwtSecret, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiJwtSecret();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result).toBe("");
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -823,6 +849,19 @@ describe("configProxy typed helpers", () => {
       const result = await fetchResendApiKey();
 
       expect(result).toBe("re_env_from_empty_exp");
+    });
+
+    it("returns empty string when exp returns an empty value and the env var is unset", async () => {
+      const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Communication:Email:ApiKey", "")));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const {fetchResendApiKey, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchResendApiKey();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result).toBe("");
     });
   });
 });

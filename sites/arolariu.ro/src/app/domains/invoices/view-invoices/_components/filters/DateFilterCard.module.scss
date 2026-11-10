@@ -38,14 +38,12 @@
   }
 }
 
+// Sized by the card rather than the viewport: the card renders in half of the inline panel or in the narrow
+// mobile sheet, so the buttons sit side by side only when both fit and stack otherwise.
 .dateRangeInputs {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: space(2);
-
-  @include respond-to("sm") {
-    flex-direction: row;
-  }
 }
 
 .dateButton {

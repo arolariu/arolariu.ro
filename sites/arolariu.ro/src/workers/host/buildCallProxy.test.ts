@@ -201,6 +201,20 @@ describe("buildCallProxy", () => {
     await expect(proxy.slow(ac.signal)).rejects.toThrow();
   });
 
+  it("rejects with the 'aborted' fallback Error when a pre-aborted signal carries no reason (defensive invariant)", async () => {
+    // Forged signal: real AbortSignals always carry a reason once aborted, so the
+    // fallback is only reachable through an instanceof-compatible object.
+    const forged: AbortSignal = Object.create(AbortSignal.prototype, {
+      aborted: {value: true},
+      reason: {value: undefined},
+    });
+    const target = {slow: vi.fn(async (_signal: AbortSignal) => "done")};
+    const {proxy} = makeFixture(target);
+
+    await expect(proxy.slow(forged)).rejects.toThrow("aborted");
+    expect(target.slow).not.toHaveBeenCalled();
+  });
+
   it("rejects with 'no method' error when the target object lacks the requested method", async () => {
     // Drives the `typeof fn !== "function"` branch (line 81 of buildCallProxy.ts).
     // We provide a target that has no methods at all — getTarget() returns an

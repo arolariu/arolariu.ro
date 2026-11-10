@@ -353,6 +353,70 @@ describe("fetchScans", () => {
     }
   });
 
+  it("should name the scan after the blob file when metadata has no displayName", async () => {
+    mockListBlobObjects.mockResolvedValue([
+      {
+        name: "scans/user-123/scan1.jpg",
+        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
+        metadata: {
+          scanId: "scan1",
+          ownerId: "user-123",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: "2024-01-01T00:00:00.000Z",
+          uploadedBy: "user-123",
+        },
+        contentType: "image/jpeg",
+        contentLength: 1024,
+        createdOn: new Date("2024-01-01T00:00:00.000Z"),
+        etag: "etag1",
+      },
+    ]);
+
+    const result = await fetchScans();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0]?.name).toBe("scan1.jpg");
+    }
+  });
+
+  it("defensive invariant: should skip blobs whose metadata is undefined", async () => {
+    mockListBlobObjects.mockResolvedValue([
+      {
+        name: "scans/user-123/nometa.jpg",
+        url: "https://storage.test/invoices/scans/user-123/nometa.jpg",
+        // The type requires metadata; the runtime guard `?? {}` exists for storage responses that omit it.
+        metadata: undefined as unknown as Record<string, string>,
+        contentType: "image/jpeg",
+        contentLength: 1,
+        createdOn: new Date(),
+        etag: "etag",
+      },
+    ]);
+
+    const result = await fetchScans();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(0);
+    }
+  });
+
+  it("should return a generic message when a non-Error value is thrown", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockListBlobObjects.mockRejectedValue("boom");
+
+    const result = await fetchScans();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toBe("An unexpected error occurred");
+    }
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
   it("should handle Azure storage failures", async () => {
     mockListBlobObjects.mockRejectedValue(new Error("Storage connection failed"));
 

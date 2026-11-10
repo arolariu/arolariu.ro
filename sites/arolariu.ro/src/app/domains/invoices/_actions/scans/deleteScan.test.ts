@@ -216,6 +216,66 @@ describe("deleteScan", () => {
     }
   });
 
+  it("should resolve the blob whose metadata scanId matches and ignore mismatching or invalid-metadata blobs", async () => {
+    const buildBlob = (name: string, metadata: Record<string, string>) => ({
+      name,
+      url: `https://storage.test/invoices/${name}`,
+      metadata,
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "etag",
+    });
+    const validMetadata = {
+      ownerId: "user-123",
+      displayName: "receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: "2024-01-01T00:00:00.000Z",
+      uploadedBy: "user-123",
+    };
+    const blobs = [
+      buildBlob("scans/user-123/invalid.jpg", {}),
+      buildBlob("scans/user-123/other.jpg", {...validMetadata, scanId: "scan-other"}),
+      buildBlob("scans/user-123/target.jpg", {...validMetadata, scanId: "scan-123"}),
+    ];
+    mockResolveBlobObjectByMetadata.mockImplementation(async ({predicate}) => blobs.find((blob) => predicate(blob)) ?? null);
+    mockDeleteBlobObject.mockResolvedValue({succeeded: true});
+
+    const result = await deleteScan({scanId: "scan-123"});
+
+    expect(result.success).toBe(true);
+    expect(mockDeleteBlobObject).toHaveBeenCalledWith({
+      storageEndpoint: "https://storage.test",
+      containerName: "invoices",
+      blobName: "scans/user-123/target.jpg",
+    });
+  });
+
+  it("should report not found when no blob metadata matches the scanId predicate", async () => {
+    const blobs = [
+      {
+        name: "scans/user-123/invalid.jpg",
+        url: "https://storage.test/invoices/scans/user-123/invalid.jpg",
+        metadata: {},
+        contentType: "image/jpeg",
+        contentLength: 1,
+        createdOn: new Date(),
+        etag: "etag",
+      },
+    ];
+    mockResolveBlobObjectByMetadata.mockImplementation(async ({predicate}) => blobs.find((blob) => predicate(blob)) ?? null);
+
+    const result = await deleteScan({scanId: "scan-123"});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("not found");
+    }
+    expect(mockDeleteBlobObject).not.toHaveBeenCalled();
+  });
+
   it("should handle Azure storage failures", async () => {
     mockResolveBlobObjectByMetadata.mockRejectedValue(new Error("Storage connection failed"));
 

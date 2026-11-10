@@ -203,6 +203,86 @@ describe("createWorkerHost", () => {
     });
   });
 
+  describe("duplicate failure events after the host is already dead (defensive invariant)", () => {
+    function createListenerCapturingWorker(): {
+      worker: Worker;
+      fire: (type: "error" | "messageerror") => void;
+    } {
+      const handlers = new Map<string, (event: Event) => void>();
+      const worker = {
+        postMessage: () => {
+          /* swallow bootstrap; never reply */
+        },
+        terminate: () => {
+          /* no-op */
+        },
+        addEventListener: ((type: string, handler: EventListenerOrEventListenerObject) => {
+          handlers.set(type, handler as (event: Event) => void);
+        }) as Worker["addEventListener"],
+        // Ignored on purpose so the captured listeners stay callable after teardown.
+        removeEventListener: () => {
+          /* no-op */
+        },
+        dispatchEvent: () => true,
+        onmessage: null,
+        onmessageerror: null,
+        onerror: null,
+      } as unknown as Worker;
+      return {
+        worker,
+        fire: (type) => handlers.get(type)?.(type === "error" ? new Event("error") : new MessageEvent("messageerror", {data: null})),
+      };
+    }
+
+    it("ignores an 'error' event after a crash without notifying subscribers again", async () => {
+      const captured = createListenerCapturingWorker();
+      const host = createWorkerHost<GreetApi>({name: "error-after-crash", load: () => captured.worker});
+      const states: WorkerHostState[] = [];
+      const warmUpOutcome = host.warmUp().catch((error: unknown) => error);
+      host.subscribe((state) => states.push(state));
+
+      captured.fire("messageerror");
+      await expect(warmUpOutcome).resolves.toBeInstanceOf(WorkerMessageError);
+      const statesAfterCrash = [...states];
+      captured.fire("error");
+
+      expect(host.state).toBe("dead");
+      expect(statesAfterCrash).toEqual(["dead"]);
+      expect(states).toEqual(statesAfterCrash);
+    });
+
+    it("ignores a second 'messageerror' event that arrives after a crash", async () => {
+      const captured = createListenerCapturingWorker();
+      const host = createWorkerHost<GreetApi>({name: "late-messageerror", load: () => captured.worker});
+      const states: WorkerHostState[] = [];
+      const warmUpOutcome = host.warmUp().catch((error: unknown) => error);
+      host.subscribe((state) => states.push(state));
+
+      captured.fire("messageerror");
+      await warmUpOutcome;
+      captured.fire("messageerror");
+
+      expect(host.state).toBe("dead");
+      expect(states).toEqual(["dead"]);
+    });
+
+    it("ignores a 'messageerror' event that arrives after dispose", async () => {
+      const captured = createListenerCapturingWorker();
+      const host = createWorkerHost<GreetApi>({name: "messageerror-after-dispose", load: () => captured.worker});
+      const states: WorkerHostState[] = [];
+      const warmUpOutcome = host.warmUp().catch((error: unknown) => error);
+      host.subscribe((state) => states.push(state));
+
+      await host.dispose();
+      await warmUpOutcome;
+      const statesAfterDispose = [...states];
+      captured.fire("messageerror");
+
+      expect(host.state).toBe("disposed");
+      expect(states).toEqual(statesAfterDispose);
+    });
+  });
+
   describe("restart", () => {
     it("transitions dead → ready after restart", async () => {
       let mock = createMockWorker({api: greetImpl});

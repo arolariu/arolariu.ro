@@ -13,9 +13,10 @@
 
 import type {AllergenAssessment} from "@/types/invoices/Allergen";
 import {AllergenAssessmentStatus, AllergenCode, isAllergenAssessment} from "@/types/invoices/Allergen";
-import {render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it, vi} from "vitest";
+import {Component, type ReactNode} from "react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AllergenAssessmentEditor} from "./AllergenAssessmentEditor";
 
 const existingAssessment: AllergenAssessment = {
@@ -351,4 +352,307 @@ describe("AllergenAssessmentEditor", () => {
     );
     expect(screen.getByText(/allergens\.editor\.status\.label/i)).toBeInTheDocument();
   });
+
+  // ── 8. Multi-row isolation ──────────────────────────────────────────────────
+
+  describe("with several signals and evidence rows", () => {
+    const multiAssessment: AllergenAssessment = {
+      status: AllergenAssessmentStatus.Detected,
+      signals: [
+        {
+          code: AllergenCode.Milk,
+          evidenceLevel: "explicit",
+          confidence: 0.9,
+          evidence: [
+            {source: "label-a", value: "milk-a"},
+            {source: "label-b", value: "milk-b"},
+          ],
+        },
+        {
+          code: AllergenCode.Eggs,
+          evidenceLevel: "inferred",
+          confidence: 0.4,
+          evidence: [{source: "label-c", value: "egg-c"}],
+        },
+      ],
+    };
+
+    it("changes confidence of one signal and leaves the other signal untouched", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={multiAssessment}
+          onChange={onChange}
+        />,
+      );
+
+      const [firstConfidence, secondConfidence] = screen.getAllByRole("spinbutton");
+      fireEvent.change(firstConfidence as HTMLElement, {target: {value: "0.5"}});
+
+      const emitted = onChange.mock.calls.at(-1)?.[0];
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(emitted?.signals[0]?.confidence).toBe(0.5);
+      expect(emitted?.signals[1]?.confidence).toBe(0.4);
+      expect(secondConfidence).toHaveValue(0.4);
+    });
+
+    it("adds an evidence row only to the targeted signal", async () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      const onValidityChange = vi.fn<(isValid: boolean) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={multiAssessment}
+          onChange={onChange}
+          onValidityChange={onValidityChange}
+        />,
+      );
+      expect(screen.getAllByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i)).toHaveLength(3);
+
+      const addButtons = screen.getAllByRole("button", {name: /allergens\.editor\.signals\.addEvidence/i});
+      await userEvent.click(addButtons[1] as HTMLElement);
+
+      const sources = screen.getAllByPlaceholderText<HTMLInputElement>(/allergens\.editor\.signals\.evidenceSource/i);
+      expect(sources.map((input) => input.value)).toEqual(["label-a", "label-b", "label-c", ""]);
+      expect(onValidityChange).toHaveBeenLastCalledWith(false);
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("removes one evidence row while keeping its sibling and the other signal", async () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={multiAssessment}
+          onChange={onChange}
+        />,
+      );
+
+      const removeButtons = screen.getAllByRole("button", {name: /allergens\.editor\.signals\.removeEvidence/i});
+      expect(removeButtons).toHaveLength(3);
+      await userEvent.click(removeButtons[0] as HTMLElement);
+
+      const emitted = onChange.mock.calls.at(-1)?.[0];
+      expect(emitted?.signals[0]?.evidence).toEqual([{source: "label-b", value: "milk-b"}]);
+      expect(emitted?.signals[1]?.evidence).toEqual([{source: "label-c", value: "egg-c"}]);
+      expect(screen.getAllByRole("button", {name: /allergens\.editor\.signals\.removeEvidence/i})).toHaveLength(2);
+    });
+
+    it("edits one evidence field without touching sibling rows or signals", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={multiAssessment}
+          onChange={onChange}
+        />,
+      );
+
+      const valueInputs = screen.getAllByPlaceholderText(/allergens\.editor\.signals\.evidenceValue/i);
+      fireEvent.change(valueInputs[1] as HTMLElement, {target: {value: "milk-b2"}});
+
+      const emitted = onChange.mock.calls.at(-1)?.[0];
+      expect(emitted?.signals[0]?.evidence).toEqual([
+        {source: "label-a", value: "milk-a"},
+        {source: "label-b", value: "milk-b2"},
+      ]);
+      expect(emitted?.signals[1]).toEqual(multiAssessment.signals[1]);
+    });
+  });
+
+  // ── 9. Defensive invariants on crafted DOM ──────────────────────────────────
+
+  describe("defensive invariant: crafted data attributes", () => {
+    const withEvidence: AllergenAssessment = {
+      status: AllergenAssessmentStatus.Detected,
+      signals: [
+        {
+          code: AllergenCode.Milk,
+          evidenceLevel: "explicit",
+          confidence: 0.9,
+          evidence: [{source: "label", value: "milk"}],
+        },
+      ],
+    };
+    const swallowedErrors: string[] = [];
+    const swallowError = (event: ErrorEvent): void => {
+      swallowedErrors.push(event.message);
+      event.preventDefault();
+    };
+
+    beforeEach(() => {
+      swallowedErrors.length = 0;
+      window.addEventListener("error", swallowError);
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      window.removeEventListener("error", swallowError);
+    });
+
+    it("defensive invariant: a remove-signal button without a signal index does not emit", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.removeSignal/i});
+      button.removeAttribute("data-signal-index");
+      fireEvent.click(button);
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid signalIndex: missing");
+    });
+
+    it("defensive invariant: a negative signal index is rejected without emitting", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.removeSignal/i});
+      button.dataset["signalIndex"] = "-1";
+      fireEvent.click(button);
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid signalIndex: -1");
+    });
+
+    it("defensive invariant: a non-numeric signal index on the confidence input does not emit", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const input = screen.getByRole("spinbutton");
+      input.dataset["signalIndex"] = "abc";
+      fireEvent.change(input, {target: {value: "0.2"}});
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid signalIndex: abc");
+    });
+
+    it("defensive invariant: an add-evidence button without a signal index adds no row", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.addEvidence/i});
+      button.removeAttribute("data-signal-index");
+      fireEvent.click(button);
+
+      expect(screen.getAllByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i)).toHaveLength(1);
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid signalIndex: missing");
+    });
+
+    it("defensive invariant: a remove-evidence button without an evidence index removes nothing", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.removeEvidence/i});
+      button.removeAttribute("data-evidence-index");
+      fireEvent.click(button);
+
+      expect(screen.getAllByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i)).toHaveLength(1);
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid evidenceIndex: missing");
+    });
+
+    it("defensive invariant: an evidence input without a field name does not emit", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i);
+      input.removeAttribute("data-evidence-field");
+      fireEvent.change(input, {target: {value: "other"}});
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid evidence field: missing");
+    });
+
+    it("defensive invariant: an evidence input with an unknown field name does not emit", () => {
+      const onChange = vi.fn<(next: AllergenAssessment) => void>();
+      render(
+        <AllergenAssessmentEditor
+          value={withEvidence}
+          onChange={onChange}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i);
+      input.dataset["evidenceField"] = "bogus";
+      fireEvent.change(input, {target: {value: "other"}});
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(swallowedErrors.join("\n")).toContain("Invalid evidence field: bogus");
+    });
+
+    it("defensive invariant: an out-of-range signal index on remove-evidence surfaces a render error", () => {
+      render(
+        <RenderErrorBoundary>
+          <AllergenAssessmentEditor
+            value={withEvidence}
+            onChange={vi.fn()}
+          />
+        </RenderErrorBoundary>,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.removeEvidence/i});
+      button.dataset["signalIndex"] = "9";
+      fireEvent.click(button);
+
+      expect(screen.getByRole("alert")).toHaveTextContent("Missing evidence identifiers for signal index 9");
+    });
+
+    it("defensive invariant: an out-of-range signal index on add-evidence surfaces a render error", () => {
+      render(
+        <RenderErrorBoundary>
+          <AllergenAssessmentEditor
+            value={withEvidence}
+            onChange={vi.fn()}
+          />
+        </RenderErrorBoundary>,
+      );
+
+      const button = screen.getByRole("button", {name: /allergens\.editor\.signals\.addEvidence/i});
+      button.dataset["signalIndex"] = "9";
+      fireEvent.click(button);
+
+      expect(screen.getByRole("alert")).toHaveTextContent("Missing evidence identifiers for signal index 9");
+    });
+  });
 });
+
+/** Minimal error boundary that exposes a render-phase error message. */
+class RenderErrorBoundary extends Component<{readonly children: ReactNode}, {readonly message: string | null}> {
+  public override state: {readonly message: string | null} = {message: null};
+
+  public static getDerivedStateFromError(error: unknown): {readonly message: string} {
+    return {message: error instanceof Error ? error.message : String(error)};
+  }
+
+  public override render(): ReactNode {
+    return this.state.message === null ? this.props.children : <p role='alert'>{this.state.message}</p>;
+  }
+}

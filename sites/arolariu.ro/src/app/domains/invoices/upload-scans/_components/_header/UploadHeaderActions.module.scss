@@ -2,6 +2,7 @@
 
 .headerActions {
   display: flex;
+  flex-wrap: wrap;
   gap: abstracts.space(2);
 }
 
@@ -9,20 +10,6 @@
   display: flex;
   align-items: center;
   gap: abstracts.space(2);
-}
-
-.hiddenMobile {
-  display: none;
-
-  @include abstracts.respond-to("sm") {
-    display: inline;
-  }
-}
-
-.visibleMobile {
-  @include abstracts.respond-to("sm") {
-    display: none;
-  }
 }
 
 .actionIcon {

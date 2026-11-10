@@ -97,4 +97,44 @@ describe("AnalysisPanel", () => {
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
+
+  // ── 4. Profile change + updates badge ─────────────────────────────────────────
+
+  it("selects a different profile when a profile radio is clicked", async () => {
+    render(<Wrapper />);
+    const radios = screen.getAllByRole("radio");
+    const initiallyChecked = radios.filter((radio) => (radio as HTMLInputElement).checked);
+    const target = radios.find((radio) => !(radio as HTMLInputElement).checked);
+    expect(initiallyChecked).toHaveLength(1);
+    expect(target).toBeDefined();
+
+    await userEvent.click(target as HTMLElement);
+
+    expect(target).toBeChecked();
+    expect(initiallyChecked[0]).not.toBeChecked();
+  });
+
+  it("shows the updates badge only when the invoice has recorded updates", () => {
+    const updated = TestDataBuilder.build("invoice", {items: [], lastUpdatedAt: new Date("2025-01-15T10:00:00Z"), numberOfUpdates: 3});
+    const {unmount} = render(
+      <InvoiceContextProvider
+        invoice={updated}
+        merchant={null}>
+        <AnalysisPanel />
+      </InvoiceContextProvider>,
+    );
+    expect(screen.getByText(/labels\.updates/i)).toBeInTheDocument();
+    unmount();
+
+    const neverUpdated = TestDataBuilder.build("invoice", {items: [], lastUpdatedAt: new Date("2025-01-15T10:00:00Z"), numberOfUpdates: 0});
+    render(
+      <InvoiceContextProvider
+        invoice={neverUpdated}
+        merchant={null}>
+        <AnalysisPanel />
+      </InvoiceContextProvider>,
+    );
+    expect(screen.getByText(/labels\.lastAnalyzed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/labels\.updates/i)).not.toBeInTheDocument();
+  });
 });

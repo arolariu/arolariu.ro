@@ -68,7 +68,8 @@ export const statsProvider: CheckProvider<StatsPayload> = {
   applicableTo: () => true,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<StatsPayload>> {
     const git = createGitHelper({cwd: input.workspaceRoot});
-    await git.fetchBranch("main", "origin", 1);
+    // A depth-limited fetch would mark main's tip as a shallow boundary in the full-history checkout and hide the merge base.
+    await git.fetchBranch("main", "origin");
     const merge = await execChecked("git", ["merge-base", input.baseRef, input.headRef], {cwd: input.workspaceRoot, silent: true});
     const mergeBase = merge.stdout.trim();
     if (!/^(?:[a-f\d]{40}|[a-f\d]{64})$/i.test(mergeBase)) throw new Error("Git returned an invalid merge-base identity");

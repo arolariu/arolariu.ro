@@ -2041,12 +2041,6 @@
           "subtitle": "Provide the details for your new invoice",
           "title": "Invoice Details"
         },
-        "emptyState": {
-          "description": "Upload some receipt scans first to create an invoice.",
-          "title": "No Scans Available",
-          "uploadButton": "Upload Scans",
-          "viewScansButton": "View Scans"
-        },
         "header": {
           "backToInvoices": "Back to Invoices",
           "subtitle": "Follow the steps below to create a new invoice from your scans",
@@ -3897,7 +3891,7 @@
       "author": {
         "biography": {
           "fifthPoint": "Alexandru is open for collaboration in projects that involve any of the Internet of Things, Software Engineering and Network Engineering fields. He has a proven track record of providing high-quality solutions to complex problems and is always looking for new challenges.",
-          "firstPoint": "Alexandru is a {age} years old software engineer and solution architect. He currently works at Microsoft as a software engineer in the E+D MSAI FAST organization, building solutions that are used by millions of users worldwide.",
+          "firstPoint": "Alexandru is a {age} years old software engineer and solution architect. He currently works at Microsoft as a full-stack software architect in the Copilot Platform organization, driving core infrastructure behind Copilot, agents, and enterprise AI.",
           "fourthPoint": "Alexandru enjoys reading technical books and playing with new technologies. He has built this platform as a \"test-bench\" for new technologies and as a way to learn new things. He is also a big fan of the \"open-source\" movement and has contributed to Microsoft's OSS repositories (dotnet/core, dotnet/docs, azure/docs).",
           "secondPoint": "Alexandru was born on the 8th of January, year 2000 in a small city called Curtea de Argeș in Romania. He got his first computer when he was just 5 years old - a Pentium 4 E2200 2.2Ghz Dual-Core  with 512 MB of RAM. Since then, he's been running different versions of Windows (started with Windows 98!), tinkering with his personal computer and developing his computer skills by playing video games. He also learnt a good amount of English and was able to fluently read, write and speak in English by the age of 12!",
           "thirdPoint": "Alexandru is a video game enthusiast. He used to be a professional player, ranking at #70 in Romania for the video game called \"DotA 2\". He enjoys playing strategy games that have a focus on mechanics and a technical setting like Age of Empires, Age of Mythology, etc. He also enjoys playing games such as Red Alert, StarCraft, and other RTS games.",
@@ -4060,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Completed"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "See more details",
+              "aboutTheProgramDescription": "A self-directed, self-paced, fully remote course of study for industry professionals, built around MIT courses.",
+              "aboutTheProgramLearnings": "# 6.8300 - Advances in Computer Vision # 6.5950 - Secure Hardware Design # 6.5060 - Algorithm Engineering",
+              "aboutTheProgramLearningsTitle": "Additional courses",
+              "aboutTheProgramTitle": "About the course of study",
+              "degree": "Graduate Program in Software Design & Engineering",
+              "description": "A self-directed, self-paced, remote-only course of study for industry professionals.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introduction to Deep Learning # 6.5660 / 6.858 - Computer Systems Security # 6.172 - Performance Engineering of Software Systems # 18.225 - Graph Theory and Additive Combinatorics # 6.033 - Computer System Engineering # 6.8300 - Advances in Computer Vision # 6.5950 - Secure Hardware Design # 6.5060 - Algorithm Engineering",
+              "keyCoursesTitle": "Key courses",
+              "location": "Online, United States",
+              "period": "2025 - 2029",
+              "status": "In progress (self-directed)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "See more details",
+              "aboutTheProgramDescription": "The coursework covered data visualization and business intelligence, exploratory data analysis, big data and machine learning, and explainable, responsible and transparent AI.",
+              "aboutTheProgramLearnings": "# Online, remote study # Sponsored by Microsoft Corporation # The collaboration ended in 2024 due to personal circumstances # The degree was not completed",
+              "aboutTheProgramLearningsTitle": "Program details",
+              "aboutTheProgramTitle": "About the program",
+              "degree": "MSc. in Data Science",
+              "description": "Previously enrolled in an online, remote MSc. in Data Science program at the University of Portsmouth, sponsored by Microsoft Corporation. The collaboration ended in 2024 due to personal circumstances; the degree was not completed.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Data Visualization and Business Intelligence # Exploratory Data Analysis Concepts # Big Data and Machine Learning # Explainable, Responsible and Transparent AI",
+              "keyCoursesTitle": "Key courses",
+              "location": "Portsmouth, United Kingdom",
+              "period": "2024 - 2024",
+              "status": "Not completed"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "See more details",
               "aboutTheProgramDescription": "The MSc in Internet of Things at Malmö University is a cutting-edge program that prepares students for the challenges and opportunities of the IoT revolution. The curriculum emphasizes hands-on learning, interdisciplinary collaboration, and real-world applications.",
@@ -4110,14 +4134,24 @@
             "title": "E + D Sovereign Clouds Software Engineer II"
           },
           "microsoft3": {
+            "achievements": "# (Microsoft M365 Copilot Platform) Delivered full-stack engineering contributions to the unified Microsoft Copilot experience, enabling a common AI-powered foundation across Teams, Outlook, Microsoft 365 Apps, Edge and Windows. # (Agentic AI Systems) Participated in the development and evolution of advanced agentic experiences, including the Researcher agent, helping establish intelligent workflows capable of multi-step reasoning, information synthesis and task orchestration.",
+            "company": "Microsoft",
+            "description": "I was part of the M365 AI Experiences organization, connecting people with AI.\n\nOur team pioneered model-forward design, embedding intelligent agents into everyday productivity tools like Copilot and Windows. I collaborated closely with cross-functional teams to prototype, evaluate, and scale AI-driven features that enhanced user workflows and decision-making.\n\nI worked in an organization that served over 1 trillion (1T+) requests per day and provided up to six nines of reliability (99.9999x%). My code positively impacted over 500M WAU across all core platforms (Linux, Apple, Microsoft) and core distribution channels (Web, Desktop, Mobile).",
+            "location": "Remote (Norway)",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Drive model-forward product design by integrating LLM-powered workflows, intelligent agents and retrieval-augmented experiences into everyday productivity applications. # Contribute to platform modernization initiatives across Teams and Outlook, improving architectural consistency, reliability and engineering velocity. # Deliver highly available services that operate at global scale while maintaining Microsoft's reliability, security and compliance standards.",
+            "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
+            "title": "M365 AI Fullstack Software Engineer II"
+          },
+          "microsoft4": {
             "achievements": "Current role achievements are being actively collected.",
             "company": "Microsoft",
-            "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI (M365 AI Experiences) organization.",
-            "location": "Remote (Norway)",
-            "period": "11/2024 - Present",
+            "description": "I am part of Microsoft's Copilot Platform organization, driving the core infrastructure behind Copilot, agents, and enterprise AI.\n\nThe platform enables continuous and on-demand AI-powered experiences through business-context grounding, memory and retrieval systems, agent orchestration, tool and connector ecosystems, secure cloud execution, and extensibility frameworks that help customers automate complex work across the Microsoft 365 boundary and external enterprise systems.",
+            "location": "Remote (United Kingdom)",
+            "period": "09/2026 - Present",
             "responsibilites": "Current role responsibilities are being actively refined.",
-            "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
-            "title": "E + D M365 AI Fullstack Software Engineer II"
+            "techAndSkills": "# AI Harness # Agent Orchestration # Retrieval-Augmented Generation # Memory & Retrieval Systems # Connectors & Extensibility # Distributed Systems # Model Context Protocol # Large-Scale Development",
+            "title": "Copilot Platform – Fullstack Software Architect"
           },
           "responsibilitiesLabel": "Responsibilities",
           "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",

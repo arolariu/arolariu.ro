@@ -18,6 +18,26 @@ import type {AnalysisProfile, MerchantAnalysisCapabilities} from "@/types/invoic
 import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import MerchantAnalysisControls from "./MerchantAnalysisControls";
 
+/**
+ * Runs `action` while swallowing window ErrorEvents React dispatches for event-handler throws.
+ * Returns the captured error messages so the test can assert the handler rejected the malformed DOM value.
+ */
+async function captureHandlerErrors(action: () => Promise<void> | void): Promise<string[]> {
+  const messages: string[] = [];
+  const listener = (event: ErrorEvent): void => {
+    event.preventDefault();
+    messages.push(event.error instanceof Error ? event.error.message : String(event.message));
+  };
+  window.addEventListener("error", listener);
+  const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    await action();
+  } finally {
+    window.removeEventListener("error", listener);
+    consoleSpy.mockRestore();
+  }
+  return messages;
+}
 describe("MerchantAnalysisControls", () => {
   // ── 1. Profile radio → exact merchant preset shape ─────────────────────────
 
@@ -138,5 +158,41 @@ describe("MerchantAnalysisControls", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     const [, emitted] = onChange.mock.calls[0] as [AnalysisProfile, MerchantAnalysisCapabilities];
     expect(emitted.descriptionGeneration).toBe(true);
+  });
+
+  it("defensive invariant: rejects an unsupported profile radio value without calling onChange", async () => {
+    const onChange = vi.fn();
+    render(
+      <MerchantAnalysisControls
+        profile='fast'
+        value={resolveAnalysisCapabilities("merchant", "fast")}
+        onChange={onChange}
+      />,
+    );
+    const radio = screen.getByRole<HTMLInputElement>("radio", {name: /profiles\.balanced/i});
+    radio.value = "bogus";
+
+    const errors = await captureHandlerErrors(() => userEvent.click(radio));
+
+    expect(errors).toContain("Unsupported merchant analysis profile: bogus");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("defensive invariant: rejects an unsupported capability checkbox value without calling onChange", async () => {
+    const onChange = vi.fn();
+    render(
+      <MerchantAnalysisControls
+        profile='fast'
+        value={{merchantClassification: true, descriptionGeneration: false}}
+        onChange={onChange}
+      />,
+    );
+    const checkbox = screen.getByRole<HTMLInputElement>("checkbox", {name: /capabilities\.descriptionGeneration/i});
+    checkbox.value = "bogus";
+
+    const errors = await captureHandlerErrors(() => userEvent.click(checkbox));
+
+    expect(errors).toContain("Unsupported merchant analysis capability: bogus");
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

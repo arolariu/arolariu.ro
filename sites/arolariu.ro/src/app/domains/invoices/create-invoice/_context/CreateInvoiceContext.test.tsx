@@ -16,6 +16,7 @@
  */
 
 import {type RenderHookResult, act, renderHook, waitFor} from "@testing-library/react";
+import {PaymentType} from "@/types/invoices";
 import {type ReactNode} from "react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -390,6 +391,188 @@ describe("CreateInvoiceContext — orchestration contract", () => {
       });
       expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
       expect(mockMarkScansAsUsedByInvoice).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("wizard navigation and details edge cases", () => {
+    it("updates the payment type without touching the other details", () => {
+      const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+      const initialDate = result.current.invoiceDetails.transactionDate;
+
+      act(() => {
+        result.current.setPaymentType(PaymentType.Card);
+      });
+
+      expect(result.current.invoiceDetails.paymentType).toBe(PaymentType.Card);
+      expect(result.current.invoiceDetails.transactionDate).toBe(initialDate);
+      expect(result.current.invoiceDetails.name).toBe("");
+    });
+
+    it("keeps a name typed earlier instead of auto-suggesting one from the first scan", () => {
+      const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+      act(() => {
+        result.current.setName("Typed name");
+        result.current.toggleScan(SCAN_A);
+      });
+      act(() => {
+        result.current.goNext();
+      });
+
+      expect(result.current.currentStep).toBe("details");
+      expect(result.current.invoiceDetails.name).toBe("Typed name");
+    });
+
+    it("advances to details without suggesting a name when no scan is selected", () => {
+      const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+      act(() => {
+        result.current.goNext();
+      });
+
+      expect(result.current.currentStep).toBe("details");
+      expect(result.current.invoiceDetails.name).toBe("");
+    });
+
+    it("stays on the review step when goNext is called there", () => {
+      const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+      act(() => {
+        result.current.goToStep("review");
+      });
+      act(() => {
+        result.current.goNext();
+      });
+
+      expect(result.current.currentStep).toBe("review");
+    });
+
+    it("stays on the first step when goBack is called there", () => {
+      const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+      act(() => {
+        result.current.goBack();
+      });
+
+      expect(result.current.currentStep).toBe("select-scans");
+    });
+  });
+
+  describe("defensive invariant: fallback messages when a failure carries no typed error", () => {
+    it("falls back to the createFailed copy when createInvoice fails without an error message", async () => {
+      mockCreateInvoice.mockResolvedValue({success: false});
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const {result} = await renderReady();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(consoleError).toHaveBeenCalledWith(
+        "Error creating invoice:",
+        expect.objectContaining({message: expect.stringMatching(/errors\.createFailed$/u)}),
+      );
+      expect(mockPatchInvoice).not.toHaveBeenCalled();
+      expect(result.current.isCreating).toBe(false);
+    });
+
+    it("recovers from a non-Error rejection of createInvoice", async () => {
+      mockCreateInvoice.mockRejectedValue("backend exploded");
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const {result} = await renderReady();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(consoleError).toHaveBeenCalledWith("Error creating invoice:", "backend exploded");
+      expect(mockPatchInvoice).not.toHaveBeenCalled();
+      expect(result.current.partialOutcome).toBeNull();
+      expect(result.current.isCreating).toBe(false);
+    });
+
+    it("uses the patchFailed copy for the partial outcome when patchInvoice fails without a message", async () => {
+      mockPatchInvoice.mockResolvedValue({success: false});
+      const {result} = await renderReady();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(result.current.partialOutcome).toMatchObject({
+        status: "partial",
+        failedStep: "patch",
+        message: expect.stringMatching(/errors\.patchFailed$/u),
+      });
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
+    });
+
+    it("uses the scanAttachFailed copy when attaching fails without a message", async () => {
+      mockAttachScanToInvoice.mockResolvedValue({success: false});
+      const {result} = await renderReady([SCAN_A, SCAN_B]);
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(result.current.partialOutcome).toMatchObject({
+        status: "partial",
+        failedStep: "scans",
+        message: expect.stringMatching(/errors\.scanAttachFailed$/u),
+      });
+      expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
+    });
+
+    it("uses the scanAttachFailed copy when attaching rejects with a non-Error", async () => {
+      mockAttachScanToInvoice.mockRejectedValue("socket closed");
+      const {result} = await renderReady([SCAN_A, SCAN_B]);
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(result.current.partialOutcome).toMatchObject({
+        status: "partial",
+        failedStep: "scans",
+        message: expect.stringMatching(/errors\.scanAttachFailed$/u),
+      });
+      expect(result.current.partialOutcome).not.toMatchObject({message: "socket closed"});
+    });
+  });
+
+  describe("non-critical background work", () => {
+    it("warns but still completes creation when persisting scan attachment metadata fails", async () => {
+      const metaError = new Error("blob unavailable");
+      mockUpdateScan.mockRejectedValue(metaError);
+      const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const {result} = await renderReady();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      await waitFor(() => {
+        expect(consoleWarn).toHaveBeenCalledWith("Failed to persist scan attachment metadata (non-critical):", metaError);
+      });
+      expect(mockMarkScansAsUsedByInvoice).toHaveBeenCalledWith([SCAN_A.id], INVOICE_ID);
+      expect(result.current.partialOutcome).toBeNull();
+    });
+
+    it("logs an error but still completes creation when the background analysis rejects", async () => {
+      const analysisError = new Error("queue unavailable");
+      mockAnalyzeInvoice.mockRejectedValue(analysisError);
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const {result} = await renderReady();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      await waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith("Background invoice analysis failed (non-critical):", analysisError);
+      });
+      expect(consoleError).not.toHaveBeenCalledWith("Error creating invoice:", expect.anything());
+      expect(mockMarkScansAsUsedByInvoice).toHaveBeenCalledWith([SCAN_A.id], INVOICE_ID);
     });
   });
 

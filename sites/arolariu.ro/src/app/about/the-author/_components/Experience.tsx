@@ -47,6 +47,23 @@ export default function Experience(): React.JSX.Element {
 
   const experiences = [
     {
+      company: t((m) => m.sections.about.author.experiences.microsoft4.company),
+      role: t((m) => m.sections.about.author.experiences.microsoft4.title),
+      period: t((m) => m.sections.about.author.experiences.microsoft4.period),
+      location: t((m) => m.sections.about.author.experiences.microsoft4.location),
+      description: t((m) => m.sections.about.author.experiences.microsoft4.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.microsoft4.responsibilites)
+        .split("#")
+        .filter((item) => item.trim().length > 3),
+      achievements: t((m) => m.sections.about.author.experiences.microsoft4.achievements)
+        .split("#")
+        .filter((item) => item.trim().length > 3),
+      skills: t((m) => m.sections.about.author.experiences.microsoft4.techAndSkills)
+        .split("#")
+        .filter((item) => item.trim().length > 0),
+      logo: <CgMicrosoft className={styles["logoIcon"]} />,
+    },
+    {
       company: t((m) => m.sections.about.author.experiences.microsoft3.company),
       role: t((m) => m.sections.about.author.experiences.microsoft3.title),
       period: t((m) => m.sections.about.author.experiences.microsoft3.period),
@@ -222,7 +239,14 @@ export default function Experience(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <p className={styles["cardDescription"]}>{experience.description}</p>
+                  <div className={styles["cardDescription"]}>
+                    {experience.description
+                      .split("\n")
+                      .filter((paragraph) => paragraph.trim().length > 0)
+                      .map((paragraph) => (
+                        <p key={paragraph.slice(0, 20)}>{paragraph}</p>
+                      ))}
+                  </div>
 
                   {experience.responsibilities.length > 0 && (
                     <div className={styles["cardSection"]}>

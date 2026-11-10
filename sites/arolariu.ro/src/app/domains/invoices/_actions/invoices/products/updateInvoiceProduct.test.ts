@@ -133,6 +133,21 @@ describe("updateInvoiceProduct", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
+  it("returns a server error and skips revalidation when the 2xx body is a malformed product", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await updateInvoiceProduct({
+      invoiceId: "11111111-1111-4111-8111-111111111111",
+      payload: {originalProductName: "Coffee", updatedProduct: TestDataBuilder.build("product")},
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
   it("handles fetch throwing a non-Error object", async () => {
     mockFetchWithTimeout.mockRejectedValue("String error");
 

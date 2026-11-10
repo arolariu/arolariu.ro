@@ -119,4 +119,46 @@ describe("createScanUploadTarget", () => {
       expect(result.data.metadata).toHaveProperty("ownerId", "user-dev");
     }
   });
+
+  it.each([
+    {label: "an Error", rejection: new Error("Storage unavailable"), expected: "Storage unavailable"},
+    {label: "a non-Error value", rejection: "boom", expected: "An unexpected error occurred"},
+  ])("should return an error result when the upload target creation rejects with $label", async ({rejection, expected}) => {
+    // Arrange
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((_name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve({userIdentifier: "user-123"})),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.prod.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobUploadTarget: vi.fn(() => Promise.reject(rejection)),
+    }));
+
+    const {createScanUploadTarget} = await import("./createScanUploadTarget");
+
+    // Act
+    const result = await createScanUploadTarget({
+      fileName: "test.jpg",
+      mimeType: "image/jpeg",
+      sizeInBytes: 1024,
+    });
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toBe(expected);
+    }
+    expect(consoleSpy).toHaveBeenCalled();
+  });
 });

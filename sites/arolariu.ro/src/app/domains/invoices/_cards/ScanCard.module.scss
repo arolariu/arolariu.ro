@@ -255,6 +255,24 @@
   }
 }
 
+// Library items use `cursor: default`; scan actions are clickable, so show a pointer. `[role="menuitem"]`
+// lifts specificity above the library's item rules so this holds regardless of stylesheet order.
+.menuItem[role="menuitem"] {
+  cursor: pointer;
+
+  // The library disables items with `pointer-events: none`, which hides any cursor. Re-enable pointer
+  // events so unavailable actions (e.g. rotating a PDF) show `not-allowed`; Base UI still blocks their
+  // activation, and hover must not highlight them.
+  &[data-disabled] {
+    pointer-events: auto;
+    cursor: not-allowed;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
 .deleteMenuItem {
   color: color("destructive");
 

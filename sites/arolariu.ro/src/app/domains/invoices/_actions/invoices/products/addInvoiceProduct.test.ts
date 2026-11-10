@@ -135,6 +135,21 @@ describe("addInvoiceProduct", () => {
     expect(result.success).toBe(false);
   });
 
+  it("returns a server error and skips revalidation when the 2xx body is a malformed product", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await addInvoiceProduct({
+      invoiceId: "11111111-1111-4111-8111-111111111111",
+      product: TestDataBuilder.build("product"),
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
   it("sends classificationCode and allergenAssessment; omits legacy totalPrice and metadata", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});

@@ -10,14 +10,23 @@
  * 2. Enter invoice details (name, category, payment, date)
  * 3. Review selections and create invoice
  *
+ * Before the wizard mounts, scans are fetched into the IndexedDB-persisted store. Users without a READY
+ * scan are redirected to the upload-scans page.
+ *
  * Uses context for wizard state management and Zustand for scan data.
  */
 
-import {Button, Card, CardContent} from "@arolariu/components";
+import {useScansStore} from "@/stores";
+import {ScanStatus} from "@/types/scans";
+import {Button, Skeleton} from "@arolariu/components";
 import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
 import {TbArrowLeft} from "react-icons/tb";
+import {fetchScans} from "../_actions/scans";
+import skeletonStyles from "./_components/CreateInvoiceSkeleton.module.scss";
 import InvoiceDetailsForm from "./_components/InvoiceDetailsForm";
 import ReviewStep from "./_components/ReviewStep";
 import ScanSelector from "./_components/ScanSelector";
@@ -100,27 +109,85 @@ function WizardNavigation(): React.JSX.Element {
 }
 
 /**
- * Empty state component when no scans are available.
+ * Result of the one-time scan availability check performed on landing.
  */
-function EmptyState(): React.JSX.Element {
-  const t = useTranslations();
+type ScanAvailability = "checking" | "available" | "unavailable";
 
+/**
+ * Fetches the user's scans into the IndexedDB-persisted store and decides once whether a READY scan exists.
+ *
+ * @remarks
+ * Waits for store hydration so persisted state cannot overwrite the fetched scans. When the fetch fails,
+ * the cached scans decide availability. The decision is never revisited: creating an invoice attaches its
+ * scans, which must not redirect the user away mid-navigation.
+ *
+ * @returns The current scan availability.
+ */
+function useScanAvailability(): ScanAvailability {
+  const hasHydrated = useScansStore((state) => state.hasHydrated);
+  const setScans = useScansStore((state) => state.setScans);
+  const setLastSyncTimestamp = useScansStore((state) => state.setLastSyncTimestamp);
+  const [availability, setAvailability] = useState<ScanAvailability>("checking");
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    let isCurrent = true;
+
+    const checkScans = async (): Promise<void> => {
+      try {
+        const result = await fetchScans();
+        if (isCurrent && result.success) {
+          const cachedAt = new Date();
+          setScans(result.data.map((scan) => ({...scan, cachedAt})));
+          setLastSyncTimestamp(cachedAt);
+        }
+      } catch (error) {
+        console.error("Failed to fetch scans before creating an invoice:", error);
+      } finally {
+        if (isCurrent) {
+          const hasReadyScans = useScansStore.getState().scans.some((scan) => scan.status === ScanStatus.READY);
+          setAvailability(hasReadyScans ? "available" : "unavailable");
+        }
+      }
+    };
+
+    void checkScans();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [hasHydrated, setScans, setLastSyncTimestamp]);
+
+  return availability;
+}
+
+function ScanAvailabilitySkeleton(): React.JSX.Element {
   return (
-    <Card className={styles["emptyState"]}>
-      <CardContent className={styles["emptyStateContent"]}>
-        <div className={styles["emptyStateIcon"]}>📄</div>
-        <h2 className={styles["emptyStateTitle"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.title)}</h2>
-        <p className={styles["emptyStateDescription"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.description)}</p>
-        <div className={styles["emptyStateActions"]}>
-          <Link href='/domains/invoices/upload-scans'>
-            <Button>{t((m) => m.forms.invoices.createInvoice.emptyState.uploadButton)}</Button>
-          </Link>
-          <Link href='/domains/invoices/view-scans'>
-            <Button variant='outline'>{t((m) => m.forms.invoices.createInvoice.emptyState.viewScansButton)}</Button>
-          </Link>
+    <div className={skeletonStyles["container"]}>
+      <div className={skeletonStyles["stepIndicator"]}>
+        <Skeleton className={skeletonStyles["stepDot"]} />
+        <Skeleton className={skeletonStyles["stepDot"]} />
+        <Skeleton className={skeletonStyles["stepDot"]} />
+      </div>
+
+      <div className={skeletonStyles["content"]}>
+        <Skeleton className={skeletonStyles["title"]} />
+        <Skeleton className={skeletonStyles["subtitle"]} />
+
+        <div className={skeletonStyles["grid"]}>
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
+          <Skeleton className={skeletonStyles["card"]} />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className={skeletonStyles["navigation"]}>
+        <Skeleton className={skeletonStyles["button"]} />
+        <Skeleton className={skeletonStyles["button"]} />
+      </div>
+    </div>
   );
 }
 
@@ -129,11 +196,6 @@ function EmptyState(): React.JSX.Element {
  */
 function CreateInvoiceWizard(): React.JSX.Element {
   const t = useTranslations();
-  const {hasScans} = useCreateInvoiceContext();
-
-  if (!hasScans) {
-    return <EmptyState />;
-  }
 
   return (
     <div className={styles["wizard"]}>
@@ -164,9 +226,26 @@ function CreateInvoiceWizard(): React.JSX.Element {
 /**
  * Root island component with context provider.
  *
+ * @remarks
+ * Holds on the wizard skeleton until the scan check settles, then either redirects to upload-scans
+ * (replacing history so Back does not loop) or mounts the wizard.
+ *
  * @returns JSX element with create invoice wizard
  */
 export default function RenderCreateInvoiceScreen(): React.JSX.Element {
+  const router = useRouter();
+  const availability = useScanAvailability();
+
+  useEffect(() => {
+    if (availability === "unavailable") {
+      router.replace("/domains/invoices/upload-scans");
+    }
+  }, [availability, router]);
+
+  if (availability !== "available") {
+    return <ScanAvailabilitySkeleton />;
+  }
+
   return (
     <CreateInvoiceProvider>
       <CreateInvoiceWizard />

@@ -110,6 +110,8 @@
 }
 
 .group {
+  /* Overflow hidden drops the flex minimum to 0; never shrink so a short list scrolls instead of clipping groups. */
+  flex-shrink: 0;
   overflow: hidden;
   padding: 2px 0;
   color: inherit;
@@ -131,6 +133,7 @@
 }
 
 .separator {
+  flex-shrink: 0;
   height: 1px;
   margin: var(--ac-space-1) var(--ac-space-1);
   background-color: var(--ac-border);

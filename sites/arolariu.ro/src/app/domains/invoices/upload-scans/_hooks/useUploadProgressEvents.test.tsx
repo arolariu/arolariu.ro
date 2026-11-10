@@ -59,4 +59,56 @@ describe("useUploadProgressEvents", () => {
 
     unmount();
   });
+
+  it("forwards error and blobUrl when present and omits them otherwise", () => {
+    const dispatch = vi.fn<(event: UploadEvent) => void>();
+    let frameCallback: FrameRequestCallback | undefined;
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+      frameCallback = callback;
+      return 1;
+    });
+    vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => undefined);
+
+    const {result} = renderHook(() => useUploadProgressEvents(dispatch));
+
+    act(() => {
+      result.current.dispatchProgress({
+        uploadId: "upload-1",
+        status: "failed",
+        progress: 10,
+        attempts: 2,
+        error: "failure",
+        blobUrl: "https://storage/1.jpg",
+      });
+      result.current.dispatchProgress({uploadId: "upload-2", status: "uploading", progress: 5, attempts: 1});
+    });
+    act(() => {
+      frameCallback?.(1);
+    });
+
+    const [first, second] = dispatch.mock.calls.map(([event]) => event);
+    expect(first).toMatchObject({uploadId: "upload-1", error: "failure", blobUrl: "https://storage/1.jpg"});
+    expect(second).toMatchObject({uploadId: "upload-2"});
+    expect(second).not.toHaveProperty("error");
+    expect(second).not.toHaveProperty("blobUrl");
+  });
+
+  it("cancels the pending animation frame on unmount and not when none is pending", () => {
+    const dispatch = vi.fn<(event: UploadEvent) => void>();
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(() => 7);
+    const cancel = vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(() => undefined);
+
+    const idle = renderHook(() => useUploadProgressEvents(dispatch));
+    idle.unmount();
+    expect(cancel).not.toHaveBeenCalled();
+
+    const pending = renderHook(() => useUploadProgressEvents(dispatch));
+    act(() => {
+      pending.result.current.dispatchProgress({uploadId: "upload-1", status: "uploading", progress: 1, attempts: 1});
+    });
+    pending.unmount();
+
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(7);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
 });

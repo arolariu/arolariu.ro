@@ -204,6 +204,23 @@ describe("uploadPendingScan", () => {
     expect(progressEvents.map((event) => event.status)).toContain("retrying");
   });
 
+  it("reports the thrown message after three attempts when createUploadTarget rejects with an Error", async () => {
+    const dependencies = createDependencies({createUploadTarget: vi.fn().mockRejectedValue(new Error("boom"))});
+
+    const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
+
+    expect(result).toEqual({success: false, uploadId: "upload-1", attempts: 3, reason: "unexpected-error", error: "boom"});
+    expect(dependencies.createUploadTarget).toHaveBeenCalledTimes(3);
+  });
+
+  it("uses the generic message when createUploadTarget rejects with a non-Error value", async () => {
+    const dependencies = createDependencies({createUploadTarget: vi.fn().mockRejectedValue("nope")});
+
+    const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
+
+    expect(result).toMatchObject({success: false, reason: "unexpected-error", error: "Unexpected upload error"});
+  });
+
   it("fails immediately when the File reference is missing", async () => {
     const result = await uploadPendingScan(createUpload({file: null}), createDependencies(), {onProgress: vi.fn()});
 

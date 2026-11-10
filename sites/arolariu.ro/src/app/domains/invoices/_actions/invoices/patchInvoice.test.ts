@@ -61,6 +61,24 @@ describe("patchInvoice", () => {
     }
   });
 
+  it("sends every provided optional field in the PATCH body", async () => {
+    const payload = {
+      description: "Weekly groceries",
+      paymentInformation: TestDataBuilder.build("invoice").paymentInformation,
+      merchantReference: "33333333-3333-4333-8333-333333333333",
+      isImportant: false,
+      sharedWith: ["44444444-4444-4444-8444-444444444444"],
+      additionalMetadata: {source: "test"},
+    };
+
+    const result = await patchInvoice({invoiceId, payload});
+
+    expect(result.success).toBe(true);
+    const body: unknown = JSON.parse(String(mockFetchWithTimeout.mock.calls[0]?.[1]?.body));
+    expect(body).toStrictEqual(JSON.parse(JSON.stringify(payload)));
+    expect(body).not.toHaveProperty("name");
+  });
+
   it("returns an error result for an invalid invoice id", async () => {
     const result = await patchInvoice({invoiceId: "not-a-guid", payload: {}});
 

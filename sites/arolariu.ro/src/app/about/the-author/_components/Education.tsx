@@ -63,6 +63,46 @@ export default function Education(): React.JSX.Element {
 
   const education = [
     {
+      degree: t((m) => m.sections.about.author.education.university.mitSelfDirected.degree),
+      institution: t((m) => m.sections.about.author.education.university.mitSelfDirected.institution),
+      location: t((m) => m.sections.about.author.education.university.mitSelfDirected.location),
+      period: t((m) => m.sections.about.author.education.university.mitSelfDirected.period),
+      description: t((m) => m.sections.about.author.education.university.mitSelfDirected.description),
+      status: t((m) => m.sections.about.author.education.university.mitSelfDirected.status),
+      coursesTitle: t((m) => m.sections.about.author.education.university.mitSelfDirected.keyCoursesTitle),
+      courses: t((m) => m.sections.about.author.education.university.mitSelfDirected.keyCourses)
+        .split("#")
+        .filter((course) => course.trim().length > 3),
+      aboutTheProgramCta: t((m) => m.sections.about.author.education.university.mitSelfDirected.aboutTheProgramCta),
+      aboutTheProgramTitle: t((m) => m.sections.about.author.education.university.mitSelfDirected.aboutTheProgramTitle),
+      aboutTheProgramDescription: t((m) => m.sections.about.author.education.university.mitSelfDirected.aboutTheProgramDescription),
+      aboutTheProgramLearningsTitle: t((m) => m.sections.about.author.education.university.mitSelfDirected.aboutTheProgramLearningsTitle),
+      aboutTheProgramLearnings: t((m) => m.sections.about.author.education.university.mitSelfDirected.aboutTheProgramLearnings)
+        .split("#")
+        .filter((learning) => learning.trim().length > 3),
+    },
+    {
+      degree: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.degree),
+      institution: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.institution),
+      location: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.location),
+      period: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.period),
+      description: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.description),
+      status: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.status),
+      coursesTitle: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.keyCoursesTitle),
+      courses: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.keyCourses)
+        .split("#")
+        .filter((course) => course.trim().length > 3),
+      aboutTheProgramCta: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.aboutTheProgramCta),
+      aboutTheProgramTitle: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.aboutTheProgramTitle),
+      aboutTheProgramDescription: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.aboutTheProgramDescription),
+      aboutTheProgramLearningsTitle: t(
+        (m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.aboutTheProgramLearningsTitle,
+      ),
+      aboutTheProgramLearnings: t((m) => m.sections.about.author.education.university.portsmouthUnitedKingdom.aboutTheProgramLearnings)
+        .split("#")
+        .filter((learning) => learning.trim().length > 3),
+    },
+    {
       degree: t((m) => m.sections.about.author.education.university.malmoSweden.degree),
       institution: t((m) => m.sections.about.author.education.university.malmoSweden.institution),
       location: t((m) => m.sections.about.author.education.university.malmoSweden.location),

@@ -5,7 +5,7 @@
  * @module app/domains/invoices/upload-scans/_components/_header/UploadHeaderActions
  */
 
-import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {buttonVariants, cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import type {ComponentProps, ReactNode} from "react";
@@ -14,24 +14,19 @@ import styles from "./UploadHeaderActions.module.scss";
 
 type LinkHref = ComponentProps<typeof Link>["href"];
 
-/** One tooltip-wrapped header link button (full label on desktop, first word on mobile). */
+/** One tooltip-wrapped header link button showing its full label at every width. */
 function HeaderActionLink({href, icon, label}: Readonly<{href: LinkHref; icon: ReactNode; label: string}>): React.JSX.Element {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button
-              variant='outline'
-              className={styles["outlineButton"]}
-              render={
-                <Link href={href}>
-                  {icon}
-                  <span className={styles["hiddenMobile"]}>{label}</span>
-                  <span className={styles["visibleMobile"]}>{label.split(" ")[0]}</span>
-                </Link>
-              }
-            />
+            <Link
+              href={href}
+              className={cn(buttonVariants({variant: "outline"}), styles["outlineButton"])}>
+              {icon}
+              <span>{label}</span>
+            </Link>
           }
         />
         <TooltipContent>{label}</TooltipContent>

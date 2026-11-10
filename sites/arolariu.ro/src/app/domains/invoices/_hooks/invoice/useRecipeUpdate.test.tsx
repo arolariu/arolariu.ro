@@ -119,6 +119,22 @@ describe("useRecipeUpdate", () => {
     });
   });
 
+  describe("recipe index validation", () => {
+    it.each([5, -1, 1.5, Number.NaN])("rejects with RangeError for invalid index %s without touching server or store", async (index) => {
+      const {result} = renderHook(() => useRecipeUpdate(testInvoice));
+
+      await expect(
+        act(async () => {
+          await result.current.updateRecipeCallback(index, testRecipes[0]!);
+        }),
+      ).rejects.toBeInstanceOf(RangeError);
+
+      expect(mockedPatch).not.toHaveBeenCalled();
+      expect(updateEntitySpy).not.toHaveBeenCalled();
+      expect(result.current.isUpdating).toBe(false);
+    });
+  });
+
   describe("loading state", () => {
     it("resets isUpdating to false after success", async () => {
       const updated = {...testRecipes[0]!, description: "Updated"};

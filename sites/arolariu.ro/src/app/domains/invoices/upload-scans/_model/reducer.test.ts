@@ -210,6 +210,40 @@ describe("uploadReducer", () => {
     expect(progressed.pendingUploads[0]).toMatchObject({status: "uploading", progress: 70, attempts: 1});
   });
 
+  it("merges error and blobUrl from scanUpload.item.progressChanged only when provided", () => {
+    const upload = createUpload();
+    const queued = uploadReducer(
+      initialUploadState,
+      event<Extract<UploadEvent, {type: "scanUpload.queue.filesAccepted"}>>({
+        type: "scanUpload.queue.filesAccepted",
+        uploads: [upload],
+      }),
+    );
+
+    const progressed = uploadReducer(
+      queued,
+      event<Extract<UploadEvent, {type: "scanUpload.item.progressChanged"}>>({
+        type: "scanUpload.item.progressChanged",
+        uploadId: upload.id,
+        status: "retrying",
+        progress: 40,
+        attempt: 2,
+        error: "temporary failure",
+        blobUrl: "https://storage/partial.jpg",
+      }),
+    );
+
+    expect(progressed.pendingUploads[0]).toMatchObject({
+      status: "retrying",
+      progress: 40,
+      attempts: 2,
+      error: "temporary failure",
+      blobUrl: "https://storage/partial.jpg",
+    });
+    expect(queued.pendingUploads[0]).not.toHaveProperty("error");
+    expect(queued.pendingUploads[0]).not.toHaveProperty("blobUrl");
+  });
+
   it("handles scanUpload.item.uploadSucceeded by completing an upload and recording prompt summary", () => {
     const upload = createUpload({error: "previous error"});
     const queued = uploadReducer(

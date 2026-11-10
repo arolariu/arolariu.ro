@@ -2041,12 +2041,6 @@
           "subtitle": "Completați detaliile pentru factura nouă",
           "title": "Detalii factură"
         },
-        "emptyState": {
-          "description": "Încărcați mai întâi câteva scanări de bonuri pentru a crea o factură.",
-          "title": "Nicio scanare disponibilă",
-          "uploadButton": "Încarcă scanări",
-          "viewScansButton": "Vezi scanările"
-        },
         "header": {
           "backToInvoices": "Înapoi la facturi",
           "subtitle": "Urmați pașii de mai jos pentru a crea o factură nouă din scanările dvs.",
@@ -3897,7 +3891,7 @@
       "author": {
         "biography": {
           "fifthPoint": "Alexandru este deschis colaborării în proiecte care implică oricare dintre domeniile Internet of Things, Software Engineering și Network Engineering. El are o experiență dovedită în furnizarea de soluții de înaltă calitate la probleme complexe și este mereu în căutarea de noi provocări.",
-          "firstPoint": "Alexandru are {age} ani și este inginer software și arhitect de soluții. În prezent lucrează la Microsoft ca inginer software în cadrul organizației E+D MSAI FAST, construind soluții care sunt utilizate de milioane de utilizatori din întreaga lume.",
+          "firstPoint": "Alexandru are {age} ani și este inginer software și arhitect de soluții. În prezent lucrează la Microsoft ca arhitect software full-stack în organizația Copilot Platform, contribuind la infrastructura din spatele Copilot, agenților și inteligenței artificiale pentru companii.",
           "fourthPoint": "Lui Alexandru îi place să citească cărți tehnice și să se joace cu noile tehnologii. A construit această platformă ca un \"banc de testare\" pentru noile tehnologii și ca o modalitate de a învăța lucruri noi. De asemenea, este un mare fan al mișcării \"open-source\" și a contribuit la depozitele OSS ale Microsoft (dotnet/core, dotnet/docs, azure/docs).",
           "secondPoint": "Alexandru s-a născut pe 8 ianuarie 2000 într-un orășel numit Curtea de Argeș din România. A primit primul său computer când avea doar 5 ani - un Pentium 4 E2200 2.2Ghz Dual-Core cu 512 MB de RAM. De atunci, a rulat diferite versiuni de Windows (a început cu Windows 98!), a bricolat calculatorul personal și și-a dezvoltat abilitățile informatice jucând jocuri video. De asemenea, a învățat o bună parte din limba engleză și a fost capabil să citească, să scrie și să vorbească fluent în limba engleză până la vârsta de 12 ani!",
           "thirdPoint": "Alexandru este un pasionat de jocuri video. A fost jucător profesionist, clasându-se pe locul 70 în România pentru jocul video numit „DotA 2”. Îi place să joace jocuri de strategie care pun accentul pe mecanică și pe un cadru tehnic, cum ar fi Age of Empires, Age of Mythology, etc. De asemenea, îi place să joace jocuri precum Red Alert, StarCraft și alte jocuri RTS.",
@@ -4060,6 +4054,36 @@
               "period": "2019 - 2022",
               "status": "Completat"
             },
+            "mitSelfDirected": {
+              "aboutTheProgramCta": "Vezi mai multe detalii",
+              "aboutTheProgramDescription": "Un program de studiu independent, în ritm propriu și desfășurat complet la distanță, destinat profesioniștilor din industrie și construit în jurul cursurilor MIT.",
+              "aboutTheProgramLearnings": "# 6.8300 - Progrese în viziunea computerizată # 6.5950 - Proiectarea hardware-ului securizat # 6.5060 - Ingineria algoritmilor",
+              "aboutTheProgramLearningsTitle": "Cursuri suplimentare",
+              "aboutTheProgramTitle": "Despre programul de studiu",
+              "degree": "Program postuniversitar în Proiectare și Inginerie Software",
+              "description": "Program de studiu independent, în ritm propriu și exclusiv la distanță, destinat profesioniștilor din industrie.",
+              "institution": "Massachusetts Institute of Technology",
+              "keyCourses": "# 6.S191 - Introducere în Deep Learning # 6.5660 / 6.858 - Securitatea sistemelor de calculatoare # 6.172 - Ingineria performanței sistemelor software # 18.225 - Teoria grafurilor și combinatorică aditivă # 6.033 - Ingineria sistemelor de calculatoare # 6.8300 - Progrese în viziunea computerizată # 6.5950 - Proiectarea hardware-ului securizat # 6.5060 - Ingineria algoritmilor",
+              "keyCoursesTitle": "Cursuri cheie",
+              "location": "Online, Statele Unite",
+              "period": "2025 - 2029",
+              "status": "În desfășurare (studiu independent)"
+            },
+            "portsmouthUnitedKingdom": {
+              "aboutTheProgramCta": "Vezi mai multe detalii",
+              "aboutTheProgramDescription": "Programul a inclus vizualizarea datelor și business intelligence, analiza exploratorie a datelor, big data și învățare automată, precum și inteligență artificială explicabilă, responsabilă și transparentă.",
+              "aboutTheProgramLearnings": "# Studii online, la distanță # Sponsorizat de Microsoft Corporation # Colaborarea s-a încheiat în 2024 din motive personale # Programul de masterat nu a fost finalizat",
+              "aboutTheProgramLearningsTitle": "Detalii despre program",
+              "aboutTheProgramTitle": "Despre program",
+              "degree": "MSc. în Știința Datelor",
+              "description": "Înscris anterior într-un program MSc. în Știința Datelor online, la distanță, la University of Portsmouth, sponsorizat de Microsoft Corporation. Colaborarea s-a încheiat în 2024 din motive personale; programul de masterat nu a fost finalizat.",
+              "institution": "University of Portsmouth",
+              "keyCourses": "# Vizualizarea datelor și business intelligence # Concepte de analiză exploratorie a datelor # Big data și învățare automată # Inteligență artificială explicabilă, responsabilă și transparentă",
+              "keyCoursesTitle": "Cursuri cheie",
+              "location": "Portsmouth, Regatul Unit",
+              "period": "2024 - 2024",
+              "status": "Neîncheiat"
+            },
             "malmoSweden": {
               "aboutTheProgramCta": "Vezi mai multe detalii",
               "aboutTheProgramDescription": "MSc în Internet of Things la Universitatea Malmö este un program de ultimă oră care pregătește studenții pentru provocările și oportunitățile revoluției IoT. Planul de învățământ pune accentul pe învățarea practică, colaborarea interdisciplinară și aplicațiile din lumea reală.",
@@ -4110,14 +4134,24 @@
             "title": "E + D Inginer Software II - Cloud-uri Suverane"
           },
           "microsoft3": {
-            "achievements": " ",
+            "achievements": "# (Microsoft M365 Copilot Platform) Am livrat contribuții de inginerie full-stack pentru experiența unificată Microsoft Copilot, oferind o fundație comună bazată pe AI în Teams, Outlook, Microsoft 365 Apps, Edge și Windows. # (Sisteme AI agentice) Am participat la dezvoltarea și evoluția unor experiențe agentice avansate, inclusiv agentul Researcher, contribuind la crearea unor fluxuri de lucru inteligente capabile de raționament în mai mulți pași, sinteză de informații și orchestrare de sarcini.",
             "company": "Microsoft",
-            "description": "Alexandru lucrează în prezent la Microsoft ca inginer software în cadrul organizației E+D MSAI (M365 AI Experiences).",
+            "description": "Am făcut parte din organizația M365 AI Experiences, care conecta oamenii cu inteligența artificială.\n\nEchipa noastră a deschis drumul unui design orientat spre modele (model-forward), integrând agenți inteligenți în instrumentele de productivitate de zi cu zi, precum Copilot și Windows. Am colaborat îndeaproape cu echipe interfuncționale pentru a prototipa, evalua și scala funcționalități bazate pe AI care îmbunătățeau fluxurile de lucru și procesul decizional al utilizatorilor.\n\nAm lucrat într-o organizație care deservea peste 1.000 de miliarde (1T+) de cereri pe zi și oferea o fiabilitate de până la „șase de nouă” (99.9999x%). Codul meu a avut un impact pozitiv asupra a peste 500 de milioane de utilizatori activi săptămânal (WAU), pe toate platformele principale (Linux, Apple, Microsoft) și pe toate canalele principale de distribuție (Web, Desktop, Mobile).",
             "location": "Remote (Norvegia)",
-            "period": "11/2024 - prezent",
-            "responsibilites": " ",
+            "period": "11/2024 – 09/2026",
+            "responsibilites": "# Conducerea designului de produs orientat spre modele (model-forward) prin integrarea fluxurilor de lucru bazate pe LLM, a agenților inteligenți și a experiențelor de tip retrieval-augmented în aplicațiile de productivitate de zi cu zi. # Contribuția la inițiativele de modernizare a platformei în Teams și Outlook, îmbunătățind consistența arhitecturală, fiabilitatea și ritmul de dezvoltare. # Livrarea de servicii cu disponibilitate ridicată care funcționează la scară globală, respectând standardele Microsoft de fiabilitate, securitate și conformitate.",
             "techAndSkills": "# React # GraphQL # Dezvoltare la scară largă # Aplicații Cloud-Native # Metodologii Agile # Excelență în inginerie # Leadership",
-            "title": "E + D Inginer Software Fullstack II - M365 AI"
+            "title": "Inginer Software Fullstack II - M365 AI"
+          },
+          "microsoft4": {
+            "achievements": "Realizările rolului actual sunt în curs de colectare.",
+            "company": "Microsoft",
+            "description": "Fac parte din organizația Copilot Platform a Microsoft, unde dezvolt infrastructura de bază din spatele lui Copilot, al agenților și al soluțiilor AI pentru întreprinderi.\n\nPlatforma permite experiențe bazate pe AI, continue și la cerere, prin ancorarea în contextul de business (business-context grounding), sisteme de memorie și regăsire, orchestrarea agenților, ecosisteme de instrumente și conectori, execuție securizată în cloud și framework-uri de extensibilitate care ajută clienții să automatizeze activități complexe dincolo de granița Microsoft 365 și în sistemele enterprise externe.",
+            "location": "Remote (Regatul Unit)",
+            "period": "09/2026 - prezent",
+            "responsibilites": "Responsabilitățile rolului actual sunt în curs de definire.",
+            "techAndSkills": "# AI Harness # Orchestrarea agenților # Retrieval-Augmented Generation # Sisteme de memorie și regăsire # Conectori și extensibilitate # Sisteme distribuite # Model Context Protocol # Dezvoltare la scară largă",
+            "title": "Copilot Platform – Arhitect Software Fullstack"
           },
           "responsibilitiesLabel": "Responsabilități",
           "subtitle": "O călătorie prin cariera profesională a lui Alexandru și prin companiile cu care a lucrat.",

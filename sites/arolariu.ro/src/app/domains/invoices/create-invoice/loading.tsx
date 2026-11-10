@@ -1,44 +1,41 @@
 import {Skeleton} from "@arolariu/components";
-import styles from "./loading.module.scss";
+import skeletonStyles from "./_components/CreateInvoiceSkeleton.module.scss";
+import styles from "./page.module.scss";
 
 /**
- * Loading skeleton for the create invoice page.
+ * Loading fallback for the create invoice page.
  *
  * @remarks
- * Displays a skeleton UI matching the wizard structure:
- * - Step indicator at top
- * - Content area with skeletons
- * - Navigation buttons at bottom
+ * Renders only skeleton primitives so this route fallback does not import wizard components.
  *
  * @returns JSX element with loading skeleton
  */
 export default function CreateInvoiceLoading(): React.JSX.Element {
   return (
-    <div className={styles["container"]}>
-      {/* Step indicator skeleton */}
-      <div className={styles["stepIndicator"]}>
-        <Skeleton className={styles["stepDot"]} />
-        <Skeleton className={styles["stepDot"]} />
-        <Skeleton className={styles["stepDot"]} />
-      </div>
-
-      {/* Content area skeleton */}
-      <div className={styles["content"]}>
-        <Skeleton className={styles["title"]} />
-        <Skeleton className={styles["subtitle"]} />
-
-        <div className={styles["grid"]}>
-          <Skeleton className={styles["card"]} />
-          <Skeleton className={styles["card"]} />
-          <Skeleton className={styles["card"]} />
-          <Skeleton className={styles["card"]} />
+    <div className={styles["page"]}>
+      <div className={skeletonStyles["container"]}>
+        <div className={skeletonStyles["stepIndicator"]}>
+          <Skeleton className={skeletonStyles["stepDot"]} />
+          <Skeleton className={skeletonStyles["stepDot"]} />
+          <Skeleton className={skeletonStyles["stepDot"]} />
         </div>
-      </div>
 
-      {/* Navigation buttons skeleton */}
-      <div className={styles["navigation"]}>
-        <Skeleton className={styles["button"]} />
-        <Skeleton className={styles["button"]} />
+        <div className={skeletonStyles["content"]}>
+          <Skeleton className={skeletonStyles["title"]} />
+          <Skeleton className={skeletonStyles["subtitle"]} />
+
+          <div className={skeletonStyles["grid"]}>
+            <Skeleton className={skeletonStyles["card"]} />
+            <Skeleton className={skeletonStyles["card"]} />
+            <Skeleton className={skeletonStyles["card"]} />
+            <Skeleton className={skeletonStyles["card"]} />
+          </div>
+        </div>
+
+        <div className={skeletonStyles["navigation"]}>
+          <Skeleton className={skeletonStyles["button"]} />
+          <Skeleton className={skeletonStyles["button"]} />
+        </div>
       </div>
     </div>
   );
