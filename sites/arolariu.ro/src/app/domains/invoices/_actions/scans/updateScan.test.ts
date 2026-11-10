@@ -370,4 +370,106 @@ describe("updateScan", () => {
     expect(updateCall?.metadata?.["lastModifiedBy"]).toBe("user-123");
     expect(updateCall?.metadata?.["lastModifiedAt"]).toBeDefined();
   });
+
+  describe("coverage of resolution predicate, metadata removal and fallbacks", () => {
+    const baseMetadata = {
+      ownerId: "user-123",
+      displayName: "receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: "2024-01-01T00:00:00.000Z",
+      uploadedBy: "user-123",
+    };
+
+    const buildBlob = (name: string, metadata: Record<string, string>) => ({
+      name,
+      url: `https://storage.test/invoices/${name}`,
+      metadata,
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "etag",
+    });
+
+    const updatedBlob = {
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {},
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "new-etag",
+    };
+
+    it("should resolve only the blob whose scanId matches, ignoring mismatching and invalid-metadata blobs", async () => {
+      const blobs = [
+        buildBlob("scans/user-123/invalid.jpg", {}),
+        buildBlob("scans/user-123/other.jpg", {...baseMetadata, scanId: "scan-other"}),
+        buildBlob("scans/user-123/target.jpg", {...baseMetadata, scanId: "scan-123"}),
+      ];
+      mockResolveBlobObjectByMetadata.mockImplementation(async ({predicate}) => blobs.find((blob) => predicate(blob)) ?? null);
+      mockUpdateBlobObject.mockResolvedValue(updatedBlob);
+
+      const result = await updateScan({scanId: "scan-123", metadataAdd: {displayName: "new.jpg"}});
+
+      expect(result.success).toBe(true);
+      expect(mockUpdateBlobObject).toHaveBeenCalledWith(expect.objectContaining({blobName: "scans/user-123/target.jpg"}));
+    });
+
+    it("should keep immutable keys when asked to remove them", async () => {
+      mockResolveBlobObjectByMetadata.mockResolvedValue(buildBlob("scans/user-123/scan_123.jpg", {...baseMetadata, scanId: "scan-123"}));
+      mockUpdateBlobObject.mockResolvedValue(updatedBlob);
+
+      const result = await updateScan({scanId: "scan-123", metadataRemove: [ScanMetadataKey.SCAN_ID]});
+
+      expect(result.success).toBe(true);
+      const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
+      expect(updateCall?.metadata?.[ScanMetadataKey.SCAN_ID]).toBe("scan-123");
+    });
+
+    it("should fall back to current values when removing document kind, role and status", async () => {
+      mockResolveBlobObjectByMetadata.mockResolvedValue(buildBlob("scans/user-123/scan_123.jpg", {...baseMetadata, scanId: "scan-123"}));
+      mockUpdateBlobObject.mockResolvedValue(updatedBlob);
+
+      const result = await updateScan({
+        scanId: "scan-123",
+        metadataRemove: [ScanMetadataKey.DOCUMENT_KIND, ScanMetadataKey.DOCUMENT_ROLE, ScanMetadataKey.STATUS],
+      });
+
+      expect(result.success).toBe(true);
+      const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
+      expect(updateCall?.metadata?.[ScanMetadataKey.DOCUMENT_KIND]).toBe("receipt");
+      expect(updateCall?.metadata?.[ScanMetadataKey.DOCUMENT_ROLE]).toBe("primary");
+      expect(updateCall?.metadata?.[ScanMetadataKey.STATUS]).toBe("ready");
+    });
+
+    it("should name the scan after the blob file when metadata has no displayName", async () => {
+      const {displayName: _displayName, ...withoutDisplayName} = baseMetadata;
+      mockResolveBlobObjectByMetadata.mockResolvedValue(
+        buildBlob("scans/user-123/scan_123.jpg", {...withoutDisplayName, scanId: "scan-123"}),
+      );
+      mockUpdateBlobObject.mockResolvedValue(updatedBlob);
+
+      const result = await updateScan({scanId: "scan-123"});
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.scan.name).toBe("scan_123.jpg");
+      }
+    });
+
+    it("should return a generic message when a non-Error value is thrown", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      mockFetchBFFUserFromAuthService.mockRejectedValue("boom");
+
+      const result = await updateScan({scanId: "scan-123"});
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toBe("An unexpected error occurred");
+      }
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+  });
 });
