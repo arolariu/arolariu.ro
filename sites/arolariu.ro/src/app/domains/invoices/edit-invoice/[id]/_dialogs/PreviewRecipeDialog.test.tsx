@@ -149,6 +149,34 @@ describe("PreviewRecipeDialog", () => {
     expect(screen.getByText(/until crispy/)).toBeTruthy();
   });
 
+  it.each([RecipeDifficulty.Easy, RecipeDifficulty.Medium, RecipeDifficulty.Hard])(
+    "renders the %s difficulty label in the badge",
+    async (difficulty) => {
+      render(<Wrapper recipe={{...testRecipe, difficulty}} />);
+      await userEvent.click(screen.getByRole("button", {name: "Open Preview"}));
+
+      expect(screen.getByText(`dialogs.invoices.recipeDialog.difficulty.${difficulty}`)).toBeInTheDocument();
+    },
+  );
+
+  it("falls back to the no-description copy when the recipe description is empty", async () => {
+    render(<Wrapper recipe={{...testRecipe, description: ""}} />);
+    await userEvent.click(screen.getByRole("button", {name: "Open Preview"}));
+
+    expect(screen.getByText("dialogs.invoices.recipeDialog.read.noDescription")).toBeInTheDocument();
+    expect(screen.queryByText("Classic Italian pasta")).not.toBeInTheDocument();
+  });
+
+  it("closes the dialog when the close button is clicked", async () => {
+    render(<Wrapper recipe={testRecipe} />);
+    await userEvent.click(screen.getByRole("button", {name: "Open Preview"}));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", {name: "shared.accessibility.close"}));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("renders recipe name in dialog title", async () => {
     render(<Wrapper recipe={testRecipe} />);
     await userEvent.click(screen.getByRole("button", {name: "Open Preview"}));
