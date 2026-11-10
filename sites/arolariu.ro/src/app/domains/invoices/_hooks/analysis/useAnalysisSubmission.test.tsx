@@ -291,6 +291,160 @@ describe("useAnalysisSubmission", () => {
     });
   });
 
+  // ── 6b. Stale and unmounted completions ─────────────────────────────────────
+
+  describe("stale and unmounted completions", () => {
+    type ActionResult = Awaited<ReturnType<typeof analyzeInvoice>>;
+
+    const deferred = (): {promise: Promise<ActionResult>; resolve: (v: ActionResult) => void; reject: (e: unknown) => void} => {
+      let resolve!: (v: ActionResult) => void;
+      let reject!: (e: unknown) => void;
+      const promise = new Promise<ActionResult>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return {promise, resolve, reject};
+    };
+
+    it("cancels the pending refresh timer when reset() is called after a queued submission", async () => {
+      mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}));
+
+      await act(async () => {
+        await result.current.submit(invoiceRequest);
+      });
+      expect(result.current.status).toBe("queued");
+
+      act(() => {
+        result.current.reset();
+      });
+      act(() => {
+        vi.advanceTimersByTime(ANALYSIS_REFRESH_DELAY_MS * 2);
+      });
+
+      expect(result.current.status).toBe("idle");
+      expect(mockRouter.refresh).not.toHaveBeenCalled();
+    });
+
+    it("replaces the pending refresh timer when a second submit happens before it fires", async () => {
+      mockAnalyzeInvoice
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID))
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess("queue-msg-second"));
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}));
+
+      await act(async () => {
+        await result.current.submit(invoiceRequest);
+      });
+      await act(async () => {
+        await result.current.submit(invoiceRequest);
+      });
+      act(() => {
+        vi.advanceTimersByTime(ANALYSIS_REFRESH_DELAY_MS * 3);
+      });
+
+      expect(result.current.messageId).toBe("queue-msg-second");
+      expect(mockRouter.refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores submit() calls made through a retained callback after unmount", async () => {
+      const {result, unmount} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+      const retainedSubmit = result.current.submit;
+      unmount();
+
+      await retainedSubmit(invoiceRequest);
+
+      expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
+    });
+
+    it("drops a successful result that resolves after unmount without scheduling a refresh", async () => {
+      const pending = deferred();
+      mockAnalyzeInvoice.mockReturnValueOnce(pending.promise);
+      const {result, unmount} = renderHook(() =>
+        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}),
+      );
+      let submission!: Promise<void>;
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      unmount();
+
+      pending.resolve({success: true, data: TEST_MESSAGE_ID});
+      await act(async () => submission);
+
+      expect(vi.getTimerCount()).toBe(0);
+      act(() => {
+        vi.advanceTimersByTime(ANALYSIS_REFRESH_DELAY_MS * 2);
+      });
+
+      expect(mockRouter.refresh).not.toHaveBeenCalled();
+    });
+
+    it("defensive invariant: swallows a rejection that arrives after unmount", async () => {
+      const pending = deferred();
+      mockAnalyzeInvoice.mockReturnValueOnce(pending.promise);
+      const {result, unmount} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+      let submission!: Promise<void>;
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      unmount();
+
+      pending.reject(new Error("late failure"));
+
+      await expect(submission).resolves.toBeUndefined();
+    });
+
+    it("keeps reset state when an earlier submission resolves with a failure result", async () => {
+      const pending = deferred();
+      mockAnalyzeInvoice.mockReturnValueOnce(pending.promise);
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+      let submission!: Promise<void>;
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      act(() => {
+        result.current.reset();
+      });
+
+      pending.resolve({success: false, error: {code: "SERVER_ERROR", message: "boom"}});
+      await act(async () => submission);
+
+      expect(result.current.status).toBe("idle");
+      expect(result.current.errorMessage).toBeNull();
+    });
+
+    it("keeps reset state when an earlier submission rejects", async () => {
+      const pending = deferred();
+      mockAnalyzeInvoice.mockReturnValueOnce(pending.promise);
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+      let submission!: Promise<void>;
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      act(() => {
+        result.current.reset();
+      });
+
+      pending.reject(new Error("late failure"));
+      await act(async () => submission);
+
+      expect(result.current.status).toBe("idle");
+      expect(result.current.errorMessage).toBeNull();
+    });
+
+    it("uses a generic error message when the rejection is not an Error instance", async () => {
+      mockAnalyzeInvoice.mockRejectedValueOnce("plain string failure");
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+
+      await act(async () => {
+        await result.current.submit(invoiceRequest);
+      });
+
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorMessage).toBe("Unknown submission error");
+    });
+  });
+
   // ── 7. refreshNow() ─────────────────────────────────────────────────────────
 
   describe("refreshNow()", () => {
