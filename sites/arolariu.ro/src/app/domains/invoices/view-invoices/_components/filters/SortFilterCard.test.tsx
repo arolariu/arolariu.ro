@@ -9,6 +9,7 @@
  */
 
 import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import {SortFilterCard} from "./SortFilterCard";
@@ -55,5 +56,65 @@ describe("SortFilterCard", () => {
     const trigger = screen.getByRole("combobox");
     expect(trigger).toHaveTextContent("forms.invoices.filters.sortOptions.amountLowToHigh");
     expect(trigger).not.toHaveTextContent("amount-asc");
+  });
+
+  it.each([
+    {sortBy: "date", sortOrder: "asc", label: "dateOldest"},
+    {sortBy: "amount", sortOrder: "desc", label: "amountHighToLow"},
+    {sortBy: "name", sortOrder: "asc", label: "nameAZ"},
+    {sortBy: "name", sortOrder: "desc", label: "nameZA"},
+  ] as const)("shows the $label active pill for a $sortBy $sortOrder sort", ({sortBy, sortOrder, label}) => {
+    render(
+      <SortFilterCard
+        filters={makeFilters({sortBy, sortOrder})}
+        onFiltersChange={vi.fn()}
+      />,
+    );
+
+    const pills = screen.getAllByText(`forms.invoices.filters.sortOptions.${label}`);
+    expect(pills.length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("forms.invoices.filters.defaultValue")).not.toBeInTheDocument();
+  });
+
+  it("shows the default label and no pill for the default date-desc sort", () => {
+    render(
+      <SortFilterCard
+        filters={makeFilters({sortBy: "date", sortOrder: "desc"})}
+        onFiltersChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("forms.invoices.filters.defaultValue")).toBeInTheDocument();
+    expect(screen.getAllByText("forms.invoices.filters.sortOptions.dateNewest")).toHaveLength(1);
+  });
+
+  it("renders an empty active pill when no sort field is set", () => {
+    render(
+      <SortFilterCard
+        filters={makeFilters({sortBy: null, sortOrder: null})}
+        onFiltersChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("forms.invoices.filters.defaultValue")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {option: "nameZA", sortBy: "name", sortOrder: "desc"},
+    {option: "amountHighToLow", sortBy: "amount", sortOrder: "desc"},
+  ])("emits the parsed field and direction when the $option option is chosen", async ({option, sortBy, sortOrder}) => {
+    const onFiltersChange = vi.fn();
+    render(
+      <SortFilterCard
+        filters={makeFilters({sortBy: "date", sortOrder: "desc"})}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("combobox"));
+    await userEvent.click(await screen.findByRole("option", {name: `forms.invoices.filters.sortOptions.${option}`}));
+
+    expect(onFiltersChange).toHaveBeenCalledTimes(1);
+    expect(onFiltersChange).toHaveBeenCalledWith({sortBy, sortOrder});
   });
 });
