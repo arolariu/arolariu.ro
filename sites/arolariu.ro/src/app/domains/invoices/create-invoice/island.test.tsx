@@ -199,6 +199,26 @@ describe("RenderCreateInvoiceScreen scan availability gate", () => {
     consoleError.mockRestore();
   });
 
+  it("ignores a scans fetch that settles after the screen unmounted", async () => {
+    let resolveFetch: (value: {success: true; data: Scan[]}) => void = () => {};
+    mockFetchScans.mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+
+    const {unmount} = render(<RenderCreateInvoiceScreen />);
+    expect(mockFetchScans).toHaveBeenCalledTimes(1);
+    unmount();
+
+    await act(async () => {
+      resolveFetch({success: true, data: [buildScan("scan-late")]});
+    });
+
+    expect(useScansStore.getState().scans).toEqual([]);
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it("keeps the wizard mounted when READY scans are consumed after the initial check", async () => {
     mockFetchScans.mockResolvedValue({success: true, data: [buildScan("scan-ready")]});
 
