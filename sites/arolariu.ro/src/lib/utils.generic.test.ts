@@ -618,6 +618,29 @@ describe("assertValidGuid", () => {
     });
   });
 
+  describe("valid UUID v5 inputs", () => {
+    it.each(["2ed6657d-e927-568b-95e1-2665a8aea6a2", "2ED6657D-E927-568B-95E1-2665A8AEA6A2"])(
+      "accepts a namespaced user identifier (%s)",
+      (identifier) => {
+        expect(() => validateStringIsGuidType(identifier, "userIdentifier")).not.toThrow();
+      },
+    );
+
+    it("accepts the deterministic identifiers generated for authenticated users", () => {
+      const identifier = generateGuid("www.example.com");
+
+      expect(identifier).toBe("2ed6657d-e927-568b-95e1-2665a8aea6a2");
+      expect(() => validateStringIsGuidType(identifier, "userIdentifier")).not.toThrow();
+    });
+
+    it.each(["2ed6657d-e927-568b-05e1-2665a8aea6a2", "2ed6657d-e927-568b-c5e1-2665a8aea6a2"])(
+      "rejects a namespaced identifier with invalid variant bits (%s)",
+      (identifier) => {
+        expect(() => validateStringIsGuidType(identifier)).toThrow("is not a valid GUID");
+      },
+    );
+  });
+
   describe("valid sentinel GUIDs", () => {
     it("should not throw for EMPTY_GUID", () => {
       expect(() => validateStringIsGuidType("00000000-0000-0000-0000-000000000000")).not.toThrow();
@@ -663,8 +686,8 @@ describe("assertValidGuid", () => {
       expect(() => validateStringIsGuidType("550e8400-e29b-31d4-a716-446655440000")).toThrow("is not a valid GUID");
     });
 
-    it("should throw for UUID v5 (version digit is 5)", () => {
-      expect(() => validateStringIsGuidType("550e8400-e29b-51d4-a716-446655440000")).toThrow("is not a valid GUID");
+    it("should throw for unsupported UUID v6 (version digit is 6)", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-61d4-a716-446655440000")).toThrow("is not a valid GUID");
     });
   });
 

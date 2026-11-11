@@ -90,7 +90,7 @@ export class TransportValidationError extends Error {
 
 /**
  * Boolean predicate wrapping the existing `validateStringIsGuidType` assertion.
- * Returns `true` when `value` is a UUIDv4 or UUIDv7 string.
+ * Accepts UUIDv4, UUIDv5, UUIDv7, and the repository sentinel GUIDs.
  * Reuses the upstream regex — no second UUID pattern is introduced.
  */
 function isGuid(value: unknown): value is string {
