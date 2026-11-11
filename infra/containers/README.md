@@ -179,10 +179,16 @@ retain local exp routing.
 The container keeps the standard `node server.js` entrypoint. Private values are not baked into image layers. Restarting the Node server
 reloads changed private configuration from exp.
 
-Cloud bootstrap gives token acquisition its own 30-second abort signal. The 10-second exp HTTP deadline starts only after request
-credentials are available; managed-identity cold-start latency does not consume the exp request budget. Cloud failures identify
-`stage=authentication` or `stage=http`, elapsed time, known SDK/network error identifiers, and whether a managed-identity endpoint was
-configured. Provider messages, tokens, endpoint values, and private configuration are never included in these errors.
+Cloud bootstrap gives token acquisition its own 30-second abort signal. Each exp HTTP attempt has a fresh 30-second deadline starting only
+after request credentials are available; managed-identity cold-start latency does not consume the exp request budget. If that HTTP deadline
+expires, bootstrap retries up to twice with a one-second pause between attempts (at most 92 seconds for HTTP attempts and pauses).
+Authentication failures, HTTP error responses, and invalid documents are not retried. Ordinary per-key reads retain their 10-second cloud
+deadline; local bootstrap retains its single two-second attempt and dotenv fallback.
+
+Retries happen inside initialization because Next.js caches the instrumentation registration promise, including a rejected promise. An
+exhausted bootstrap remains a startup failure; restarting/replacing that Node worker is required to attempt initialization again. Cloud
+failures identify `stage=authentication` or `stage=http`, elapsed time, known SDK/network error identifiers, and whether a managed-identity
+endpoint was configured. Provider messages, tokens, endpoint values, and private configuration are never included in these errors.
 
 The build workflow runs a bounded startup smoke test on the final image before publishing it. It uses the image's normal entrypoint and
 runner-stage environment (without setting `SITE_ENV` or private variables), plus a local exp fixture. The test checks the requested exp
@@ -194,9 +200,9 @@ node sites/arolariu.ro/tests/container/runtime-configuration.smoke.mjs <image> P
 ```
 
 The smoke also exercises the real bundled Azure SDK against a loopback App Service-shaped managed-identity endpoint, checking the selected
-client ID, token audience and Authorization handoff. A delayed valid token response covers cold-start latency beyond the exp request
-deadline. Only the external identity and exp services are controlled; the normal server entrypoint remains unchanged. The fixtures and test
-containers are temporary; no real Azure credentials are used.
+client ID, token audience and Authorization handoff. A delayed valid token response covers managed-identity cold-start latency. Only the
+external identity and exp services are controlled; the normal server entrypoint remains unchanged. The fixtures and test containers are
+temporary; no real Azure credentials are used.
 
 | Variable                              | Description                                               | Required |
 | ------------------------------------- | --------------------------------------------------------- | -------- |
