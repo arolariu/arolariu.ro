@@ -4,7 +4,7 @@
  */
 
 import type {Invoice} from "@/types/invoices";
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useInvoices} from "./useInvoices";
@@ -403,8 +403,10 @@ describe("useInvoices", () => {
       expect(result.current).toHaveProperty("invoices");
       expect(result.current).toHaveProperty("isLoading");
       expect(result.current).toHaveProperty("isError");
+      expect(result.current).toHaveProperty("refetch");
       expect(typeof result.current.isLoading).toBe("boolean");
       expect(typeof result.current.isError).toBe("boolean");
+      expect(typeof result.current.refetch).toBe("function");
       expect(Array.isArray(result.current.invoices)).toBe(true);
     });
 
@@ -437,6 +439,142 @@ describe("useInvoices", () => {
       // Both should share the same store state
       expect(result1.current.invoices).toEqual(result2.current.invoices);
       expect(setEntities).toHaveBeenCalled();
+    });
+  });
+
+  describe("refetch", () => {
+    type FetchInvoicesResult = Awaited<ReturnType<typeof fetchInvoices>>;
+
+    const createDeferredFetch = () => {
+      let resolve: (result: FetchInvoicesResult) => void = () => undefined;
+      let reject: (error: unknown) => void = () => undefined;
+      const promise = new Promise<FetchInvoicesResult>((promiseResolve, promiseReject) => {
+        resolve = promiseResolve;
+        reject = promiseReject;
+      });
+
+      return {promise, resolve, reject};
+    };
+
+    it("keeps isError true while a retry is in flight and clears it when the retry succeeds", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const {setEntities} = createMockStoreState({hasHydrated: true});
+      const retry = createDeferredFetch();
+      TestDataBuilder.mockResolvedActionFailure(mockFetchInvoices, {code: "SERVER_ERROR", message: "Internal server error"});
+      mockFetchInvoices.mockReturnValueOnce(retry.promise);
+
+      const {result} = renderHook(() => useInvoices());
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      let refetchPromise: Promise<void> = Promise.resolve();
+      act(() => {
+        refetchPromise = result.current.refetch();
+      });
+
+      expect(result.current.isError).toBe(true);
+
+      await act(async () => {
+        retry.resolve({success: true, data: [testInvoice1]});
+        await refetchPromise;
+      });
+
+      expect(result.current.isError).toBe(false);
+      expect(setEntities).toHaveBeenCalledOnce();
+      expect(setEntities).toHaveBeenCalledWith([testInvoice1]);
+      expect(mockFetchInvoices).toHaveBeenCalledTimes(2);
+    });
+
+    it("resolves instead of rejecting when a retry throws", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const {setEntities} = createMockStoreState({hasHydrated: true});
+      const testError = new Error("Network failure");
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice1]});
+      mockFetchInvoices.mockRejectedValueOnce(testError);
+
+      const {result} = renderHook(() => useInvoices());
+
+      await waitFor(() => {
+        expect(setEntities).toHaveBeenCalledOnce();
+      });
+
+      await act(async () => {
+        await expect(result.current.refetch()).resolves.toBeUndefined();
+      });
+
+      expect(result.current.isError).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoices in useInvoices hook:", testError);
+    });
+
+    it("ignores a superseded fetch that resolves after a newer refetch", async () => {
+      const {setEntities} = createMockStoreState({hasHydrated: true});
+      const mountFetch = createDeferredFetch();
+      mockFetchInvoices.mockReturnValueOnce(mountFetch.promise);
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice2]});
+
+      const {result} = renderHook(() => useInvoices());
+
+      await waitFor(() => {
+        expect(mockFetchInvoices).toHaveBeenCalledOnce();
+      });
+
+      await act(async () => {
+        await result.current.refetch();
+      });
+
+      await act(async () => {
+        mountFetch.resolve({success: true, data: [testInvoice1]});
+        await mountFetch.promise;
+      });
+
+      expect(setEntities).toHaveBeenCalledOnce();
+      expect(setEntities).toHaveBeenCalledWith([testInvoice2]);
+      expect(result.current.isError).toBe(false);
+    });
+
+    it("ignores a superseded fetch that rejects after a newer refetch", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const {setEntities} = createMockStoreState({hasHydrated: true});
+      const mountFetch = createDeferredFetch();
+      mockFetchInvoices.mockReturnValueOnce(mountFetch.promise);
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice2]});
+
+      const {result} = renderHook(() => useInvoices());
+
+      await waitFor(() => {
+        expect(mockFetchInvoices).toHaveBeenCalledOnce();
+      });
+
+      await act(async () => {
+        await result.current.refetch();
+      });
+
+      await act(async () => {
+        mountFetch.reject(new Error("Network failure"));
+        await mountFetch.promise.catch(() => undefined);
+      });
+
+      expect(setEntities).toHaveBeenCalledOnce();
+      expect(setEntities).toHaveBeenCalledWith([testInvoice2]);
+      expect(result.current.isError).toBe(false);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it("keeps a stable identity across renders", async () => {
+      createMockStoreState({hasHydrated: true});
+      mockFetchInvoices.mockResolvedValue({success: true, data: [testInvoice1]});
+
+      const {result, rerender} = renderHook(() => useInvoices());
+      const initialRefetch = result.current.refetch;
+
+      rerender();
+
+      expect(result.current.refetch).toBe(initialRefetch);
+      await waitFor(() => {
+        expect(mockFetchInvoices).toHaveBeenCalledOnce();
+      });
     });
   });
 });
