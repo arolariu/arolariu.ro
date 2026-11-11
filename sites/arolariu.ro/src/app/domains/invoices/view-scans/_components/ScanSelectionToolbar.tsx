@@ -91,12 +91,19 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   }
 
   const deleteLabel = t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)});
+  const createLabel =
+    selectedScans.length > 1
+      ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices)
+      : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice);
 
   return (
     <div className={styles["toolbar"]}>
       <div className={styles["toolbarContent"]}>
         <div className={styles["toolbarLeft"]}>
-          <span className={styles["selectedCount"]}>
+          <span
+            role='status'
+            aria-atomic='true'
+            className={styles["selectedCount"]}>
             <motion.span
               key={selectedScans.length}
               initial={{scale: 1.2}}
@@ -143,7 +150,8 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                           variant='destructive'
                           size='sm'
                           disabled={isDeleting}
-                          aria-label={deleteLabel}>
+                          aria-label={deleteLabel}
+                          className={styles["deleteButton"]}>
                           <TbTrash aria-hidden />
                           <span className={styles["hiddenMobile"]}>{deleteLabel}</span>
                         </Button>
@@ -178,24 +186,18 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                 render={
                   <Button
                     onClick={onCreateInvoice}
+                    aria-label={createLabel}
                     className={styles["createButton"]}>
-                    <TbFileInvoice className={styles["createIcon"]} />
-                    <span className={styles["hiddenMobile"]}>
-                      {selectedScans.length > 1
-                        ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices)
-                        : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}
-                    </span>
-                    <span className={styles["visibleMobile"]}>
-                      {t((m) => m.pages.invoices.viewScans.toolbar.createInvoice).split(" ")[0]}
-                    </span>
+                    <TbFileInvoice
+                      aria-hidden
+                      className={styles["createIcon"]}
+                    />
+                    <span className={styles["hiddenMobile"]}>{createLabel}</span>
+                    <span className={styles["visibleMobile"]}>{createLabel.split(" ")[0]}</span>
                   </Button>
                 }
               />
-              <TooltipContent>
-                {selectedScans.length > 1
-                  ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices)
-                  : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}
-              </TooltipContent>
+              <TooltipContent>{createLabel}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
