@@ -24,6 +24,7 @@
 /// 12. Border color reset (uses `--border` CSS variable)
 /// 13. Optimized text rendering on `<html>`
 /// 14. Minimum viewport height (`100dvh`)
+/// 15. Landscape safe-area inline insets (required by `viewport-fit=cover`)
 /// ===========================================
 
 // 1. Use border-box sizing
@@ -122,4 +123,12 @@ html {
 // 14. Minimum viewport height
 body {
   min-height: 100dvh;
+}
+
+// 15. Landscape safe-area inline insets.
+// `viewport-fit=cover` removes the browser's automatic notch letterboxing, so keep page content
+// inset from the left/right safe areas. Resolves to 0 wherever the device has no such insets.
+body {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }

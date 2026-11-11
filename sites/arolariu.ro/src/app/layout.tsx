@@ -15,7 +15,7 @@ import "@arolariu/components/styles.css";
 
 import "./globals.scss";
 
-export {metadata} from "@/metadata";
+export {metadata, viewport} from "@/metadata";
 
 /**
  * The root layout of the website that wraps the entire app.
