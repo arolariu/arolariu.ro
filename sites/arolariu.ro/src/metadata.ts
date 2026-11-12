@@ -18,7 +18,7 @@
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-metadata}
  */
 
-import type {Metadata} from "next";
+import type {Metadata, Viewport} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import type {Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
@@ -307,6 +307,23 @@ export const metadata: Metadata = {
     "msapplication-config": "/browserconfig.xml",
     "format-detection": "telephone=no",
   },
+};
+
+/**
+ * Root viewport configuration exported by the root layout.
+ *
+ * @remarks
+ * `viewportFit: "cover"` lets the page render under the device safe areas. iOS Safari 26 ignores
+ * `theme-color` and only tints its floating toolbars from page content when the viewport covers the
+ * display; without it, Safari paints its own light chrome below the footer. Landscape safe-area
+ * insets are restored in CSS (`body` and the fixed mobile header).
+ *
+ * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-viewport}
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 /**

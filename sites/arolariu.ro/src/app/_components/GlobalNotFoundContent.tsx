@@ -2,6 +2,7 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import {SITE_URL} from "@/lib/utils.generic";
 import {buttonVariants, cn} from "@arolariu/components";
 import Link from "next/link";
 import QRCode from "react-qr-code";
@@ -26,7 +27,7 @@ export interface NotFoundContentCopy {
   falsePositive: string;
   /** Label for the "submit error report" action, linking home. */
   submitErrorButton: string;
-  /** Label for the "return to homepage" action. */
+  /** Label for the "return to homepage" action, linking to the deployment's `SITE_URL`. */
   returnButton: string;
 }
 
@@ -56,6 +57,9 @@ export interface NotFoundContentProps {
  * available outside a real Next.js request. All request-derived data
  * (QR payload, localized copy) is resolved once by {@link NotFound} and
  * passed in as plain, typed props.
+ *
+ * The "return to homepage" action targets the deployment's configured `SITE_URL` (falling back to `/` when it is unset) so that
+ * development, preview and local environments never send visitors to the production origin.
  *
  * @param props - Component props.
  * @param props.qrCodeData - Pre-serialized JSON diagnostics payload for the QR code.
@@ -102,7 +106,7 @@ export function GlobalNotFoundContent({qrCodeData, copy}: Readonly<NotFoundConte
             </Link>
             <Link
               className={cn(buttonVariants(), styles["actionButtonDefault"])}
-              href='https://arolariu.ro/'>
+              href={`${SITE_URL}/`}>
               {copy.returnButton}
             </Link>
           </div>

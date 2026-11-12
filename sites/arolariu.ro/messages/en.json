@@ -3375,6 +3375,12 @@
         },
         "title": "Welcome, {name}!",
         "viewInvoicesIsland": {
+          "loadError": {
+            "description": "Something went wrong while fetching your invoices. Check your connection and try again.",
+            "retry": "Try again",
+            "retrying": "Retrying...",
+            "title": "We couldn't load your invoices"
+          },
           "tabs": {
             "invoices": "Invoices",
             "liveAnalysis": "Live analysis",

@@ -12,7 +12,21 @@
 
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {describe, expect, test} from "vitest";
-import {createMetadata, metadata} from "./metadata";
+import {createMetadata, metadata, viewport} from "./metadata";
+
+// ============================================================================
+// Viewport Tests
+// ============================================================================
+
+describe("viewport", () => {
+  test("extends the page under the device safe areas so iOS Safari can tint its toolbars", () => {
+    expect(viewport).toEqual({
+      width: "device-width",
+      initialScale: 1,
+      viewportFit: "cover",
+    });
+  });
+});
 
 // ============================================================================
 // Base Metadata Tests

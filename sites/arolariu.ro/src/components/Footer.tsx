@@ -275,6 +275,11 @@ function Footer(): React.JSX.Element {
           </span>
         </div>
       </div>
+      {/* Sticky sampler: iOS Safari tints its bottom toolbar with this color when the page end is reached. */}
+      <div
+        className='footer__toolbar-tint'
+        aria-hidden='true'
+      />
     </footer>
   );
 }

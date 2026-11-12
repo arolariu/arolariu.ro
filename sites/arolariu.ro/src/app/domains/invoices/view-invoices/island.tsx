@@ -15,6 +15,7 @@
  * - Dialog management via `DialogProvider` context for modals/sheets
  * - Bulk actions toolbar for multi-select operations
  * - Loading skeleton during initial data fetch from Zustand store
+ * - Retry alert in place of the tabs when the invoices fetch fails
  * - Framer Motion transitions for smooth tab switching
  *
  * **Context Providers**:
@@ -42,6 +43,7 @@ import {DialogProvider} from "../_contexts/DialogContext";
 import {useInvoices} from "../_hooks/invoice";
 import BulkActionsToolbar from "./_components/BulkActionsToolbar";
 import InvoicesHeader from "./_components/InvoicesHeader";
+import InvoicesLoadError from "./_components/InvoicesLoadError";
 import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
@@ -65,6 +67,12 @@ import styles from "./island.module.scss";
  * - IndexedDB hydration is in progress (first render)
  * - Store hasn't marked `hasHydrated: true` yet
  * - Typically completes in 50-200ms on modern devices
+ *
+ * **Error State**: When the latest invoices fetch fails, the header stays visible and
+ * {@link InvoicesLoadError} replaces the tabs with a retry button wired to
+ * `useInvoices().refetch`. Cached invoices are not shown alongside the error, because
+ * the persisted store may still hold data from an earlier session. A successful retry
+ * restores the tabs with fresh data.
  *
  * **Tab Structure**:
  * 1. **Invoices**: Default tab showing table/grid view with search, filters, pagination
@@ -93,6 +101,7 @@ import styles from "./island.module.scss";
  *
  * @returns Interactive JSX with tab navigation, invoice views, and dialog system.
  * During loading, returns skeleton UI with header, tabs, and card placeholders.
+ * When the fetch fails, returns the header with a retry alert instead of the tabs.
  * After loading, returns full invoice management interface with three tab views
  * wrapped in dialog context for modal/sheet operations.
  *
@@ -134,13 +143,14 @@ import styles from "./island.module.scss";
  * @see {@link RenderStatisticsView} - Analytics dashboard view
  * @see {@link RenderGenerativeView} - AI-powered analysis view
  * @see {@link BulkActionsToolbar} - Floating toolbar for multi-select actions
+ * @see {@link InvoicesLoadError} - Retry alert shown when the invoices fetch fails
  * @see {@link DialogContainer} - Renders active modal/sheet dialogs
  * @see RFC 1003 - Internationalization system (next-intl usage)
  * @see RFC 1005 - State management (Zustand patterns)
  * @see RFC 2001 - Domain-Driven Design (invoices bounded context)
  */
-export default function RenderViewInvoicesScreen(): React.JSX.Element | null {
-  const {invoices, isLoading, isError} = useInvoices();
+export default function RenderViewInvoicesScreen(): React.JSX.Element {
+  const {invoices, isLoading, isError, refetch} = useInvoices();
   const t = useTranslations();
 
   if (isLoading) {
@@ -161,9 +171,18 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element | null {
     );
   }
 
-  // TODO: treat isError case with error message and retry button instead of empty fragment
   if (isError) {
-    return null;
+    return (
+      <DialogProvider>
+        <motion.section>
+          <InvoicesHeader />
+          <motion.article>
+            <InvoicesLoadError onRetry={refetch} />
+          </motion.article>
+        </motion.section>
+        <DialogContainer />
+      </DialogProvider>
+    );
   }
 
   return (

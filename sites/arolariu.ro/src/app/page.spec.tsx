@@ -107,6 +107,29 @@ test.describe("Homepage @homepage", () => {
       },
     );
 
+    test(
+      tagged(
+        "should not scroll horizontally on mobile viewport",
+        TEST_TYPE_TAGS.E2E,
+        BROWSER_TIER_TAGS.CROSS_BROWSER,
+        BROWSER_TIER_TAGS.RESPONSIVE,
+      ),
+      async ({page}) => {
+        await page.setViewportSize({width: 390, height: 844});
+        await expect(page.locator("main")).toBeVisible();
+
+        // Decorative orbs bleed past the screen edge; that bleed must be clipped, not become pannable page width.
+        const overflow = await page.evaluate(() => {
+          const root = document.documentElement;
+          window.scrollTo({left: root.scrollWidth, behavior: "instant"});
+          return {clientWidth: root.clientWidth, scrollWidth: root.scrollWidth, scrollX: window.scrollX};
+        });
+
+        expect(overflow.scrollWidth).toBe(overflow.clientWidth);
+        expect(overflow.scrollX).toBe(0);
+      },
+    );
+
     test(tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({page}) => {
       await page.setViewportSize({width: 768, height: 1024});
 

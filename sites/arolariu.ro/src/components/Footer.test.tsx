@@ -25,4 +25,14 @@ describe("Footer", () => {
     expect(screen.queryByRole("link", {name: "arolariu.ro"})).not.toBeInTheDocument();
     expect(screen.getByRole("link", {name: "cv.arolariu.ro"})).toHaveAttribute("href", "https://cv.arolariu.ro");
   });
+
+  it("ends with a decorative toolbar tint strip hidden from assistive technology", () => {
+    render(<Footer />);
+
+    const tint = screen.getByRole("contentinfo").lastElementChild;
+
+    expect(tint).toHaveClass("footer__toolbar-tint");
+    expect(tint).toHaveAttribute("aria-hidden", "true");
+    expect(tint).toBeEmptyDOMElement();
+  });
 });

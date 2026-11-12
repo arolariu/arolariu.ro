@@ -126,12 +126,12 @@ function Commander(): React.JSX.Element {
     canvas.style.zIndex = "9999";
     canvas.style.pointerEvents = "none";
 
-    globalThis.document.body.append(canvas);
-
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       return;
     }
+
+    globalThis.document.body.append(canvas);
 
     const matrix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%";
     const fontSize = 10;

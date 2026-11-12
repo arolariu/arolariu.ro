@@ -1,7 +1,7 @@
 /// ===========================================
 /// BASE ELEMENT STYLES
 /// ===========================================
-/// Default styles for HTML elements: body, headings (h1-h6),
+/// Default styles for HTML elements: the root (html), body, headings (h1-h6),
 /// paragraphs, links, code/pre, blockquote, hr, and text selection.
 ///
 /// Uses design token functions (`font-size()`, `space()`, `radius()`)
@@ -21,6 +21,18 @@
 /// @see base/_globals.scss — CSS custom properties referenced here
 /// ===========================================
 @use "../abstracts" as *;
+
+// ===========================================
+// ROOT
+// ===========================================
+// The viewport takes its overflow from <html> once <html> sets one, so body's own
+// `overflow-x: clip` stays on body and clips decorative bleed at the screen edge.
+// Otherwise body's clip propagates to the viewport as `hidden`, which mobile browsers
+// still widen and pan into. No `hidden` fallback here: it would make body a scroll
+// container and break sticky positioning.
+html {
+  overflow-x: clip;
+}
 
 // ===========================================
 // BODY
