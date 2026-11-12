@@ -36,6 +36,18 @@ type ScanSelectionToolbarProps = {
 };
 
 /**
+ * Refreshes the server-rendered scan list without letting a router failure
+ * contradict the deletion outcome already reported to the user.
+ */
+function refreshScanList(router: ReturnType<typeof useRouter>): void {
+  try {
+    router.refresh();
+  } catch (error) {
+    console.error("Failed to refresh the scan list after deleting scans:", error);
+  }
+}
+
+/**
  * Toolbar that appears when scans are selected.
  * Provides bulk actions like create invoice, delete, and deselect all.
  */
@@ -76,7 +88,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
       }
 
       clearSelection(); // Clear the selection after deletion
-      router.refresh(); // Refresh to update the scan list
+      refreshScanList(router);
     } catch (error) {
       console.error("Failed to delete scans:", error);
       notify.error(t((m) => m.pages.invoices.viewScans.toolbar.delete.error));
