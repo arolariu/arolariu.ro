@@ -528,6 +528,45 @@ describe("ClassificationPicker", () => {
     expect(screen.getByRole("option", {name: new RegExp(RESULT_A.code)})).toHaveAttribute("aria-selected", "false");
   });
 
+  it("does not select when a newer, shorter result set leaves the active option out of range", async () => {
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+    mockSearch.mockResolvedValueOnce({success: true, data: [RESULT_A, RESULT_B]}).mockResolvedValueOnce({success: true, data: [RESULT_A]});
+
+    render(
+      <ClassificationPicker
+        system={SYSTEM}
+        value={null}
+        onChange={onChange}
+        label='Test'
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox");
+    await user.type(combobox, "ju");
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    // Refine the query, then highlight the second (stale) option while the replacement search is debounced.
+    await user.type(combobox, "i");
+    await user.keyboard("{ArrowDown}{ArrowDown}");
+    expect(screen.getByRole("option", {name: new RegExp(RESULT_B.code)})).toHaveAttribute("aria-selected", "true");
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+
+    await user.keyboard("{Enter}");
+
+    expect(mockSearch).toHaveBeenCalledTimes(2);
+    expect(mockSearch).toHaveBeenLastCalledWith({system: SYSTEM, query: "jui"});
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(screen.getByRole("option", {name: new RegExp(RESULT_A.code)})).toHaveAttribute("aria-selected", "false");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("ignores keys other than Enter and Space on a focused option", async () => {
     const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
     const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
