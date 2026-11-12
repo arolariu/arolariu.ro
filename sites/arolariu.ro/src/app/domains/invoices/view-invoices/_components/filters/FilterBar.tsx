@@ -179,6 +179,7 @@ export default function FilterBar({
                 <Button
                   variant='outline'
                   size='sm'
+                  aria-label={t((m) => m.forms.invoices.filters.button)}
                   className={styles["filterButton"]}>
                   <TbFilter className={styles["filterIcon"]} />
                   {activeFilterCount > 0 && (
@@ -268,6 +269,7 @@ export default function FilterBar({
                   <Button
                     variant={viewMode === "table" ? "default" : "ghost"}
                     size='sm'
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.invoicesView.viewModes.table)}
                     className={styles["viewButtonLeft"]}
                     // eslint-disable-next-line react/jsx-no-bind -- inline mode setter
                     onClick={() => onViewModeChange("table")}>
@@ -284,6 +286,7 @@ export default function FilterBar({
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size='sm'
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.invoicesView.viewModes.grid)}
                     className={styles["viewButtonRight"]}
                     // eslint-disable-next-line react/jsx-no-bind -- inline mode setter
                     onClick={() => onViewModeChange("grid")}>
