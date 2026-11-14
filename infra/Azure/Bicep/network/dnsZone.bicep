@@ -1,251 +1,105 @@
-// =====================================================================================
-// Azure DNS Zone - Authoritative DNS for arolariu.ro Domain
-// =====================================================================================
-// This module provisions an Azure DNS Zone that serves as the authoritative DNS
-// for the arolariu.ro domain. The zone contains all DNS records required for:
-// - Website routing (A, CNAME records pointing to Front Door)
-// - SSL certificate validation (TXT records for domain verification)
-// - Email authentication (SPF, DKIM, DMARC records)
-// - Third-party service verification (Clerk, Google, etc.)
-//
-// Record Types Deployed:
-// - A Record (@): Apex domain to Front Door (ALIAS)
-// - CNAME Records: www and Clerk subdomains (api, dev, docs, cv, status are bound in bindings/)
-// - TXT Records: Domain validation tokens, SPF, DKIM
-// - MX Records: Email routing (if configured)
-//
-// DNSSEC:
-// - DNSSEC is enabled for cryptographic DNS security
-// - Prevents DNS spoofing and cache poisoning attacks
-//
-// Front Door Integration:
-// - Validation tokens are passed from Front Door deployment
-// - TXT records (_dnsauth.*) required for managed certificate issuance
-// - A record uses target resource ID for ALIAS functionality
-//
-// Third-Party Integrations:
-// - Clerk (authentication): CNAME records for custom auth domain
-// - Google (verification): TXT record for Search Console
-// - Email providers: SPF and DKIM records
-//
-// TTL Settings:
-// - 3600 seconds (1 hour) for most records
-// - Lower TTL during migrations for faster propagation
-//
-// See: network/azureFrontDoor.bicep (provides validation tokens)
-// See: bindings/deploymentFile.bicep (custom domain bindings)
-// =====================================================================================
-
 targetScope = 'resourceGroup'
 
-metadata description = 'Azure DNS Zone with DNSSEC and dynamic Front Door integration'
-metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
-metadata version = '2.0.0'
-
-@description('The name of the Azure DNS Zone resource.')
-param dnsZoneName string
-
-@description('The date when the deployment is executed.')
-param dnsZoneDeploymentDate string
-
-@description('The name of the Azure Front Door profile.')
-param frontDoorName string
-
-@description('The FQDN of the Azure Front Door production endpoint.')
-param frontDoorProductionFqdn string
-
-@description('The Azure Front Door APEX custom domain validation token.')
-param frontDoorApexCustomDomainValidationToken string
-
-@description('The Azure Front Door WWW custom domain validation token.')
-param frontDoorWwwCustomDomainValidationToken string
+metadata description = 'Prepares the public DNS zone, DNSSEC, and Azure-owned records before domain completion.'
 
 import { createTags } from '../constants/tags.bicep'
-var commonTags = createTags('network', dnsZoneDeploymentDate)
+import { dnsRecord } from '../types/dns.type.bicep'
 
-resource frontDoor 'Microsoft.Cdn/profiles@2025-09-01-preview' existing = { name: frontDoorName }
-resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-09-01-preview' existing = {
-  parent: frontDoor
-  name: 'production'
-}
+@description('The public DNS zone name.')
+param dnsZoneName string
 
-resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
+@description('The audit timestamp used for resource tags.')
+param dnsZoneDeploymentDate string
+
+@description('The actual globally unique Front Door endpoint resource ID.')
+param frontDoorEndpointId string
+
+@description('The actual Front Door endpoint hostname.')
+param frontDoorProductionFqdn string
+
+@description('The apex Front Door ownership-verification token.')
+param frontDoorApexCustomDomainValidationToken string
+
+@description('The www Front Door ownership-verification token.')
+param frontDoorWwwCustomDomainValidationToken string
+
+@description('Relative application CNAME/TXT records resolved from actual site resources.')
+param applicationDnsRecords dnsRecord[]
+
+resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
   name: dnsZoneName
   location: 'Global'
   properties: { zoneType: 'Public' }
-
-  // DNSSEC configuration for the DNS zone
-  resource dnssecResource 'dnssecConfigs@2023-07-01-preview' = { name: 'default' }
-
-  // Apex A record pointing to Azure Front Door production endpoint
-  resource apexRecord 'A@2023-07-01-preview' = {
-    name: '@'
-    properties: {
-      TTL: 3600 // 1 hour
-      targetResource: {
-        id: frontDoorProductionEndpoint.id
-      }
-    }
-  }
-
-  // WWW CNAME record pointing to Azure Front Door
-  resource wwwRecord 'CNAME@2023-07-01-preview' = {
-    name: 'www'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: frontDoorProductionFqdn
-      }
-    }
-  }
-
-  // Front door TXT record for domain verification - apex
-  resource frontDoorApexTxtRecord 'TXT@2023-07-01-preview' = {
-    name: '_dnsauth'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            frontDoorApexCustomDomainValidationToken
-          ]
-        }
-      ]
-    }
-  }
-
-  // Front door TXT record for domain verification - www
-  resource frontDoorWwwTxtRecord 'TXT@2023-07-01-preview' = {
-    name: '_dnsauth.www'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            frontDoorWwwCustomDomainValidationToken
-          ]
-        }
-      ]
-    }
-  }
-
-  // Clerk CNAME records for Auth-as-a-Service domain verification
-  resource clerkAuthCnameRecord 'CNAME@2023-07-01-preview' = {
-    name: 'clerk'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: 'frontend-api.clerk.services'
-      }
-    }
-  }
-
-  // Clerk CNAME record pointing to Clerk accounts service
-  resource clerkAccountsCnameRecord 'CNAME@2023-07-01-preview' = {
-    name: 'accounts'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: 'accounts.clerk.services'
-      }
-    }
-  }
-
-  // Clerk CNAME record pointing to Clerk mail service
-  resource clerkMailCnameRecord 'CNAME@2023-07-01-preview' = {
-    name: 'clkmail'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: '<your-clerk-mail-service-cname>' // Replace with actual CNAME for Clerk mail service
-      }
-    }
-  }
-
-  // Clerk CNAME records for mail key verification
-  resource clerkMailKeyCnameRecord1 'CNAME@2023-07-01-preview' = {
-    name: 'clk._domainkey'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: '<your-clerk-mail-service-cname>' // Replace with actual CNAME for Clerk mail service
-      }
-    }
-  }
-
-  resource clerkMailKeyCnameRecord2 'CNAME@2023-07-01-preview' = {
-    name: 'clk2._domainkey'
-    properties: {
-      TTL: 3600
-      CNAMERecord: {
-        cname: '<your-clerk-mail-service-cname>' // Replace with actual CNAME for Clerk mail service
-      }
-    }
-  }
-
-  // Resend DKIM and SPF records for Resend email service
-  resource resendMxRecord 'MX@2023-07-01-preview' = {
-    name: 'send.mail'
-    properties: {
-      TTL: 3600
-      MXRecords: [
-        {
-          preference: 10
-          exchange: '<your-amazon-ses-endpoint>' // Replace with actual Amazon SES endpoint
-        }
-      ]
-    }
-  }
-
-  resource resendTxtRecord1 'TXT@2023-07-01-preview' = {
-    name: 'send.mail'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            'v=spf1 include:amazonses.com ~all'
-          ]
-        }
-      ]
-    }
-  }
-
-  resource resendTxtRecord2 'TXT@2023-07-01-preview' = {
-    name: 'resend._domainkey.mail'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            'v=DKIM1; k=rsa; p=<your-dkim-public-key>' // Replace with actual DKIM public key
-          ]
-        }
-      ]
-    }
-  }
-
-  // DMARC record for email security
-  resource dmarcTxtRecord 'TXT@2023-07-01-preview' = {
-    name: '_dmarc'
-    properties: {
-      TTL: 3600
-      TXTRecords: [
-        {
-          value: [
-            'v=DMARC1; p=none; rua=mailto:admin@arolariu.ro'
-          ]
-        }
-      ]
-    }
-  }
-
-  tags: union(commonTags, {
-    displayName: 'DNS Zone for arolariu.ro'
-    resourceType: 'DNS Zone'
-  })
+  tags: createTags('network', dnsZoneDeploymentDate)
 }
 
-// Output the DNS zone name servers for domain configuration
-output dnsZoneNameServers array = dnsZone.properties.nameServers
+resource dnssecResource 'Microsoft.Network/dnsZones/dnssecConfigs@2023-07-01-preview' = {
+  parent: dnsZone
+  name: 'default'
+}
+
+resource apexRecord 'Microsoft.Network/dnsZones/A@2018-05-01' = {
+  parent: dnsZone
+  name: '@'
+  properties: {
+    TTL: 3600
+    targetResource: { id: frontDoorEndpointId }
+  }
+}
+
+resource wwwRecord 'Microsoft.Network/dnsZones/CNAME@2018-05-01' = {
+  parent: dnsZone
+  name: 'www'
+  properties: {
+    TTL: 3600
+    CNAMERecord: { cname: frontDoorProductionFqdn }
+  }
+}
+
+resource apexVerification 'Microsoft.Network/dnsZones/TXT@2018-05-01' = {
+  parent: dnsZone
+  name: '_dnsauth'
+  properties: {
+    TTL: 3600
+    TXTRecords: [{ value: [frontDoorApexCustomDomainValidationToken] }]
+  }
+}
+
+resource wwwVerification 'Microsoft.Network/dnsZones/TXT@2018-05-01' = {
+  parent: dnsZone
+  name: '_dnsauth.www'
+  properties: {
+    TTL: 3600
+    TXTRecords: [{ value: [frontDoorWwwCustomDomainValidationToken] }]
+  }
+}
+
+resource applicationCnames 'Microsoft.Network/dnsZones/CNAME@2018-05-01' = [
+  for record in filter(applicationDnsRecords, record => record.type == 'CNAME'): {
+    parent: dnsZone
+    name: record.name
+    properties: {
+      TTL: 3600
+      CNAMERecord: { cname: record.expectedValues[0] }
+    }
+  }
+]
+
+resource applicationVerification 'Microsoft.Network/dnsZones/TXT@2018-05-01' = [
+  for record in filter(applicationDnsRecords, record => record.type == 'TXT'): {
+    parent: dnsZone
+    name: record.name
+    properties: {
+      TTL: 3600
+      TXTRecords: [{ value: record.expectedValues }]
+    }
+  }
+]
+
 output dnsZoneName string = dnsZone.name
+output dnsZoneId string = dnsZone.id
+output dnsZoneNameServers string[] = dnsZone.properties.nameServers
+output dnsZoneDsRecords string[] = flatten(map(
+  dnssecResource.properties.signingKeys ?? [],
+  key => map(key.delegationSignerInfo ?? [], signer => toUpper(signer.record))
+))

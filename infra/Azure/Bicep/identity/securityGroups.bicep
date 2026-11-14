@@ -1,5 +1,5 @@
 targetScope = 'resourceGroup'
-extension 'br:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0:0.1.9-preview'
+extension 'br:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0:1.0.0'
 
 // =====================================================================================
 // Azure AD Security Groups for Just-In-Time (JIT) Access

@@ -70,41 +70,11 @@ var commonTags resourceTags = {
 }
 
 resource apiWebsite 'Microsoft.Web/sites@2025-03-01' existing = { name: apiWebsiteHostname }
-resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
-
-// Add CNAME record for domain binding
-resource apiCnameRecord 'Microsoft.Network/dnsZones/CNAME@2023-07-01-preview' = {
-  parent: dnsZone
-  name: 'api'
-  properties: {
-    TTL: 3600 // 1 hour
-    CNAMERecord: {
-      cname: apiWebsite.properties.defaultHostName // Use the default hostname of the App Service
-    }
-  }
-}
-
-// Add TXT record for domain verification
-resource apiTxtRecord 'Microsoft.Network/dnsZones/TXT@2023-07-01-preview' = {
-  parent: dnsZone
-  name: 'asuid.api'
-  properties: {
-    TTL: 3600 // 1 hour
-    TXTRecords: [
-      {
-        value: [
-          apiWebsite.properties.customDomainVerificationId
-        ]
-      }
-    ]
-  }
-}
 
 // Custom domain binding for api.arolariu.ro
 resource apiCustomDomain 'Microsoft.Web/sites/hostNameBindings@2025-03-01' = {
-  name: 'api.arolariu.ro'
+  name: 'api.${dnsZoneName}'
   parent: apiWebsite
-  dependsOn: [apiCnameRecord, apiTxtRecord]
   properties: {
     hostNameType: 'Verified'
     sslState: 'Disabled' // Initially disabled, will be enabled after certificate creation
@@ -120,10 +90,10 @@ resource apiManagedCertificate 'Microsoft.Web/certificates@2025-03-01' = {
   dependsOn: [apiCustomDomain]
   properties: {
     serverFarmId: apiWebsiteAppServicePlanId
-    canonicalName: 'api.arolariu.ro'
+    canonicalName: 'api.${dnsZoneName}'
   }
   tags: union(commonTags, {
-    displayName: 'Development Managed Certificate'
+    displayName: 'API Managed Certificate'
     resourceType: 'SSL Certificate'
   })
 }

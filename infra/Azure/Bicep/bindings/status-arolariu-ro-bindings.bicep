@@ -45,23 +45,10 @@ param dnsZoneName string
 param statusWebsiteName string
 
 resource statusWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: statusWebsiteName }
-resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
-
-// CNAME record for status.arolariu.ro
-resource statusCnameRecord 'Microsoft.Network/dnsZones/CNAME@2023-07-01-preview' = {
-  parent: dnsZone
-  name: 'status'
-  properties: {
-    TTL: 3600
-    CNAMERecord: {
-      cname: statusWebsite.properties.defaultHostname
-    }
-  }
-}
 
 // Custom domain for status.arolariu.ro with managed certificate
 resource statusCustomDomain 'Microsoft.Web/staticSites/customDomains@2025-03-01' = {
   parent: statusWebsite
-  name: 'status.arolariu.ro'
-  dependsOn: [statusCnameRecord]
+  name: 'status.${dnsZoneName}'
+  properties: { validationMethod: 'cname-delegation' }
 }

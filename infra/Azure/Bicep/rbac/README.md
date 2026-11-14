@@ -1,119 +1,106 @@
 # RBAC Module — Resource-Scoped Role Assignments
 
-This module manages Role-Based Access Control (RBAC) assignments for managed identities across the arolariu.ro platform. All role
-assignments are **scoped to individual Azure resources** (not the resource group) following the principle of least privilege.
+Resource-scoped grants for the frontend, backend, and infrastructure identities. Database-contained SQL users are a separate operational
+task, not an Azure management-plane role assignment.
 
 ## Architecture
 
-RBAC assignments are co-located with the resources they protect. Each file assigns roles scoped to a single Azure resource type using the
-`existing` keyword and `scope:` property. Role definition GUIDs are imported from `constants/roles.bicep` (single source of truth).
+The facade invokes individual RBAC files after their resource/identity outputs exist. Role identifiers come from `constants/roles.bicep`;
+assignments use deterministic resource/principal/role GUIDs and `ServicePrincipal` principal types.
 
-```
+```text
 facade.bicep
-  ├── identity/ → creates UAMIs
-  ├── storage/  → creates resources
-  ├── ...
-  └── rbac/     → assigns roles scoped to each resource (after creation)
+  -> identity and resource modules
+  -> resource-scoped RBAC files
+  -> sites and their runtime identities
 ```
 
 ## Module Files
 
-| File                            | Target Resource          | Assignments                                        |
-| ------------------------------- | ------------------------ | -------------------------------------------------- |
-| `storage-rbac.bicep`            | Storage Account          | 9 (frontend/backend/infra)                         |
-| `container-registry-rbac.bicep` | Container Registry       | 4 (frontend/backend/infra)                         |
-| `key-vault-rbac.bicep`          | Key Vault                | 3 (backend/infra)                                  |
-| `app-configuration-rbac.bicep`  | App Configuration        | 3 (frontend/backend/infra)                         |
-| `sql-server-rbac.bicep`         | SQL Server               | 1 (backend)                                        |
-| `cosmos-db-rbac.bicep`          | Cosmos DB                | 1 (backend)                                        |
-| `openai-rbac.bicep`             | Azure OpenAI             | 1 (backend)                                        |
-| `websites-rbac.bicep`           | App Services (looped)    | 1 per web app (infra)                              |
-| `sql-rbac-uami.sql`             | SQL database-level roles | N/A                                                |
-| **Total**                       |                          | **22 fixed + 1 per web app (Website Contributor)** |
+| File                            | Scope and purpose                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `storage-rbac.bicep`            | Storage-account blob/queue/table data roles.                                 |
+| `container-registry-rbac.bicep` | Registry push/pull.                                                          |
+| `app-configuration-rbac.bicep`  | Store readers/owners.                                                        |
+| `key-vault-rbac.bicep`          | Vault metadata/secret access.                                                |
+| `cosmos-db-rbac.bicep`          | Native SQL data-contributor grant at `/dbs/primary`.                         |
+| `ai-rbac.bicep`                 | Backend Cognitive Services User and Azure AI User on the account.            |
+| `websites-rbac.bicep`           | Infrastructure Website Contributor per App Service.                          |
+| `app-insights-rbac.bicep`       | Monitoring access at the component.                                          |
+| `sql-rbac-uami.sql`             | Restored unchanged manual reference, not an idempotent executable bootstrap. |
+
+The inline `sql-server-rbac.bicep` deployment script has been removed. There is no management-plane SQL DB Contributor substitute: that role
+would not establish backend database authentication.
 
 ## Identity Roles Summary
 
 ### Frontend Identity (read-heavy, minimal write)
 
-| Resource           | Role                  | Purpose                             |
-| ------------------ | --------------------- | ----------------------------------- |
-| Storage Account    | Blob Data Contributor | Read + write user-uploaded invoices |
-| Storage Account    | Queue Data Reader     | Status polling                      |
-| Storage Account    | Table Data Reader     | Feature flags, metadata             |
-| App Configuration  | Data Reader           | Read settings                       |
-| Container Registry | ACR Pull              | Pull container images               |
+| Resource             | Grant                                                        |
+| -------------------- | ------------------------------------------------------------ |
+| Storage              | Blob Data Contributor, Queue Data Reader, Table Data Reader. |
+| ACR                  | Pull.                                                        |
+| App Configuration    | Data Reader.                                                 |
+| Application Insights | Existing scoped monitoring access.                           |
 
 ### Backend Identity (data plane access)
 
-| Resource           | Role                   | Purpose                 |
-| ------------------ | ---------------------- | ----------------------- |
-| Storage Account    | Blob Data Owner        | Full blob access + ACL  |
-| Storage Account    | Queue Data Contributor | Async processing        |
-| Storage Account    | Table Data Contributor | Entity CRUD             |
-| SQL Server         | SQL DB Contributor     | Database operations     |
-| Cosmos DB          | Data Operator          | Document CRUD           |
-| App Configuration  | Data Owner             | Read + write settings   |
-| Key Vault          | Secrets User           | Read secrets at runtime |
-| Azure OpenAI       | OpenAI User            | API inference calls     |
-| Container Registry | ACR Pull               | Pull container images   |
+| Resource                      | Grant                                                            |
+| ----------------------------- | ---------------------------------------------------------------- |
+| Storage                       | Blob Data Owner, Queue Data Contributor, Table Data Contributor. |
+| Cosmos                        | Native Data Contributor at `/dbs/primary`.                       |
+| App Configuration / Key Vault | Data Owner / Secrets User.                                       |
+| AI Foundry                    | Cognitive Services User, Azure AI User.                          |
+| ACR / monitoring              | Existing scoped pull/monitoring access.                          |
+
+SQL reader/writer/DDL memberships require separately approved contained-user provisioning and real backend login proof; Bicep no longer
+creates or verifies those users.
 
 ### Infrastructure Identity (CI/CD)
 
-| Resource           | Role                | Purpose                     |
-| ------------------ | ------------------- | --------------------------- |
-| Storage Account    | Blob Data Reader    | Deployment verification     |
-| Storage Account    | Queue Data Reader   | Deployment verification     |
-| Storage Account    | Table Data Reader   | Deployment verification     |
-| App Configuration  | Data Reader         | Deployment settings         |
-| Key Vault          | Reader              | Discover metadata           |
-| Key Vault          | Secrets User        | Read secrets for deployment |
-| Container Registry | ACR Push            | Push built images           |
-| Container Registry | ACR Pull            | Pull base images            |
-| App Services       | Website Contributor | Deploy web apps (per app)   |
+| Resource          | Grant                                                            |
+| ----------------- | ---------------------------------------------------------------- |
+| Storage           | Blob/queue/table readers.                                        |
+| ACR               | Push and pull.                                                   |
+| App Configuration | Permanent Data Owner.                                            |
+| Key Vault         | Metadata Reader and permanent Secrets Officer.                   |
+| SQL               | Permanent Entra administrator configured by the server resource. |
+| Sites             | Website Contributor per app.                                     |
+
+These are not temporary bootstrap-only identities/roles. No subscription-wide Owner/Contributor assignment is added.
 
 ## How to Add a New Role Assignment
 
-1. Identify the target resource and which identity needs access
-2. Add the role GUID to `constants/roles.bicep` if not already present
-3. Add the assignment to the appropriate `rbac/<resource>-rbac.bicep` file
-4. Use this pattern:
+Obtain approval for the exact identity, role, and resource scope. Add a shared role constant if necessary and follow the existing pattern:
 
 ```bicep
-import { myNewRole } from '../constants/roles.bicep'
-
-resource myAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: targetResource  // ALWAYS scope to the specific resource
-  name: guid(targetResource.id, principalId, myNewRole)
+resource assignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: targetResource
+  name: guid(targetResource.id, principalId, roleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', myNewRole)
     principalId: principalId
     principalType: 'ServicePrincipal'
-    description: 'Identity: purpose of this access'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleId)
   }
 }
 ```
 
 ## Cleanup: Remove Old RG-Scoped Assignments
 
-After deploying the new resource-scoped RBAC, remove the orphaned resource-group-level assignments:
+Production permission migration is not part of this fresh definition. Do not automatically delete old assignments or infer that all
+resource-group-scoped roles are redundant. Any cleanup needs an exact-ID review and separate authorization.
 
-```bash
-# List all RG-scoped role assignments for managed identities
-az role assignment list --resource-group arolariu-rg --query "[?principalType=='ServicePrincipal']" --output table
-
-# Delete a specific old assignment by ID
-az role assignment delete --ids <assignment-id>
-```
-
-The old assignments use `guid(resourceGroup().id, ...)` as their name seed; the new ones use `guid(resource.id, ...)`. Both may coexist
-temporarily — the old ones are redundant but not harmful.
+Actual future PowerShell/deployment-script execution cleanup is also a separate concern; no execution container/storage is created by the
+current graph.
 
 ## References
 
-- [Azure RBAC Best Practices](https://learn.microsoft.com/azure/role-based-access-control/best-practices)
-- [Built-in Azure Roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles)
-- [Bicep RBAC Scenarios](https://learn.microsoft.com/azure/azure-resource-manager/bicep/scenarios-rbac)
+- [Azure RBAC best practices](https://learn.microsoft.com/azure/role-based-access-control/best-practices)
+- [Built-in security roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/security)
+- [Cosmos native data-plane security](https://learn.microsoft.com/azure/cosmos-db/nosql/security/how-to-grant-data-plane-access)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
 
 ---
 
-**Module Version**: 3.0.0 **Last Updated**: February 2026
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026

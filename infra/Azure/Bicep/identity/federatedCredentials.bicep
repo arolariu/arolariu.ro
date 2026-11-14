@@ -44,12 +44,12 @@ var federatedCredentials = [
   }
 ]
 
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-01-31-preview' existing = {
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-05-31-preview' existing = {
   name: infrastructureManagedIdentity.name
 }
 
 @batchSize(1) // This ensures that the federated credentials are created one at a time to avoid conflicts -- there's a limitation to create sequential fed creds.
-resource federatedCredentialsForInfrastructureIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2025-01-31-preview' = [
+resource federatedCredentialsForInfrastructureIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2025-05-31-preview' = [
   for credential in federatedCredentials: {
     parent: managedIdentity
     name: credential.name

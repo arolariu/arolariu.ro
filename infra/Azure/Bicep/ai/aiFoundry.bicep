@@ -55,7 +55,7 @@ param aiFoundryName string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('ai', aiFoundryDeploymentDate)
 
-resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
+resource aiFoundry 'Microsoft.CognitiveServices/accounts@2026-09-01' = {
   name: aiFoundryName
   location: aiFoundryLocation
   identity: { type: 'SystemAssigned' }
@@ -70,6 +70,7 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
       ipRules: []
     }
     allowProjectManagement: true
+    disableLocalAuth: false
     publicNetworkAccess: 'Enabled'
     defaultProject: 'arolariu-ro'
     associatedProjects: ['arolariu-ro']
@@ -78,13 +79,29 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
     sku: 'Standard'
   })
 
-  resource aiProject 'projects@2025-10-01-preview' = {
+  resource aiProject 'projects@2026-09-01' = {
     name: 'arolariu-ro'
     location: aiFoundryLocation
     identity: { type: 'SystemAssigned' }
     properties: {
       description: 'AI project for arolariu-ro'
       displayName: 'arolariu-ro AI Project'
+    }
+  }
+
+  resource modelRouterDeployment 'deployments@2026-09-01' = {
+    name: 'model-router'
+    dependsOn: [aiProject]
+    sku: {
+      name: 'GlobalStandard'
+      capacity: 10
+    }
+    properties: {
+      model: {
+        format: 'OpenAI'
+        name: 'model-router'
+        version: '2025-11-18'
+      }
     }
   }
 }

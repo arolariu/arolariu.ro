@@ -69,7 +69,7 @@ var identities = [
   }
 ]
 
-resource userAssignedManagedIdentities 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-01-31-preview' = [
+resource userAssignedManagedIdentities 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-05-31-preview' = [
   for identity in identities: {
     name: identity.name
     location: identity.location

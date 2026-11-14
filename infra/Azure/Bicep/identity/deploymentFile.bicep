@@ -35,6 +35,7 @@ param resourceLocation string
 param resourceConventionPrefix string
 
 var managedIdentitiesNamePrefix = '${resourceConventionPrefix}-uami'
+var expApplicationUniqueName = '${resourceConventionPrefix}-exp'
 
 module managedIdentities 'userAssignedIdentity.bicep' = {
   name: 'managedIdentitiesDeployment-${resourceDeploymentDate}'
@@ -54,5 +55,24 @@ module securityGroups 'securityGroups.bicep' = {
   name: 'securityGroupsDeployment-${resourceDeploymentDate}'
 }
 
+module expApplication 'expApplication.bicep' = {
+  name: 'experimentsApplication-${resourceDeploymentDate}'
+  params: {
+    applicationUniqueName: expApplicationUniqueName
+    displayName: '${resourceConventionPrefix}-experiments'
+  }
+}
+
+module expApplicationExposure 'expApplicationExposure.bicep' = {
+  name: 'experimentsApplicationExposure-${resourceDeploymentDate}'
+  params: {
+    applicationUniqueName: expApplicationUniqueName
+    displayName: '${resourceConventionPrefix}-experiments'
+    appClientId: expApplication.outputs.appClientId
+  }
+}
+
 import { identity } from '../types/identity.type.bicep'
 output managedIdentitiesList identity[] = managedIdentities.outputs.userAssignedManagedIdentities
+output expEntraAppClientId string = expApplicationExposure.outputs.appClientId
+output expEntraServicePrincipalId string = expApplicationExposure.outputs.servicePrincipalId

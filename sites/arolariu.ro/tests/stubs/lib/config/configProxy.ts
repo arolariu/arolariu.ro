@@ -21,9 +21,6 @@ export const setCachedConfigValue = vi.fn();
 export const invalidateConfigValueCache = vi.fn();
 export const invalidateConfigCache = vi.fn();
 
-// Constants
-export const EXP_SERVICE_TOKEN_SCOPE = "api://test-scope/.default" as const;
-
 // Fetch functions (tests must set mockResolvedValue)
 export const fetchConfigValue = vi.fn();
 export const fetchConfigValues = vi.fn();

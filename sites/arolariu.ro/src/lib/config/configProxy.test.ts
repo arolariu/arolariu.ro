@@ -51,6 +51,7 @@ beforeEach(() => {
   vi.stubEnv("INFRA", "");
   vi.stubEnv("WEBSITE_INSTANCE_ID", "");
   vi.stubEnv("EXP_PROXY_URL", "");
+  vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "11111111-2222-4333-8444-555555555555");
 });
 
 afterEach(() => {
@@ -206,6 +207,122 @@ describe("configProxy", () => {
     invalidateConfigCache();
 
     await expect(fetchConfigValue("Some:Key")).rejects.toThrow("Invalid config response payload for key 'Some:Key'.");
+  });
+});
+
+describe("experiments token scope", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@/lib/azure/credentials");
+    vi.stubEnv("AZURE_CLIENT_ID", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.doUnmock("@azure/identity");
+  });
+
+  it.each([undefined, "", "   "])("rejects an absent configured application ID (%s)", async (value) => {
+    const {resolveExpServiceTokenScope} = await import("./configProxy");
+
+    expect(() => resolveExpServiceTokenScope(value)).toThrow("EXP_ENTRA_APP_CLIENT_ID");
+  });
+
+  it.each([
+    ["11111111-2222-4333-8444-555555555555", "api://11111111-2222-4333-8444-555555555555/.default"],
+    ["  AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE  ", "api://aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/.default"],
+  ])("normalizes the configured experiments application ID (%s)", async (value, expected) => {
+    const {resolveExpServiceTokenScope} = await import("./configProxy");
+
+    expect(resolveExpServiceTokenScope(value)).toBe(expected);
+  });
+
+  it("rejects malformed configuration without including its raw value", async () => {
+    const {resolveExpServiceTokenScope} = await import("./configProxy");
+    const value = "private-malformed-application-value";
+
+    expect(() => resolveExpServiceTokenScope(value)).toThrow("EXP_ENTRA_APP_CLIENT_ID");
+    expect(() => resolveExpServiceTokenScope(value)).not.toThrow(value);
+  });
+
+  it("requests the configured audience through the real credential boundary", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("AZURE_CLIENT_ID", "frontend-identity");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "11111111-2222-4333-8444-555555555555");
+    const getToken = vi.fn().mockResolvedValue({token: "synthetic-exp-token", expiresOnTimestamp: Date.now() + 60_000});
+    vi.doMock("@azure/identity", () => ({
+      DefaultAzureCredential: class {
+        public getToken = getToken;
+      },
+    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.example.test"))),
+    );
+    const {fetchConfigValue} = await import("./configProxy");
+
+    await fetchConfigValue("Endpoints:Service:Api");
+
+    expect(getToken).toHaveBeenCalledWith("api://11111111-2222-4333-8444-555555555555/.default");
+  });
+
+  it("ignores an unused malformed Azure audience for local proxy requests", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("EXP_PROXY_URL", "http://exp");
+    vi.stubEnv("AZURE_CLIENT_ID", "local-resource-identity");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "private-unused-malformed-setting");
+    const credentialCreated = vi.fn();
+    vi.doMock("@azure/identity", () => ({
+      DefaultAzureCredential: class {
+        public constructor() {
+          credentialCreated();
+          throw new Error("Local requests must not initialize Azure authentication.");
+        }
+      },
+    }));
+    const fetch = vi.fn().mockResolvedValue(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "http://api")));
+    vi.stubGlobal("fetch", fetch);
+    const {fetchConfigValue} = await import("./configProxy");
+
+    await expect(fetchConfigValue("Endpoints:Service:Api")).resolves.toBe("http://api");
+
+    expect(credentialCreated).not.toHaveBeenCalled();
+    expect(fetch.mock.calls[0]?.[0]).toContain("http://exp/");
+  });
+
+  it("rejects malformed cloud configuration before credentials or HTTP are used", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "private-malformed-cloud-setting");
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+
+    const {fetchConfigValue} = await import("./configProxy");
+    await expect(fetchConfigValue("Endpoints:Service:Api")).rejects.toThrow("EXP_ENTRA_APP_CLIENT_ID");
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, "", "   "])("rejects absent cloud configuration before HTTP is used (%s)", async (value) => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", value);
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+
+    const {fetchConfigValue} = await import("./configProxy");
+    await expect(fetchConfigValue("Endpoints:Service:Api")).rejects.toThrow("EXP_ENTRA_APP_CLIENT_ID");
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("can import cloud routing during build before the runtime application ID is supplied", async () => {
+    vi.stubEnv("EXP_PROXY_URL", "https://exp.arolariu.ro");
+    vi.stubEnv("EXP_ENTRA_APP_CLIENT_ID", "");
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(import("./configProxy")).resolves.toHaveProperty("fetchConfigValue");
+
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 

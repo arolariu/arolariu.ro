@@ -37,6 +37,8 @@ metadata description = 'Sites orchestrator deploying all web applications and st
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
+import { dnsRecord } from '../types/dns.type.bicep'
+
 targetScope = 'resourceGroup'
 
 @description('The date when the deployment is executed.')
@@ -79,8 +81,11 @@ param managedIdentityInfrastructurePrincipalId string
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
 param expEntraAppClientId string
 
-@description('The Azure App Configuration store name.')
-param appConfigurationName string
+@description('The actual Azure App Configuration endpoint.')
+param appConfigurationEndpoint string
+
+@description('The generated container registry login server.')
+param containerRegistryLoginServer string
 
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
@@ -91,6 +96,8 @@ module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
     apiWebsiteIdentityId: managedIdentityBackendId
     apiWebsiteIdentityClientId: managedIdentityBackendClientId
     apiWebsiteDeploymentDate: resourceDeploymentDate
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -103,6 +110,8 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
     productionWebsiteIdentityId: managedIdentityFrontendId
     productionWebsiteIdentityClientId: managedIdentityFrontendClientId
     productionWebsiteDeploymentDate: resourceDeploymentDate
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -114,6 +123,9 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
     developmentWebsiteIdentityId: managedIdentityFrontendId
     developmentWebsiteIdentityClientId: managedIdentityFrontendClientId
     developmentWebsiteDeploymentDate: resourceDeploymentDate
+    appInsightsConnectionString: appInsightsConnectionString
+    expEntraAppClientId: expEntraAppClientId
+    containerRegistryLoginServer: containerRegistryLoginServer
   }
 }
 
@@ -127,10 +139,16 @@ module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
   params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }
 
+module statusWebsiteDeployment 'status-arolariu-ro.bicep' = {
+  name: 'statusWebsiteDeployment-${resourceDeploymentDate}'
+  params: { staticWebAppDeploymentDate: resourceDeploymentDate }
+}
+
 module expWebsiteDeployment 'exp-arolariu-ro.bicep' = {
   name: 'expWebsiteDeployment-${resourceDeploymentDate}'
   params: {
-    appConfigurationName: appConfigurationName
+    appConfigurationEndpoint: appConfigurationEndpoint
+    containerRegistryLoginServer: containerRegistryLoginServer
     appInsightsConnectionString: appInsightsConnectionString
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: expEntraAppClientId
@@ -151,6 +169,7 @@ output devWebsiteUrl string = devWebsiteDeployment.outputs.devWebsiteUrl
 output docsWebsiteUrl string = docsWebsiteDeployment.outputs.docsWebsiteUrl
 output cvWebsiteUrl string = cvWebsiteDeployment.outputs.cvWebsiteUrl
 output expWebsiteUrl string = expWebsiteDeployment.outputs.expWebsiteUrl
+output statusWebsiteUrl string = statusWebsiteDeployment.outputs.statusWebsiteUrl
 
 // Output all website names for bindings
 output mainWebsiteName string = mainWebsiteDeployment.outputs.mainWebsiteName
@@ -159,3 +178,16 @@ output devWebsiteName string = devWebsiteDeployment.outputs.devWebsiteName
 output docsWebsiteName string = docsWebsiteDeployment.outputs.docsWebsiteName
 output cvWebsiteName string = cvWebsiteDeployment.outputs.cvWebsiteName
 output expWebsiteName string = expWebsiteDeployment.outputs.expWebsiteName
+output statusWebsiteName string = statusWebsiteDeployment.outputs.statusWebsiteName
+
+output applicationDnsRecords dnsRecord[] = [
+  { name: 'api', type: 'CNAME', expectedValues: [apiWebsiteDeployment.outputs.apiWebsiteUrl] }
+  { name: 'asuid.api', type: 'TXT', expectedValues: [apiWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'dev', type: 'CNAME', expectedValues: [devWebsiteDeployment.outputs.devWebsiteUrl] }
+  { name: 'asuid.dev', type: 'TXT', expectedValues: [devWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'exp', type: 'CNAME', expectedValues: [expWebsiteDeployment.outputs.expWebsiteUrl] }
+  { name: 'asuid.exp', type: 'TXT', expectedValues: [expWebsiteDeployment.outputs.domainVerificationId] }
+  { name: 'docs', type: 'CNAME', expectedValues: [docsWebsiteDeployment.outputs.docsWebsiteUrl] }
+  { name: 'cv', type: 'CNAME', expectedValues: [cvWebsiteDeployment.outputs.cvWebsiteUrl] }
+  { name: 'status', type: 'CNAME', expectedValues: [statusWebsiteDeployment.outputs.statusWebsiteUrl] }
+]
