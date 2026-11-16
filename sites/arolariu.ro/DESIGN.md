@@ -192,6 +192,10 @@ site stylesheet; dark counterparts follow in a table. Names describe the role; e
 - **Success Green** (`hsl(142 71% 35%)`), **Amber Warning** (`hsl(38 92% 40%)`), **Info Cyan** (`hsl(199 89% 38%)`) and **Alert Red**
   (`hsl(0 84.2% 60.2%)`, foreground `hsl(210 40% 98%)`). Success, warning and info take white text in light mode and black text in dark
   mode.
+- **Known contrast gap:** in light mode these pairs measure 3.70:1 (success), 3.29:1 (warning), 4.36:1 (info) and 3.59:1 (destructive),
+  below the 4.5:1 floor for normal text. They clear only the 3:1 bar for large text and non-text indicators. Do not copy them as normal-text
+  pairings; existing uses such as the delete button in `DeleteScanDialog.module.scss` are recorded gaps, not approved patterns. The
+  dark-mode pairs clear 8.7:1 or more.
 
 ### Dark Theme Counterparts
 
