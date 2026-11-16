@@ -263,8 +263,9 @@ the font toggled before shipping a tight layout.
 The site is a centered, mobile-first column system. Spacing is a rem scale on a 4px base; sections breathe with generous vertical padding,
 and cards pack tightly inside that air.
 
-- **Spacing scale (rem):** 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60,
-  64, 72, 80, 96 (step `4` is `1rem`). It has fractional steps and gaps; use the named steps rather than assuming every integer exists.
+- **Spacing scale (`space()` keys, each key is 0.25rem):** 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28,
+  32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96. So `space(4)` is `1rem` and `space(96)` is `24rem`. The keys have fractional steps and
+  gaps; use a listed key rather than assuming every integer exists.
 - **Breakpoints:** 2xsm 320, xsm 480, sm 640, md 768, lg 1024, xl 1280, 2xl 1440, 3xl 1976 (pixels). Design mobile first and add upward.
 - **Shell:** a 64px header (4rem plus the top safe-area inset) with a page-background fill, fixed below `lg` and in flow from `lg`, the
   page, then the footer slab. A mobile-only bottom bar (Home, Scan, Invoices, Profile) appears on the invoices hub.
