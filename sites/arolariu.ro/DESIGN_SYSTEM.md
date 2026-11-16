@@ -101,9 +101,10 @@ flowchart LR
 `src/app/providers.tsx` nests, from the outside in: `TranslationProvider` → `AuthProvider` (Clerk) → `FontProvider` → `ThemeProvider`.
 Inside it sit `PreferencesSubscriptions`, the page children, `GlobalToaster`, and the feature-flagged `Commander`.
 
-The root `layout.tsx` renders the **EULA screen instead of the page** until the `eula-accepted` cookie exists, on every route. Analytics
-tracking mounts only after acceptance. Design consequence: the very first thing a new visitor sees is the EULA surface, so it must carry the
-identity on its own. See [`UX-FLOWS.md`](UX-FLOWS.md#first-visit-and-the-eula-gate).
+The root `layout.tsx` renders the **EULA screen instead of the page** until the `eula-accepted` cookie exists, on every route. In that
+layout, analytics tracking mounts only after acceptance; `global-error.tsx` is the exception and mounts it unconditionally (see
+[`UX-FLOWS.md`](UX-FLOWS.md#known-gaps)). Design consequence: the very first thing a new visitor sees is the EULA surface, so it must carry
+the identity on its own. See [`UX-FLOWS.md`](UX-FLOWS.md#first-visit-and-the-eula-gate).
 
 ![EULA gate](docs/screenshots/01-eula-gate-desktop-light.webp)
 
