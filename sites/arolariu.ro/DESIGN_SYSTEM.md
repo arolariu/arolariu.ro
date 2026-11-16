@@ -468,7 +468,12 @@ Reference: `src/app/_components/Hero.tsx` and `Hero.module.scss`.
       <div className={styles.ctaWrapper}>
         {/* relative wrapper: the gradient rim sibling, then the pill call to action */}
         <div className={styles.ctaGlow} />
-        <Link href='/domains'>{cta}</Link>
+        <Link
+          href='/domains'
+          className={styles.ctaButton}>
+          {/* ctaButton: relative, opaque pill that sits above the absolute glow */}
+          {cta}
+        </Link>
       </div>
     </motion.div>
     <motion.div className={styles.visual}>
