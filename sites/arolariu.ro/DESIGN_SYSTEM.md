@@ -446,23 +446,31 @@ rules for what may be a Server versus a Client Component are in [`AGENTS.md`](..
 Reference: `src/app/_components/Hero.tsx` and `Hero.module.scss`.
 
 ```tsx
-<section className={styles.section}>        {/* tall section, generous vertical padding */}
-  <article className={styles.article}>      {/* 1 column, 2 columns from lg */}
-    <motion.div className={styles.content}  {/* left: scale 0.8 → 1, duration 0.8, delay 0.3 */}>
+<section className={styles.section}>
+  {/* section: tall, generous vertical padding */}
+  <article className={styles.article}>
+    {/* article: 1 column, 2 columns from lg */}
+    <motion.div className={styles.content}>
+      {/* content (left): scale 0.8 → 1, duration 0.8, delay 0.3 */}
       <h1 className={styles.title}>
         <span className={styles.titleGradient}>{title}</span>
       </h1>
       <p className={styles.subtitle}>{subtitle}</p>
-      <div className={styles.ctaWrapper}>   {/* relative wrapper */}
-        <div className={styles.ctaGlow} />  {/* gradient rim sibling */}
-        <Link href="/domains">{cta}</Link>  {/* pill call to action */}
+      <div className={styles.ctaWrapper}>
+        {/* relative wrapper: the gradient rim sibling, then the pill call to action */}
+        <div className={styles.ctaGlow} />
+        <Link href='/domains'>{cta}</Link>
       </div>
     </motion.div>
-    <motion.div className={styles.visual}>  {/* right: opacity 0 → 1 and scale 0.8 → 1 */}
-      <motion.div className={styles.orbPrimary} />  {/* pulses, 8s */}
-      <motion.div className={styles.orbPurple} />   {/* pulses, 6s */}
-      <TechSphere />                                {/* desktop only (lg and up) */}
-      <div className={styles.mobileAnimation}>      {/* below sm: a small pulsing orb, 4s */}</div>
+    <motion.div className={styles.visual}>
+      {/* visual (right): opacity 0 → 1 and scale 0.8 → 1 */}
+      {/* orbs pulse: primary 8s, purple 6s */}
+      <motion.div className={styles.orbPrimary} />
+      <motion.div className={styles.orbPurple} />
+      {/* desktop only (lg and up) */}
+      <TechSphere />
+      {/* below sm only */}
+      <div className={styles.mobileAnimation}>{/* a small pulsing orb, 4s */}</div>
     </motion.div>
   </article>
 </section>
