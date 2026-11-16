@@ -1,6 +1,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {buildPrCommentMarkdown, postPrComment, HYGIENE_V3_COMMENT_ID, type GitHubCommentUpserter} from "./prComment.ts";
 import type {HygieneReport} from "../domain/types.ts";
+import {buildStepSummary} from "./stepSummary.ts";
 
 const report: HygieneReport = {
   schemaVersion: "3",
@@ -26,6 +27,13 @@ describe("buildPrCommentMarkdown", () => {
   it("includes overall result", () => {
     const md = buildPrCommentMarkdown(report);
     expect(md).toMatch(/Hygiene/);
+  });
+
+  it("uses the same infographic as the Actions summary behind the stable marker", () => {
+    const markdown = buildPrCommentMarkdown(report);
+    expect(markdown).toBe(`${HYGIENE_V3_COMMENT_ID}\n\n${buildStepSummary(report)}`);
+    expect(markdown).toContain("⏱️ Provider time");
+    expect(markdown.match(/<!-- arolariu-hygiene-check-v3 -->/g)).toHaveLength(1);
   });
 });
 

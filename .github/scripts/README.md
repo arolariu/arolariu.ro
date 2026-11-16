@@ -46,6 +46,17 @@ The plan always contains `format`, `lint`, `test-typescript`, `test-dotnet`, `te
 setup; an unselected job still gets minimal Node/scripts bootstrap and emits an explicit planned-skip outcome. The gate requires all six
 records, including skips.
 
+The PR comment and Actions step summary share a GitHub-native overview and provider scorecard. Skipped checks are labelled **SKIP**, with
+their reason in the Signal column rather than counted as executed passes. The overview rounds the sum of executed-provider durations to
+whole units; individual check durations retain at most three decimal places. This sum is not workflow wall-clock time.
+
+Statistics count added, modified, deleted, and other file statuses from the validated PR merge-base change plan. Rename records count once.
+Unavailable status evidence is labelled explicitly, not reported as zero. Collapsed details retain line churn and file-type/directory
+counts. **Git-tracked folder size** compares all committed file bytes against `main`, including source, documentation, and screenshots; it
+does **not** measure production bundles, compressed downloads, or deployed artifacts. Binary units are labelled KiB/MiB. The signal shows
+the net change across measured folders, while details retain per-folder deltas and exact bytes. This baseline is independent of the PR
+target.
+
 Affected mode checks changed supported existing files first. Tests select owners and reverse graph consumers: a component change includes
 website tests. Renames retain both owners; deleted paths still affect tests but are not passed to path-based tools. CI scripts and root
 tooling are explicit suites. The planner reads shared inputs from the live `nx.json`, not a copied root list. Unknown
