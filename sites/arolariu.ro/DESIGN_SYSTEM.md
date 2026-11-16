@@ -154,7 +154,9 @@ Two usage facts worth knowing:
 #### The signature gradient
 
 `@include gradient-bg($direction: to right)` emits `linear-gradient($direction, primary, tertiary, secondary)` in that order, each from the
-semantic tokens, so it re-skins with every preset. It takes a direction only; there is no alpha argument.
+semantic tokens, so it re-skins with every named preset. The `custom` preset only replaces `--primary`, so only the first stop follows the
+custom colors; tertiary and secondary keep their default values (see [section 4.1](#41-how-a-preset-reaches-the-page)). It takes a direction
+only; there is no alpha argument.
 
 | Use                       | Pattern                                                                                                                                                              |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -286,8 +288,10 @@ Two orthogonal axes:
 
 The runtime path is `src/app/_components/PreferencesSubscriptions.tsx`. On every `themePreset` or `customThemeColors` change it writes
 `document.documentElement.dataset.themePreset` and, for the `custom` preset only, sets `--gradient-from`, `--gradient-via`, `--gradient-to`,
-`--primary`, `--primary-foreground`, `--accent-primary` and `--footer-bg` on the root. For named presets all colors come from
-`src/styles/themes/_presets.scss`, which generates `[data-theme-preset="name"]` and the matching `.dark` selectors in an `@each` loop.
+`--primary`, `--primary-foreground`, `--accent-primary` and `--footer-bg` on the root. No stylesheet reads `--gradient-from`,
+`--gradient-via` or `--gradient-to`, and `gradient-bg()` is built from primary, tertiary and secondary, so a custom preset changes only the
+gradient's first stop. For named presets all colors come from `src/styles/themes/_presets.scss`, which generates
+`[data-theme-preset="name"]` and the matching `.dark` selectors in an `@each` loop.
 
 The choice is stored in the preferences store (IndexedDB, key `account-preferences`) and synced across tabs; see
 [`UX-FLOWS.md`](UX-FLOWS.md#persistence). It is chosen in the appearance settings on **My Profile** (`SettingsAppearance.tsx`): a presets

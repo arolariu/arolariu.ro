@@ -132,8 +132,8 @@ type but stay calm. Expression is a property of the page, never of a data row.
 - One serif family (Caudex) for everything, loaded in a single bold face. The warmth comes from the letterforms, not from weight changes.
 - Soft, wide depth: large low-contrast shadows on cards and blurred orbs behind content. Hard, tight shadows are absent.
 - A gradient is a signature, not a fill: headline text and the rim of the primary call to action.
-- Six named theme presets plus a user-defined custom preset re-tint the triad without touching the layout, so every color must reach the
-  screen through a token.
+- Six named theme presets re-tint the triad without touching the layout, and a user-defined custom preset swaps the primary color (the
+  gradient's first stop), so every color must reach the screen through a token.
 - Light and dark are both first-class. Dark is true black with lifted, pastel versions of the triad.
 
 ### Named Rules
