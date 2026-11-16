@@ -348,8 +348,8 @@ hand-tune a library control to match a site card; wrap or compose instead.
 
 ### Navigation
 
-- **Header:** 64px, transparent. The brand mark and name sit on the left; **Domains** and **About** sit in the center; Sign in and the theme
-  toggle sit on the right.
+- **Header:** 64px with an opaque page-background fill (`hsl(var(--background))`). The brand mark and name sit on the left; **Domains** and
+  **About** sit in the center; Sign in and the theme toggle sit on the right.
 - **Mobile:** a menu button opens a navigation panel with expandable groups; the invoices hub adds a four-item bottom bar.
 - **Theme toggle:** a 40px circular outline button that switches light and dark directly. There is no menu.
 - **Command palette:** **Ctrl or Cmd plus K** opens a palette for navigation, theme, language, accessibility font and a few playful effects.
