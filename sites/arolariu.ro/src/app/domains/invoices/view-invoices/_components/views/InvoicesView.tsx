@@ -40,7 +40,7 @@ function resolveViewMode(urlViewMode: ViewMode | null, chosenViewMode: ViewMode 
   if (urlViewMode !== null) {
     return urlViewMode;
   }
-  // `useInvoiceFilters` omits the default table view from the URL, so a table choice is only visible here.
+  // The URL is empty until a view is chosen, and a table choice is not in it yet while navigation is pending.
   if (chosenViewMode === "table") {
     return "table";
   }
@@ -71,8 +71,8 @@ function resolveViewMode(urlViewMode: ViewMode | null, chosenViewMode: ViewMode 
  * **Responsive Design**:
  * - Defaults to grid view on mobile devices for better touch interaction
  * - The device default is derived at render time from the measured window size, without rewriting the URL
- * - An explicit `view` URL parameter or a toggle choice always takes precedence over the device default,
- *   and an explicit table view survives later filter or sort updates that drop it from the URL
+ * - An explicit `view` URL parameter or a toggle choice always takes precedence over the device default
+ * - A toggle choice is written to the URL, so it survives filter or sort updates and remounts such as tab switches
  *
  * **Performance**:
  * - Filtered results are memoized via `useFilteredInvoices` hook

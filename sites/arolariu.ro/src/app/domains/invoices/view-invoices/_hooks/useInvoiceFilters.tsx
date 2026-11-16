@@ -100,12 +100,13 @@ function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
  * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
  * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
- * - `view` (string): View mode - `table` or `grid` (default: `table`)
+ * - `view` (string): View mode - `table` or `grid`; absent means the device default chosen by the view
  *
  * **Default Values**:
  * - Parameters with default values are removed from URL when set to default
  * - This keeps URLs clean and prevents unnecessary query string pollution
- * - Defaults: `sortBy=null`, `sortOrder=null`, `view="table"`, empty filters
+ * - Defaults: `sortBy=null`, `sortOrder=null`, empty filters
+ * - An explicit view choice is always kept in the URL, because the effective default depends on the device
  * - When no sort params are present, invoices appear in their natural order
  *
  * **Performance**:
@@ -201,6 +202,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * **URL Cleanup Strategy**:
    * - Parameters set to default values are removed from URL
    * - Empty strings, null values, and empty arrays remove their parameters
+   * - A supplied `view` is always written; otherwise the current `view` parameter is left unchanged
    * - This keeps URLs clean and human-readable
    *
    * **Navigation Strategy**:
@@ -224,7 +226,10 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       setOptionalParameter(params, "pay", merged.paymentTypes.join(","));
       setOptionalParameter(params, "cur", merged.currencies.join(","));
       setSortParameters(params, merged.sortBy, merged.sortOrder);
-      setOptionalParameter(params, "view", merged.view === "table" ? null : merged.view);
+      // Persist an explicit view choice, including table: the effective default is device-dependent.
+      if (newFilters.view !== undefined) {
+        params.set("view", newFilters.view);
+      }
 
       // Replace URL without adding to history or scrolling
       // Only add '?' if there are parameters, otherwise keep pathname clean

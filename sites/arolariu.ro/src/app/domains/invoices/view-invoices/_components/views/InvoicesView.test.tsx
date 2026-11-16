@@ -198,7 +198,7 @@ describe("RenderInvoicesView", () => {
       await user.click(getViewToggle("table"));
 
       // Assert
-      expect(navigation.state.replacements).toEqual([`${PATHNAME}?view=grid`, PATHNAME]);
+      expect(navigation.state.replacements).toEqual([`${PATHNAME}?view=grid`, `${PATHNAME}?view=table`]);
       expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
       expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
     });
@@ -231,7 +231,7 @@ describe("RenderInvoicesView", () => {
         expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
       });
 
-      it("keeps a table view chosen in the URL after a sort drops the default view from the URL", async () => {
+      it("keeps a table view chosen in the URL after a sort", async () => {
         // Arrange
         const {user} = renderView(namedInvoices, "view=table");
 
@@ -239,12 +239,12 @@ describe("RenderInvoicesView", () => {
         await user.click(screen.getByRole("columnheader", {name: /tableView\.columns\.invoice/u}));
 
         // Assert
-        expect(navigation.state.replacements).toEqual([`${PATHNAME}?sortBy=name&sortOrder=asc`]);
+        expect(navigation.state.replacements).toEqual([`${PATHNAME}?view=table&sortBy=name&sortOrder=asc`]);
         expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
         expect(renderedNames(NAMED_INVOICE)).toEqual(["Alpha market", "Bravo bakery", "Charlie cafe"]);
       });
 
-      it("keeps the table view once the user picks it, even though the URL omits the default table view", async () => {
+      it("writes the table view to the URL once the user picks it over the grid device default", async () => {
         // Arrange
         const {user} = renderView(namedInvoices);
 
@@ -252,7 +252,25 @@ describe("RenderInvoicesView", () => {
         await user.click(getViewToggle("table"));
 
         // Assert
-        expect(navigation.state.replacements).toEqual([PATHNAME]);
+        expect(navigation.state.replacements).toEqual([`${PATHNAME}?view=table`]);
+        expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
+        expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
+      });
+
+      it("keeps a table view chosen from the toggle after the view remounts, as when switching tabs", async () => {
+        // Arrange
+        const {user, unmount} = renderView(namedInvoices);
+        await user.click(getViewToggle("table"));
+
+        // Act
+        unmount();
+        render(
+          <DialogProvider>
+            <RenderInvoicesView invoices={namedInvoices} />
+          </DialogProvider>,
+        );
+
+        // Assert
         expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
         expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
       });
@@ -263,18 +281,18 @@ describe("RenderInvoicesView", () => {
 
         await user.click(getViewToggle("table"));
 
-        expect(replace).toHaveBeenCalledWith(PATHNAME);
+        expect(replace).toHaveBeenCalledWith(`${PATHNAME}?view=table`);
         expect(navigation.state.search).toBe("view=grid");
 
         act(() => {
-          navigation.replace(PATHNAME);
+          navigation.replace(`${PATHNAME}?view=table`);
         });
 
         expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
         expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
       });
 
-      it("remembers a table URL reached after mounting when a later sort removes the view parameter", async () => {
+      it("keeps a table URL reached after mounting when a later sort updates the URL", async () => {
         const {user} = renderView(namedInvoices, "view=grid");
 
         act(() => {
@@ -282,7 +300,7 @@ describe("RenderInvoicesView", () => {
         });
         await user.click(screen.getByRole("columnheader", {name: /tableView\.columns\.invoice/u}));
 
-        expect(navigation.state.replacements.at(-1)).toBe(`${PATHNAME}?sortBy=name&sortOrder=asc`);
+        expect(navigation.state.replacements.at(-1)).toBe(`${PATHNAME}?view=table&sortBy=name&sortOrder=asc`);
         expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
         expect(renderedNames(NAMED_INVOICE)).toEqual(["Alpha market", "Bravo bakery", "Charlie cafe"]);
       });
