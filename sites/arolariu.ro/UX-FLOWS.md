@@ -176,7 +176,9 @@ flowchart LR
   Hub["Invoices hub"] --> Up["Upload scans"]
   Up --> Scans["View scans"]
   Up --> Create
-  Scans --> Create["Create invoice: select scans, details, review"]
+  Scans -- "selection toolbar" --> Quick["Create-from-scans dialog: one invoice per scan, or one from all"]
+  Quick --> List
+  Scans -- "group banner" --> Create["Create invoice wizard: select scans, details, review"]
   Create --> Detail["View invoice"]
   Hub --> List["View invoices"]
   List --> Detail
@@ -204,13 +206,20 @@ invoices) and **Profile** (`/my-profile`). The active item follows the pathname.
 
 ### View scans
 
-A grid of scans with selection, rename (Esc cancels), rotation and delete. Selecting scans reveals a toolbar and a group banner whose action
-continues to **Create invoice**. An empty library offers an upload action.
+A grid of scans with selection, rename (Esc cancels), rotation and delete. An empty library offers an upload action. Two separate paths lead
+from scans to invoices:
+
+- **Selection toolbar.** Selecting scans reveals a toolbar whose **Create invoice** action (**Create invoices** for several scans) opens a
+  dialog, not the wizard. With more than one scan selected, the dialog asks for a mode: one invoice per scan, or one invoice from all the
+  selected scans. It creates the invoices in place, shows progress and any partial failures, and ends with a link to **View invoices**.
+- **Group banner.** When 2 to 5 ready scans were uploaded within five minutes of each other, a banner (dismissible for the session) offers
+  to combine them. Its action selects that group in the scans store and opens the three-step **Create invoice** wizard below.
 
 ### Create invoice
 
-Three steps in order: `select-scans`, `details`, `review`. Back is hidden on the first step and Next is hidden on review. Creating the
-invoice navigates to `view-invoice/<id>`. The flow has its own notes in
+Three steps in order: `select-scans`, `details`, `review`. Back is hidden on the first step and Next is hidden on review. The wizard keeps
+its own scan selection and starts empty, even when the View scans group banner opened it. Creating the invoice navigates to
+`view-invoice/<id>`. The flow has its own notes in
 [`src/app/domains/invoices/create-invoice/README.md`](src/app/domains/invoices/create-invoice/README.md).
 
 ### View invoices
@@ -340,6 +349,7 @@ Recorded, not fixed: this documentation pass is docs-only, so none of these were
 | Contrast            | `muted-foreground` on the Slate Wash surface measures about 4.3:1, below AA for body text.                                                                                                                                                                                                                                                                             |
 | Mobile navigation   | No Escape handler and no focus trap or restore; the drawer has no slide animation.                                                                                                                                                                                                                                                                                     |
 | Access flow         | Edit-invoice and the invoice forbidden screen do not carry a return path to sign-in; `/auth` is reached without `redirect_url`. Edit has no owner comparison in the page. A missing invoice shows the forbidden screen instead of `not-found.tsx`, because `fetchInvoice` errors carry no `status` for the pages' `404` branch.                                        |
+| Scan grouping       | The View scans group banner selects its scans in the scans store, but the create-invoice wizard keeps its own selection, so the grouped scans are not preselected when the wizard opens.                                                                                                                                                                               |
 | Preferences         | `animationsEnabled` and `compactMode` are stored and toggled but not read anywhere. Only Appearance preferences persist; the other profile panels hold in-memory state, Quick stats are placeholder values, the Data panel's export and delete buttons are inert and Delete Account links out to Clerk. Storage keys are not per-user and no sign-out reset was found. |
 | Theme presets       | `THEME_PRESETS.default.preview` shows cyan, purple and pink, but the real default is blue, violet and magenta. Preset names and descriptions are English-only strings. The custom preset writes `--gradient-from`, `--gradient-via` and `--gradient-to`, but no stylesheet reads them, so custom gradient colors only reach the first stop through `--primary`.        |
 | i18n                | An unsupported `locale` cookie throws instead of falling back.                                                                                                                                                                                                                                                                                                         |
