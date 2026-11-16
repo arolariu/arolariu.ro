@@ -42,7 +42,12 @@ export interface EntityState<E extends BaseEntity> extends EntityPersistedState<
  */
 export interface EntityActions<E extends BaseEntity> {
   /**
-   * Sets the complete list of entities
+   * Sets the complete list of entities and reconciles the selection with it.
+   *
+   * @remarks
+   * Selected entities absent from the new list are deselected; the rest are replaced by their
+   * refreshed versions in selection order. The selection keeps its reference when nothing changes.
+   *
    * @param entities - The new entities array
    */
   setEntities: (entities: ReadonlyArray<E>) => void;
@@ -122,6 +127,28 @@ export interface CreateEntityStoreOptions {
 }
 
 /**
+ * Reconciles a selection with a replacement entity list.
+ * @template E - Entity type extending BaseEntity
+ * @param selectedEntities - The current selection.
+ * @param entities - The replacement entity list.
+ * @returns The selected entities still present, as their refreshed versions in selection order;
+ * the original selection when nothing changed.
+ */
+function reconcileSelection<E extends BaseEntity>(selectedEntities: E[], entities: ReadonlyArray<E>): E[] {
+  if (selectedEntities.length === 0) return selectedEntities;
+
+  const entitiesById = new Map(entities.map((entity) => [entity.id, entity]));
+  const reconciled = selectedEntities.flatMap((selected) => {
+    const refreshed = entitiesById.get(selected.id);
+    return refreshed === undefined ? [] : [refreshed];
+  });
+  const isUnchanged =
+    reconciled.length === selectedEntities.length && reconciled.every((entity, index) => entity === selectedEntities[index]);
+
+  return isUnchanged ? selectedEntities : reconciled;
+}
+
+/**
  * Creates the entity slice with state and actions.
  * @template E - Entity type extending BaseEntity
  */
@@ -136,7 +163,11 @@ function createEntitySlice<E extends BaseEntity>(
     hasHydrated: false,
 
     // Actions
-    setEntities: (entities) => set({entities}),
+    setEntities: (entities) =>
+      set((state) => ({
+        entities,
+        selectedEntities: reconcileSelection(state.selectedEntities, entities),
+      })),
 
     setSelectedEntities: (selectedEntities) => set({selectedEntities}),
 

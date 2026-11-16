@@ -171,5 +171,6 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   };
 
   const httpStatus = overallStatus === "Healthy" ? 200 : 503;
-  return NextResponse.json(response, {status: httpStatus});
+  // Azure Front Door caches a GET response lacking Cache-Control, which would freeze the reported status.
+  return NextResponse.json(response, {status: httpStatus, headers: {"Cache-Control": "no-store"}});
 }

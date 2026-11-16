@@ -275,11 +275,6 @@
   // even when the scans list is empty (e.g. right after creating an invoice).
   // Without this, the footer can overlap the success dialog.
   min-height: calc(100vh - 8rem);
-
-  // Bottom padding for mobile nav
-  @include abstracts.respond-below("md") {
-    padding-bottom: abstracts.space(20);
-  }
 }
 
 .breadcrumb {
@@ -337,7 +332,12 @@
 }
 
 .bottomSpacer {
-  height: abstracts.space(24);
+  height: calc(#{abstracts.space(20)} + env(safe-area-inset-bottom, 0px));
+
+  // Reserve room when narrow screens or translated labels wrap the toolbar.
+  @include abstracts.respond-below("md") {
+    height: calc(#{abstracts.space(32)} + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 // ===========================================

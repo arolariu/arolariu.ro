@@ -3375,6 +3375,12 @@
         },
         "title": "Bienvenue, {name} !",
         "viewInvoicesIsland": {
+          "loadError": {
+            "description": "Une erreur s'est produite lors de la récupération de vos factures. Vérifiez votre connexion et réessayez.",
+            "retry": "Réessayer",
+            "retrying": "Nouvelle tentative...",
+            "title": "Impossible de charger vos factures"
+          },
           "tabs": {
             "invoices": "Factures",
             "liveAnalysis": "Analyse en direct",

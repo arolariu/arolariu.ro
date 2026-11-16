@@ -227,6 +227,26 @@ describe("Commander", () => {
       expect(vi.getTimerCount()).toBe(0);
     });
 
+    it("does not start the matrix rain or leave an overlay canvas when the 2D context is unavailable", () => {
+      // Arrange
+      const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null); // canvas without 2D support
+      const random = vi.spyOn(Math, "random");
+      render(<Commander />);
+
+      // Act
+      select("matrix");
+      act(() => {
+        vi.advanceTimersByTime(33 * 30);
+      });
+
+      // Assert
+      expect(getContext).toHaveBeenCalledTimes(1);
+      expect(getContext).toHaveBeenCalledWith("2d");
+      expect(random).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+      expect(globalThis.document.body.querySelector("canvas")).toBeNull();
+    });
+
     describe("matrix rain", () => {
       const fillText = vi.fn();
       const fillRect = vi.fn();

@@ -171,12 +171,15 @@ const RUNTIME_ENVIRONMENT_KEYS = {
 let runtimeConfiguration: Readonly<Record<string, string>> | null = null;
 
 /**
- * Timeout for exp config fetches.
- * Azure (production): 10 seconds — exp is reliably reachable.
+ * Timeout for individual exp config reads.
+ * Cloud: 10 seconds. Bootstrap has a separate cold-start budget.
  * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
  */
 const CONFIG_FETCH_TIMEOUT_MS = IS_CLOUD_DEPLOYMENT ? 10_000 : 2000;
 const CONFIG_AUTHENTICATION_TIMEOUT_MS = 30_000;
+const RUNTIME_CONFIG_FETCH_TIMEOUT_MS = IS_CLOUD_DEPLOYMENT ? 30_000 : 2000;
+const RUNTIME_CONFIG_MAX_ATTEMPTS = IS_CLOUD_DEPLOYMENT ? 3 : 1;
+const RUNTIME_CONFIG_RETRY_DELAY_MS = 1000;
 
 const SAFE_FAILURE_IDENTIFIERS = new Set([
   "Error",
@@ -386,14 +389,56 @@ export function invalidateConfigCache(key?: string): void {
   invalidateConfigValueCache(key);
 }
 
+/** Outcome of one runtime configuration request whose response body was consumed within its deadline. */
+type RuntimeConfigurationFetchResult =
+  | {readonly kind: "status"; readonly status: number}
+  | {readonly kind: "malformed"}
+  | {readonly kind: "document"; readonly payload: unknown};
+
+async function fetchRuntimeConfigurationDocument(
+  endpoint: string,
+  headers: Record<string, string>,
+): Promise<RuntimeConfigurationFetchResult> {
+  for (let attempt = 1; ; attempt += 1) {
+    const signal = AbortSignal.timeout(RUNTIME_CONFIG_FETCH_TIMEOUT_MS);
+    try {
+      const response = await fetch(endpoint, {cache: "no-store", headers, signal});
+      if (!response.ok) return {kind: "status", status: response.status};
+
+      // The deadline also covers the body: a read aborted by the signal is retried like a stalled response.
+      return await response.json().then(
+        (payload: unknown): RuntimeConfigurationFetchResult => ({kind: "document", payload}),
+        (error: unknown): RuntimeConfigurationFetchResult => {
+          if (signal.aborted) throw error;
+          return {kind: "malformed"};
+        },
+      );
+    } catch (error) {
+      if (!signal.aborted || !isRecord(error) || error["name"] !== "TimeoutError" || attempt >= RUNTIME_CONFIG_MAX_ATTEMPTS) throw error;
+
+      logWithTrace(
+        "warn",
+        "Runtime configuration HTTP deadline expired; retrying before startup fails",
+        {attempt, maxAttempts: RUNTIME_CONFIG_MAX_ATTEMPTS, timeoutMs: RUNTIME_CONFIG_FETCH_TIMEOUT_MS},
+        "server",
+      );
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, RUNTIME_CONFIG_RETRY_DELAY_MS);
+      });
+    }
+  }
+}
+
 /**
  * Initializes private environment configuration before Next.js serves requests.
  *
  * @remarks
  * Called by the existing Node.js instrumentation hook. Fetches the complete exp
- * runtime document once per initialization and retains it for server-side reads.
- * Local deployments fall back to dotenv when exp is unreachable; cloud failures
- * stop initialization. Public configuration remains CI/build-owned. Build workers
+ * runtime document and retains it for server-side reads. Cloud HTTP deadlines,
+ * which cover both the response headers and body, allow up to three attempts
+ * with fresh 30-second budgets before startup fails.
+ * Local deployments fall back to dotenv when exp is unreachable or exceeds its
+ * deadline; cloud failures stop initialization. Public configuration remains CI/build-owned. Build workers
  * never fetch private values, and runtime values are never logged.
  *
  * @returns Resolves when the runtime environment configuration is initialized.
@@ -416,11 +461,10 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
 
   let stage: "authentication" | "http" = "authentication";
   const startedAt = Date.now();
-  const response = await getRequestHeaders(AbortSignal.timeout(CONFIG_AUTHENTICATION_TIMEOUT_MS))
+  const result = await getRequestHeaders(AbortSignal.timeout(CONFIG_AUTHENTICATION_TIMEOUT_MS))
     .then((headers) => {
       stage = "http";
-      const signal = AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS);
-      return fetch(endpoint.href, {cache: "no-store", headers, signal});
+      return fetchRuntimeConfigurationDocument(endpoint.href, headers);
     })
     .catch((error: unknown) => {
       if (IS_CLOUD_DEPLOYMENT) {
@@ -436,14 +480,15 @@ export async function initializeRuntimeEnvironmentConfiguration(): Promise<void>
       logWithTrace("warn", "Local exp is unavailable; retaining dotenv runtime configuration", {environment}, "server");
       return null;
     });
-  if (response === null) return;
-  if (!response.ok) {
-    throw new Error(`Failed to fetch private runtime configuration from exp (status=${response.status}).`);
+  if (result === null) return;
+  if (result.kind === "status") {
+    throw new Error(`Failed to fetch private runtime configuration from exp (status=${result.status}).`);
+  }
+  if (result.kind === "malformed") {
+    throw new Error("Invalid website runtime configuration document from exp.");
   }
 
-  const payload: unknown = await response.json().catch(() => {
-    throw new Error("Invalid website runtime configuration document from exp.");
-  });
+  const {payload} = result;
   if (!isRecord(payload) || payload["target"] !== "website" || !isRecord(payload["config"])) {
     throw new Error("Invalid website runtime configuration document from exp.");
   }

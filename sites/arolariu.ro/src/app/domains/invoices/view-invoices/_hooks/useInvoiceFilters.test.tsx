@@ -279,7 +279,7 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
     });
 
-    it("should not include default view mode in URL", () => {
+    it("should write an explicitly chosen table view to the URL", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
@@ -289,7 +289,33 @@ describe("useInvoiceFilters", () => {
       result.current.setFilters({view: "table"});
 
       // Assert
-      expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?view=table`, {scroll: false});
+    });
+
+    it("should keep an existing table view when other filters change", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams("?view=table");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act
+      result.current.setFilters({search: "groceries"});
+
+      // Assert
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?view=table&q=groceries`, {scroll: false});
+    });
+
+    it("should not add a view to the URL when other filters change and no view was chosen", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act
+      result.current.setFilters({search: "groceries"});
+
+      // Assert
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?q=groceries`, {scroll: false});
     });
 
     it("should set payment types query param", () => {
@@ -324,7 +350,7 @@ describe("useInvoiceFilters", () => {
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
       const {result} = renderHook(() => useInvoiceFilters());
 
-      // Act - Set view to non-default value
+      // Act - Choose the grid view
       result.current.setFilters({view: "grid"});
 
       // Assert - Verify URL includes 'view' param

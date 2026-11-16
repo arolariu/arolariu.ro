@@ -193,6 +193,7 @@ function InvoiceTableRow({invoice, isSelected, onSelectInvoice}: Readonly<Invoic
                 render={
                   <Link
                     href={`/domains/invoices/view-invoice/${invoice.id}`}
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.viewInvoice)}
                     className={styles["viewLink"]}>
                     <TbEye className={styles["viewIcon"]} />
                   </Link>

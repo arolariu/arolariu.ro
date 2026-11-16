@@ -96,3 +96,8 @@ export const SingleSelected: Story = {
 export const MultipleSelected: Story = {
   decorators: [withSeededSelection(5)],
 };
+
+/** A three-digit selection count on narrow screens. */
+export const LargeSelection: Story = {
+  decorators: [withSeededSelection(102)],
+};

@@ -334,4 +334,28 @@ describe("/api/health", () => {
 
     expect(body.process.nextVersion).toBe("unknown");
   });
+
+  // Production sits behind Azure Front Door, which caches a GET response that has no
+  // Cache-Control header for one to three days, so the probe would keep reporting a stale status.
+  describe("response caching", () => {
+    it("forbids storing a Healthy response", async () => {
+      mockFetch.mockResolvedValue({ok: true, status: 200});
+
+      const {GET} = await import("./route");
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    });
+
+    it("forbids storing an Unhealthy response", async () => {
+      mockFetch.mockRejectedValue(new Error("down"));
+
+      const {GET} = await import("./route");
+      const response = await GET();
+
+      expect(response.status).toBe(503);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    });
+  });
 });

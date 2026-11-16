@@ -8,7 +8,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "16503841580064942228"
+      "templateHash": "9861025083925732101"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -95,7 +95,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "16345899558335370087"
+              "templateHash": "1691567371983225860"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -5403,7 +5403,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.39.26.7824",
-                      "templateHash": "8197019384079480811"
+                      "templateHash": "12393143367703953137"
                     },
                     "description": "Network orchestrator deploying Azure Front Door and DNS Zone",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -5471,7 +5471,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.39.26.7824",
-                              "templateHash": "7643021306667145682"
+                              "templateHash": "1675202492163830722"
                             },
                             "description": "Azure Front Door with WAF and custom domains",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -5627,7 +5627,7 @@
                                     "isCompressionEnabled": false,
                                     "contentTypesToCompress": []
                                   },
-                                  "queryStringCachingBehavior": "IgnoreQueryString"
+                                  "queryStringCachingBehavior": "UseQueryString"
                                 },
                                 "customDomains": [
                                   {

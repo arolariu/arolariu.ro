@@ -423,4 +423,39 @@ describe("GET /api/user", () => {
       expect.any(String),
     );
   });
+
+  // Production sits behind Azure Front Door, which caches a GET response that has no
+  // Cache-Control header for one to three days and leaves cookies out of the cache key,
+  // so a storable response would replay one visitor's identity to everyone else.
+  describe("response caching", () => {
+    it("forbids storing authenticated responses, which carry the Clerk user and a JWT", async () => {
+      mockAuth.mockResolvedValue({isAuthenticated: true, userId: "user-123"});
+      mockCurrentUser.mockResolvedValue({id: "user-123", emailAddresses: [{emailAddress: "john@example.com"}]});
+      mockCreateJwtToken.mockResolvedValue("mock-generated-jwt-token");
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    });
+
+    it("forbids storing guest responses, so signed-in users never receive a cached guest identity", async () => {
+      mockAuth.mockResolvedValue({isAuthenticated: false, userId: null});
+      mockCreateJwtToken.mockResolvedValue("mock-guest-jwt-token");
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    });
+
+    it("forbids storing the guest fallback returned after an error", async () => {
+      mockAuth.mockRejectedValue(new Error("Auth service error"));
+
+      const response = await GET();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    });
+  });
 });

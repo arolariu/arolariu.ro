@@ -10,6 +10,9 @@
   right: 0;
   z-index: z("sticky");
   padding: space(3) space(6);
+  padding-right: max(#{space(6)}, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(#{space(3)} + env(safe-area-inset-bottom, 0px));
+  padding-left: max(#{space(6)}, env(safe-area-inset-left, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;

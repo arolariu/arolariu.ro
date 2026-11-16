@@ -1,0 +1,45 @@
+// ===========================================
+// INVOICES LOAD ERROR STYLES
+// ===========================================
+@use "../../../../../styles/abstracts" as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+// Same spacing below the header as the tabs content it replaces.
+.loadError {
+  margin-top: space(6);
+
+  @include respond-below("md") {
+    margin-top: space(4);
+  }
+}
+
+.actions {
+  margin-top: space(3);
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.retryIcon {
+  @include icon-size(space(4));
+}
+
+.retryIconSpinning {
+  animation: spin 1s linear infinite;
+
+  @include reduced-motion {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

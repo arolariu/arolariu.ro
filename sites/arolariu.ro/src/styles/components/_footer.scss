@@ -33,6 +33,7 @@
 ///     .footer__build-info       — build metadata (slate text)
 ///     .footer__build-tooltip    — tooltip trigger
 ///     .footer__commit-link      — italic commit SHA link
+///   .footer__toolbar-tint       — sticky bottom strip sampled by iOS Safari toolbar tinting
 /// ```
 ///
 /// @see base/_globals.scss — `--footer-bg` CSS variable
@@ -431,4 +432,21 @@
   &:hover {
     text-decoration-color: color("primary-foreground");
   }
+}
+
+// iOS Safari toolbar tint sampler.
+// Safari 26 tints its floating toolbar from a fixed/sticky box (>10px tall, ~viewport wide) at the
+// viewport edge. Sticking to `bottom: 0` inside the footer keeps this strip at the viewport edge only
+// while the footer is on screen, so the toolbar matches the footer at the page end instead of showing
+// a light band. The safe-area inset keeps footer content above the home indicator. `z-index: -1`
+// paints it under the footer content (still above the footer background) so it never covers text.
+.footer__toolbar-tint {
+  display: block;
+  position: sticky;
+  bottom: 0;
+  z-index: -1;
+  width: 100%;
+  height: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  background-color: hsl(var(--footer-bg));
+  pointer-events: none;
 }

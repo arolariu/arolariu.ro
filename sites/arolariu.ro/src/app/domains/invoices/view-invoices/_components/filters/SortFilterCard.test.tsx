@@ -120,4 +120,30 @@ describe("SortFilterCard", () => {
     expect(onFiltersChange).toHaveBeenCalledTimes(1);
     expect(onFiltersChange).toHaveBeenCalledWith({sortBy, sortOrder});
   });
+
+  it("emits no filter change when browsing the options of a cleared sort without choosing one", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const onFiltersChange = vi.fn();
+    const {rerender} = render(
+      <SortFilterCard
+        filters={makeFilters({sortBy: null, sortOrder: null})}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    // Act — re-render with an unrelated filter change while the options are open, then dismiss them.
+    await user.click(screen.getByRole("combobox"));
+    expect(await screen.findByRole("option", {name: "forms.invoices.filters.sortOptions.nameAZ"})).toBeInTheDocument();
+    rerender(
+      <SortFilterCard
+        filters={makeFilters({sortBy: null, sortOrder: null, search: "milk"})}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+    await user.keyboard("{Escape}");
+
+    // Assert
+    expect(onFiltersChange).not.toHaveBeenCalled();
+  });
 });

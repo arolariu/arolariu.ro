@@ -3375,6 +3375,12 @@
         },
         "title": "Bine ați venit, {name}!",
         "viewInvoicesIsland": {
+          "loadError": {
+            "description": "A apărut o eroare la preluarea facturilor tale. Verifică-ți conexiunea și încearcă din nou.",
+            "retry": "Încearcă din nou",
+            "retrying": "Se reîncearcă...",
+            "title": "Nu am putut încărca facturile tale"
+          },
           "tabs": {
             "invoices": "Facturi",
             "liveAnalysis": "Analiză live",

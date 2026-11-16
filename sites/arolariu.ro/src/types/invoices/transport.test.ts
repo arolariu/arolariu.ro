@@ -133,6 +133,17 @@ describe("parseInvoiceResponse", () => {
   });
 
   describe("parseInvoiceCreationResponse", () => {
+    it("accepts an authenticated UUID v5 owner before invoice enrichment", () => {
+      const invoice = parseInvoiceCreationResponse({
+        ...validInvoiceJson,
+        userIdentifier: "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+        name: "",
+      });
+
+      expect(invoice.userIdentifier).toBe("2ed6657d-e927-568b-95e1-2665a8aea6a2");
+      expect(invoice.name).toBe("");
+    });
+
     it("accepts the empty name emitted before invoice enrichment", () => {
       const invoice = parseInvoiceCreationResponse({...validInvoiceJson, name: ""});
 
@@ -151,6 +162,13 @@ describe("parseInvoiceResponse", () => {
 
       expect(() => parseInvoiceCreationResponse(withoutName)).toThrow(new TransportValidationError("invoice.name", "expected string"));
     });
+  });
+
+  it("preserves authenticated UUID v5 ownership in detail and list responses", () => {
+    const response = {...validInvoiceJson, userIdentifier: "2ed6657d-e927-568b-95e1-2665a8aea6a2"};
+
+    expect(parseInvoiceResponse(response).userIdentifier).toBe("2ed6657d-e927-568b-95e1-2665a8aea6a2");
+    expect(parseInvoicesResponse([response])[0]?.userIdentifier).toBe("2ed6657d-e927-568b-95e1-2665a8aea6a2");
   });
 
   it("converts timestamps to real Date instances", () => {

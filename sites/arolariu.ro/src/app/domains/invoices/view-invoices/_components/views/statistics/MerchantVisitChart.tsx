@@ -41,8 +41,8 @@ function MerchantVisitCard({
 }): React.JSX.Element {
   const t = useTranslations();
 
-  // Format day name using Intl.DateTimeFormat for i18n support
-  const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(new Date(2024, 0, pattern.mostCommonDayOfWeek + 1));
+  // `mostCommonDayOfWeek` is a `Date#getDay()` index (0 = Sunday); Jan 7, 2024 is a Sunday.
+  const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(new Date(2024, 0, 7 + pattern.mostCommonDayOfWeek));
 
   return (
     <div className={styles["merchantCard"]}>
