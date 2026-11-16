@@ -387,6 +387,75 @@ az network front-door show \
 6. **Routing Rules**: Configure advanced routing
 7. **WAF Policies**: Add security policies (optional)
 
+### Cache-correction rollout and verification
+
+Changing the origin's `Cache-Control` header does not evict responses already cached at the edge. Complete this sequence after an **approved
+production deployment** of both [the query-string cache-key fix](./azureFrontDoor.bicep) and the website's
+[`/api/user`](../../../../sites/arolariu.ro/src/app/api/user/route.ts) and
+[`/api/health`](../../../../sites/arolariu.ro/src/app/api/health/route.ts) `no-store` responses. A purge is a separately approved production
+operation; these instructions do not authorize deployment, permission changes, or a purge.
+
+1. In Azure, confirm the deployed `production-route` uses `UseQueryString`. A committed Bicep/ARM change alone is not deployment evidence.
+2. Verify the deployed origin returns `Cache-Control: no-store` for `/api/user/` and `/api/health/`. Use unauthenticated **HEAD** requests
+   for this preflight: Front Door forwards HEAD to the origin instead of serving cached GET data. Do not warm the GET cache before the
+   corrected origin is live, and do not print or save identity response bodies. HEAD is only an origin-header check, not cache-purge proof.
+3. Confirm the production endpoint and its route-bound custom domains in Azure before purging. Also include the endpoint hostname when
+   `linkToDefaultDomain` is enabled. Do not infer this list from all custom domains on the profile: an unbound domain is not a route. The
+   production resource verified for this rollout is `arolariu-rg` / `qpfnu3-afd` / `production`, with `arolariu.ro`, `www.arolariu.ro`, and
+   `production-c0e8gvg4dpfzcvhs.z02.azurefd.net`. Re-discover the scope if these resources change.
+4. With approval, purge the following paths for **every** domain from step 3. Both API slash forms and the actual Next.js optimizer path are
+   included; purging `/images/*` alone does not clear `/_next/image/`. Front Door purges all query-string variants of a path.
+
+```powershell
+# Requires an approved Azure CLI environment with the cdn commands already available.
+# Otherwise use the Azure portal's Purge cache operation with the same domains and paths.
+$domains = @('arolariu.ro', 'www.arolariu.ro', 'production-c0e8gvg4dpfzcvhs.z02.azurefd.net')
+$paths = @('/api/*', '/api/user', '/api/user/', '/api/health', '/api/health/',
+           '/_next/image', '/_next/image/', '/images/*')
+az afd endpoint purge --resource-group arolariu-rg --profile-name qpfnu3-afd `
+    --endpoint-name production --domains $domains --content-paths $paths
+if ($LASTEXITCODE -ne 0) { throw 'Front Door purge failed; do not mark the rollout complete.' }
+```
+
+5. Wait for successful purge completion and edge propagation. Microsoft documents propagation of up to ten minutes. Then issue two ordinary
+   GETs to each API path on each domain, without query cache-busters, authorization, cookies, or request cache-bypass headers. On Windows,
+   this probe discards bodies and outputs only the status and relevant cache headers:
+
+```powershell
+foreach ($domain in $domains) {
+    foreach ($path in @('/api/user', '/api/user/', '/api/health', '/api/health/')) {
+        foreach ($attempt in 1..2) {
+            $headers = @(curl.exe --silent --show-error --max-time 30 --dump-header - --output NUL "https://$domain$path")
+            if ($LASTEXITCODE -ne 0) { throw "Request failed: $domain$path" }
+            $status = @($headers | Select-String '^HTTP/\S+\s+(\d{3})')
+            $expectedStatus = if ($path.EndsWith('/')) { '200' } else { '308' }
+            if ($status.Count -ne 1 -or $status[0].Matches[0].Groups[1].Value -ne $expectedStatus) {
+                throw "Unexpected HTTP status: $domain$path"
+            }
+            $cache = ($headers | Select-String '^x-cache:\s*') -join ', '
+            if ($cache -notmatch '^x-cache:\s*(TCP_MISS|CONFIG_NOCACHE|PRIVATE_NOSTORE)\s*$') {
+                throw "Unexpected or missing cache status: $domain$path ($cache)"
+            }
+            if ($path.EndsWith('/') -and -not ($headers -match '^cache-control:.*\bno-store\b')) {
+                throw "Missing no-store directive: $domain$path"
+            }
+            "GET $domain$path attempt $attempt"
+            $headers | Select-String '^(HTTP/|location:|cache-control:|x-cache:|age:|x-azure-ref:)'
+        }
+    }
+}
+```
+
+6. Confirm the no-slash `308` redirects point to their corresponding slash paths. Repeat the GET checks from another geographic location
+   where available. Any `TCP_HIT`/`TCP_REMOTE_HIT`, missing `no-store` on a terminal API response, unexpected status, or failed purge leaves
+   the rollout incomplete. A single `TCP_MISS` or a HEAD request does not prove that stale cached entries were evicted.
+
+Record the deployment revision, purge operation result, affected domains/paths, and sanitized header evidence on the associated review
+thread before resolving it. If validation fails, investigate the deployed origin and route rather than restoring cacheable identity
+responses or repeatedly purging an unchanged origin. Do not automatically install CLI extensions or grant broader Azure permissions. See
+[Microsoft's purge procedure](https://learn.microsoft.com/en-us/azure/frontdoor/standard-premium/how-to-cache-purge) and
+[Front Door caching behavior](https://learn.microsoft.com/en-us/azure/frontdoor/front-door-caching).
+
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues**
