@@ -231,12 +231,19 @@ the logo and social icons use `full`. This is the **site** scale; library compon
 
 ### 3.6 Elevation
 
-Separate `$shadows` (light) and `$shadows-dark` maps with levels `none`, `sm`, `md`, `lg`, `xl`, `2xl`. Use the **mixin** so dark mode picks
-the dark map automatically; the bare `shadow()` function is light-only.
+Separate `$shadows` (light) and `$shadows-dark` maps with levels `none`, `sm`, `md`, `lg`, `xl`, `2xl`. The `shadow()` **mixin** emits the
+light value plus a `.dark &` override; the bare `shadow()` function is light-only. That override, like `@include dark`, only works in global
+partials: in a CSS Module the `.dark` class is hashed and never matches `<html class="dark">`, so `@include shadow`, `hover-lift` and
+`card-hover` render the light shadow in both modes. In a module, write the dark value under `:global(.dark) &`.
 
 ```scss
-@include shadow("md"); // ✅ light value, plus a .dark & override
+@include shadow("md"); // light value, plus a .dark & override (global partials only)
 box-shadow: shadow("md"); // light mode only
+
+// In a *.module.scss (with @use "sass:map")
+:global(.dark) & {
+  box-shadow: map.get($shadows-dark, "md");
+}
 ```
 
 | Level  | Typical use                                        |
@@ -417,7 +424,8 @@ Module. Only write a custom primitive when the library has no equivalent.
 Layout: `flex`, `flex-between`, `flex-center`, `flex-column`, `flex-column-center`, `grid`, `responsive-grid`, `stack`, `spaced-children`,
 `container`. Responsive: `respond-to`, `respond-below`. Visual: `gradient-bg`, `backdrop-blur`, `glass`, `shadow`, `card-hover`,
 `hover-lift`, `orb`, `image-drop-shadow`, `icon-size`. Typography and utility: `text-balance`, `text-muted`, `truncate`, `line-clamp`,
-`visually-hidden`, `transition`. Accessibility: `focus-ring`, `reduced-motion`, `reduced-transparency`. Theming: `dark`.
+`visually-hidden`, `transition`. Accessibility: `focus-ring`, `reduced-motion`, `reduced-transparency`. Theming: `dark` (global partials
+only; see [section 3.6](#36-elevation)).
 
 `glass` is defined but **no stylesheet uses it**; the frosted surfaces on the site call `backdrop-blur` directly (2px on the code block, 4px
 on the biography and auth panels, 8px on About pillar cards and invoice overlays and toolbars).
@@ -621,8 +629,9 @@ The design-specific checklist:
 4. **Existing motifs first.** Orb, gradient text, frosted surface, `card-hover`, `hover-lift`.
 5. **Responsive through mixins.** `respond-to` and `respond-below`, never a raw `@media (min-width: 768px)`.
 6. **Motion.** `motion/react` for entrance and loop, `@include transition()` for state; gate JS motion on reduced-motion preference.
-7. **Verify dark mode and presets.** The `.dark` class flips tokens; add `@include dark { … }` only when a property does not follow a token.
-   Check the default, `sunset` and `monochrome` presets.
+7. **Verify dark mode and presets.** The `.dark` class flips tokens; add a dark override only when a property does not follow a token. In a
+   CSS Module write it as `:global(.dark) & { … }`, because `@include dark` emits a hashed `.dark` class there that never matches. Check the
+   default, `sunset` and `monochrome` presets.
 8. **Accessibility.** Focus rings, localized names for icon-only controls, landmarks, contrast over translucent surfaces.
 9. **Copy.** All user-facing text through `next-intl` for `en`, `ro` and `fr`.
 10. **Tests and stories.** Colocate `Foo.test.tsx` and `Foo.stories.tsx` next to `Foo.tsx`.
@@ -663,7 +672,10 @@ opacity("semi")
 @include gradient-bg()                @include backdrop-blur(8px)
 @include text-balance                 @include truncate                @include line-clamp(3)
 @include focus-ring                   @include orb(10rem, 48px, color-alpha("primary", 0.2))
-@include dark { … }                   @include reduced-motion { … }    @include reduced-transparency { … }
+@include reduced-motion { … }         @include reduced-transparency { … }
+
+// Dark overrides in a *.module.scss (@include dark only works in global partials)
+:global(.dark) & { … }
 ```
 
 ```tsx
