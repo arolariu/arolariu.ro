@@ -562,6 +562,64 @@ describe("useInvoices", () => {
       expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
+    it("ignores a retry that settles after its hook unmounted and a remounted hook fetched fresh invoices", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const {setEntities} = createMockStoreState({hasHydrated: true});
+      const departedRetry = createDeferredFetch();
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice1]});
+      mockFetchInvoices.mockReturnValueOnce(departedRetry.promise);
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice3]});
+
+      const departed = renderHook(() => useInvoices());
+      await waitFor(() => {
+        expect(setEntities).toHaveBeenCalledWith([testInvoice1]);
+      });
+      let departedRetryPromise: Promise<void> = Promise.resolve();
+      act(() => {
+        departedRetryPromise = departed.result.current.refetch();
+      });
+      departed.unmount();
+
+      renderHook(() => useInvoices());
+      await waitFor(() => {
+        expect(setEntities).toHaveBeenLastCalledWith([testInvoice3]);
+      });
+
+      await act(async () => {
+        departedRetry.resolve({success: true, data: [testInvoice2]});
+        await departedRetryPromise;
+      });
+
+      expect(setEntities).not.toHaveBeenCalledWith([testInvoice2]);
+      expect(setEntities).toHaveBeenLastCalledWith([testInvoice3]);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it("ignores a retry that fails after its hook unmounted", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      createMockStoreState({hasHydrated: true});
+      const departedRetry = createDeferredFetch();
+      mockFetchInvoices.mockResolvedValueOnce({success: true, data: [testInvoice1]});
+      mockFetchInvoices.mockReturnValueOnce(departedRetry.promise);
+
+      const departed = renderHook(() => useInvoices());
+      await waitFor(() => {
+        expect(mockFetchInvoices).toHaveBeenCalledOnce();
+      });
+      let departedRetryPromise: Promise<void> = Promise.resolve();
+      act(() => {
+        departedRetryPromise = departed.result.current.refetch();
+      });
+      departed.unmount();
+
+      await act(async () => {
+        departedRetry.reject(new Error("Network failure"));
+        await departedRetryPromise;
+      });
+
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
     it("keeps a stable identity across renders", async () => {
       createMockStoreState({hasHydrated: true});
       mockFetchInvoices.mockResolvedValue({success: true, data: [testInvoice1]});

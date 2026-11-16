@@ -71,6 +71,7 @@ type HookOutputType = Readonly<{
  *
  * **Concurrency:**
  * - The most recently started fetch wins; an older fetch that settles later is ignored
+ * - Fetches still outstanding when the hook unmounts are ignored, so they cannot overwrite a newer mount's data
  *
  * **Performance:**
  * - One fetch per mount; a remount shows cached data immediately and revalidates in the background
@@ -157,6 +158,10 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
 
   useEffect(() => {
     void refetch();
+    return () => {
+      // Invalidate outstanding requests so a departed instance cannot overwrite a newer mount's data.
+      latestRequestIdRef.current += 1;
+    };
   }, [refetch]);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
