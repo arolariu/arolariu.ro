@@ -10,6 +10,9 @@ import styles from "./global-not-found.module.scss";
 import ContextProviders from "./providers";
 import Tracking from "./tracking";
 
+// This document bypasses the root layout, so it re-exports the shared viewport (including `viewport-fit=cover`).
+export {viewport} from "@/metadata";
+
 export const metadata: Metadata = {
   title: "arolariu.ro | 404",
   description: "Page not found.",

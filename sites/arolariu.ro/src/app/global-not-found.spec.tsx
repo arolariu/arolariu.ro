@@ -33,6 +33,14 @@ test.describe("Global Not Found (404) Tests @error @404", () => {
     expect(bodyText!.length).toBeGreaterThan(20);
   });
 
+  test("should extend the 404 document into the display safe areas", async ({safeNavigate, page}) => {
+    const navigationResult = await safeNavigate("/viewport-404-test");
+    expect(navigationResult.success).toBe(false);
+    expect(navigationResult.status).toBe(404);
+
+    await expect(page.locator('meta[name="viewport"]')).toHaveAttribute("content", /viewport-fit=cover/u);
+  });
+
   test.describe("404 Page Accessibility @a11y", () => {
     test("should be accessible", async ({safeNavigate, checkA11y}) => {
       const navigationResult = await safeNavigate("/non-existent-route-a11y-test");
