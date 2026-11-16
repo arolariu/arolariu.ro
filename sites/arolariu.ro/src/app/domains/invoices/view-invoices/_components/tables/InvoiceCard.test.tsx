@@ -107,6 +107,15 @@ describe("InvoiceCard", () => {
       expect(screen.queryByText(formatFullDate(createdAt))).not.toBeInTheDocument();
     });
 
+    it("identifies an unnamed invoice by its id in the title and scan alt text", () => {
+      const invoice = buildInvoice({...baseInvoice, name: ""});
+
+      renderCard(buildProps({invoice}));
+
+      expect(screen.getByText(baseInvoice.id)).toBeInTheDocument();
+      expect(within(getCarousel()).getByAltText(`${baseInvoice.id} scan 1`)).toBeInTheDocument();
+    });
+
     it("falls back to the unknown merchant label when the merchant is not cached", () => {
       act(() => {
         useMerchantsStore.setState({entities: []});
