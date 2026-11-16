@@ -239,9 +239,12 @@ on the same browser profile (see [Persistence](#persistence)).
 
 ### Invoice detail and edit
 
-- **Detail** has **Recipes** and **Info** tabs, export to PDF, CSV or JSON (or copy a summary; the Edit button, the share,
-  shopping-calendar, budget and seasonal cards are owner-only, and other viewers see a guest banner), a share-analytics dialog, a receipt
-  scan card, an item analytics card, and related invoices. Edit is one click away from the header.
+- **Detail** shows every viewer the invoice details, a health-score bar with its report dialog, item analytics, category insights, the
+  **Recipes** and **Info** tabs, a receipt scan card, a merchant card, the current-invoice analytics charts (when the invoice has items),
+  and **Print** and **Export** in the header. Export offers PDF, CSV or JSON, or copies a summary. The Print button has no click handler;
+  the browser's own print still uses the print header. Only the owner gets **Edit** and **Delete** in the header, the analysis panel, the
+  share, shopping-calendar, budget and seasonal cards, the analytics **Compare** tab and related invoices; shared and public viewers see a
+  guest banner instead. A share-analytics dialog is registered in `DialogContainer`, but nothing opens it.
 - **Edit** opens with a guided-edit banner, an items table with inline edit (Esc cancels), a sharing card, and metadata and recipes tabs.
   Destructive actions (for example delete) go through confirmation dialogs.
 
