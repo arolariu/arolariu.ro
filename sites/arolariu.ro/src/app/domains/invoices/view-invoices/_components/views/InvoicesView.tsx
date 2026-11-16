@@ -19,15 +19,25 @@ type Props = {
 type ViewMode = "table" | "grid";
 
 /**
+ * Narrows the raw `view` search parameter to a supported view mode.
+ *
+ * @param rawViewMode - The raw `view` search parameter.
+ * @returns The view mode when the parameter names one, otherwise `null`.
+ */
+function parseViewMode(rawViewMode: string | null): ViewMode | null {
+  return rawViewMode === "table" || rawViewMode === "grid" ? rawViewMode : null;
+}
+
+/**
  * Resolves which invoices view to render.
  *
- * @param urlViewMode - The raw `view` search parameter.
- * @param chosenViewMode - The view the user picked from the toggle during this visit, if any.
+ * @param urlViewMode - The view selected by the URL, if any.
+ * @param chosenViewMode - The view last chosen during this visit, from the URL or the toggle, if any.
  * @param isMobile - Whether the measured viewport is below the mobile breakpoint.
- * @returns The URL view when valid, otherwise the user's table choice, otherwise the device default.
+ * @returns The URL view when present, otherwise the last table choice, otherwise the device default.
  */
-function resolveViewMode(urlViewMode: string | null, chosenViewMode: ViewMode | null, isMobile: boolean): ViewMode {
-  if (urlViewMode === "table" || urlViewMode === "grid") {
+function resolveViewMode(urlViewMode: ViewMode | null, chosenViewMode: ViewMode | null, isMobile: boolean): ViewMode {
+  if (urlViewMode !== null) {
     return urlViewMode;
   }
   // `useInvoiceFilters` omits the default table view from the URL, so a table choice is only visible here.
@@ -61,7 +71,8 @@ function resolveViewMode(urlViewMode: string | null, chosenViewMode: ViewMode | 
  * **Responsive Design**:
  * - Defaults to grid view on mobile devices for better touch interaction
  * - The device default is derived at render time from the measured window size, without rewriting the URL
- * - An explicit `view` URL parameter or a toggle choice always takes precedence over the device default
+ * - An explicit `view` URL parameter or a toggle choice always takes precedence over the device default,
+ *   and an explicit table view survives later filter or sort updates that drop it from the URL
  *
  * **Performance**:
  * - Filtered results are memoized via `useFilteredInvoices` hook
@@ -76,8 +87,13 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   const searchParams = useSearchParams();
   const {filters, setFilters, activeFilterCount} = useInvoiceFilters();
   const filteredInvoices = useFilteredInvoices(invoices, filters);
-  const [chosenViewMode, setChosenViewMode] = useState<ViewMode | null>(null);
-  const viewMode = resolveViewMode(searchParams.get("view"), chosenViewMode, isMobile);
+  const urlViewMode = parseViewMode(searchParams.get("view"));
+  const [chosenViewMode, setChosenViewMode] = useState<ViewMode | null>(urlViewMode);
+  // Remember explicit URL views: later filter or sort updates drop the default `view=table` from the URL.
+  if (urlViewMode !== null && urlViewMode !== chosenViewMode) {
+    setChosenViewMode(urlViewMode);
+  }
+  const viewMode = resolveViewMode(urlViewMode, chosenViewMode, isMobile);
 
   const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
     items: filteredInvoices,

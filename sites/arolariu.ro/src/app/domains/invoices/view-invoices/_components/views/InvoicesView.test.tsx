@@ -231,6 +231,19 @@ describe("RenderInvoicesView", () => {
         expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
       });
 
+      it("keeps a table view chosen in the URL after a sort drops the default view from the URL", async () => {
+        // Arrange
+        const {user} = renderView(namedInvoices, "view=table");
+
+        // Act
+        await user.click(screen.getByRole("columnheader", {name: /tableView\.columns\.invoice/u}));
+
+        // Assert
+        expect(navigation.state.replacements).toEqual([`${PATHNAME}?sortBy=name&sortOrder=asc`]);
+        expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
+        expect(renderedNames(NAMED_INVOICE)).toEqual(["Alpha market", "Bravo bakery", "Charlie cafe"]);
+      });
+
       it("keeps the table view once the user picks it, even though the URL omits the default table view", async () => {
         // Arrange
         const {user} = renderView(namedInvoices);
