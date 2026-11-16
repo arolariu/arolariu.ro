@@ -525,8 +525,9 @@ header or action; no decorative emoji or icon noise.
 
 ### 6.8 Feedback and overlays
 
-`GlobalToaster` (mounted by the provider stack) shows toasts through `@/lib/notify`; toasts persist until closed (default timeout 0) and
-have a localized close label. The library `Dialog` takes a `closeLabel`. Overlays take their layer from the z-index scale above.
+`GlobalToaster` (mounted by the provider stack) shows toasts through `@/lib/notify` and has a localized close label. Success, info and
+neutral toasts auto-dismiss after `DEFAULT_CONFIRMATION_TIMEOUT_MS` (5000 ms); errors, warnings and loading toasts stay until closed unless
+the caller passes a `timeout`. The library `Dialog` takes a `closeLabel`. Overlays take their layer from the z-index scale above.
 
 ---
 

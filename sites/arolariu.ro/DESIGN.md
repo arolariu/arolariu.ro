@@ -366,8 +366,9 @@ hand-tune a library control to match a site card; wrap or compose instead.
 
 ### Feedback
 
-- **Toasts** appear in one labelled notification region, persist until the visitor closes them (the default timeout is zero) and sit on the
-  toast layer.
+- **Toasts** appear in one labelled notification region and sit on the toast layer. Success, info and neutral toasts auto-dismiss after 5
+  seconds (`DEFAULT_CONFIRMATION_TIMEOUT_MS` in `src/lib/notify.ts`); errors, warnings and loading toasts stay until the visitor closes
+  them.
 - **Skeletons** are the loading pattern: route loading files for the invoice flows mirror the final layout instead of showing a spinner.
 - **Empty states** explain what is missing and offer the next action, such as uploading a first receipt.
 
