@@ -602,8 +602,9 @@ border or elevation; decorative emoji.
   `transition-duration: 0.01ms !important` and `scroll-behavior: auto !important` to `*`, `*::before` and `*::after` under
   `prefers-reduced-motion: reduce`. `TechSphere` also respects the preference.
 - **Not covered:** `motion/react` JavaScript animations (orb pulses, entrance scales, scroll reveals). The app has no global
-  `MotionConfig reducedMotion`, so they still run. When adding one, gate it with `useReducedMotion()` or never let the content depend on the
-  animation finishing.
+  `MotionConfig reducedMotion`, so they still run. When adding one, gate the motion itself with `useReducedMotion()` so looping and entrance
+  animations stop for users who asked for less motion. Also never let content visibility depend on the animation finishing; that is an
+  additional requirement, not a substitute for the gate.
 - **Unwired preference:** My Profile exposes an `animationsEnabled` toggle, but nothing reads it globally.
 
 ---
