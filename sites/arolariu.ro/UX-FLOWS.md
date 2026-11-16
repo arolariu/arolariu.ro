@@ -225,8 +225,10 @@ its own scan selection and starts empty, even when the View scans group banner o
 ### View invoices
 
 Tabs for **Invoices**, **Statistics** and **Live analysis**. The invoices tab switches between grid and table views, filters and sorts, and
-offers bulk actions. **Import** accepts `csv`, `pdf` and `xlsx`; **Export** produces `csv`, `json` or `pdf`. Guests see an empty state that
-points to upload.
+offers bulk actions. **Import** is a placeholder: it accepts `csv`, `pdf` and `xlsx` (or `xls`) files up to 10 MB, then only simulates
+success; no file is processed. **Export** offers `csv`, `json` and `pdf`, but only JSON produces a file (or copies to the clipboard); CSV
+and PDF throw a not-implemented error. Single-invoice export on the detail page works in every format. Guests see an empty state that points
+to upload.
 
 ![View invoices as a guest](docs/screenshots/13-view-invoices-guest-desktop-light.webp)
 
@@ -350,6 +352,7 @@ Recorded, not fixed: this documentation pass is docs-only, so none of these were
 | Mobile navigation   | No Escape handler and no focus trap or restore; the drawer has no slide animation.                                                                                                                                                                                                                                                                                     |
 | Access flow         | Edit-invoice and the invoice forbidden screen do not carry a return path to sign-in; `/auth` is reached without `redirect_url`. Edit has no owner comparison in the page. A missing invoice shows the forbidden screen instead of `not-found.tsx`, because `fetchInvoice` errors carry no `status` for the pages' `404` branch.                                        |
 | Scan grouping       | The View scans group banner selects its scans in the scans store, but the create-invoice wizard keeps its own selection, so the grouped scans are not preselected when the wizard opens.                                                                                                                                                                               |
+| Import and export   | On View invoices, the import dialog only simulates success (`ImportDialog.tsx`), and the collection exporter throws for CSV and PDF (`view-invoices/_utils/export.ts`); only JSON export works.                                                                                                                                                                        |
 | Preferences         | `animationsEnabled` and `compactMode` are stored and toggled but not read anywhere. Only Appearance preferences persist; the other profile panels hold in-memory state, Quick stats are placeholder values, the Data panel's export and delete buttons are inert and Delete Account links out to Clerk. Storage keys are not per-user and no sign-out reset was found. |
 | Theme presets       | `THEME_PRESETS.default.preview` shows cyan, purple and pink, but the real default is blue, violet and magenta. Preset names and descriptions are English-only strings. The custom preset writes `--gradient-from`, `--gradient-via` and `--gradient-to`, but no stylesheet reads them, so custom gradient colors only reach the first stop through `--primary`.        |
 | i18n                | An unsupported `locale` cookie throws instead of falling back.                                                                                                                                                                                                                                                                                                         |
