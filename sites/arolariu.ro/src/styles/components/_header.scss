@@ -40,8 +40,11 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 4rem;
+  // Home Screen launches draw the `black-translucent` status bar over the page, so the fixed mobile header
+  // grows by the top safe area and keeps its controls below the status bar or Dynamic Island.
+  min-height: calc(4rem + env(safe-area-inset-top, 0px));
   padding: space(2) space(4);
+  padding-top: calc(space(2) + env(safe-area-inset-top, 0px));
   // The fixed mobile header ignores body safe-area padding, so it clears landscape notches itself.
   padding-left: calc(space(4) + env(safe-area-inset-left, 0px));
   padding-right: calc(space(4) + env(safe-area-inset-right, 0px));
@@ -55,9 +58,12 @@
   right: 0;
   z-index: z("fixed");
 
+  // Desktop: the header joins the document flow, which the body's top safe-area padding already offsets.
   @include respond-to("lg") {
     position: relative;
     z-index: z("sticky");
+    min-height: 4rem;
+    padding-top: space(2);
     padding-left: space(4);
     padding-right: space(4);
   }

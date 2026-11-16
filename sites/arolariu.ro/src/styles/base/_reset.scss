@@ -132,3 +132,11 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
+
+// 16. Top safe-area inset.
+// Home Screen launches draw the `black-translucent` status bar over the page. Offset the document flow
+// below it; the fixed mobile header adds the same inset to its own height, so page content keeps its gap
+// beneath the header. Resolves to 0 in the browser and wherever the device has no top inset.
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+}
