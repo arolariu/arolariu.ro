@@ -179,10 +179,9 @@ This is the Operate surface: guests can look, signed-in users finish tasks. Atmo
 flowchart LR
   Hub["Invoices hub"] --> Up["Upload scans"]
   Up --> Scans["View scans"]
-  Up --> Create
+  Up --> Create["Create invoice wizard: select scans, details, review"]
   Scans -- "selection toolbar" --> Quick["Create-from-scans dialog: one invoice per scan, or one from all"]
   Quick --> List
-  Scans -- "group banner" --> Create["Create invoice wizard: select scans, details, review"]
   Create --> Detail["View invoice"]
   Hub --> List["View invoices"]
   List --> Detail
@@ -210,20 +209,21 @@ invoices) and **Profile** (`/my-profile`). The active item follows the pathname.
 
 ### View scans
 
-A grid of scans with selection, rename (Esc cancels), rotation and delete. An empty library offers an upload action. Two separate paths lead
-from scans to invoices:
+A grid of scans with selection, rename (Esc cancels), rotation and delete. An empty library offers an upload action. One path leads from
+scans to invoices:
 
 - **Selection toolbar.** Selecting scans reveals a toolbar whose **Create invoice** action (**Create invoices** for several scans) opens a
   dialog, not the wizard. With more than one scan selected, the dialog asks for a mode: one invoice per scan, or one invoice from all the
   selected scans. It creates the invoices in place, shows progress and any partial failures, and ends with a link to **View invoices**.
-- **Group banner.** When 2 to 5 ready scans were uploaded within five minutes of each other, a banner (dismissible for the session) offers
-  to combine them. Its action selects that group in the scans store and opens the three-step **Create invoice** wizard below.
+
+`view-scans/_components/ScanGroupBanner.tsx` is dormant: nothing imports it, so View scans never shows a group banner. If it were mounted,
+it would appear only when the whole library holds 2 to 5 ready scans and at least two of them were uploaded within five minutes of each
+other; its action selects that group in the scans store and opens the wizard.
 
 ### Create invoice
 
 Three steps in order: `select-scans`, `details`, `review`. Back is hidden on the first step and Next is hidden on review. The wizard keeps
-its own scan selection and starts empty, even when the View scans group banner opened it. Creating the invoice navigates to
-`view-invoice/<id>`. The flow has its own notes in
+its own scan selection and always starts empty. Creating the invoice navigates to `view-invoice/<id>`. The flow has its own notes in
 [`src/app/domains/invoices/create-invoice/README.md`](src/app/domains/invoices/create-invoice/README.md).
 
 ### View invoices
@@ -358,7 +358,7 @@ Recorded, not fixed: this documentation pass is docs-only, so none of these were
 | Contrast            | `muted-foreground` on the Slate Wash surface measures about 4.3:1, below AA for body text. In light mode the intent pairs also fall short for normal text: white on success 3.70:1, on warning 3.29:1 and on info 4.36:1, and the destructive pair 3.59:1 (used by the delete button in `DeleteScanDialog.module.scss`).                                                                                                                              |
 | Mobile navigation   | No Escape handler and no focus trap or restore; the drawer has no slide animation.                                                                                                                                                                                                                                                                                                                                                                    |
 | Access flow         | Edit-invoice and the invoice forbidden screen do not carry a return path to sign-in; `/auth` is reached without `redirect_url`. Edit has no owner comparison in the page, so sharing recipients, and any signed-in user for a public invoice, reach an edit screen whose saves the API rejects. A missing invoice shows the forbidden screen instead of `not-found.tsx`, because `fetchInvoice` errors carry no `status` for the pages' `404` branch. |
-| Scan grouping       | The View scans group banner selects its scans in the scans store, but the create-invoice wizard keeps its own selection, so the grouped scans are not preselected when the wizard opens.                                                                                                                                                                                                                                                              |
+| Scan grouping       | `ScanGroupBanner.tsx` is implemented but not mounted, so there is no grouped-scan shortcut. Its 2-to-5 limit counts every ready scan in the library, so a larger library would never show it, and it selects scans in the scans store while the create-invoice wizard keeps its own selection, so the group would not be preselected.                                                                                                                 |
 | Playground gate     | `playground/workers/page.tsx` allows `SITE_ENV` values `DEV` and `STAGING`, but deployments set `DEVELOPMENT` or `PRODUCTION`, so the page 404s on staging too and renders only under `next dev`.                                                                                                                                                                                                                                                     |
 | Import and export   | On View invoices, the import dialog only simulates success (`ImportDialog.tsx`), and the collection exporter throws for CSV and PDF (`view-invoices/_utils/export.ts`); only JSON export works.                                                                                                                                                                                                                                                       |
 | Account isolation   | Invoices, merchants and scans share one IndexedDB database with no per-user key and no sign-out reset. `useInvoices` (`_hooks/invoice/useInvoices.tsx`) returns the cached invoices after hydration while the current account's fetch is pending, and keeps them if it fails, so a guest or another account can see the previous account's invoices on the same browser profile.                                                                      |
