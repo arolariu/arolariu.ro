@@ -45,6 +45,19 @@ function delayedResponse(milliseconds: number, options?: RequestInit): Promise<R
   });
 }
 
+function stalledBodyResponse(options?: RequestInit): Promise<Response> {
+  const signal = options?.signal;
+  if (!signal) throw new Error("The runtime request must supply an abort signal.");
+
+  // Like fetch, the headers arrive first and an aborted request signal then errors the unread body stream.
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      signal.addEventListener("abort", () => controller.error(signal.reason), {once: true});
+    },
+  });
+  return Promise.resolve(new Response(body, {headers: {"content-type": "application/json"}}));
+}
+
 describe("runtime configuration startup deadlines", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -131,6 +144,60 @@ describe("runtime configuration startup deadlines", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(Date.now() - startedAt).toBe(92_000);
     for (const [key, value] of Object.entries(privateEnvironment)) expect(process.env[key]).toBe(value);
+  });
+
+  it("retries when the response body stalls past the HTTP deadline before initializing", async () => {
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+    useDeadlineClock();
+    let attempts = 0;
+    const fetchMock = vi.fn((_url: string, options?: RequestInit) => {
+      attempts += 1;
+      return attempts < 3 ? stalledBodyResponse(options) : Promise.resolve(runtimeResponse());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = initializeRuntimeEnvironmentConfiguration().catch((error: unknown) => error);
+    await vi.runAllTimersAsync();
+
+    expect(await result).toBeUndefined();
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("test-clerk");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("reports the HTTP deadline after three stalled response bodies instead of an invalid document", async () => {
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+    useDeadlineClock();
+    const fetchMock = vi.fn((_url: string, options?: RequestInit) => stalledBodyResponse(options));
+    vi.stubGlobal("fetch", fetchMock);
+    const startedAt = Date.now();
+
+    const result = initializeRuntimeEnvironmentConfiguration().catch((error: unknown) => error);
+    await vi.runAllTimersAsync();
+    const error: unknown = await result;
+
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error)).toContain("stage=http");
+    expect(String(error)).toContain("failure=TimeoutError");
+    expect(String(error)).not.toContain("Invalid website runtime configuration");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(Date.now() - startedAt).toBe(92_000);
+    for (const [key, value] of Object.entries(privateEnvironment)) expect(process.env[key]).toBe(value);
+  });
+
+  it("falls back to dotenv locally when the response body stalls past the deadline", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("CLERK_SECRET_KEY", "local-clerk");
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./configProxy");
+    useDeadlineClock();
+    const fetchMock = vi.fn((_url: string, options?: RequestInit) => stalledBodyResponse(options));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = initializeRuntimeEnvironmentConfiguration().catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(await result).toBeUndefined();
+    expect(process.env["CLERK_SECRET_KEY"]).toBe("local-clerk");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("retains the two-second, single-attempt local fallback", async () => {
