@@ -62,7 +62,8 @@ Constraints that future work must preserve:
 
 - Server Components by default; interactivity lives in small client islands. Access decisions are made on the server, never only in client
   UI.
-- User-facing text is translated in all three locales, with a few documented exceptions in UX-FLOWS.md.
+- User-facing text is translated in all three locales, with hard-coded English exceptions; UX-FLOWS.md lists the known ones, not
+  exhaustively.
 - Shared UI comes from `@arolariu/components`; site styling uses SCSS and CSS Modules.
 - The repository, versions, commands, and risk boundaries are owned by root `AGENTS.md`; this document does not restate them.
 
