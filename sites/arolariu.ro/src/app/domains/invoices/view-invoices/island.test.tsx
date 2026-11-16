@@ -32,6 +32,7 @@ const LOAD_ERROR_TITLE = /viewInvoicesIsland\.loadError\.title/;
 const RETRY_BUTTON = /viewInvoicesIsland\.loadError\.retry$/;
 const RETRYING_BUTTON = /viewInvoicesIsland\.loadError\.retrying/;
 const INVOICES_TAB = /viewInvoicesIsland\.tabs\.invoices/;
+const BULK_SELECTION_SUMMARY = "pages.invoices.viewInvoices.bulkActions.selected";
 
 function buildInvoice(id: string, name: string): Invoice {
   return TestDataBuilder.build("invoice", {
@@ -146,6 +147,41 @@ describe("RenderViewInvoicesScreen", () => {
     expect(screen.queryByRole("button", {name: RETRY_BUTTON})).not.toBeInTheDocument();
     expect(mockFetchWithTimeout).toHaveBeenCalledTimes(2);
     expect(useInvoicesStore.getState().entities.map((invoice) => invoice.id)).toEqual([cachedInvoice.id, freshInvoice.id]);
+  });
+
+  it("drops a selection of invoices that a successful retry no longer returns", async () => {
+    act(() => {
+      useInvoicesStore.setState({selectedEntities: [cachedInvoice]});
+    });
+    mockFetchWithTimeout.mockResolvedValueOnce(serverErrorResponse()).mockResolvedValueOnce(invoicesResponse([freshInvoice]));
+    const user = userEvent.setup();
+
+    render(<RenderViewInvoicesScreen />);
+    await user.click(await screen.findByRole("button", {name: RETRY_BUTTON}));
+
+    expect(await screen.findByRole("tab", {name: INVOICES_TAB})).toBeInTheDocument();
+    expect(useInvoicesStore.getState().selectedEntities).toEqual([]);
+    expect(screen.queryByText(BULK_SELECTION_SUMMARY)).not.toBeInTheDocument();
+  });
+
+  it("keeps a selection of invoices that a successful retry returns, using the refreshed invoices", async () => {
+    const refreshedCachedInvoice: Invoice = {...cachedInvoice, name: "Refreshed cached invoice"};
+    act(() => {
+      useInvoicesStore.setState({selectedEntities: [cachedInvoice]});
+    });
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(serverErrorResponse())
+      .mockResolvedValueOnce(invoicesResponse([refreshedCachedInvoice, freshInvoice]));
+    const user = userEvent.setup();
+
+    render(<RenderViewInvoicesScreen />);
+    await user.click(await screen.findByRole("button", {name: RETRY_BUTTON}));
+
+    expect(await screen.findByRole("tab", {name: INVOICES_TAB})).toBeInTheDocument();
+    expect(useInvoicesStore.getState().selectedEntities.map((invoice) => [invoice.id, invoice.name])).toEqual([
+      [cachedInvoice.id, "Refreshed cached invoice"],
+    ]);
+    expect(screen.getByText(BULK_SELECTION_SUMMARY)).toBeInTheDocument();
   });
 
   it("keeps the focused retry button unavailable while a retry is in flight and restores it when the retry fails", async () => {

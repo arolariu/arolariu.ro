@@ -230,6 +230,79 @@ describe("createEntityStore functionality", () => {
       expect(result.current.getState().entities).toHaveLength(1);
       expect(result.current.getState().entities[0]?.id).toBe("2");
     });
+
+    it("should drop selections whose entities are absent from the new list", () => {
+      const {result} = renderHook(() => useTestStore);
+      const kept: TestEntity = {id: "1", name: "Kept", value: 1};
+      const removed: TestEntity = {id: "2", name: "Removed", value: 2};
+
+      act(() => {
+        result.current.getState().setEntities([kept, removed]);
+        result.current.getState().setSelectedEntities([kept, removed]);
+      });
+
+      act(() => {
+        result.current.getState().setEntities([kept]);
+      });
+
+      expect(result.current.getState().selectedEntities).toEqual([kept]);
+    });
+
+    it("should clear the selection when the new list is empty", () => {
+      const {result} = renderHook(() => useTestStore);
+      const selected: TestEntity = {id: "1", name: "Selected", value: 1};
+
+      act(() => {
+        result.current.getState().setEntities([selected]);
+        result.current.getState().setSelectedEntities([selected]);
+      });
+
+      act(() => {
+        result.current.getState().setEntities([]);
+      });
+
+      expect(result.current.getState().selectedEntities).toEqual([]);
+    });
+
+    it("should replace selected entities with their refreshed versions in selection order", () => {
+      const {result} = renderHook(() => useTestStore);
+      const first: TestEntity = {id: "1", name: "First", value: 1};
+      const second: TestEntity = {id: "2", name: "Second", value: 2};
+      const refreshedFirst: TestEntity = {id: "1", name: "First (refreshed)", value: 10};
+      const refreshedSecond: TestEntity = {id: "2", name: "Second (refreshed)", value: 20};
+
+      act(() => {
+        result.current.getState().setEntities([first, second]);
+        result.current.getState().setSelectedEntities([second, first]);
+      });
+
+      act(() => {
+        result.current.getState().setEntities([refreshedFirst, refreshedSecond]);
+      });
+
+      const {selectedEntities} = result.current.getState();
+      expect(selectedEntities).toEqual([refreshedSecond, refreshedFirst]);
+      expect(selectedEntities[0]).toBe(refreshedSecond);
+      expect(selectedEntities[1]).toBe(refreshedFirst);
+    });
+
+    it("should keep the selection reference when no selected entity changed", () => {
+      const {result} = renderHook(() => useTestStore);
+      const selected: TestEntity = {id: "1", name: "Selected", value: 1};
+      const other: TestEntity = {id: "2", name: "Other", value: 2};
+
+      act(() => {
+        result.current.getState().setEntities([selected, other]);
+        result.current.getState().setSelectedEntities([selected]);
+      });
+      const selectionBefore = result.current.getState().selectedEntities;
+
+      act(() => {
+        result.current.getState().setEntities([selected, {...other, value: 3}]);
+      });
+
+      expect(result.current.getState().selectedEntities).toBe(selectionBefore);
+    });
   });
 
   describe("setSelectedEntities", () => {
