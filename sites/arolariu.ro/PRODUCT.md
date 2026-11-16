@@ -55,8 +55,8 @@ Confirmed capabilities:
 - Invoice domain: hub, scan upload, scan library, create invoice, invoice list with statistics, invoice detail, invoice edit, sharing, and
   export (PDF, CSV and JSON for a single invoice; JSON only for the invoice list). Bulk import is a placeholder that processes no files.
 - My Profile for signed-in users, a command palette (Commander) behind a feature flag, a theme toggle, and locale and font preferences.
-- An engineering worker playground that renders only in development and staging; production answers 404. It is not linked from the
-  navigation.
+- An engineering worker playground that renders only under a local `next dev` server; every deployed build, staging included, answers 404.
+  It is not linked from the navigation.
 
 Constraints that future work must preserve:
 
