@@ -256,6 +256,36 @@ describe("RenderInvoicesView", () => {
         expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
         expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
       });
+
+      it("keeps the table toggle choice while the grid URL is waiting for navigation to finish", async () => {
+        const {user} = renderView(namedInvoices, "view=grid");
+        const replace = vi.spyOn(navigation, "replace").mockImplementationOnce(() => undefined);
+
+        await user.click(getViewToggle("table"));
+
+        expect(replace).toHaveBeenCalledWith(PATHNAME);
+        expect(navigation.state.search).toBe("view=grid");
+
+        act(() => {
+          navigation.replace(PATHNAME);
+        });
+
+        expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
+        expect(screen.queryByText(UNKNOWN_MERCHANT)).not.toBeInTheDocument();
+      });
+
+      it("remembers a table URL reached after mounting when a later sort removes the view parameter", async () => {
+        const {user} = renderView(namedInvoices, "view=grid");
+
+        act(() => {
+          navigation.replace(`${PATHNAME}?view=table`);
+        });
+        await user.click(screen.getByRole("columnheader", {name: /tableView\.columns\.invoice/u}));
+
+        expect(navigation.state.replacements.at(-1)).toBe(`${PATHNAME}?sortBy=name&sortOrder=asc`);
+        expect(screen.getByRole("region", {name: TABLE_REGION})).toBeInTheDocument();
+        expect(renderedNames(NAMED_INVOICE)).toEqual(["Alpha market", "Bravo bakery", "Charlie cafe"]);
+      });
     });
   });
 

@@ -89,9 +89,13 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   const filteredInvoices = useFilteredInvoices(invoices, filters);
   const urlViewMode = parseViewMode(searchParams.get("view"));
   const [chosenViewMode, setChosenViewMode] = useState<ViewMode | null>(urlViewMode);
-  // Remember explicit URL views: later filter or sort updates drop the default `view=table` from the URL.
-  if (urlViewMode !== null && urlViewMode !== chosenViewMode) {
-    setChosenViewMode(urlViewMode);
+  const [previousUrlViewMode, setPreviousUrlViewMode] = useState(urlViewMode);
+  // Only a changed URL can override a toggle choice; router.replace may still be pending.
+  if (urlViewMode !== previousUrlViewMode) {
+    setPreviousUrlViewMode(urlViewMode);
+    if (urlViewMode !== null) {
+      setChosenViewMode(urlViewMode);
+    }
   }
   const viewMode = resolveViewMode(urlViewMode, chosenViewMode, isMobile);
 
