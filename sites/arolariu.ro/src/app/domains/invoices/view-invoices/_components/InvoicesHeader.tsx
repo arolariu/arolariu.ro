@@ -9,12 +9,18 @@ import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 import styles from "./InvoicesHeader.module.scss";
 
+type Props = {
+  /** Whether to offer the Export action, which downloads the locally cached invoices. Defaults to `true`. */
+  canExport?: boolean;
+};
+
 /**
  * This function renders the header for the invoices page.
  * It includes a title, description, and buttons for importing, exporting, and creating new invoices.
+ * @param props - Component props.
  * @returns The rendered invoices header.
  */
-export default function InvoicesHeader(): React.JSX.Element {
+export default function InvoicesHeader({canExport = true}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const {open: openImportDialog} = useDialog("VIEW_INVOICES__IMPORT");
   const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
@@ -52,23 +58,25 @@ export default function InvoicesHeader(): React.JSX.Element {
           </Tooltip>
         </TooltipProvider>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["actionButton"]}
-                  onClick={openExportDialog}>
-                  <TbDownload className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.export)}</span>
-                </Button>
-              }
-            />
-            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.export)}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {canExport ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className={styles["actionButton"]}
+                    onClick={openExportDialog}>
+                    <TbDownload className={styles["actionIcon"]} />
+                    <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.export)}</span>
+                  </Button>
+                }
+              />
+              <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.export)}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
 
         <TooltipProvider>
           <Tooltip>

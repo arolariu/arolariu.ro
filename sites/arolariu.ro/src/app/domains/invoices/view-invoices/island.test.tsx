@@ -25,6 +25,9 @@ const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 const HEADER_TITLE = /viewInvoices\.invoicesHeader\.title/;
+const EXPORT_BUTTON = /invoicesHeader\.actions\.export$/u;
+const IMPORT_BUTTON = /invoicesHeader\.actions\.import$/u;
+const EXPORT_DIALOG_TITLE = /exportDialog\.title/u;
 const LOAD_ERROR_TITLE = /viewInvoicesIsland\.loadError\.title/;
 const RETRY_BUTTON = /viewInvoicesIsland\.loadError\.retry$/;
 const RETRYING_BUTTON = /viewInvoicesIsland\.loadError\.retrying/;
@@ -97,6 +100,37 @@ describe("RenderViewInvoicesScreen", () => {
 
     expect(await screen.findByRole("button", {name: RETRY_BUTTON})).toBeInTheDocument();
     expect(screen.getByRole("heading", {name: HEADER_TITLE})).toBeInTheDocument();
+  });
+
+  it("withholds the cached invoice export but keeps import when the invoices fetch fails", async () => {
+    mockFetchWithTimeout.mockResolvedValue(serverErrorResponse());
+
+    render(<RenderViewInvoicesScreen />);
+
+    expect(await screen.findByRole("button", {name: RETRY_BUTTON})).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: EXPORT_BUTTON})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeInTheDocument();
+  });
+
+  it("closes an export dialog opened against the cached invoices once the fetch fails", async () => {
+    let settleFetch: (response: BackendResponse) => void = () => {};
+    mockFetchWithTimeout.mockReturnValueOnce(
+      new Promise<BackendResponse>((resolve) => {
+        settleFetch = resolve;
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<RenderViewInvoicesScreen />);
+    await user.click(screen.getByRole("button", {name: EXPORT_BUTTON}));
+    expect(await screen.findByRole("dialog", {name: EXPORT_DIALOG_TITLE})).toBeInTheDocument();
+
+    await act(async () => {
+      settleFetch(serverErrorResponse());
+    });
+
+    await waitFor(() => expect(screen.queryByRole("dialog", {name: EXPORT_DIALOG_TITLE})).not.toBeInTheDocument());
+    expect(await screen.findByRole("button", {name: RETRY_BUTTON})).toBeInTheDocument();
   });
 
   it("restores the invoice tabs with fresh data when a retry succeeds", async () => {

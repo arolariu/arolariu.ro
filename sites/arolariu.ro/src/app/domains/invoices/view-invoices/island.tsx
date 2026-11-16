@@ -71,8 +71,10 @@ import styles from "./island.module.scss";
  * **Error State**: When the latest invoices fetch fails, the header stays visible and
  * {@link InvoicesLoadError} replaces the tabs with a retry button wired to
  * `useInvoices().refetch`. Cached invoices are not shown alongside the error, because
- * the persisted store may still hold data from an earlier session. A successful retry
- * restores the tabs with fresh data.
+ * the persisted store may still hold data from an earlier session. For the same reason the
+ * header omits the cache-backed Export action, and the error state mounts a fresh dialog
+ * context so a dialog opened against the cached invoices does not stay open. A successful
+ * retry restores the tabs with fresh data.
  *
  * **Tab Structure**:
  * 1. **Invoices**: Default tab showing table/grid view with search, filters, pagination
@@ -172,10 +174,11 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
   }
 
   if (isError) {
+    // A distinct key remounts the dialog state, discarding any dialog opened against the cached invoices.
     return (
-      <DialogProvider>
+      <DialogProvider key='load-error'>
         <motion.section>
-          <InvoicesHeader />
+          <InvoicesHeader canExport={false} />
           <motion.article>
             <InvoicesLoadError onRetry={refetch} />
           </motion.article>

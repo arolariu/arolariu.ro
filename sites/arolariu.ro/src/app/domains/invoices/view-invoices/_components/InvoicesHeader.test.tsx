@@ -27,10 +27,10 @@ function DialogProbe(): React.JSX.Element {
   return <output data-testid='open-dialog'>{currentDialog.type ?? "none"}</output>;
 }
 
-function renderHeader(): void {
+function renderHeader(props: Readonly<React.ComponentProps<typeof InvoicesHeader>> = {}): void {
   render(
     <DialogProvider>
-      <InvoicesHeader />
+      <InvoicesHeader {...props} />
       <DialogProbe />
     </DialogProvider>,
   );
@@ -92,6 +92,17 @@ describe("InvoicesHeader", () => {
     // Assert
     expect(screen.getByTestId("open-dialog")).toHaveTextContent("VIEW_INVOICES__EXPORT");
     expect(printSpy).not.toHaveBeenCalled();
+  });
+
+  it("omits the cache-backed export action when export is not allowed", () => {
+    // Arrange & Act
+    renderHeader({canExport: false});
+
+    // Assert
+    expect(screen.queryByRole("button", {name: EXPORT_BUTTON})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: PRINT_BUTTON})).toBeInTheDocument();
+    expect(screen.getByRole("link", {name: NEW_INVOICE_LINK})).toBeInTheDocument();
   });
 
   it("opens the browser print dialog without opening an app dialog when the print action is clicked", async () => {
