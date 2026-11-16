@@ -539,7 +539,8 @@ header or action; no decorative emoji or icon noise.
 ### 6.7 Header, navigation, footer
 
 - **Header** (`.header*`): `header__start` (brand), `header__center` (desktop navigation), `header__end` (authentication controls and the
-  theme toggle). Relative with `z('sticky')` on desktop; the mobile navigation is fixed at `z('fixed')`.
+  theme toggle). Below `lg` the header bar itself is fixed at `z('fixed')`; from `lg` it is relative at `z('sticky')`. The mobile navigation
+  overlay sits above it at `z('modal')`.
 - **Desktop navigation:** hover-reveal dropdowns (`z('dropdown')`, min width 200px, radius `xl`, shadow `lg`, opacity transition).
 - **Mobile navigation:** a 20rem panel anchored left, with right-side radius `lg` and the `xl` shadow, a backdrop at
   `color-alpha('foreground', 0.4)` and `z('modal')`. The CSS has **no slide animation** despite older comments; only the expand icon
