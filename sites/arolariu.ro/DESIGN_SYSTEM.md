@@ -509,9 +509,10 @@ not consume them). Treat this as a familiar template, not a mandate; new editori
 ### 6.5 Buttons and links
 
 - `@arolariu/components` **Button** (a Base UI wrapper). Variants: `default`, `destructive`, `outline`, `secondary`, `ghost`, `link`. Sizes:
-  `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. **There is no `asChild`.** To render a link as a button, use the
-  `render` prop, or style a native `<a>` or Next `<Link>` with `className={buttonVariants({variant, size})}`; `buttonVariants` can be called
-  from a Server Component.
+  `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. **There is no `asChild`.** Button always has button semantics, so it
+  is for actions, not navigation; never pass a link (`<a href>`) through its `render` prop. For a link that looks like a button, style a
+  native `<a>` or Next `<Link>` with `className={buttonVariants({variant, size})}`. Imported from the package root, `buttonVariants` can be
+  called from a Server Component.
 - Icon-only buttons need a localized `aria-label`.
 - Use **one** filled primary action per view; make a second one an outline or ghost (The One Primary Rule).
 - Every interactive element needs a visible `:focus-visible` ring (`@include focus-ring` is a 2px `--ring` outline with a 2px offset).
