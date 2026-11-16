@@ -195,6 +195,10 @@
   max-width: 100%;
   overflow: auto;
   padding: space(6);
+  // The full-height overlay covers the safe areas, so keep the close button and links clear of them.
+  padding-top: calc(#{space(6)} + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(#{space(6)} + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(#{space(6)} + env(safe-area-inset-left, 0px));
   background-color: color("card");
   border-radius: 0 radius("lg") radius("lg") 0;
   @include shadow("xl");
