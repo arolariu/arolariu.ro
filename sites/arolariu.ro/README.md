@@ -116,6 +116,16 @@ SDKs, or Clerk.
 
 ## Documentation
 
+Product, design and UX guides for this site:
+
+- [`PRODUCT.md`](./PRODUCT.md) - audience, purpose, positioning and product principles.
+- [`DESIGN.md`](./DESIGN.md) - normative visual identity ("The Jewel Atelier"): tokens, named rules, Do's and Don'ts.
+- [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) - long-form guide to the token layers, theming runtime, SCSS architecture and component patterns.
+- [`UX-FLOWS.md`](./UX-FLOWS.md) - routes, access rules, global chrome, user journeys, persistence and known UX gaps.
+- [`docs/screenshots/`](./docs/screenshots/) - reference screenshots of the dev environment.
+
+Engineering references:
+
 - [`../../docs/frontend/README.md`](../../docs/frontend/README.md)
 - [`../../docs/rfc/1003-internationalization-system.md`](../../docs/rfc/1003-internationalization-system.md)
 - [`../../docs/rfc/1004-metadata-seo-system.md`](../../docs/rfc/1004-metadata-seo-system.md)

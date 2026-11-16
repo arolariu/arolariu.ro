@@ -1,389 +1,382 @@
 # arolariu.ro — Design System & Frontend Guidelines
 
-> **Audience:** AI coding agents and human designers working on `sites/arolariu.ro/`. **Purpose:** Single, authoritative reference for the
-> visual language, design tokens, component patterns, and motion vocabulary of the arolariu.ro web platform.
->
-> Read this **before** writing any frontend code. The system is opinionated by design — deviating without cause produces drift.
+> **Audience:** engineers, designers and AI coding agents working on `sites/arolariu.ro/`. **Purpose:** the long-form guide to the visual
+> language, the SCSS cookbook, the component patterns and the motion vocabulary of the arolariu.ro website. Source wins: when this guide and
+> the stylesheet disagree, fix this guide.
+
+## Document map
+
+| Document                                | Answers                                                                                       |
+| --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [`PRODUCT.md`](PRODUCT.md)              | Who the site is for, what it is for, and the principles behind every design decision.         |
+| [`DESIGN.md`](DESIGN.md)                | The **token values**, named rules, components, and Do's and Don'ts (the normative reference). |
+| `DESIGN_SYSTEM.md` (this file)          | How to _build_ with the system: SCSS cookbook, theming internals, patterns, motifs, motion.   |
+| [`UX-FLOWS.md`](UX-FLOWS.md)            | Routes, access rules, global chrome, journeys, cross-cutting mechanics and known UX gaps.     |
+| [Root `AGENTS.md`](../../AGENTS.md)     | Versions, commands, repository-wide coding, testing and risk rules (not repeated here).       |
+| [`docs/screenshots/`](docs/screenshots) | Reference captures of the live dev site used throughout these documents.                      |
+
+Token values live in `DESIGN.md` and in the stylesheet. This guide explains the system around them and links to the value tables rather than
+copying them, so there is one place to update.
 
 ---
 
-## 1. Brand Identity — "Crystalline Court"
+## 1. Identity — "The Jewel Atelier"
 
-arolariu.ro is a personal full-stack platform that wears its sophistication on its sleeve. The aesthetic is best understood as **Digital
-Renaissance** — classical typography under a vivid jewel-tone gradient, set against ethereal blurred orbs and crystalline geometric
-ornament. It is **not** flat, not brutalist, not playful, not Material Design. Treat it as a refined court: ceremonious typography, regal
-color, restrained ornament, and high craft in the details.
+> Formerly "Crystalline Court". The visuals are unchanged; the framing is now a craftsman's studio where a handful of jewel-toned pieces are
+> set against a quiet workbench.
 
-### 1.1 Aesthetic Pillars
+arolariu.ro is a personal, full-stack playground that wears its craft on its sleeve: classical serif typography, a jewel-tone gradient used
+sparingly, blurred light and crystalline geometry behind the content. It is **not** flat, brutalist, playful or Material. The invoice
+domain, where people do real work, stays calmer than the marketing pages (see [`PRODUCT.md`](PRODUCT.md)).
 
-| Pillar                   | Expression                                                                                                                                                                                                                                          |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Regal typography**     | Caudex serif (Renaissance-revival, weight 700) sets all body text by default. Headings carry weight without shouting.                                                                                                                               |
-| **Jewel-tone gradients** | A signature triad — **sapphire blue → ruby fuchsia → amethyst violet** — flows through wordmarks, badges, CTA glows, and gradient-bordered cards. Always animate or anchor it; never use it as a flat background fill.                              |
-| **Ethereal orbs**        | Large, blurred (24–64px) circular blobs colored with `color-alpha('primary', 0.2)` or `color-alpha('tertiary', 0.2)` float behind hero sections and CTAs. They are atmosphere, not decoration.                                                      |
-| **Crystalline ornament** | The `TechSphere` (interconnected wireframe globe) on the homepage, `BackgroundBeams` (animated radiant lines), and faint grid overlays (`linear-gradient(... 1px, transparent 1px)` at 50px tiles) provide geometric counterpoint to the soft orbs. |
-| **Royal foundation**     | The `--footer-bg` resolves to `var(--primary)` — every page closes on a slab of saturated brand color. Footer text is `--primary-foreground` (high-contrast white).                                                                                 |
-| **Crafted detail**       | Fluid `clamp()` typography, gradient borders via `mask-composite`, focus rings, dark mode parity, dyslexic-font opt-in, reduced-motion compliance, high-contrast media queries.                                                                     |
+![Home, desktop, light](docs/screenshots/02-home-desktop-light.webp)
 
-### 1.2 Voice in the Visual
+![Home, desktop, dark](docs/screenshots/05-home-desktop-dark.webp)
 
-- **Confident, never loud.** Hero titles use the largest size on the scale (`8xl` ≈ 6rem fluid), but always set against generous negative
-  space.
-- **Asymmetric balance, not chaos.** Hero is a 1-column grid below `lg`, 2-column above — wordmark left, ornament right. Mission/value
-  sections use 3-up card grids.
-- **Atmosphere over decoration.** Background orbs and beams are positioned with `z('behind')` and `pointer-events: none`. They never compete
-  with content.
-- **Weight through gradient, not through bold.** Hero word marks use `gradient-bg + background-clip: text + color: transparent` — color _is_
-  the emphasis.
+### 1.1 Aesthetic pillars
 
-### 1.3 What This Site Is Not
+| Pillar                   | Expression                                                                                                                                                                       |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **One bold serif**       | Caudex ships in a single 700 face and sets the whole UI. Hierarchy comes from size, color and spacing, not from weight changes.                                                  |
+| **The jewel triad**      | Blue, then magenta, then violet (`--primary`, `--tertiary`, `--secondary`) as headline text or a thin call-to-action rim, once per view.                                         |
+| **Ethereal orbs**        | Large blurred circles tinted with `color-alpha('primary' / 'tertiary', 0.2)` float behind heroes and call-to-action blocks as atmosphere.                                        |
+| **Crystalline ornament** | The wireframe `TechSphere`, `BackgroundBeams` and faint 50px grid overlays give a geometric counterpoint to the soft orbs.                                                       |
+| **A closing slab**       | The footer is a solid `--footer-bg` slab. `--footer-bg` is `var(--primary)`, so the slab follows the active **theme preset** (blue by default, not always blue).                 |
+| **Crafted detail**       | Fluid headings, visible focus rings, dark-mode parity, an opt-in dyslexia-friendly font, a stylesheet-level reduced-motion clamp, and forced-colors and high-contrast overrides. |
 
-Do not introduce these aesthetic patterns; they break the identity:
+### 1.2 Voice in the visual (inferred from the shipped UI)
 
-- ❌ **Generic sans-serif body text** (Inter, Roboto, system-ui). Caudex is the default — change this and the brand collapses.
-- ❌ **Glassmorphism as a hero treatment.** Frosted glass exists (`@include glass`) but is reserved for code-block surfaces and
-  modal-adjacent overlays.
-- ❌ **Drop-shadow trees** (multiple cards each with `shadow('lg')` on rest). Shadows step from `sm → md → lg → xl → 2xl` with intent; rest
-  state is usually `md` or none.
-- ❌ **Flat purple-on-white gradients** (the "AI slop" cliche). The triad is **blue–pink–purple**, in that order, traversing the rim of
-  color space, not a single hue.
-- ❌ **Inline styles** (`style={{...}}`). Forbidden by the project conventions in `CLAUDE.md`.
-- ❌ **`@arolariu/components` reskins.** The shared library at `packages/components/` ships pre-themed; consume it, don't restyle it.
+- **Confident, never loud.** The largest type on the scale appears once, on the hero, with generous empty space around it.
+- **Asymmetric balance.** The hero is one column below `lg` and two columns above: words left, ornament right.
+- **Atmosphere under content.** Beams sit at `z('behind')`; orbs are `pointer-events: none` and positioned by their section.
+- **Color is the emphasis.** Hero wordmarks use gradient text instead of heavier weight, because only one weight exists.
+
+### 1.3 What this site is not
+
+- ❌ **A generic sans-serif UI.** Caudex is the identity; the only sanctioned alternate is the dyslexia-friendly Atkinson Hyperlegible,
+  which the user opts into.
+- ❌ **Glassmorphism as a hero treatment.** Frosted surfaces exist (code blocks, About pillar cards, invoice overlays and toolbars) but they
+  are quiet 2–8px blurs on translucent cards, never the hero. See the Glass Floor Rule in [`DESIGN.md`](DESIGN.md#elevation--depth).
+- ❌ **Shadow trees.** Rest state is usually `md` or none; elevation steps up with intent.
+- ❌ **A flat purple-on-white gradient.** The triad is blue, magenta, violet, in that order.
+- ❌ **Inline style objects** in application code (see the repository rules in [`AGENTS.md`](../../AGENTS.md)).
+- ❌ **Reskinning `@arolariu/components`.** The shared library ships pre-themed; consume it and compose around it.
 
 ---
 
-## 2. Design Tokens
+## 2. Two token layers and the cascade
 
-All tokens are defined in SCSS under `src/styles/abstracts/` and surfaced through accessor functions. **Always use the function — never
-hardcode the underlying value.**
+Two token sets coexist on every page. Knowing which one a component reads explains most "why is this blue slightly different" questions.
 
-| File               | Defines                                                                                                                                   |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `_config.scss`     | Feature switches: `$enable-fluid-type`, `$enable-css-layers`, `$css-prefix` (`aro`), etc.                                                 |
-| `_colors.scss`     | `color('name')`, `color-alpha('name', $α)`, `static-color('white')`                                                                       |
-| `_typography.scss` | `font-size()`, `font-weight()`, `line-height()`, `letter-spacing()`, `$font-family-default`, `$font-family-dyslexic`, `$font-family-mono` |
-| `_variables.scss`  | `space()`, `breakpoint()`, `z()`, `radius()`, `shadow()`, `duration()`, `easing()`, `blur-size()`, `opacity()`                            |
-| `_mixins.scss`     | `flex-center`, `respond-to`, `gradient-bg`, `glass`, `card-hover`, `orb`, `focus-ring`, `dark`, `reduced-motion`, etc.                    |
+| Layer           | Source                              | Format                                                                          | Read by                                  |
+| --------------- | ----------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Library**     | `packages/components/src/index.css` | `--ac-*` custom properties in OKLCH (no `@layer`)                               | Every `@arolariu/components` component   |
+| **Site (SCSS)** | `src/styles/base/_globals.scss`     | Unprefixed HSL channels (`--primary: 221.2 83.2% 53.3%`), mirrored as `--aro-*` | Site CSS Modules, global chrome, presets |
 
-### 2.1 Color System
+```mermaid
+flowchart LR
+  A["layout.tsx imports"] --> B["@arolariu/components/styles.css<br/>(--ac-* tokens, OKLCH)"]
+  A --> C["globals.scss -> styles/main.scss<br/>(HSL channel tokens, --aro-* mirrors)"]
+  C --> D["@layer base, themes, animations, utilities, components"]
+  B --> E["Library components"]
+  C --> F["Site modules and chrome"]
+  G["PreferencesSubscriptions"] -->|"sets data-theme-preset"| C
+  H["next-themes"] -->|"toggles .dark on html"| C
+```
 
-Colors are HSL-channel CSS custom properties (e.g. `--primary: 221.2 83.2% 53.3%`) consumed through SCSS helpers. The HSL-channel pattern
-lets `color-alpha()` compose `hsl(var(--primary) / 0.2)` without losing theme reactivity.
+- **Import order.** `src/app/layout.tsx` imports `@arolariu/components/styles.css` first and `./globals.scss` second. `globals.scss` is a
+  single `@use "../styles/main"`.
+- **Layer order.** `main.scss` declares `@layer base, themes, animations, utilities, components;` and loads each partial inside its layer
+  through the `load-system-layer` mixin, so a later layer deterministically beats an earlier one without `!important`. The library
+  stylesheet is not layered.
+- **Config switches** live in `src/styles/abstracts/_config.scss`: `$enable-fluid-type`, `$enable-logical-properties`,
+  `$enable-reduced-motion`, `$enable-high-contrast`, `$enable-print-styles` and `$enable-css-layers` are all `true`, and `$css-prefix` is
+  `aro`.
+- **The Two-Blues caveat.** Site components read the HSL tokens (Royal Blue, `221.2 83.2% 53.3%`); library components read `--ac-primary`
+  (`oklch(0.488 0.243 264.376)`), a deeper indigo. Likewise the library radius (`--ac-radius`, `0.875rem`) differs from the site radius
+  scale. Do not "fix" one to match the other in a component; see the Two-Blues and Two-Radius-Layers rules in [`DESIGN.md`](DESIGN.md).
 
-#### Default light-mode palette (`:root` in `base/_globals.scss`)
+### 2.1 Provider stack and the EULA gate
 
-| Token                | HSL                 | Approx hex | Role                                                                       |
-| -------------------- | ------------------- | ---------- | -------------------------------------------------------------------------- |
-| `--background`       | `0 0% 100%`         | `#ffffff`  | Page surface                                                               |
-| `--foreground`       | `222.2 84% 4.9%`    | `#020817`  | Body text                                                                  |
-| `--primary`          | `221.2 83.2% 53.3%` | `#3b82f6`  | **Sapphire blue** — wordmark, footer, CTAs                                 |
-| `--secondary`        | `262 94% 52%`       | `#7c3aed`  | **Amethyst violet** — gradient terminal                                    |
-| `--tertiary`         | `330 92% 46%`       | `#e11d74`  | **Ruby fuchsia** — gradient midpoint, links                                |
-| `--muted`            | `210 40% 96.1%`     | `#f1f5f9`  | Subtle backgrounds, code blocks                                            |
-| `--muted-foreground` | `215.4 16.3% 46.9%` | `#64748b`  | Secondary text                                                             |
-| `--card`             | `0 0% 100%`         | `#ffffff`  | Card surface                                                               |
-| `--border`           | `214.3 31.8% 91.4%` | `#e2e8f0`  | Default border                                                             |
-| `--ring`             | `221.2 83.2% 53.3%` | `#3b82f6`  | Focus ring (matches primary)                                               |
-| `--destructive`      | `0 84.2% 60.2%`     | `#ef4444`  | Errors, destructive actions                                                |
-| `--success`          | `142 71% 35%`       | `#15803d`  | Success states                                                             |
-| `--warning`          | `38 92% 40%`        | `#c2780c`  | Warnings                                                                   |
-| `--info`             | `199 89% 38%`       | `#0c84b8`  | Informational                                                              |
-| `--link`             | `var(--tertiary)`   | —          | **Light mode links → ruby**, **dark mode links → violet** (set in `.dark`) |
-| `--footer-bg`        | `var(--primary)`    | —          | Footer slab — always the brand primary                                     |
+`src/app/providers.tsx` nests, from the outside in: `TranslationProvider` → `AuthProvider` (Clerk) → `FontProvider` → `ThemeProvider`.
+Inside it sit `PreferencesSubscriptions`, the page children, `GlobalToaster`, and the feature-flagged `Commander`.
 
-**Dark mode** (`.dark` ancestor) flips backgrounds to true black, lifts brand colors to higher lightness (e.g. `--primary: 214 100% 47%`),
-and swaps `--link` to `var(--secondary)` (violet).
+The root `layout.tsx` renders the **EULA screen instead of the page** until the `eula-accepted` cookie exists, on every route. In that
+layout, analytics tracking mounts only after acceptance; `global-error.tsx` is the exception and mounts it unconditionally (see
+[`UX-FLOWS.md`](UX-FLOWS.md#known-gaps)). Design consequence: the very first thing a new visitor sees is the EULA surface, so it must carry
+the identity on its own. See [`UX-FLOWS.md`](UX-FLOWS.md#first-visit-and-the-eula-gate).
 
-#### Usage rules
+![EULA gate](docs/screenshots/01-eula-gate-desktop-light.webp)
+
+---
+
+## 3. Design tokens (SCSS accessors)
+
+SCSS helpers in `src/styles/abstracts/` return values from the token maps. **Use the accessor; never hardcode the underlying value.** The
+actual values, contrast measurements and rules are in [`DESIGN.md`](DESIGN.md); this section is the cookbook.
+
+| File               | Defines                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `_config.scss`     | Feature switches and `$css-prefix`.                                                                                                        |
+| `_colors.scss`     | `color('name')`, `color-alpha('name', $alpha)`, `static-color('white')`.                                                                   |
+| `_typography.scss` | `font-size()`, `font-weight()`, `line-height()`, `letter-spacing()`, `$font-family-default`, `$font-family-dyslexic`, `$font-family-mono`. |
+| `_variables.scss`  | `space()`, `breakpoint()`, `z()`, `radius()`, `shadow()`, `duration()`, `easing()`, `blur-size()`, `opacity()`.                            |
+| `_functions.scss`  | Utility functions: `rem()`, `em()`, `strip-unit()`, `map-deep-get()`, `list-contains()`, `str-replace()`.                                  |
+| `_mixins.scss`     | Layout, responsive, visual, accessibility and utility mixins (see [section 5.5](#55-mixins-that-exist)).                                   |
+| `_index.scss`      | Forwards the files above, so one `@use "…/styles/abstracts" as *;` pulls in everything.                                                    |
+
+### 3.1 Color
+
+Semantic colors are HSL-channel custom properties consumed through SCSS helpers. The channel format lets `color-alpha()` produce
+`hsl(var(--primary) / 0.2)` without losing theme reactivity. The full palette (brand triad, neutrals, intent colors, dark counterparts,
+`--link`, `--footer-bg`) is in [`DESIGN.md`](DESIGN.md#colors).
 
 ```scss
-// ✅ Semantic tokens — theme-reactive
+// ✅ Semantic tokens: theme-reactive
 color: color("foreground");
 background: color("card");
 border: 1px solid color("border");
-background: color-alpha("primary", 0.1); // 10% tint of primary
+background: color-alpha("primary", 0.1); // 10% tint of the primary
 
-// ✅ Static colors when truly static
-background: static-color("white"); // pure white, never themed
-border: 1px solid static-color("black");
+// ✅ Static colors only when they must never theme
+background: static-color("white");
 
-// ❌ Never hardcode literals
+// ❌ Literal colors bypass presets and dark mode
 color: #3b82f6;
 background: rgb(59, 130, 246);
-border: 1px solid hsl(221, 83%, 53%);
 ```
 
-#### The Signature Gradient
+Two usage facts worth knowing:
 
-The **`@include gradient-bg($direction)`** mixin is the brand's most recognizable mark. It emits:
+- `--link` is `var(--tertiary)` in light mode and `var(--secondary)` in dark mode.
+- Measured on the live site, `--muted-foreground` on the Slate Wash (`--muted`) surface is about 4.3:1, below the AA 4.5:1 floor for body
+  text. Use `--foreground` on `--muted` surfaces, and re-check any translucent surface over orbs and beams.
+
+#### The signature gradient
+
+`@include gradient-bg($direction: to right)` emits `linear-gradient($direction, primary, tertiary, secondary)` in that order, each from the
+semantic tokens, so it re-skins with every named preset. The `custom` preset only replaces `--primary`, so only the first stop follows the
+custom colors; tertiary and secondary keep their default values (see [section 4.1](#41-how-a-preset-reaches-the-page)). It takes a direction
+only; there is no alpha argument.
+
+| Use                       | Pattern                                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gradient text**         | `@include gradient-bg(); -webkit-background-clip: text; background-clip: text; color: transparent;` (hero wordmark, one key phrase)                                  |
+| **Gradient rim**          | A pseudo-element with `padding: 1px` and the `mask-composite: exclude` trick (see the footnote on global BEM in [section 5.4](#54-modules-versus-global-bem)).       |
+| **Call-to-action glow**   | A `position: relative` wrapper and an absolute gradient sibling inset by -1px behind the pill, forming a 1px rim with no blur (see `ctaGlow` in `Hero.module.scss`). |
+| **Background atmosphere** | Only on a large blurred orb, never as a flat fill on a section.                                                                                                      |
+
+Do not use the gradient as a body, page or section background; it dilutes the signature (the One Gradient Rule).
+
+### 3.2 Typography
+
+| Variable                | Resolves to                                              | Loaded by                                                      | Use                                     |
+| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------- |
+| `$font-family-default`  | `var(--font-default)`, Caudex, Georgia, Times, serif     | `next/font/google` in `FontContext.tsx`, weight 700, preloaded | The whole UI: body, headings, controls. |
+| `$font-family-dyslexic` | `var(--font-dyslexic)`, Atkinson Hyperlegible, system-ui | `next/font/google`, weight 400, **not** preloaded              | Opt-in accessibility swap.              |
+| `$font-family-mono`     | ui-monospace, SF Mono, Menlo, Consolas                   | System stack                                                   | `code`, `pre`, build SHA, tech content. |
+
+`FontContext` (`src/contexts/FontContext.tsx`) persists the choice in `localStorage["selectedFont"]` and syncs other tabs through the
+`storage` event. It is switched from the Commander palette (Accessibility group). Because Caudex ships in a single bold face, **every
+`font-weight` renders as that face**: do not try to build hierarchy with weight, and test layouts after swapping to Atkinson Hyperlegible,
+whose metrics differ.
+
+**Type scale** (`$font-sizes`, in px): `xs` 12 · `sm` 14 · `base` 16 · `lg` 18 · `xl` 20 · `2xl` 24 · `3xl` 30 · `4xl` 36 · `5xl` 48 · `6xl`
+60 · `7xl` 72 · `8xl` 96 · `9xl` 128.
+
+With `$enable-fluid-type` on (the default), `font-size('xl')` and larger return a `clamp()` that interpolates between a 320px and a 1280px
+viewport; `xs` through `lg` are static. Up to `5xl` each fluid minimum is the previous step's maximum (for example `5xl` goes from 36px to
+48px); from `6xl` up the minimums are 44, 52, 64 and 80px:
 
 ```scss
-linear-gradient($direction,
-  color-alpha('primary',   $α),  // sapphire blue
-  color-alpha('tertiary',  $α),  // ruby fuchsia (midpoint)
-  color-alpha('secondary', $α)); // amethyst violet
+font-size: font-size("base"); // 1rem (static)
+font-size: font-size("5xl"); // clamp(2.25rem, 2rem + 1.25vw, 3rem)
 ```
 
-Apply it with intent:
+**Element defaults** (`base/_elements.scss`): `body` is `base`, weight `normal`, line height `normal` (1.5). `h1` to `h6` use `5xl`, `4xl`,
+`3xl`, `2xl`, `lg` and `base`, weight `semibold`, line height `tight` (1.25). The home hero overrides the `h1` upward because it is the
+storefront. Other line heights: `none` 1, `snug` 1.375, `relaxed` 1.625, `loose` 2. Letter spacing runs from `tighter` (-0.05em) to `widest`
+(0.1em, used for uppercase labels).
 
-| Use                                                            | Pattern                                                                                                                        |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Gradient text (hero, brand)**                                | `@include gradient-bg(); -webkit-background-clip: text; background-clip: text; color: transparent;`                            |
-| **Gradient border (`btn-outline-gradient`, `card--featured`)** | Pseudo-element + `mask-composite: exclude` trick (see `_buttons.scss`).                                                        |
-| **Gradient CTA glow**                                          | Wrap button in a `position: relative` container with an absolute, blurred gradient sibling (see `Hero.module.scss` `ctaGlow`). |
-| **Background blob**                                            | Apply to a large blurred orb (`width: 24rem; filter: blur(64px)`), not as a flat fill.                                         |
+### 3.3 Spacing
 
-Do not use `gradient-bg` as a body background, page background, or large flat surface — it dilutes the signature.
-
-### 2.2 Typography
-
-#### Font families
-
-| Variable                | Family                                 | Source                                                | Use                                             |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
-| `$font-family-default`  | **Caudex** (700), then Georgia, Times  | next/font Google, preloaded, CSS var `--font-default` | Default for entire app — body, headings, UI     |
-| `$font-family-dyslexic` | **Atkinson Hyperlegible**, system-ui   | next/font, lazy, CSS var `--font-dyslexic`            | User opt-in via `FontContext` (a11y)            |
-| `$font-family-mono`     | ui-monospace, SF Mono, Menlo, Consolas | system stack                                          | `<code>`, `<pre>`, build SHA, technical content |
-
-**Caudex** is the brand's anchor — a modern serif with Renaissance roots. Pair it with the gradient triad and you get the "Crystalline
-Court" identity. The font is wired via `FontContext.tsx`, which sets `--font-default` on `<html>` and supports localStorage-persisted
-dyslexic-font swapping.
-
-#### Type scale (`$font-sizes` map)
-
-`xs` 12 · `sm` 14 · `base` 16 · `lg` 18 · `xl` 20 · `2xl` 24 · `3xl` 30 · `4xl` 36 · `5xl` 48 · `6xl` 60 · `7xl` 72 · `8xl` 96 · `9xl` 128
-
-When `$enable-fluid-type` is on (default), tokens `xl` and above return `clamp(min, intercept + slope·vw, max)` expressions interpolating
-between **320px** and **1280px** viewports. The `5xl → 6xl → 8xl` progression on the homepage hero `<h1>` is achieved through fluid scaling,
-**not** breakpoint jumps.
-
-```scss
-font-size: font-size("base"); // → 1rem
-font-size: font-size("5xl"); // → clamp(2.25rem, 2rem + 1.25vw, 3rem)  (when fluid)
-```
-
-#### Weight & rhythm
-
-- **Body** — `font-weight: normal` (400) (Caudex 700 is loaded; the loaded weight is heavy enough that we render it at "normal" for body)
-- **Headings** — `font-weight('semibold')` (600) by default in `_elements.scss`; hero title uses `normal` (400) and lets the gradient carry
-  emphasis
-- **Line height** — `tight` (1.25) for headings, `normal` (1.5) for body, `relaxed` (1.625) for long-form
-- **Letter spacing** — `tight` (-0.025em) for compact headings; `widest` (0.1em) for uppercase utility labels (e.g., the footer brand name)
-
-#### Default heading scale (from `base/_elements.scss`)
-
-```scss
-h1 {
-  font-size: font-size("5xl");
-} // ~48px static, fluid to 3rem
-h2 {
-  font-size: font-size("4xl");
-} // ~36px
-h3 {
-  font-size: font-size("3xl");
-} // ~30px
-h4 {
-  font-size: font-size("2xl");
-} // ~24px
-h5 {
-  font-size: font-size("lg");
-} // 18px
-h6 {
-  font-size: font-size("base");
-} // 16px
-```
-
-Override only with intent. Hero `<h1>` overrides up to `8xl` because the page is the brand's storefront.
-
-### 2.3 Spacing
-
-Unitless multipliers from `0` to `96` mapped to rem. Common values: `4` = 1rem (16px), `6` = 1.5rem (24px), `8` = 2rem, `12` = 3rem, `16` =
-4rem, `20` = 5rem (hero vertical breathing).
+`space($key)` maps a Tailwind-style key to rem. Keys are **not** every integer: `0`, `0.5`, `1`, `1.5`, `2`, `2.5`, `3`, `3.5`, then every
+integer from `4` to `12`, then `14`, `16`, `20`, `24`, `28`, `32`, `36`, `40`, `44`, `48`, `52`, `56`, `60`, `64`, `72`, `80` and `96` (`4`
+= 1rem, `96` = 24rem). An unknown key is a Sass compile error, which is the point.
 
 ```scss
 padding: space(6) space(8); // 24px / 32px
 gap: space(4); // 16px
-margin-top: space(20); // 80px — hero top spacing
+padding-block: space(20); // 80px, marketing section breathing room
 ```
 
-**Section rhythm:** Hero sections consistently use `padding: space(20) 0` (80px y). Mission/value sections use `space(12)` to `space(16)`.
-Cards use `space(6)` internal padding (`space(4)` for `--compact` modifier).
+Marketing sections use 5rem (`space(20)`) or more of vertical padding; the invoice operating surfaces are tighter so data stays on screen.
 
-### 2.4 Breakpoints
+### 3.4 Breakpoints
 
-`2xsm` 320 · `xsm` 480 · `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `2xl` 1440 · `3xl` 1976
-
-Mobile-first. Hero is single-column below `lg`, two-column above. The homepage TechSphere ornament is hidden below `lg` (replaced by a
-smaller `.mobileOrb`).
+`2xsm` 320 · `xsm` 480 · `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `2xl` 1440 · `3xl` 1976 (ultra-wide). Mobile first.
 
 ```scss
 @include respond-to("lg") {
   grid-template-columns: repeat(2, 1fr);
-}
+} // min-width
 @include respond-below("md") {
   display: none;
+} // max-width
+```
+
+### 3.5 Radius
+
+`none` 0 · `sm` 2px · `md` 6px · `lg` 8px (the base) · `xl` 12px · `2xl` 16px · `3xl` 24px · `full` 9999px. Cards default to `xl`; pills,
+the logo and social icons use `full`. This is the **site** scale; library components derive their radius from `--ac-radius` (see section 2).
+
+### 3.6 Elevation
+
+Separate `$shadows` (light) and `$shadows-dark` maps with levels `none`, `sm`, `md`, `lg`, `xl`, `2xl`. The `shadow()` **mixin** emits the
+light value plus a `.dark &` override; the bare `shadow()` function is light-only. That override, like `@include dark`, only works in global
+partials: in a CSS Module the `.dark` class is hashed and never matches `<html class="dark">`, so `@include shadow`, `hover-lift` and
+`card-hover` render the light shadow in both modes. In a module, write the dark value under `:global(.dark) &`.
+
+```scss
+@include shadow("md"); // light value, plus a .dark & override (global partials only)
+box-shadow: shadow("md"); // light mode only
+
+// In a *.module.scss (with @use "sass:map")
+:global(.dark) & {
+  box-shadow: map.get($shadows-dark, "md");
 }
 ```
 
-### 2.5 Border radius
+| Level  | Typical use                                        |
+| ------ | -------------------------------------------------- |
+| `none` | Flat                                               |
+| `sm`   | Subtle depth, input rest state                     |
+| `md`   | Card rest state                                    |
+| `lg`   | Hover-lifted cards, desktop nav dropdown, popovers |
+| `xl`   | Mobile nav panel, modals                           |
+| `2xl`  | Maximum elevation, the code-block surface          |
 
-`none` 0 · `sm` 2px · `md` 6px · `lg` 8px (default) · `xl` 12px (cards) · `2xl` 16px · `3xl` 24px · `full` 9999px (CTA pills, logo, social
-icons).
+### 3.7 Motion tokens
 
-Cards default to `radius('xl')`. CTAs and badges in the hero use `radius('full')` for a pill silhouette. The site logo and footer logo
-always use `9999px` (perfect circle).
-
-### 2.6 Elevation
-
-Material-3 inspired, with separate `$shadows` (light) and `$shadows-dark` (dark) maps. Use the **mixin**, not the function directly — the
-mixin auto-resolves dark mode:
-
-```scss
-@include shadow("md"); // ✅ correct — picks light or dark variant
-box-shadow: shadow("md"); // works but light-mode only
-```
-
-| Level  | Use                                             |
-| ------ | ----------------------------------------------- |
-| `none` | Flat                                            |
-| `sm`   | Subtle depth (1dp) — rest state for some inputs |
-| `md`   | **Card rest state** (3dp) — the default         |
-| `lg`   | Hover-lift cards, popovers (6dp)                |
-| `xl`   | Modals, mobile nav panel (12dp)                 |
-| `2xl`  | Maximum elevation, code-block surface (24dp)    |
-
-### 2.7 Motion
-
-#### Durations (`$durations`)
-
-`instant` 0ms · `fast` 100ms · **`normal` 150ms** (default) · `moderate` 250ms · `slow` 350ms · `slower` 500ms · `slowest` 700ms
-
-#### Easings (`$easings`)
-
-- `ease` `cubic-bezier(0.4, 0, 0.2, 1)` — Material standard, the default
-- `ease-out` `cubic-bezier(0, 0, 0.2, 1)` — entrance (decelerating in)
-- `ease-in` `cubic-bezier(0.4, 0, 1, 1)` — exit (accelerating out)
-- `spring` `cubic-bezier(0.34, 1.56, 0.64, 1)` — gentle overshoot, use on hover-lift only
-
-#### Application
+- **Durations:** `instant` 0ms · `fast` 100ms · **`normal` 150ms** (default) · `moderate` 250ms · `slow` 350ms · `slower` 500ms · `slowest`
+  700ms.
+- **Easings:** `linear`; `ease` `cubic-bezier(0.4, 0, 0.2, 1)` (default); `ease-in` and `ease-out`; `ease-in-out`; and `spring`
+  `cubic-bezier(0.34, 1.56, 0.64, 1)`, a gentle overshoot. It is defined but currently unused in SCSS; hover-lift uses `ease`.
 
 ```scss
-@include transition((border-color, box-shadow)); // multi-prop, normal/ease
+@include transition((border-color, box-shadow)); // normal / ease
 @include transition(transform, "moderate", "spring"); // 250ms with overshoot
 ```
 
-For React-driven animation (page enter, parallax, looping orb pulses), use the `motion` library (`motion/react`). Stagger entrances with
-`transition={{ duration: 0.8, delay: 0.3 }}` on hero panels — this is the established pattern.
+### 3.8 Z-index
 
-#### Reduced motion
+Never write a raw z number. `behind` -1 · `base` 0 · `raised` 1 · `content` 10 · `content-high` 20 · `overlay-subtle` 50 · `dropdown` 1000 ·
+`sticky` 1020 · `fixed` 1030 · `modal-backdrop` 1040 · `modal` 1050 · `popover` 1060 · `tooltip` 1070 · `toast` 1080.
 
-The animations layer auto-clamps every transition and animation to `0.01ms` under `@media (prefers-reduced-motion: reduce)`. Don't override
-this. When using `motion`, pair page-load animations with semantic content (the `<h1>` is rendered visible on first paint; only the
-_container_ scales).
+Examples in use: orbs and beams at `behind`; the desktop header at `sticky`; the mobile header at `fixed`; the mobile navigation overlay at
+`modal`; the desktop nav dropdown at `dropdown`.
 
-### 2.8 Z-index scale
+### 3.9 Opacity and blur
 
-Never use raw z numbers. The scale:
-
-| Token            | Value | Use                              |
-| ---------------- | ----- | -------------------------------- |
-| `behind`         | -1    | Background orbs, BackgroundBeams |
-| `base`           | 0     | Default                          |
-| `raised`         | 1     | Loading spinners                 |
-| `content`        | 10    | Content above decorative bg      |
-| `content-high`   | 20    | Timeline connectors over content |
-| `overlay-subtle` | 50    | Section-scoped overlays          |
-| `dropdown`       | 1000  | Desktop nav dropdown             |
-| `sticky`         | 1020  | Header (desktop)                 |
-| `fixed`          | 1030  | Header (mobile fixed top)        |
-| `modal-backdrop` | 1040  | Modal scrim                      |
-| `modal`          | 1050  | Modal dialog, mobile nav overlay |
-| `popover`        | 1060  | Popover content                  |
-| `tooltip`        | 1070  | Tooltip                          |
-| `toast`          | 1080  | Topmost — toast notifications    |
-
-### 2.9 Opacity scale
-
-`subtle` 0.05 · `light` 0.1 · `medium` 0.2 · `semi` 0.5 · `heavy` 0.8 · `near` 0.9 · `full` 1.
-
-Used for tinted overlays: `color-alpha('primary', opacity('light'))` = 10% sapphire wash.
-
-### 2.10 Blur scale
-
-`sm` 2px · `md` 4px · **`lg` 8px** (frosted glass default) · `xl` 12px · `2xl` 16px.
-
-Orbs use bigger blurs (24–64px) outside the scale — they're decorative, not surface.
+- **Opacity** (`opacity()`): `subtle` 0.05 · `light` 0.1 · `medium` 0.2 · `semi` 0.5 · `heavy` 0.8 · `near` 0.9 · `full` 1.
+- **Blur** (`blur-size()`): `sm` 2px · `md` 4px · **`lg` 8px** · `xl` 12px · `2xl` 16px. Orbs use larger blurs (about 24 to 72px) outside
+  the scale because they are atmosphere, not surface.
 
 ---
 
-## 3. Theming System
+## 4. Theming
 
 Two orthogonal axes:
 
-1. **Light vs dark** — toggled by `next-themes` setting `class="dark"` on `<html>`. Drives every CSS variable.
-2. **Theme preset** — set by `useThemePreset` hook setting `data-theme-preset="<name>"` on `<html>`. Overrides `--primary`, `--secondary`,
-   `--tertiary`, `--ring`, `--surface-elevated`.
+1. **Light versus dark.** `next-themes` (`attribute="class"`, `defaultTheme="system"`, `enableSystem`) toggles `class="dark"` on `<html>`.
+   The `.dark` block in `_globals.scss` re-declares the tokens that change: a true-black page background and lifted brand colors.
+2. **Theme preset.** `data-theme-preset="<name>"` on `<html>` overrides the brand triad, its foreground, the ring and the elevated surface.
 
-### Available presets
+### 4.1 How a preset reaches the page
 
-| Name                     | Vibe                                                                                                                                                                    | Light/dark variants |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| (default — no attribute) | **Cyan / purple / pink** — the signature look (sapphire blue is actual default `--primary`, but the _named_ palette in `theme-presets.ts` previews as cyan-purple-pink) | base globals        |
-| `midnight`               | Deep indigo → blue, elegant and dark                                                                                                                                    | `_presets.scss`     |
-| `ocean`                  | Sky → cyan → teal, cool and refreshing                                                                                                                                  | `_presets.scss`     |
-| `sunset`                 | Orange → red → pink, warm and vibrant                                                                                                                                   | `_presets.scss`     |
-| `forest`                 | Green → emerald → teal, natural                                                                                                                                         | `_presets.scss`     |
-| `rose`                   | Rose → pink → fuchsia, soft                                                                                                                                             | `_presets.scss`     |
-| `monochrome`             | Grayscale, clean                                                                                                                                                        | `_presets.scss`     |
+The runtime path is `src/app/_components/PreferencesSubscriptions.tsx`. On every `themePreset` or `customThemeColors` change it writes
+`document.documentElement.dataset.themePreset` and, for the `custom` preset only, sets `--gradient-from`, `--gradient-via`, `--gradient-to`,
+`--primary`, `--primary-foreground`, `--accent-primary` and `--footer-bg` on the root. No stylesheet reads `--gradient-from`,
+`--gradient-via` or `--gradient-to`, and `gradient-bg()` is built from primary, tertiary and secondary, so a custom preset changes only the
+gradient's first stop. For named presets all colors come from `src/styles/themes/_presets.scss`, which generates
+`[data-theme-preset="name"]` and the matching `.dark` selectors in an `@each` loop.
 
-To add a preset:
+The choice is stored in the preferences store (IndexedDB, key `account-preferences`) and synced across tabs; see
+[`UX-FLOWS.md`](UX-FLOWS.md#persistence). It is chosen in the appearance settings on **My Profile** (`SettingsAppearance.tsx`): a presets
+card lists every `THEME_PRESETS` entry plus a "custom" option, and the custom color editor appears only when "custom" is selected.
 
-1. Add the entry to `$theme-presets` in `src/styles/themes/_presets.scss` — both `light` and `dark` keys.
-2. Add metadata to `src/lib/theme-presets.ts`.
-3. Update the `ThemePresetName` type if needed.
+### 4.2 The six named presets
 
-No new JS is required — the `@each` loop in `_presets.scss` generates `[data-theme-preset="name"]` and `[data-theme-preset="name"].dark`
-selectors automatically.
+Each preset overrides primary, secondary, tertiary, `--ring` and `--surface-elevated`. Every light preset sets `--primary-foreground` to
+`0 0% 100%` and every dark preset to `0 0% 0%`. Values are `H S% L%` HSL channels.
 
-### Custom user theme
+| Preset (feel)                       | Light: primary / secondary / tertiary               | Dark: primary / secondary / tertiary           |
+| ----------------------------------- | --------------------------------------------------- | ---------------------------------------------- |
+| **default** (blue, violet, magenta) | `221.2 83.2% 53.3%` / `262 94% 52%` / `330 92% 46%` | `214 100% 47%` / `268 96% 80%` / `336 94% 76%` |
+| **midnight** (indigo to blue)       | `243 84% 58%` / `276 90% 56%` / `208 88% 43%`       | `241 88% 68%` / `276 94% 82%` / `208 90% 74%`  |
+| **ocean** (sky, teal, cool)         | `199 96% 35%` / `168 94% 27%` / `220 95% 50%`       | `199 98% 62%` / `168 94% 76%` / `220 94% 70%`  |
+| **sunset** (orange, red, pink)      | `24 98% 39%` / `338 92% 46%` / `8 90% 44%`          | `24 98% 68%` / `338 92% 78%` / `8 90% 72%`     |
+| **forest** (green, emerald, teal)   | `142 78% 30%` / `168 90% 27%` / `118 84% 29%`       | `142 88% 64%` / `168 90% 76%` / `118 84% 70%`  |
+| **rose** (rose, violet, magenta)    | `350 92% 46%` / `286 94% 48%` / `330 90% 44%`       | `336 92% 70%` / `286 94% 80%` / `356 92% 74%`  |
+| **monochrome** (graphite)           | `0 0% 26%` / `0 0% 40%` / `0 0% 34%`                | `0 0% 74%` / `0 0% 88%` / `0 0% 80%`           |
 
-`themePreset === "custom"` triggers runtime JS injection of CSS variables from `CustomThemeColors` (HSL strings). This is the only path that
-bypasses the SCSS-only model.
+The default row is the `:root` and `.dark` defaults from `_globals.scss`, not a preset block. The `surface-elevated` values per preset are
+in `_presets.scss`. Because the footer slab, links, focus ring and gradient all read these tokens, **verify any new screen under at least
+the default, `sunset` and `monochrome` presets in both modes.**
+
+### 4.3 Adding a preset
+
+1. Add the entry, with both `light` and `dark` maps, to `$theme-presets` in `src/styles/themes/_presets.scss`. The loop generates the
+   selectors.
+2. Add the matching metadata (`name`, `description`, `preview` colors) to `THEME_PRESETS` in `src/lib/theme-presets.ts`. `ThemePresetName`
+   is derived from its keys, so no type edit is needed. The store accepts `ThemePresetName | "custom"`.
+3. Be aware that the settings card renders `preset.name` and `preset.description` straight from `THEME_PRESETS`: they are plain English
+   strings, not `next-intl` messages (see the drift list below).
+
+### 4.4 Known theming drift (documented, not yet fixed)
+
+- **Preview mismatch.** `THEME_PRESETS.default.preview` is cyan, purple and pink (`#06b6d4`, `#8b5cf6`, `#ec4899`) with the description
+  "Cyan, purple, and pink — the signature look", but the real default is blue, violet and magenta.
+- **Unlocalized preset labels.** The preset names and descriptions shown in the settings card are hard-coded English in `THEME_PRESETS`; the
+  "custom" option, by contrast, is translated.
+- **Stale `useThemePreset` references.** Comments in `main.scss`, `_presets.scss`, `_index.scss` and `theme-presets.ts` mention a
+  `useThemePreset` hook and "no runtime JS for named presets". No such hook exists; `PreferencesSubscriptions` does the work.
 
 ---
 
-## 4. SCSS Architecture (7-1 with CSS Layers)
+## 5. SCSS architecture
 
-Entry point: `src/styles/main.scss`, imported once via `app/globals.scss`.
+Entry point: `src/styles/main.scss`, loaded once through `app/globals.scss`.
 
+```text
+src/styles/
+├─ main.scss          # declares @layer order, loads each layer
+├─ abstracts/         # no CSS output: _config, _colors, _typography, _variables, _functions, _mixins, _index
+├─ base/              # _reset, _elements, _globals (:root and .dark custom properties)
+├─ themes/            # _presets (data-theme-preset overrides)
+├─ animations/        # _keyframes, _transitions
+├─ utilities/         # _colors, _display, _effects, _layout, _sizing (atomic helpers)
+└─ components/        # _header, _navigation, _footer, _buttons, _cards, _badges (global BEM)
 ```
-abstracts/         # SCSS helpers (NO css output) — variables, functions, mixins
-base/              # Reset, element defaults, :root + .dark CSS variables
-themes/            # [data-theme-preset] CSS variable overrides
-animations/        # @keyframes + transition utility classes
-utilities/         # Atomic helpers (.flex, .relative, .top-0, etc.)
-components/        # BEM component styles (.card, .header, .footer, .desktop-nav, ...)
-```
 
-CSS `@layer` order is `base, themes, animations, utilities, components` — utilities deterministically beat base, components beat utilities.
-This eliminates `!important` arms races.
+Layer order, lowest to highest: `base`, `themes`, `animations`, `utilities`, `components`. Style tests exist for `_elements`, `_reset`,
+`_footer` and `_header` (`*.styles.test.ts`).
 
-### File-naming and selector conventions
+### 5.1 Naming and selector conventions
 
-| Context                                                       | Convention                             | Example                                                  |
-| ------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------- |
-| **CSS Modules** (page/component-scoped, lives next to `.tsx`) | camelCase keys                         | `styles.cardWrapper`, `styles["section"]`                |
-| **Global components** (BEM, in `styles/components/`)          | kebab-case BEM                         | `.card__header`, `.card--elevated`, `.mobile-nav__panel` |
-| **Utility classes** (in `styles/utilities/`)                  | kebab-case                             | `.flex`, `.items-center`                                 |
-| **CSS custom properties**                                     | `--` prefix, no SCSS prefix in `var()` | `var(--primary)`, `hsl(var(--ring) / 0.3)`               |
-| **SCSS map keys**                                             | kebab-case strings                     | `'primary'`, `'2xl'`, `'tertiary'`                       |
-| **SCSS function names**                                       | kebab-case                             | `space()`, `font-size()`, `color()`                      |
+| Context                                      | Convention                             | Example                                    |
+| -------------------------------------------- | -------------------------------------- | ------------------------------------------ |
+| **CSS Modules** (next to the `.tsx`)         | camelCase keys                         | `styles.cardWrapper`, `styles["section"]`  |
+| **Global components** (`styles/components/`) | kebab-case BEM                         | `.footer__wave`, `.mobile-nav__panel`      |
+| **Utility classes** (`styles/utilities/`)    | kebab-case                             | `.flex`, `.items-center`                   |
+| **CSS custom properties**                    | `--` prefix, no SCSS prefix in `var()` | `var(--primary)`, `hsl(var(--ring) / 0.3)` |
+| **SCSS map keys, functions and mixins**      | kebab-case                             | `'tertiary'`, `space()`, `flex-center`     |
 
-### Module SCSS template
+### 5.2 Module template
 
 ```scss
 // MyComponent.module.scss
-@use "../../styles/abstracts" as *; // pulls in ALL helpers as bare names
+@use "../../styles/abstracts" as *; // pulls in every helper as a bare name
 
 .section {
   position: relative;
@@ -400,7 +393,7 @@ This eliminates `!important` arms races.
   font-size: font-size("5xl");
   font-weight: font-weight("semibold");
   letter-spacing: letter-spacing("tight");
-  @include text-balance; // prevents orphan words in headings
+  @include text-balance; // avoids orphan words in headings
 }
 
 .titleGradient {
@@ -411,293 +404,332 @@ This eliminates `!important` arms races.
 }
 ```
 
-### When to use modules vs global BEM
+### 5.3 Reach for the library first
 
-- **CSS Modules** (`.module.scss` next to the component) for **page-, route-, and feature-scoped** styles. The vast majority of files.
-  Modules go in `app/<route>/_components/<Name>.module.scss` and are imported as `import styles from "./Name.module.scss"`.
-- **Global BEM** (`src/styles/components/_*.scss`) only for the **chrome**: `.header`, `.footer`, `.desktop-nav`, `.mobile-nav`, `.card`,
-  `.btn-gradient`. These are app-wide primitives consumed without an import.
+Compose pages from `@arolariu/components` (imported by subpath, for example `@arolariu/components/accordion`) and style the glue with a CSS
+Module. Only write a custom primitive when the library has no equivalent.
 
-Default to modules. Promote to global BEM only when a third+ page wants the same primitive.
+### 5.4 Modules versus global BEM
+
+- **CSS Modules** (`app/<route>/_components/<Name>.module.scss`, imported as `import styles from "./Name.module.scss"`) hold nearly all
+  page-, route- and feature-scoped styling. This is the default.
+- **Global BEM is only really used for chrome:** `.header*` (`Header`), `.footer*` (`Footer`), and `.desktop-nav*` and `.mobile-nav*`
+  (`Navigation`).
+- **Defined but currently unused.** `_buttons.scss` (`.btn-gradient`, `.btn-outline-gradient`, `.btn-icon`, `.btn-link`), `_cards.scss`
+  (`.card--featured`, `.card-grid`) and `_badges.scss` (`.badge--*`) have **no consumers** in any TSX, message file or other SCSS. Do not
+  assume they are the sanctioned path. Prefer a library `Button` or `Card` plus a module. If you revive one, start by checking that it still
+  matches this guide, or delete it. The gradient-rim technique they contain (a pseudo-element with a mask) remains a valid reference.
+
+### 5.5 Mixins that exist
+
+Layout: `flex`, `flex-between`, `flex-center`, `flex-column`, `flex-column-center`, `grid`, `responsive-grid`, `stack`, `spaced-children`,
+`container`. Responsive: `respond-to`, `respond-below`. Visual: `gradient-bg`, `backdrop-blur`, `glass`, `shadow`, `card-hover`,
+`hover-lift`, `orb`, `image-drop-shadow`, `icon-size`. Typography and utility: `text-balance`, `text-muted`, `truncate`, `line-clamp`,
+`visually-hidden`, `transition`. Accessibility: `focus-ring`, `reduced-motion`, `reduced-transparency`. Theming: `dark` (global partials
+only; see [section 3.6](#36-elevation)).
+
+`glass` is defined but **no stylesheet uses it**; the frosted surfaces on the site call `backdrop-blur` directly (2px on the code block, 4px
+on the biography and auth panels, 8px on About pillar cards and invoice overlays and toolbars).
+
+Accessor functions in use: `color`, `color-alpha`, `static-color`, `font-size`, `font-weight`, `line-height`, `letter-spacing`, `space`,
+`breakpoint`, `z`, `radius`, `shadow`, `duration`, `easing`, `blur-size`, `opacity`, plus the utilities in `_functions.scss`.
 
 ---
 
-## 5. Component Patterns
+## 6. Component patterns
 
-### 5.1 The Island pattern (Next.js App Router)
+### 6.1 The island pattern (Next.js App Router)
 
+```text
+page.tsx            ← Server Component: data, metadata, SEO
+  └─ island.tsx     ← Client Component ("use client"): the interactive boundary
+       └─ _components/   ← route-local sub-components
+            └─ _effects/ ← decorative client visuals (TechSphere, and so on)
 ```
-page.tsx          ← Server Component: data, metadata, SEO
-   └ island.tsx   ← Client Component ("use client"): all interactivity
-       └ _components/   ← local sub-components, also CSCs/RSCs
-           └ _effects/  ← decorative client visuals (TechSphere, BackgroundBeams)
-```
 
-The page is rendered server-side; the `island` is the only interactive boundary. CSS Modules live next to the component that owns them.
+The page renders on the server; the island is the only interactive boundary. CSS Modules live next to the component that owns them. The
+rules for what may be a Server versus a Client Component are in [`AGENTS.md`](../../AGENTS.md).
 
-### 5.2 The Hero anatomy (the brand's storefront)
+### 6.2 The hero anatomy (the storefront)
 
-Reference: `app/_components/Hero.tsx` + `Hero.module.scss`.
+Reference: `src/app/_components/Hero.tsx` and `Hero.module.scss`.
 
 ```tsx
-<section className={styles.section}>           {/* min-height: 100vh; padding: space(20) 0 */}
-  <article className={styles.article}>          {/* grid 1 → lg:2 cols, gap: space(12) */}
-    <motion.div                                  {/* left: scale-in entrance */}
-      initial={{scale: 0.8}} animate={{scale: 1}} transition={{duration: 0.8, delay: 0.3}}
-      className={styles.content}
-    >
+<section className={styles.section}>
+  {/* section: tall, generous vertical padding */}
+  <article className={styles.article}>
+    {/* article: 1 column, 2 columns from lg */}
+    <motion.div className={styles.content}>
+      {/* content (left): scale 0.8 → 1, duration 0.8, delay 0.3 */}
       <h1 className={styles.title}>
-        <span className={styles.titleGradient}>{title}</span>   {/* gradient-text */}
+        <span className={styles.titleGradient}>{title}</span>
       </h1>
-      <p className={styles.subtitle}>{subtitle}</p>             {/* muted-foreground */}
-      <div className={styles.ctaWrapper}>                       {/* relative wrapper */}
-        <div className={styles.ctaGlow} />                      {/* gradient blur sibling */}
-        <Link className={styles.ctaButton}>{cta}</Link>         {/* black pill, white text */}
+      <p className={styles.subtitle}>{subtitle}</p>
+      <div className={styles.ctaWrapper}>
+        {/* relative wrapper: the gradient rim sibling, then the pill call to action */}
+        <div className={styles.ctaGlow} />
+        <Link
+          href='/domains'
+          className={styles.ctaButton}>
+          {/* ctaButton: relative, opaque pill that sits above the absolute glow */}
+          {cta}
+        </Link>
       </div>
     </motion.div>
-    <motion.div                                  {/* right: opacity + scale */}
-      initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}}
-      className={styles.visual}
-    >
-      <motion.div className={styles.orbPrimary}                 {/* pulsing sapphire orb */}
-        animate={{scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3]}}
-        transition={{duration: 8, repeat: Infinity, repeatType: "reverse"}}
-      />
-      <motion.div className={styles.orbPurple} ... />            {/* pulsing ruby orb */}
-      <TechSphere />                                              {/* desktop only */}
-      <div className={styles.mobileAnimation}>...</div>           {/* below sm */}
+    <motion.div className={styles.visual}>
+      {/* visual (right): opacity 0 → 1 and scale 0.8 → 1 */}
+      {/* orbs pulse: primary 8s, purple 6s */}
+      <motion.div className={styles.orbPrimary} />
+      <motion.div className={styles.orbPurple} />
+      {/* desktop only (lg and up) */}
+      <TechSphere />
+      {/* below sm only */}
+      <div className={styles.mobileAnimation}>{/* a small pulsing orb, 4s */}</div>
     </motion.div>
   </article>
 </section>
 ```
 
-**Hero rules:**
+![Home hero and TechSphere](docs/screenshots/02-home-desktop-light.webp)
 
-- **Title is a single `<h1>`** with one `<span class={titleGradient}>` for emphasis — never multiple gradient runs.
-- **Subtitle uses `color('muted-foreground')`** — never the gradient.
-- **Two pulsing orbs** flank the right-hand visual at opposite corners (top-left and bottom-right), 8s and 6s loop times to avoid lockstep.
-- **`BackgroundBeams`** from `@arolariu/components` renders behind the hero at `z('behind')` with `pointer-events: none`. A second instance
-  handles the header overflow band (mask-image fade).
-- **CTA glow:** absolute gradient sibling at `inset: -1px`, `radius('full')`, behind a black `border-radius: full` pill button with white
-  text.
+**Hero rules**
 
-### 5.3 Section page rhythm
+- One `<h1>` with one gradient span. The live copy is "Welcome to arolariu.ro" (`m.pages.home.title`), and the call to action is "Start
+  Exploring" (`m.pages.home.cta`), linking to `/domains`.
+- The subtitle uses `--muted-foreground`, never the gradient. Body copy over beams or orbs must still clear 4.5:1 (see the Orb Contrast
+  Rule).
+- Two orbs sit at opposite corners (top-left and bottom-right) with different loop times (8s and 6s) so they never move in lockstep.
+- `BackgroundBeams` from `@arolariu/components` come from the home `island.tsx` (a page-wide instance plus a header-overflow instance faded
+  with `mask-image: linear-gradient(to bottom, #000 0%, transparent 90%)`) at `z('behind')`.
+- The container scales while the text is already visible at first paint. Never hide primary content behind an opacity-0 entrance.
+- The about hero and call to action add a 50px grid overlay; The Platform page reuses beams in its hero and call to action.
 
-Below the hero, pages alternate:
+### 6.3 Section rhythm
 
-1. **Mission / value statement** — centered, `font-size('2xl')` headline, gradient-text key phrase, body in `muted-foreground`.
-2. **3-up card grid** — `responsive-grid(1, 2, 3, space(8))` of `--featured` cards or simple `border + shadow('md')` cards. Each card has
-   icon (`@include icon-size(2.5rem)` or larger), heading, description.
-3. **Stats row** — 4 columns at `lg`, large fluid numbers in `--primary`, label below.
-4. **Explore further** — 2-column horizontal cards with image, title, bulleted feature list, CTA.
-5. **FAQ accordion** — `@arolariu/components` `Accordion` (Base UI; `multiple` + array `value`), uses `@keyframes accordion-down/up` from
-   `_keyframes.scss`.
-6. **Closing CTA** — centered headline + 2 buttons (primary + outline).
+The About page (`about/island.tsx`) shows the established marketing rhythm: **Hero → Mission → Values → Stats → Navigation ("explore
+further") → FAQ → Call to action.** Each is a route-local component with its own module. The FAQ uses the library `Accordion`
+(`AccordionItem`, `AccordionTrigger`, `AccordionContent`) (the `accordion-down` and `accordion-up` keyframes exist globally but the FAQ does
+not consume them). Treat this as a familiar template, not a mandate; new editorial pages should feel related.
 
-This is a **template**, not a mandate — but new about-style pages should feel familiar.
+![About](docs/screenshots/08-about-desktop-light.webp)
 
-### 5.4 Cards
+### 6.4 Cards
 
-Three layers of card primitives:
+1. **Library `Card`** (`CardHeader`, `CardTitle`, `CardContent`, `CardFooter`): the first choice for a generic card.
+2. **Route-local module card** for one-off visuals (for example `Features.module.scss`). Use `@include card-hover('xl', 0.3, 'primary')` to
+   animate the border, shadow and background together.
+3. The global `.card--*` classes are unused (see [section 5.4](#54-modules-versus-global-bem)).
 
-- **`@arolariu/components`** `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter` — the Base UI-backed baseline. Use this
-  **first** when the card is generic.
-- **Global BEM** `.card`, `.card__header`, `.card--featured`, `.card--elevated`, `.card--gradient-overlay`, `.card-grid` (in
-  `styles/components/_cards.scss`) — when you need the gradient-border feature card or grid layout.
-- **CSS Module ad-hoc** — for one-off card visuals (e.g., `Features.module.scss` `.card`). Avoid when a shared variant exists.
+### 6.5 Buttons and links
 
-**Card hover:** Use `@include card-hover('xl', 0.3, 'primary')` — animates border-color, box-shadow, and background-color. The `--featured`
-modifier adds a gradient border via `mask-composite: exclude`.
+- `@arolariu/components` **Button** (a Base UI wrapper). Variants: `default`, `destructive`, `outline`, `secondary`, `ghost`, `link`. Sizes:
+  `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. **There is no `asChild`.** Button always has button semantics, so it
+  is for actions, not navigation; never pass a link (`<a href>`) through its `render` prop. For a link that looks like a button, style a
+  native `<a>` or Next `<Link>` with `className={buttonVariants({variant, size})}`. Imported from the package root, `buttonVariants` can be
+  called from a Server Component.
+- Icon-only buttons need a localized `aria-label`.
+- Use **one** filled primary action per view; make a second one an outline or ghost (The One Primary Rule).
+- Every interactive element needs a visible `:focus-visible` ring (`@include focus-ring` is a 2px `--ring` outline with a 2px offset).
 
-### 5.5 Buttons
+### 6.6 Icons
 
-- **Primary action** — `@arolariu/components` `Button`. v3 has no `asChild`; style navigation links as buttons with
-  `<Link className={buttonVariants({variant, size})}>`. Icon-only buttons require a localized `aria-label`.
-- **Gradient filled** — `.btn-gradient` (with `--sm`, `--lg`).
-- **Gradient outline** — `.btn-outline-gradient` (mask-composite gradient border).
-- **Icon button** — `.btn-icon` (with `--sm` 32px+44px-target, `--lg` 48px, `--ghost` no-border).
-- **Link-style** — `.btn-link` (underlined, link-colored).
+Icons are **Tabler** icons from `react-icons/tb` (`Tb*` components), used across the app. `lucide-react` is not used. One icon per card
+header or action; no decorative emoji or icon noise.
 
-All buttons include `@include focus-ring` (a 2px outline of `var(--ring)` with 2px offset) and a disabled state.
+### 6.7 Header, navigation, footer
 
-### 5.6 Header, navigation, footer
+- **Header** (`.header*`): `header__start` (brand), `header__center` (desktop navigation), `header__end` (authentication controls and the
+  theme toggle). Below `lg` the header bar itself is fixed at `z('fixed')`; from `lg` it is relative at `z('sticky')`. The mobile navigation
+  overlay sits above it at `z('modal')`.
+- **Desktop navigation:** hover-reveal dropdowns (`z('dropdown')`, min width 200px, radius `xl`, shadow `lg`, opacity transition).
+- **Mobile navigation:** a 20rem panel anchored left, with right-side radius `lg` and the `xl` shadow, a backdrop at
+  `color-alpha('foreground', 0.4)` and `z('modal')`. The CSS has **no slide animation** despite older comments; only the expand icon
+  rotates. There is no Escape handler or focus trap yet (a gap listed in [`UX-FLOWS.md`](UX-FLOWS.md#known-gaps)).
+- **Footer:** a solid `--footer-bg` slab with an SVG wave on top, a three-column responsive grid (the brand spans two columns at `lg`) and
+  `--primary-foreground` text. It shows the build date and commit SHA. Under a preset the slab changes color with `--primary`.
+- **Print:** the header and footer are hidden when `$enable-print-styles` is on.
 
-- **Header** — fixed on mobile (`z('fixed')`), relative on desktop (`z('sticky')`). Brand on left (logo + uppercase wordmark), nav center
-  (desktop) or hamburger (mobile), auth + theme on right.
-- **Desktop nav** — hover-reveal dropdowns, `radius('xl')` panels, `shadow('lg')`, opacity transition.
-- **Mobile nav** — slide-in 20rem panel from left, scrim at `color-alpha('foreground', 0.4)`, `z('modal')`.
-- **Footer** — solid `var(--footer-bg)` (= `--primary`) slab with SVG wave on top, 3-column responsive grid (brand spans 2 cols on `lg`),
-  white text with `primary-foreground`. Always closes the page on royal blue.
+![Mobile navigation open](docs/screenshots/07-mobile-nav-open-light.webp)
 
----
+### 6.8 Feedback and overlays
 
-## 6. Decorative Motif Library
-
-These are the recurring visual elements. Reach for them in this order before inventing new ones:
-
-| Motif                    | Mixin / source                                                                                                                                                                                                                               | Usage                                                                                                                                                                       |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Orb (blob)**           | `@include orb($size, $blur, $color)`                                                                                                                                                                                                         | Behind heroes, CTAs, sections; `pointer-events: none`; `position: absolute`. Size 3–24rem, blur 24–64px, color is `color-alpha('primary'/'tertiary'/'secondary', 0.2–0.3)`. |
-| **Pulsing orb**          | Wrap with `motion.div` and animate `{scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3]}` looping 4–8s.                                                                                                                                            | Hero accent.                                                                                                                                                                |
-| **Background beams**     | `<BackgroundBeams />` from `@arolariu/components`                                                                                                                                                                                            | Full-page or header-overflow ambient lines at `z('behind')`. Mask the bottom with `mask-image: linear-gradient(...)` for fade-out.                                          |
-| **Grid pattern overlay** | `background-image: linear-gradient(color-alpha('secondary', 0.14) 1px, transparent 1px), linear-gradient(90deg, color-alpha('tertiary', 0.14) 1px, transparent 1px); background-size: 50px 50px;`                                            | About hero, structural sections.                                                                                                                                            |
-| **Gradient text**        | `@include gradient-bg(); -webkit-background-clip: text; background-clip: text; color: transparent;`                                                                                                                                          | Wordmark, hero titles, key phrases.                                                                                                                                         |
-| **Gradient border**      | `&::before { content: ''; position: absolute; inset: 0; padding: 2px; @include gradient-bg(); -webkit-mask: linear-gradient(white,white) content-box, linear-gradient(white,white); -webkit-mask-composite: xor; mask-composite: exclude; }` | `.btn-outline-gradient`, `.card--featured`.                                                                                                                                 |
-| **CTA glow**             | Absolute gradient sibling at `inset: -1px`, `radius('full')`, blurred or solid behind a contrasting pill.                                                                                                                                    | Hero CTA.                                                                                                                                                                   |
-| **Frosted glass**        | `@include glass($blur, $opacity, $bg)`                                                                                                                                                                                                       | Code-block surface (Technologies section), modal-adjacent overlays. **Not for hero.**                                                                                       |
-| **TechSphere**           | `<TechSphere />` from `app/_effects/`                                                                                                                                                                                                        | Homepage right-hand ornament; aspect 1/1; max-width 600px; desktop only.                                                                                                    |
-| **SVG wave (footer)**    | The `.footer__wave` SVG sits at the top of the footer (`-mt-5` → `-mt-10`).                                                                                                                                                                  | Always include when introducing a `--footer-bg` slab on a page.                                                                                                             |
-
-### Anti-motifs
-
-- ❌ **Drop shadow on text** — use gradient text instead.
-- ❌ **Multiple gradients per section** — one signature gradient run per visual block.
-- ❌ **Pure white panels on white background** — surfaces need `border` (`color('border')`) or elevation (`@include shadow('md')`).
-- ❌ **Random emoji or icon noise** — icons come from `lucide-react` (consumed via the component library). One icon per card header,
-  optionally one per list item.
+`GlobalToaster` (mounted by the provider stack) shows toasts through `@/lib/notify` and has a localized close label. Success, info and
+neutral toasts auto-dismiss after `DEFAULT_CONFIRMATION_TIMEOUT_MS` (5000 ms); errors, warnings and loading toasts stay until closed unless
+the caller passes a `timeout`. The library `Dialog` takes a `closeLabel`. Overlays take their layer from the z-index scale above.
 
 ---
 
-## 7. Motion Vocabulary
+## 7. Decorative motif library
 
-### 7.1 Principles
+Reach for these before inventing something new:
 
-1. **Stagger, don't simultaneously fire.** Hero left and hero right both animate with `delay: 0.3`, but their inner orbs and visuals start
-   later (`0.6`+).
-2. **Loop atmosphere, transition states.** Background orbs loop forever (`repeat: Infinity, repeatType: "reverse"`). Hover transitions use
-   `'normal'` (150ms) duration with `ease`.
-3. **Translate small, scale gentle.** Hover-lift is `-2px` to `-4px` translateY; scale changes are `0.95–1.0` or `1.0–1.2`. No flips, no
-   360° spins (except `<Loader />`).
-4. **Spring is for delight, not for state change.** Reserve `spring` easing for hover-lift on featured cards.
+| Motif                   | Source                                                                                                    | Usage                                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Orb**                 | `@include orb($size, $blur, $color)`                                                                      | Behind heroes and calls to action. `position: absolute`, `pointer-events: none`, color `color-alpha(…, 0.2–0.3)`. |
+| **Pulsing orb**         | `motion.div` animating `{scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3]}`, looping 4 to 8 seconds           | Hero accent.                                                                                                      |
+| **Background beams**    | `<BackgroundBeams />` from `@arolariu/components`                                                         | Page-wide or header-overflow ambient lines at `z('behind')`, bottom masked for a fade.                            |
+| **Grid pattern**        | Two 1px `linear-gradient`s tinted with `secondary` and `tertiary` alpha over `background-size: 50px 50px` | About hero and call to action, structural sections.                                                               |
+| **Gradient text**       | `gradient-bg` plus `background-clip: text`                                                                | Wordmark, hero title, one key phrase.                                                                             |
+| **Call-to-action glow** | Absolute gradient sibling at `inset: -1px`, `radius('full')`, behind a contrasting pill                   | Hero call to action.                                                                                              |
+| **Frosted surface**     | `@include backdrop-blur(2px–8px)` on a translucent card                                                   | Code block, About pillar cards, invoice overlays and toolbars. Check text over the busiest thing behind it.       |
+| **TechSphere**          | `<TechSphere />` (`app/_effects/`, Three.js WebGL)                                                        | Home hero ornament, `lg` and up. Honors reduced motion.                                                           |
+| **Footer wave**         | `.footer__wave` SVG                                                                                       | Top edge of the footer slab.                                                                                      |
 
-### 7.2 Library choice
-
-- **CSS / SCSS** — for hover, focus, single-state transitions. Use `@include transition()`.
-- **Motion** (`motion/react`) — for entrance animations, looping atmosphere, staggered reveals, scroll-driven effects. **Always preferred
-  over Framer Motion v11/lower** — `motion` is the project standard.
-
-### 7.3 Reduced motion
-
-Already enforced globally — the animations layer clamps every transition to `0.01ms` under `prefers-reduced-motion: reduce`. When using
-`motion`, you don't need to manually respect the preference _for transitions_; you do need to ensure that **content is not hidden behind
-opacity-0 entrances** that would never resolve. The hero's `<h1>` is rendered normally; only the _container_ scales — that pattern is
-correct.
+**Anti-motifs:** drop shadows on text (use gradient text); several gradient runs in one visual block; white panels on a white page without a
+border or elevation; decorative emoji.
 
 ---
 
-## 8. Accessibility
+## 8. Motion vocabulary
 
-These are not optional polish; they are part of the brand's craft.
+### 8.1 Principles
 
-| Concern                  | Provision                                                                                                                     |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Reduced motion**       | Auto-clamped via `_transitions.scss` under `prefers-reduced-motion`.                                                          |
-| **High contrast**        | `prefers-contrast: more` and `forced-colors: active` overrides in `_globals.scss` raise border opacity and shift link colors. |
-| **Reduced transparency** | `@include reduced-transparency` mixin available — provide solid backgrounds for frosted-glass surfaces inside the wrapper.    |
-| **Dyslexia**             | `FontContext` allows users to swap to Atkinson Hyperlegible. Persist to `localStorage`, sync across tabs via storage events.  |
-| **Focus rings**          | Every interactive element gets `@include focus-ring` (2px `--ring` outline, 2px offset).                                      |
-| **Touch targets**        | Icon buttons `--sm` (32px visual) expand their hit area to 44px via an `::after` overlay.                                     |
-| **Semantic HTML**        | Always use `<header>`, `<main>`, `<nav>`, `<section>`, `<article>`, `<footer>`. Headings are sequential.                      |
-| **Alt text**             | Every `<Image>` requires alt text from i18n (`Common.accessibility.*`).                                                       |
-| **Print**                | `@if $enable-print-styles { @media print { display: none; } }` hides chrome on print.                                         |
+1. **Stagger, do not fire everything at once.** Hero panels start at `delay: 0.3`; inner visuals start later.
+2. **Loop atmosphere, transition state.** Orbs loop forever (`repeat: Infinity, repeatType: "reverse"`); hover and focus transitions use
+   `normal` (150ms) with `ease`.
+3. **Translate small, scale gently.** Hover-lift is `-2px` to `-4px`; scale changes are modest. No flips or full spins except loaders.
+4. **Spring is for delight.** It is defined but not yet used in SCSS; use it sparingly if adopted.
+
+### 8.2 Library choice
+
+- **CSS and SCSS** for hover, focus and single-state transitions (`@include transition()`).
+- **`motion/react`** for entrance animations, looping atmosphere, staggered reveals and scroll reveals. Scroll reveals use `useInView` with
+  `once: true` and a `-100px` margin; a few of The Author's sections re-trigger.
+
+### 8.3 Reduced motion: what is and is not covered
+
+- **Covered:** `animations/_transitions.scss` applies `animation-duration: 0.01ms !important`, `animation-iteration-count: 1 !important`,
+  `transition-duration: 0.01ms !important` and `scroll-behavior: auto !important` to `*`, `*::before` and `*::after` under
+  `prefers-reduced-motion: reduce`. `TechSphere` also respects the preference.
+- **Not covered:** `motion/react` JavaScript animations (orb pulses, entrance scales, scroll reveals). The app has no global
+  `MotionConfig reducedMotion`, so they still run. When adding one, gate the motion itself with `useReducedMotion()` so looping and entrance
+  animations stop for users who asked for less motion. Also never let content visibility depend on the animation finishing; that is an
+  additional requirement, not a substitute for the gate.
+- **Unwired preference:** My Profile exposes an `animationsEnabled` toggle, but nothing reads it globally.
 
 ---
 
-## 9. The Agent's Build Checklist
+## 9. Accessibility
 
-When asked to build a new page, section, or component:
+| Concern                    | Provision                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Reduced motion**         | CSS clamp in `_transitions.scss`; see section 8.3 for what it misses.                                                                                                                                                                                                                                                                                                                                                                                 |
+| **High contrast**          | `@media (prefers-contrast: more), (forced-colors: active)` overrides in `_globals.scss`; `color-scheme: light dark` is declared.                                                                                                                                                                                                                                                                                                                      |
+| **Reduced transparency**   | `@include reduced-transparency` exists for frosted surfaces; apply it wherever a translucent surface carries text.                                                                                                                                                                                                                                                                                                                                    |
+| **Dyslexia-friendly type** | `FontContext` swaps to Atkinson Hyperlegible, stored in `localStorage["selectedFont"]` and synced across tabs.                                                                                                                                                                                                                                                                                                                                        |
+| **Focus**                  | A visible `:focus-visible` ring on every interactive element (`@include focus-ring`).                                                                                                                                                                                                                                                                                                                                                                 |
+| **Icon-only controls**     | A localized `aria-label` (including the toaster and dialog close buttons).                                                                                                                                                                                                                                                                                                                                                                            |
+| **Landmarks**              | `<header>`, `<main>`, `<nav>`, `<section>`, `<article>`, `<footer>`; sequential headings, one `<h1>` per page.                                                                                                                                                                                                                                                                                                                                        |
+| **Contrast floor**         | 4.5:1 for text against what is really behind it. Measured: Royal Blue on white 5.17:1; Violet on white about 7.0:1; footer text on the slab 4.94:1; magenta link on white 4.67:1; `--muted-foreground` on white 4.76:1. **Fails:** `--muted-foreground` on `--muted` is about 4.34:1; light-mode intent pairs measure 3.70:1 (success), 3.29:1 (warning), 4.36:1 (info) and 3.59:1 (destructive), so keep them to large text and non-text indicators. |
+| **Print**                  | Chrome hidden under `$enable-print-styles`.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Automated checks**       | `src/accessibility/full-site.spec.tsx` and `src/app/aria-snapshots.spec.tsx`; the component library's own guide is `packages/components/ACCESSIBILITY.md`.                                                                                                                                                                                                                                                                                            |
 
-1. **Scope** — Is this a new page, a section in an existing page, a reusable global, or a route-local component? Default to route-local +
-   CSS Module.
-2. **Server vs client** — Is it interactive? If no, `page.tsx` is a Server Component returning the structure. If yes, the interactivity goes
-   in `island.tsx` (`"use client"`) and `page.tsx` thinly delegates.
-3. **Tokens, not values** — Pull the SCSS abstracts (`@use '../../styles/abstracts' as *;`) and write only `space()`, `color()`,
-   `font-size()`, `radius()`, `shadow()`, `duration()`, `easing()`, etc. Reject any literal except `0`, `1px`, `100%`, and percentages.
-4. **Reach for existing motifs first** — orb, gradient-bg, glass, card-hover, hover-lift, gradient text. Only invent when truly missing.
-5. **Compose responsive layouts with `respond-to`** — never write raw `@media (min-width: 768px)`.
-6. **Wire animations through `motion`** for entrance/loop, through `@include transition()` for state.
-7. **Confirm dark mode** — the `.dark` class auto-flips CSS variables; manual `@include dark { ... }` only when a property doesn't pick up
-   via tokens (e.g., gradient-overlay opacity).
-8. **Confirm accessibility** — focus rings, alt text, semantic landmarks, motion-safe.
-9. **Tests collocated** — `Foo.test.tsx` next to `Foo.tsx`. Stories `Foo.stories.tsx` likewise. (A11y snapshot tests live at
-   `app/aria-snapshots.spec.tsx`.)
-10. **Run only `npm run test:unit`** — the user runs lint, build, e2e, and dotnet manually.
+---
 
-### Adding a new section to an existing page (worked example)
+## 10. Building a new surface
 
-```bash
-sites/arolariu.ro/src/app/about/_components/NewSection.tsx           # the component
-sites/arolariu.ro/src/app/about/_components/NewSection.module.scss   # the styles
-sites/arolariu.ro/src/app/about/_components/NewSection.stories.tsx   # Storybook
-sites/arolariu.ro/src/app/about/_components/NewSection.test.tsx      # Vitest (if any logic)
+The repository-wide workflow, commands, testing targets and risk boundaries are in [`AGENTS.md`](../../AGENTS.md); do not copy them here.
+The design-specific checklist:
+
+1. **Scope.** Route-local component plus a CSS Module by default; promote to a shared component only on a third consumer.
+2. **Server or client.** Interactivity goes in `island.tsx`; `page.tsx` stays a thin Server Component.
+3. **Tokens, not values.** `@use '../../styles/abstracts' as *;` and only accessors. No literal colors, spacing, radii or z numbers.
+4. **Existing motifs first.** Orb, gradient text, frosted surface, `card-hover`, `hover-lift`.
+5. **Responsive through mixins.** `respond-to` and `respond-below`, never a raw `@media (min-width: 768px)`.
+6. **Motion.** `motion/react` for entrance and loop, `@include transition()` for state; gate JS motion on reduced-motion preference.
+7. **Verify dark mode and presets.** The `.dark` class flips tokens; add a dark override only when a property does not follow a token. In a
+   CSS Module write it as `:global(.dark) & { … }`, because `@include dark` emits a hashed `.dark` class there that never matches. Check the
+   default, `sunset` and `monochrome` presets.
+8. **Accessibility.** Focus rings, localized names for icon-only controls, landmarks, contrast over translucent surfaces.
+9. **Copy.** All user-facing text through `next-intl` for `en`, `ro` and `fr`.
+10. **Tests and stories.** Colocate `Foo.test.tsx` and `Foo.stories.tsx` next to `Foo.tsx`.
+
+Worked example: adding a section to the About page.
+
+```text
+sites/arolariu.ro/src/app/about/_components/NewSection.tsx
+sites/arolariu.ro/src/app/about/_components/NewSection.module.scss
+sites/arolariu.ro/src/app/about/_components/NewSection.stories.tsx
+sites/arolariu.ro/src/app/about/_components/NewSection.test.tsx
 ```
 
-Then import it in `app/about/island.tsx` (the client island). Add translation keys in `messages/en.json` (and `ro.json`, `fr.json`) under
-`About.newSection.*`. Run `npm run generate:i18n` to sync if needed.
+Then render it in `src/app/about/island.tsx`, add the message keys to every locale file in `messages/`, and regenerate with
+`npm run generate:i18n`.
 
 ---
 
-## 10. Quick reference cheat sheet
+## 11. Cheat sheet
 
 ```scss
-// Always at the top of a *.module.scss
-@use '../../styles/abstracts' as *;
+// Top of every *.module.scss
+@use "../../styles/abstracts" as *;
 
-// Tokens you'll reach for daily
-color('primary')               color-alpha('primary', 0.1)    static-color('white')
-font-size('5xl')               font-weight('semibold')         line-height('tight')
-letter-spacing('tight')        space(8)                        breakpoint('lg')
-z('content')                   radius('xl')                    shadow('md')
-duration('normal')             easing('ease')                  blur-size('lg')
-opacity('semi')
+// Accessors
+color("primary")        color-alpha("primary", 0.1)   static-color("white")
+font-size("5xl")        font-weight("semibold")       line-height("tight")      letter-spacing("tight")
+space(8)                breakpoint("lg")              z("content")              radius("xl")
+shadow("md")            duration("normal")            easing("ease")            blur-size("lg")
+opacity("semi")
 
-// Mixins you'll reach for daily
-@include respond-to('lg')              @include respond-below('md')
-@include flex-center                   @include flex-between
-@include grid(3, space(6))             @include responsive-grid(1, 2, 3, space(8))
-@include shadow('md')                  @include transition((border-color, box-shadow))
-@include hover-lift(-2px)              @include card-hover('lg', 0.3, 'primary')
-@include gradient-bg()                 @include glass(8px, 0.5, 'card')
-@include text-balance                  @include truncate                @include line-clamp(3)
-@include focus-ring                    @include orb(10rem, 48px, color-alpha('primary', 0.2))
-@include dark { ... }                  @include reduced-motion { ... } @include reduced-transparency { ... }
+// Mixins
+@include respond-to("lg")             @include respond-below("md")
+@include flex-center                  @include flex-between
+@include grid(3, space(6))            @include responsive-grid(1, 2, 3, space(8))
+@include shadow("md")                 @include transition((border-color, box-shadow))
+@include hover-lift(-2px)             @include card-hover("lg", 0.3, "primary")
+@include gradient-bg()                @include backdrop-blur(8px)
+@include text-balance                 @include truncate                @include line-clamp(3)
+@include focus-ring                   @include orb(10rem, 48px, color-alpha("primary", 0.2))
+@include reduced-motion { … }         @include reduced-transparency { … }
 
-// The signature hero gradient text
-.titleGradient {
-  @include gradient-bg();
-  -webkit-background-clip: text; background-clip: text;
-  color: transparent;
-}
+// Dark overrides in a *.module.scss (@include dark only works in global partials)
+:global(.dark) & { … }
 ```
 
 ```tsx
 // The signature pulsing orb
 <motion.div
   className={styles.orb}
-  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-  transition={{ duration: 8, repeat: Infinity, repeatType: "reverse" }}
+  animate={{scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3]}}
+  transition={{duration: 8, repeat: Infinity, repeatType: "reverse"}}
 />
-
-// The signature staggered hero entrance
-<motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }}
-  transition={{ duration: 0.8, delay: 0.3 }}>
-  ...
-</motion.div>
 ```
 
 ---
 
-## 11. References
+## 12. Known design-system gaps
 
-- **SCSS abstracts** — `src/styles/abstracts/` (`_config.scss`, `_colors.scss`, `_typography.scss`, `_variables.scss`, `_mixins.scss`)
-- **Base layer** — `src/styles/base/_globals.scss` (CSS variables), `_elements.scss` (HTML defaults)
-- **Theme presets** — `src/styles/themes/_presets.scss` + `src/lib/theme-presets.ts`
-- **Animations** — `src/styles/animations/_keyframes.scss`, `_transitions.scss`
-- **Global components** — `src/styles/components/_*.scss`
-- **Hero reference** — `src/app/_components/Hero.tsx` + `Hero.module.scss`
-- **Decorative effects** — `src/app/_effects/TechSphere.tsx`, `BackgroundBeams` from `@arolariu/components`
-- **Font wiring** — `src/contexts/FontContext.tsx`
-- **Provider stack** — `src/app/providers.tsx` (auth → font → theme → translation)
-- **Project conventions** — `CLAUDE.md` and `AGENTS.md` at the repository root
+These are documented facts about the current build, not source changes. Each is a candidate follow-up.
 
-When the SCSS source and this document disagree, **the SCSS source wins** — file an update to this document so the drift is recorded.
+| Gap                                                                                                  | Where                                                            |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `THEME_PRESETS.default.preview` shows cyan, purple, pink; the real default is blue, violet, magenta. | `src/lib/theme-presets.ts`                                       |
+| Preset names and descriptions are hard-coded English (not localized).                                | `src/lib/theme-presets.ts`, `SettingsAppearance.tsx`             |
+| Stale `useThemePreset` comments and a "no runtime JS for named presets" note.                        | `main.scss`, `_presets.scss`, `_index.scss`, `theme-presets.ts`  |
+| `.btn-*`, `.card--featured`, `.card-grid` and `.badge--*` have no consumers.                         | `styles/components/_buttons.scss`, `_cards.scss`, `_badges.scss` |
+| The `glass` mixin has no consumers (surfaces call `backdrop-blur` directly).                         | `styles/abstracts/_mixins.scss`                                  |
+| `--muted-foreground` on `--muted` is about 4.3:1, below AA for body text.                            | `styles/base/_globals.scss`                                      |
+| `motion/react` animations ignore `prefers-reduced-motion`; `animationsEnabled` is unwired.           | `Hero.tsx`, scroll reveals, `SettingsAppearance.tsx`             |
+| Body text can cross orbs on `/about/the-platform` and beams on the home hero.                        | Orb Contrast Rule in `DESIGN.md`                                 |
+| The mobile navigation has no Escape handling and no focus management.                                | `src/components/Navigation.tsx`                                  |
+| Homepage technology cards and the architecture card disagree on framework and runtime versions.      | `messages/en.json`, `Technologies.tsx` (see `UX-FLOWS.md`)       |
+
+---
+
+## 13. References
+
+- **SCSS abstracts:** `src/styles/abstracts/`. **Base layer:** `src/styles/base/_globals.scss` (custom properties), `_elements.scss` (HTML
+  defaults). **Themes:** `src/styles/themes/_presets.scss` and `src/lib/theme-presets.ts`. **Animations:** `src/styles/animations/`.
+  **Global components:** `src/styles/components/`.
+- **Hero reference:** `src/app/_components/Hero.tsx` and `Hero.module.scss`. **Effects:** `src/app/_effects/` and `BackgroundBeams` from
+  `@arolariu/components`.
+- **Font wiring:** `src/contexts/FontContext.tsx`. **Providers:** `src/app/providers.tsx`. **Preferences:** `src/stores/preferencesStore.ts`
+  and `src/app/_components/PreferencesSubscriptions.tsx`.
+- **Library tokens and accessibility:** `packages/components/src/index.css` and `packages/components/ACCESSIBILITY.md`.
+- **RFCs** (repository root, `docs/rfc/`): `1003-internationalization-system.md`, `1005-state-management-zustand.md`,
+  `1006-component-library-architecture.md`, `1007-advanced-frontend-patterns.md`, `1008-scss-system-architecture.md`.
+- **Project conventions:** root [`AGENTS.md`](../../AGENTS.md) and [`sites/arolariu.ro/AGENTS.md`](AGENTS.md).
+- **Provenance:** reference screenshots were captured from the live dev build (footer "Built on 2026-11-16", commit `1fce0ee1b`) with
+  reduced motion enabled.
+
+When the SCSS source and this document disagree, **the source wins**; update this document so the drift is recorded.
