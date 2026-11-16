@@ -187,7 +187,7 @@ flowchart LR
   Detail --> Share["Share, export, analyze"]
 ```
 
-On mobile, the invoice area adds a four-item bottom bar: **Home** (`/domains/invoices`), **Scan** (upload scans), **Invoices** (view
+Below `md`, every invoice route shows a four-item bottom bar: **Home** (`/domains/invoices`), **Scan** (upload scans), **Invoices** (view
 invoices) and **Profile** (`/my-profile`). The active item follows the pathname.
 
 ![Invoices hub on desktop](docs/screenshots/12-invoices-hub-desktop-light.webp)

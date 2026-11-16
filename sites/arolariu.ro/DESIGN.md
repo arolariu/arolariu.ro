@@ -272,7 +272,7 @@ and cards pack tightly inside that air.
   gaps; use a listed key rather than assuming every integer exists.
 - **Breakpoints:** 2xsm 320, xsm 480, sm 640, md 768, lg 1024, xl 1280, 2xl 1440, 3xl 1976 (pixels). Design mobile first and add upward.
 - **Shell:** a 64px header (4rem plus the top safe-area inset) with a page-background fill, fixed below `lg` and in flow from `lg`, the
-  page, then the footer slab. A mobile-only bottom bar (Home, Scan, Invoices, Profile) appears on the invoices hub.
+  page, then the footer slab. A bottom bar (Home, Scan, Invoices, Profile) appears on every invoice route below `md`.
 - **Hero:** full viewport height, 5rem vertical padding, one column on small screens and two columns from `lg`, with the globe on the right.
 - **Horizontal overflow:** the root clips horizontal overflow so decorative orbs and beams never create a sideways scrollbar.
 - **Layering:** behind -1, base 0, raised 1, content 10, content-high 20, overlay-subtle 50, dropdown 1000, sticky 1020, fixed 1030, modal
@@ -354,7 +354,8 @@ hand-tune a library control to match a site card; wrap or compose instead.
 
 - **Header:** 64px with an opaque page-background fill (`hsl(var(--background))`). The brand mark and name sit on the left; **Domains** and
   **About** sit in the center; Sign in and the theme toggle sit on the right.
-- **Mobile:** a menu button opens a navigation panel with expandable groups; the invoices hub adds a four-item bottom bar.
+- **Mobile:** a menu button opens a navigation panel with expandable groups; below `md`, every invoice route adds a four-item bottom bar
+  from the shared invoices layout.
 - **Theme toggle:** a 40px circular outline button that switches light and dark directly. There is no menu.
 - **Command palette:** **Ctrl or Cmd plus K** opens a palette for navigation, theme, language, accessibility font and a few playful effects.
   It is feature-flagged and may be absent in an environment.
