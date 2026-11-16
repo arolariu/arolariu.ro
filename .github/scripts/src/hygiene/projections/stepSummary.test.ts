@@ -20,6 +20,8 @@ import {context as planContext} from "../../../lib/planning/fixtures/plans.ts";
 import {plan as evidencePlan, outcome as evidenceOutcome} from "../../../lib/hygiene/fixtures/outcomes.ts";
 import {providerIds} from "../../../lib/hygiene/registry.ts";
 import {buildVerifiedReport} from "../../../lib/hygiene/aggregate.ts";
+import type {GitChangeSet} from "../../../helpers/git/index.ts";
+import type {FolderSize, StatsPayload} from "../../../lib/hygiene/payloads.ts";
 
 describe("scorecard cell safety", () => {
   it("summarizes repository-wide selection without dumping per-file planning diagnostics", () => {
@@ -63,8 +65,8 @@ describe("scorecard cell safety", () => {
   it("publishes selection/skip reasons and explicit missing evidence", () => {
     const plan = evidencePlan(true);
     const report = buildVerifiedReport(planContext(), plan, {outcomes: providerIds().map((id) => evidenceOutcome(plan, id)), issues: []});
-    expect(buildStepSummary(report)).toContain("Selection plan");
-    expect(buildStepSummary(report)).toContain("No changed files");
+    expect(buildStepSummary(report)).not.toContain("Selection plan");
+    expect(buildStepSummary(report)).toMatch(/Skipped — no changed files/);
     const missing = buildVerifiedReport(planContext(), plan, {outcomes: [], issues: []});
     expect(buildStepSummary(missing)).toContain("missing-outcome");
   });
@@ -116,6 +118,54 @@ function makeReport(overrides: Partial<HygieneReport> = {}): HygieneReport {
     outcomes: [],
     ...overrides,
   };
+}
+
+function makeStatsReport(
+  changes: GitChangeSet = {
+    scope: "known",
+    baseSha: "b".repeat(40),
+    headSha: "a".repeat(40),
+    entries: [
+      ...Array.from({length: 19}, (_, index) => ({kind: "added" as const, path: `sites/arolariu.ro/new-${index}.md`})),
+      {kind: "modified", path: "sites/arolariu.ro/README.md"},
+      {kind: "modified", path: "sites/arolariu.ro/DESIGN_SYSTEM.md"},
+    ],
+  },
+  bundleSizes: readonly FolderSize[] = [{folder: "sites/arolariu.ro", mainTotal: 18398102, headTotal: 19414019}],
+): HygieneReport {
+  const payload: StatsPayload = {
+    filesChanged: 21,
+    linesAdded: 1435,
+    linesDeleted: 502,
+    topExtensions: [
+      {extension: "webp", count: 16},
+      {extension: "md", count: 5},
+    ],
+    topDirectories: [{directory: "sites", count: 21}],
+    bundleSizes,
+  };
+  return makeReport({
+    plan: {...evidencePlan(), changes},
+    outcomes: [
+      makeOutcome({
+        providerId: "stats",
+        providerName: "Statistics",
+        payload,
+        findings: bundleSizes
+          .filter((folder) => folder.mainTotal !== folder.headTotal)
+          .map((folder) => ({
+            kind: "comparison",
+            severity: "info",
+            name: `bundle.${folder.folder}`,
+            baseValue: folder.mainTotal,
+            headValue: folder.headTotal,
+            diff: folder.headTotal - folder.mainTotal,
+            unit: "B",
+            message: "",
+          })),
+      }),
+    ],
+  });
 }
 
 function lineFinding(over: Partial<Finding & {kind: "line"}> = {}): Finding {
@@ -181,13 +231,13 @@ describe("formatHumanBytes", () => {
     expect(formatHumanBytes(512)).toBe("512 B");
   });
   it("formats kilobytes", () => {
-    expect(formatHumanBytes(2048)).toBe("2.0 KB");
+    expect(formatHumanBytes(2048)).toBe("2.0 KiB");
   });
   it("formats megabytes", () => {
-    expect(formatHumanBytes(5_242_880)).toBe("5.0 MB");
+    expect(formatHumanBytes(5_242_880)).toBe("5.0 MiB");
   });
   it("preserves sign for negative", () => {
-    expect(formatHumanBytes(-2048)).toBe("-2.0 KB");
+    expect(formatHumanBytes(-2048)).toBe("-2.0 KiB");
   });
 });
 
@@ -208,7 +258,8 @@ describe("renderHeader", () => {
     const report = makeReport({
       outcomes: [makeOutcome({gateResult: "passed"}), makeOutcome({gateResult: "passed"}), makeOutcome({gateResult: "failed"})],
     });
-    expect(renderHeader(report)).toMatch(/2\/3 providers passed/);
+    expect(renderHeader(report)).toMatch(/2 passed/);
+    expect(renderHeader(report)).toMatch(/1 failed/);
     expect(renderHeader(report)).toMatch(/300ms/);
   });
   it("renders total findings counts broken down", () => {
@@ -220,7 +271,7 @@ describe("renderHeader", () => {
       ],
     });
     const out = renderHeader(report);
-    expect(out).toMatch(/3 findings/);
+    expect(out).toMatch(/1 informational finding/);
     expect(out).toMatch(/1 errors?/);
     expect(out).toMatch(/1 warnings?/);
   });
@@ -236,7 +287,86 @@ describe("renderHeader", () => {
     const report = makeReport({
       outcomes: [makeOutcome({findings: [metricFinding]})],
     });
-    expect(renderHeader(report)).toMatch(/0 findings/);
+    expect(renderHeader(report)).toContain("0 errors · 0 warnings");
+    expect(renderHeader(report)).not.toContain("42");
+  });
+});
+
+describe("execution-aware timing", () => {
+  it.each([
+    [0, "0ms"],
+    [100, "100ms"],
+    [891.1209309999999, "891.121ms"],
+    [305.10104, "305.101ms"],
+    [0.0017460000000255604, "0.002ms"],
+    [999.9999, "1s"],
+    [1250, "1.25s"],
+    [1499.4999, "1.499s"],
+    [59999.9999, "1m00s"],
+    [119999.9999, "2m00s"],
+    [215292.873714, "3m35.293s"],
+  ])("formats %s milliseconds as %s in the check table", (durationMs, expected) => {
+    expect(renderScorecard(makeReport({outcomes: [makeOutcome({durationMs})]}))).toContain(`| ${expected} |`);
+  });
+
+  it("rounds the overview directly in displayed units without a second rounding increment", () => {
+    expect(renderHeader(makeReport({outcomes: [makeOutcome({durationMs: 1499.9999})]}))).toContain("**1s**");
+  });
+
+  it("counts executed passes separately and excludes skipped bookkeeping from the whole-number overview", () => {
+    const plan = evidencePlan(true);
+    const skipped = (["lint", "test-dotnet", "test-python"] as const).map((id) => ({
+      ...evidenceOutcome(plan, id),
+      durationMs: 10000,
+    }));
+    const report = makeReport({
+      plan,
+      outcomes: [891.120931, 215292.873714, 305.10104].map((durationMs) => makeOutcome({durationMs})).concat(skipped),
+    });
+    const header = renderHeader(report);
+    expect(header).toContain("3 passed");
+    expect(header).toContain("3 skipped");
+    expect(header).toContain("3m36s");
+    expect(header).not.toContain("6/6");
+    expect(header).not.toContain("3m36.");
+  });
+
+  it("shows skipped checks with their actual reason and no execution time", () => {
+    const plan = evidencePlan(true);
+    const skipped = {...evidenceOutcome(plan, "lint"), skipReason: "No affected inputs for this provider"};
+    const markdown = renderScorecard(makeReport({plan, outcomes: [skipped]}));
+    expect(markdown).toContain("| ⏭️ SKIP | Skipped — no changed files affect this check | — |");
+    expect(markdown).not.toMatch(/PASS|planned skip/);
+  });
+
+  it("falls back to the matching plan reason without inventing a missing reason", () => {
+    const plan = evidencePlan(true);
+    const {skipReason: _reason, ...skipped} = evidenceOutcome(plan, "lint");
+    expect(renderScorecard(makeReport({plan, outcomes: [skipped]}))).toContain("Skipped — no changed files");
+    expect(renderScorecard(makeReport({outcomes: [skipped]}))).toContain("Skipped — reason unavailable");
+  });
+
+  it("escapes unfamiliar skip reasons and preserves their meaning", () => {
+    const skipped = {...evidenceOutcome(evidencePlan(true), "lint"), skipReason: "Manual | choice\n<details>"};
+    expect(renderScorecard(makeReport({outcomes: [skipped]}))).toContain("Manual \\| choice<br>&lt;details&gt;");
+  });
+
+  it("never hides an evidence error behind a skip or marks an all-skipped report as executed passes", () => {
+    const plan = evidencePlan(true);
+    const report = buildVerifiedReport(planContext(), plan, {outcomes: providerIds().map((id) => evidenceOutcome(plan, id)), issues: []});
+    expect(renderHeader(report)).toContain("0 passed");
+    expect(renderHeader(report)).toContain("6 skipped");
+    const broken = {...evidenceOutcome(plan, "lint"), gateResult: "errored" as const};
+    expect(renderScorecard(makeReport({outcomes: [broken]}))).toContain("| 💥 ERROR | runner error |");
+    expect(renderScorecard(makeReport({outcomes: [broken]}))).not.toContain("SKIP");
+  });
+
+  it("reports advisory and cancelled execution without claiming success", () => {
+    const cancelled = {...evidenceOutcome(evidencePlan(), "lint"), executionStatus: "cancelled" as const, gateResult: "failed" as const};
+    const report = makeReport({outcomes: [makeOutcome({gateResult: "advisory"}), cancelled]});
+    expect(renderHeader(report)).toContain("1 advisory");
+    expect(renderHeader(report)).toContain("1 failed");
+    expect(renderScorecard(report)).toContain("cancelled");
   });
 });
 
@@ -342,7 +472,7 @@ describe("renderScorecard", () => {
     expect(renderScorecard(report)).toMatch(/clean/);
   });
 
-  it("summarizes stats providers with changed-file count and largest diff", () => {
+  it("distinguishes legacy folder comparisons from unavailable file counts and sums all deltas", () => {
     const report = makeReport({
       outcomes: [
         makeOutcome({
@@ -357,7 +487,10 @@ describe("renderScorecard", () => {
       ],
     });
 
-    expect(renderScorecard(report)).toMatch(/2 files changed · ▲ \+4\.0 KB/);
+    expect(renderScorecard(report)).toContain("File changes unavailable");
+    expect(renderScorecard(report)).toContain("+5.0 KiB");
+    expect(renderScorecard(report)).toContain("2 folders changed");
+    expect(renderScorecard(report)).not.toContain("files changed");
   });
 });
 
@@ -521,22 +654,22 @@ describe("renderStatsDetails", () => {
     expect(md).not.toBeNull();
     expect(md!).toMatch(/<details>/);
     expect(md!).not.toMatch(/<details open>/);
-    expect(md!).toMatch(/<summary>📦 Bundle stats · 1 file changed<\/summary>/);
-    expect(md!).toMatch(/\| File \| Before \| After \| Diff \|/);
+    expect(md!).toContain("Git-tracked folder size");
+    expect(md!).toContain("| 📁 Folder | 🏠 Main | 🚀 PR head | ⚖️ Change | 📊 Relative |");
   });
   it("uses positive sign for size increases", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("grew", 1000, 2024)],
     });
-    expect(renderStatsDetails(o)!).toMatch(/▲ \+1\.0 KB/);
+    expect(renderStatsDetails(o)!).toContain("📈 +1.0 KiB");
   });
   it("uses negative sign for size decreases", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("shrunk", 2024, 1000)],
     });
-    expect(renderStatsDetails(o)!).toMatch(/▼ -1\.0 KB/);
+    expect(renderStatsDetails(o)!).toContain("📉 -1.0 KiB");
   });
   it("escapes HTML in comparison names", () => {
     const o = makeOutcome({
@@ -707,7 +840,7 @@ describe("buildStepSummary", () => {
     });
     const md = buildStepSummary(report);
     const providerIndex = md.indexOf("ESLint · FAIL");
-    const statsIndex = md.indexOf("Bundle stats");
+    const statsIndex = md.indexOf("Git-tracked folder size");
 
     expect(providerIndex).toBeGreaterThanOrEqual(0);
     expect(statsIndex).toBeGreaterThanOrEqual(0);
@@ -719,6 +852,169 @@ describe("buildStepSummary", () => {
       outcomes: [makeOutcome({providerId: "stats", findings: []})],
     });
 
-    expect(buildStepSummary(report)).not.toMatch(/Bundle stats/);
+    expect(buildStepSummary(report)).not.toMatch(/Git-tracked folder size/);
+  });
+});
+
+describe("file changes and tracked footprint", () => {
+  it("reports all 21 source changes independently of the single folder comparison", () => {
+    const markdown = buildStepSummary(makeStatsReport());
+    expect(markdown).toContain("**21 files** · 19 added · 2 modified · 0 deleted");
+    expect(markdown).toContain("1 folder changed");
+    expect(markdown).not.toContain("1 file changed");
+    expect(markdown).toContain("+1,435 / −502 lines");
+    expect(markdown).toContain("16");
+    expect(markdown).toContain("webp");
+    expect(markdown).toContain("5");
+    expect(markdown).toContain("md");
+    expect(markdown).toContain("| 🆕 Added | ✏️ Modified | 🗑️ Deleted | 🗂️ Total |");
+    expect(markdown).toContain("| 19 | 2 | 0 | 21 |");
+  });
+
+  describe("infographic composition", () => {
+    it("renders the verified run as a compact shared scorecard with collapsible details", () => {
+      const report = makeStatsReport();
+      const plan = {...evidencePlan(), mode: "affected" as const, changes: report.plan?.changes ?? evidencePlan().changes};
+      const skippedPlan = evidencePlan(true);
+      const stats = report.outcomes[0];
+      if (!stats) throw new Error("Missing statistics fixture");
+      const sample = makeReport({
+        plan,
+        outcomes: [
+          {...evidenceOutcome(plan, "format"), durationMs: 891.120931},
+          {...evidenceOutcome(skippedPlan, "lint"), skipReason: "No affected inputs for this provider"},
+          {
+            ...evidenceOutcome(plan, "test-typescript"),
+            durationMs: 215292.873714,
+            payload: {totalTests: 6001, passed: 5997, failed: 0, skipped: 4, suites: []},
+          },
+          evidenceOutcome(skippedPlan, "test-dotnet"),
+          evidenceOutcome(skippedPlan, "test-python"),
+          {...stats, durationMs: 305.10104},
+        ],
+      });
+      const markdown = buildStepSummary(sample);
+      expect(markdown).toContain("| ✅ Executed checks | ⏭️ Skipped checks | 🚦 Diagnostics | ⏱️ Provider time |");
+      expect(markdown).toContain("3 passed");
+      expect(markdown).toContain("3 skipped");
+      expect(markdown).toContain("3m36s");
+      expect(markdown).toContain("**5,997 passed** · 4 tests skipped");
+      expect(markdown).toContain("1 informational measurement");
+      expect(markdown).toContain("Scope **affected**");
+      expect(markdown).toContain(`Plan \`${plan.id.slice(0, 12)}\``);
+      expect(markdown).toContain(`${sample.workflowRunUrl}#artifacts`);
+      expect(markdown).not.toMatch(/planned skip|Selection plan|Bundle stats|\n{4,}|<details open>/);
+      expect(markdown.indexOf("Check results")).toBeLessThan(markdown.indexOf("Change breakdown"));
+      expect(markdown.indexOf("Change breakdown")).toBeLessThan(markdown.indexOf("Git-tracked folder size"));
+    });
+
+    it("retains reused evidence and bounded verification errors without a selection dump", () => {
+      const plan = evidencePlan();
+      const report = makeReport({
+        plan,
+        workflowRunAttempt: 2,
+        outcomes: [evidenceOutcome(plan, "lint")],
+        evidenceIssues: Array.from({length: 51}, (_, index) => ({code: `issue-${index}`, message: "Bad <evidence>", providerId: "lint"})),
+      });
+      const markdown = buildStepSummary(report);
+      expect(markdown).toContain("Reused `lint` from compatible attempt 1");
+      expect(markdown).toContain("Evidence verification issues");
+      expect(markdown).toContain("issue-49");
+      expect(markdown).not.toContain("issue-50");
+      expect(markdown).toContain("1 more issue(s)");
+      expect(markdown).toContain("Bad &lt;evidence&gt;");
+      expect(markdown).not.toContain("Selection plan");
+    });
+
+    it("retains explicit full-scope selection without hiding it as a no-change skip", () => {
+      const plan = {...evidencePlan(), mode: "full" as const, diagnostics: [{code: "full-requested", message: "Explicit full request"}]};
+      const markdown = buildStepSummary(makeReport({plan}));
+      expect(markdown).toContain("Scope **full**");
+      expect(markdown).toContain("Full validation was explicitly requested.");
+      expect(markdown).not.toContain("Skipped —");
+    });
+  });
+
+  it("shows exact main-based bytes without making a production bundle claim", () => {
+    const markdown = buildStepSummary(makeStatsReport());
+    expect(markdown).toContain("+992.1 KiB");
+    expect(markdown).toContain("18,398,102");
+    expect(markdown).toContain("19,414,019");
+    expect(markdown).toContain("+1,015,917 B");
+    expect(markdown).toContain("+5.5%");
+    expect(markdown).toContain("vs `main`");
+    expect(markdown).toContain("not a production bundle");
+    expect(markdown).toContain("documentation and screenshots");
+    expect(markdown).not.toContain("bundle.sites");
+  });
+
+  it("counts rename and other statuses once each rather than counting both paths", () => {
+    const markdown = buildStepSummary(
+      makeStatsReport({
+        scope: "known",
+        baseSha: "b".repeat(40),
+        headSha: "a".repeat(40),
+        entries: [
+          {kind: "added", path: "new.ts"},
+          {kind: "modified", path: "changed.ts"},
+          {kind: "deleted", path: "old.ts"},
+          {kind: "renamed", path: "renamed.ts", previousPath: "before.ts"},
+          {kind: "copied", path: "copy.ts", previousPath: "original.ts"},
+          {kind: "type-changed", path: "link"},
+          {kind: "unmerged", path: "conflict.ts"},
+        ],
+      }),
+    );
+    expect(markdown).toContain("**7 files** · 1 added · 1 modified · 1 deleted · 1 renamed · 1 copied · 1 type-changed · 1 unmerged");
+    expect(markdown).not.toContain("21 files");
+  });
+
+  it("distinguishes unknown and legacy breakdowns from known empty changes", () => {
+    const report = makeStatsReport({scope: "unknown", reason: "Git unavailable"});
+    expect(renderScorecard(report)).toContain("21 files");
+    expect(renderScorecard(report)).toContain("status breakdown unavailable");
+    expect(renderScorecard(report)).not.toContain("0 deleted");
+    const {plan: _plan, ...legacy} = report;
+    expect(renderScorecard(legacy)).toContain("status breakdown unavailable");
+    const empty = makeStatsReport({scope: "known", baseSha: "b".repeat(40), headSha: "a".repeat(40), entries: []});
+    expect(renderScorecard(empty)).toContain("**0 files** · 0 added · 0 modified · 0 deleted");
+  });
+
+  it("sums offsetting folder changes without claiming there were no folder changes", () => {
+    const report = makeStatsReport(undefined, [
+      {folder: "sites/a", mainTotal: 1000, headTotal: 2024},
+      {folder: "sites/b", mainTotal: 2024, headTotal: 1000},
+    ]);
+    expect(renderScorecard(report)).toContain("net = 0 B");
+    expect(renderScorecard(report)).toContain("2 folders changed");
+    const markdown = buildStepSummary(report);
+    expect(markdown).toContain("📈 +1.0 KiB");
+    expect(markdown).toContain("📉 -1.0 KiB");
+  });
+
+  it("distinguishes no measurements from unchanged measured folders", () => {
+    expect(renderScorecard(makeStatsReport(undefined, []))).toContain("No tracked-folder measurements");
+    const report = makeStatsReport(undefined, [{folder: "sites/a", mainTotal: 10, headTotal: 10}]);
+    expect(renderScorecard(report)).toContain("0 folders changed");
+    const markdown = buildStepSummary(report);
+    expect(markdown).toContain("↔️ 0 B");
+    expect(markdown).toContain("| 0% |");
+  });
+
+  it("handles positive growth from zero and zero-to-zero without infinite percentages", () => {
+    const report = makeStatsReport(undefined, [
+      {folder: "sites/new", mainTotal: 0, headTotal: 100},
+      {folder: "sites/empty", mainTotal: 0, headTotal: 0},
+    ]);
+    const markdown = buildStepSummary(report);
+    expect(markdown).toContain("| new |");
+    expect(markdown).toContain("| 0% |");
+    expect(markdown).not.toMatch(/Infinity|NaN/);
+  });
+
+  it("escapes file-type and folder evidence and rejects malformed non-null stats payloads", () => {
+    const report = makeStatsReport(undefined, [{folder: "sites/a|b\n<script>", mainTotal: 10, headTotal: 20}]);
+    expect(buildStepSummary(report)).toContain("sites/a\\|b<br>&lt;script&gt;");
+    expect(() => buildStepSummary(makeReport({outcomes: [makeOutcome({providerId: "stats", payload: {filesChanged: "21"}})]}))).toThrow();
   });
 });
