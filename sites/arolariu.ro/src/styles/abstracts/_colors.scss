@@ -61,7 +61,7 @@ $color-vars: (
   "link": "--link",
   "link-foreground": "--link-foreground",
   "accent-primary": "--accent-primary",
-  "footer-bg": "--footer-bg"
+  "footer-bg": "--footer-bg",
 );
 
 @function _prefixed-css-var($raw-css-var) {
