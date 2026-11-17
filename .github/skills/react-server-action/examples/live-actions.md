@@ -13,7 +13,12 @@ together.
 - `sites/arolariu.ro/src/lib/utils.server.ts`
 
 Useful live patterns include identifier checks, session-derived backend credentials, `fetchWithTimeout`, `withSpan`, transport parsing from
-`unknown`, and discriminated results.
+`unknown`, and discriminated results. Their non-OK HTTP mapping is not a pattern to copy: passing `new Error(internalMessage)` to
+`createErrorResult` returns that internal text (in `fetchInvoice`, including the backend body) instead of the prepared user message, drops
+the HTTP status, and reports `NETWORK_ERROR`. No live action currently preserves the status. A new or changed mapping must keep the HTTP
+status in the result (`ServerActionResult<T>` has an optional `status` field, and `mapHttpStatusToErrorCode` in `utils.server.ts` maps a
+status to an error code) and return a prepared user message without raw backend text, as
+[Transport and result](../references/rpc-boundary-decisions.md#transport-and-result) requires.
 
 Inspect authorization separately. `fetchInvoice` documents owner/shared access and relies on the downstream boundary for that decision.
 `createInvoice` currently accepts a caller-provided `userIdentifier` when present; that is security-sensitive live behavior, not a pattern
@@ -39,6 +44,8 @@ arbitrary RPC relay. Use this boundary for server-owned reads.
 
 ## Test interpretation
 
-Current action tests identify important branches, but some mock repository helpers. New tests should execute repository-owned
-validation/mapping when that is the behavior under test and substitute only the true external boundary (for example Clerk, network, or email
-provider).
+Current action tests identify important branches, but they run against global Vitest stub aliases (`sites/arolariu.ro/vitest.config.ts` →
+`tests/stubs/**`) for `server-only`, `@/instrumentation.server`, config/storage modules, `fetchUser`, and `@/lib/utils.server` (where
+`fetchWithTimeout` is `vi.fn()` and `createErrorResult` is a copy). To execute real repository mapping, import it relatively, as
+`src/lib/utils.server.test.ts` does, or keep the stub copy in sync. New tests should execute repository-owned validation/mapping when that
+is the behavior under test and substitute only the true external boundary (for example Clerk, network, or email provider).

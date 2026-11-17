@@ -7,7 +7,8 @@ points to their live owners; it is not a substitute for reading the sibling part
 
 The current service pattern separates observable work from classification:
 
-1. The public method invokes `TryCatchAsync`.
+1. The public method invokes the service's TryCatch wrapper: `TryCatchAsync`, or `TryCatchAnalysisAsync` for Processing's queue and analysis
+   methods.
 2. The delegate starts the bounded-context Activity and performs validation and the direct next-layer call.
 3. `OperationCanceledException` is caught first and rethrown unchanged.
 4. The classifier translates only exceptions the current layer owns into that layer's outer exception family.

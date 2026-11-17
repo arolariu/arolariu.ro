@@ -2,17 +2,17 @@
 
 ## Decision Table
 
-| Check                    | Evidence                                                                              | Action                                                                                              |
-| ------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Requested scope and mode | User request plus mode table                                                          | Clarify before starting a broader environment                                                       |
-| Explicit engine          | `rancher` or `podman`                                                                 | Ask if absent; reject Docker Desktop                                                                |
-| Runtime capability       | Current wrapper preflight and selected adapter                                        | Fix configuration only; ask before installing a provider/tool                                       |
-| Repository prerequisites | Root engines/scripts and existing installed state                                     | Ask before any install or generated dependency state                                                |
-| Ports                    | AppHost constants/endpoints, Compose mappings, and current listeners                  | Attribute conflicts to exact PID/container before action                                            |
-| Config/secrets           | Required variable names and ignored/user-secret source files                          | Report missing names only; never print values                                                       |
-| Certificates             | Native Next.js experimental-HTTPS state plus selfhost cert paths and startup branches | Ask before certificate generation, downloaded certificate tooling, or local CA/trust-store mutation |
-| Data/bootstrap           | Current AppHost bootstrap and selfhost bootstrap paths                                | Explain reset/ensure behavior; ask before destructive effects                                       |
-| Persistence              | Current Compose/AppHost volume declarations                                           | Choose stop versus down based on data that must survive                                             |
+| Check                    | Evidence                                                                           | Action                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Requested scope and mode | User request plus mode table                                                       | Clarify before starting a broader environment                                                       |
+| Explicit engine          | `rancher` or `podman`                                                              | Ask if absent; reject Docker Desktop                                                                |
+| Runtime capability       | Current wrapper preflight and selected adapter                                     | Fix configuration only; ask before installing a provider/tool                                       |
+| Repository prerequisites | Root engines/scripts and existing installed state                                  | Ask before any install or generated dependency state                                                |
+| Ports                    | AppHost constants/endpoints, Compose mappings, and current listeners               | Attribute conflicts to exact PID/container before action                                            |
+| Config/secrets           | Required variable names and ignored/user-secret source files                       | Report missing names only; never print values                                                       |
+| Certificates             | `WebsiteCertificateRenewal`, Next.js HTTPS state, selfhost cert paths and branches | Ask before certificate generation, downloaded certificate tooling, or local CA/trust-store mutation |
+| Data/bootstrap           | Current AppHost bootstrap and selfhost bootstrap paths                             | Explain reset/ensure behavior; ask before destructive effects                                       |
+| Persistence              | Current Compose/AppHost volume declarations                                        | Choose stop versus down based on data that must survive                                             |
 
 ## Start
 
@@ -23,8 +23,11 @@
 - Treat ordinary Aspire startup and the explicit dashboard reset as different operations. Read the
   [local-environment runbook](../../../../infra/Local/readme.md#persistent-data-and-explicit-reset) and live guards for their current data
   effects; obtain acknowledgement before any operation that clears existing data.
-- Aspire launches the website through `next dev --experimental-https`. On a certificate-free first run, Next.js can download/run certificate
-  tooling and install a local CA. Stop and ask before that trust-store branch.
+- Aspire launches the website through `next dev --experimental-https`. Before each start, the AppHost
+  (`tooling/src/AppHost/Applications/Website/WebsiteCertificateRenewal.cs`) issues or renews `sites/arolariu.ro/certificates/localhost.pem`
+  and `localhost-key.pem` from an already-trusted mkcert CA without touching trust stores, and fails the website start when an issue or
+  renewal cannot be done safely. Only when neither a certificate nor a usable trusted CA exists does Next.js run its own first-run flow,
+  which can download/run certificate tooling and install a local CA. Stop and ask before that trust-store branch.
 - Selfhost startup requires the current SQL password variable in the shell and performs SQL/Cosmos/Azurite/storage bootstrap. The
   storage-only .NET branch ensures resources rather than running the Aspire scenario reset; verify this in current source.
 - If selfhost certificates are absent, current startup may generate a key/cert and install a local CA when the certificate tool is

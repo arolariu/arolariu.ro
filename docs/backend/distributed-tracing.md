@@ -59,14 +59,19 @@ Durable analysis messages carry provider-neutral correlation and trace context. 
 Message ID/pop receipt identify a provider delivery; correlation ID identifies logical work. Do not substitute one for the other in trace
 queries or logs.
 
+The `correlation.id` span tag is not the logical correlation ID: `ActivityEnrichingProcessor` stamps every span with `correlation.id` set to
+the trace ID. The logical analysis correlation is the separate `analysis.correlation_id` tag, set on the worker consumer and analysis
+orchestration spans.
+
 ## Activity sources
 
-| Source                             | Boundary                            |
-| ---------------------------------- | ----------------------------------- |
-| `arolariu.Backend.Common`          | Shared infrastructure               |
-| `arolariu.Backend.Core`            | Host/runtime                        |
-| `arolariu.Backend.Auth`            | Core.Auth                           |
-| `arolariu.Backend.Domain.Invoices` | Invoices endpoint and service graph |
+| Source                             | Boundary                                         |
+| ---------------------------------- | ------------------------------------------------ |
+| `arolariu.Backend.Common`          | Shared infrastructure                            |
+| `arolariu.Backend.Core`            | Host/runtime                                     |
+| `arolariu.Backend.Auth`            | Core.Auth                                        |
+| `arolariu.Backend.Domain.Invoices` | Invoices endpoint and service graph              |
+| `Azure.Cosmos.Operation`           | Cosmos DB SDK operations (registered explicitly) |
 
 The actual registrations are owned by `src/Common/Telemetry/Tracing/TracingExtensions.cs`. Provider SDKs may register additional sources;
 inspect current configuration before depending on one.
@@ -93,7 +98,7 @@ union requests, dependencies, traces, exceptions
 | order by timestamp asc
 ```
 
-Inspect Invoices layer timing:
+Inspect endpoint and broker timing:
 
 ```kusto
 union requests, dependencies, traces
@@ -107,6 +112,10 @@ union requests, dependencies, traces
           operation=tostring(customDimensions["operation.type"])
 | order by timestamp asc
 ```
+
+Only the Invoices endpoint handlers and the Cosmos DB and configuration-proxy brokers set `service.layer`, and the Cosmos DB broker leaves
+`operation.type` empty. Service-layer Activities (Management through Foundation) carry only their method name; inspect them through the span
+hierarchy (`operation_ParentId`) rather than `service.layer`.
 
 Inspect Cosmos request charge only when the exporter emits the configured numeric attribute:
 

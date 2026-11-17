@@ -1,15 +1,19 @@
 # Stable Store Test Patterns
 
 Use only after a current store with the same factory/storage shape confirms the behavioral contract. This is the preferred real-storage
-pattern for new or rewritten tests, not a claim that every current store suite already follows it. Several live store suites still mock
-`indexedDBStorage`; treat those mocks as migration debt and do not copy them into new tests.
+pattern for new or rewritten tests, not a claim that every current store suite already follows it. Every current store-behavior suite
+(`createEntityStore`, `invoicesStore`, `merchantsStore`, `scansStore`, and `preferencesStore`) still mocks `indexedDBStorage`; only
+`sites/arolariu.ro/src/stores/storage/indexedDBStorage.test.ts` exercises the real adapter. Treat those mocks as migration debt and do not
+copy them into new tests.
 
 ## Provenance
 
 - State/action contracts: `sites/arolariu.ro/src/stores/createEntityStore.test.ts`, `sites/arolariu.ro/src/stores/invoicesStore.test.tsx`,
   `sites/arolariu.ro/src/stores/scansStore.test.tsx`, `sites/arolariu.ro/src/stores/preferencesStore.test.ts`
 - Real storage contract: `sites/arolariu.ro/src/stores/storage/indexedDBStorage.test.ts`
-- Hydration/selectors: `sites/arolariu.ro/src/app/domains/invoices/_hooks/invoice/useInvoices.test.tsx`, `sites/arolariu.ro/vitest.setup.ts`
+- Hook-level hydration gating with a stubbed store (the suite mocks `@/stores` and the fetch action):
+  `sites/arolariu.ro/src/app/domains/invoices/_hooks/invoice/useInvoices.test.tsx`; fake IndexedDB setup:
+  `sites/arolariu.ro/vitest.setup.ts`
 - Cross-tab cleanup: `sites/arolariu.ro/src/app/_components/PreferencesSubscriptions.test.tsx`
 
 ## Invariants

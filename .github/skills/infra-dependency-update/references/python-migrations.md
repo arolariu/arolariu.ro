@@ -4,13 +4,15 @@ Load only after live inspection establishes Python requirements/runtime ownershi
 
 ## Live Ownership Model
 
-- [`requirements.txt`](../../../../sites/exp.arolariu.ro/requirements.txt) owns production dependency specifiers, including compatible
-  ranges.
+- [`requirements.txt`](../../../../sites/exp.arolariu.ro/requirements.txt) owns production dependency specifiers, including one
+  compatible-release (`~=`) range.
 - [`requirements-dev.txt`](../../../../sites/exp.arolariu.ro/requirements-dev.txt) includes production requirements and adds
   development/test/documentation tools.
 - [`pyproject.toml`](../../../../sites/exp.arolariu.ro/pyproject.toml) owns the Python runtime floor and Ruff/pytest/build configuration,
   plus build-system constraints, not the application's dependency list.
-- [`Dockerfile`](../../../../sites/exp.arolariu.ro/Dockerfile) installs the production layer, while
+- [`Dockerfile`](../../../../sites/exp.arolariu.ro/Dockerfile) (CI image) and
+  [`infra/containers/Dockerfile.exp`](../../../../infra/containers/Dockerfile.exp) (selfhost and local image builds) both install the
+  production layer, so a Python runtime, base-image, or install-flag change touches both, while
   [`project.json`](../../../../sites/exp.arolariu.ro/project.json) defines live local/Nx test and lint execution.
 
 Preserve that layering. Do not duplicate a production specifier in the dev file or move dependencies into `pyproject.toml` as incidental

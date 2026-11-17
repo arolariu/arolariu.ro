@@ -1,6 +1,9 @@
 # Container Images for arolariu.ro
 
-This directory contains production-grade Dockerfiles for building container images for all arolariu.ro sites.
+This directory contains the Dockerfiles that build from the repository root. `npm run containers:build` and `containers:run` use all four;
+the `infra/Local` selfhost stacks use the frontend, backend, and exp files; and CI builds the website image from `Dockerfile.frontend`. CI
+builds the API and exp images from `sites/api.arolariu.ro/Dockerfile` and `sites/exp.arolariu.ro/Dockerfile` instead. CV deploys to Azure
+Static Web Apps, and the status and docs sites have no Dockerfile.
 
 ## Features
 
@@ -10,7 +13,7 @@ All Dockerfiles include:
 - ✅ **Non-root users** for security
 - ✅ **Health checks** for container orchestration
 - ✅ **OCI-compliant labels** for container metadata
-- ✅ **Proper signal handling** (dumb-init/tini for zombie reaping)
+- ✅ **Proper signal handling** (dumb-init in the frontend, CV, and exp images; the backend runs `dotnet` directly as PID 1)
 - ✅ **Layer caching optimization** for faster builds
 - ✅ **Security hardening** with minimal attack surface
 - ✅ **Alpine-based images** where possible
@@ -33,8 +36,8 @@ individual site directories.
 # Correct: from repository root
 npm run containers:build -- --engine rancher --target frontend
 
-# Wrong: from infra/containers
-cd infra/containers && npm run containers:build -- --engine rancher --target frontend  # ❌
+# Wrong: a direct engine build that uses infra/containers as its context
+cd infra/containers && docker build -f Dockerfile.frontend .  # ❌ context lacks package.json and sites/
 ```
 
 ## Local engine-aware builds
@@ -54,10 +57,11 @@ Podman image and Compose build commands select Docker image format explicitly so
 must also use `--format docker`.
 
 Build contexts exclude environment files, private exp configuration, package-feed configuration, key material and nested build/dependency
-artifacts. Frontend recipes build the local components package themselves and preserve the complete Next.js standalone hierarchy. Only
-public website metadata values are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the build-only
-`website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated website `.env` as
-this secret, without embedding the file in an image or introducing provider-specific defaults.
+artifacts. The website recipe installs the published `@arolariu/components` tarball pinned in `sites/arolariu.ro/package.json` (it copies
+only the `packages/components` workspace manifest), so local component-library changes are not included; it preserves the complete Next.js
+standalone hierarchy. Only public website metadata values are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from
+the build-only `website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated
+website `.env` as this secret, without embedding the file in an image or introducing provider-specific defaults.
 
 Frontend `containers:run` requires the generated website `.env`, parses its quoted values and supplies them through the child process
 environment with engine variable-name flags, never secret values in arguments. Exp `containers:run` requires
@@ -101,9 +105,18 @@ npm run containers:build -- --engine rancher --target cv
 npm run containers:run -- --engine rancher --target cv
 ```
 
+### Experimentation Service (exp.arolariu.ro)
+
+```bash
+npm run containers:build -- --engine rancher --target exp
+npm run containers:run -- --engine rancher --target exp
+```
+
 ## Build Arguments
 
 ### Common Build Arguments
+
+The frontend, backend, and CV Dockerfiles declare these arguments; `Dockerfile.exp` declares no build arguments.
 
 | Argument     | Description                     | Default   |
 | ------------ | ------------------------------- | --------- |
@@ -113,13 +126,18 @@ npm run containers:run -- --engine rancher --target cv
 
 ### Frontend-Specific
 
-| Argument                | Description                      | Default   |
-| ----------------------- | -------------------------------- | --------- |
-| `NODE_VERSION`          | Node.js major version            | `24`      |
-| `AZURE_TENANT_ID`       | Azure AD tenant ID               | -         |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID            | -         |
-| `AZURE_CLIENT_ID`       | Azure managed identity client ID | -         |
-| `INFRA`                 | Infrastructure type              | `unknown` |
+| Argument                            | Description                                                                  | Default   |
+| ----------------------------------- | ---------------------------------------------------------------------------- | --------- |
+| `NODE_VERSION`                      | Node.js major version                                                        | `24`      |
+| `AZURE_TENANT_ID`                   | Azure AD tenant ID                                                           | -         |
+| `AZURE_SUBSCRIPTION_ID`             | Azure subscription ID                                                        | -         |
+| `AZURE_CLIENT_ID`                   | Azure managed identity client ID                                             | -         |
+| `INFRA`                             | Infrastructure type                                                          | `unknown` |
+| `SITE_ENV`                          | `PRODUCTION` or `DEVELOPMENT`; baked into the bundle and required at startup | -         |
+| `SITE_URL`                          | Public site URL; baked into the bundle                                       | -         |
+| `SITE_NAME`                         | Public site host name; baked into the bundle                                 | -         |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk key inlined into the client bundle                              | -         |
+| `TIMESTAMP`                         | Build timestamp                                                              | -         |
 
 ### Backend-Specific
 
@@ -218,7 +236,15 @@ temporary; no real Azure credentials are used.
 
 ### Backend
 
-Most backend configuration is embedded at build time via build arguments.
+Backend configuration is resolved at runtime from `appsettings.json`, `appsettings.{ASPNETCORE_ENVIRONMENT}.json`, environment variables,
+and the exp service. The backend build arguments only set overridable `ENV` defaults.
+
+| Variable                 | Description                                                                                                         | Required |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------- |
+| `INFRA`                  | `azure`, `proxy`, or `local`; the image default `unknown` stops startup                                             | Yes      |
+| `EXP_PROXY_URL`          | exp URL override                                                                                                    | No       |
+| `AZURE_CLIENT_ID`        | Unless `EXP_PROXY_URL` is set: present selects `https://exp.arolariu.ro` with Entra ID, absent selects `http://exp` | No       |
+| `ASPNETCORE_ENVIRONMENT` | Selects `appsettings.{env}.json`; defaults to `Development`                                                         | No       |
 
 ### CV Site
 
@@ -226,6 +252,8 @@ Most backend configuration is embedded at build time via build arguments.
 | -------- | ----------- | --------- |
 | `PORT`   | Server port | `3000`    |
 | `HOST`   | Server host | `0.0.0.0` |
+
+`serve` always listens on port 3000 (`-l 3000`); `PORT` and `HOST` are informational, and overriding them has no effect.
 
 ## Multi-Architecture Builds
 
@@ -236,13 +264,15 @@ Use the engine-native multi-architecture build workflow for the selected runtime
 
 ## Health Checks
 
-All containers include built-in health checks compatible with Docker Compose, Kubernetes, and Azure Container Apps.
+Each Dockerfile declares a `HEALTHCHECK`, which Docker-compatible engines and Docker Compose run (Podman keeps it only with the Docker image
+format described above). Kubernetes and Azure Container Apps do not read it; configure their own probes against these endpoints.
 
-| Container | Endpoint                      | Interval | Timeout | Start Period |
-| --------- | ----------------------------- | -------- | ------- | ------------ |
-| Backend   | `GET /health` (port 8080)     | 30s      | 10s     | 30s          |
-| Frontend  | `GET /api/health` (port 3000) | 30s      | 10s     | 30s          |
-| CV        | `GET /health` (port 3000)     | 30s      | 10s     | 10s          |
+| Container | Endpoint                       | Interval | Timeout | Start Period |
+| --------- | ------------------------------ | -------- | ------- | ------------ |
+| Backend   | `GET /health` (port 8080)      | 30s      | 10s     | 30s          |
+| Frontend  | `GET /api/health/` (port 3000) | 30s      | 10s     | 30s          |
+| CV        | `GET /` (port 3000)            | 30s      | 10s     | 10s          |
+| Exp       | `GET /api/health` (port 8080)  | 30s      | 5s      | 10s          |
 
 ## Security
 
@@ -253,14 +283,16 @@ All containers include built-in health checks compatible with Docker Compose, Ku
 | Frontend  | `nextjs`    | 1001 | `nodejs`   | 1001 |
 | Backend   | `appuser`   | 1001 | `appgroup` | 1001 |
 | CV        | `sveltekit` | 1001 | `nodejs`   | 1001 |
+| Exp       | `app`       | 1001 | `app`      | 1001 |
 
 ### Image Hardening
 
-- Alpine-based images for minimal attack surface
-- No shell access in production images
-- Read-only root filesystem support
-- Dropped capabilities (where applicable)
-- No SUID/SGID binaries
+- Alpine-based frontend, backend, and CV images; exp uses `python:3.12-slim`
+- Non-root runtime users (UID/GID 1001); the backend user has no login shell
+- Multi-stage builds keep SDKs and build tools out of runtime images
+
+The images do not themselves enforce a read-only root filesystem, dropped capabilities, or SUID/SGID removal, and every runtime image
+includes `/bin/sh`, which the shell-form health checks use.
 
 ### Vulnerability Scanning
 
@@ -275,55 +307,24 @@ grype arolariu-frontend:latest
 grype arolariu-backend:latest
 
 # Build security scan stage (backend only)
-podman build -f infra/containers/Dockerfile.backend --target=security-scan -t scan .
+podman build --format docker -f infra/containers/Dockerfile.backend --target=security-scan -t scan .
 ```
 
-## Compose Example
+## Compose Stacks
 
-```yaml
-version: "3.8"
+The maintained multi-container definitions are the selfhost Compose files under `infra/Local`: `Storage` (including the profile-gated exp
+service), `Backend`, and `Frontend`. Start them with `npm run dev:selfhost -- --engine <rancher|podman>`; see the
+[local environment guide](../Local/readme.md).
 
-services:
-  frontend:
-    build:
-      context: .
-      dockerfile: infra/containers/Dockerfile.frontend
-      args:
-        - COMMIT_SHA=${COMMIT_SHA}
-        - VERSION=${VERSION}
-    ports:
-      - "3000:3000"
-    environment:
-      - SITE_ENV=development
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+A hand-written Compose file must supply what those files do:
 
-  backend:
-    build:
-      context: .
-      dockerfile: infra/containers/Dockerfile.backend
-      args:
-        - COMMIT_SHA=${COMMIT_SHA}
-        - API_NAME=api.arolariu.ro
-        - API_URL=http://localhost:8080
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  cv:
-    build:
-      context: .
-      dockerfile: infra/containers/Dockerfile.cv
-    ports:
-      - "3001:3000"
-```
+- Frontend build arguments `SITE_ENV` (`PRODUCTION` or `DEVELOPMENT`), `SITE_URL`, and `SITE_NAME`, plus the `website_env` build secret.
+  These values are baked into the bundle, so a runtime-only `SITE_ENV` cannot replace them.
+- `INFRA=local` and `EXP_PROXY_URL=http://exp:8080` on both applications. The backend image default `INFRA=unknown` stops API startup, and
+  without the override both applications target `http://exp` on port 80 while exp listens on 8080.
+- An exp service built from `Dockerfile.exp` with `sites/exp.arolariu.ro/config.docker.json` mounted read-only.
+- A frontend probe on `/api/health/`: with `trailingSlash: true`, `/api/health` answers with a 308 redirect, which `curl -f` treats as
+  success.
 
 ## Troubleshooting
 
@@ -333,10 +334,11 @@ Ensure you're building from the repository root, not from a subdirectory.
 
 ### Health Check Fails
 
-1. Check container logs with the selected engine: `npm run dev:selfhost:logs -- --engine rancher` or
-   `npm run dev:selfhost:logs -- --engine podman`
+1. Check container logs: `containers:run` streams them in the foreground; for the selfhost exp, API, and website containers, use
+   `npm run dev:selfhost:logs -- --engine rancher` or `npm run dev:selfhost:logs -- --engine podman`
 2. Verify the application started correctly
-3. Check the health endpoint manually: `curl http://localhost:<port>/health`
+3. Probe the image's endpoint manually: backend `curl http://localhost:5000/health`, frontend `curl http://localhost:3000/api/health/`, exp
+   `curl http://localhost:5002/api/health`, or CV `curl http://localhost:4173/`
 
 ### Large Image Size
 

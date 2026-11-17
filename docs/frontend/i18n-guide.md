@@ -10,12 +10,13 @@ sites/arolariu.ro/messages/
 ├── en.json
 ├── ro.json
 ├── fr.json
-└── en.d.json.ts
+└── en.d.json.ts   # generated locally by next-intl; gitignored
 ```
 
 - `en.json` is the source schema.
 - `ro.json` and `fr.json` must contain the same key structure.
-- `en.d.json.ts` is generated and must not be edited by hand.
+- `en.d.json.ts` is generated from `en.json` by next-intl's `createMessagesDeclaration` (configured in `next.config.ts`) during `next dev`
+  and `next build`. It is gitignored and must not be edited by hand.
 - User-visible text belongs in messages, including accessibility labels, errors, empty/loading states, metadata, and email copy.
 
 ## Server usage
@@ -85,14 +86,18 @@ Keep variable names identical in each locale. Prefer plural/select/date/time for
 Server Components use server formatting APIs such as `getFormatter`; Client Components use the matching client Hooks. Do not call or await a
 client Hook from server code.
 
-The request configuration in `src/i18n/request.ts` owns locale validation, dictionary loading, and the configured time zone.
+The request configuration in `src/i18n/request.ts` owns locale validation, dictionary loading, and the configured time zone. It reads the
+locale from the `locale` cookie (default `en`; only `en`, `ro`, and `fr` are supported, and any other value throws). The
+`PreferencesSubscriptions` client component sets that cookie through the `setCookie` Server Action when the stored locale changes. The time
+zone is `Europe/Bucharest`.
 
 ## Adding or changing messages
 
 1. Find the nearest existing domain/shared namespace.
 2. Add the same key and ICU variables to `en`, `ro`, and `fr`.
 3. Use a typed selector callback at the consumer.
-4. Run the root i18n generation command.
+4. Run `npm run generate:i18n`. It validates `ro` and `fr` against `en` and adds missing keys as empty strings; the `en.d.json.ts`
+   declaration is regenerated on the next `next dev` or `next build`.
 5. Test every changed ICU branch and user-visible state.
 6. Inspect metadata/email/accessibility consumers when their schema changes.
 
@@ -119,7 +124,7 @@ server-side, authorize independently, and translate only the user-visible result
 - visible copy and accessible names render correctly;
 - metadata selectors feed `createMetadata`;
 - no machine identifier, metric label, route, or provider code is translated;
-- generated declaration changes are reviewed but not hand-edited.
+- the generated declaration is regenerated locally and never hand-edited or committed.
 
 ## References
 

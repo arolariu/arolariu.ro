@@ -24,17 +24,18 @@ A comprehensive guide for deploying the Azure Bicep infrastructure, from prerequ
 - [🔄 Post-Deployment Configuration](#-post-deployment-configuration)
 - [📈 Monitoring Setup](#-monitoring-setup)
 - [🚨 Troubleshooting](#-troubleshooting)
+- [📞 Support](#-support)
 
 ## 📋 **Prerequisites**
 
 ### **Required Tools**
 
-| Tool       | Version | Purpose                             |
-| ---------- | ------- | ----------------------------------- |
-| Azure CLI  | ≥2.50.0 | Azure resource management           |
-| Bicep CLI  | ≥0.24.0 | Template compilation and deployment |
-| PowerShell | ≥7.0    | Script execution (optional)         |
-| Git        | ≥2.30.0 | Source code management              |
+| Tool       | Version                     | Purpose                                                                       |
+| ---------- | --------------------------- | ----------------------------------------------------------------------------- |
+| Azure CLI  | ≥2.50.0                     | Azure resource management                                                     |
+| Bicep CLI  | latest (`az bicep upgrade`) | Template compilation and deployment (Graph extension, user-defined functions) |
+| PowerShell | ≥7.0                        | Script execution (optional)                                                   |
+| Git        | ≥2.30.0                     | Source code management                                                        |
 
 ### **Azure Requirements**
 
@@ -45,11 +46,14 @@ A comprehensive guide for deploying the Azure Bicep infrastructure, from prerequ
 
 ### **Permission Requirements**
 
-| Scope          | Role                    | Purpose                         |
-| -------------- | ----------------------- | ------------------------------- |
-| Subscription   | Contributor             | Create resource groups          |
-| Resource Group | Owner                   | Deploy all resources            |
-| Key Vault      | Key Vault Administrator | Manage secrets and certificates |
+The deploying identity needs the following capabilities. The built-in roles are examples only.
+
+| Scope                                              | Capability needed                                                                                                   | Example built-in roles                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Subscription                                       | Create the resource group, deploy resources and register resource providers                                         | For example, Owner or Contributor                                                          |
+| Subscription (inherited by the deployed resources) | Create role assignments (`Microsoft.Authorization/roleAssignments/write`) on the resources the deployment creates   | For example, Owner, or Contributor plus Role Based Access Control Administrator            |
+| Microsoft Entra ID                                 | Create the `arolariu-JIT-Users` and `arolariu-JIT-Apps` security groups through the Microsoft Graph Bicep extension | For example, Groups Administrator, unless tenant settings let users create security groups |
+| Key Vault (after deployment)                       | Replace the placeholder secret values (the vault uses RBAC authorization)                                           | For example, Key Vault Secrets Officer                                                     |
 
 ## 🔧 **Pre-Deployment Setup**
 
@@ -98,6 +102,11 @@ az provider register --namespace Microsoft.Insights
 az provider register --namespace Microsoft.OperationalInsights
 az provider register --namespace Microsoft.Cdn
 az provider register --namespace Microsoft.AppConfiguration
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.ContainerRegistry
+az provider register --namespace Microsoft.Sql
+az provider register --namespace Microsoft.DocumentDB
+az provider register --namespace Microsoft.CognitiveServices
 
 # Check registration status
 az provider list --query "[?namespace=='Microsoft.Web'].registrationState" --output table
@@ -127,10 +136,11 @@ echo $? # Should return 0 if successful
 #### **Basic Deployment**
 
 ```bash
-# Deploy with default parameters
+# Deploy with the canonical parameters file (set expEntraAppClientId in main.bicepparam first)
 az deployment sub create \
-  --location swedencentral \
+  --location francecentral \
   --template-file main.bicep \
+  --parameters main.bicepparam \
   --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
 ```
 
@@ -139,44 +149,30 @@ az deployment sub create \
 ```bash
 # Deploy with custom parameters
 az deployment sub create \
-  --location swedencentral \
+  --location francecentral \
   --template-file main.bicep \
   --parameters \
-    resourceGroupName="arolariu-rg-prod" \
-    resourceGroupLocation="swedencentral" \
+    resourceGroupName="arolariu-rg" \
+    resourceGroupLocation="francecentral" \
     resourceGroupAuthor="Your Name <your.email@domain.com>" \
+    expEntraAppClientId="<app-registration-client-id>" \
   --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
 ```
 
-#### **Parameters File**
+#### **Parameters File (`main.bicepparam`)**
 
-Create `main.parameters.json`:
-
-```json
-{
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "resourceGroupName": {
-      "value": "arolariu-rg-prod"
-    },
-    "resourceGroupLocation": {
-      "value": "swedencentral"
-    },
-    "resourceGroupAuthor": {
-      "value": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
-    }
-  }
-}
-```
+`main.bicepparam` is the canonical, checked-in parameters file. It sets `resourceGroupName = 'arolariu-rg'`,
+`resourceGroupLocation = 'francecentral'` and `resourceGroupAuthor`. Before deploying, replace the `expEntraAppClientId` placeholder with
+the client ID of the exp.arolariu.ro App Registration; the file shows the `az ad app create` command that creates the registration. The
+legacy `main.parameters.json` lacks `expEntraAppClientId` and is not a working alternative.
 
 Deploy with parameters file:
 
 ```bash
 az deployment sub create \
-  --location swedencentral \
+  --location francecentral \
   --template-file main.bicep \
-  --parameters @main.parameters.json \
+  --parameters main.bicepparam \
   --name "arolariu-infra-$(date +%Y%m%d-%H%M%S)"
 ```
 
@@ -191,16 +187,17 @@ Set-AzContext -SubscriptionId "your-subscription-id"
 
 # Deploy template
 New-AzSubscriptionDeployment `
-  -Location "swedencentral" `
+  -Location "francecentral" `
   -TemplateFile "main.bicep" `
-  -resourceGroupName "arolariu-rg-prod" `
-  -resourceGroupLocation "swedencentral" `
+  -TemplateParameterFile "main.bicepparam" `
   -Name "arolariu-infra-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 ```
 
 ### **Method 3: GitHub Actions (CI/CD)**
 
-Create `.github/workflows/deploy-infrastructure.yml`:
+No infrastructure deployment workflow exists in this repository; infrastructure is deployed manually. The following is an illustrative
+template only. It follows the repository's workflow conventions (OIDC authentication instead of stored credentials) and deploys
+`main.bicepparam`, so set `expEntraAppClientId` in that file first.
 
 ```yaml
 name: Deploy Azure Infrastructure
@@ -211,27 +208,33 @@ on:
     paths: ["infra/Azure/Bicep/**"]
   workflow_dispatch:
 
+permissions:
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read
+
+concurrency:
+  group: infra-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Azure Login
-        uses: azure/login@v1
+        uses: Azure/login@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy Bicep Template
-        uses: azure/arm-deploy@v1
-        with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          scope: subscription
-          region: swedencentral
-          template: ./infra/Azure/Bicep/main.bicep
-          parameters: |
-            resourceGroupName=arolariu-rg-prod
-            resourceGroupLocation=swedencentral
+        run: |
+          az deployment sub create \
+            --location francecentral \
+            --template-file infra/Azure/Bicep/main.bicep \
+            --parameters infra/Azure/Bicep/main.bicepparam
 ```
 
 ## 📊 **Deployment Validation**
@@ -255,16 +258,16 @@ az deployment sub show \
 ```bash
 # List all resources in the resource group
 az resource list \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --output table
 
 # Check specific resource types
 az appservice plan list \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --output table
 
 az webapp list \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --output table
 ```
 
@@ -282,41 +285,40 @@ openssl s_client -connect your-webapp-name.azurewebsites.net:443 -servername you
 
 ### **1. DNS Configuration**
 
-If using custom domains:
+Custom domains and managed certificates are provisioned by `bindings/` (api, dev, cv, docs) and `network/azureFrontDoor.bicep` (apex, www);
+only verify DNS propagation.
 
 ```bash
-# Add custom domain to web app
-az webapp config hostname add \
-  --webapp-name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod" \
-  --hostname "yourdomain.com"
-
-# Configure SSL binding
-az webapp config ssl bind \
-  --certificate-thumbprint "cert-thumbprint" \
-  --ssl-type SNI \
-  --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod"
+# List the records in the arolariu.ro DNS zone
+az network dns record-set list \
+  --resource-group "arolariu-rg" \
+  --zone-name "arolariu.ro" \
+  --output table
 ```
 
 ### **2. Application Settings**
 
+Each web app's settings are defined in `sites/*.bicep`, including `APPLICATIONINSIGHTS_CONNECTION_STRING` for the www, api and exp apps. A
+template deployment replaces the app settings, so settings added manually are overwritten on redeploy; add persistent settings to the site's
+Bicep module instead.
+
 ```bash
-# Configure application settings
+# Configure application settings (overwritten by the next template deployment)
 az webapp config appsettings set \
   --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --settings \
-    "ENVIRONMENT=Production" \
-    "APPINSIGHTS_INSTRUMENTATIONKEY=your-key"
+    "ENVIRONMENT=Production"
 ```
 
 ### **3. Scaling Configuration**
 
+Not applicable to the current Basic (B1/B2) plans; autoscale requires Standard (S1+).
+
 ```bash
 # Configure auto-scaling (if using Standard/Premium plans)
 az monitor autoscale create \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --resource "your-app-service-plan" \
   --resource-type Microsoft.Web/serverfarms \
   --name "autoscale-rules" \
@@ -332,17 +334,17 @@ az monitor autoscale create \
 ```bash
 # Create resource health alert
 az monitor activity-log alert create \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --name "webapp-health-alert" \
-  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod" \
+  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg" \
   --condition category=ResourceHealth
 
 # Create metric alert for high CPU
 az monitor metrics alert create \
   --name "high-cpu-alert" \
-  --resource-group "arolariu-rg-prod" \
-  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/serverfarms/your-plan" \
-  --condition "avg Percentage CPU > 80" \
+  --resource-group "arolariu-rg" \
+  --scopes "/subscriptions/your-sub-id/resourceGroups/arolariu-rg/providers/Microsoft.Web/serverfarms/your-plan" \
+  --condition "avg CpuPercentage > 80" \
   --description "High CPU usage alert"
 ```
 
@@ -352,8 +354,8 @@ az monitor metrics alert create \
 # Enable diagnostics for App Service
 az monitor diagnostic-settings create \
   --name "webapp-diagnostics" \
-  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/sites/your-webapp" \
-  --workspace "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.OperationalInsights/workspaces/your-workspace" \
+  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg/providers/Microsoft.Web/sites/your-webapp" \
+  --workspace "/subscriptions/your-sub-id/resourceGroups/arolariu-rg/providers/Microsoft.OperationalInsights/workspaces/your-workspace" \
   --logs '[{"category":"AppServiceHTTPLogs","enabled":true}]' \
   --metrics '[{"category":"AllMetrics","enabled":true}]'
 ```
@@ -386,13 +388,13 @@ flowchart TD
 
 ### **Common Deployment Issues**
 
-| Issue                                | Symptoms                                                              | Solution                                                                |
-| ------------------------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Resource Provider Not Registered** | `The subscription is not registered to use namespace 'Microsoft.Web'` | Run `az provider register --namespace Microsoft.Web`                    |
-| **Insufficient Permissions**         | `Authorization failed`                                                | Verify RBAC permissions at subscription/resource group level            |
-| **Resource Name Conflicts**          | `Resource name already exists`                                        | Use unique resource names or delete existing resources                  |
-| **Location Constraints**             | `Location not available for subscription`                             | Use allowed regions: swedencentral, norwayeast, westeurope, northeurope |
-| **Template Validation Errors**       | `Template validation failed`                                          | Run `az bicep lint` and fix syntax errors                               |
+| Issue                                | Symptoms                                                              | Solution                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Resource Provider Not Registered** | `The subscription is not registered to use namespace 'Microsoft.Web'` | Run `az provider register --namespace Microsoft.Web`                       |
+| **Insufficient Permissions**         | `Authorization failed`                                                | Verify RBAC permissions at subscription/resource group level               |
+| **Resource Name Conflicts**          | `Resource name already exists`                                        | Use unique resource names or delete existing resources                     |
+| **Location Constraints**             | `Location not available for subscription`                             | Use allowed regions: francecentral, northeurope, westeurope, swedencentral |
+| **Template Validation Errors**       | `Template validation failed`                                          | Run `az bicep lint` and fix syntax errors                                  |
 
 ### **Debugging Commands**
 
@@ -404,13 +406,13 @@ az deployment sub show \
 
 # Check activity log
 az monitor activity-log list \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --start-time "2024-01-01T00:00:00Z" \
   --query "[?level=='Error']"
 
 # Validate specific resource
 az resource show \
-  --resource-group "arolariu-rg-prod" \
+  --resource-group "arolariu-rg" \
   --name "resource-name" \
   --resource-type "Microsoft.Web/sites"
 ```
@@ -420,7 +422,7 @@ az resource show \
 ```bash
 # Check App Service Plan metrics
 az monitor metrics list \
-  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg-prod/providers/Microsoft.Web/serverfarms/your-plan" \
+  --resource "/subscriptions/your-sub-id/resourceGroups/arolariu-rg/providers/Microsoft.Web/serverfarms/your-plan" \
   --metric "CpuPercentage" \
   --start-time "2024-01-01T00:00:00Z" \
   --end-time "2024-01-01T23:59:59Z"
@@ -428,7 +430,7 @@ az monitor metrics list \
 # View application logs
 az webapp log tail \
   --name "your-webapp-name" \
-  --resource-group "arolariu-rg-prod"
+  --resource-group "arolariu-rg"
 ```
 
 ### **Rollback Procedures**
@@ -438,16 +440,16 @@ If deployment fails or causes issues:
 ```bash
 # Delete the resource group (complete rollback)
 az group delete \
-  --name "arolariu-rg-prod" \
+  --name "arolariu-rg" \
   --yes \
   --no-wait
 
 # Redeploy previous version
 git checkout previous-commit
 az deployment sub create \
-  --location swedencentral \
+  --location francecentral \
   --template-file main.bicep \
-  --parameters @main.parameters.json
+  --parameters main.bicepparam
 ```
 
 ## 📞 **Support**
@@ -469,6 +471,6 @@ az deployment sub create \
 
 ---
 
-**Last Updated**: July 2025  
+**Last Updated**: November 2026\
 **Version**: 2.1.0  
 **Maintainer**: Alexandru-Razvan Olariu

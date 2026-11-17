@@ -32,7 +32,7 @@ infrastructure. For Aspire, prefer dashboard resource console output and the App
 Use tracked source to locate the endpoint rather than copying a URL:
 
 ```powershell
-git --no-pager grep -n -E 'With(Http|Https)Endpoint|WithHttpHealthCheck|MapHealthChecks' -- tooling/src/AppHost sites
+git --no-pager grep -n -E 'With(Http|Https)?Endpoint|\.Port = |Port = [0-9]|WithHttpHealthCheck|MapHealthChecks' -- tooling/src/AppHost sites
 git --no-pager grep -n -E 'ports:|healthcheck:|Host\(' -- infra/Local
 ```
 

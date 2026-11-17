@@ -27,6 +27,17 @@ Every public function, component, and type should have JSDoc:
  */
 ````
 
+### Module Headers
+
+Major modules also start with a file-level header (RFC 1002):
+
+```typescript
+/**
+ * @fileoverview Generic utilities and environment-derived constants.
+ * @module sites/arolariu.ro/src/lib/utils.generic
+ */
+```
+
 ## Common Patterns
 
 ### React Server Components
@@ -38,19 +49,19 @@ Every public function, component, and type should have JSDoc:
  * @remarks
  * This is a React Server Component that fetches data directly.
  * No client-side JavaScript is shipped for this component.
+ * `fetchInvoices()` derives the user's identity on the server, so no user ID is passed in.
  *
- * @param props - Component properties
  * @returns Server-rendered invoice dashboard
  *
  * @example
  * ```tsx
  * export default async function Page() {
- *   return <InvoiceDashboard userId="123" />;
+ *   return <InvoiceDashboard />;
  * }
  * ```
  */
-export async function InvoiceDashboard(props: DashboardProps): Promise<React.JSX.Element> {
-  const data = await fetchInvoices(props.userId);
+export async function InvoiceDashboard(): Promise<React.JSX.Element> {
+  const result = await fetchInvoices();
   return <div>{/* ... */}</div>;
 }
 ````
@@ -114,31 +125,29 @@ export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
 "use server";
 
 /**
- * Updates an invoice and revalidates the cache.
+ * Replaces an invoice with a complete updated payload.
  *
  * @remarks
  * This is a Server Action that:
  * - Is implemented on the server but exposed as browser-callable RPC
  * - Validates untrusted input
  * - Derives identity and authorization on the server
- * - Revalidates the /invoices path
- * - Returns type-safe result
+ * - Returns a type-safe result object instead of throwing
  *
- * @param formData - Form data containing invoice fields
- * @returns Success/error result with updated invoice
- *
- * @throws {AuthenticationError} If user is not authenticated
- * @throws {ValidationError} If invoice data is invalid
+ * @param input - The invoice ID and complete invoice object.
+ * @param input.invoiceId - UUIDv4 of the invoice to replace.
+ * @param input.invoice - Complete invoice payload that replaces the existing resource.
+ * @returns A result object containing the updated invoice, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
- * const result = await updateInvoice(formData);
+ * const result = await updateInvoice({invoiceId: invoice.id, invoice: updatedInvoice});
  * if (result.success) {
  *   toast.success("Invoice updated!");
  * }
  * ```
  */
-export async function updateInvoice(formData: FormData): Promise<ActionResult<Invoice>> {
+export async function updateInvoice({invoiceId, invoice}: ServerActionInputType): ServerActionOutputType {
   // ...
 }
 ````
@@ -151,21 +160,19 @@ export async function updateInvoice(formData: FormData): Promise<ActionResult<In
  *
  * @remarks
  * - Uses Intl.NumberFormat for locale-aware formatting
- * - Falls back to USD if currency is undefined
  * - Handles zero, negative, and large numbers correctly
  *
- * @param amount - Numeric amount to format
- * @param currency - ISO 4217 currency code (e.g., "USD", "EUR")
- * @param locale - BCP 47 locale string (defaults to "en-US")
- * @returns Formatted currency string (e.g., "$123.45")
+ * @param possibleAmount - Numeric amount to format
+ * @param options - ISO 4217 `currencyCode`, BCP 47 `locale`, and optional `Intl.NumberFormatOptions` overrides
+ * @returns Formatted currency string (e.g., "$1,234.56")
  *
  * @example
  * ```typescript
- * formatCurrency(1234.56, "USD", "en-US"); // "$1,234.56"
- * formatCurrency(1234.56, "EUR", "ro-RO"); // "1.234,56 €"
+ * formatCurrency(1234.56, {currencyCode: "USD", locale: "en-US"}); // "$1,234.56"
+ * formatCurrency(1234.56, {currencyCode: "EUR", locale: "de-DE"}); // "1.234,56 €"
  * ```
  */
-export function formatCurrency(amount: number, currency: string = "USD", locale: string = "en-US"): string {
+export function formatCurrency(possibleAmount: number, options: FormatCurrencyOptions): string {
   // ...
 }
 ````
@@ -178,65 +185,62 @@ export function formatCurrency(amount: number, currency: string = "USD", locale:
  *
  * @remarks
  * Domain Model:
- * - Invoices are immutable after creation (except metadata)
- * - Total amount is computed from items (not stored separately)
- * - Payment information is optional (unpaid invoices)
+ * - Aggregate root of the invoices bounded context
+ * - Invoices stay editable after creation (`updateInvoice`, `patchInvoice`)
+ * - The total is stored in `paymentInformation.totalCostAmount`
+ * - Payment information is always present
  *
  * @example
  * ```typescript
- * const invoice: Invoice = {
- *   id: "inv_123",
- *   merchantId: "mrc_456",
- *   items: [{productId: "prod_789", quantity: 2}],
- *   paymentInformation: {method: PaymentType.CARD},
- *   metadata: {tags: ["grocery"]},
- * };
+ * const total = invoice.paymentInformation.totalCostAmount;
+ * const paidByCard = invoice.paymentInformation.paymentType === PaymentType.Card;
  * ```
  */
-export interface Invoice {
-  /** Unique invoice identifier (format: inv_[a-z0-9]{10}) */
-  id: string;
+export interface Invoice extends NamedEntity<string> {
+  // id, name, description, and audit fields are inherited from NamedEntity.
 
-  /** Merchant who issued this invoice */
-  merchantId: string;
+  /** Reference identifier (GUIDv4) of the merchant that issued the invoice */
+  merchantReference: string;
 
-  /** Line items included in this invoice */
-  items: InvoiceItem[];
+  /** Line items present on the invoice */
+  items: Product[];
 
-  /** Payment details (undefined if unpaid) */
-  paymentInformation?: PaymentInformation;
+  /** Payment details, including the total cost and payment type */
+  paymentInformation: PaymentInformation;
 
-  /** User-defined metadata (tags, notes, etc.) */
-  metadata: InvoiceMetadata;
+  // userIdentifier, sharedWith, scans, and the remaining fields are omitted here.
 }
 ````
 
 ### Context Providers
 
 ````typescript
+"use client";
+
 /**
- * Provides theme state (light/dark mode) to the component tree.
+ * Provides application-wide font selection (normal or dyslexic-friendly) to the component tree.
  *
  * @remarks
  * Implementation:
- * - Persists theme preference to localStorage
- * - Syncs with system preferences (prefers-color-scheme)
- * - Prevents flash of unstyled content (FOUC)
- * - Uses CSS variables for theme values
+ * - Persists the font preference to localStorage
+ * - Syncs the preference across tabs via storage events
+ * - Applies the selected font class to `document.documentElement`
+ * - Memoizes the context value to prevent unnecessary re-renders
  *
- * @param props - Provider configuration
- * @returns Theme context provider
+ * @param props - Component props
+ * @param props.children - Child components to receive font context
+ * @returns Provider component wrapping children with font context
  *
  * @example
  * ```tsx
- * <ThemeProvider>
+ * <FontContextProvider>
  *   <App />
- * </ThemeProvider>
+ * </FontContextProvider>
  * ```
  *
- * @see {@link useTheme} for consuming theme context
+ * @see {@link useFontContext} for consuming the context
  */
-export function ThemeProvider({children}: {children: React.ReactNode}): React.JSX.Element {
+export function FontContextProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
   // ...
 }
 ````
@@ -336,26 +340,26 @@ Show realistic code samples:
  * <input onChange={(e) => handleSearch(e.target.value)} />
  * ```
  */
-function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(func: T, wait: number): (...args: Parameters<T>) => void {
   // ...
 }
 ````
 
 ### @see - Cross-References
 
-Link to related code, RFCs, external docs:
+Link to related code, RFCs, external docs. Use `{@link}` for symbols and URLs, and cite RFCs as plain text:
 
 ```typescript
 /**
  * Creates optimized metadata for SEO and social sharing.
  *
- * @see {@link RFC1004} for complete metadata architecture
+ * @see RFC 1004 - Metadata and SEO System
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-metadata} Next.js Metadata API
  * @see {@link metadata} for base metadata configuration
  */
-export function createMetadata(partial: PartialMetadata): Metadata {
+export const createMetadata = (partialMetadata: PartialMetadata = {}): Readonly<Metadata> => {
   // ...
-}
+};
 ```
 
 ## Documentation Checklist
@@ -423,18 +427,26 @@ const [selectedCount, setSelectedCount] = useState(0);
 
 ## Quick Reference
 
-| Code Element    | Required Tags                       | Optional Tags                     |
-| --------------- | ----------------------------------- | --------------------------------- |
-| Function        | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@throws` |
-| React Component | Summary, `@param props`, `@returns` | `@remarks`, `@example`            |
-| Custom Hook     | Summary, `@param`, `@returns`       | `@remarks`, `@example`            |
-| Server Action   | Summary, `@param`, `@returns`       | `@remarks`, `@throws`, `@example` |
-| Type/Interface  | Summary, field comments             | `@remarks`, `@example`            |
-| Utility         | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@see`    |
+| Code Element         | Required Tags                       | Optional Tags                     |
+| -------------------- | ----------------------------------- | --------------------------------- |
+| Function             | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@throws` |
+| React Component      | Summary, `@param props`, `@returns` | `@remarks`, `@example`            |
+| Custom Hook          | Summary, `@param`, `@returns`       | `@remarks`, `@example`            |
+| Server Action        | Summary, `@param`, `@returns`       | `@remarks`, `@throws`, `@example` |
+| Type/Interface       | Summary, field comments             | `@remarks`, `@example`            |
+| Utility              | Summary, `@param`, `@returns`       | `@remarks`, `@example`, `@see`    |
+| Module (file header) | `@fileoverview`, `@module`          | `@remarks`, `@see`                |
+
+## Publication
+
+`npm run build:docs` and `npm run dev:docs` first run the docs site's `assemble` target (`npm run docs:assemble`). It runs TypeDoc with
+`typedoc.website.json`, also available alone as `npm run docs:typedoc:website`. TypeDoc reads `sites/arolariu.ro/src` through
+`sites/arolariu.ro/tsconfig.typedoc.json` and writes Markdown to `sites/docs.arolariu.ro/_generated/ts-reference/website`. That tsconfig
+excludes tests, stories, generated code, `src/app/**`, and several layout components, so JSDoc in those files is not published.
 
 ## Additional Resources
 
-- **RFC 1002**: Full JSDoc standard documentation
+- **[RFC 1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md)**: Full JSDoc standard documentation
 - **TypeScript TSDoc**: <https://tsdoc.org/>
 - **JSDoc Reference**: <https://jsdoc.app/>
 - **VS Code IntelliSense**: <https://code.visualstudio.com/docs/languages/typescript>

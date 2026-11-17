@@ -7,10 +7,10 @@ Load this catalog whenever any test double is considered.
 Do not add `vi.mock(...)`, `vi.doMock(...)`, alias replacement, or a hand-built facsimile for repository modules such as `@/...`, relative
 application modules, stores, actions, utilities, contexts, or `@arolariu/components`. Execute repository code as repository code.
 
-Aliases that redirect repository modules to stubs or fake implementations, including those already configured by
-`sites/arolariu.ro/vitest.config.ts`, `sites/arolariu.ro/vitest.setup.ts`, or `sites/arolariu.ro/tests/stubs/` are migration debt, not
-approved unit seams. A passing test under one of those replacements cannot prove behavior owned by the replaced repository module. Do not
-configure, copy, or expand that strategy.
+Aliases that redirect repository modules to stubs or fake implementations, including those already configured in
+`sites/arolariu.ro/vitest.config.ts` to files under `sites/arolariu.ro/tests/stubs/`, are migration debt, not approved unit seams. A passing
+test under one of those replacements cannot prove behavior owned by the replaced repository module. Do not configure, copy, or expand that
+strategy.
 
 An external runtime or provider substitute may prove how real repository code consumes that external boundary. It cannot prove behavior
 owned by the external system. If repository behavior cannot execute without replacing repository modules, move outward to an integration/E2E

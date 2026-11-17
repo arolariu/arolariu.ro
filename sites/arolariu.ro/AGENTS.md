@@ -9,22 +9,31 @@ website-specific architecture.
 - Interactive routes use `page.tsx` -> `island.tsx` -> `_components/`.
 - Use Zustand for global client state, Context for scoped state, and local React state otherwise.
 - User-visible text uses `next-intl` in `en`, `ro`, and `fr`.
-- Clerk middleware protects the routes matched in `src/proxy.ts`. Server Components and Server Actions retain established redirect,
-  guest/public, ownership, and authorization checks outside that matcher; do not replace those checks with client-only logic.
+- Clerk middleware in `src/proxy.ts` runs on all non-static routes but only calls `auth.protect()` for `/admin*` paths. Server Components
+  and Server Actions enforce the established redirect, guest/public, ownership, and authorization checks; do not replace those checks with
+  client-only logic.
 - Metadata uses the shared metadata helpers and localized typed selectors. Live namespaces use nested `metadata` keys consistently across
   all locales.
 
 ## Local Paths
 
-| Path                      | Responsibility                                                                         |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| `src/app/`                | App Router routes and route-local components                                           |
-| `src/hooks/`              | Reusable React hooks                                                                   |
-| `src/stores/`             | Persisted global client state                                                          |
-| `src/lib/actions/`        | Private `server-only` helpers, client-invoked Server Actions, and transport boundaries |
-| `src/types/`              | Website domain types                                                                   |
-| `messages/`               | Localized messages                                                                     |
-| `tests/helpers/builders/` | Shared test builders                                                                   |
+| Path                      | Responsibility                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/app/`                | App Router routes and route-local components                                               |
+| `src/app/**/_actions/`    | Route-local Server Actions, for example `src/app/domains/invoices/_actions/`               |
+| `src/components/`         | Site-wide components shared across routes                                                  |
+| `src/hooks/`              | Reusable React hooks                                                                       |
+| `src/stores/`             | Persisted global client state                                                              |
+| `src/lib/`                | Shared helpers, including `server-only` modules such as `utils.server.ts` (HTTP transport) |
+| `src/lib/actions/`        | Cross-route Server Actions (cookies, email, user) and the `server-only` config reader      |
+| `src/types/`              | Website domain types                                                                       |
+| `src/workers/`            | Web Worker foundation; see `src/workers/README.md`                                         |
+| `src/styles/`             | Global SCSS architecture                                                                   |
+| `src/i18n/`               | next-intl request configuration                                                            |
+| `messages/`               | Localized messages                                                                         |
+| `emails/`                 | React Email templates; see `emails/readme.md`                                              |
+| `tests/`                  | Vitest stubs and helpers plus Playwright infrastructure; see `tests/README.md`             |
+| `tests/helpers/builders/` | Shared test builders                                                                       |
 
 ## Local Verification
 

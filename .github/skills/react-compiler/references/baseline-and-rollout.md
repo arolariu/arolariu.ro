@@ -7,7 +7,7 @@ Use before diagnosing or enabling React Compiler.
 | State                | Evidence                                                                                                      |
 | -------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Dependency available | Package manifest/lock contains the required package                                                           |
-| Diagnostics active   | ESLint config imports/registers the current documented plugin/rules and a lint run reports from them          |
+| Diagnostics active   | ESLint config imports/registers the documented plugin/rules (react-hooks presets count) and lint reports them |
 | Transform active     | Next/build config enables the documented React Compiler transform and build diagnostics/output confirm it ran |
 
 None implies another. The `compiler` property already present in Next config contains SWC transforms such as console/property removal and

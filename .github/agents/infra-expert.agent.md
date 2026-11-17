@@ -16,6 +16,7 @@ the repository's reversible local-development boundary.
 
 - `infra/Azure/Bicep/**`
 - `infra/Local/**`
+- `infra/containers/**`
 - `tooling/src/AppHost/**`
 - Root scripts and package commands that own local Aspire, selfhost, image, Compose, or container-engine behavior
 - `.github/workflows/**`

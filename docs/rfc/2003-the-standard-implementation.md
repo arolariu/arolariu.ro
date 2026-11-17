@@ -291,12 +291,14 @@ processes at most one received message per iteration through `ProcessAnalysisAsy
 
 ### Local development bootstrap
 
-Aspire starts a tooling-only one-shot bootstrap before the API. It clears local Cosmos invoice/merchant documents, resets Azurite invoice
-blobs and analysis messages, and writes a deterministic Alice/Bob/Charlie scenario. The tooling project references domain models for
-invariant-safe fixture construction but is not part of the Management → Processing → Orchestration → Foundation → Broker runtime graph. It
-is excluded from deployment manifests and refuses non-emulator targets.
+Aspire starts a tooling-only one-shot bootstrap before the API. On first launch it seeds a deterministic Alice/Bob/Charlie/Dmitryi scenario
+(Cosmos invoice/merchant documents and Azurite scan blobs) and records completion; later launches create nothing and preserve custom data
+and seed edits. The confirmed **Reset local data** dashboard command deletes local Cosmos, storage, and SQL user data and restores the
+scenario. The tooling project references domain models for invariant-safe fixture construction but is not part of the Management →
+Processing → Orchestration → Foundation → Broker runtime graph. It is excluded from deployment manifests and refuses non-emulator targets.
 
-SQL, Redis, emulator schemas, indexes, and named volumes are retained between launches. No production seed path exists.
+SQL, Redis, Cosmos and Azurite data, emulator schemas, indexes, and named volumes are retained between launches. No production seed path
+exists.
 
 ---
 
@@ -406,9 +408,14 @@ application coverage target remains 85% or higher.
 
 ## Exception to HTTP mapping
 
-All bounded contexts classify exceptions using marker interfaces from `arolariu.Backend.Common.Exceptions`. Endpoint handlers delegate
-response construction to `ExceptionToHttpResultMapper`; `ExceptionMappingHandler` is the defense-in-depth handler for exceptions that escape
-before or around an endpoint.
+Bounded contexts that raise domain exceptions (Invoices and Common) classify them using marker interfaces from
+`arolariu.Backend.Common.Exceptions`; Core and Core.Auth return results directly. Endpoint handlers delegate response construction to
+`ExceptionToHttpResultMapper`; `ExceptionMappingHandler` is the defense-in-depth handler for exceptions that escape before or around an
+endpoint.
+
+Cancellations are classified before the mapper: endpoints call `HandleCancellation`, returning 504 (`ProblemTypeUris.Timeout`) when the
+request or write timeout fired and 499 when the client disconnected; `ExceptionMappingHandler` applies the same split to cancellations that
+escape a handler.
 
 | Marker interface/type            |      HTTP status | Problem type                          |
 | -------------------------------- | ---------------: | ------------------------------------- |
@@ -427,7 +434,7 @@ before or around an endpoint.
 | Unclassified                     |              500 | `ProblemTypeUris.InternalServerError` |
 
 The mapper walks the inner-exception chain and chooses the innermost classifiable exception. ProblemDetails responses include `traceId`,
-omit stack traces and exception type/source details, use non-leaking messages for 401/403/500/503, and add `retryAfterSeconds` for rate
+omit stack traces and exception type/source details, use non-leaking messages for 401/403/500/503/504, and add `retryAfterSeconds` for rate
 limits.
 
 ---
@@ -441,4 +448,4 @@ limits.
 
 ---
 
-**Document Version**: 1.3.0 **Last Updated**: 2026-08-20 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+**Document Version**: 1.4.0 **Last Updated**: 2026-11-17 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))

@@ -33,7 +33,11 @@ python -m pytest -q
 
 ## Development
 
+Prefer the exp development command owned by root `AGENTS.md`; its Nx target sets `INFRA=local` and listens on port 5002. A direct run from
+`sites/exp.arolariu.ro` must set `INFRA` itself because `/api/v1/*` authorization returns `500` when it is unset:
+
 ```powershell
 pip install -r requirements-dev.txt
-uvicorn main:app --reload
+$env:INFRA = "local"
+python -m uvicorn main:app --reload --port 5002
 ```

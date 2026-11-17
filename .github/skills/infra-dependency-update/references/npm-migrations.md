@@ -10,10 +10,18 @@ target.
 
 The live repository demonstrates two valid domains:
 
-- [`package.json`](../../../../package.json) owns the root workspaces and [`package-lock.json`](../../../../package-lock.json). Workspace
-  manifests such as [`sites/arolariu.ro/package.json`](../../../../sites/arolariu.ro/package.json) and
-  [`packages/components/package.json`](../../../../packages/components/package.json) express member dependency/peer intent.
-  [`.npmrc`](../../../../.npmrc) and [`nx.json`](../../../../nx.json) affect this domain.
+- [`package.json`](../../../../package.json) owns the root workspaces and [`package-lock.json`](../../../../package-lock.json). Version
+  ownership is centralized: root `devDependencies` hold exact versions, and workspace manifests such as
+  [`sites/arolariu.ro/package.json`](../../../../sites/arolariu.ro/package.json) and
+  [`packages/components/package.json`](../../../../packages/components/package.json) declare member dependencies as `"*"`. There are two
+  exceptions. The shared package's `peerDependencies` carry real ranges, and the website pins a published `@arolariu/components` registry
+  tarball (lock entry `sites/arolariu.ro/node_modules/@arolariu/components`) instead of the root workspace link to `packages/components`, so
+  a shared-package change reaches the website only after it is published and that URL is bumped. Change other versions at the root, and edit
+  a member manifest only to add or remove usage or to change a peer range. The root `overrides` block (`typescript`, the transitive
+  `webpackbar`, a nested `zod-validation-error` under `eslint-plugin-react-hooks`, and `$eslint` references under `eslint-plugin-react` and
+  `eslint-plugin-jsx-a11y`) also belongs to this domain: keep the `typescript` override equal to its root devDependency, and re-check each
+  override when its target or parent package changes. [`.npmrc`](../../../../.npmrc) and [`nx.json`](../../../../nx.json) affect this
+  domain.
 - [`.github/scripts/package.json`](../../../../.github/scripts/package.json) is outside the root workspace membership and owns its adjacent
   [`.github/scripts/package-lock.json`](../../../../.github/scripts/package-lock.json). It is an independent install and resolution domain.
 
@@ -41,7 +49,7 @@ evidence limit rather than installing to populate it.
 | Next, React, React DOM, TypeScript, Next plugins, React compiler/lint/test tooling | Official peer/engine matrix, App Router changes, server/client behavior, JSX/types, build/test adapters | Hydration/rendering defaults, server-only/client-only APIs, metadata/routing, type regressions |
 | Nx and installed executors/plugins                                                 | Official Nx migration path, workspace schema, project targets, cache inputs, generated migration plan   | Migration generators can alter source/config beyond the package declaration                    |
 | Svelte, SvelteKit, Vite plugin, adapters, Svelte testing/checking                  | Each standalone site's manifest/config and official compiler/runtime migration docs                     | Reactivity syntax, prerender/adapter behavior, compiler diagnostics, test transform            |
-| Shared React component package and website consumer                                | Package peers/exports, root resolution, website imports, package and website tests/builds               | Accidentally narrowing peer support or making the shared package depend on website code        |
+| Shared React component package and website consumer                                | Package peers/exports, website's registry-tarball pin, website imports, package/website tests/builds    | Accidentally narrowing peer support or making the shared package depend on website code        |
 | Azure/telemetry/browser packages                                                   | Runtime target, ESM/CJS/browser exports, auth/lifecycle, bundling, and instrumentation tests            | Server/client bundling, credential or telemetry behavior, native/optional dependencies         |
 
 Treat each cohort as an evidence set, not an instruction to upgrade every member. Mutate only approved packages.

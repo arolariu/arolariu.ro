@@ -1,44 +1,48 @@
 # CodeQL Security Analysis Configuration
 
-This directory contains the CodeQL configuration for the arolariu.ro monorepo.
+This directory contains a CodeQL advanced-setup configuration file for the arolariu.ro monorepo.
 
 ## Overview
 
 [CodeQL](https://codeql.github.com/) is GitHub's semantic code analysis engine that identifies security vulnerabilities and code quality
-issues. This configuration enables automated security scanning for the entire monorepo.
+issues.
 
-## Analyzed Languages
+## How Analysis Runs
 
-| Language              | Source Paths                                                          | Build Required   |
-| --------------------- | --------------------------------------------------------------------- | ---------------- |
-| JavaScript/TypeScript | `sites/arolariu.ro/`, `sites/cv.arolariu.ro/`, `packages/components/` | No (interpreted) |
-| C# / .NET             | `sites/api.arolariu.ro/`                                              | Yes (compiled)   |
+Code scanning runs through GitHub's CodeQL **default setup**, which is configured in the repository's code security settings rather than in
+a tracked file. The settings own the enabled languages; recent default-setup analyses (analysis key
+`dynamic/github-code-scanning/codeql:analyze`) cover C#, JavaScript/TypeScript, Python, and GitHub Actions.
 
-## Configuration Files
+No workflow under [`.github/workflows/`](../workflows/) runs CodeQL or references `codeql-config.yml`. Default setup does not read
+repository configuration files, so this file currently has no effect. It applies only if an advanced-setup workflow passes it to
+`github/codeql-action/init` through the `config-file` input.
+
+## Configuration File
 
 ### `codeql-config.yml`
 
-Main configuration file that defines:
+The file defines:
 
-- **Query suites**: `security-extended` and `security-and-quality` for comprehensive analysis
-- **Paths to analyze**: Source directories for all projects
-- **Paths to ignore**: Build outputs, tests, generated files, and dependencies
-- **Threat models**: Remote flow sources for security analysis
+- **Query suites**: `security-extended` and `security-and-quality`; queries tagged `experimental` are excluded through `query-filters`
+- **Paths to analyze**:
 
-### Workflow: `.github/workflows/official-codeql-analysis.yml`
+  | Area                   | Path                           |
+  | ---------------------- | ------------------------------ |
+  | Website                | `sites/arolariu.ro/src/**`     |
+  | CV site                | `sites/cv.arolariu.ro/src/**`  |
+  | API                    | `sites/api.arolariu.ro/src/**` |
+  | Component library      | `packages/components/src/**`   |
+  | Repository scripts     | `scripts/**`                   |
+  | GitHub Actions scripts | `.github/scripts/**`           |
 
-The GitHub Actions workflow that runs CodeQL analysis:
+  Everything else, including `sites/status.arolariu.ro`, `sites/exp.arolariu.ro`, `sites/docs.arolariu.ro`, `tooling/`, and
+  `.github/workflows/`, is outside `paths`.
 
-- **Triggers**:
-  - Push to `main` or `preview` branches
-  - Pull requests targeting `main` or `preview`
-  - Weekly scheduled scan (Sundays at 00:00 UTC)
-  - Manual dispatch
-
-- **Jobs**:
-  - `analyze-javascript`: Scans JavaScript/TypeScript code
-  - `analyze-csharp`: Builds and scans .NET code
-  - `summary`: Generates analysis summary
+- **Paths to ignore**: dependencies and build outputs, tests and coverage output, generated files, lockfiles, documentation (`**/docs/**`,
+  `**/*.md`), `infra/**`, Storybook, and Playwright artifacts
+- **Threat models**: `remote` (remote flow sources)
+- **Languages**: none; the analysis that uses the file selects languages
+- **Registries**: a commented-out placeholder for future custom query packs
 
 ## Viewing Results
 
@@ -46,23 +50,26 @@ Security findings are available in:
 
 1. **Security Tab**: Navigate to `Security > Code scanning alerts` in the repository
 2. **Pull Request Checks**: Results appear as check runs on PRs
-3. **SARIF Files**: Uploaded as workflow artifacts
 
 ## Query Suites
 
-| Suite                  | Description                       |
-| ---------------------- | --------------------------------- |
-| `security-extended`    | Extended set of security queries  |
-| `security-and-quality` | Security + code quality queries   |
-| `code-scanning`        | Default queries for code scanning |
+`codeql-config.yml` names these suites. They apply only when an advanced-setup analysis uses the file; default setup uses the query suite
+selected in repository settings.
+
+| Suite                  | Description                      |
+| ---------------------- | -------------------------------- |
+| `security-extended`    | Extended set of security queries |
+| `security-and-quality` | Security + code quality queries  |
+
+Queries tagged `experimental` are excluded through `query-filters`.
 
 ## Customization
 
 ### Adding New Languages
 
-To add support for additional languages:
+Under default setup, enable the language in the repository's code scanning settings. Under advanced setup:
 
-1. Add the language to the workflow matrix
+1. Select the language in the analysis workflow (`codeql-config.yml` has no `languages` key)
 2. Configure build steps if required (compiled languages)
 3. Update `codeql-config.yml` paths
 
@@ -71,12 +78,12 @@ To add support for additional languages:
 To exclude false positives:
 
 1. Use inline comments: `// lgtm[rule-id]` or `// codeql[rule-id]`
-2. Add query filters to `codeql-config.yml`
+2. With advanced setup, add query filters to `codeql-config.yml`
 3. Dismiss alerts in the Security tab with justification
 
 ### Custom Queries
 
-To add custom queries:
+Custom query packs require advanced setup, because default setup does not read `codeql-config.yml`. To add custom queries:
 
 1. Create a query pack in `.github/codeql/queries/`
 2. Reference the pack in `codeql-config.yml`
@@ -95,6 +102,7 @@ To add custom queries:
 - [CodeQL Documentation](https://codeql.github.com/docs/)
 - [CodeQL Query Reference](https://codeql.github.com/codeql-query-help/)
 - [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
+- [Customizing Advanced Setup](https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning)
 - [SARIF Format](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning)
 
 ## Troubleshooting
@@ -103,7 +111,7 @@ To add custom queries:
 
 If the C# analysis fails:
 
-1. Ensure .NET SDK version matches `DOTNET_VERSION` in workflow
+1. Ensure the analysis uses the .NET SDK version listed in the root [`AGENTS.md`](../../AGENTS.md#versions)
 2. Check that all NuGet packages restore correctly
 3. Verify the solution/project files are valid
 
@@ -111,14 +119,13 @@ If the C# analysis fails:
 
 If expected results are missing:
 
-1. Check that the file path is included in `paths`
-2. Verify the file is not in `paths-ignore`
+1. Under default setup, check that the language is enabled in the repository's code scanning settings
+2. Under advanced setup with this file, check that the path is included in `paths` and not matched by `paths-ignore`
 3. Ensure the language is correctly detected
 
 ### Rate Limiting
 
 For large codebases:
 
-1. Use path filters to limit scope
+1. With advanced setup, use `paths` and `paths-ignore` to limit scope
 2. Consider splitting analysis by project
-3. Use `workflow_dispatch` for on-demand scans

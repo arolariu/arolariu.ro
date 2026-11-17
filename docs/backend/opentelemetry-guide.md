@@ -41,21 +41,24 @@ ASP.NET Core request span
             -> Broker/provider Activity
 ```
 
-The analysis worker starts from the queue message's propagated trace context and follows the same Management entry path. A replacement
-message preserves the logical correlation/trace contract while advancing the bounded attempt.
+The analysis worker enters through Management, whose polling Activity is local to the worker. After dequeue, Processing starts an
+`ActivityKind.Consumer` Activity whose parent is parsed from the message's `TraceParent`, so the analysis work joins the producer's trace. A
+replacement message preserves the logical correlation/trace contract while advancing the bounded attempt.
 
 ## Starting and completing an Activity
 
-Use the live helper methods rather than hand-building duplicate tag keys:
+Use the live helper methods rather than hand-building duplicate tag keys. The endpoint pattern (from `InvoiceEndpoints.Handlers.cs`):
 
 ```csharp
 using var activity =
-  InvoicePackageTracing.StartActivity(nameof(ReadInvoice), ActivityKind.Internal);
+  InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
 
 activity?
-  .SetLayerContext("Management", nameof(InvoiceManagementService))
-  .SetOperationType("CRUD.Read")
-  .SetInvoiceContext(invoiceId, userId);
+  .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+  .SetOperationType("CRUD.Read");
+
+var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
 // Await the real operation with its caller-owned token.
 
@@ -84,8 +87,10 @@ payload fields, amounts, product/merchant names, scan locations, prompts, or exc
 
 ## Service and Broker Activities
 
-Management through Foundation use internal Activities that identify the role, component, operation, and bounded entity identifiers. Brokers
-may add provider-neutral database/storage context such as operation, container, and request charge.
+Management through Foundation start internal Activities named after the method (`StartActivity(nameof(...))`) and do not call
+`SetLayerContext` or `SetOperationType`. Processing adds user/invoice context in two places, and Processing, Orchestration, and Foundation
+add a few `analysis.*` and result tags. Within Invoices, only endpoint handlers and the Cosmos DB broker add layer/component/operation
+context. Brokers may add provider-neutral database/storage context such as operation, container, and request charge.
 
 Provider SDK instrumentation can add its own child spans. Preserve parent context and avoid duplicating the same provider call at multiple
 manual boundaries.

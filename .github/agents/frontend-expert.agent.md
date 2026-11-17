@@ -55,8 +55,8 @@ workflow, or backend API changes.
 2. Is it shareable/bookmarkable navigation state? Use URL state.
 3. Is it confined to one component/subtree? Use local state.
 4. Is it shared by a few related components in one mounted subtree? Use Context.
-5. Is it genuinely global client state shared across unrelated mounted route branches, and does no existing store already own it? Only then
-   is a Zustand store in scope, and only an already-approved store may be extended without further approval.
+5. Is it genuinely global client state shared across unrelated mounted route branches or required to persist globally, and does no existing
+   store already own it? Only then is a Zustand store in scope, and only an already-approved store may be extended without further approval.
 
 **Route-local versus website-shared versus component-library scope**:
 

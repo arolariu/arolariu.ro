@@ -35,9 +35,10 @@ Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/
   workspace; the apps do not run their own installers.
 - **Cosmos emulator data**: a pinned emulator image and compatible named volume retain data across runs. Bootstrap records completed
   initialization instead of clearing data every time; see [persistent data and explicit reset](#persistent-data-and-explicit-reset).
-- **Direct service URLs**: api → `https://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv →
-  `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies
-  HTTPS to exp and the API; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
+- **Direct service URLs**: api → `https://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv →
+  `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire supplies HTTPS to the API and website;
+  exp, and therefore the `EXP_PROXY_URL` injected into them, is plain HTTP. Use the resource URL shown by the current dashboard. Selfhost
+  URLs below belong to its separate Compose setup.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers
@@ -199,9 +200,9 @@ Everything containerized via the selected Rancher Desktop or Podman Desktop Comp
 - CI parity validation
 - Testing deploy-mock-of-prod configurations
 
-The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with
-`--profile selfhost` to include containerized exp + apps). Docker Desktop is deprecated and is not a supported local runtime for this
-repository.
+The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (the Storage stack runs
+with `--profile selfhost` to include the containerized exp service). Docker Desktop is deprecated and is not a supported local runtime for
+this repository.
 
 ---
 
@@ -215,7 +216,7 @@ to run the entire stack locally with Rancher Desktop or Podman Desktop.
 
 The local environment is organized into four main container groups:
 
-1. **Management** — Traefik reverse proxy with dashboard
+1. **Management** — Traefik reverse proxy with dashboard, plus the Healthchecks dashboard
 
 2. **Storage** — Data persistence and configuration
    - `exp.arolariu.ro` — experimentation / config proxy (serves all runtime config)
@@ -243,7 +244,8 @@ behavior; application containers do not embed the environment-specific values in
 
 - **Rancher Desktop** in Moby/dockerd mode, or **Podman Desktop** with `podman compose`
 - Docker Desktop is deprecated and is not a supported local runtime for this repository
-- **Node.js** 24.15.0+ on the 24.x line, or ≥ 26, and **npm** ≥ 11 (for Azurite blob container init)
+- **Node.js** 24.15.0+ on the 24.x line, or ≥ 26, and **npm** ≥ 11 (runs the repository CLI, including Azurite blob container init)
+- **.NET 10 SDK** (start runs the `tooling/src/LocalDevelopment.Bootstrap` storage step with `dotnet run`)
 - **Git** (to clone the repository)
 - `MSSQL_SA_PASSWORD` environment variable for the local SQL Server container. Keep it in your shell/session environment only; do not commit
   it to `.env` files, launch profiles, or source control.
@@ -332,10 +334,11 @@ npm run dev:selfhost -- --engine rancher
 
 The startup process:
 
-1. Starts Management containers (Traefik)
+1. Starts Management containers (Traefik, Healthchecks)
 2. Starts Storage containers (SQL, CosmosDB, Azurite, Redis, **exp**) detached
 3. Waits a fixed ten seconds before invoking storage/bootstrap steps; this is not a Compose health-readiness gate
-4. Performs the current SQL/Cosmos/Azurite provisioning
+4. Provisions the SQL schema and Cosmos (each retried every 5 seconds, up to 13 attempts, while its service starts) and Azurite, then runs
+   the .NET `LocalDevelopment.Bootstrap --ensure-storage-only` storage step
 5. Starts the Backend and Frontend Compose projects detached
 
 The root wrapper then exits while Compose keeps running. Use Compose `ps`, health status, and logs to establish readiness; container
@@ -492,7 +495,8 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
 1. On the approved first trusted-certificate run, `mkcert -install` installs a local Certificate Authority into the OS/browser trust store
 2. A wildcard certificate for `*.localhost` is generated and mounted into Traefik
 3. Traefik's **file provider** loads the cert via `traefik/dynamic/tls.yml`
-4. All services use `tls=true` labels — Traefik presents the mkcert cert
+4. `npm run dev:selfhost` generates the HTTPS routers into `traefik/dynamic/selfhost-services.yml` (each with `tls: {}`) and the stop action
+   removes the file; Traefik presents the mkcert cert. Compose `traefik.*` labels are not read because there is no Docker provider
 5. HTTP→HTTPS redirect is enabled on the `:80` entrypoint
 
 ### Available HTTPS routes
@@ -503,7 +507,6 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
 | `https://api.localhost`          | .NET API               |
 | `https://traefik.localhost`      | Traefik dashboard      |
 | `https://health.localhost`       | Healthchecks dashboard |
-| `https://mssql.localhost`        | SQL Server             |
 | `https://cosmosdb.localhost`     | CosmosDB emulator      |
 | `https://azurite-blob.localhost` | Azurite blob storage   |
 
@@ -526,8 +529,7 @@ Windows hosts file entries are optional and require administrator approval:
 ```
 
 > Use: Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n# arolariu.ro local development (Traefik HTTPS)`n127.0.0.1
-> traefik.localhost website.localhost api.localhost health.localhost cosmosdb.localhost azurite-blob.localhost redis.localhost" -Encoding
-> ASCII
+> traefik.localhost website.localhost api.localhost health.localhost cosmosdb.localhost azurite-blob.localhost" -Encoding ASCII
 
 ### Regenerating certificates
 
@@ -544,7 +546,7 @@ npm run dev:selfhost -- --engine rancher
 
 | Issue                   | Solution                                                                                                                              |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Port conflicts          | Ensure ports 3000, 5000, 5002, 8081, 8082, 10000 are free                                                                             |
+| Port conflicts          | Ensure ports 80, 443, 8080, 1234, 3000, 5000, 5002, 6379, 8081, 8082, and 10000–10002 are free                                        |
 | `exp` not starting      | Check `config.docker.json` exists and is valid JSON                                                                                   |
 | Clerk auth errors       | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard                                                                       |
 | Scan images not loading | Ensure the current selfhost bootstrap configured Azurite CORS and the required container                                              |

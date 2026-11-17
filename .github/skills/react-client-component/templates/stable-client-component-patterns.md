@@ -10,7 +10,8 @@ Use only after a same-scope live sibling confirms the pattern.
 - Website CSS Module usage: `sites/arolariu.ro/src/app/about/_components/Hero.tsx` and
   `sites/arolariu.ro/src/app/about/_components/Hero.module.scss`
 - Shared ref/composition behavior: `packages/components/src/components/ui/button.tsx` and
-  `packages/components/src/components/ui/button.test.tsx`
+  `packages/components/src/components/ui/button.test.tsx`; native-element `ref` prop: `packages/components/src/components/ui/card.tsx` and
+  `packages/components/src/components/ui/card.test.tsx`
 - User interaction/focus behavior: `packages/components/src/components/ui/dialog.test.tsx`
 - Global website test shims: `sites/arolariu.ro/vitest.setup.ts`
 
@@ -81,15 +82,19 @@ Website components derive the SCSS import path and mixins from a sibling:
 .section {
   color: hsl(var(--foreground));
 
-  &:focus-within {
-    @include focus-ring;
-  }
-
   @include reduced-motion {
     scroll-behavior: auto;
   }
 }
+
+.link {
+  @include focus-ring;
+}
 ```
+
+`focus-ring` emits `&:focus-visible`, so include it on the natively focusable element the module styles, as
+`sites/arolariu.ro/src/styles/components/_buttons.scss` does. Nested under a non-focusable container's `:focus-within`, it compiles to
+`:focus-within:focus-visible` and never matches. Shared primitives such as `Button` already style their own focus.
 
 Shared-library components use their current `.module.css` plus `cn()` pattern. Do not mix the two owners or add inline style objects.
 
@@ -98,21 +103,28 @@ Shared-library components use their current `.module.css` plus `cn()` pattern. D
 ```tsx
 import * as React from "react";
 
-type Props = Readonly<React.ComponentPropsWithoutRef<"<live-element>">>;
+import {cn} from "@/lib/utilities";
+import styles from "./<component-name>.module.css";
 
-export const <ComponentName> = React.forwardRef<
-  <LiveHTMLElement>,
-  Props
->((props, ref): React.ReactElement => (
+export interface <ComponentName>Props extends Readonly<React.ComponentPropsWithRef<"<live-element>">> {
+  readonly className?: string;
+}
+
+const <ComponentName> = ({ref, className, ...props}: Readonly<<ComponentName>Props>): React.JSX.Element => (
   <<live-element>
     ref={ref}
+    data-slot='<component-name>'
+    className={cn(styles.<live-class>, className)}
     {...props}
   />
-));
-
+);
 <ComponentName>.displayName = "<ComponentName>";
+
+export {<ComponentName>};
 ```
 
+This mirrors the React 19 `ref`-as-prop shape of `packages/components/src/components/ui/card.tsx` and
+`packages/components/src/components/ui/skeleton.tsx`; no website component currently receives a `ref` prop, and no source uses `forwardRef`.
 For a composed shared primitive, follow the Base UI `render` and React 19 `ref` prop contract owned by
 `.github/instructions/components.instructions.md` instead of raw prop spreading.
 

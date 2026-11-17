@@ -9,12 +9,12 @@ architecture; accepted RFCs record intent.
 
 The API is a modular monolith with four bounded contexts:
 
-| Context   | Current shape                                                                |
-| --------- | ---------------------------------------------------------------------------- |
-| Core      | Host, middleware, health, OpenAPI, and runtime composition                   |
-| Core.Auth | ASP.NET Core Identity persistence and endpoints                              |
-| Invoices  | Full Management -> Processing -> Orchestration -> Foundation -> Broker chain |
-| Common    | Shared HTTP, exception, telemetry, and DDD primitives                        |
+| Context   | Current shape                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Core      | Host, middleware, health, OpenAPI, and runtime composition                                                |
+| Core.Auth | ASP.NET Core Identity persistence and endpoints                                                           |
+| Invoices  | Full Management -> Processing -> Orchestration -> Foundation -> Broker chain                              |
+| Common    | Shared HTTP, exception, telemetry, DDD, configuration/options, Azure credential, and validator primitives |
 
 Invoices endpoints and the analysis worker enter through Management. Core.Auth is a deliberate exception: framework routes use
 `MapIdentityApi`, and the custom logout handler injects `SignInManager<IdentityUser>` directly.

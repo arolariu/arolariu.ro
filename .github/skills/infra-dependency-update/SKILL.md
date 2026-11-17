@@ -46,15 +46,17 @@ Read-only compatibility research may begin without mutation approval.
 
 ## Core Procedure
 
-1. Capture the original declarations, lock/resolution evidence, runtime floors, and ownership boundaries before editing. Keep this baseline
-   immutable; an intermediate prerelease edit must never become evidence of the original release channel.
+1. Capture the original declarations, lock/resolution evidence, runtime floors, and ownership boundaries before editing, including the
+   matching `.github/dependabot.yml` entry and container/deployment use such as Dockerfile base images. Keep this baseline immutable; an
+   intermediate prerelease edit must never become evidence of the original release channel.
 2. Build one target ledger using the release-selection policy below. Filter channels and compatibility before researching migrations or
    installing. Include unchanged declarations and explicit holds, not only packages reported as outdated.
 3. Research selected source-to-target intervals using exact registry metadata and maintainer changelogs/migration guides. Group shared
    releases by cohort; identify changed APIs/defaults, peers/engines, advisories, native assets, and required intermediate versions.
 4. Inspect affected consumers and select ecosystem guidance. Record mutations, validation, rollback, and independently reversible phases
    where needed. Reuse the user's existing in-scope approval; request only missing approval or a newly crossed risk boundary.
-5. After approval, establish the smallest affected baseline and apply declarations with the owning native package manager.
+5. After approval, establish the smallest affected baseline and apply declarations with the owning native package manager; for a GitHub
+   Action, update only the approved `uses:` declarations.
 6. Prove the proposed graph early: inspect peers, engines, provenance, and transitive deltas, then perform a clean install/restore from the
    generated lock where one exists. Do this before expensive application-wide validation or speculative source migrations.
 7. Apply only adaptations required by the selected targets, preserving behavior. If targets or channel policy change, remove this task's

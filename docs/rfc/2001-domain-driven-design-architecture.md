@@ -74,6 +74,7 @@ The Invoices bounded context contains:
 ```text
 BoundedContext/
 ├── DDD/                    # Aggregates, entities, value objects, and contracts
+├── DTOs/                  # Request/response contracts
 ├── Services/
 │   ├── Management/        # Application-facing facade over unified Processing
 │   ├── Processing/        # Domain computation and workflow sequencing
@@ -81,6 +82,9 @@ BoundedContext/
 │   └── Foundation/        # Validation and direct dependency classification
 ├── Brokers/               # Thin external-system adapters
 ├── Endpoints/             # Protocol adapters
+├── Modules/               # DI registration, endpoint mapping, metrics, logging
+├── Resources/Taxonomies/  # Embedded classification taxonomies
+├── Serialization/         # JSON converters
 └── Workers/               # Background host adapters
 ```
 
@@ -149,8 +153,9 @@ resolve the Invoices Management contract rather than lower-layer contracts.
 
 When analysis must survive request completion or process restart, the application publishes a provider-neutral message to a backend-owned
 Azure Queue. A worker receives visible messages through the same Management boundary used by request adapters. Message visibility provides
-temporary ownership: successful work is deleted, transiently failed work becomes visible for retry, and long-running work renews visibility
-while it executes.
+temporary ownership: completed attempts delete the message; failed analysis options are retried by publishing a replacement message that
+carries only those options (up to attempt three); work that throws or is interrupted before deletion becomes visible again after the
+visibility timeout; and long-running work renews visibility while it executes.
 
 Queue transport details remain in Broker and Foundation roles. Target loading, analysis execution, persistence ordering, and terminal retry
 policy remain in Processing.
@@ -226,4 +231,4 @@ The backend coverage target remains 85% or higher for domain and application cod
 
 ---
 
-**Document Version**: 1.2.0 **Last Updated**: 2026-08-19 **Reviewed By**: Alexandru-Razvan Olariu **Status**: ✅ Implemented
+**Document Version**: 1.3.0 **Last Updated**: 2026-11-17 **Reviewed By**: Alexandru-Razvan Olariu **Status**: ✅ Implemented

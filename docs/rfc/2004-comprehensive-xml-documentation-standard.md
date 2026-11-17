@@ -424,7 +424,7 @@ Link to related types, methods, properties, and members.
 ```csharp
 /// <summary>
 /// Represents the invoice aggregate root controlling line items, merchant linkage, payment details,
-/// scan data, AI enrichment artifacts (recipes, categorization) and arbitrary extensible metadata
+/// scan data, AI enrichment artifacts (recipes, classification) and arbitrary extensible metadata
 /// within the bounded invoices context.
 /// </summary>
 /// <remarks>
@@ -435,8 +435,7 @@ Link to related types, methods, properties, and members.
 /// </para>
 /// <para>
 /// <b>Sentinel Defaults:</b> <see cref="Guid.Empty"/> for <c>UserIdentifier</c> and <c>MerchantReference</c>,
-/// <see cref="InvoiceCategory.NOT_DEFINED"/> for <c>Category</c>, and <see cref="InvoiceScan.Default()"/>
-/// for <c>Scan</c> indicate an unenriched or unlinked state.
+/// and <see langword="null"/> for <c>Classification</c> indicate an unenriched or unlinked state.
 /// </para>
 /// </remarks>
 ```
@@ -475,25 +474,40 @@ Use inline tags for emphasis and code references:
 
 ### 4. Inheritance Documentation
 
-Use `<inheritdoc/>` to inherit documentation from base classes or interfaces:
+Use `<inheritdoc/>` to inherit documentation from base classes or interfaces (excerpt from `IAuditable`, `BaseEntity<T>`, and `Invoice`;
+other members and attributes omitted):
 
 ```csharp
+public interface IAuditable
+{
+  /// <summary>
+  /// Gets the date and time when the entity was originally created.
+  /// This timestamp is immutable and represents the initial entity creation moment.
+  /// </summary>
+  DateTimeOffset CreatedAt { get; init; }
+}
+
 public abstract class BaseEntity<T> : IAuditable
 {
   /// <summary>
-  /// Gets or sets the UTC timestamp when this entity was created.
+  /// Gets or initializes the unique identifier for this entity.
+  /// This property serves as the primary key and must be unique within the entity's context.
   /// </summary>
-  public DateTimeOffset CreatedAt { get; set; }
-}
+  public virtual T? id { get; init; } = default;
 
-public class Invoice : BaseEntity<Guid>
-{
   /// <inheritdoc/>
   /// <remarks>
   /// Automatically set to the current UTC time when the entity is created.
   /// This timestamp is immutable after entity creation to maintain audit integrity.
   /// </remarks>
-  public override DateTimeOffset CreatedAt { get; set; }
+  public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+}
+
+// NamedEntity<T> derives from BaseEntity<T>.
+public sealed class Invoice : NamedEntity<Guid>
+{
+  /// <inheritdoc/>
+  public override required Guid id { get; init; } = Guid.CreateVersion7();
 }
 ```
 
@@ -683,10 +697,12 @@ public void MyMethod(string parameterName) { }
 /// </para>
 /// </remarks>
 /// <param name="invoice">Fully formed invoice aggregate to persist.</param>
-/// <param name="userIdentifier">Optional partition / tenant context for the invoice.</param>
-/// <returns>Asynchronous task completing when invoice is persisted.</returns>
+/// <param name="userIdentifier">Partition / tenant context for the invoice (acts as partition key); pass null for a cross-partition operation.</param>
+/// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+/// <returns>Asynchronous task.</returns>
 /// <exception cref="ArgumentNullException">If <paramref name="invoice"/> is null.</exception>
-Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+/// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
 ```
 
 ### Property Documentation
@@ -787,6 +803,18 @@ public enum PaymentType
 
   /// <summary>Payment card (credit / debit).</summary>
   CARD = 200,
+
+  /// <summary>Bank (wire / ACH / SEPA-like) transfer.</summary>
+  TRANSFER = 300,
+
+  /// <summary>Mobile wallet / NFC application (e.g. device-based tokenized payment).</summary>
+  MOBILEPAYMENT = 400,
+
+  /// <summary>Voucher / coupon / prepaid certificate redemption.</summary>
+  VOUCHER = 500,
+
+  /// <summary>Fallback when no defined payment method applies.</summary>
+  Other = 9999,
 }
 ```
 
@@ -864,7 +892,7 @@ Link to Domain-Driven Design concepts (RFC 2001):
 ```csharp
 /// <summary>
 /// Represents the invoice aggregate root controlling line items, merchant linkage, payment details,
-/// scan data, AI enrichment artifacts (recipes, categorization) and arbitrary extensible metadata
+/// scan data, AI enrichment artifacts (recipes, classification) and arbitrary extensible metadata
 /// within the bounded invoices context.
 /// </summary>
 /// <remarks>
@@ -908,7 +936,7 @@ Explain why certain decisions were made:
 
 ### Example 1: Comprehensive Class Documentation
 
-**File**: `src/Core/Program.cs`
+**File**: `sites/api.arolariu.ro/src/Core/Program.cs`
 
 ```csharp
 /// <summary>
@@ -967,7 +995,7 @@ internal static class Program
 
 ### Example 2: Aggregate Root with Merge Semantics
 
-**File**: `src/Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs`
+**File**: `sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs`
 
 ```csharp
 /// <summary>
@@ -1020,7 +1048,7 @@ internal static Invoice Merge(Invoice original, Invoice partialUpdates) { }
 
 ### Example 3: Generic Validator with Multiple Audiences
 
-**File**: `src/Common/Validators/Validator.cs`
+**File**: `sites/api.arolariu.ro/src/Common/Validators/Validator.cs`
 
 ```csharp
 /// <summary>
@@ -1464,9 +1492,10 @@ into a **living technical manual** that teaches while it functions.
 - **DefaultDocumentation**: <https://github.com/Doraku/DefaultDocumentation>
 - **Swashbuckle (Swagger for .NET)**: <https://github.com/domaindrivendev/Swashbuckle.AspNetCore>
 - **RFC 2001**: Domain-Driven Design Architecture (`docs/rfc/2001-domain-driven-design-architecture.md`)
+- **RFC 2002**: OpenTelemetry Backend Observability System (`docs/rfc/2002-opentelemetry-backend-observability.md`)
 - **RFC 2003**: The Standard Implementation (`docs/rfc/2003-the-standard-implementation.md`)
 - **RFC 1001**: OpenTelemetry Observability System (`docs/rfc/1001-opentelemetry-observability-system.md`)
 
 ---
 
-**Document Version**: 1.0.0 **Last Updated**: 2025-01-26 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+**Document Version**: 1.1.0 **Last Updated**: 2026-11-17 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))

@@ -49,7 +49,7 @@ runtime permission checks; reviewers must still inspect the complete configurati
 ---
 name: Experimental Service Python
 description: Python typing, FastAPI, Ruff, and pytest conventions for the experimental service.
-applyTo: "sites/exp.arolariu.ro/**/*.py"
+applyTo: "sites/exp.arolariu.ro/**/*.py,sites/exp.arolariu.ro/config*.json,sites/exp.arolariu.ro/pyproject.toml,sites/exp.arolariu.ro/requirements*.txt"
 ---
 ```
 
@@ -69,7 +69,8 @@ tools: ["read", "edit", "search", "execute", "agent"]
 ---
 name: code-unit-test
 description:
-  Add or improve focused tests for already-correct behavior across the repository stacks; route production defects to code-fix-bug.
+  Add or improve focused tests for already-correct behavior across TypeScript/React/Svelte/Node, .NET/MSTest, and Python/FastAPI/pytest;
+  route production defects to code-fix-bug.
 ---
 ```
 
@@ -87,8 +88,8 @@ agent: agent
 ### Anti-pattern: pinned model or calendar-review metadata
 
 `diagnostics.mjs` explicitly rejects a `model:` key on an agent/prompt (`"pinned-model"` finding — model selection must inherit the active
-surface's default) and a `lastReviewed`/`lastUpdated` key on any asset (`"last-reviewed"` finding — git history already records when an
-asset changed):
+surface's default) and a `lastReviewed`/`lastUpdated` key in agent, instruction, prompt, or skill frontmatter (`"last-reviewed"` finding —
+git history already records when an asset changed); a `version` key there is flagged as `"version-metadata"`:
 
 ```yaml
 # ❌ Anti-pattern (flagged by arolariu_ai_doctor)
@@ -127,7 +128,7 @@ Every fact has exactly one asset that states it; every other asset points to tha
   states.
 - Global and repository-owned scripts live only in root `AGENTS.md`'s Commands section; local guides point there and retain only commands
   that are genuinely local to a subproject.
-- The RFC map (0001, 1001-1008, 2001-2004) lives only in root `AGENTS.md`. Instructions reference an RFC number
+- The RFC map (0001-0002, 1001-1008, 2001-2004) lives only in root `AGENTS.md`. Instructions reference an RFC number
   (`agent-governance.instructions.md` references RFC via the operating protocol) instead of restating its content.
 - Repository-wide risk boundaries live only in root `AGENTS.md`. `.github/copilot-instructions.md` and the operating protocol point there;
   agents and instructions add only role/path-specific triggers.
@@ -186,10 +187,10 @@ every row names an exact decision point, not a vague "read if useful":
 Do not open troubleshooting during a successful routine test task.
 ```
 
-This repository's instruction-catalog pattern (introduced across `typescript.instructions.md`, `csharp.instructions.md`,
-`python.instructions.md`, `svelte.instructions.md`, and this instruction) follows the same shape: the auto-loaded instruction names the
-exact conditions ("a naming, tagging, or user-defined-type decision beyond the rules above") that justify opening `references/<name>.md`,
-and states that the catalog does not redefine the rules or escalation section above it.
+This repository's instruction-catalog pattern (a `## Reference Catalog` or `## Reference Catalogs` section in every `*.instructions.md`
+file) follows the same shape: the auto-loaded instruction names the exact conditions (for example, `bicep.instructions.md`'s "a naming,
+tagging, or user-defined-type decision beyond the rules above") that justify opening `references/<name>.md`, and states that the catalog
+does not redefine the rules or escalation section above it.
 
 ### Anti-pattern: a trigger with no decision boundary
 
@@ -200,7 +201,7 @@ See references/python.md for more details on Python.
 ```
 
 ```markdown
-<!-- ✅ Correction, from python.instructions.md's Reference Catalog section:
+<!-- ✅ Correction, paraphrasing python.instructions.md's Reference Catalog section:
      names the exact conditions that justify opening the catalog. -->
 
 Open `references/python.md` only when the task needs a typing/FastAPI boundary decision, a feature-flag storage-prefix question, a
@@ -215,8 +216,9 @@ permission decisions:
 - `arolariu-checker` exposes inventory and doctor tools (`arolariu_ai_inventory`, `arolariu_ai_doctor`), each wrapped in
   `success()`/`failure()` and backed by pure filesystem reads. `diagnoseAssets` never edits a file. Validation command selection remains
   with the canonical guides and task skills rather than a duplicated extension profile.
-- `arolariu-context` only implements `onUserPromptSubmitted` and returns a bounded (`maxCharacters: 2000`), deterministically-derived
-  `additionalContext` string built from existing file paths — it never fabricates a path and never grows unbounded:
+- `arolariu-context` implements `onSessionStart` (one status log line) and `onUserPromptSubmitted`, which returns a bounded
+  (`maxCharacters: 2000`), deterministically-derived `additionalContext` string built from existing file paths — it never fabricates a path
+  and never grows unbounded:
 
 ```js
 // .github/extensions/arolariu-context/extension.mjs
@@ -288,7 +290,7 @@ as runtime floors, arbitrary Git/GitHub commands, paths, and architecture snapsh
   "entities": [
     {
       "name": "repository-versions",
-      "observations": ["Framework <version-from-source>", "run the current repository test command"]
+      "observations": ["Framework 1.2.3", "npm run test"]
     }
   ]
 }
@@ -393,7 +395,8 @@ tool and inspect the server/CLI log. Record a failure explicitly; do not add CI 
 - `.github/CODEOWNERS` — agentic-path review gate.
 - `.github/mcp.json` — registered MCP servers and the `filesystem` allowlist.
 - `.github/memory/memory.json` — current memory state and schema.
-- `.github/extensions/arolariu-checker/{extension,diagnostics,frontmatter,inventory}.mjs` — read-only inventory and doctor tools.
+- `.github/extensions/arolariu-checker/{extension,diagnostics,frontmatter,inventory,path-safety}.mjs` — read-only inventory and doctor
+  tools.
 - `.github/extensions/arolariu-context/{extension,resolver}.mjs` — bounded deterministic context injection.
 - `.github/skills/code-unit-test/SKILL.md` — canonical Resource Triggers table shape.
 - `.github/prompts/fix-bug.prompt.md` — canonical thin-prompt shape.

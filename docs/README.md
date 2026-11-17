@@ -10,11 +10,13 @@ docs/
 ├── README.md           # This file
 ├── RFC_TEMPLATE.md     # Template for creating new RFCs
 ├── rfc/                # All RFCs organized by number ranges
+│   ├── README.md       # RFC index and authoring procedure
 │   ├── 0000-0999: Monorepo/general RFCs
 │   ├── 1000-1999: Frontend RFCs
 │   ├── 2000-2999: Backend RFCs
 │   ├── 3000-3999: Database RFCs
-│   └── 4000+: Other domain-specific RFCs
+│   ├── 4000-4999: Infrastructure RFCs
+│   └── 5000+: Reserved for future domain-specific RFCs
 ├── frontend/           # Frontend-related documentation
 └── backend/            # Backend-related documentation
 ```
@@ -27,17 +29,17 @@ All architectural RFCs are organized by number ranges in a single directory:
 
 #### Monorepo/General (0000-0999)
 
-- [RFC 0001: GitHub Actions Workflows](./rfc/0001-github-actions-workflows.md) - ✅ Implemented
-- [RFC 0002: Lean Monorepo Tooling Architecture](./rfc/0002-lean-monorepo-tooling-architecture.md) - Accepted
+- [RFC 0001: GitHub Actions Workflows - DevOps Architecture](./rfc/0001-github-actions-workflows.md) - ✅ Implemented
+- [RFC 0002: Lean Monorepo Tooling Architecture](./rfc/0002-lean-monorepo-tooling-architecture.md) - ✅ Implemented
 - General architecture decisions
 - Cross-cutting concerns
 - Tooling and infrastructure
 
 #### Frontend (1000-1999)
 
-- [RFC 1001: OpenTelemetry Observability System](./rfc/1001-opentelemetry-observability-system.md) - ✅ Implemented
-- [RFC 1002: JSDoc/TSDoc Documentation Standard](./rfc/1002-comprehensive-jsdoc-documentation-standard.md) - ✅ Implemented
-- [RFC 1003: next-intl Internationalization System](./rfc/1003-internationalization-system.md) - ✅ Implemented
+- [RFC 1001: OpenTelemetry Observability System for Next.js 16](./rfc/1001-opentelemetry-observability-system.md) - ✅ Implemented
+- [RFC 1002: Comprehensive JSDoc/TSDoc Documentation Standard](./rfc/1002-comprehensive-jsdoc-documentation-standard.md) - ✅ Implemented
+- [RFC 1003: Internationalization System](./rfc/1003-internationalization-system.md) - ✅ Implemented
 - [RFC 1004: Metadata and SEO System](./rfc/1004-metadata-seo-system.md) - ✅ Implemented
 - [RFC 1005: State Management with Zustand](./rfc/1005-state-management-zustand.md) - ✅ Implemented
 - [RFC 1006: Component Library Architecture](./rfc/1006-component-library-architecture.md) - ✅ Implemented
@@ -51,9 +53,9 @@ All architectural RFCs are organized by number ranges in a single directory:
 #### Backend (2000-2999)
 
 - [RFC 2001: Domain-Driven Design Architecture](./rfc/2001-domain-driven-design-architecture.md) - ✅ Implemented
-- [RFC 2002: OpenTelemetry Backend Observability](./rfc/2002-opentelemetry-backend-observability.md) - ✅ Implemented
-- [RFC 2003: The Standard Implementation](./rfc/2003-the-standard-implementation.md) - ✅ Implemented
-- [RFC 2004: XML Documentation Standard](./rfc/2004-comprehensive-xml-documentation-standard.md) - ✅ Implemented
+- [RFC 2002: OpenTelemetry Backend Observability System](./rfc/2002-opentelemetry-backend-observability.md) - ✅ Implemented
+- [RFC 2003: The Standard Implementation in arolariu.ro Backend](./rfc/2003-the-standard-implementation.md) - ✅ Implemented
+- [RFC 2004: Comprehensive XML Documentation Standard](./rfc/2004-comprehensive-xml-documentation-standard.md) - ✅ Implemented
 - .NET API architecture
 - Domain-Driven Design (DDD) patterns
 - SOLID principles implementation
@@ -79,7 +81,7 @@ To create a new RFC:
 2. Place it in the `/docs/rfc/` directory
 3. Name it with the next sequential number in the appropriate range: `NNNN-descriptive-name.md`
 4. Fill in all sections of the template
-5. Update the index in this README
+5. Update both RFC indexes: [`docs/rfc/README.md`](./rfc/README.md) and this README
 6. Submit a pull request for review
 
 ### RFC Numbering Convention
@@ -156,4 +158,4 @@ For questions about documentation:
 
 ---
 
-**Last Updated**: 2026-08-31 **Maintained By**: arolariu team
+**Last Updated**: 2026-11-17 **Maintained By**: arolariu team

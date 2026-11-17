@@ -1,7 +1,8 @@
 # status.arolariu.ro
 
-Public service status page for arolariu.ro. Polls `/health` endpoints of 4 services every 30 min, stores 365 days of history in a dedicated
-`status-data` branch, renders a GitHub-style uptime table with hover tooltips and auto-detected incidents.
+Public service status page for arolariu.ro. Polls the health endpoints of the website, API and exp services (and the CV home page) every 30
+min, stores 365 days of history in a dedicated `status-data` branch, renders a GitHub-style uptime table with hover tooltips and
+auto-detected incidents.
 
 - Live: https://status.arolariu.ro
 - See `AGENTS.md` for development guidance and the full dashboard anatomy.

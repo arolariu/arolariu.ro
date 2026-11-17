@@ -160,8 +160,9 @@ regression must control pre-abort, mid-flight abort, body-first completion, the 
 
 For React worker hooks, supply only the browser `Worker` runtime surface while running the real host/protocol. For Node lint/format workers,
 separate the pure dispatch table from Piscina/thread loading and external tool execution. `scripts/workers/lint.worker.test.ts` proves only
-ordered target steps. `scripts/workers/shell.test.ts` proves the real process-availability wrapper. A pass in either does not prove dynamic
-config import, working directory, structured cloning, or worker startup.
+ordered target steps and the root ESLint config's generated-output ignore boundary. `scripts/workers/shell.test.ts` proves the real
+process-availability wrapper. A pass in either does not prove dynamic config import, working directory, structured cloning, or worker
+startup.
 
 Check that worker inputs and outputs contain cloneable data, not functions, errors with relied-upon prototypes, DOM objects, or repository
 state containers. Verify fail-fast result fields and skipped-step reporting at the worker boundary when those are the symptom.

@@ -3,7 +3,7 @@
 This module provisions secure, enterprise-grade storage resources for the arolariu.ro platform, including Azure Storage Account, SQL
 Database, Cosmos DB (NoSQL), and Container Registry.
 
-## 📋 Overview
+## 📋 **Overview**
 
 This module provides:
 
@@ -14,168 +14,35 @@ This module provides:
 - **Lifecycle management** for cost optimization
 - **Comprehensive encryption** (at rest, in transit, infrastructure)
 
-## 🏗️ Resources Created
+## 🏗️ **Resources Created**
 
-| Resource Type      | Name Pattern     | Purpose                          |
-| ------------------ | ---------------- | -------------------------------- |
-| Storage Account    | Customizable     | Blob, file, queue, table storage |
-| SQL Server         | `{prefix}-sql`   | Azure SQL Server                 |
-| SQL Database       | `{prefix}-db`    | SQL Database                     |
-| Cosmos DB Account  | `{prefix}-nosql` | NoSQL document database          |
-| Container Registry | `{prefix}acr`    | Docker container images          |
-| ManagementPolicy   | default          | Lifecycle/cost optimization      |
+| Resource Type          | Name Pattern                      | Purpose                                               |
+| ---------------------- | --------------------------------- | ----------------------------------------------------- |
+| Storage Account        | `{prefix}sacc`                    | Blob, file, queue, table storage                      |
+| Blob Container         | `invoices`                        | Private container for invoice scan uploads            |
+| Storage Queue          | `invoice-analysis`                | Durable invoice and merchant analysis work            |
+| ManagementPolicy       | default                           | Lifecycle/cost optimization                           |
+| Container Registry     | `{prefix}acrprod`                 | Docker container images                               |
+| SQL Server             | `{prefix}-sqlserver`              | Azure SQL Server                                      |
+| SQL Database           | `{prefix}-sqlserver-db-primary`   | Primary database (Standard, 10 DTU)                   |
+| SQL Database           | `{prefix}-sqlserver-db-secondary` | Serverless free-offer database (`GP_S_Gen5_2`)        |
+| Cosmos DB Account      | `{prefix}-nosqlserver`            | NoSQL document database                               |
+| Cosmos DB SQL Database | `primary`                         | Document database                                     |
+| Cosmos DB Container    | `invoices`                        | Invoice documents (partition key `/UserIdentifier`)   |
+| Cosmos DB Container    | `merchants`                       | Merchant documents (partition key `/ParentCompanyId`) |
 
-## 📁 Module Files
+`{prefix}` is the `resourceConventionPrefix` parameter. The storage account and registry names drop any dashes from it
+(`replace(resourceConventionPrefix, '-', '')`).
+
+## 📁 **Module Files**
 
 | File                      | Purpose                              |
 | ------------------------- | ------------------------------------ |
 | `deploymentFile.bicep`    | Orchestrates all storage deployments |
 | `storageAccount.bicep`    | Azure Storage Account                |
-| `sqlServer.bicep`         | Azure SQL Server & Database          |
+| `sqlServer.bicep`         | Azure SQL Server & Databases         |
 | `noSqlServer.bicep`       | Azure Cosmos DB (NoSQL)              |
 | `containerRegistry.bicep` | Azure Container Registry             |
-
-## 📊 Architecture
-
-```mermaid
-graph TB
-    subgraph "App Layer"
-        WEB[Web/API/Dev]
-    end
-    subgraph "Storage Account"
-        BLOB[Blob]
-        FILE[File]
-        QUEUE[Queue]
-        TABLE[Table]
-    end
-    subgraph "Security"
-        ENCRYPTION[Encryption]
-        RETENTION[Retention]
-        LIFECYCLE[Lifecycle]
-    end
-    WEB --> BLOB
-    WEB --> FILE
-    WEB --> QUEUE
-    WEB --> TABLE
-    BLOB --> ENCRYPTION
-    FILE --> ENCRYPTION
-    QUEUE --> ENCRYPTION
-    TABLE --> ENCRYPTION
-    BLOB --> RETENTION
-    BLOB --> LIFECYCLE
-```
-
-## 🔧 Configuration
-
-### Parameters
-
-| Parameter                      | Type   | Required | Description                               |
-| ------------------------------ | ------ | -------- | ----------------------------------------- |
-| `storageAccountName`           | string | ✅       | Storage account name (3-24 chars, unique) |
-| `storageAccountLocation`       | string | ✅       | Azure region                              |
-| `storageAccountDeploymentDate` | string | ✅       | Deployment timestamp                      |
-
-### Example Usage
-
-```bicep
-module storage 'storage/storageAccount.bicep' = {
-  name: 'storageDeployment'
-  params: {
-    storageAccountName: 'arolariusa'
-    storageAccountLocation: 'westeurope'
-    storageAccountDeploymentDate: '2025-07-03'
-  }
-}
-```
-
-## 📤 Outputs
-
-| Output                        | Type   | Description                        |
-| ----------------------------- | ------ | ---------------------------------- |
-| `storageAccountName`          | string | Name of the storage account        |
-| `storageAccountId`            | string | Resource ID of the storage account |
-| `storageAccountBlobEndpoint`  | string | Blob endpoint URL                  |
-| `storageAccountFileEndpoint`  | string | File endpoint URL                  |
-| `storageAccountQueueEndpoint` | string | Queue endpoint URL                 |
-| `storageAccountTableEndpoint` | string | Table endpoint URL                 |
-
-## 💾 Storage Account Features
-
-**General:**
-
-- SKU: Standard_LRS (Locally Redundant)
-- Kind: StorageV2
-- Access Tier: Hot
-- Public Network Access: Enabled (can restrict)
-- Allow Cross-Tenant Replication: Disabled
-- Minimum TLS: 1.2
-- HTTPS Only: Yes
-- Tags: Environment, deployment, cost center, etc.
-
-**Security & Encryption:**
-
-- Encryption at rest: Microsoft-managed keys
-- Infrastructure encryption: Enabled
-- Network ACLs: AzureServices, Logging, Metrics bypassed; default allow
-
-**Blob Service:**
-
-- Change feed: Enabled (90 days)
-- Restore policy: Enabled (30 days)
-- Container delete retention: 7 days
-- Blob delete retention: 90 days (no permanent delete)
-- CORS: Configured for prod/dev
-- Versioning: Enabled
-- Last access time tracking: Enabled (1 day)
-
-**File Service:**
-
-- Share delete retention: 7 days (no permanent delete)
-- SMB: 3.0/3.1.1, Kerberos, AES encryption
-
-**Queue/Table Service:**
-
-- Queue and table services are enabled.
-- The `invoice-analysis` queue is provisioned declaratively for durable invoice and merchant analysis work. Application Brokers consume this
-  queue but never create infrastructure at runtime.
-
-**Lifecycle Management:**
-
-- Move blobs to cool after 30 days, archive after 90 days, delete after 365 days
-- Delete snapshots after 90 days, versions after 365 days
-
-## 🛡️ Security Practices
-
-- All endpoints require HTTPS
-- Infrastructure encryption is enabled
-- Public access is enabled at the account level but can be restricted at the container level
-- Shared key access is enabled (can be restricted)
-
-## 🛠️ Maintenance & Operations
-
-- Automated lifecycle policies for cost optimization
-- Retention and restore policies for data recovery
-- CORS rules for both production and local development
-
-## 🚨 Troubleshooting
-
-| Issue                 | Symptoms           | Solution                                |
-| --------------------- | ------------------ | --------------------------------------- |
-| Storage access denied | 403 errors         | Check RBAC and network access           |
-| Blob not found        | 404 errors         | Check container and blob name           |
-| CORS errors           | Browser errors     | Check CORS rules in blobServices        |
-| High storage costs    | Unexpected billing | Review lifecycle and retention policies |
-
-## 📚 References
-
-- [Azure Storage Documentation](https://docs.microsoft.com/en-us/azure/storage/)
-- [Storage Security Guide](https://docs.microsoft.com/en-us/azure/storage/common/storage-security-guide)
-
----
-
-**Module Version**: 2.0.0  
-**Last Updated**: July 2025  
-**Maintainer**: Alexandru-Razvan Olariu
 
 ## 📊 **Architecture**
 
@@ -192,32 +59,31 @@ graph TB
             SA[Storage Account<br/>Standard_LRS<br/>Hot Tier]
 
             subgraph "Storage Services"
-                BLOB[Blob Storage<br/>Static Assets, Files]
-                TABLE[Table Storage<br/>NoSQL Key-Value]
-                QUEUE[Queue Storage<br/>Message Queuing]
-                FILE[File Storage<br/>Shared Files]
+                BLOB[Blob Storage<br/>invoices container]
+                TABLE[Table Storage<br/>no tables provisioned]
+                QUEUE[Queue Storage<br/>invoice-analysis queue]
+                FILE[File Storage<br/>no shares provisioned]
             end
         end
 
         subgraph "Container Storage"
-            ACR[Container Registry<br/>Docker Images<br/>Premium SKU]
+            ACR[Container Registry<br/>Docker Images<br/>Basic SKU]
         end
 
         subgraph "Structured Data"
-            SQL_SERVER[SQL Server<br/>Serverless Compute<br/>Azure AD Auth]
+            SQL_SERVER[SQL Server<br/>Azure AD Auth]
 
             subgraph "SQL Databases"
-                DB_MAIN[Primary Database<br/>Application Data]
-                DB_ANALYTICS[Analytics Database<br/>Reporting Data]
+                DB_MAIN[Primary Database<br/>Standard 10 DTU]
+                DB_SECONDARY[Secondary Database<br/>Serverless free offer]
             end
         end
 
         subgraph "Document Storage"
-            COSMOS_ACCOUNT[Cosmos DB Account<br/>SQL API<br/>Serverless Mode]
+            COSMOS_ACCOUNT[Cosmos DB Account<br/>NoSQL API<br/>Free tier, 1000 RU/s cap]
 
-            subgraph "Cosmos Databases"
-                DB_DOCUMENTS[Documents Database<br/>CMS Content]
-                DB_EVENTS[Events Database<br/>Audit & Telemetry]
+            subgraph "Cosmos Database"
+                DB_PRIMARY[primary Database<br/>invoices + merchants containers]
             end
         end
     end
@@ -225,12 +91,11 @@ graph TB
     subgraph "Security & Access"
         RBAC[Role-Based Access<br/>Azure AD Integration]
         ENCRYPTION[Encryption<br/>At Rest & In Transit]
-        NETWORK[Network Security<br/>Private Endpoints]
+        RETENTION[Data Protection<br/>Versioning, Soft Delete<br/>30-Day Restore]
+        LIFECYCLE[Lifecycle Policy<br/>Cool 30d, Archive 90d<br/>Delete 365d]
     end
 
     WEB_MAIN --> SA
-    WEB_MAIN --> SQL_SERVER
-    WEB_MAIN --> COSMOS_ACCOUNT
 
     WEB_API --> SA
     WEB_API --> SQL_SERVER
@@ -238,8 +103,6 @@ graph TB
     WEB_API --> ACR
 
     WEB_DEV --> SA
-    WEB_DEV --> SQL_SERVER
-    WEB_DEV --> COSMOS_ACCOUNT
 
     SA --> BLOB
     SA --> TABLE
@@ -247,10 +110,12 @@ graph TB
     SA --> FILE
 
     SQL_SERVER --> DB_MAIN
-    SQL_SERVER --> DB_ANALYTICS
+    SQL_SERVER --> DB_SECONDARY
 
-    COSMOS_ACCOUNT --> DB_DOCUMENTS
-    COSMOS_ACCOUNT --> DB_EVENTS
+    COSMOS_ACCOUNT --> DB_PRIMARY
+
+    BLOB --> RETENTION
+    BLOB --> LIFECYCLE
 
     RBAC --> SA
     RBAC --> SQL_SERVER
@@ -262,11 +127,6 @@ graph TB
     ENCRYPTION --> COSMOS_ACCOUNT
     ENCRYPTION --> ACR
 
-    NETWORK --> SA
-    NETWORK --> SQL_SERVER
-    NETWORK --> COSMOS_ACCOUNT
-    NETWORK --> ACR
-
     classDef app fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef storage fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
     classDef container fill:#fff3e0,stroke:#e65100,stroke-width:2px
@@ -277,123 +137,158 @@ graph TB
     class WEB_MAIN,WEB_API,WEB_DEV app
     class SA,BLOB,TABLE,QUEUE,FILE storage
     class ACR container
-    class SQL_SERVER,DB_MAIN,DB_ANALYTICS sql
-    class COSMOS_ACCOUNT,DB_DOCUMENTS,DB_EVENTS nosql
-    class RBAC,ENCRYPTION,NETWORK security
+    class SQL_SERVER,DB_MAIN,DB_SECONDARY sql
+    class COSMOS_ACCOUNT,DB_PRIMARY nosql
+    class RBAC,ENCRYPTION,RETENTION,LIFECYCLE security
 ```
+
+SQL Database and Cosmos DB roles go only to the backend identity, used by the API and exp. The frontend identity, used by the main and dev
+sites, receives storage and registry roles (see [`../rbac/README.md`](../rbac/README.md)). No private endpoints, VNet rules or IP filters
+are deployed.
 
 ## 🔧 **Configuration**
 
 ### **Parameters**
 
-| Parameter                   | Type   | Required | Description                                    |
-| --------------------------- | ------ | -------- | ---------------------------------------------- |
-| `resourceConventionPrefix`  | string | ✅       | Prefix for resource naming (1-20 chars)        |
-| `storageDeploymentLocation` | string | ✅       | Azure region (swedencentral, norwayeast, etc.) |
-| `resourceDeploymentDate`    | string | ❌       | Deployment timestamp (defaults to utcNow())    |
+| Parameter                  | Type   | Required | Description                                                                                                                         |
+| -------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource names, 3-20 chars (generated by `facade.bicep` as `q` + 5 characters of `uniqueString(resourceDeploymentDate)`) |
+| `resourceLocation`         | string | ✅       | Azure region (allowed: `francecentral`, `northeurope`, `westeurope`, `swedencentral`)                                               |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp (no default; passed by the facade)                                                                             |
+
+`deploymentFile.bicep` derives every resource name from the prefix and passes each name, with the location and date, to its child module.
+For example, `storageAccount.bicep` takes `storageAccountName` (3-24 chars), `storageAccountLocation` and `storageAccountDeploymentDate`.
 
 ### **Example Usage**
 
+`facade.bicep` declares `param resourceDeploymentDate string = utcNow()` and passes its generated prefix:
+
 ```bicep
 module storageDeployment 'storage/deploymentFile.bicep' = {
-  name: 'storageDeployment'
+  name: 'storageDeployment-${resourceDeploymentDate}'
+  dependsOn: [identitiesDeployment]
   params: {
-    resourceConventionPrefix: 'arolariu'
-    storageDeploymentLocation: 'swedencentral'
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
   }
 }
 ```
 
 ## 📤 **Outputs**
 
-| Output                       | Type   | Description                         |
-| ---------------------------- | ------ | ----------------------------------- |
-| `storageAccountName`         | string | Name of the created storage account |
-| `storageAccountId`           | string | Resource ID of the storage account  |
-| `storageAccountBlobEndpoint` | string | Blob storage endpoint URL           |
-| `sqlServerName`              | string | Name of the SQL Server instance     |
-| `cosmosAccountName`          | string | Name of the Cosmos DB account       |
+| Output                       | Type   | Description                          |
+| ---------------------------- | ------ | ------------------------------------ |
+| `storageAccountName`         | string | Name of the created storage account  |
+| `storageAccountId`           | string | Resource ID of the storage account   |
+| `storageAccountBlobEndpoint` | string | Blob storage endpoint URL            |
+| `containerRegistryName`      | string | Name of the Azure Container Registry |
+| `sqlServerName`              | string | Name of the SQL Server instance      |
+| `cosmosAccountName`          | string | Name of the Cosmos DB account        |
+
+`facade.bicep` passes the storage account, registry, SQL server and Cosmos DB names to the resource-scoped RBAC modules.
+`storageAccount.bicep` also outputs `storageAccountFileEndpoint`, `storageAccountQueueEndpoint` and `storageAccountTableEndpoint`, which the
+orchestrator does not re-export.
 
 ## 💾 **Storage Components**
 
 ### **Azure Storage Account**
 
-**Configuration:**
+**General:**
 
-- **SKU**: Standard_LRS (Locally Redundant Storage)
-- **Performance**: Standard tier
-- **Access Tier**: Hot (optimized for frequent access)
-- **Replication**: LRS for cost optimization
-- **Security**: HTTPS only, TLS 1.2 minimum
+- SKU: Standard_LRS (Locally Redundant)
+- Kind: StorageV2
+- Access Tier: Hot
+- Public Network Access: Enabled (can restrict)
+- Allow Cross-Tenant Replication: Disabled
+- Minimum TLS: 1.2
+- HTTPS Only: Yes
+- Tags: Environment, deployment, cost center, etc.
 
-**Security Features:**
+**Security & Encryption:**
 
-- **Public access**: Disabled for blob containers
-- **Shared key access**: Disabled (Azure AD only)
-- **Network access**: Public (can be restricted)
-- **Encryption**: Microsoft-managed keys
+- Blob public (anonymous) access: Disabled at the account level
+- Shared key access: Disabled; Entra ID (OAuth) is the default authentication
+- Encryption at rest: Microsoft-managed keys
+- Infrastructure encryption: Enabled
+- Network ACLs: AzureServices, Logging, Metrics bypassed; default allow
 
-**Storage Services:**
+**Blob Service:**
 
-#### **Blob Storage**
+- Change feed: Enabled (90 days)
+- Restore policy: Enabled (30 days)
+- Container delete retention: 7 days
+- Blob delete retention: 90 days (no permanent delete)
+- CORS: Configured for production (`arolariu.ro`, `api.arolariu.ro`), `dev.arolariu.ro` and local development (`localhost`) origins
+- Versioning: Enabled
+- Last access time tracking: Enabled (1 day)
+- Container: `invoices` (private), which holds invoice scans that the website uploads through short-lived user-delegation SAS URLs
 
-- **Static websites**: CSS, JavaScript, images
-- **User uploads**: Profile pictures, documents
-- **Application data**: Logs, backups, exports
+**File Service:**
 
-#### **Table Storage**
+- Share delete retention: 7 days (no permanent delete)
+- SMB: 3.0/3.1.1, Kerberos, AES encryption
+- No file shares are provisioned
 
-- **Session data**: User sessions and temporary data
-- **Application cache**: Frequently accessed data
-- **Metrics storage**: Custom application metrics
-- **Configuration**: Feature flags and settings
+**Queue/Table Service:**
 
-#### **Queue Storage**
+- Queue and table services are enabled.
+- The `invoice-analysis` queue is provisioned declaratively for durable invoice and merchant analysis work. Application Brokers consume this
+  queue but never create infrastructure at runtime.
+- No tables are provisioned.
 
-- **Email processing**: Asynchronous email delivery
-- **Background jobs**: Long-running task processing
-- **Event handling**: Decoupled event processing
-- **Integration**: Webhook processing
+**Lifecycle Management:**
 
-#### **File Storage**
-
-- **Shared configuration**: Application config files
-- **Certificates**: SSL certificates and keys
-- **Reports**: Generated reports and documents
-- **Backup storage**: File-based backup archives
+- Move blobs to cool after 30 days, archive after 90 days, delete after 365 days
+- Delete snapshots after 90 days, versions after 365 days
 
 ### **Azure Container Registry**
 
 **Configuration:**
 
-- **SKU**: Premium (supports private endpoints, geo-replication)
+- **SKU**: Basic
 - **Admin user**: Disabled (managed identity authentication)
-- **Public access**: Enabled (with network restrictions)
-- **Content trust**: Available for image signing
+- **Public access**: Enabled (no network rule set; AzureServices bypass)
+- **Content trust**: Disabled (requires Premium)
+- **Anonymous pull**: Disabled
 
 **Features:**
 
 - **Multi-architecture images**: Support for ARM64 and x86
-- **Vulnerability scanning**: Automatic security scanning
-- **Geo-replication**: Available for global distribution
-- **Webhook integration**: CI/CD pipeline triggers
+- **Vulnerability scanning**: Not configured
+- **Geo-replication**: Not available (requires Premium)
+- **Webhook integration**: Not configured
 
 **Container Images:**
 
 - **Frontend applications**: React/Next.js production builds
 - **Backend APIs**: .NET Core application containers
-- **Supporting services**: Redis, utility containers
-- **Development tools**: Custom development containers
+- **Experimental service**: exp.arolariu.ro (Python/FastAPI) container
+
+CI pushes these images from `official-website-build.yml`, `official-api-trigger.yml` and `official-exp-trigger.yml` in `.github/workflows/`.
 
 ### **Azure SQL Database**
 
 **SQL Server Configuration:**
 
-- **Edition**: Standard Edition
-- **Compute model**: Serverless (auto-pause enabled)
+- **Primary database**: Standard (10 DTU, 250 GB maximum size)
+- **Secondary database**: General Purpose serverless `GP_S_Gen5_2` free offer (32 GB, auto-pause after 60 minutes)
 - **Authentication**: Azure AD integration
 - **TLS**: Minimum version 1.2
-- **Firewall**: Azure services allowed
+- **Firewall**: No firewall rules are defined in Bicep (public network access enabled)
+
+### **Azure Cosmos DB**
+
+**Account Configuration:**
+
+- **API**: NoSQL (`GlobalDocumentDB`)
+- **Capacity**: Provisioned throughput on the free tier, capped at 1000 RU/s for the account
+- **Consistency**: Session
+- **Regions**: Single region (no zone redundancy or automatic failover)
+- **Backup**: Continuous (7-day point-in-time restore)
+- **Authentication**: Entra ID only (local/key auth disabled)
+- **TLS**: Minimum version 1.2
+- **Database**: `primary`, with the `invoices` and `merchants` containers (see Cosmos DB Document Patterns below)
 
 ### **Access Control**
 
@@ -401,29 +296,31 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
 
 - **Authentication**: Azure AD and managed identities
 - **Authorization**: RBAC and fine-grained permissions
-- **Network**: Private endpoints for production
+- **Network**: Public endpoint (no private endpoints, VNet rules or IP filters are configured)
 - **SAS tokens**: Time-limited for specific operations
 
 **SQL Database:**
 
 - **Authentication**: Azure AD (primary), SQL Auth (fallback)
-- **Authorization**: Database-level and schema-level permissions
-- **Network**: Firewall rules and VNet integration
-- **Always Encrypted**: Sensitive data protection
+- **Authorization**: The manually run `../rbac/sql-rbac-uami.sql` adds the `backend` and `infra` database users to `db_datareader`,
+  `db_datawriter` and `db_ddladmin`; Bicep assigns only SQL DB Contributor (management) to the backend identity
+- **Network**: Public endpoint (no private endpoints, VNet rules or IP filters are configured)
+- **Always Encrypted**: Not configured
 
 **Cosmos DB:**
 
-- **Authentication**: Azure AD and resource tokens
-- **Authorization**: Database and collection-level permissions
-- **Network**: Private endpoints and IP filtering
+- **Authentication**: Entra ID only (local/key auth disabled)
+- **Authorization**: Bicep assigns only Cosmos DB Operator (management, no data access) to the backend identity; no Cosmos DB SQL role
+  assignment is defined (see [`../rbac/README.md`](../rbac/README.md#role-ids-that-differ-from-their-constant-names))
+- **Network**: Public endpoint (no private endpoints, VNet rules or IP filters are configured)
 - **Encryption**: Automatic encryption at rest
 
 ### **Encryption Standards**
 
 - **At rest**: All data encrypted with Microsoft-managed keys
 - **In transit**: TLS 1.2+ for all connections
-- **Application-level**: Additional encryption for sensitive fields
-- **Key management**: Integration with Azure Key Vault
+- **Application-level**: Not configured
+- **Key management**: Not configured (Microsoft-managed keys only; no Key Vault keys)
 
 ## 📊 **Data Patterns & Use Cases**
 
@@ -471,38 +368,24 @@ AS RANGE RIGHT FOR VALUES
 
 ### **Cosmos DB Document Patterns**
 
-```javascript
-// Example: Product document structure
-{
-  "id": "product-12345",
-  "type": "product",
-  "category": "electronics", // Partition key
-  "name": "Smartphone XYZ",
-  "price": 599.99,
-  "inventory": {
-    "quantity": 100,
-    "warehouse": "EU-Central"
-  },
-  "metadata": {
-    "createdAt": "2024-01-15T10:30:00Z",
-    "lastModified": "2024-01-20T14:45:00Z",
-    "version": 2
-  },
-  "searchTags": ["phone", "mobile", "electronics"],
-  "_ts": 1705837800 // Cosmos DB timestamp
-}
-```
+The `primary` database holds two containers. Both use consistent, automatic indexing of all paths except `/_etag/?` and define no unique
+keys.
+
+| Container   | Partition key      | Contents                                                           |
+| ----------- | ------------------ | ------------------------------------------------------------------ |
+| `invoices`  | `/UserIdentifier`  | Invoice documents, read and written by the API's Cosmos DB broker  |
+| `merchants` | `/ParentCompanyId` | Merchant documents, read and written by the API's Cosmos DB broker |
 
 ## 💰 **Cost Considerations**
 
-| Component          | Configuration          | Monthly Cost Estimate\* |
-| ------------------ | ---------------------- | ----------------------- |
-| Storage Account    | Standard_LRS, Hot tier | €5-15                   |
-| Container Registry | Premium SKU            | €15-25                  |
-| SQL Database       | Serverless, 2-4 vCores | €20-40                  |
-| Cosmos DB          | Serverless mode        | €10-30                  |
-| **Data Transfer**  | Egress costs           | €2-10                   |
-| **Total**          |                        | **€52-120**             |
+| Component          | Configuration                                      | Monthly Cost Estimate\* |
+| ------------------ | -------------------------------------------------- | ----------------------- |
+| Storage Account    | Standard_LRS, Hot tier                             | €5-15                   |
+| Container Registry | Basic SKU                                          | €15-25                  |
+| SQL Database       | Standard 10 DTU primary, serverless free secondary | €20-40                  |
+| Cosmos DB          | Free tier (provisioned, 1000 RU/s cap)             | €10-30                  |
+| **Data Transfer**  | Egress costs                                       | €2-10                   |
+| **Total**          |                                                    | **€52-120**             |
 
 \*Estimates based on moderate usage. Costs scale with data volume and operations.
 
@@ -516,7 +399,7 @@ AS RANGE RIGHT FOR VALUES
 
 **SQL Database:**
 
-- **Serverless tier**: Automatic scaling and pause for development
+- **Serverless free offer**: The secondary database auto-pauses after 60 minutes of inactivity and pauses when its free limit is exhausted
 - **Query optimization**: Regular performance tuning
 - **Backup retention**: Optimize backup retention periods
 
@@ -536,35 +419,25 @@ AS RANGE RIGHT FOR VALUES
 
 ### **Connection String Management**
 
-```bicep
-// Store connection strings in Key Vault
-resource storageConnectionSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'storage-connection-string'
-  properties: {
-    value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
-  }
-}
-```
+Shared-key access is disabled (`allowSharedKeyAccess: false`), so account-key connection strings cannot authenticate. Store or pass only the
+blob endpoint (the `storageAccountBlobEndpoint` output) and authenticate with the workload's user-assigned managed identity; its storage
+roles come from [`../rbac/storage-rbac.bicep`](../rbac/storage-rbac.bicep).
 
 ### **Application Configuration**
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=${sqlServerName}.database.windows.net;Authentication=Active Directory Default;Database=${databaseName};",
-    "CosmosConnection": "AccountEndpoint=https://${cosmosAccountName}.documents.azure.com:443/;",
-    "StorageConnection": "DefaultEndpointsProtocol=https;AccountName=${storageAccountName};"
-  },
-  "Storage": {
-    "ContainerNames": {
-      "StaticAssets": "static-assets",
-      "UserUploads": "user-uploads",
-      "Backups": "backups"
-    }
-  }
-}
-```
+The API reads no storage connection strings from `appsettings*.json`. At startup it loads these App Configuration keys through the exp
+configuration proxy (`sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs`):
+
+| Key                        | Value in Azure                               | API option                            |
+| -------------------------- | -------------------------------------------- | ------------------------------------- |
+| `Endpoints:Database:SQL`   | SQL Database connection string               | `AzureOptions:SqlConnectionString`    |
+| `Endpoints:Database:NoSQL` | Cosmos DB account endpoint                   | `AzureOptions:NoSqlConnectionString`  |
+| `Endpoints:Storage:Blob`   | Blob endpoint (`storageAccountBlobEndpoint`) | `AzureOptions:StorageAccountEndpoint` |
+
+[`../configuration/appConfiguration.json`](../configuration/appConfiguration.json) declares these keys under the `PRODUCTION` and
+`DEVELOPMENT` labels with empty values, so Bicep does not populate them. Resource names are fixed in code: the API uses the `primary` Cosmos
+DB database with its `invoices` and `merchants` containers and the `invoice-analysis` queue, and the website's scan Server Actions upload to
+the `invoices` blob container.
 
 ### **Managed Identity Integration**
 
@@ -578,7 +451,7 @@ public class StorageService
     {
         var credential = new DefaultAzureCredential();
         _blobClient = new BlobServiceClient(
-            new Uri("https://arolariusa.blob.core.windows.net/"),
+            new Uri("https://<prefix>sacc.blob.core.windows.net/"),
             credential
         );
     }
@@ -591,41 +464,42 @@ public class StorageService
 
 **Storage Account:**
 
-- **Blob snapshots**: Point-in-time recovery for critical data
-- **Cross-region replication**: Geo-redundant storage for critical data
-- **Export jobs**: Regular exports to archive storage
+- **Blob snapshots**: None are created by the infrastructure; lifecycle management deletes snapshots after 90 days
+- **Retention and restore**: Versioning, 90-day blob soft delete and 30-day point-in-time restore
+- **Replication**: LRS only (no cross-region copy)
+- **Export jobs**: Not configured
 
 **SQL Database:**
 
 - **Automated backups**: 7-day retention with point-in-time restore
-- **Long-term retention**: Monthly/yearly backups for compliance
-- **Geo-restore**: Cross-region backup availability
+- **Backup redundancy**: Local (no geo-restore)
 
 **Cosmos DB:**
 
-- **Continuous backup**: Point-in-time restore capability
-- **Periodic backup**: Regular snapshots for disaster recovery
-- **Cross-region backup**: Multi-region backup availability
+- **Continuous backup**: Point-in-time restore capability (7 days)
+- **Regions**: Single region
 
 ### **Monitoring & Alerting**
 
 ```bash
+# List resource names to find the generated <prefix> (for example <prefix>sacc)
+az resource list --resource-group "arolariu-rg" --query "[].name" --output tsv
+
 # Monitor storage account metrics
 az monitor metrics list \
-  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/arolariusa" \
+  --resource "/subscriptions/<subscription-id>/resourceGroups/arolariu-rg/providers/Microsoft.Storage/storageAccounts/<prefix>sacc" \
   --metric "UsedCapacity,Transactions,Ingress,Egress"
 
-# Check SQL database performance
-az sql db show-usage \
-  --name "arolariu-sqlserver-db-main" \
-  --server "arolariu-sqlserver" \
+# Check SQL database usage
+az sql db list-usages \
+  --name "<prefix>-sqlserver-db-primary" \
+  --server "<prefix>-sqlserver" \
   --resource-group "arolariu-rg"
 
 # Monitor Cosmos DB RU consumption
-az cosmosdb sql database throughput show \
-  --account-name "arolariu-nosqlserver" \
-  --name "documents" \
-  --resource-group "arolariu-rg"
+az monitor metrics list \
+  --resource "/subscriptions/<subscription-id>/resourceGroups/arolariu-rg/providers/Microsoft.DocumentDB/databaseAccounts/<prefix>-nosqlserver" \
+  --metric "TotalRequestUnits"
 ```
 
 ### **Performance Optimization**
@@ -651,60 +525,59 @@ az cosmosdb sql database throughput show \
 
 ### **Required Dependencies**
 
-- **Identity Module**: Managed identities for secure access
-- **Configuration Module**: Key Vault for connection strings
+- **Identity Module**: Deployment ordering only (`dependsOn: [identitiesDeployment]` in `facade.bicep`)
 
 ### **Optional Dependencies**
 
-- **Network Module**: Private endpoints and VNet integration
-- **Observability Module**: Monitoring and diagnostics
+- None. No private endpoints or diagnostic settings are provisioned, so there is no Network or Observability dependency.
 
 ## 📊 **Deployment Flow**
 
-1. **Storage Account**: Deploy first (foundation for other services)
-2. **Container Registry**: Deploy for container image storage
-3. **SQL Server**: Deploy database server infrastructure
-4. **SQL Databases**: Create application databases
-5. **Cosmos DB Account**: Deploy NoSQL infrastructure
-6. **Cosmos Databases**: Create document collections
-7. **Security Configuration**: Apply access policies and RBAC
-8. **Integration**: Configure application connections
+1. **Storage resources**: The storage account, container registry, SQL server (with its two databases) and Cosmos DB account (with the
+   `primary` database and its containers) deploy in parallel; `deploymentFile.bicep` declares no dependencies between them
+2. **RBAC**: `facade.bicep` then applies role assignments through [`../rbac/storage-rbac.bicep`](../rbac/storage-rbac.bicep),
+   [`../rbac/container-registry-rbac.bicep`](../rbac/container-registry-rbac.bicep),
+   [`../rbac/sql-server-rbac.bicep`](../rbac/sql-server-rbac.bicep) and [`../rbac/cosmos-db-rbac.bicep`](../rbac/cosmos-db-rbac.bicep)
+3. **SQL database users**: Database users for the managed identities are created by manually running `../rbac/sql-rbac-uami.sql`; no Bicep
+   module runs it
 
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues**
 
-| Issue                       | Symptoms                     | Solution                                     |
-| --------------------------- | ---------------------------- | -------------------------------------------- |
-| **Storage access denied**   | 403 Forbidden errors         | Check RBAC assignments and network access    |
-| **SQL connection timeout**  | Database connection failures | Verify firewall rules and connection strings |
-| **Cosmos DB throttling**    | 429 Too Many Requests        | Optimize queries and partition key design    |
-| **Container registry auth** | Docker push/pull failures    | Verify managed identity and registry access  |
-| **High storage costs**      | Unexpected billing           | Review lifecycle policies and data retention |
+| Issue                       | Symptoms                     | Solution                                                                       |
+| --------------------------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| **Storage access denied**   | 403 Forbidden errors         | Check RBAC assignments and network access                                      |
+| **Blob not found**          | 404 errors                   | Check container and blob name                                                  |
+| **CORS errors**             | Browser errors               | Check CORS rules in blobServices                                               |
+| **SQL connection timeout**  | Database connection failures | Verify firewall rules (none are defined in Bicep) and connection strings       |
+| **Cosmos DB throttling**    | 429 Too Many Requests        | Optimize queries and partition key design (the account is capped at 1000 RU/s) |
+| **Container registry auth** | Docker push/pull failures    | Verify managed identity and registry access                                    |
+| **High storage costs**      | Unexpected billing           | Review lifecycle policies and data retention                                   |
 
 ### **Validation Commands**
 
 ```bash
 # Test storage account access
 az storage blob list \
-  --account-name "arolariusa" \
-  --container-name "static-assets" \
+  --account-name "<prefix>sacc" \
+  --container-name "invoices" \
   --auth-mode login
 
 # Test SQL connectivity
-sqlcmd -S "arolariu-sqlserver.database.windows.net" \
-  -d "arolariu-sqlserver-db-main" \
+sqlcmd -S "<prefix>-sqlserver.database.windows.net" \
+  -d "<prefix>-sqlserver-db-primary" \
   -G \
   -Q "SELECT @@VERSION"
 
 # Test Cosmos DB access
 az cosmosdb sql database list \
-  --account-name "arolariu-nosqlserver" \
+  --account-name "<prefix>-nosqlserver" \
   --resource-group "arolariu-rg"
 
 # Test container registry
 az acr repository list \
-  --name "arolariu-acr"
+  --name "<prefix>acrprod"
 ```
 
 ### **Performance Diagnostics**
@@ -724,7 +597,7 @@ ORDER BY avg_cpu_time DESC;
 ```bash
 # Storage: Monitor transaction metrics
 az monitor metrics list \
-  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/arolariusa" \
+  --resource "/subscriptions/<subscription-id>/resourceGroups/arolariu-rg/providers/Microsoft.Storage/storageAccounts/<prefix>sacc" \
   --metric "Transactions" \
   --dimension "ResponseType" \
   --start-time "2024-01-01T00:00:00Z"
@@ -742,5 +615,5 @@ az monitor metrics list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: November 2026\
 **Maintainer**: Alexandru-Razvan Olariu

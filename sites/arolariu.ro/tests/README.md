@@ -4,12 +4,15 @@
 
 ## Quick Reference
 
-| What             | Command                                                                                                                                                              |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run all tests    | `npm run test:website`                                                                                                                                               |
-| Run one file     | `npx vitest run src/lib/utils.generic.test.ts`                                                                                                                       |
-| Watch mode       | `npx vitest --project=website`                                                                                                                                       |
-| Website coverage | `npx vitest run sites\arolariu.ro\src sites\arolariu.ro\emails --config sites\arolariu.ro\vitest.config.ts --coverage.enabled=true --coverage.reporter=text-summary` |
+| What             | Command                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| Run all tests    | `npm run test:website`                                       |
+| Run one file     | `npx vitest run src/lib/utils.generic.test.ts`               |
+| Watch mode       | `npx vitest`                                                 |
+| Website coverage | `npx vitest run src emails --coverage.reporter=text-summary` |
+
+Run `npm run test:website` from the repository root and the `npx vitest` commands from `sites/arolariu.ro`. Coverage needs no flag: the root
+`vitest.config.ts` sets `coverage.enabled: true`.
 
 **Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`. Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is
 reserved for Playwright E2E.
@@ -91,7 +94,9 @@ const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
 
 beforeEach(() => {
   mockFetchBFFUserFromAuthService.mockResolvedValue({
+    user: null,
     userIdentifier: "test-user",
+    userJwt: "test-jwt",
   });
 });
 ```
@@ -104,27 +109,41 @@ beforeEach(() => {
 
 These apply to ALL test files automatically:
 
-| Module             | Mock Behavior                                                    |
-| ------------------ | ---------------------------------------------------------------- |
-| `next/navigation`  | useRouter returns push/replace/back fns, usePathname returns "/" |
-| `next-intl`        | useTranslations returns key passthrough, useLocale returns "en"  |
-| `@clerk/nextjs`    | useUser/useAuth return unauthenticated state                     |
-| `@opentelemetry/*` | Empty or try-import with fallback                                |
-| `@azure/*`         | Empty constructors to prevent CJS resolution crashes             |
+| Module or setup             | Mock behavior                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Setup imports               | `@testing-library/jest-dom/vitest` matchers and `fake-indexeddb/auto` (in-memory IndexedDB)              |
+| `RESEND_API_KEY`            | Set to a fake key in `process.env`                                                                       |
+| `next/navigation`           | `useRouter()` returns push/replace/back/prefetch fns; `usePathname` returns "/"; empty `useSearchParams` |
+| `next/cache`                | `revalidatePath` and `revalidateTag` are `vi.fn()`                                                       |
+| `next/font/google`          | `Atkinson_Hyperlegible` and `Caudex` return mock font objects                                            |
+| `next-intl`                 | Real module plus `useTranslations` (returns key paths), `useLocale` (`"en"`), and a stub `useFormatter`  |
+| `next-intl-selector`        | Real module plus `useTranslations` returning `mockSelectorTranslator()` (`next-intl-selector/testing`)   |
+| `next-intl-selector/server` | Real module plus `getTranslations` returning `mockSelectorTranslator()`                                  |
+| `@clerk/nextjs`             | Signed-out `useUser`/`useAuth`; passthrough `ClerkProvider`; `Show`, `SignInButton`, `UserButton` stubs  |
+| `@opentelemetry/*`          | Real `api` (stub fallback if import fails); empty `sdk-logs`, `sdk-trace-base`, `resources`              |
+| `@azure/*`                  | `vi.fn()` constructors for `storage-blob`/`identity`; empty `app-configuration` (avoids CJS/ESM crashes) |
 
 ### Overriding global mocks in a test
 
+The global `next/navigation` mock defines `useRouter` as a plain function, not `vi.fn()`, so `vi.mocked(useRouter).mockReturnValue(...)`
+throws against it. Re-mock the module in the test file with `vi.fn()` exports, then configure them:
+
 ```typescript
-// Use vi.mocked() for type-safe access
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import {useRouter} from "next/navigation";
-const mockRouter = vi.mocked(useRouter);
+const mockUseRouter = vi.mocked(useRouter);
 
 beforeEach(() => {
-  mockRouter.mockReturnValue({
+  mockUseRouter.mockReturnValue({
     push: vi.fn(),
     replace: vi.fn(),
     // ... custom behavior for this test
-  });
+  } as never);
 });
 ```
 
@@ -142,13 +161,13 @@ directly and assert their real outputs. If an internal server module imports run
 Use when you just need to control a module's return values:
 
 ```typescript
-vi.mock("@/lib/actions/invoices/fetchInvoice");
+vi.mock("@/app/domains/invoices/_actions/invoices/fetchInvoice");
 
-import {fetchInvoice} from "@/lib/actions/invoices/fetchInvoice";
+import {fetchInvoice} from "@/app/domains/invoices/_actions/invoices/fetchInvoice";
 const mockFetchInvoice = vi.mocked(fetchInvoice);
 
 beforeEach(() => {
-  mockFetchInvoice.mockResolvedValue({status: "success", data: testInvoice});
+  mockFetchInvoice.mockResolvedValue({success: true, data: testInvoice});
 });
 ```
 
@@ -176,33 +195,23 @@ import {Resend} from "resend";
 expect(mockSendEmail).toHaveBeenCalledWith({to: "user@test.com", ...});
 ```
 
-### Pattern C: Azure blob client chain
+### Pattern C: Azure Blob storage (aliased stub)
+
+`@/lib/azure/storageClient` resolves to the Tier 1 stub, where Blob helpers such as `uploadBlobObject` are bare `vi.fn()`s. Import the
+helper the code under test calls and configure it in `beforeEach`; do not rebuild the Blob client chain:
 
 ```typescript
-type MockContainerClient = {
-  readonly getContainerClient: typeof mockGetContainerClient;
-};
+import {uploadBlobObject} from "@/lib/azure/storageClient";
 
-const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoisted(() => {
-  const getBlockBlobClient = vi.fn();
-  const getContainerClient = vi.fn(() => ({getBlockBlobClient}));
-  return {
-    mockDownload: vi.fn(),
-    mockGetBlockBlobClient: getBlockBlobClient,
-    mockGetContainerClient: getContainerClient,
-  };
-});
+const mockUploadBlobObject = vi.mocked(uploadBlobObject);
 
-// Wire up in beforeEach (survives mockReset)
 beforeEach(() => {
-  const {createBlobClient} = await import("@/lib/azure/storageClient");
-  const mockContainerClient: MockContainerClient = {
-    getContainerClient: mockGetContainerClient,
-  };
-  vi.mocked(createBlobClient).mockResolvedValue(mockContainerClient);
-  mockGetBlockBlobClient.mockReturnValue({download: mockDownload});
+  mockUploadBlobObject.mockResolvedValue(testBlobObject); // a BlobObject fixture
 });
 ```
+
+Only `src/lib/azure/storageClient.test.ts` exercises `createBlobClient`: it calls `vi.unmock("@/lib/azure/storageClient")` and tests the
+real module against a mocked `@azure/storage-blob`.
 
 ---
 
@@ -212,10 +221,12 @@ beforeEach(() => {
 
 ### `renderWithProviders()`
 
-Wraps components with NextIntlClientProvider (currently a passthrough mock):
+Renders with a passthrough wrapper (no provider yet); the `messages` and `locale` options are currently ignored. Import the helpers barrel
+by relative path; there is no `@tests` alias:
 
 ```tsx
-import {renderWithProviders, screen} from "@tests/helpers";
+// src/components/MyComponent.test.tsx
+import {renderWithProviders, screen} from "../../tests/helpers";
 
 it("renders title", () => {
   renderWithProviders(<MyComponent title='Hello' />);
@@ -275,11 +286,15 @@ You cannot `await import()` inside `vi.hoisted()`. Only use it to create mock ob
 
 Thresholds (enforced in CI): **90%** for statements, branches, functions, and lines.
 
-Excluded from coverage:
+Effective exclusions are the union of the `coverage.exclude` arrays in the [root `vitest.config.ts`](../../../vitest.config.ts) and the
+[site `vitest.config.ts`](../vitest.config.ts). Besides build output, generated files, Storybook, `tests/`, test and spec files, config and
+setup files, and the OTel bootstrap (`instrumentation.ts`, `instrumentation.server.ts`), these are excluded:
 
-- `instrumentation.server.ts`, `instrumentation.ts` (OTel bootstrap)
-- `.next/` (build artifacts)
-- `tests/` (test infrastructure)
+- Type definitions: `**/*.d.ts`, `**/types/**/*.ts`
+- Side-effect infrastructure: `**/telemetry.ts`, `**/proxy.ts`
+- Presentational and template files: `**/emails/**/*.tsx`, `**/export/InvoicePDF.tsx`, `src/components/Navigation.tsx`,
+  `src/app/_components/PreferencesSubscriptions.tsx`, `**/*.stories.tsx`
+- Styles: `**/*.css`, `**/*.scss`, `**/*.module.scss`
 
 ---
 
@@ -288,12 +303,22 @@ Excluded from coverage:
 ```
 sites/arolariu.ro/
 ├── tests/
-│   ├── stubs/              ← Tier 1: module alias stubs
-│   ├── helpers/            ← Shared test utilities (renderWithProviders)
-│   ├── utils/              ← Playwright E2E utilities (tags, assertions)
-│   └── README.md           ← This file
-├── vitest.config.ts        ← Alias resolution + coverage config
-├── vitest.setup.ts         ← Tier 2: global mocks
+│   ├── stubs/                 ← Tier 1: module alias stubs
+│   ├── helpers/               ← Shared Vitest utilities (renderWithProviders, invokeHookCallback, chart layout)
+│   │   └── builders/          ← Test data builders (TestDataBuilder)
+│   ├── config/                ← Playwright environment, projects, and reporters
+│   ├── fixtures/              ← Playwright fixtures (a11y, base, navigation)
+│   ├── page-objects/          ← Playwright page objects (BasePage, header, footer)
+│   ├── utils/                 ← Playwright E2E utilities (tags, assertions, logger)
+│   ├── container/             ← Container runtime-configuration smoke test (run by CI)
+│   ├── global-setup.ts        ← Playwright global setup
+│   ├── global-teardown.ts     ← Playwright global teardown
+│   ├── playwright-helpers.ts  ← Playwright navigation retry helpers
+│   └── README.md              ← This file
+├── playwright.config.ts       ← Playwright E2E config
+├── vitest.config.ts           ← Alias resolution + coverage config
+├── vitest.setup.ts            ← Tier 2: global mocks
 └── src/
-    └── **/*.test.ts(x)     ← Tier 3: test files colocated with source
+    ├── **/*.test.ts(x)        ← Tier 3: Vitest tests colocated with source
+    └── **/*.spec.tsx          ← Playwright E2E specs colocated with source
 ```
