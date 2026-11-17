@@ -479,11 +479,6 @@
         "resolved": "11.0.0",
         "contentHash": "+boRR9uSKiIPtFeRLGwO5xylhDF80xpwM+dmk5jgIqqeUKLbujGkGICMTKqQrBzKO6fIp8BU8DV6YZkQukqo3A=="
       },
-      "System.Formats.Asn1": {
-        "type": "Transitive",
-        "resolved": "11.0.0",
-        "contentHash": "RSIrJ7D8gEHykZWTfS/r9tz/G5YpxIQAaFFXSLLHhVaRed+/26KvqaXvUtqqMJMlNjubAcMvf3UJ+E6ABT8AWw=="
-      },
       "System.IdentityModel.Tokens.Jwt": {
         "type": "Transitive",
         "resolved": "8.19.2",
@@ -512,6 +507,11 @@
         "type": "Transitive",
         "resolved": "11.0.0",
         "contentHash": "thx6y1hMzB6LumB/aLcZoLHWq8wr+dbldk/FiNghyT+4ynxo9u2oCTFfb5iDMDG6hykDXLorXuaf4EPEij2BBg=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "Transitive",
+        "resolved": "10.0.13",
+        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
@@ -565,8 +565,7 @@
           "Swashbuckle.AspNetCore.Annotations": "[10.3.1, )",
           "Swashbuckle.AspNetCore.Swagger": "[10.3.1, )",
           "Swashbuckle.AspNetCore.SwaggerGen": "[10.3.1, )",
-          "Swashbuckle.AspNetCore.SwaggerUI": "[10.3.1, )",
-          "System.Security.Cryptography.Pkcs": "[11.0.0, )"
+          "Swashbuckle.AspNetCore.SwaggerUI": "[10.3.1, )"
         }
       },
       "arolariu.backend.core.auth": {
@@ -948,15 +947,6 @@
         "requested": "[10.3.1, )",
         "resolved": "10.3.1",
         "contentHash": "kXuMIVJBDD6qMwG78VUrKy4x5Ke98HU0Q023Sf2iSBO/x45c5BuByYPAExIs9UeVsjdGGgvLWU5jK8l6MO2Z0Q=="
-      },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "CentralTransitive",
-        "requested": "[11.0.0, )",
-        "resolved": "11.0.0",
-        "contentHash": "G8mTjSWrwaPJ2bJRbKuI4ZqdKUYcANK0KtNH3s8/va3nXiF/Pk/yhv2R17rv5PBKJO5+ZXDyhTnZXh0W9v0J8w==",
-        "dependencies": {
-          "System.Formats.Asn1": "11.0.0"
-        }
       }
     }
   }

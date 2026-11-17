@@ -521,11 +521,6 @@
         "resolved": "9.0.11",
         "contentHash": "2Us/NchH6SM69NYWzf8NRyeftdv3ILso8LMiMdAjT7ECTiZKzddiXWhAyQj6ZzbddoAOHS9GdlPbAAkwCPID3Q=="
       },
-      "System.Formats.Asn1": {
-        "type": "Transitive",
-        "resolved": "11.0.0",
-        "contentHash": "RSIrJ7D8gEHykZWTfS/r9tz/G5YpxIQAaFFXSLLHhVaRed+/26KvqaXvUtqqMJMlNjubAcMvf3UJ+E6ABT8AWw=="
-      },
       "System.IdentityModel.Tokens.Jwt": {
         "type": "Transitive",
         "resolved": "8.19.2",
@@ -544,6 +539,11 @@
         "type": "Transitive",
         "resolved": "10.0.10",
         "contentHash": "roR+5AeOpflUxJQlqSfsZs/Bvi1uw4KBuTkIgF1e8l0RdalG4AUn84+sjJLclEfOV85gAjc8+Pp540qjDE5UIg=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "Transitive",
+        "resolved": "10.0.13",
+        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
@@ -597,8 +597,7 @@
           "Swashbuckle.AspNetCore.Annotations": "[10.3.1, )",
           "Swashbuckle.AspNetCore.Swagger": "[10.3.1, )",
           "Swashbuckle.AspNetCore.SwaggerGen": "[10.3.1, )",
-          "Swashbuckle.AspNetCore.SwaggerUI": "[10.3.1, )",
-          "System.Security.Cryptography.Pkcs": "[11.0.0, )"
+          "Swashbuckle.AspNetCore.SwaggerUI": "[10.3.1, )"
         }
       },
       "Azure.Core": {
@@ -899,15 +898,6 @@
         "requested": "[10.3.1, )",
         "resolved": "10.3.1",
         "contentHash": "kXuMIVJBDD6qMwG78VUrKy4x5Ke98HU0Q023Sf2iSBO/x45c5BuByYPAExIs9UeVsjdGGgvLWU5jK8l6MO2Z0Q=="
-      },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "CentralTransitive",
-        "requested": "[11.0.0, )",
-        "resolved": "11.0.0",
-        "contentHash": "G8mTjSWrwaPJ2bJRbKuI4ZqdKUYcANK0KtNH3s8/va3nXiF/Pk/yhv2R17rv5PBKJO5+ZXDyhTnZXh0W9v0J8w==",
-        "dependencies": {
-          "System.Formats.Asn1": "11.0.0"
-        }
       }
     }
   }

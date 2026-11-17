@@ -12,11 +12,6 @@
     <PackageVersion Include="Aspire.Hosting.Redis" Version="13.6.5" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.6.5" />
   </ItemGroup>
-  <ItemGroup Label="Security">
-    <!-- Temporary security floor until Aspire.Hosting.SqlServer includes the fix:
-         https://github.com/advisories/GHSA-846f-f764-76mx -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
-  </ItemGroup>
   <ItemGroup Label="Storage and Identity">
     <PackageVersion Include="Azure.Data.Tables" Version="12.13.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />

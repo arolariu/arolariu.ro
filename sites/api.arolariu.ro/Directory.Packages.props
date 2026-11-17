@@ -89,9 +89,6 @@
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
-    <!-- Shared security floor for SQL-backed consumers:
-         https://github.com/advisories/GHSA-846f-f764-76mx -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
   </ItemGroup>
   <ItemGroup Label="Testing Frameworks">
     <PackageVersion Include="coverlet.collector" Version="10.1.1" />
